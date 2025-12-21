@@ -49,19 +49,12 @@ export function Header() {
           >
             Rent
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              New Projects <ChevronDown className="h-3 w-3" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <Link to="/projects">All Projects</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/developers">Developers</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link 
+            to="/projects" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Projects
+          </Link>
           <Link 
             to="/areas" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -173,14 +166,7 @@ export function Header() {
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
             >
-              New Projects
-            </Link>
-            <Link 
-              to="/developers" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Developers
+              Projects
             </Link>
             <Link 
               to="/areas" 
