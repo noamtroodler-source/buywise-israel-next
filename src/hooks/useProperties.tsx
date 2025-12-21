@@ -19,7 +19,7 @@ export function useProperties(filters?: PropertyFilters) {
         query = query.ilike('city', `%${filters.city}%`);
       }
       if (filters?.property_type) {
-        query = query.eq('property_type', filters.property_type);
+        query = query.eq('property_type', filters.property_type as any);
       }
       if (filters?.listing_status) {
         query = query.eq('listing_status', filters.listing_status);
@@ -30,17 +30,56 @@ export function useProperties(filters?: PropertyFilters) {
       if (filters?.max_price) {
         query = query.lte('price', filters.max_price);
       }
-      if (filters?.min_bedrooms) {
-        query = query.gte('bedrooms', filters.min_bedrooms);
+      if (filters?.min_rooms) {
+        query = query.gte('bedrooms', filters.min_rooms);
       }
-      if (filters?.max_bedrooms) {
-        query = query.lte('bedrooms', filters.max_bedrooms);
+      if (filters?.max_rooms) {
+        query = query.lte('bedrooms', filters.max_rooms);
+      }
+      if (filters?.min_bathrooms) {
+        query = query.gte('bathrooms', filters.min_bathrooms);
       }
       if (filters?.min_size) {
         query = query.gte('size_sqm', filters.min_size);
       }
       if (filters?.max_size) {
         query = query.lte('size_sqm', filters.max_size);
+      }
+      if (filters?.min_parking) {
+        query = query.gte('parking', filters.min_parking);
+      }
+      if (filters?.is_furnished !== undefined) {
+        query = query.eq('is_furnished', filters.is_furnished);
+      }
+      if (filters?.is_accessible !== undefined) {
+        query = query.eq('is_accessible', filters.is_accessible);
+      }
+      if (filters?.condition && filters.condition.length > 0) {
+        query = query.in('condition', filters.condition);
+      }
+      if (filters?.features && filters.features.length > 0) {
+        query = query.contains('features', filters.features);
+      }
+      
+      // Apply sorting
+      if (filters?.sort_by) {
+        switch (filters.sort_by) {
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          case 'price_asc':
+            query = query.order('price', { ascending: true });
+            break;
+          case 'price_desc':
+            query = query.order('price', { ascending: false });
+            break;
+          case 'size_desc':
+            query = query.order('size_sqm', { ascending: false, nullsFirst: false });
+            break;
+          case 'rooms_desc':
+            query = query.order('bedrooms', { ascending: false });
+            break;
+        }
       }
 
       const { data, error } = await query;
