@@ -349,7 +349,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
         </Button>
 
         {/* Sort & Alert Section */}
-        <div className="flex items-center gap-3 ml-auto">
+        <div className="flex items-center gap-3">
           {/* Sort */}
           <div className="flex items-center gap-1">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
