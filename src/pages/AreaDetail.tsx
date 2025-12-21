@@ -314,8 +314,8 @@ export default function CityDetail() {
             <MarketStatsCards marketData={marketData} cityName={city.name} />
           ) : null}
 
-          {/* Chart and Tabs - Stacked Vertically */}
-          <div className="flex flex-col gap-8">
+          {/* Two Column Layout for Chart and Tabs */}
+          <div className="grid lg:grid-cols-2 gap-6">
             {/* Price Trend Chart */}
             {marketData.length > 0 && (
               <PriceTrendChart marketData={marketData} cityName={city.name} />
