@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Bell, X, Mail, MessageSquare, Phone } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Bell, X, Mail, MessageSquare, Phone, Zap, Clock, Calendar, Sparkles, Check } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { PropertyFilters, AlertFrequency, ListingType } from '@/types/database';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface CreateAlertDialogProps {
   open: boolean;
@@ -19,10 +17,10 @@ interface CreateAlertDialogProps {
   listingType: ListingType;
 }
 
-const FREQUENCY_OPTIONS: { value: AlertFrequency; label: string; description: string }[] = [
-  { value: 'instant', label: 'Instant', description: 'Get notified immediately when new listings match' },
-  { value: 'daily', label: 'Daily', description: 'Receive a daily digest of new listings' },
-  { value: 'weekly', label: 'Weekly', description: 'Get a weekly summary of new listings' },
+const FREQUENCY_OPTIONS: { value: AlertFrequency; label: string; icon: React.ReactNode }[] = [
+  { value: 'instant', label: 'Instant', icon: <Zap className="h-5 w-5" /> },
+  { value: 'daily', label: 'Daily', icon: <Clock className="h-5 w-5" /> },
+  { value: 'weekly', label: 'Weekly', icon: <Calendar className="h-5 w-5" /> },
 ];
 
 function formatFilterValue(key: string, value: any): string {
@@ -38,10 +36,10 @@ function formatFilterValue(key: string, value: any): string {
   if (key === 'property_type') {
     return value.replace(/_/g, ' ');
   }
-  if (key === 'features' && Array.isArray(value)) {
-    return value.join(', ');
+  if (key === 'city') {
+    return value;
   }
-  if (key === 'condition' && Array.isArray(value)) {
+  if (key === 'features' && Array.isArray(value)) {
     return value.join(', ');
   }
   return String(value);
@@ -49,8 +47,7 @@ function formatFilterValue(key: string, value: any): string {
 
 export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: CreateAlertDialogProps) {
   const { user } = useAuth();
-  const [alertName, setAlertName] = useState('');
-  const [frequency, setFrequency] = useState<AlertFrequency>('daily');
+  const [frequency, setFrequency] = useState<AlertFrequency>('weekly');
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
   const [notifySms, setNotifySms] = useState(false);
@@ -86,7 +83,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
     try {
       const { error } = await supabase.from('search_alerts').insert({
         user_id: user.id,
-        name: alertName || null,
+        name: null,
         filters: filters as any,
         listing_type: listingType,
         frequency,
@@ -102,8 +99,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
       onOpenChange(false);
       
       // Reset form
-      setAlertName('');
-      setFrequency('daily');
+      setFrequency('weekly');
       setNotifyEmail(true);
       setNotifyWhatsapp(false);
       setNotifySms(false);
@@ -115,144 +111,169 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
     }
   };
 
-  const listingTypeLabel = listingType === 'for_sale' ? 'Resell Properties' : 
-                           listingType === 'for_rent' ? 'Long-term Rentals' : 'New Projects';
+  const listingTypeLabel = listingType === 'for_sale' ? 'properties for sale' : 
+                           listingType === 'for_rent' ? 'rentals' : 'new projects';
+
+  const getFiltersSummary = () => {
+    if (activeFilters.length === 0) return 'All listings';
+    return activeFilters.map(([key, value]) => formatFilterValue(key, value)).join(', ');
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Create Search Alert
-          </DialogTitle>
-          <DialogDescription>
-            Get notified when new {listingTypeLabel.toLowerCase()} match your search criteria.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Alert Name */}
-          <div className="space-y-2">
-            <Label htmlFor="alert-name">Alert Name (optional)</Label>
-            <Input
-              id="alert-name"
-              placeholder="e.g., Tel Aviv 3-bedroom apartments"
-              value={alertName}
-              onChange={(e) => setAlertName(e.target.value)}
-            />
+      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 pb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bell className="h-5 w-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-semibold">Create Alert</h2>
           </div>
+          <p className="text-muted-foreground">
+            Get notified when new {listingTypeLabel} match your criteria
+          </p>
+        </div>
 
-          {/* Active Filters Display */}
+        <div className="px-6 space-y-6">
+          {/* Your Filters */}
           <div className="space-y-2">
-            <Label>Your Filters</Label>
+            <h3 className="font-semibold">Your Filters</h3>
             {activeFilters.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">{listingTypeLabel}</Badge>
                 {activeFilters.map(([key, value]) => (
-                  <Badge key={key} variant="outline">
+                  <Badge key={key} variant="secondary" className="rounded-full">
                     {formatFilterValue(key, value)}
                   </Badge>
                 ))}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No filters applied. You'll be notified about all new {listingTypeLabel.toLowerCase()}.
+                No filters set - you'll get all new listings
               </p>
             )}
-          </div>
-
-          {/* Frequency */}
-          <div className="space-y-3">
-            <Label>How often?</Label>
-            <RadioGroup value={frequency} onValueChange={(v) => setFrequency(v as AlertFrequency)}>
-              {FREQUENCY_OPTIONS.map(option => (
-                <div key={option.value} className="flex items-start space-x-3">
-                  <RadioGroupItem value={option.value} id={option.value} className="mt-1" />
-                  <div className="flex-1">
-                    <Label htmlFor={option.value} className="font-medium cursor-pointer">
-                      {option.label}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">{option.description}</p>
-                  </div>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-
-          {/* Notification Methods */}
-          <div className="space-y-3">
-            <Label>Notify me via</Label>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="notify-email"
-                  checked={notifyEmail}
-                  onCheckedChange={(checked) => setNotifyEmail(!!checked)}
-                />
-                <Label htmlFor="notify-email" className="flex items-center gap-2 cursor-pointer">
-                  <Mail className="h-4 w-4" />
-                  Email
-                </Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="notify-whatsapp"
-                  checked={notifyWhatsapp}
-                  onCheckedChange={(checked) => setNotifyWhatsapp(!!checked)}
-                />
-                <Label htmlFor="notify-whatsapp" className="flex items-center gap-2 cursor-pointer">
-                  <MessageSquare className="h-4 w-4" />
-                  WhatsApp
-                </Label>
-              </div>
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="notify-sms"
-                  checked={notifySms}
-                  onCheckedChange={(checked) => setNotifySms(!!checked)}
-                />
-                <Label htmlFor="notify-sms" className="flex items-center gap-2 cursor-pointer">
-                  <Phone className="h-4 w-4" />
-                  SMS
-                </Label>
-              </div>
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span>36 current listings match</span>
             </div>
           </div>
 
-          {/* Phone Input */}
-          {needsPhone && (
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+          {/* How Often */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">How Often?</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {FREQUENCY_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  className={cn(
+                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                    frequency === option.value 
+                      ? "border-primary bg-primary/5" 
+                      : "border-border hover:border-muted-foreground/30"
+                  )}
+                  onClick={() => setFrequency(option.value)}
+                >
+                  <div className={cn(
+                    "text-muted-foreground",
+                    frequency === option.value && "text-primary"
+                  )}>
+                    {option.icon}
+                  </div>
+                  <span className="text-sm font-medium">{option.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notify Me Via */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">Notify Me Via</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all text-sm font-medium",
+                  notifyEmail 
+                    ? "border-primary bg-primary/5 text-primary" 
+                    : "border-border hover:border-muted-foreground/30"
+                )}
+                onClick={() => setNotifyEmail(!notifyEmail)}
+              >
+                <Mail className="h-4 w-4" />
+                Email
+                {notifyEmail && <Check className="h-4 w-4" />}
+              </button>
+              <button
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all text-sm font-medium",
+                  notifyWhatsapp 
+                    ? "border-primary bg-primary/5 text-primary" 
+                    : "border-border hover:border-muted-foreground/30"
+                )}
+                onClick={() => setNotifyWhatsapp(!notifyWhatsapp)}
+              >
+                <MessageSquare className="h-4 w-4" />
+                WhatsApp
+                {notifyWhatsapp && <Check className="h-4 w-4" />}
+              </button>
+              <button
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all text-sm font-medium",
+                  notifySms 
+                    ? "border-primary bg-primary/5 text-primary" 
+                    : "border-border hover:border-muted-foreground/30"
+                )}
+                onClick={() => setNotifySms(!notifySms)}
+              >
+                <Phone className="h-4 w-4" />
+                SMS
+                {notifySms && <Check className="h-4 w-4" />}
+              </button>
+            </div>
+
+            {/* Phone Input */}
+            {needsPhone && (
               <Input
-                id="phone"
                 type="tel"
                 placeholder="+972 50 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                className="rounded-lg"
               />
-              <p className="text-xs text-muted-foreground">
-                Required for WhatsApp and SMS notifications
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateAlert} disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Alert'}
-            </Button>
+            )}
           </div>
 
-          {!user && (
+          {/* Summary Box */}
+          <div className="bg-muted/30 border border-dashed border-border rounded-xl p-4">
+            <p className="text-sm font-medium mb-1">You'll get alerts for:</p>
+            <p className="text-sm text-muted-foreground">{getFiltersSummary()}</p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-6 pt-4">
+          <Button 
+            variant="outline" 
+            className="flex-1 rounded-full"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            className="flex-1 rounded-full"
+            onClick={handleCreateAlert} 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Creating...' : 'Create Alert'}
+          </Button>
+        </div>
+
+        {!user && (
+          <div className="px-6 pb-6">
             <p className="text-sm text-center text-muted-foreground">
               You'll need to sign in to create alerts.
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
