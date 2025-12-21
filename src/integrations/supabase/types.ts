@@ -193,6 +193,54 @@ export type Database = {
         }
         Relationships: []
       }
+      developers: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string | null
+          founded_year: number | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          slug: string
+          total_projects: number | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          slug: string
+          total_projects?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          slug?: string
+          total_projects?: number | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -276,6 +324,48 @@ export type Database = {
           },
         ]
       }
+      market_data: {
+        Row: {
+          average_price_sqm: number | null
+          city: string
+          created_at: string
+          data_type: string | null
+          id: string
+          median_price: number | null
+          month: number | null
+          neighborhood: string | null
+          price_change_percent: number | null
+          total_transactions: number | null
+          year: number
+        }
+        Insert: {
+          average_price_sqm?: number | null
+          city: string
+          created_at?: string
+          data_type?: string | null
+          id?: string
+          median_price?: number | null
+          month?: number | null
+          neighborhood?: string | null
+          price_change_percent?: number | null
+          total_transactions?: number | null
+          year: number
+        }
+        Update: {
+          average_price_sqm?: number | null
+          city?: string
+          created_at?: string
+          data_type?: string | null
+          id?: string
+          median_price?: number | null
+          month?: number | null
+          neighborhood?: string | null
+          price_change_percent?: number | null
+          total_transactions?: number | null
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -305,6 +395,154 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      project_units: {
+        Row: {
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string
+          currency: string | null
+          floor: number | null
+          floor_plan_url: string | null
+          id: string
+          price: number | null
+          project_id: string
+          size_sqm: number | null
+          status: string | null
+          unit_type: string
+        }
+        Insert: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          currency?: string | null
+          floor?: number | null
+          floor_plan_url?: string | null
+          id?: string
+          price?: number | null
+          project_id: string
+          size_sqm?: number | null
+          status?: string | null
+          unit_type: string
+        }
+        Update: {
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          currency?: string | null
+          floor?: number | null
+          floor_plan_url?: string | null
+          id?: string
+          price?: number | null
+          project_id?: string
+          size_sqm?: number | null
+          status?: string | null
+          unit_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_units_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          address: string | null
+          amenities: string[] | null
+          available_units: number | null
+          city: string
+          completion_date: string | null
+          construction_start: string | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          developer_id: string | null
+          floor_plans: string[] | null
+          id: string
+          images: string[] | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          latitude: number | null
+          longitude: number | null
+          name: string
+          neighborhood: string | null
+          price_from: number | null
+          price_to: number | null
+          slug: string
+          status: Database["public"]["Enums"]["project_status"] | null
+          total_units: number | null
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          address?: string | null
+          amenities?: string[] | null
+          available_units?: number | null
+          city: string
+          completion_date?: string | null
+          construction_start?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          developer_id?: string | null
+          floor_plans?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          neighborhood?: string | null
+          price_from?: number | null
+          price_to?: number | null
+          slug: string
+          status?: Database["public"]["Enums"]["project_status"] | null
+          total_units?: number | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          address?: string | null
+          amenities?: string[] | null
+          available_units?: number | null
+          city?: string
+          completion_date?: string | null
+          construction_start?: string | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          developer_id?: string | null
+          floor_plans?: string[] | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          neighborhood?: string | null
+          price_from?: number | null
+          price_to?: number | null
+          slug?: string
+          status?: Database["public"]["Enums"]["project_status"] | null
+          total_units?: number | null
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       properties: {
         Row: {
@@ -441,6 +679,11 @@ export type Database = {
     Enums: {
       app_role: "admin" | "agent" | "user"
       listing_status: "for_sale" | "for_rent" | "sold" | "rented"
+      project_status:
+        | "planning"
+        | "pre_sale"
+        | "under_construction"
+        | "completed"
       property_type:
         | "apartment"
         | "house"
@@ -577,6 +820,12 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "agent", "user"],
       listing_status: ["for_sale", "for_rent", "sold", "rented"],
+      project_status: [
+        "planning",
+        "pre_sale",
+        "under_construction",
+        "completed",
+      ],
       property_type: [
         "apartment",
         "house",
