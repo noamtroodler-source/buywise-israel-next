@@ -19,6 +19,9 @@
     /* Backgrounds */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
+
+    /* Hero fade (used to blend hero images into the page) */
+    --hero-fade: 0 0% 100%;
     
     /* Cards and surfaces */
     --card: 0 0% 100%;
@@ -85,6 +88,9 @@
     
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
+
+    /* Hero fade (used to blend hero images into the page) */
+    --hero-fade: 222 47% 6%;
     
     --card: 222 47% 8%;
     --card-foreground: 210 40% 98%;
