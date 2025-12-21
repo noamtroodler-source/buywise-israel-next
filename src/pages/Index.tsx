@@ -4,7 +4,8 @@ import { CategoryButtons } from '@/components/home/CategoryButtons';
 import { PropertyCarousel } from '@/components/home/PropertyCarousel';
 import { ProjectCarousel } from '@/components/home/ProjectCarousel';
 import { PopularCities } from '@/components/home/PopularCities';
-import { 
+import { ToolsPromo } from '@/components/home/ToolsPromo';
+import {
   useRecommendedProperties, 
   useFeaturedSaleProperties, 
   useFeaturedRentalProperties 
@@ -61,6 +62,8 @@ const Index = () => {
         viewAllLink="/listings?status=for_rent"
         viewAllText="View All Rentals"
       />
+
+      <ToolsPromo />
 
       <PopularCities />
     </Layout>
