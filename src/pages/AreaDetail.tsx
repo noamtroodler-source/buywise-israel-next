@@ -93,10 +93,12 @@ export default function CityDetail() {
             alt={city.name}
             className="w-full h-full object-cover"
           />
-          {/* Light blur/fade at top */}
-          <div className="absolute inset-x-0 top-0 h-1/3 backdrop-blur-[2px] bg-gradient-to-b from-white/50 to-transparent" />
+          {/* Top fade that blends into page background */}
+          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white via-white/60 to-transparent" />
+          {/* Blur effect layered on top */}
+          <div className="absolute inset-x-0 top-0 h-2/5 backdrop-blur-md bg-gradient-to-b from-white/30 to-transparent" />
           {/* Bottom gradient for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
             <div className="container">
               <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" asChild>
