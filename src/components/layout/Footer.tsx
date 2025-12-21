@@ -1,0 +1,86 @@
+import { Link } from 'react-router-dom';
+import { Home, Mail, Phone, MapPin } from 'lucide-react';
+
+export function Footer() {
+  return (
+    <footer className="border-t border-border bg-muted/30">
+      <div className="container py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand */}
+          <div className="space-y-4">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+                <Home className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-foreground">BuyWise</span>
+              <span className="text-xl font-bold text-primary">Israel</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              Your trusted partner for finding the perfect property in Israel.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-foreground">Quick Links</h4>
+            <nav className="flex flex-col gap-2">
+              <Link to="/listings?status=for_sale" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Buy Property
+              </Link>
+              <Link to="/listings?status=for_rent" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Rent Property
+              </Link>
+              <Link to="/listings" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Browse All
+              </Link>
+            </nav>
+          </div>
+
+          {/* Property Types */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-foreground">Property Types</h4>
+            <nav className="flex flex-col gap-2">
+              <Link to="/listings?type=apartment" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Apartments
+              </Link>
+              <Link to="/listings?type=house" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Houses
+              </Link>
+              <Link to="/listings?type=penthouse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Penthouses
+              </Link>
+              <Link to="/listings?type=commercial" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Commercial
+              </Link>
+            </nav>
+          </div>
+
+          {/* Contact */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-foreground">Contact Us</h4>
+            <div className="flex flex-col gap-3">
+              <a href="mailto:info@buywiseisrael.com" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Mail className="h-4 w-4" />
+                info@buywiseisrael.com
+              </a>
+              <a href="tel:+972-3-123-4567" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Phone className="h-4 w-4" />
+                +972-3-123-4567
+              </a>
+              <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                Tel Aviv, Israel
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-border">
+          <p className="text-sm text-muted-foreground text-center">
+            © {new Date().getFullYear()} BuyWise Israel. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
