@@ -219,13 +219,6 @@ function CityCard({ city, index }: { city: City; index: number }) {
               alt={city.name}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-white/90">
-                <MapPin className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">View listings</span>
-              </div>
-            </div>
           </div>
 
           {/* Content */}
