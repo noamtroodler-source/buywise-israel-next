@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
@@ -70,6 +71,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [citySearch, setCitySearch] = useState('');
   
   const { data: cities } = useCities();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleCreateAlertClick = () => {
+    if (!user) {
+      navigate('/auth?redirect=/listings');
+      return;
+    }
+    onCreateAlert?.();
+  };
 
   const updateFilter = <K extends keyof PropertyFiltersType>(key: K, value: PropertyFiltersType[K]) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -424,8 +435,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           {onCreateAlert && (
             <Button 
               variant="outline"
+              onClick={handleCreateAlertClick}
               className="h-11 gap-2 rounded-full border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-700 px-5 font-medium shadow-sm"
-              onClick={onCreateAlert}
             >
               <Bell className="h-4 w-4" />
               <span>Create Alert</span>
