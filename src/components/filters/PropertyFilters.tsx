@@ -348,53 +348,61 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           <span>More Filters</span>
         </Button>
 
-        {/* Sort */}
-        <div className="flex items-center gap-1 ml-auto">
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-          <Popover open={sortOpen} onOpenChange={setSortOpen}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
-              >
-                <span>{getSortLabel()}</span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
-              {SORT_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
-                    filters.sort_by === option.value 
-                      ? "bg-amber-400 font-medium" 
-                      : "hover:bg-muted"
-                  )}
-                  onClick={() => {
-                    updateFilter('sort_by', option.value);
-                    setSortOpen(false);
-                  }}
+        {/* Sort & Alert Section */}
+        <div className="flex items-center gap-3 ml-auto">
+          {/* Sort */}
+          <div className="flex items-center gap-1">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <Popover open={sortOpen} onOpenChange={setSortOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
                 >
-                  {filters.sort_by === option.value && <Check className="h-4 w-4" />}
-                  <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        </div>
+                  <span>{getSortLabel()}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
+                {SORT_OPTIONS.map(option => (
+                  <button
+                    key={option.value}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                      filters.sort_by === option.value 
+                        ? "bg-amber-400 font-medium" 
+                        : "hover:bg-muted"
+                    )}
+                    onClick={() => {
+                      updateFilter('sort_by', option.value);
+                      setSortOpen(false);
+                    }}
+                  >
+                    {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                    <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+          </div>
 
-        {/* Create Alert Button */}
-        {onCreateAlert && (
-          <Button 
-            variant="outline"
-            className="h-11 gap-2 rounded-full border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-700 px-5 font-medium shadow-sm"
-            onClick={onCreateAlert}
-          >
-            <Bell className="h-4 w-4" />
-            <span>Create Alert</span>
-          </Button>
-        )}
+          {/* Subtle Separator */}
+          {onCreateAlert && (
+            <div className="h-6 w-px bg-border/60" />
+          )}
+
+          {/* Create Alert Button */}
+          {onCreateAlert && (
+            <Button 
+              variant="outline"
+              className="h-11 gap-2 rounded-full border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-700 px-5 font-medium shadow-sm"
+              onClick={onCreateAlert}
+            >
+              <Bell className="h-4 w-4" />
+              <span>Create Alert</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* More Filters Dialog */}
