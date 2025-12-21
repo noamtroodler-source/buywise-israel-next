@@ -17,6 +17,80 @@ import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { NeighborhoodGrid } from '@/components/city/NeighborhoodGrid';
 
+// City Images
+import telAvivImg from '@/assets/cities/tel-aviv.jpg';
+import herzliyaImg from '@/assets/cities/herzliya.jpg';
+import netanyaImg from '@/assets/cities/netanya.jpg';
+import haifaImg from '@/assets/cities/haifa.jpg';
+import jerusalemImg from '@/assets/cities/jerusalem.jpg';
+import raananaImg from '@/assets/cities/raanana.jpg';
+import kfarSabaImg from '@/assets/cities/kfar-saba.jpg';
+import modiiinImg from '@/assets/cities/modiin.jpg';
+import ashdodImg from '@/assets/cities/ashdod.jpg';
+import ashkelonImg from '@/assets/cities/ashkelon.jpg';
+import beerShevaImg from '@/assets/cities/beer-sheva.jpg';
+import eilatImg from '@/assets/cities/eilat.jpg';
+import ramatGanImg from '@/assets/cities/ramat-gan.jpg';
+import givatayimImg from '@/assets/cities/givatayim.jpg';
+import petahTikvaImg from '@/assets/cities/petah-tikva.jpg';
+import holonImg from '@/assets/cities/holon.jpg';
+import batYamImg from '@/assets/cities/bat-yam.jpg';
+import roshHaayinImg from '@/assets/cities/rosh-haayin.jpg';
+import hodHasharonImg from '@/assets/cities/hod-hasharon.jpg';
+import shohamImg from '@/assets/cities/shoham.jpg';
+import givatShmuelImg from '@/assets/cities/givat-shmuel.jpg';
+import caesareaImg from '@/assets/cities/caesarea.jpg';
+import zichronYaakovImg from '@/assets/cities/zichron-yaakov.jpg';
+import pardesHannaImg from '@/assets/cities/pardes-hanna.jpg';
+import kiryatTivonImg from '@/assets/cities/kiryat-tivon.jpg';
+import yokneamImg from '@/assets/cities/yokneam.jpg';
+import haderaImg from '@/assets/cities/hadera.jpg';
+import nahariyaImg from '@/assets/cities/nahariya.jpg';
+import beitShemeshImg from '@/assets/cities/beit-shemesh.jpg';
+import mevasseretZionImg from '@/assets/cities/mevaseret-zion.jpg';
+import efratImg from '@/assets/cities/efrat.jpg';
+import gushEtzionImg from '@/assets/cities/gush-etzion.jpg';
+import maaleAdumimImg from '@/assets/cities/maale-adumim.jpg';
+import givatZeevImg from '@/assets/cities/givat-zeev.jpg';
+
+// Slug to image mapping
+const cityImages: Record<string, string> = {
+  'tel-aviv': telAvivImg,
+  'herzliya': herzliyaImg,
+  'netanya': netanyaImg,
+  'haifa': haifaImg,
+  'jerusalem': jerusalemImg,
+  'raanana': raananaImg,
+  'kfar-saba': kfarSabaImg,
+  'modiin': modiiinImg,
+  'ashdod': ashdodImg,
+  'ashkelon': ashkelonImg,
+  'beer-sheva': beerShevaImg,
+  'eilat': eilatImg,
+  'ramat-gan': ramatGanImg,
+  'givatayim': givatayimImg,
+  'petah-tikva': petahTikvaImg,
+  'holon': holonImg,
+  'bat-yam': batYamImg,
+  'rosh-haayin': roshHaayinImg,
+  'hod-hasharon': hodHasharonImg,
+  'shoham': shohamImg,
+  'givat-shmuel': givatShmuelImg,
+  'caesarea': caesareaImg,
+  'zichron-yaakov': zichronYaakovImg,
+  'pardes-hanna': pardesHannaImg,
+  'kiryat-tivon': kiryatTivonImg,
+  'yokneam': yokneamImg,
+  'hadera': haderaImg,
+  'nahariya': nahariyaImg,
+  'beit-shemesh': beitShemeshImg,
+  'mevaseret-zion': mevasseretZionImg,
+  'efrat': efratImg,
+  'gush-etzion': gushEtzionImg,
+  'maale-adumim': maaleAdumimImg,
+  'givat-zeev': givatZeevImg,
+};
+
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
@@ -95,7 +169,7 @@ export default function CityDetail() {
         {/* Hero Section */}
         <div className="relative h-[45vh] min-h-[350px]">
           <img
-            src={city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
+            src={cityImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
             alt={city.name}
             className="w-full h-full object-cover"
           />
