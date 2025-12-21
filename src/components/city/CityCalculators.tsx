@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calculator, TrendingUp, ArrowRight } from 'lucide-react';
+import { Calculator, TrendingUp, Wallet, Home, ArrowRight } from 'lucide-react';
 
 interface CityCalculatorsProps {
   cityName: string;
@@ -24,6 +24,20 @@ export function CityCalculators({ cityName, averagePrice }: CityCalculatorsProps
       link: '/tools',
       color: 'bg-accent/20 text-accent-foreground',
     },
+    {
+      title: 'Affordability Calculator',
+      description: `See what you can afford in ${cityName}`,
+      icon: Wallet,
+      link: '/tools',
+      color: 'bg-emerald-500/10 text-emerald-600',
+    },
+    {
+      title: 'Rent vs Buy Calculator',
+      description: `Should you rent or buy in ${cityName}?`,
+      icon: Home,
+      link: '/tools',
+      color: 'bg-blue-500/10 text-blue-600',
+    },
   ];
 
   return (
@@ -34,7 +48,7 @@ export function CityCalculators({ cityName, averagePrice }: CityCalculatorsProps
       className="space-y-4"
     >
       <h2 className="text-xl font-semibold text-foreground">Run the Numbers</h2>
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {calculators.map((calc) => (
           <Link key={calc.title} to={calc.link}>
             <Card className="h-full hover:shadow-md transition-shadow border-border/50 group cursor-pointer">
