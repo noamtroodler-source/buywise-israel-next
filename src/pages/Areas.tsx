@@ -175,7 +175,7 @@ function RegionQuickNav({
       className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border py-4"
     >
       <div className="container">
-        <div className="flex items-center justify-center gap-6 md:gap-10 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
           {regions.map((region) => {
             const Icon = region.icon;
             const isActive = activeRegion === region.id;
@@ -184,19 +184,19 @@ function RegionQuickNav({
               <button
                 key={region.id}
                 onClick={() => onRegionClick(region.id)}
-                className={`flex flex-col items-center gap-2.5 min-w-[70px] transition-all duration-200 group ${
-                  isActive ? '' : 'opacity-60 hover:opacity-100'
+                className={`flex flex-col items-center gap-2 min-w-[80px] transition-all duration-200 group ${
+                  isActive ? 'scale-105' : 'opacity-70 hover:opacity-100'
                 }`}
               >
-                <div className={`w-16 h-16 md:w-18 md:h-18 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-200 ${
                   isActive 
-                    ? 'bg-muted text-primary' 
-                    : 'bg-muted text-muted-foreground group-hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                 }`}>
-                  <Icon className="w-7 h-7 md:w-8 md:h-8" strokeWidth={1.5} />
+                  <Icon className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
-                <span className={`text-sm font-medium whitespace-nowrap transition-colors ${
-                  isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
+                <span className={`text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 }`}>
                   {region.shortName}
                 </span>
