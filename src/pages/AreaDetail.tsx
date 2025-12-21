@@ -94,9 +94,9 @@ export default function CityDetail() {
             className="w-full h-full object-cover"
           />
           {/* Top fade that blends into page background */}
-          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-background via-background/70 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[hsl(var(--hero-fade))] via-[hsl(var(--hero-fade)_/_0.7)] to-transparent" />
           {/* Blur effect layered on top */}
-          <div className="absolute inset-x-0 top-0 h-1/2 backdrop-blur-lg bg-gradient-to-b from-background/50 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-1/2 backdrop-blur-lg bg-gradient-to-b from-[hsl(var(--hero-fade)_/_0.5)] to-transparent" />
           {/* Bottom gradient for text readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
