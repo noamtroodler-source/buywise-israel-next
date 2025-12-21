@@ -1,33 +1,63 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Line, LineChart, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp } from 'lucide-react';
 import { MarketData } from '@/types/projects';
+import { getComparisonColor } from './CityCompareSelector';
+
+interface ComparisonData {
+  city: string;
+  data: MarketData[];
+}
 
 interface PriceTrendChartProps {
   marketData: MarketData[];
   cityName: string;
+  comparisonData?: ComparisonData[];
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) {
+export function PriceTrendChart({ marketData, cityName, comparisonData = [] }: PriceTrendChartProps) {
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('6m');
 
-  // Sort data chronologically and format for chart
-  const chartData = [...marketData]
-    .sort((a, b) => {
-      if (a.year !== b.year) return a.year - b.year;
-      return (a.month || 0) - (b.month || 0);
-    })
-    .map(d => ({
-      name: `${months[(d.month || 1) - 1]} ${d.year}`,
-      pricePerSqm: d.average_price_sqm,
-      medianPrice: d.median_price ? d.median_price / 1000000 : null,
-      transactions: d.total_transactions,
-    }));
+  const hasComparison = comparisonData.length > 0;
+
+  // Get all cities for the chart
+  const allCities = [cityName, ...comparisonData.map(c => c.city)];
+
+  // Combine all data into a unified chart format
+  const buildChartData = () => {
+    // Get all unique date points
+    const allData = [
+      ...marketData.map(d => ({ ...d, city: cityName })),
+      ...comparisonData.flatMap(c => c.data.map(d => ({ ...d, city: c.city })))
+    ];
+
+    // Group by date
+    const dateMap = new Map<string, Record<string, string | number | null>>();
+    
+    allData.forEach(d => {
+      const dateKey = `${d.year}-${String(d.month || 1).padStart(2, '0')}`;
+      const displayName = `${months[(d.month || 1) - 1]} ${d.year}`;
+      
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, { name: displayName });
+      }
+      
+      const entry = dateMap.get(dateKey)!;
+      entry[d.city] = d.average_price_sqm;
+    });
+
+    // Convert to array and sort
+    return Array.from(dateMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, value]) => value);
+  };
+
+  const chartData = buildChartData();
 
   // Filter based on period
   const filteredData = period === '6m' 
@@ -39,15 +69,43 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-          <p className="font-medium text-foreground mb-1">{label}</p>
-          <p className="text-sm text-primary">
-            ₪{payload[0].value?.toLocaleString()}/m²
-          </p>
+        <div className="bg-card border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
+          <p className="font-medium text-foreground mb-2 text-sm">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4 text-sm">
+              <span className="flex items-center gap-1.5">
+                <div 
+                  className="w-2.5 h-2.5 rounded-full" 
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-muted-foreground">{entry.dataKey}</span>
+              </span>
+              <span className="font-medium" style={{ color: entry.color }}>
+                ₪{entry.value?.toLocaleString()}
+              </span>
+            </div>
+          ))}
         </div>
       );
     }
     return null;
+  };
+
+  const CustomLegend = ({ payload }: any) => {
+    if (!payload) return null;
+    return (
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-1.5 text-xs">
+            <div 
+              className="w-2.5 h-2.5 rounded-full" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-muted-foreground">{entry.value}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -61,7 +119,7 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <CardTitle className="flex items-center gap-2 text-foreground">
               <TrendingUp className="h-5 w-5 text-primary" />
-              Price Trend in {cityName}
+              {hasComparison ? 'Price Comparison' : `Price Trend in ${cityName}`}
             </CardTitle>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-muted">
@@ -76,37 +134,70 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
           <div className="h-[300px] w-full">
             {filteredData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(213 94% 45%)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(213 94% 45%)" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fontSize: 12 }} 
-                    className="text-muted-foreground"
-                    axisLine={{ className: 'stroke-border' }}
-                    tickLine={{ className: 'stroke-border' }}
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }} 
-                    className="text-muted-foreground"
-                    tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
-                    axisLine={{ className: 'stroke-border' }}
-                    tickLine={{ className: 'stroke-border' }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area
-                    type="monotone"
-                    dataKey="pricePerSqm"
-                    stroke="hsl(213 94% 45%)"
-                    strokeWidth={2}
-                    fill="url(#priceGradient)"
-                  />
-                </AreaChart>
+                {hasComparison ? (
+                  <LineChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 12 }} 
+                      className="text-muted-foreground"
+                      axisLine={{ className: 'stroke-border' }}
+                      tickLine={{ className: 'stroke-border' }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }} 
+                      className="text-muted-foreground"
+                      tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
+                      axisLine={{ className: 'stroke-border' }}
+                      tickLine={{ className: 'stroke-border' }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend content={<CustomLegend />} />
+                    {allCities.map((city, index) => (
+                      <Line
+                        key={city}
+                        type="monotone"
+                        dataKey={city}
+                        stroke={getComparisonColor(index)}
+                        strokeWidth={index === 0 ? 3 : 2}
+                        dot={false}
+                        activeDot={{ r: 4, strokeWidth: 2 }}
+                      />
+                    ))}
+                  </LineChart>
+                ) : (
+                  <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(213 94% 45%)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(213 94% 45%)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fontSize: 12 }} 
+                      className="text-muted-foreground"
+                      axisLine={{ className: 'stroke-border' }}
+                      tickLine={{ className: 'stroke-border' }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }} 
+                      className="text-muted-foreground"
+                      tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
+                      axisLine={{ className: 'stroke-border' }}
+                      tickLine={{ className: 'stroke-border' }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey={cityName}
+                      stroke="hsl(213 94% 45%)"
+                      strokeWidth={2}
+                      fill="url(#priceGradient)"
+                    />
+                  </AreaChart>
+                )}
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">

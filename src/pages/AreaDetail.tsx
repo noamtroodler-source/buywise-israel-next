@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
-import { useMarketData } from '@/hooks/useMarketData';
+import { useMarketData, useCityComparison } from '@/hooks/useMarketData';
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChart } from '@/components/city/PriceTrendChart';
@@ -14,6 +15,7 @@ import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
+import { CityCompareSelector } from '@/components/city/CityCompareSelector';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -180,11 +182,21 @@ const cityImages: Record<string, string> = {
 
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const [comparisonCities, setComparisonCities] = useState<string[]>([]);
+  
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: properties = [], isLoading: propertiesLoading } = useProperties(
     city ? { city: city.name } : undefined
   );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
+  const { data: comparisonMarketData = [] } = useCityComparison(comparisonCities);
+
+  // Group comparison data by city
+  const comparisonDataByCity = comparisonCities.map(cityName => ({
+    city: cityName,
+    data: comparisonMarketData.filter(d => d.city === cityName),
+    propertiesCount: 0 // We don't have this data yet, could be fetched if needed
+  }));
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
@@ -314,11 +326,27 @@ export default function CityDetail() {
             <MarketStatsCards marketData={marketData} cityName={city.name} />
           ) : null}
 
+          {/* City Comparison Selector */}
+          {city && marketData.length > 0 && (
+            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+              <CityCompareSelector
+                currentCity={city.name}
+                selectedCities={comparisonCities}
+                onCitiesChange={setComparisonCities}
+                maxCities={3}
+              />
+            </div>
+          )}
+
           {/* Two Column Layout for Chart and Tabs */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Price Trend Chart */}
             {marketData.length > 0 && (
-              <PriceTrendChart marketData={marketData} cityName={city.name} />
+              <PriceTrendChart 
+                marketData={marketData} 
+                cityName={city.name}
+                comparisonData={comparisonDataByCity.filter(c => c.data.length > 0)}
+              />
             )}
 
             {/* Market Reality Tabs */}
@@ -327,6 +355,7 @@ export default function CityDetail() {
                 marketData={marketData} 
                 cityName={city.name}
                 propertiesCount={properties.length}
+                comparisonData={comparisonDataByCity.filter(c => c.data.length > 0)}
               />
             )}
           </div>
