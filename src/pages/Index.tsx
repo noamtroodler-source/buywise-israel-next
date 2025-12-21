@@ -4,7 +4,6 @@ import { CategoryButtons } from '@/components/home/CategoryButtons';
 import { PropertyCarousel } from '@/components/home/PropertyCarousel';
 import { ProjectCarousel } from '@/components/home/ProjectCarousel';
 import { PopularCities } from '@/components/home/PopularCities';
-import { SmartTools } from '@/components/home/SmartTools';
 import { 
   useRecommendedProperties, 
   useFeaturedSaleProperties, 
@@ -62,9 +61,6 @@ const Index = () => {
         viewAllLink="/listings?status=for_rent"
         viewAllText="View All Rentals"
       />
-
-      {/* Smart Tools Section */}
-      <SmartTools />
 
       <PopularCities />
     </Layout>

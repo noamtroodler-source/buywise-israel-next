@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
@@ -82,25 +81,7 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
 }
 
 export default function Tools() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
-
-  // Handle ?tool= query param
-  useEffect(() => {
-    const toolParam = searchParams.get('tool');
-    if (toolParam && toolComponents[toolParam]) {
-      setActiveTool(toolParam);
-    }
-  }, [searchParams]);
-
-  const handleSetActiveTool = (toolId: string | null) => {
-    setActiveTool(toolId);
-    if (toolId) {
-      setSearchParams({ tool: toolId });
-    } else {
-      setSearchParams({});
-    }
-  };
 
   const ActiveComponent = activeTool ? toolComponents[activeTool] : null;
 
@@ -114,7 +95,7 @@ export default function Tools() {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto space-y-4"
             >
-              <Button variant="ghost" onClick={() => handleSetActiveTool(null)} className="gap-2 -ml-2">
+              <Button variant="ghost" onClick={() => setActiveTool(null)} className="gap-2 -ml-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back to all tools
               </Button>
@@ -153,7 +134,7 @@ export default function Tools() {
                 >
                   <ToolCard 
                     tool={tool} 
-                    onClick={() => handleSetActiveTool(tool.id)} 
+                    onClick={() => setActiveTool(tool.id)} 
                   />
                 </motion.div>
               ))}
