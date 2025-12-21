@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
-import { useMarketData, useCityComparison } from '@/hooks/useMarketData';
+import { useMarketData } from '@/hooks/useMarketData';
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChart } from '@/components/city/PriceTrendChart';
@@ -181,33 +180,11 @@ const cityImages: Record<string, string> = {
 
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
-  
-  // Separate state for each comparison component
-  const [priceTrendComparisonCities, setPriceTrendComparisonCities] = useState<string[]>([]);
-  const [marketRealityComparisonCities, setMarketRealityComparisonCities] = useState<string[]>([]);
-  
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: properties = [], isLoading: propertiesLoading } = useProperties(
     city ? { city: city.name } : undefined
   );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
-  
-  // Fetch comparison data for each component separately
-  const { data: priceTrendComparisonData = [] } = useCityComparison(priceTrendComparisonCities);
-  const { data: marketRealityComparisonData = [] } = useCityComparison(marketRealityComparisonCities);
-
-  // Group comparison data by city for Price Trend
-  const priceTrendComparisonByCity = priceTrendComparisonCities.map(cityName => ({
-    city: cityName,
-    data: priceTrendComparisonData.filter(d => d.city === cityName),
-  }));
-
-  // Group comparison data by city for Market Reality
-  const marketRealityComparisonByCity = marketRealityComparisonCities.map(cityName => ({
-    city: cityName,
-    data: marketRealityComparisonData.filter(d => d.city === cityName),
-    propertiesCount: 0
-  }));
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
@@ -341,13 +318,7 @@ export default function CityDetail() {
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Price Trend Chart */}
             {marketData.length > 0 && (
-              <PriceTrendChart 
-                marketData={marketData} 
-                cityName={city.name}
-                comparisonData={priceTrendComparisonByCity.filter(c => c.data.length > 0)}
-                selectedCities={priceTrendComparisonCities}
-                onCitiesChange={setPriceTrendComparisonCities}
-              />
+              <PriceTrendChart marketData={marketData} cityName={city.name} />
             )}
 
             {/* Market Reality Tabs */}
@@ -356,9 +327,6 @@ export default function CityDetail() {
                 marketData={marketData} 
                 cityName={city.name}
                 propertiesCount={properties.length}
-                comparisonData={marketRealityComparisonByCity.filter(c => c.data.length > 0)}
-                selectedCities={marketRealityComparisonCities}
-                onCitiesChange={setMarketRealityComparisonCities}
               />
             )}
           </div>

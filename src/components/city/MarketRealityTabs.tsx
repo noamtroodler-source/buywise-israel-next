@@ -1,25 +1,17 @@
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Building2, Zap, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DollarSign, Building2, Zap, ArrowRight, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
-import { CityCompareSelector, getComparisonColor, getComparisonTextClass } from './CityCompareSelector';
-
-interface ComparisonData {
-  city: string;
-  data: MarketData[];
-  propertiesCount: number;
-}
+import { Link } from 'react-router-dom';
 
 interface MarketRealityTabsProps {
   marketData: MarketData[];
   cityName: string;
   propertiesCount: number;
   propertyTypes?: { name: string; value: number }[];
-  comparisonData?: ComparisonData[];
-  selectedCities?: string[];
-  onCitiesChange?: (cities: string[]) => void;
 }
 
 const NATIONAL_AVG_PRICE_SQM = 32000; // National average for comparison
@@ -28,23 +20,12 @@ export function MarketRealityTabs({
   marketData, 
   cityName, 
   propertiesCount,
-  propertyTypes = [],
-  comparisonData = [],
-  selectedCities = [],
-  onCitiesChange
+  propertyTypes = []
 }: MarketRealityTabsProps) {
   const latestData = marketData[0];
   const pricePerSqm = latestData?.average_price_sqm || 0;
   const percentAboveNational = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
   
-  const hasComparison = comparisonData.length > 0;
-
-  // All cities data for comparison
-  const allCitiesData = [
-    { city: cityName, data: marketData, propertiesCount },
-    ...comparisonData
-  ];
-
   // Default property types if none provided
   const defaultPropertyTypes = [
     { name: 'Apartments', value: 65 },
@@ -56,31 +37,26 @@ export function MarketRealityTabs({
   const typesData = propertyTypes.length > 0 ? propertyTypes : defaultPropertyTypes;
   const COLORS = ['hsl(213, 94%, 45%)', 'hsl(45, 100%, 51%)', 'hsl(142, 76%, 36%)', 'hsl(215, 16%, 47%)'];
 
-  const getPricePosition = (percent: number) => {
+  const getPricePosition = () => {
     // Returns 0-100 position on affordability scale
-    if (percent >= 70) return 95;
-    if (percent >= 50) return 80;
-    if (percent >= 30) return 65;
-    if (percent >= 10) return 50;
-    if (percent >= 0) return 40;
-    if (percent >= -20) return 25;
+    if (percentAboveNational >= 70) return 95;
+    if (percentAboveNational >= 50) return 80;
+    if (percentAboveNational >= 30) return 65;
+    if (percentAboveNational >= 10) return 50;
+    if (percentAboveNational >= 0) return 40;
+    if (percentAboveNational >= -20) return 25;
     return 10;
   };
 
-  const getMarketSpeed = (transactions: number) => {
+  const getMarketSpeed = () => {
+    const transactions = latestData?.total_transactions || 0;
     if (transactions > 400) return { label: 'Very Active', color: 'text-emerald-600', days: '30-45' };
     if (transactions > 200) return { label: 'Active', color: 'text-primary', days: '45-60' };
     if (transactions > 100) return { label: 'Moderate', color: 'text-amber-600', days: '60-90' };
     return { label: 'Slow', color: 'text-muted-foreground', days: '90+' };
   };
 
-  const getCityStats = (data: MarketData[]) => {
-    const latest = data[0];
-    const price = latest?.average_price_sqm || 0;
-    const percent = ((price - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
-    const transactions = latest?.total_transactions || 0;
-    return { price, percent, transactions, speed: getMarketSpeed(transactions) };
-  };
+  const marketSpeed = getMarketSpeed();
 
   return (
     <motion.div
@@ -90,17 +66,7 @@ export function MarketRealityTabs({
     >
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-foreground mb-3">
-            {hasComparison ? 'Market Comparison' : 'Market Reality'}
-          </CardTitle>
-          {onCitiesChange && (
-            <CityCompareSelector
-              currentCity={cityName}
-              selectedCities={selectedCities}
-              onCitiesChange={onCitiesChange}
-              maxCities={3}
-            />
-          )}
+          <CardTitle className="text-foreground">Market Reality</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="prices" className="w-full">
@@ -120,96 +86,55 @@ export function MarketRealityTabs({
             </TabsList>
 
             <TabsContent value="prices" className="mt-6 space-y-6">
-              {hasComparison ? (
-                // Comparison view - show all cities side by side
-                <div className="space-y-4">
-                  {allCitiesData.map((cityData, index) => {
-                    const stats = getCityStats(cityData.data);
-                    return (
-                      <div key={cityData.city} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: getComparisonColor(index) }}
-                            />
-                            <span className="font-medium text-foreground">{cityData.city}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-bold text-foreground">
-                              ₪{stats.price.toLocaleString()}/m²
-                            </span>
-                            <span className={`text-xs ml-2 ${stats.percent >= 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                              {stats.percent >= 0 ? '+' : ''}{stats.percent.toFixed(0)}%
-                            </span>
-                          </div>
-                        </div>
-                        {/* Mini affordability slider */}
-                        <div className="relative h-2 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500">
-                          <div 
-                            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 rounded-full shadow-sm transition-all"
-                            style={{ 
-                              left: `calc(${getPricePosition(stats.percent)}% - 6px)`,
-                              borderColor: getComparisonColor(index)
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  <div className="flex justify-between text-xs text-muted-foreground pt-2">
-                    <span>Affordable</span>
-                    <span>Premium</span>
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">Average Price per Square Meter</p>
+                <p className="text-4xl font-bold text-foreground">
+                  ₪{pricePerSqm.toLocaleString()}
+                  <span className="text-lg font-normal text-muted-foreground">/m²</span>
+                </p>
+                <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {percentAboveNational >= 0 ? '+' : ''}{percentAboveNational.toFixed(0)}% vs national average
+                </p>
+              </div>
+
+              {/* Affordability Slider */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Affordable</span>
+                  <span>Premium</span>
+                </div>
+                <div className="relative h-3 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500">
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-foreground rounded-full shadow-lg transition-all"
+                    style={{ left: `calc(${getPricePosition()}% - 8px)` }}
+                  />
+                </div>
+              </div>
+
+              {/* Insight Card */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">What This Means For You</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {percentAboveNational > 50 
+                        ? `${cityName} is a premium market. Expect higher prices but also strong property value retention.`
+                        : percentAboveNational > 0
+                          ? `${cityName} prices are above average. Look for value in emerging neighborhoods.`
+                          : `${cityName} offers competitive pricing compared to major cities.`
+                      }
+                    </p>
                   </div>
                 </div>
-              ) : (
-                // Single city view
-                <>
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-2">Average Price per Square Meter</p>
-                    <p className="text-4xl font-bold text-foreground">
-                      ₪{pricePerSqm.toLocaleString()}
-                      <span className="text-lg font-normal text-muted-foreground">/m²</span>
-                    </p>
-                    <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                      {percentAboveNational >= 0 ? '+' : ''}{percentAboveNational.toFixed(0)}% vs national average
-                    </p>
-                  </div>
+              </div>
 
-                  {/* Affordability Slider */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Affordable</span>
-                      <span>Premium</span>
-                    </div>
-                    <div className="relative h-3 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500">
-                      <div 
-                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-foreground rounded-full shadow-lg transition-all"
-                        style={{ left: `calc(${getPricePosition(percentAboveNational)}% - 8px)` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Insight Card */}
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-foreground">What This Means For You</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {percentAboveNational > 50 
-                            ? `${cityName} is a premium market. Expect higher prices but also strong property value retention.`
-                            : percentAboveNational > 0
-                              ? `${cityName} prices are above average. Look for value in emerging neighborhoods.`
-                              : `${cityName} offers competitive pricing compared to major cities.`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/areas">
+                  Compare Cities
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
             </TabsContent>
 
             <TabsContent value="types" className="mt-6">
@@ -250,78 +175,38 @@ export function MarketRealityTabs({
             </TabsContent>
 
             <TabsContent value="speed" className="mt-6 space-y-6">
-              {hasComparison ? (
-                // Comparison view - grid of stats
-                <div className="space-y-4">
-                  {allCitiesData.map((cityData, index) => {
-                    const stats = getCityStats(cityData.data);
-                    return (
-                      <div 
-                        key={cityData.city} 
-                        className="bg-muted/50 rounded-lg p-4"
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: getComparisonColor(index) }}
-                          />
-                          <span className="font-medium text-foreground">{cityData.city}</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-3 text-center">
-                          <div>
-                            <p className={`text-lg font-bold ${stats.speed.color}`}>{stats.speed.label}</p>
-                            <p className="text-xs text-muted-foreground">Activity</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-foreground">{stats.speed.days}</p>
-                            <p className="text-xs text-muted-foreground">Days to Sell</p>
-                          </div>
-                          <div>
-                            <p className="text-lg font-bold text-foreground">{cityData.propertiesCount}</p>
-                            <p className="text-xs text-muted-foreground">Listings</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">Market Activity Level</p>
+                <p className={`text-3xl font-bold ${marketSpeed.color}`}>
+                  {marketSpeed.label}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-foreground">{propertiesCount}</p>
+                  <p className="text-sm text-muted-foreground">Active Listings</p>
                 </div>
-              ) : (
-                // Single city view
-                <>
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-2">Market Activity Level</p>
-                    <p className={`text-3xl font-bold ${getMarketSpeed(latestData?.total_transactions || 0).color}`}>
-                      {getMarketSpeed(latestData?.total_transactions || 0).label}
+                <div className="bg-muted/50 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-foreground">{marketSpeed.days}</p>
+                  <p className="text-sm text-muted-foreground">Avg. Days to Sell</p>
+                </div>
+              </div>
+
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Zap className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">Market Insight</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {latestData?.total_transactions 
+                        ? `With ${latestData.total_transactions} transactions last month, ${cityName} shows ${marketSpeed.label.toLowerCase()} market activity.`
+                        : `${cityName} market data is being collected to provide accurate insights.`
+                      }
                     </p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-foreground">{propertiesCount}</p>
-                      <p className="text-sm text-muted-foreground">Active Listings</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <p className="text-2xl font-bold text-foreground">{getMarketSpeed(latestData?.total_transactions || 0).days}</p>
-                      <p className="text-sm text-muted-foreground">Avg. Days to Sell</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Zap className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium text-foreground">Market Insight</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {latestData?.total_transactions 
-                            ? `With ${latestData.total_transactions} transactions last month, ${cityName} shows ${getMarketSpeed(latestData.total_transactions).label.toLowerCase()} market activity.`
-                            : `${cityName} market data is being collected to provide accurate insights.`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
