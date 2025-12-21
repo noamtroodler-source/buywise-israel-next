@@ -128,13 +128,6 @@ export function MarketRealityTabs({
                   </div>
                 </div>
               </div>
-
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/areas">
-                  Compare Cities
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
             </TabsContent>
 
             <TabsContent value="types" className="mt-6">
