@@ -63,16 +63,10 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
           <Link 
-            to="/cities" 
+            to="/areas" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Cities
-          </Link>
-          <Link 
-            to="/market-insights" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Market Insights
+            Areas
           </Link>
           <Link 
             to="/tools" 
@@ -189,18 +183,11 @@ export function Header() {
               Developers
             </Link>
             <Link 
-              to="/cities" 
+              to="/areas" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Cities
-            </Link>
-            <Link 
-              to="/market-insights" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Market Insights
+              Areas
             </Link>
             <Link 
               to="/tools" 
