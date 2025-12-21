@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Heart, Bed, Bath, Maximize, MapPin } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { FavoriteButton } from './FavoriteButton';
 
 interface PropertyCardProps {
   property: Property;
@@ -87,17 +87,10 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
                 </Badge>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-3 right-3 bg-background/80 hover:bg-background text-muted-foreground hover:text-destructive"
-              onClick={(e) => {
-                e.preventDefault();
-                // TODO: Add to favorites
-              }}
-            >
-              <Heart className="h-4 w-4" />
-            </Button>
+            <FavoriteButton
+              propertyId={property.id}
+              className="absolute top-3 right-3"
+            />
           </div>
 
           {/* Content */}
