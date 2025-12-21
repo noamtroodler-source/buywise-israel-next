@@ -7,15 +7,102 @@ import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
-import { Neighborhood } from '@/types/content';
-
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChart } from '@/components/city/PriceTrendChart';
 import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
-import { NeighborhoodGrid } from '@/components/city/NeighborhoodGrid';
+import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
+
+// Worth Watching data per city
+const cityMarketFactors: Record<string, MarketFactor[]> = {
+  'tel-aviv': [
+    {
+      title: 'Red Line Light Rail Opening',
+      description: 'First metro line will transform transit and boost areas near stations',
+      icon: 'transit',
+    },
+    {
+      title: 'Tama 38 Policy Changes',
+      description: 'Proposed limits on urban renewal could reduce new supply',
+      icon: 'policy',
+    },
+    {
+      title: 'Port Area Redevelopment',
+      description: 'New towers and public spaces coming to northern waterfront',
+      icon: 'development',
+    },
+  ],
+  'jerusalem': [
+    {
+      title: 'Blue Line Extension',
+      description: 'Light rail expansion connecting more neighborhoods to city center',
+      icon: 'transit',
+    },
+    {
+      title: 'Talpiot Industrial Zone',
+      description: 'Major rezoning for mixed-use development underway',
+      icon: 'zoning',
+    },
+    {
+      title: 'American Embassy Impact',
+      description: 'Continued investment in Arnona and surrounding areas',
+      icon: 'infrastructure',
+    },
+  ],
+  'haifa': [
+    {
+      title: 'Tech Hub Expansion',
+      description: 'Growing high-tech presence driving demand for housing',
+      icon: 'development',
+    },
+    {
+      title: 'Haifa Bay Development',
+      description: 'Major waterfront transformation with new residential towers',
+      icon: 'infrastructure',
+    },
+    {
+      title: 'Carmelit Renovation',
+      description: 'Underground railway modernization improving connectivity',
+      icon: 'transit',
+    },
+  ],
+  'herzliya': [
+    {
+      title: 'Herzliya Pituach Growth',
+      description: 'Continued high-tech expansion driving premium housing demand',
+      icon: 'development',
+    },
+    {
+      title: 'Marina Development',
+      description: 'New luxury residential and commercial projects on waterfront',
+      icon: 'infrastructure',
+    },
+    {
+      title: 'Highway 2 Improvements',
+      description: 'Better access to Tel Aviv increasing commuter appeal',
+      icon: 'transit',
+    },
+  ],
+  'raanana': [
+    {
+      title: 'Tech Park Expansion',
+      description: 'New office towers bringing more high-income residents',
+      icon: 'development',
+    },
+    {
+      title: 'Rail Connection Plans',
+      description: 'Proposed light rail to Tel Aviv could boost property values',
+      icon: 'transit',
+    },
+    {
+      title: 'School District Excellence',
+      description: 'Top-rated schools continuing to attract families',
+      icon: 'policy',
+    },
+  ],
+};
 
 // City Images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -115,10 +202,8 @@ export default function CityDetail() {
     return pop.toString();
   };
 
-  const getNeighborhoods = (): Neighborhood[] => {
-    if (!city?.neighborhoods) return [];
-    if (Array.isArray(city.neighborhoods)) return city.neighborhoods as Neighborhood[];
-    return [];
+  const getWorthWatching = (): MarketFactor[] => {
+    return cityMarketFactors[slug || ''] || [];
   };
 
   const getMarketTagline = () => {
@@ -160,7 +245,7 @@ export default function CityDetail() {
     );
   }
 
-  const neighborhoods = getNeighborhoods();
+  const worthWatching = getWorthWatching();
   const marketTagline = getMarketTagline();
 
   return (
@@ -246,8 +331,8 @@ export default function CityDetail() {
             )}
           </div>
 
-          {/* Neighborhoods */}
-          <NeighborhoodGrid neighborhoods={neighborhoods} cityName={city.name} />
+          {/* Worth Watching */}
+          <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
 
           {/* Run the Numbers - Calculators */}
           <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
