@@ -45,6 +45,20 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'rooms_desc', label: 'Rooms: Most to Fewest' },
 ];
 
+// Helper to format number with commas
+const formatWithCommas = (value: number | undefined): string => {
+  if (value === undefined || value === null) return '';
+  return value.toLocaleString('en-US');
+};
+
+// Helper to parse comma-formatted string to number
+const parseCommaNumber = (value: string): number | undefined => {
+  const cleaned = value.replace(/,/g, '');
+  if (cleaned === '') return undefined;
+  const num = Number(cleaned);
+  return isNaN(num) ? undefined : num;
+};
+
 export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
@@ -177,17 +191,19 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               
               <div className="flex gap-3">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Min ($)"
-                  value={filters.min_price || ''}
-                  onChange={(e) => updateFilter('min_price', e.target.value ? Number(e.target.value) : undefined)}
+                  value={formatWithCommas(filters.min_price)}
+                  onChange={(e) => updateFilter('min_price', parseCommaNumber(e.target.value))}
                   className="flex-1 rounded-lg"
                 />
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Max ($)"
-                  value={filters.max_price || ''}
-                  onChange={(e) => updateFilter('max_price', e.target.value ? Number(e.target.value) : undefined)}
+                  value={formatWithCommas(filters.max_price)}
+                  onChange={(e) => updateFilter('max_price', parseCommaNumber(e.target.value))}
                   className="flex-1 rounded-lg"
                 />
               </div>
@@ -424,17 +440,19 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <Label className="text-sm text-muted-foreground">Size (m²)</Label>
                   <div className="flex gap-2">
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="Min"
-                      value={filters.min_size || ''}
-                      onChange={(e) => updateFilter('min_size', e.target.value ? Number(e.target.value) : undefined)}
+                      value={formatWithCommas(filters.min_size)}
+                      onChange={(e) => updateFilter('min_size', parseCommaNumber(e.target.value))}
                       className="rounded-lg"
                     />
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="Max"
-                      value={filters.max_size || ''}
-                      onChange={(e) => updateFilter('max_size', e.target.value ? Number(e.target.value) : undefined)}
+                      value={formatWithCommas(filters.max_size)}
+                      onChange={(e) => updateFilter('max_size', parseCommaNumber(e.target.value))}
                       className="rounded-lg"
                     />
                   </div>
