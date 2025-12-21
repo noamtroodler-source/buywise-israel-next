@@ -87,16 +87,16 @@ export default function CityDetail() {
     <Layout>
       <div className="min-h-screen">
         {/* Hero Section */}
-        <div className="relative h-[45vh] min-h-[350px]">
+        <div className="relative h-[55vh] min-h-[420px]">
           <img
             src={city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
             alt={city.name}
             className="w-full h-full object-cover"
           />
           {/* Top fade that blends into page background */}
-          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white via-white/60 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-background via-background/70 to-transparent" />
           {/* Blur effect layered on top */}
-          <div className="absolute inset-x-0 top-0 h-2/5 backdrop-blur-md bg-gradient-to-b from-white/30 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-1/2 backdrop-blur-lg bg-gradient-to-b from-background/50 to-transparent" />
           {/* Bottom gradient for text readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
