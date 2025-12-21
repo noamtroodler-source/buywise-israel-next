@@ -91,3 +91,67 @@ export function useProperty(id: string) {
     enabled: !!id,
   });
 }
+
+export function useFeaturedSaleProperties() {
+  return useQuery({
+    queryKey: ['properties', 'featured', 'for_sale'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          agent:agents(*)
+        `)
+        .eq('is_published', true)
+        .eq('is_featured', true)
+        .eq('listing_status', 'for_sale')
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+      return data as Property[];
+    },
+  });
+}
+
+export function useFeaturedRentalProperties() {
+  return useQuery({
+    queryKey: ['properties', 'featured', 'for_rent'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          agent:agents(*)
+        `)
+        .eq('is_published', true)
+        .eq('is_featured', true)
+        .eq('listing_status', 'for_rent')
+        .order('created_at', { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+      return data as Property[];
+    },
+  });
+}
+
+export function useRecommendedProperties() {
+  return useQuery({
+    queryKey: ['properties', 'recommended'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          agent:agents(*)
+        `)
+        .eq('is_published', true)
+        .order('views_count', { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+      return data as Property[];
+    },
+  });
+}
