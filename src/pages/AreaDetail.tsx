@@ -1,13 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
-import { useCityImage } from '@/hooks/useCityImage';
 import { Neighborhood } from '@/types/content';
 
 // Market Dashboard Components
@@ -25,13 +24,6 @@ export default function CityDetail() {
     city ? { city: city.name } : undefined
   );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
-  
-  // AI-generated city image
-  const { imageUrl: aiImageUrl, isLoading: imageLoading } = useCityImage(
-    city?.name,
-    city?.slug,
-    city?.highlights || null
-  );
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
@@ -100,22 +92,12 @@ export default function CityDetail() {
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Hero Section with AI-Generated Image */}
+        {/* Hero Section */}
         <div className="relative h-[45vh] min-h-[350px]">
-          {/* Loading state overlay */}
-          {imageLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20">
-              <div className="flex items-center gap-3 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full">
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-                <span className="text-sm font-medium">Generating artwork...</span>
-              </div>
-            </div>
-          )}
           <img
-            src={aiImageUrl || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
-            alt={`${city.name} - AI generated artistic representation`}
-            className="w-full h-full object-cover transition-opacity duration-500"
-            style={{ opacity: imageLoading ? 0.3 : 1 }}
+            src={city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
+            alt={city.name}
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
