@@ -13,8 +13,8 @@ import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
-import Cities from "./pages/Cities";
-import CityDetail from "./pages/CityDetail";
+import Areas from "./pages/Areas";
+import AreaDetail from "./pages/AreaDetail";
 import Tools from "./pages/Tools";
 import AgentRegister from "./pages/agent/AgentRegister";
 import AgentDashboard from "./pages/agent/AgentDashboard";
@@ -25,7 +25,6 @@ import Developers from "./pages/Developers";
 import DeveloperDetail from "./pages/DeveloperDetail";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
-import MarketInsights from "./pages/MarketInsights";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
@@ -49,14 +48,14 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/cities" element={<Cities />} />
-            <Route path="/cities/:slug" element={<CityDetail />} />
+            <Route path="/areas" element={<Areas />} />
+            <Route path="/areas/:slug" element={<AreaDetail />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers/:slug" element={<DeveloperDetail />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
-            <Route path="/market-insights" element={<MarketInsights />} />
+            
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />

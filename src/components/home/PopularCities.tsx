@@ -1,27 +1,15 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import telAvivImg from '@/assets/cities/tel-aviv.jpg';
+import jerusalemImg from '@/assets/cities/jerusalem.jpg';
+import haifaImg from '@/assets/cities/haifa.jpg';
+import herzliyaImg from '@/assets/cities/herzliya.jpg';
 
 const cities = [
-  {
-    name: 'Tel Aviv',
-    image: 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=800&auto=format&fit=crop&q=60',
-    count: '2,500+',
-  },
-  {
-    name: 'Jerusalem',
-    image: 'https://images.unsplash.com/photo-1552423314-cf29ab68ad73?w=800&auto=format&fit=crop&q=60',
-    count: '1,800+',
-  },
-  {
-    name: 'Haifa',
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&auto=format&fit=crop&q=60',
-    count: '1,200+',
-  },
-  {
-    name: 'Herzliya',
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&auto=format&fit=crop&q=60',
-    count: '800+',
-  },
+  { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, count: '2,500+' },
+  { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, count: '1,800+' },
+  { name: 'Haifa', slug: 'haifa', image: haifaImg, count: '1,200+' },
+  { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, count: '800+' },
 ];
 
 export function PopularCities() {
@@ -36,7 +24,7 @@ export function PopularCities() {
           className="text-center mb-10"
         >
           <h2 className="text-3xl font-bold text-foreground mb-3">
-            Popular Cities
+            Popular Areas
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Explore properties in Israel's most sought-after locations
@@ -53,7 +41,7 @@ export function PopularCities() {
               transition={{ duration: 0.3, delay: index * 0.1 }}
             >
               <Link
-                to={`/listings?city=${encodeURIComponent(city.name)}`}
+                to={`/areas/${city.slug}`}
                 className="group block relative aspect-[4/3] rounded-xl overflow-hidden"
               >
                 <img
