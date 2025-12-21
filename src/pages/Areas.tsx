@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent } from '@/components/ui/card';
+import { useRef, useState } from 'react';
 
-// City images will be imported after generation
+// City images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
 import herzliyaImg from '@/assets/cities/herzliya.jpg';
 import netanyaImg from '@/assets/cities/netanya.jpg';
@@ -44,145 +44,220 @@ interface City {
   name: string;
   slug: string;
   image: string;
+  description: string;
+  tags: string[];
 }
 
 interface Region {
   name: string;
+  subtitle: string;
   cities: City[];
 }
 
 const regions: Region[] = [
   {
     name: 'Coastal & Greater Tel Aviv',
+    subtitle: 'Beach life, urban energy & metro convenience',
     cities: [
-      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg },
-      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg },
-      { name: 'Netanya', slug: 'netanya', image: netanyaImg },
-      { name: 'Haifa', slug: 'haifa', image: haifaImg },
-      { name: 'Bat Yam', slug: 'bat-yam', image: batYamImg },
-      { name: 'Holon', slug: 'holon', image: holonImg },
-      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg },
-      { name: 'Givatayim', slug: 'givatayim', image: givatayimImg },
-      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg },
-      { name: 'Nahariya', slug: 'nahariya', image: nahariyaImg },
+      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Israel's most expensive and competitive real estate market with urban premium...", tags: ['Urban premium', 'Limited supply'] },
+      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: 'Herzliya is a premium coastal market with distinct neighborhoods...', tags: ['Coastal premium', 'High demand'] },
+      { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: 'Netanya offers coastal living with more varied price points...', tags: ['Coastal variety', 'Range of price points'] },
+      { name: 'Haifa', slug: 'haifa', image: haifaImg, description: 'Haifa offers urban living at significantly lower prices...', tags: ['Northern metro', 'Value positioning'] },
+      { name: 'Bat Yam', slug: 'bat-yam', image: batYamImg, description: 'Affordable coastal living south of Tel Aviv with beach access...', tags: ['Affordable coast', 'Urban renewal'] },
+      { name: 'Holon', slug: 'holon', image: holonImg, description: 'Family-friendly city with growing cultural scene...', tags: ['Family city', 'Cultural growth'] },
+      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: 'Diamond exchange district with high-rise living...', tags: ['Business hub', 'High-rise living'] },
+      { name: 'Givatayim', slug: 'givatayim', image: givatayimImg, description: 'Quiet residential area adjacent to Tel Aviv...', tags: ['Quiet residential', 'Tel Aviv adjacent'] },
+      { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: 'Major port city with beaches and affordable housing...', tags: ['Port city', 'Beach access'] },
+      { name: 'Nahariya', slug: 'nahariya', image: nahariyaImg, description: 'Northern coastal town with relaxed atmosphere...', tags: ['Northern coast', 'Relaxed lifestyle'] },
     ],
   },
   {
     name: 'Central Israel',
+    subtitle: 'Family suburbs, commuter value & growing communities',
     cities: [
-      { name: "Ra'anana", slug: 'raanana', image: raananaImg },
-      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg },
-      { name: "Modi'in", slug: 'modiin', image: modiinImg },
-      { name: 'Givat Shmuel', slug: 'givat-shmuel', image: givatShmuelImg },
-      { name: 'Hod HaSharon', slug: 'hod-hasharon', image: hodHasharonImg },
-      { name: "Rosh HaAyin", slug: 'rosh-haayin', image: roshHaayinImg },
-      { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg },
-      { name: 'Shoham', slug: 'shoham', image: shohamImg },
-      { name: 'Hadera', slug: 'hadera', image: haderaImg },
-      { name: 'Caesarea', slug: 'caesarea', image: caesareaImg },
+      { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is an established suburban city with premium pricing...", tags: ['Established suburban', 'Premium pricing'] },
+      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, description: 'Kfar Saba offers suburban living at more moderate prices...', tags: ['Suburban value', 'Family-oriented'] },
+      { name: "Modi'in", slug: 'modiin', image: modiinImg, description: "Modi'in is a planned city built primarily since the 1990s...", tags: ['Planned city', 'Central location'] },
+      { name: 'Givat Shmuel', slug: 'givat-shmuel', image: givatShmuelImg, description: 'Givat Shmuel is a small city with significant development...', tags: ['Compact city', 'Developing market'] },
+      { name: 'Hod HaSharon', slug: 'hod-hasharon', image: hodHasharonImg, description: 'Growing suburb with excellent schools and parks...', tags: ['Quality schools', 'Green spaces'] },
+      { name: "Rosh HaAyin", slug: 'rosh-haayin', image: roshHaayinImg, description: 'Rapidly developing city with mixed housing options...', tags: ['Rapid growth', 'Mixed housing'] },
+      { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg, description: 'Historic city with diverse neighborhoods and pricing...', tags: ['Historic city', 'Diverse options'] },
+      { name: 'Shoham', slug: 'shoham', image: shohamImg, description: 'Upscale community with excellent quality of life...', tags: ['Upscale community', 'High quality'] },
+      { name: 'Hadera', slug: 'hadera', image: haderaImg, description: 'Affordable option with improving infrastructure...', tags: ['Affordable', 'Improving area'] },
+      { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: 'Exclusive community with luxury properties...', tags: ['Luxury market', 'Exclusive area'] },
     ],
   },
   {
     name: 'Jerusalem & Surroundings',
+    subtitle: 'History, meaning & community',
     cities: [
-      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg },
-      { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg },
-      { name: 'Efrat', slug: 'efrat', image: efratImg },
-      { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg },
-      { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg },
-      { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg },
-      { name: "Givat Ze'ev", slug: 'givat-zeev', image: givatZeevImg },
+      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem's real estate market is characterized by high demand and varied neighborhoods...", tags: ['High demand', 'Varied neighborhoods'] },
+      { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: 'Beit Shemesh has experienced rapid expansion with new construction...', tags: ['Rapid growth', 'New construction'] },
+      { name: 'Efrat', slug: 'efrat', image: efratImg, description: 'Efrat is a mid-sized community with a relatively established market...', tags: ['Established community', 'Limited inventory'] },
+      { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg, description: 'Gush Etzion encompasses multiple distinct communities...', tags: ['Multiple communities', 'Varied options'] },
+      { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg, description: 'Large suburban city east of Jerusalem with established infrastructure...', tags: ['Established suburb', 'Jerusalem access'] },
+      { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg, description: 'Upscale suburb on the outskirts of Jerusalem...', tags: ['Upscale suburb', 'Nature access'] },
+      { name: "Givat Ze'ev", slug: 'givat-zeev', image: givatZeevImg, description: 'Growing community north of Jerusalem with affordable options...', tags: ['Growing community', 'Affordable'] },
     ],
   },
   {
     name: 'Northern Israel',
+    subtitle: 'Lifestyle value & scenic living',
     cities: [
-      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg },
-      { name: 'Pardes Hanna-Karkur', slug: 'pardes-hanna', image: pardesHannaImg },
-      { name: 'Kiryat Tivon', slug: 'kiryat-tivon', image: kiryatTivonImg },
-      { name: 'Yokneam', slug: 'yokneam', image: yokneamImg },
+      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: 'Zichron Yaakov is a historic town on the Carmel coast...', tags: ['Wine country', 'Historic charm'] },
+      { name: 'Pardes Hanna-Karkur', slug: 'pardes-hanna', image: pardesHannaImg, description: 'Pardes Hanna-Karkur offers quiet, affordable living in the north...', tags: ['Quiet living', 'Value north'] },
+      { name: 'Kiryat Tivon', slug: 'kiryat-tivon', image: kiryatTivonImg, description: 'Kiryat Tivon is a small, green town on the Carmel slopes...', tags: ['Carmel suburbs', 'Nature access'] },
+      { name: 'Yokneam', slug: 'yokneam', image: yokneamImg, description: 'Yokneam is a growing high-tech center in the Jezreel Valley...', tags: ['Tech hub north', 'Growing city'] },
     ],
   },
   {
     name: 'Southern Israel',
+    subtitle: 'Affordable frontier & resort living',
     cities: [
-      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg },
-      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg },
-      { name: 'Eilat', slug: 'eilat', image: eilatImg },
+      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: 'Coastal city with beaches and affordable housing options...', tags: ['Coastal affordable', 'Beach lifestyle'] },
+      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: 'Capital of the Negev with university and tech growth...', tags: ['Negev capital', 'Tech growth'] },
+      { name: 'Eilat', slug: 'eilat', image: eilatImg, description: 'Resort city on the Red Sea with unique lifestyle...', tags: ['Resort living', 'Tax benefits'] },
     ],
   },
 ];
 
+function RegionCarousel({ region, index }: { region: Region; index: number }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 320;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className="bg-muted/30 rounded-3xl p-8 md:p-10"
+    >
+      {/* Region Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+          {region.name}
+        </h2>
+        <p className="text-muted-foreground">{region.subtitle}</p>
+        <p className="text-muted-foreground/70 text-sm mt-1">
+          {region.cities.length} cities
+        </p>
+      </div>
+
+      {/* Carousel */}
+      <div className="relative">
+        {/* Left Arrow */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -ml-4"
+          >
+            <ChevronLeft className="h-5 w-5 text-foreground" />
+          </button>
+        )}
+
+        {/* Right Arrow */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -mr-4"
+          >
+            <ChevronRight className="h-5 w-5 text-foreground" />
+          </button>
+        )}
+
+        {/* Cities */}
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex gap-5 overflow-x-auto scrollbar-hide pb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {region.cities.map((city) => (
+            <Link
+              key={city.slug}
+              to={`/areas/${city.slug}`}
+              className="flex-shrink-0 w-[280px] group"
+            >
+              <div className="bg-background rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                {/* Image */}
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={city.image}
+                    alt={city.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {city.name}
+                    </h3>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {city.description}
+                  </p>
+                  <div className="bg-muted/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-muted-foreground">
+                      {city.tags.join(' • ')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Areas() {
   return (
     <Layout>
-      <div className="container py-8">
+      <div className="container py-8 space-y-8">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-10"
+          className="text-center space-y-3"
         >
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <MapPin className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold text-foreground">Explore Areas</h1>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover Israel's most desirable neighborhoods across 34 cities in 5 regions.
-            </p>
-          </div>
-
-          {/* Regions */}
-          {regions.map((region, regionIndex) => (
-            <motion.div
-              key={region.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: regionIndex * 0.1 }}
-              className="space-y-4"
-            >
-              <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2">
-                {region.name}
-                <span className="text-muted-foreground font-normal text-base ml-2">
-                  ({region.cities.length} cities)
-                </span>
-              </h2>
-              
-              <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                {region.cities.map((city, cityIndex) => (
-                  <motion.div
-                    key={city.slug}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: regionIndex * 0.1 + cityIndex * 0.03 }}
-                  >
-                    <Link to={`/areas/${city.slug}`}>
-                      <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group h-full">
-                        <div className="aspect-[4/3] overflow-hidden relative">
-                          <img
-                            src={city.image}
-                            alt={city.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                          <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-white font-semibold text-sm md:text-base">
-                                {city.name}
-                              </h3>
-                              <ChevronRight className="h-4 w-4 text-white/80 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+            Explore Areas
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Discover Israel's most desirable neighborhoods across 34 cities in 5 regions
+          </p>
         </motion.div>
+
+        {/* Region Sections */}
+        <div className="space-y-8">
+          {regions.map((region, index) => (
+            <RegionCarousel key={region.name} region={region} index={index} />
+          ))}
+        </div>
       </div>
     </Layout>
   );
