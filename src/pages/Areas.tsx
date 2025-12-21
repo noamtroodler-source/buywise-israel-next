@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, ChevronLeft, Search, Building, Star, Heart, Trees, Sun, MapPin } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
+import { Input } from '@/components/ui/input';
 
 // City images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -49,15 +50,21 @@ interface City {
 }
 
 interface Region {
+  id: string;
   name: string;
+  shortName: string;
   subtitle: string;
+  icon: typeof Building;
   cities: City[];
 }
 
 const regions: Region[] = [
   {
+    id: 'coastal',
     name: 'Coastal & Greater Tel Aviv',
+    shortName: 'Coastal',
     subtitle: 'Beach life, urban energy & metro convenience',
+    icon: Sun,
     cities: [
       { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, description: "Israel's most expensive and competitive real estate market with urban premium...", tags: ['Urban premium', 'Limited supply'] },
       { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: 'Herzliya is a premium coastal market with distinct neighborhoods...', tags: ['Coastal premium', 'High demand'] },
@@ -72,8 +79,11 @@ const regions: Region[] = [
     ],
   },
   {
+    id: 'central',
     name: 'Central Israel',
+    shortName: 'Central',
     subtitle: 'Family suburbs, commuter value & growing communities',
+    icon: Building,
     cities: [
       { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is an established suburban city with premium pricing...", tags: ['Established suburban', 'Premium pricing'] },
       { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, description: 'Kfar Saba offers suburban living at more moderate prices...', tags: ['Suburban value', 'Family-oriented'] },
@@ -88,8 +98,11 @@ const regions: Region[] = [
     ],
   },
   {
+    id: 'jerusalem',
     name: 'Jerusalem & Surroundings',
+    shortName: 'Jerusalem',
     subtitle: 'History, meaning & community',
+    icon: Star,
     cities: [
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem's real estate market is characterized by high demand and varied neighborhoods...", tags: ['High demand', 'Varied neighborhoods'] },
       { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: 'Beit Shemesh has experienced rapid expansion with new construction...', tags: ['Rapid growth', 'New construction'] },
@@ -101,8 +114,11 @@ const regions: Region[] = [
     ],
   },
   {
+    id: 'northern',
     name: 'Northern Israel',
+    shortName: 'Northern',
     subtitle: 'Lifestyle value & scenic living',
+    icon: Trees,
     cities: [
       { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: 'Zichron Yaakov is a historic town on the Carmel coast...', tags: ['Wine country', 'Historic charm'] },
       { name: 'Pardes Hanna-Karkur', slug: 'pardes-hanna', image: pardesHannaImg, description: 'Pardes Hanna-Karkur offers quiet, affordable living in the north...', tags: ['Quiet living', 'Value north'] },
@@ -111,8 +127,11 @@ const regions: Region[] = [
     ],
   },
   {
+    id: 'southern',
     name: 'Southern Israel',
+    shortName: 'Southern',
     subtitle: 'Affordable frontier & resort living',
+    icon: Heart,
     cities: [
       { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, description: 'Coastal city with beaches and affordable housing options...', tags: ['Coastal affordable', 'Beach lifestyle'] },
       { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, description: 'Capital of the Negev with university and tech growth...', tags: ['Negev capital', 'Tech growth'] },
@@ -121,18 +140,152 @@ const regions: Region[] = [
   },
 ];
 
+// Tag color mapping
+const tagColors: Record<string, string> = {
+  'Urban premium': 'bg-primary/10 text-primary',
+  'Limited supply': 'bg-destructive/10 text-destructive',
+  'Coastal premium': 'bg-primary/10 text-primary',
+  'High demand': 'bg-warning/20 text-warning-foreground',
+  'Affordable': 'bg-success/10 text-success',
+  'Affordable coast': 'bg-success/10 text-success',
+  'Family city': 'bg-accent/20 text-accent-foreground',
+  'Family-oriented': 'bg-accent/20 text-accent-foreground',
+  'Growing community': 'bg-success/10 text-success',
+  'Rapid growth': 'bg-success/10 text-success',
+  'Luxury market': 'bg-primary/10 text-primary',
+  'Tech hub north': 'bg-primary/10 text-primary',
+  'Tech growth': 'bg-primary/10 text-primary',
+  'Resort living': 'bg-accent/20 text-accent-foreground',
+  'Wine country': 'bg-accent/20 text-accent-foreground',
+};
+
+function RegionQuickNav({ 
+  regions, 
+  activeRegion, 
+  onRegionClick 
+}: { 
+  regions: Region[]; 
+  activeRegion: string; 
+  onRegionClick: (id: string) => void;
+}) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border py-4"
+    >
+      <div className="container">
+        <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
+          {regions.map((region) => {
+            const Icon = region.icon;
+            const isActive = activeRegion === region.id;
+            
+            return (
+              <button
+                key={region.id}
+                onClick={() => onRegionClick(region.id)}
+                className={`flex flex-col items-center gap-2 min-w-[80px] transition-all duration-200 group ${
+                  isActive ? 'scale-105' : 'opacity-70 hover:opacity-100'
+                }`}
+              >
+                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25' 
+                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                }`}>
+                  <Icon className="w-6 h-6 md:w-7 md:h-7" />
+                </div>
+                <span className={`text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                }`}>
+                  {region.shortName}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function CityCard({ city, index }: { city: City; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+    >
+      <Link
+        to={`/areas/${city.slug}`}
+        className="flex-shrink-0 w-[300px] group block"
+      >
+        <div className="bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-border/50">
+          {/* Image */}
+          <div className="aspect-[16/10] overflow-hidden relative">
+            <img
+              src={city.image}
+              alt={city.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-white/90">
+                <MapPin className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium">View listings</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                {city.name}
+              </h3>
+              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+              {city.description}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {city.tags.map((tag) => (
+                <span 
+                  key={tag} 
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                    tagColors[tag] || 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
 function RegionCarousel({ region, index }: { region: Region; index: number }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+      const maxScroll = scrollWidth - clientWidth;
+      setScrollProgress(maxScroll > 0 ? scrollLeft / maxScroll : 0);
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < maxScroll - 10);
     }
   };
+
+  useEffect(() => {
+    checkScroll();
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -145,119 +298,203 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
     }
   };
 
+  const Icon = region.icon;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="bg-muted/30 rounded-3xl p-8 md:p-10"
+    <motion.section
+      id={region.id}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-100px' }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="scroll-mt-36"
     >
-      {/* Region Header */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-          {region.name}
-        </h2>
-        <p className="text-muted-foreground">{region.subtitle}</p>
-        <p className="text-muted-foreground/70 text-sm mt-1">
-          {region.cities.length} cities
-        </p>
-      </div>
+      <div className="bg-gradient-to-br from-muted/50 via-muted/30 to-transparent rounded-3xl p-6 md:p-10">
+        {/* Region Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Icon className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+              {region.name}
+            </h2>
+            <p className="text-muted-foreground">{region.subtitle}</p>
+          </div>
+        </div>
 
-      {/* Carousel */}
-      <div className="relative">
-        {/* Left Arrow */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -ml-4"
+        {/* Carousel */}
+        <div className="relative">
+          {/* Left Arrow */}
+          <AnimatePresence>
+            {canScrollLeft && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => scroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all -ml-4 border border-border"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Right Arrow */}
+          <AnimatePresence>
+            {canScrollRight && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => scroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all -mr-4 border border-border"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Cities */}
+          <div
+            ref={scrollRef}
+            onScroll={checkScroll}
+            className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <ChevronLeft className="h-5 w-5 text-foreground" />
-          </button>
-        )}
-
-        {/* Right Arrow */}
-        {canScrollRight && (
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -mr-4"
-          >
-            <ChevronRight className="h-5 w-5 text-foreground" />
-          </button>
-        )}
-
-        {/* Cities */}
-        <div
-          ref={scrollRef}
-          onScroll={checkScroll}
-          className="flex gap-5 overflow-x-auto scrollbar-hide pb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {region.cities.map((city) => (
-            <Link
-              key={city.slug}
-              to={`/areas/${city.slug}`}
-              className="flex-shrink-0 w-[280px] group"
-            >
-              <div className="bg-background rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-                {/* Image */}
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={city.image}
-                    alt={city.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                {/* Content */}
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {city.name}
-                    </h3>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                    {city.description}
-                  </p>
-                  <div className="bg-muted/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-muted-foreground">
-                      {city.tags.join(' • ')}
-                    </p>
-                  </div>
-                </div>
+            {region.cities.map((city, cityIndex) => (
+              <div key={city.slug} className="snap-start">
+                <CityCard city={city} index={cityIndex} />
               </div>
-            </Link>
-          ))}
+            ))}
+          </div>
+
+          {/* Progress Indicator */}
+          <div className="mt-4 flex justify-center">
+            <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+              <motion.div 
+                className="h-full bg-primary rounded-full"
+                style={{ width: `${Math.max(20, scrollProgress * 100)}%` }}
+                transition={{ duration: 0.2 }}
+              />
+            </div>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </motion.section>
   );
 }
 
 export default function Areas() {
+  const [activeRegion, setActiveRegion] = useState(regions[0].id);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter cities based on search
+  const filteredRegions = useMemo(() => {
+    if (!searchQuery.trim()) return regions;
+    
+    const query = searchQuery.toLowerCase();
+    return regions.map(region => ({
+      ...region,
+      cities: region.cities.filter(city => 
+        city.name.toLowerCase().includes(query) ||
+        city.tags.some(tag => tag.toLowerCase().includes(query))
+      )
+    })).filter(region => region.cities.length > 0);
+  }, [searchQuery]);
+
+  // Update active region on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = regions.map(r => document.getElementById(r.id));
+      const scrollPos = window.scrollY + 200;
+      
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i];
+        if (section && section.offsetTop <= scrollPos) {
+          setActiveRegion(regions[i].id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleRegionClick = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setActiveRegion(id);
+    }
+  };
+
   return (
     <Layout>
-      <div className="container py-8 space-y-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-3"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-            Explore Areas
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover Israel's most desirable neighborhoods across 34 cities in 5 regions
-          </p>
-        </motion.div>
-
-        {/* Region Sections */}
-        <div className="space-y-8">
-          {regions.map((region, index) => (
-            <RegionCarousel key={region.name} region={region} index={index} />
-          ))}
+      {/* Hero Header */}
+      <div className="bg-gradient-to-b from-primary/5 via-primary/5 to-transparent">
+        <div className="container pt-8 pb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-6"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+              Explore Areas
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Discover Israel's most desirable neighborhoods and find your perfect location
+            </p>
+            
+            {/* Search Input */}
+            <div className="max-w-md mx-auto">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search cities or neighborhoods..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 h-12 rounded-full border-border/50 bg-background shadow-sm"
+                />
+              </div>
+            </div>
+          </motion.div>
         </div>
+      </div>
+
+      {/* Quick Nav */}
+      <RegionQuickNav 
+        regions={regions} 
+        activeRegion={activeRegion} 
+        onRegionClick={handleRegionClick} 
+      />
+
+      {/* Region Sections */}
+      <div className="container py-8 space-y-10">
+        <AnimatePresence mode="wait">
+          {filteredRegions.length > 0 ? (
+            filteredRegions.map((region, index) => (
+              <RegionCarousel key={region.id} region={region} index={index} />
+            ))
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center py-16"
+            >
+              <p className="text-muted-foreground text-lg">No cities found matching "{searchQuery}"</p>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="mt-4 text-primary hover:underline"
+              >
+                Clear search
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </Layout>
   );
