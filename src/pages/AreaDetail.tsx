@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,12 +34,6 @@ export default function CityDetail() {
     }).format(price);
   };
 
-  const formatPopulation = (pop: number | null) => {
-    if (!pop) return 'N/A';
-    if (pop >= 1000000) return `${(pop / 1000000).toFixed(1)} million`;
-    if (pop >= 1000) return `${(pop / 1000).toFixed(0)}K`;
-    return pop.toString();
-  };
 
   const getNeighborhoods = (): Neighborhood[] => {
     if (!city?.neighborhoods) return [];
@@ -99,7 +93,10 @@ export default function CityDetail() {
             alt={city.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+          {/* Light blur/fade at top */}
+          <div className="absolute inset-x-0 top-0 h-1/3 backdrop-blur-[2px] bg-gradient-to-b from-white/50 to-transparent" />
+          {/* Bottom gradient for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
             <div className="container">
               <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" asChild>
@@ -122,10 +119,6 @@ export default function CityDetail() {
               )}
               
               <div className="flex flex-wrap items-center gap-4 text-white/80">
-                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">{formatPopulation(city.population)}</span>
-                </div>
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <TrendingUp className="h-4 w-4" />
                   <span className="text-sm font-medium">Avg. {formatPrice(city.average_price)}</span>
