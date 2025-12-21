@@ -15,6 +15,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Cities from "./pages/Cities";
 import CityDetail from "./pages/CityDetail";
+import Tools from "./pages/Tools";
 import AgentRegister from "./pages/agent/AgentRegister";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentProperties from "./pages/agent/AgentProperties";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/cities" element={<Cities />} />
             <Route path="/cities/:slug" element={<CityDetail />} />
+            <Route path="/tools" element={<Tools />} />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
