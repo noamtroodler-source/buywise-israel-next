@@ -99,6 +99,7 @@ export interface Inquiry {
 export interface PropertyFilters {
   city?: string;
   property_type?: PropertyType;
+  property_types?: PropertyType[];
   listing_status?: ListingStatus;
   min_price?: number;
   max_price?: number;
