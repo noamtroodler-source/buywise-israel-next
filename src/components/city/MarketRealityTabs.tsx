@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Building2, Zap, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
-import { getComparisonColor, getComparisonTextClass } from './CityCompareSelector';
+import { CityCompareSelector, getComparisonColor, getComparisonTextClass } from './CityCompareSelector';
 
 interface ComparisonData {
   city: string;
@@ -18,6 +18,8 @@ interface MarketRealityTabsProps {
   propertiesCount: number;
   propertyTypes?: { name: string; value: number }[];
   comparisonData?: ComparisonData[];
+  selectedCities?: string[];
+  onCitiesChange?: (cities: string[]) => void;
 }
 
 const NATIONAL_AVG_PRICE_SQM = 32000; // National average for comparison
@@ -27,7 +29,9 @@ export function MarketRealityTabs({
   cityName, 
   propertiesCount,
   propertyTypes = [],
-  comparisonData = []
+  comparisonData = [],
+  selectedCities = [],
+  onCitiesChange
 }: MarketRealityTabsProps) {
   const latestData = marketData[0];
   const pricePerSqm = latestData?.average_price_sqm || 0;
@@ -86,9 +90,17 @@ export function MarketRealityTabs({
     >
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-foreground">
+          <CardTitle className="text-foreground mb-3">
             {hasComparison ? 'Market Comparison' : 'Market Reality'}
           </CardTitle>
+          {onCitiesChange && (
+            <CityCompareSelector
+              currentCity={cityName}
+              selectedCities={selectedCities}
+              onCitiesChange={onCitiesChange}
+              maxCities={3}
+            />
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="prices" className="w-full">

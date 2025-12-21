@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp } from 'lucide-react';
 import { MarketData } from '@/types/projects';
-import { getComparisonColor } from './CityCompareSelector';
+import { CityCompareSelector, getComparisonColor } from './CityCompareSelector';
 
 interface ComparisonData {
   city: string;
@@ -16,11 +16,19 @@ interface PriceTrendChartProps {
   marketData: MarketData[];
   cityName: string;
   comparisonData?: ComparisonData[];
+  selectedCities?: string[];
+  onCitiesChange?: (cities: string[]) => void;
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function PriceTrendChart({ marketData, cityName, comparisonData = [] }: PriceTrendChartProps) {
+export function PriceTrendChart({ 
+  marketData, 
+  cityName, 
+  comparisonData = [],
+  selectedCities = [],
+  onCitiesChange
+}: PriceTrendChartProps) {
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('6m');
 
   const hasComparison = comparisonData.length > 0;
@@ -116,18 +124,28 @@ export function PriceTrendChart({ marketData, cityName, comparisonData = [] }: P
     >
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              {hasComparison ? 'Price Comparison' : `Price Trend in ${cityName}`}
-            </CardTitle>
-            <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
-              <TabsList className="bg-muted">
-                <TabsTrigger value="6m" className="text-xs">6M</TabsTrigger>
-                <TabsTrigger value="1y" className="text-xs">1Y</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                {hasComparison ? 'Price Comparison' : `Price Trend in ${cityName}`}
+              </CardTitle>
+              <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
+                <TabsList className="bg-muted">
+                  <TabsTrigger value="6m" className="text-xs">6M</TabsTrigger>
+                  <TabsTrigger value="1y" className="text-xs">1Y</TabsTrigger>
+                  <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            {onCitiesChange && (
+              <CityCompareSelector
+                currentCity={cityName}
+                selectedCities={selectedCities}
+                onCitiesChange={onCitiesChange}
+                maxCities={3}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent>
