@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2 } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, TrendingUp, Shield, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { isAgent } = useUserRole();
+  const { isAgent, isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -49,6 +49,19 @@ export function Header() {
           >
             Rent
           </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              New Projects <ChevronDown className="h-3 w-3" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link to="/projects">All Projects</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/developers">Developers</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Link 
             to="/cities" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -56,16 +69,22 @@ export function Header() {
             Cities
           </Link>
           <Link 
-            to="/blog" 
+            to="/market-insights" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Blog
+            Market Insights
           </Link>
           <Link 
             to="/tools" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Tools
+          </Link>
+          <Link 
+            to="/blog" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Blog
           </Link>
         </nav>
 
@@ -96,6 +115,14 @@ export function Header() {
                     <Link to="/agent" className="flex items-center gap-2">
                       <Building2 className="h-4 w-4" />
                       Agent Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Admin Panel
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -148,6 +175,20 @@ export function Header() {
               Rent
             </Link>
             <Link 
+              to="/projects" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              New Projects
+            </Link>
+            <Link 
+              to="/developers" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Developers
+            </Link>
+            <Link 
               to="/cities" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
@@ -155,11 +196,11 @@ export function Header() {
               Cities
             </Link>
             <Link 
-              to="/blog" 
+              to="/market-insights" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Blog
+              Market Insights
             </Link>
             <Link 
               to="/tools" 
@@ -167,6 +208,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Tools
+            </Link>
+            <Link 
+              to="/blog" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             {!user && (
               <>
