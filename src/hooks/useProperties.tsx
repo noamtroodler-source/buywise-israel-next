@@ -18,7 +18,9 @@ export function useProperties(filters?: PropertyFilters) {
       if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
-      if (filters?.property_type) {
+      if (filters?.property_types && filters.property_types.length > 0) {
+        query = query.in('property_type', filters.property_types as any);
+      } else if (filters?.property_type) {
         query = query.eq('property_type', filters.property_type as any);
       }
       if (filters?.listing_status) {

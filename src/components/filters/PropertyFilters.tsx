@@ -308,7 +308,13 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               className={cn(filterButtonBase, typeOpen && filterButtonActive)}
             >
               <Building2 className="h-4 w-4" />
-              <span>{filters.property_type ? PROPERTY_TYPES.find(t => t.value === filters.property_type)?.label : 'Type'}</span>
+              <span>
+                {filters.property_types && filters.property_types.length > 0
+                  ? filters.property_types.length === 1
+                    ? PROPERTY_TYPES.find(t => t.value === filters.property_types![0])?.label
+                    : `${filters.property_types.length} Types`
+                  : 'Type'}
+              </span>
               {typeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
@@ -316,10 +322,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Property Type</h3>
-                {filters.property_type && (
+                {filters.property_types && filters.property_types.length > 0 && (
                   <button 
                     className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => updateFilter('property_type', undefined)}
+                    onClick={() => updateFilter('property_types', undefined)}
                   >
                     Clear
                   </button>
@@ -327,28 +333,35 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </div>
               
               <div className="space-y-1">
-                {PROPERTY_TYPES.map(type => (
-                  <button
-                    key={type.value}
-                    className="w-full flex items-center gap-3 px-2 py-2.5 text-sm rounded-lg hover:bg-muted transition-colors"
-                    onClick={() => {
-                      updateFilter('property_type', type.value);
-                      setTypeOpen(false);
-                    }}
-                  >
-                    <div className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                      filters.property_type === type.value 
-                        ? "border-primary bg-primary" 
-                        : "border-primary/50"
-                    )}>
-                      {filters.property_type === type.value && (
-                        <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                      )}
-                    </div>
-                    <span>{type.label}</span>
-                  </button>
-                ))}
+                {PROPERTY_TYPES.map(type => {
+                  const isSelected = filters.property_types?.includes(type.value) || false;
+                  return (
+                    <button
+                      key={type.value}
+                      className="w-full flex items-center gap-3 px-2 py-2.5 text-sm rounded-lg hover:bg-muted transition-colors"
+                      onClick={() => {
+                        const currentTypes = filters.property_types || [];
+                        if (isSelected) {
+                          updateFilter('property_types', currentTypes.filter(t => t !== type.value));
+                        } else {
+                          updateFilter('property_types', [...currentTypes, type.value]);
+                        }
+                      }}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
+                        isSelected 
+                          ? "border-primary bg-primary" 
+                          : "border-border"
+                      )}>
+                        {isSelected && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </div>
+                      <span>{type.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </PopoverContent>
