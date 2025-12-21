@@ -16,11 +16,22 @@ import BlogPost from "./pages/BlogPost";
 import Cities from "./pages/Cities";
 import CityDetail from "./pages/CityDetail";
 import Tools from "./pages/Tools";
+import Developers from "./pages/Developers";
+import DeveloperDetail from "./pages/DeveloperDetail";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
+import MarketInsights from "./pages/MarketInsights";
 import AgentRegister from "./pages/agent/AgentRegister";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentProperties from "./pages/agent/AgentProperties";
 import NewProperty from "./pages/agent/NewProperty";
 import EditProperty from "./pages/agent/EditProperty";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProperties from "./pages/admin/AdminProperties";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminBlog from "./pages/admin/AdminBlog";
+import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +53,11 @@ const App = () => (
             <Route path="/cities" element={<Cities />} />
             <Route path="/cities/:slug" element={<CityDetail />} />
             <Route path="/tools" element={<Tools />} />
+            <Route path="/developers" element={<Developers />} />
+            <Route path="/developers/:slug" element={<DeveloperDetail />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/market-insights" element={<MarketInsights />} />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
@@ -77,6 +93,22 @@ const App = () => (
                 <EditProperty />
               </ProtectedRoute>
             } />
+            {/* Admin Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="properties" element={<AdminProperties />} />
+              <Route path="agents" element={<AdminPlaceholder title="Agents Management" />} />
+              <Route path="projects" element={<AdminPlaceholder title="Projects Management" />} />
+              <Route path="developers" element={<AdminPlaceholder title="Developers Management" />} />
+              <Route path="blog" element={<AdminBlog />} />
+              <Route path="cities" element={<AdminPlaceholder title="Cities Management" />} />
+              <Route path="market-data" element={<AdminPlaceholder title="Market Data Management" />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
