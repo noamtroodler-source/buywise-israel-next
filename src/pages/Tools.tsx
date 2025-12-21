@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, MapPinned, Clock, Hammer, ClipboardList, ArrowLeft } from 'lucide-react';
+import { 
+  Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
+  MapPinned, Clock, Hammer, ClipboardList, ArrowRight, ArrowLeft 
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalculator';
@@ -15,17 +17,25 @@ import { RealEstateTimeMachine } from '@/components/tools/RealEstateTimeMachine'
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklist } from '@/components/tools/DocumentChecklist';
 
-const tools = [
-  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Answer questions to discover your ideal property and area', icon: Compass, category: 'Discovery' },
-  { id: 'neighborhood', label: 'Neighborhood Match', description: 'Rate your priorities and find matching neighborhoods', icon: MapPinned, category: 'Discovery' },
-  { id: 'affordability', label: 'Affordability Calculator', description: 'Calculate how much property you can afford', icon: Wallet, category: 'Financial' },
-  { id: 'investment', label: 'Investment Return Calculator', description: 'Analyze ROI, cap rate, and cash-on-cash returns', icon: TrendingUp, category: 'Financial' },
-  { id: 'mortgage', label: 'Mortgage Calculator', description: 'Calculate monthly payments and total costs', icon: Calculator, category: 'Financial' },
-  { id: 'totalcost', label: 'Total Cost Calculator', description: 'See all costs: taxes, fees, moving, furniture', icon: Receipt, category: 'Financial' },
-  { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare long-term costs of renting vs buying', icon: Scale, category: 'Financial' },
-  { id: 'timemachine', label: 'Real Estate Time Machine', description: 'Explore historical price trends by city', icon: Clock, category: 'Analysis' },
-  { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate costs for your renovation project', icon: Hammer, category: 'Analysis' },
-  { id: 'documents', label: 'Document Checklist & Tracker', description: 'Track all required documents for purchase', icon: ClipboardList, category: 'Planning' },
+interface Tool {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  category: string;
+}
+
+const tools: Tool[] = [
+  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Discover what truly matters for your Israel home before you start searching', icon: Compass, category: 'Discovery Tools' },
+  { id: 'neighborhood', label: 'Neighborhood Match', description: 'Find the perfect Israeli neighborhood based on your lifestyle preferences', icon: MapPinned, category: 'Discovery Tools' },
+  { id: 'affordability', label: 'Affordability Calculator', description: 'Calculate your maximum affordable home price based on income, savings, and Israeli mortgage rules', icon: Wallet, category: 'Financial Calculators' },
+  { id: 'investment', label: 'Investment Return Calculator', description: 'Calculate potential returns, cash flow, and ROI on investment properties in Israel', icon: TrendingUp, category: 'Financial Calculators' },
+  { id: 'mortgage', label: 'Mortgage Calculator', description: 'Calculate monthly payments, total interest, and view detailed amortization schedules', icon: Calculator, category: 'Financial Calculators' },
+  { id: 'totalcost', label: 'Total Cost Calculator', description: 'Calculate all one-time and monthly costs for buying property in Israel including taxes, fees, and mortgage', icon: Receipt, category: 'Financial Calculators' },
+  { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare the true cost of renting versus buying property in Israel over time', icon: Scale, category: 'Analysis Tools' },
+  { id: 'timemachine', label: 'Real Estate Time Machine', description: 'Explore how Israeli real estate has historically performed by area and time', icon: Clock, category: 'Analysis Tools' },
+  { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs for Israeli properties including materials, labor, and permits', icon: Hammer, category: 'Analysis Tools' },
+  { id: 'documents', label: 'Document Checklist & Tracker', description: 'Track all required documents for your Israel property purchase with status updates', icon: ClipboardList, category: 'Planning Tools' },
 ];
 
 const toolComponents: Record<string, React.ComponentType> = {
@@ -41,6 +51,34 @@ const toolComponents: Record<string, React.ComponentType> = {
   documents: DocumentChecklist,
 };
 
+function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
+  const Icon = tool.icon;
+  
+  return (
+    <div 
+      className="group bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer flex flex-col h-full"
+      onClick={onClick}
+    >
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
+        <Icon className="h-6 w-6 text-primary" />
+      </div>
+      
+      <h3 className="text-lg font-semibold text-foreground mb-2">
+        {tool.label}
+      </h3>
+      
+      <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">
+        {tool.description}
+      </p>
+      
+      <button className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all self-end mt-auto">
+        Open tool
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export default function Tools() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
 
@@ -49,78 +87,97 @@ export default function Tools() {
 
   return (
     <Layout>
-      <div className="container py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
-        >
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <Calculator className="h-8 w-8 text-primary" />
-              <h1 className="text-4xl font-bold text-foreground">Property Tools</h1>
-            </div>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Make informed decisions with our suite of real estate calculators designed for the Israeli market.
-            </p>
-          </div>
-
-          {activeTool ? (
-            <div className="max-w-4xl mx-auto space-y-4">
-              <Button variant="ghost" onClick={() => setActiveTool(null)} className="gap-2">
+      <div className="min-h-screen bg-background">
+        {activeTool ? (
+          <div className="container py-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="max-w-4xl mx-auto space-y-6"
+            >
+              <Button variant="ghost" onClick={() => setActiveTool(null)} className="gap-2 -ml-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back to all tools
               </Button>
               {ActiveComponent && <ActiveComponent />}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              {categories.map((category) => (
-                <div key={category} className="space-y-4">
-                  <h2 className="text-xl font-semibold text-foreground">{category} Tools</h2>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {tools.filter(t => t.category === category).map((tool) => {
-                      const Icon = tool.icon;
-                      return (
-                        <Card 
-                          key={tool.id}
-                          className="cursor-pointer hover:border-primary hover:shadow-lg transition-all"
-                          onClick={() => setActiveTool(tool.id)}
-                        >
-                          <CardHeader>
-                            <div className="flex items-start gap-3">
-                              <div className="p-2 rounded-lg bg-primary/10">
-                                <Icon className="h-6 w-6 text-primary" />
-                              </div>
-                              <div>
-                                <CardTitle className="text-lg">{tool.label}</CardTitle>
-                                <CardDescription className="mt-1">{tool.description}</CardDescription>
-                              </div>
-                            </div>
-                          </CardHeader>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Disclaimer */}
-          <div className="max-w-4xl mx-auto">
-            <div className="p-6 rounded-lg bg-muted/50 text-center">
-              <h3 className="font-semibold text-foreground mb-2">Disclaimer</h3>
-              <p className="text-sm text-muted-foreground">
-                These tools provide estimates for informational purposes only. 
-                Actual costs may vary based on individual circumstances, market conditions, 
-                and lender requirements. Consult with a financial advisor or mortgage 
-                professional for personalized advice.
-              </p>
-            </div>
+            </motion.div>
           </div>
-        </motion.div>
+        ) : (
+          <>
+            {/* Hero Header */}
+            <div className="py-16 md:py-20">
+              <div className="container">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center max-w-3xl mx-auto"
+                >
+                  <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                    Property Tools & Calculators
+                  </h1>
+                  <p className="text-lg text-muted-foreground">
+                    Powerful tools to help you make informed decisions about your property purchase in Israel
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Tools Grid */}
+            <div className="container pb-20">
+              <div className="space-y-16">
+                {categories.map((category, catIndex) => {
+                  const categoryTools = tools.filter(t => t.category === category);
+                  
+                  return (
+                    <motion.section 
+                      key={category}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: catIndex * 0.1 }}
+                    >
+                      <h2 className="text-2xl font-semibold text-foreground mb-6 pb-2 border-b border-border">
+                        {category}
+                      </h2>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {categoryTools.map((tool, index) => (
+                          <motion.div
+                            key={tool.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: catIndex * 0.1 + index * 0.05 }}
+                          >
+                            <ToolCard 
+                              tool={tool} 
+                              onClick={() => setActiveTool(tool.id)} 
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.section>
+                  );
+                })}
+              </div>
+
+              {/* Disclaimer */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="mt-16 max-w-3xl mx-auto"
+              >
+                <div className="p-6 rounded-2xl bg-muted/50 text-center">
+                  <h3 className="font-semibold text-foreground mb-2">Disclaimer</h3>
+                  <p className="text-sm text-muted-foreground">
+                    These tools provide estimates for informational purposes only. 
+                    Actual costs may vary based on individual circumstances, market conditions, 
+                    and lender requirements. Consult with a financial advisor or mortgage 
+                    professional for personalized advice.
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
       </div>
     </Layout>
   );
