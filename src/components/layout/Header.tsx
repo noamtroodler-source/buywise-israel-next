@@ -61,6 +61,12 @@ export function Header() {
           >
             Blog
           </Link>
+          <Link 
+            to="/tools" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Tools
+          </Link>
         </nav>
 
         {/* Right Side */}
@@ -154,6 +160,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
+            </Link>
+            <Link 
+              to="/tools" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Tools
             </Link>
             {!user && (
               <>
