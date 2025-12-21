@@ -15,7 +15,6 @@ import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
-import { CityCompareSelector } from '@/components/city/CityCompareSelector';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -182,20 +181,32 @@ const cityImages: Record<string, string> = {
 
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const [comparisonCities, setComparisonCities] = useState<string[]>([]);
+  
+  // Separate state for each comparison component
+  const [priceTrendComparisonCities, setPriceTrendComparisonCities] = useState<string[]>([]);
+  const [marketRealityComparisonCities, setMarketRealityComparisonCities] = useState<string[]>([]);
   
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: properties = [], isLoading: propertiesLoading } = useProperties(
     city ? { city: city.name } : undefined
   );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
-  const { data: comparisonMarketData = [] } = useCityComparison(comparisonCities);
+  
+  // Fetch comparison data for each component separately
+  const { data: priceTrendComparisonData = [] } = useCityComparison(priceTrendComparisonCities);
+  const { data: marketRealityComparisonData = [] } = useCityComparison(marketRealityComparisonCities);
 
-  // Group comparison data by city
-  const comparisonDataByCity = comparisonCities.map(cityName => ({
+  // Group comparison data by city for Price Trend
+  const priceTrendComparisonByCity = priceTrendComparisonCities.map(cityName => ({
     city: cityName,
-    data: comparisonMarketData.filter(d => d.city === cityName),
-    propertiesCount: 0 // We don't have this data yet, could be fetched if needed
+    data: priceTrendComparisonData.filter(d => d.city === cityName),
+  }));
+
+  // Group comparison data by city for Market Reality
+  const marketRealityComparisonByCity = marketRealityComparisonCities.map(cityName => ({
+    city: cityName,
+    data: marketRealityComparisonData.filter(d => d.city === cityName),
+    propertiesCount: 0
   }));
 
   const formatPrice = (price: number | null) => {
@@ -326,18 +337,6 @@ export default function CityDetail() {
             <MarketStatsCards marketData={marketData} cityName={city.name} />
           ) : null}
 
-          {/* City Comparison Selector */}
-          {city && marketData.length > 0 && (
-            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
-              <CityCompareSelector
-                currentCity={city.name}
-                selectedCities={comparisonCities}
-                onCitiesChange={setComparisonCities}
-                maxCities={3}
-              />
-            </div>
-          )}
-
           {/* Two Column Layout for Chart and Tabs */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Price Trend Chart */}
@@ -345,7 +344,9 @@ export default function CityDetail() {
               <PriceTrendChart 
                 marketData={marketData} 
                 cityName={city.name}
-                comparisonData={comparisonDataByCity.filter(c => c.data.length > 0)}
+                comparisonData={priceTrendComparisonByCity.filter(c => c.data.length > 0)}
+                selectedCities={priceTrendComparisonCities}
+                onCitiesChange={setPriceTrendComparisonCities}
               />
             )}
 
@@ -355,7 +356,9 @@ export default function CityDetail() {
                 marketData={marketData} 
                 cityName={city.name}
                 propertiesCount={properties.length}
-                comparisonData={comparisonDataByCity.filter(c => c.data.length > 0)}
+                comparisonData={marketRealityComparisonByCity.filter(c => c.data.length > 0)}
+                selectedCities={marketRealityComparisonCities}
+                onCitiesChange={setMarketRealityComparisonCities}
               />
             )}
           </div>
