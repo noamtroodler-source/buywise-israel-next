@@ -68,6 +68,131 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          category_id: string | null
+          content: string
+          cover_image: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          is_published: boolean | null
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+          views_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          category_id?: string | null
+          content: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean | null
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          category_id?: string | null
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean | null
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "blog_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cities: {
+        Row: {
+          average_price: number | null
+          created_at: string
+          description: string | null
+          hero_image: string | null
+          highlights: string[] | null
+          id: string
+          is_featured: boolean | null
+          name: string
+          neighborhoods: Json | null
+          population: number | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          average_price?: number | null
+          created_at?: string
+          description?: string | null
+          hero_image?: string | null
+          highlights?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          name: string
+          neighborhoods?: Json | null
+          population?: number | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          average_price?: number | null
+          created_at?: string
+          description?: string | null
+          hero_image?: string | null
+          highlights?: string[] | null
+          id?: string
+          is_featured?: boolean | null
+          name?: string
+          neighborhoods?: Json | null
+          population?: number | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,10 +10,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAgent } = useUserRole();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -48,10 +50,16 @@ export function Header() {
             Rent
           </Link>
           <Link 
-            to="/listings" 
+            to="/cities" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Browse All
+            Cities
+          </Link>
+          <Link 
+            to="/blog" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Blog
           </Link>
         </nav>
 
@@ -66,11 +74,25 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    My Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/favorites" className="flex items-center gap-2">
                     <Heart className="h-4 w-4" />
                     Saved Properties
                   </Link>
                 </DropdownMenuItem>
+                {isAgent && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/agent" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Agent Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 text-destructive">
                   <LogOut className="h-4 w-4" />
@@ -120,11 +142,18 @@ export function Header() {
               Rent
             </Link>
             <Link 
-              to="/listings" 
+              to="/cities" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Browse All
+              Cities
+            </Link>
+            <Link 
+              to="/blog" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             {!user && (
               <>
