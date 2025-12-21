@@ -254,6 +254,8 @@ function CityCard({ city, index }: { city: City; index: number }) {
 function RegionCarousel({ region, index }: { region: Region; index: number }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   const [isScrollable, setIsScrollable] = useState(false);
 
   const checkScroll = () => {
@@ -262,6 +264,8 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
       const maxScroll = scrollWidth - clientWidth;
       setIsScrollable(maxScroll > 10);
       setScrollProgress(maxScroll > 0 ? scrollLeft / maxScroll : 0);
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < maxScroll - 10);
     }
   };
 
@@ -273,25 +277,11 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      const maxScroll = scrollWidth - clientWidth;
       const scrollAmount = 320;
-      
-      if (direction === 'right') {
-        // If near the end, loop to beginning
-        if (scrollLeft >= maxScroll - 10) {
-          scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-        }
-      } else {
-        // If at the beginning, loop to end
-        if (scrollLeft <= 10) {
-          scrollRef.current.scrollTo({ left: maxScroll, behavior: 'smooth' });
-        } else {
-          scrollRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-        }
-      }
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
       setTimeout(checkScroll, 300);
     }
   };
@@ -327,9 +317,12 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
           {isScrollable && (
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: canScrollLeft ? 1 : 0.4, scale: 1 }}
               onClick={() => scroll('left')}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -ml-4 border border-border hover:bg-primary hover:text-primary-foreground cursor-pointer"
+              disabled={!canScrollLeft}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -ml-4 border border-border ${
+                canScrollLeft ? 'hover:bg-primary hover:text-primary-foreground cursor-pointer' : 'cursor-not-allowed'
+              }`}
             >
               <ChevronLeft className="h-6 w-6" />
             </motion.button>
@@ -339,9 +332,12 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
           {isScrollable && (
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: canScrollRight ? 1 : 0.4, scale: 1 }}
               onClick={() => scroll('right')}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -mr-4 border border-border hover:bg-primary hover:text-primary-foreground cursor-pointer"
+              disabled={!canScrollRight}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -mr-4 border border-border ${
+                canScrollRight ? 'hover:bg-primary hover:text-primary-foreground cursor-pointer' : 'cursor-not-allowed'
+              }`}
             >
               <ChevronRight className="h-6 w-6" />
             </motion.button>
