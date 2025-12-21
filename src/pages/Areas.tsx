@@ -2,9 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { useCallback, useEffect, useState } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
-import { Button } from '@/components/ui/button';
+import { useRef, useState } from 'react';
 
 // City images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -124,40 +122,28 @@ const regions: Region[] = [
 ];
 
 function RegionCarousel({ region, index }: { region: Region; index: number }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'start',
-    loop: false,
-    skipSnaps: false,
-    dragFree: true,
-  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
+  const checkScroll = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
 
-  const scrollPrev = useCallback(() => {
-    if (emblaApi) emblaApi.scrollPrev();
-  }, [emblaApi]);
-
-  const scrollNext = useCallback(() => {
-    if (emblaApi) emblaApi.scrollNext();
-  }, [emblaApi]);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    onSelect();
-    emblaApi.on('select', onSelect);
-    emblaApi.on('reInit', onSelect);
-    return () => {
-      emblaApi.off('select', onSelect);
-      emblaApi.off('reInit', onSelect);
-    };
-  }, [emblaApi, onSelect]);
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 320;
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScroll, 300);
+    }
+  };
 
   return (
     <motion.div
@@ -179,72 +165,69 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
 
       {/* Carousel */}
       <div className="relative">
-        {/* Navigation Arrows */}
-        <div className="absolute -left-4 top-1/2 -translate-y-1/2 z-10">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={scrollPrev}
-            disabled={!canScrollPrev}
-            className="h-10 w-10 rounded-full border-border bg-background shadow-lg hover:bg-muted disabled:opacity-0 disabled:pointer-events-none"
+        {/* Left Arrow */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -ml-4"
           >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        </div>
+            <ChevronLeft className="h-5 w-5 text-foreground" />
+          </button>
+        )}
 
-        <div className="absolute -right-4 top-1/2 -translate-y-1/2 z-10">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={scrollNext}
-            disabled={!canScrollNext}
-            className="h-10 w-10 rounded-full border-border bg-background shadow-lg hover:bg-muted disabled:opacity-0 disabled:pointer-events-none"
+        {/* Right Arrow */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-background rounded-full shadow-lg flex items-center justify-center hover:bg-muted transition-colors -mr-4"
           >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
+            <ChevronRight className="h-5 w-5 text-foreground" />
+          </button>
+        )}
 
         {/* Cities */}
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex -ml-5">
-            {region.cities.map((city) => (
-              <div
-                key={city.slug}
-                className="min-w-0 shrink-0 grow-0 basis-[280px] pl-5"
-              >
-                <Link to={`/areas/${city.slug}`} className="block group">
-                  <div className="bg-background rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-                    {/* Image */}
-                    <div className="aspect-[4/3] overflow-hidden">
-                      <img
-                        src={city.image}
-                        alt={city.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
+        <div
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex gap-5 overflow-x-auto scrollbar-hide pb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {region.cities.map((city) => (
+            <Link
+              key={city.slug}
+              to={`/areas/${city.slug}`}
+              className="flex-shrink-0 w-[280px] group"
+            >
+              <div className="bg-background rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                {/* Image */}
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={city.image}
+                    alt={city.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
 
-                    {/* Content */}
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {city.name}
-                        </h3>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {city.description}
-                      </p>
-                      <div className="bg-muted/50 rounded-lg px-3 py-2">
-                        <p className="text-xs text-muted-foreground">
-                          {city.tags.join(' • ')}
-                        </p>
-                      </div>
-                    </div>
+                {/* Content */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {city.name}
+                    </h3>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
-                </Link>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {city.description}
+                  </p>
+                  <div className="bg-muted/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-muted-foreground">
+                      {city.tags.join(' • ')}
+                    </p>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
+            </Link>
+          ))}
         </div>
       </div>
     </motion.div>
