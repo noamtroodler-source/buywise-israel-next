@@ -1,14 +1,21 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Users, TrendingUp, Home, Star, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PropertyCard } from '@/components/property/PropertyCard';
+import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
+import { useMarketData } from '@/hooks/useMarketData';
 import { Neighborhood } from '@/types/content';
+
+// Market Dashboard Components
+import { MarketStatsCards } from '@/components/city/MarketStatsCards';
+import { PriceTrendChart } from '@/components/city/PriceTrendChart';
+import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
+import { CityCalculators } from '@/components/city/CityCalculators';
+import { ListingsCTA } from '@/components/city/ListingsCTA';
+import { NeighborhoodGrid } from '@/components/city/NeighborhoodGrid';
 
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -16,6 +23,7 @@ export default function CityDetail() {
   const { data: properties = [], isLoading: propertiesLoading } = useProperties(
     city ? { city: city.name } : undefined
   );
+  const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
@@ -39,6 +47,19 @@ export default function CityDetail() {
     return [];
   };
 
+  const getMarketTagline = () => {
+    if (marketData.length === 0) return null;
+    const latestPrice = marketData[0]?.average_price_sqm || 0;
+    const nationalAvg = 32000;
+    const percentAbove = ((latestPrice - nationalAvg) / nationalAvg) * 100;
+    
+    if (percentAbove > 50) return `${percentAbove.toFixed(0)}% above national average — Israel's premium market`;
+    if (percentAbove > 20) return `${percentAbove.toFixed(0)}% above national average — Strong market`;
+    if (percentAbove > 0) return `${percentAbove.toFixed(0)}% above national average`;
+    if (percentAbove > -20) return 'Competitive pricing — Great value market';
+    return 'Affordable market — Below national average';
+  };
+
   if (cityLoading) {
     return (
       <Layout>
@@ -58,7 +79,7 @@ export default function CityDetail() {
             The city you're looking for doesn't exist.
           </p>
           <Button asChild>
-            <Link to="/cities">Browse All Cities</Link>
+            <Link to="/areas">Browse All Cities</Link>
           </Button>
         </div>
       </Layout>
@@ -66,145 +87,99 @@ export default function CityDetail() {
   }
 
   const neighborhoods = getNeighborhoods();
+  const marketTagline = getMarketTagline();
 
   return (
     <Layout>
       <div className="min-h-screen">
         {/* Hero Section */}
-        <div className="relative h-[40vh] min-h-[300px]">
+        <div className="relative h-[45vh] min-h-[350px]">
           <img
             src={city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
             alt={city.name}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
           <div className="absolute bottom-0 left-0 right-0 p-8">
             <div className="container">
-              <Button variant="ghost" className="text-white mb-4" asChild>
-                <Link to="/cities">
+              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" asChild>
+                <Link to="/areas">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   All Cities
                 </Link>
               </Button>
-              <h1 className="text-5xl font-bold text-white mb-2">{city.name}</h1>
-              <div className="flex items-center gap-4 text-white/80">
-                <div className="flex items-center gap-1">
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">{city.name}</h1>
+              
+              {/* Market Tagline */}
+              {marketTagline && (
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg text-white/90 font-medium mb-4"
+                >
+                  {marketTagline}
+                </motion.p>
+              )}
+              
+              <div className="flex flex-wrap items-center gap-4 text-white/80">
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <Users className="h-4 w-4" />
-                  {formatPopulation(city.population)}
+                  <span className="text-sm font-medium">{formatPopulation(city.population)}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
                   <TrendingUp className="h-4 w-4" />
-                  Avg. {formatPrice(city.average_price)}
+                  <span className="text-sm font-medium">Avg. {formatPrice(city.average_price)}</span>
                 </div>
+                {city.highlights && city.highlights.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-2">
+                    {city.highlights.slice(0, 3).map((highlight, index) => (
+                      <Badge key={index} variant="secondary" className="bg-white/10 text-white border-0 backdrop-blur-sm">
+                        {highlight}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="container py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
-            {/* Description */}
-            {city.description && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>About {city.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{city.description}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Highlights */}
-            {city.highlights && city.highlights.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-accent" />
-                    Highlights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {city.highlights.map((highlight, index) => (
-                      <Badge key={index} variant="secondary" className="text-sm">
-                        {highlight}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Neighborhoods */}
-            {neighborhoods.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
-                    Neighborhoods
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {neighborhoods.map((neighborhood, index) => (
-                      <div
-                        key={index}
-                        className="p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <h3 className="font-semibold text-foreground">{neighborhood.name}</h3>
-                        {neighborhood.description && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {neighborhood.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Properties in this City */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <Home className="h-6 w-6 text-primary" />
-                  Properties in {city.name}
-                </h2>
-                <Button variant="outline" asChild>
-                  <Link to={`/listings?city=${encodeURIComponent(city.name)}`}>
-                    View All
-                  </Link>
-                </Button>
-              </div>
-
-              {propertiesLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : properties.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <Home className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">
-                      No properties currently listed in {city.name}
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {properties.slice(0, 6).map((property) => (
-                    <PropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
-              )}
+        {/* Main Content - Interactive Dashboard */}
+        <div className="container py-8 space-y-8">
+          {/* Market Stats Cards */}
+          {marketLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          </motion.div>
+          ) : marketData.length > 0 ? (
+            <MarketStatsCards marketData={marketData} cityName={city.name} />
+          ) : null}
+
+          {/* Two Column Layout for Chart and Tabs */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Price Trend Chart */}
+            {marketData.length > 0 && (
+              <PriceTrendChart marketData={marketData} cityName={city.name} />
+            )}
+
+            {/* Market Reality Tabs */}
+            {marketData.length > 0 && (
+              <MarketRealityTabs 
+                marketData={marketData} 
+                cityName={city.name}
+                propertiesCount={properties.length}
+              />
+            )}
+          </div>
+
+          {/* Neighborhoods */}
+          <NeighborhoodGrid neighborhoods={neighborhoods} cityName={city.name} />
+
+          {/* Run the Numbers - Calculators */}
+          <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
+
+          {/* Browse Listings CTA */}
+          <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
         </div>
       </div>
     </Layout>
