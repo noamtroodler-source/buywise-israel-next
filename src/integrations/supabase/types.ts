@@ -551,6 +551,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           city: string
+          condition: string | null
           created_at: string
           currency: string | null
           description: string | null
@@ -558,13 +559,16 @@ export type Database = {
           floor: number | null
           id: string
           images: string[] | null
+          is_accessible: boolean | null
           is_featured: boolean | null
+          is_furnished: boolean | null
           is_published: boolean | null
           latitude: number | null
           listing_status: Database["public"]["Enums"]["listing_status"]
           longitude: number | null
           lot_size_sqm: number | null
           neighborhood: string | null
+          parking: number | null
           price: number
           property_type: Database["public"]["Enums"]["property_type"]
           size_sqm: number | null
@@ -580,6 +584,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city: string
+          condition?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -587,13 +592,16 @@ export type Database = {
           floor?: number | null
           id?: string
           images?: string[] | null
+          is_accessible?: boolean | null
           is_featured?: boolean | null
+          is_furnished?: boolean | null
           is_published?: boolean | null
           latitude?: number | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
+          parking?: number | null
           price: number
           property_type?: Database["public"]["Enums"]["property_type"]
           size_sqm?: number | null
@@ -609,6 +617,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string
+          condition?: string | null
           created_at?: string
           currency?: string | null
           description?: string | null
@@ -616,13 +625,16 @@ export type Database = {
           floor?: number | null
           id?: string
           images?: string[] | null
+          is_accessible?: boolean | null
           is_featured?: boolean | null
+          is_furnished?: boolean | null
           is_published?: boolean | null
           latitude?: number | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
+          parking?: number | null
           price?: number
           property_type?: Database["public"]["Enums"]["property_type"]
           size_sqm?: number | null
@@ -672,6 +684,54 @@ export type Database = {
           price_min?: number
           rooms?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      search_alerts: {
+        Row: {
+          created_at: string | null
+          filters: Json
+          frequency: string
+          id: string
+          is_active: boolean | null
+          listing_type: string
+          name: string | null
+          notify_email: boolean | null
+          notify_sms: boolean | null
+          notify_whatsapp: boolean | null
+          phone: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filters?: Json
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          listing_type?: string
+          name?: string | null
+          notify_email?: boolean | null
+          notify_sms?: boolean | null
+          notify_whatsapp?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filters?: Json
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          listing_type?: string
+          name?: string | null
+          notify_email?: boolean | null
+          notify_sms?: boolean | null
+          notify_whatsapp?: boolean | null
+          phone?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

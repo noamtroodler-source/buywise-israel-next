@@ -81,7 +81,8 @@ export function useCreateProperty() {
         .insert({
           ...propertyData,
           agent_id: agentProfile.id,
-        })
+          property_type: propertyData.property_type as any,
+        } as any)
         .select()
         .single();
 
@@ -106,7 +107,7 @@ export function useUpdateProperty() {
     mutationFn: async ({ id, ...propertyData }: Partial<Property> & { id: string }) => {
       const { data, error } = await supabase
         .from('properties')
-        .update(propertyData)
+        .update(propertyData as any)
         .eq('id', id)
         .select()
         .single();

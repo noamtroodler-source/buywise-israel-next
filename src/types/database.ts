@@ -1,5 +1,9 @@
-export type PropertyType = 'apartment' | 'house' | 'penthouse' | 'cottage' | 'land' | 'commercial';
+export type PropertyType = 'apartment' | 'garden_apartment' | 'penthouse' | 'mini_penthouse' | 'duplex' | 'house' | 'cottage' | 'land' | 'commercial';
 export type ListingStatus = 'for_sale' | 'for_rent' | 'sold' | 'rented';
+export type ListingType = 'for_sale' | 'for_rent' | 'projects';
+export type PropertyCondition = 'new' | 'renovated' | 'good' | 'needs_renovation';
+export type AlertFrequency = 'instant' | 'daily' | 'weekly';
+export type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'size_desc' | 'rooms_desc';
 export type AppRole = 'admin' | 'agent' | 'user';
 
 export interface Profile {
@@ -63,6 +67,10 @@ export interface Property {
   views_count: number;
   is_featured: boolean;
   is_published: boolean;
+  parking: number;
+  condition: PropertyCondition | null;
+  is_furnished: boolean;
+  is_accessible: boolean;
   created_at: string;
   updated_at: string;
   agent?: Agent;
@@ -94,8 +102,31 @@ export interface PropertyFilters {
   listing_status?: ListingStatus;
   min_price?: number;
   max_price?: number;
-  min_bedrooms?: number;
-  max_bedrooms?: number;
+  min_rooms?: number;
+  max_rooms?: number;
+  min_bathrooms?: number;
   min_size?: number;
   max_size?: number;
+  min_parking?: number;
+  features?: string[];
+  condition?: PropertyCondition[];
+  is_furnished?: boolean;
+  is_accessible?: boolean;
+  sort_by?: SortOption;
+}
+
+export interface SearchAlert {
+  id: string;
+  user_id: string;
+  name: string | null;
+  filters: PropertyFilters;
+  listing_type: ListingType;
+  frequency: AlertFrequency;
+  notify_email: boolean;
+  notify_whatsapp: boolean;
+  notify_sms: boolean;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
