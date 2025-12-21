@@ -56,25 +56,28 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   
   return (
     <div 
-      className="group bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
       onClick={onClick}
     >
-      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
-        <Icon className="h-6 w-6 text-primary" />
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground mb-1">
+            {tool.label}
+          </h3>
+          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
+            {tool.description}
+          </p>
+        </div>
       </div>
-      
-      <h3 className="text-lg font-semibold text-foreground mb-2">
-        {tool.label}
-      </h3>
-      
-      <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">
-        {tool.description}
-      </p>
-      
-      <button className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all self-end mt-auto">
-        Open tool
-        <ArrowRight className="h-4 w-4" />
-      </button>
+      <div className="flex justify-end mt-3">
+        <span className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+          Open tool
+          <ArrowRight className="h-4 w-4" />
+        </span>
+      </div>
     </div>
   );
 }
@@ -89,11 +92,11 @@ export default function Tools() {
     <Layout>
       <div className="min-h-screen bg-background">
         {activeTool ? (
-          <div className="container py-8">
+          <div className="container py-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="max-w-4xl mx-auto space-y-6"
+              className="max-w-4xl mx-auto space-y-4"
             >
               <Button variant="ghost" onClick={() => setActiveTool(null)} className="gap-2 -ml-2">
                 <ArrowLeft className="h-4 w-4" />
@@ -103,80 +106,60 @@ export default function Tools() {
             </motion.div>
           </div>
         ) : (
-          <>
-            {/* Hero Header */}
-            <div className="py-16 md:py-20">
-              <div className="container">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center max-w-3xl mx-auto"
-                >
-                  <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                    Property Tools & Calculators
-                  </h1>
-                  <p className="text-lg text-muted-foreground">
-                    Powerful tools to help you make informed decisions about your property purchase in Israel
-                  </p>
-                </motion.div>
-              </div>
-            </div>
+          <div className="container py-8 md:py-12">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center max-w-2xl mx-auto mb-10"
+            >
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+                Property Tools & Calculators
+              </h1>
+              <p className="text-muted-foreground">
+                Powerful tools to help you make informed decisions about your property purchase in Israel
+              </p>
+            </motion.div>
 
             {/* Tools Grid */}
-            <div className="container pb-20">
-              <div className="space-y-16">
-                {categories.map((category, catIndex) => {
-                  const categoryTools = tools.filter(t => t.category === category);
-                  
-                  return (
-                    <motion.section 
-                      key={category}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: catIndex * 0.1 }}
-                    >
-                      <h2 className="text-2xl font-semibold text-foreground mb-6 pb-2 border-b border-border">
-                        {category}
-                      </h2>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {categoryTools.map((tool, index) => (
-                          <motion.div
-                            key={tool.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: catIndex * 0.1 + index * 0.05 }}
-                          >
-                            <ToolCard 
-                              tool={tool} 
-                              onClick={() => setActiveTool(tool.id)} 
-                            />
-                          </motion.div>
-                        ))}
-                      </div>
-                    </motion.section>
-                  );
-                })}
-              </div>
-
-              {/* Disclaimer */}
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-16 max-w-3xl mx-auto"
-              >
-                <div className="p-6 rounded-2xl bg-muted/50 text-center">
-                  <h3 className="font-semibold text-foreground mb-2">Disclaimer</h3>
-                  <p className="text-sm text-muted-foreground">
-                    These tools provide estimates for informational purposes only. 
-                    Actual costs may vary based on individual circumstances, market conditions, 
-                    and lender requirements. Consult with a financial advisor or mortgage 
-                    professional for personalized advice.
-                  </p>
-                </div>
-              </motion.div>
+            <div className="space-y-8">
+              {categories.map((category, catIndex) => {
+                const categoryTools = tools.filter(t => t.category === category);
+                
+                return (
+                  <motion.section 
+                    key={category}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: catIndex * 0.05 }}
+                  >
+                    <h2 className="text-lg font-semibold text-foreground mb-4">
+                      {category}
+                    </h2>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {categoryTools.map((tool) => (
+                        <ToolCard 
+                          key={tool.id}
+                          tool={tool} 
+                          onClick={() => setActiveTool(tool.id)} 
+                        />
+                      ))}
+                    </div>
+                  </motion.section>
+                );
+              })}
             </div>
-          </>
+
+            {/* Disclaimer */}
+            <div className="mt-12 max-w-2xl mx-auto">
+              <div className="p-4 rounded-xl bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">Disclaimer:</span> These tools provide estimates for informational purposes only. 
+                  Consult with a financial advisor or mortgage professional for personalized advice.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </Layout>
