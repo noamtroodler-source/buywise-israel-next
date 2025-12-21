@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, Home, BarChart3, Zap, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Home, Zap, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MarketData } from '@/types/projects';
+import { useRentalPrices } from '@/hooks/useRentalPrices';
 
 interface MarketStatsCardsProps {
   marketData: MarketData[];
@@ -15,6 +18,9 @@ const getMonthName = (month: number | null) => {
 };
 
 export function MarketStatsCards({ marketData, cityName }: MarketStatsCardsProps) {
+  const [selectedRooms, setSelectedRooms] = useState<number>(3);
+  const { data: rentalPrices } = useRentalPrices(cityName);
+  
   const latestData = marketData[0];
   const previousData = marketData[1];
 
@@ -31,41 +37,19 @@ export function MarketStatsCards({ marketData, cityName }: MarketStatsCardsProps
     return `₪${(value / 1000).toFixed(0)}K`;
   };
 
+  const formatRentalPrice = (value: number) => {
+    return `₪${value.toLocaleString()}`;
+  };
+
   const getPriceChange = () => {
     if (!latestData?.price_change_percent) return null;
     return latestData.price_change_percent;
   };
 
-  const stats = [
-    {
-      label: 'Price per m²',
-      value: formatPrice(latestData?.average_price_sqm),
-      icon: DollarSign,
-      trend: getPriceChange(),
-      description: 'Average asking price',
-    },
-    {
-      label: 'Median Price',
-      value: formatMedianPrice(latestData?.median_price),
-      icon: Home,
-      trend: previousData ? ((latestData?.median_price || 0) - (previousData?.median_price || 0)) / (previousData?.median_price || 1) * 100 : null,
-      description: 'Typical property value',
-    },
-    {
-      label: 'Monthly Sales',
-      value: latestData?.total_transactions ? `${latestData.total_transactions}` : 'N/A',
-      icon: BarChart3,
-      trend: previousData ? ((latestData?.total_transactions || 0) - (previousData?.total_transactions || 0)) / (previousData?.total_transactions || 1) * 100 : null,
-      description: 'Transactions this month',
-    },
-    {
-      label: 'Market Trend',
-      value: getPriceChange() ? `${getPriceChange()! > 0 ? '+' : ''}${getPriceChange()?.toFixed(1)}%` : 'Stable',
-      icon: Zap,
-      trend: getPriceChange(),
-      description: 'Price momentum',
-    },
-  ];
+  const selectedRentalPrice = rentalPrices?.find(rp => rp.rooms === selectedRooms);
+  const rentalPriceRange = selectedRentalPrice 
+    ? `${formatRentalPrice(selectedRentalPrice.price_min)}–${formatRentalPrice(selectedRentalPrice.price_max)}`
+    : 'N/A';
 
   const dataDate = latestData ? `${getMonthName(latestData.month)} ${latestData.year}` : null;
 
@@ -78,45 +62,159 @@ export function MarketStatsCards({ marketData, cityName }: MarketStatsCardsProps
         </div>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <stat.icon className="h-4 w-4 text-primary" />
+        {/* Price per m² Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0 }}
+        >
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </div>
+                {getPriceChange() !== null && (
+                  <div className={`flex items-center text-xs font-medium ${
+                    getPriceChange()! > 0 ? 'text-emerald-600' : getPriceChange()! < 0 ? 'text-red-500' : 'text-muted-foreground'
+                  }`}>
+                    {getPriceChange()! > 0 ? (
+                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                    ) : getPriceChange()! < 0 ? (
+                      <TrendingDown className="h-3 w-3 mr-0.5" />
+                    ) : null}
+                    {getPriceChange() !== 0 && (
+                      <span title="Month-over-Month">
+                        {Math.abs(getPriceChange()!).toFixed(1)}%
+                      </span>
+                    )}
                   </div>
-                  {stat.trend !== null && (
-                    <div className={`flex items-center text-xs font-medium ${
-                      stat.trend > 0 ? 'text-emerald-600' : stat.trend < 0 ? 'text-red-500' : 'text-muted-foreground'
-                    }`}>
-                      {stat.trend > 0 ? (
-                        <TrendingUp className="h-3 w-3 mr-0.5" />
-                      ) : stat.trend < 0 ? (
-                        <TrendingDown className="h-3 w-3 mr-0.5" />
-                      ) : null}
-                      {stat.trend !== 0 && (
-                        <span title="Month-over-Month">
-                          {Math.abs(stat.trend).toFixed(1)}%
-                        </span>
-                      )}
-                    </div>
-                  )}
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-foreground">{formatPrice(latestData?.average_price_sqm)}</p>
+                <p className="text-sm font-medium text-foreground/80">Price per m²</p>
+                <p className="text-xs text-muted-foreground">Average asking price</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Median Price Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Home className="h-4 w-4 text-primary" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-sm font-medium text-foreground/80">{stat.label}</p>
-                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                {previousData && (
+                  <div className={`flex items-center text-xs font-medium ${
+                    ((latestData?.median_price || 0) - (previousData?.median_price || 0)) > 0 ? 'text-emerald-600' : 
+                    ((latestData?.median_price || 0) - (previousData?.median_price || 0)) < 0 ? 'text-red-500' : 'text-muted-foreground'
+                  }`}>
+                    {((latestData?.median_price || 0) - (previousData?.median_price || 0)) > 0 ? (
+                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                    ) : ((latestData?.median_price || 0) - (previousData?.median_price || 0)) < 0 ? (
+                      <TrendingDown className="h-3 w-3 mr-0.5" />
+                    ) : null}
+                    <span title="Month-over-Month">
+                      {Math.abs(((latestData?.median_price || 0) - (previousData?.median_price || 0)) / (previousData?.median_price || 1) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-foreground">{formatMedianPrice(latestData?.median_price)}</p>
+                <p className="text-sm font-medium text-foreground/80">Median Price</p>
+                <p className="text-xs text-muted-foreground">Typical property value</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Rental Price Range Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Home className="h-4 w-4 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-foreground">{rentalPriceRange}</p>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={selectedRooms.toString()}
+                    onValueChange={(value) => setSelectedRooms(parseInt(value))}
+                  >
+                    <SelectTrigger className="h-7 w-auto min-w-[90px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7].map((rooms) => (
+                        <SelectItem key={rooms} value={rooms.toString()}>
+                          {rooms} {rooms === 1 ? 'room' : 'rooms'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">rent</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Typical monthly rent</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Market Trend Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Zap className="h-4 w-4 text-primary" />
+                </div>
+                {getPriceChange() !== null && (
+                  <div className={`flex items-center text-xs font-medium ${
+                    getPriceChange()! > 0 ? 'text-emerald-600' : getPriceChange()! < 0 ? 'text-red-500' : 'text-muted-foreground'
+                  }`}>
+                    {getPriceChange()! > 0 ? (
+                      <TrendingUp className="h-3 w-3 mr-0.5" />
+                    ) : getPriceChange()! < 0 ? (
+                      <TrendingDown className="h-3 w-3 mr-0.5" />
+                    ) : null}
+                    {getPriceChange() !== 0 && (
+                      <span title="Month-over-Month">
+                        {Math.abs(getPriceChange()!).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-foreground">
+                  {getPriceChange() ? `${getPriceChange()! > 0 ? '+' : ''}${getPriceChange()?.toFixed(1)}%` : 'Stable'}
+                </p>
+                <p className="text-sm font-medium text-foreground/80">Market Trend</p>
+                <p className="text-xs text-muted-foreground">Price momentum</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

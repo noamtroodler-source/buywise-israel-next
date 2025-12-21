@@ -642,6 +642,39 @@ export type Database = {
           },
         ]
       }
+      rental_prices: {
+        Row: {
+          city: string
+          created_at: string | null
+          currency: string | null
+          id: string
+          price_max: number
+          price_min: number
+          rooms: number
+          updated_at: string | null
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          price_max: number
+          price_min: number
+          rooms: number
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          price_max?: number
+          price_min?: number
+          rooms?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
