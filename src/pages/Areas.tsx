@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Search, Building, Heart, Trees, Sun, MapPin } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Search, Building, Star, Heart, Trees, Sun, MapPin } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,13 @@ import petahTikvaImg from '@/assets/cities/petah-tikva.jpg';
 import shohamImg from '@/assets/cities/shoham.jpg';
 import haderaImg from '@/assets/cities/hadera.jpg';
 import caesareaImg from '@/assets/cities/caesarea.jpg';
+import jerusalemImg from '@/assets/cities/jerusalem.jpg';
+import beitShemeshImg from '@/assets/cities/beit-shemesh.jpg';
+import efratImg from '@/assets/cities/efrat.jpg';
+import gushEtzionImg from '@/assets/cities/gush-etzion.jpg';
+import maaleAdumimImg from '@/assets/cities/maale-adumim.jpg';
+import mevaseretZionImg from '@/assets/cities/mevaseret-zion.jpg';
+import givatZeevImg from '@/assets/cities/givat-zeev.jpg';
 import zichronYaakovImg from '@/assets/cities/zichron-yaakov.jpg';
 import pardesHannaImg from '@/assets/cities/pardes-hanna.jpg';
 import kiryatTivonImg from '@/assets/cities/kiryat-tivon.jpg';
@@ -91,6 +98,22 @@ const regions: Region[] = [
     ],
   },
   {
+    id: 'jerusalem',
+    name: 'Jerusalem & Surroundings',
+    shortName: 'Jerusalem',
+    subtitle: 'History, meaning & community',
+    icon: Star,
+    cities: [
+      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem's real estate market is characterized by high demand and varied neighborhoods...", tags: ['High demand', 'Varied neighborhoods'] },
+      { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: 'Beit Shemesh has experienced rapid expansion with new construction...', tags: ['Rapid growth', 'New construction'] },
+      { name: 'Efrat', slug: 'efrat', image: efratImg, description: 'Efrat is a mid-sized community with a relatively established market...', tags: ['Established community', 'Limited inventory'] },
+      { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg, description: 'Gush Etzion encompasses multiple distinct communities...', tags: ['Multiple communities', 'Varied options'] },
+      { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg, description: 'Large suburban city east of Jerusalem with established infrastructure...', tags: ['Established suburb', 'Jerusalem access'] },
+      { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg, description: 'Upscale suburb on the outskirts of Jerusalem...', tags: ['Upscale suburb', 'Nature access'] },
+      { name: "Givat Ze'ev", slug: 'givat-zeev', image: givatZeevImg, description: 'Growing community north of Jerusalem with affordable options...', tags: ['Growing community', 'Affordable'] },
+    ],
+  },
+  {
     id: 'northern',
     name: 'Northern Israel',
     shortName: 'Northern',
@@ -153,7 +176,7 @@ function RegionQuickNav({
     >
       <div className="container">
         <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
-          {regions.map((region) => {
+          {regions.filter(r => r.id !== 'jerusalem').map((region) => {
             const Icon = region.icon;
             const isActive = activeRegion === region.id;
             
