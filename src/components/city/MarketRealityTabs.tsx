@@ -26,16 +26,15 @@ export function MarketRealityTabs({
   const pricePerSqm = latestData?.average_price_sqm || 0;
   const percentAboveNational = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
   
-  // Default property types if none provided
-  const defaultPropertyTypes = [
-    { name: 'Apartments', value: 65 },
-    { name: 'Houses', value: 20 },
-    { name: 'Penthouses', value: 10 },
-    { name: 'Commercial', value: 5 },
+  // Default listing types if none provided
+  const defaultListingTypes = [
+    { name: 'Resell', value: 55 },
+    { name: 'Projects', value: 30 },
+    { name: 'Long-term Rentals', value: 15 },
   ];
   
-  const typesData = propertyTypes.length > 0 ? propertyTypes : defaultPropertyTypes;
-  const COLORS = ['hsl(213, 94%, 45%)', 'hsl(45, 100%, 51%)', 'hsl(142, 76%, 36%)', 'hsl(215, 16%, 47%)'];
+  const typesData = propertyTypes.length > 0 ? propertyTypes : defaultListingTypes;
+  const COLORS = ['hsl(213, 94%, 45%)', 'hsl(142, 76%, 36%)', 'hsl(45, 100%, 51%)'];
 
   const getPricePosition = () => {
     // Returns 0-100 position on affordability scale
@@ -161,8 +160,8 @@ export function MarketRealityTabs({
               </div>
               <div className="bg-muted/50 rounded-lg p-4 mt-4">
                 <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Apartments dominate</strong> {cityName}'s real estate market, 
-                  typical for urban Israeli markets. Houses and penthouses command premium prices.
+                  <strong className="text-foreground">Resell properties lead</strong> {cityName}'s market. 
+                  New projects offer modern options, while long-term rentals provide flexibility.
                 </p>
               </div>
             </TabsContent>
