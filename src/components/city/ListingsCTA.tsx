@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Home, Building2, Key, ArrowRight } from 'lucide-react';
+import { Home, Building2, Key } from 'lucide-react';
 
 interface ListingsCTAProps {
   cityName: string;
@@ -31,11 +31,10 @@ export function ListingsCTA({ cityName, propertiesCount }: ListingsCTAProps) {
           </div>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" className="w-full sm:w-auto" asChild>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto" asChild>
               <Link to={`/listings?city=${encodeURIComponent(cityName)}`}>
                 <Home className="h-4 w-4 mr-2" />
                 Homes for Sale
-                <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
             <Button variant="outline" size="lg" className="w-full sm:w-auto" asChild>
@@ -44,7 +43,7 @@ export function ListingsCTA({ cityName, propertiesCount }: ListingsCTAProps) {
                 New Projects
               </Link>
             </Button>
-            <Button variant="ghost" size="lg" className="w-full sm:w-auto" asChild>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto" asChild>
               <Link to={`/listings?city=${encodeURIComponent(cityName)}&status=for_rent`}>
                 <Key className="h-4 w-4 mr-2" />
                 Rentals
