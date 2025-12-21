@@ -163,7 +163,7 @@ function RegionQuickNav({
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b border-border py-4"
+      className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border py-4"
     >
       <div className="container">
         <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
