@@ -176,7 +176,7 @@ function RegionQuickNav({
     >
       <div className="container">
         <div className="flex items-center justify-center gap-3 md:gap-6 overflow-x-auto scrollbar-hide pb-1">
-          {regions.filter(r => r.id !== 'jerusalem').map((region) => {
+          {regions.map((region) => {
             const Icon = region.icon;
             const isActive = activeRegion === region.id;
             
