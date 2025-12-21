@@ -263,11 +263,13 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isScrollable, setIsScrollable] = useState(false);
 
   const checkScroll = () => {
     if (scrollRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
       const maxScroll = scrollWidth - clientWidth;
+      setIsScrollable(maxScroll > 10);
       setScrollProgress(maxScroll > 0 ? scrollLeft / maxScroll : 0);
       setCanScrollLeft(scrollLeft > 10);
       setCanScrollRight(scrollLeft < maxScroll - 10);
@@ -276,6 +278,8 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
 
   useEffect(() => {
     checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
   }, []);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -317,34 +321,34 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
         {/* Carousel */}
         <div className="relative">
           {/* Left Arrow */}
-          <AnimatePresence>
-            {canScrollLeft && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => scroll('left')}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all -ml-4 border border-border"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {isScrollable && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: canScrollLeft ? 1 : 0.4, scale: 1 }}
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -ml-4 border border-border ${
+                canScrollLeft ? 'hover:bg-primary hover:text-primary-foreground cursor-pointer' : 'cursor-not-allowed'
+              }`}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </motion.button>
+          )}
 
           {/* Right Arrow */}
-          <AnimatePresence>
-            {canScrollRight && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => scroll('right')}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all -mr-4 border border-border"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </motion.button>
-            )}
-          </AnimatePresence>
+          {isScrollable && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: canScrollRight ? 1 : 0.4, scale: 1 }}
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-background rounded-full shadow-xl flex items-center justify-center transition-all -mr-4 border border-border ${
+                canScrollRight ? 'hover:bg-primary hover:text-primary-foreground cursor-pointer' : 'cursor-not-allowed'
+              }`}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </motion.button>
+          )}
 
           {/* Cities */}
           <div
@@ -360,16 +364,18 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
             ))}
           </div>
 
-          {/* Progress Indicator */}
-          <div className="mt-4 flex justify-center">
-            <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-primary rounded-full"
-                style={{ width: `${Math.max(20, scrollProgress * 100)}%` }}
-                transition={{ duration: 0.2 }}
-              />
+          {/* Progress Indicator - only show when scrollable */}
+          {isScrollable && (
+            <div className="mt-4 flex justify-center">
+              <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+                <motion.div 
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${Math.max(20, scrollProgress * 100)}%` }}
+                  transition={{ duration: 0.2 }}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </motion.section>
