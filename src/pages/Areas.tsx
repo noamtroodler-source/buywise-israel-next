@@ -82,7 +82,7 @@ const regions: Region[] = [
     id: 'central',
     name: 'Central Israel',
     shortName: 'Central',
-    subtitle: 'Family suburbs, commuter value & growing communities',
+    subtitle: 'Family suburbs, Jerusalem area & growing communities',
     icon: Building,
     cities: [
       { name: "Ra'anana", slug: 'raanana', image: raananaImg, description: "Ra'anana is an established suburban city with premium pricing...", tags: ['Established suburban', 'Premium pricing'] },
@@ -95,15 +95,6 @@ const regions: Region[] = [
       { name: 'Shoham', slug: 'shoham', image: shohamImg, description: 'Upscale community with excellent quality of life...', tags: ['Upscale community', 'High quality'] },
       { name: 'Hadera', slug: 'hadera', image: haderaImg, description: 'Affordable option with improving infrastructure...', tags: ['Affordable', 'Improving area'] },
       { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: 'Exclusive community with luxury properties...', tags: ['Luxury market', 'Exclusive area'] },
-    ],
-  },
-  {
-    id: 'jerusalem',
-    name: 'Jerusalem & Surroundings',
-    shortName: 'Jerusalem',
-    subtitle: 'History, meaning & community',
-    icon: Star,
-    cities: [
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem's real estate market is characterized by high demand and varied neighborhoods...", tags: ['High demand', 'Varied neighborhoods'] },
       { name: 'Beit Shemesh', slug: 'beit-shemesh', image: beitShemeshImg, description: 'Beit Shemesh has experienced rapid expansion with new construction...', tags: ['Rapid growth', 'New construction'] },
       { name: 'Efrat', slug: 'efrat', image: efratImg, description: 'Efrat is a mid-sized community with a relatively established market...', tags: ['Established community', 'Limited inventory'] },
