@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Loader2, TrendingUp, Clock, Bookmark, Lightbulb, BarChart3 } from 'lucide-react';
+import { BookOpen, Loader2, TrendingUp, Clock, Lightbulb, BarChart3 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useBlogPosts, useBlogCategories, useBlogCities } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { BlogFilters } from '@/components/blog/BlogFilters';
 import { BlogCard } from '@/components/blog/BlogCard';
-import { FeaturedArticle } from '@/components/blog/FeaturedArticle';
 import { BlogSection } from '@/components/blog/BlogSection';
 import { BlogSortOption, BlogAudience } from '@/types/content';
 import { useSearchParams } from 'react-router-dom';
@@ -60,23 +59,17 @@ export default function Blog() {
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
 
-  // Get featured article (most viewed from all posts)
-  const featuredPost = useMemo(() => {
-    if (hasActiveFilters) return null;
-    return popularPosts[0] || allPosts[0] || null;
-  }, [popularPosts, allPosts, hasActiveFilters]);
-
-  // Get latest articles (excluding featured)
+  // Get latest articles
   const latestPosts = useMemo(() => {
     if (hasActiveFilters) return [];
-    return allPosts.filter(p => p.id !== featuredPost?.id).slice(0, 8);
-  }, [allPosts, featuredPost, hasActiveFilters]);
+    return allPosts.slice(0, 8);
+  }, [allPosts, hasActiveFilters]);
 
-  // Get popular articles (excluding featured)
+  // Get popular articles
   const trendingPosts = useMemo(() => {
     if (hasActiveFilters) return [];
-    return popularPosts.filter(p => p.id !== featuredPost?.id).slice(0, 8);
-  }, [popularPosts, featuredPost, hasActiveFilters]);
+    return popularPosts.slice(0, 8);
+  }, [popularPosts, hasActiveFilters]);
 
   // Group posts by category for topic sections
   const postsByCategory = useMemo(() => {
@@ -105,40 +98,27 @@ export default function Blog() {
 
   return (
     <Layout>
-      {/* Featured Article Hero (only when no filters) */}
-      {!hasActiveFilters && featuredPost && (
-        <section className="container pt-8 pb-4">
-          <FeaturedArticle
-            post={featuredPost}
-            isSaved={isArticleSaved(featuredPost.id)}
-            onToggleSave={toggleSave}
-          />
-        </section>
-      )}
-
-      {/* Hero with title (when filters active or no featured) */}
-      {(hasActiveFilters || !featuredPost) && (
-        <section className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b border-border/50">
-          <div className="container py-12 md:py-16">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="max-w-3xl mx-auto text-center space-y-4"
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <BookOpen className="h-4 w-4" />
-                Expert Insights & Guides
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-                Blog & Guides
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Expert insights, buying guides, and market updates to help you make informed real estate decisions in Israel.
-              </p>
-            </motion.div>
-          </div>
-        </section>
-      )}
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b border-border/50">
+        <div className="container py-12 md:py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-3xl mx-auto text-center space-y-4"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <BookOpen className="h-4 w-4" />
+              Expert Insights & Guides
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
+              Blog & Guides
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Expert insights, buying guides, and market updates to help you make informed real estate decisions in Israel.
+            </p>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Content Section */}
       <div className="container py-8 md:py-12">
