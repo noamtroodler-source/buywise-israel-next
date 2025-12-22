@@ -104,9 +104,6 @@ export function HeroSection() {
                     <SelectItem value="apartment">Apartment</SelectItem>
                     <SelectItem value="house">House</SelectItem>
                     <SelectItem value="penthouse">Penthouse</SelectItem>
-                    <SelectItem value="cottage">Cottage</SelectItem>
-                    <SelectItem value="land">Land</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button type="submit" size="lg" className="h-12 px-8 gap-2">
