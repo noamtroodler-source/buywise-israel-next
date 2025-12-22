@@ -94,7 +94,7 @@ export function SimilarProperties({ currentProperty }: SimilarPropertiesProps) {
           ) : (
             properties?.map((property) => (
               <div key={property.id} className="flex-[0_0_280px] md:flex-[0_0_300px]">
-                <PropertyCard property={property} />
+                <PropertyCard property={property} showCompareButton={false} />
               </div>
             ))
           )}
