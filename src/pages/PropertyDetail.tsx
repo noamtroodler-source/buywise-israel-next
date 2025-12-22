@@ -13,7 +13,6 @@ import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { CalculatorCTA } from '@/components/property/CalculatorCTA';
 import { CityMarketCTA } from '@/components/property/CityMarketCTA';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
-import { PersonalizedRecommendations } from '@/components/property/PersonalizedRecommendations';
 import { motion } from 'framer-motion';
 
 export default function PropertyDetail() {
@@ -145,9 +144,6 @@ export default function PropertyDetail() {
 
         {/* Similar Properties - Full Width */}
         <SimilarProperties currentProperty={property} />
-
-        {/* Personalized Recommendations - Full Width */}
-        <PersonalizedRecommendations currentProperty={property} />
       </div>
 
       {/* Mobile Contact Bar */}
