@@ -10,6 +10,8 @@ import { AgentContactSection } from '@/components/property/AgentContactSection';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { CalculatorCTA } from '@/components/property/CalculatorCTA';
+import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { motion } from 'framer-motion';
 
 export default function PropertyDetail() {
@@ -120,6 +122,9 @@ export default function PropertyDetail() {
                 longitude={property.longitude}
               />
             </motion.div>
+
+            {/* Calculator Quick Links */}
+            <CalculatorCTA propertyPrice={property.price} />
           </div>
 
           {/* Sticky Sidebar - Desktop Only */}
@@ -132,6 +137,9 @@ export default function PropertyDetail() {
             </div>
           </div>
         </div>
+
+        {/* Similar Properties - Full Width */}
+        <SimilarProperties currentProperty={property} />
       </div>
 
       {/* Mobile Contact Bar */}
