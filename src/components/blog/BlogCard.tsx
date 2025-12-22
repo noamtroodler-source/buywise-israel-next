@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Eye, Clock, Bookmark } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Calendar, Eye, Clock, Bookmark, ArrowUpRight } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BlogPost } from '@/types/content';
@@ -19,39 +19,85 @@ export function BlogCard({ post, index, isSaved, onToggleSave }: BlogCardProps) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.4 }}
+      transition={{ delay: index * 0.05, duration: 0.4 }}
+      className="h-full"
     >
-      <Card className="h-full overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 group">
-        <Link to={`/blog/${post.slug}`}>
-          <div className="aspect-[16/10] overflow-hidden relative">
+      <Card className="h-full overflow-hidden rounded-2xl border-0 bg-card shadow-md hover:shadow-2xl transition-all duration-500 group relative">
+        {/* Image Container */}
+        <Link to={`/blog/${post.slug}`} className="block">
+          <div className="aspect-[4/3] overflow-hidden relative">
             <img
               src={post.cover_image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
               alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+            
+            {/* Category Badge */}
             {post.category && (
               <Badge 
-                variant="secondary" 
-                className="absolute top-3 left-3 text-xs bg-background/95 backdrop-blur-sm shadow-sm rounded-full px-3"
+                className="absolute top-4 left-4 bg-white/95 text-foreground backdrop-blur-sm shadow-lg rounded-full px-3 py-1 text-xs font-semibold"
               >
                 {post.category.name}
               </Badge>
             )}
+
+            {/* Save Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "absolute top-4 right-4 h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all",
+                isSaved && "bg-primary/90 hover:bg-primary"
+              )}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleSave(post.id);
+              }}
+            >
+              <Bookmark 
+                className={cn(
+                  "h-4 w-4 transition-colors",
+                  isSaved ? "fill-white text-white" : "text-foreground"
+                )} 
+              />
+            </Button>
+
+            {/* Read More Arrow - appears on hover */}
+            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-lg">
+                <ArrowUpRight className="h-5 w-5 text-foreground" />
+              </div>
+            </div>
+
+            {/* Reading Time Badge */}
+            {post.reading_time_minutes && (
+              <div className="absolute bottom-4 left-4 flex items-center gap-1.5 text-white/90 text-xs font-medium">
+                <Clock className="h-3.5 w-3.5" />
+                {post.reading_time_minutes} min
+              </div>
+            )}
           </div>
         </Link>
-        <CardContent className="p-4 space-y-3">
+
+        {/* Content */}
+        <div className="p-5 space-y-3">
           <Link to={`/blog/${post.slug}`}>
-            <h2 className="font-semibold text-base text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+            <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
               {post.title}
-            </h2>
+            </h3>
           </Link>
+          
           {post.excerpt && (
             <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
               {post.excerpt}
             </p>
           )}
-          <div className="flex items-center justify-between pt-2 border-t border-border/50">
+
+          {/* Footer Meta */}
+          <div className="flex items-center justify-between pt-3 border-t border-border/30">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
@@ -63,32 +109,9 @@ export function BlogCard({ post, index, isSaved, onToggleSave }: BlogCardProps) 
                 <Eye className="h-3.5 w-3.5" />
                 {post.views_count || 0}
               </div>
-              {post.reading_time_minutes && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  {post.reading_time_minutes}m
-                </div>
-              )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full hover:bg-primary/10"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggleSave(post.id);
-              }}
-            >
-              <Bookmark 
-                className={cn(
-                  "h-4 w-4 transition-colors",
-                  isSaved ? "fill-primary text-primary" : "text-muted-foreground hover:text-primary"
-                )} 
-              />
-            </Button>
           </div>
-        </CardContent>
+        </div>
       </Card>
     </motion.div>
   );

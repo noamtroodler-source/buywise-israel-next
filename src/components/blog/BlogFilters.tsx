@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,165 +63,172 @@ export function BlogFilters({
     selectedAudiences.length;
 
   return (
-    <div className="space-y-6">
-      {/* Row 1: Search + Sort */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="space-y-4">
+      {/* Sleek Filter Bar */}
+      <div className="flex flex-col lg:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+        {/* Search */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search articles..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-11 h-11 rounded-xl bg-background border-border/50 focus:border-primary"
+            className="pl-10 h-10 rounded-xl bg-background border-border/50 focus:border-primary focus:ring-2 focus:ring-primary/20"
           />
         </div>
-        <Select value={sortBy} onValueChange={(value) => onSortChange(value as BlogSortOption)}>
-          <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-background border-border/50">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="most_viewed">Most Viewed</SelectItem>
-            <SelectItem value="most_saved">Most Saved</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Row 2: Category pills - horizontally scrollable */}
-      <div className="relative">
-        <ScrollArea className="w-full">
-          <div className="flex gap-2 pb-2 px-1">
-            <Button
-              variant={!selectedCategory ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onCategoryChange(null)}
-              className={cn(
-                "rounded-full px-4 h-9 text-sm font-medium whitespace-nowrap transition-all",
-                !selectedCategory 
-                  ? "bg-primary text-primary-foreground shadow-md" 
-                  : "bg-background hover:bg-accent border-border/50"
-              )}
-            >
-              All Articles
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.slug ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onCategoryChange(category.slug)}
+        {/* Filters Group */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={(value) => onSortChange(value as BlogSortOption)}>
+            <SelectTrigger className="w-[140px] h-10 rounded-xl bg-background border-border/50 text-sm">
+              <Sparkles className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="most_viewed">Most Viewed</SelectItem>
+              <SelectItem value="most_saved">Most Saved</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* City */}
+          <Select 
+            value={selectedCity || 'all'} 
+            onValueChange={(value) => onCityChange(value === 'all' ? null : value)}
+          >
+            <SelectTrigger className="w-[130px] h-10 rounded-xl bg-background border-border/50 text-sm">
+              <SelectValue placeholder="All Cities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {cities.map((city) => (
+                <SelectItem key={city} value={city}>
+                  {city}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Audience */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
                 className={cn(
-                  "rounded-full px-4 h-9 text-sm font-medium whitespace-nowrap transition-all",
-                  selectedCategory === category.slug 
-                    ? "bg-primary text-primary-foreground shadow-md" 
-                    : "bg-background hover:bg-accent border-border/50"
+                  "h-10 rounded-xl px-4 text-sm gap-2 bg-background border-border/50",
+                  selectedAudiences.length > 0 && "border-primary/50 bg-primary/5"
                 )}
               >
-                {category.name}
+                <SlidersHorizontal className="h-4 w-4" />
+                Audience
+                {selectedAudiences.length > 0 && (
+                  <Badge className="h-5 px-1.5 text-xs rounded-full bg-primary text-primary-foreground">
+                    {selectedAudiences.length}
+                  </Badge>
+                )}
               </Button>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" className="invisible" />
-        </ScrollArea>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 rounded-xl p-4" align="end">
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-foreground">Filter by audience</p>
+                {AUDIENCE_OPTIONS.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={option.value}
+                      checked={selectedAudiences.includes(option.value)}
+                      onCheckedChange={() => handleAudienceToggle(option.value)}
+                      className="rounded"
+                    />
+                    <Label htmlFor={option.value} className="text-sm cursor-pointer">
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+                {selectedAudiences.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs mt-2"
+                    onClick={() => onAudienceChange([])}
+                  >
+                    Clear audience
+                  </Button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Row 3: City + Audience filters */}
-      <div className="flex flex-wrap gap-3 items-center justify-center">
-        <Select 
-          value={selectedCity || 'all'} 
-          onValueChange={(value) => onCityChange(value === 'all' ? null : value)}
-        >
-          <SelectTrigger className="w-[150px] h-9 rounded-full text-sm bg-background border-border/50">
-            <SelectValue placeholder="All Cities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Cities</SelectItem>
-            {cities.map((city) => (
-              <SelectItem key={city} value={city}>
-                {city}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="h-9 rounded-full px-4 text-sm gap-2 bg-background border-border/50"
+      {/* Category Pills */}
+      <ScrollArea className="w-full">
+        <div className="flex gap-2 pb-2">
+          <Button
+            variant={!selectedCategory ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onCategoryChange(null)}
+            className={cn(
+              "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all",
+              !selectedCategory 
+                ? "bg-primary text-primary-foreground shadow-lg" 
+                : "bg-background hover:bg-accent border-border/50 hover:border-primary/50"
+            )}
+          >
+            All Articles
+          </Button>
+          {categories.map((category) => (
+            <Button
+              key={category.id}
+              variant={selectedCategory === category.slug ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onCategoryChange(category.slug)}
+              className={cn(
+                "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all",
+                selectedCategory === category.slug 
+                  ? "bg-primary text-primary-foreground shadow-lg" 
+                  : "bg-background hover:bg-accent border-border/50 hover:border-primary/50"
+              )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              Audience
-              {selectedAudiences.length > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5 text-xs rounded-full">
-                  {selectedAudiences.length}
-                </Badge>
-              )}
+              {category.name}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 rounded-xl" align="center">
-            <div className="space-y-3">
-              <p className="text-sm font-medium">Filter by audience</p>
-              {AUDIENCE_OPTIONS.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={option.value}
-                    checked={selectedAudiences.includes(option.value)}
-                    onCheckedChange={() => handleAudienceToggle(option.value)}
-                  />
-                  <Label htmlFor={option.value} className="text-sm cursor-pointer">
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-              {selectedAudiences.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs"
-                  onClick={() => onAudienceChange([])}
-                >
-                  Clear all
-                </Button>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+          ))}
+        </div>
+        <ScrollBar orientation="horizontal" className="invisible" />
+      </ScrollArea>
 
-      {/* Active filters display */}
+      {/* Active Filters */}
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2 items-center justify-center">
-          <span className="text-xs text-muted-foreground">Active filters:</span>
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-muted-foreground font-medium">Active:</span>
           {selectedCategory && (
-            <Badge variant="secondary" className="text-xs gap-1 rounded-full px-3 py-1">
+            <Badge variant="secondary" className="text-xs gap-1.5 rounded-full px-3 py-1 bg-primary/10 text-primary border-0">
               {categories.find(c => c.slug === selectedCategory)?.name}
               <button 
                 onClick={() => onCategoryChange(null)}
-                className="ml-1 hover:text-foreground"
+                className="hover:text-primary/70"
               >
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {selectedCity && (
-            <Badge variant="secondary" className="text-xs gap-1 rounded-full px-3 py-1">
+            <Badge variant="secondary" className="text-xs gap-1.5 rounded-full px-3 py-1 bg-primary/10 text-primary border-0">
               {selectedCity}
               <button 
                 onClick={() => onCityChange(null)}
-                className="ml-1 hover:text-foreground"
+                className="hover:text-primary/70"
               >
                 <X className="h-3 w-3" />
               </button>
             </Badge>
           )}
           {selectedAudiences.map((audience) => (
-            <Badge key={audience} variant="secondary" className="text-xs gap-1 rounded-full px-3 py-1">
+            <Badge key={audience} variant="secondary" className="text-xs gap-1.5 rounded-full px-3 py-1 bg-primary/10 text-primary border-0">
               {AUDIENCE_OPTIONS.find(a => a.value === audience)?.label}
               <button 
                 onClick={() => handleAudienceToggle(audience)}
-                className="ml-1 hover:text-foreground"
+                className="hover:text-primary/70"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -230,7 +237,7 @@ export function BlogFilters({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            className="h-6 text-xs text-muted-foreground hover:text-primary px-2"
             onClick={() => {
               onCategoryChange(null);
               onCityChange(null);
