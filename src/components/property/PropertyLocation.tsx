@@ -88,16 +88,14 @@ export function PropertyLocation({
           </div>
         </div>
 
-        {/* Market Insights */}
+        {/* About the City */}
         <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-          <h4 className="font-medium text-foreground mb-2">{city} Market Insights</h4>
+          <h4 className="font-medium text-foreground mb-2">About {city}</h4>
           <p className="text-sm text-muted-foreground">
-            Explore price trends, rental rates, and property values in {city}—see how the market has evolved and what to expect.
+            Discover more about life in {city}, including community information, local amenities, and market trends.
           </p>
-          <Button variant="link" className="px-0 mt-2 h-auto text-primary" asChild>
-            <a href={`/areas/${city.toLowerCase().replace(/\s+/g, '-')}`}>
-              View Market Data →
-            </a>
+          <Button variant="link" className="px-0 mt-2 h-auto text-primary">
+            View City Guide →
           </Button>
         </div>
       </div>
