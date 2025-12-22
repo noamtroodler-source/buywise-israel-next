@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
+import { CompareBar } from '@/components/property/CompareBar';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,6 +135,9 @@ export default function Listings() {
         filters={filters}
         listingType={isRentals ? 'for_rent' : 'for_sale'}
       />
+
+      {/* Compare Bar */}
+      <CompareBar />
     </Layout>
   );
 }

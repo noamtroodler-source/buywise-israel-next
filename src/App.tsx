@@ -4,10 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CompareProvider } from "@/contexts/CompareContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
+import Compare from "./pages/Compare";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
@@ -37,15 +39,17 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/listings" element={<Listings />} />
-            <Route path="/property/:id" element={<PropertyDetail />} />
-            <Route path="/auth" element={<Auth />} />
+      <CompareProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/listings" element={<Listings />} />
+              <Route path="/property/:id" element={<PropertyDetail />} />
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/auth" element={<Auth />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/areas" element={<Areas />} />
@@ -101,10 +105,11 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
             </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CompareProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
