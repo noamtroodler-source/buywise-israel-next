@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { MapPin, Bed, Bath, Maximize, Building2, Layers, Eye, Clock, Share2, Heart } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { MapPin, Bed, Bath, Maximize, Building2, Layers, Eye, Clock, Share2, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface Agent {
   name: string;
@@ -37,6 +38,11 @@ interface PropertyHeroProps {
 
 export function PropertyHero({ property, onSave, onShare, isSaved = false }: PropertyHeroProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    align: 'start',
+    containScroll: 'trimSnaps',
+    dragFree: true
+  });
   
   const images = property.images?.length 
     ? property.images 
@@ -67,6 +73,25 @@ export function PropertyHero({ property, onSave, onShare, isSaved = false }: Pro
     commercial: 'Commercial',
   };
 
+  const scrollPrev = useCallback(() => {
+    if (selectedImageIndex > 0) {
+      setSelectedImageIndex(selectedImageIndex - 1);
+    }
+  }, [selectedImageIndex]);
+
+  const scrollNext = useCallback(() => {
+    if (selectedImageIndex < images.length - 1) {
+      setSelectedImageIndex(selectedImageIndex + 1);
+    }
+  }, [selectedImageIndex, images.length]);
+
+  // Scroll thumbnail carousel to keep selected image visible
+  useEffect(() => {
+    if (emblaApi) {
+      emblaApi.scrollTo(selectedImageIndex);
+    }
+  }, [emblaApi, selectedImageIndex]);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -74,79 +99,97 @@ export function PropertyHero({ property, onSave, onShare, isSaved = false }: Pro
       transition={{ duration: 0.4 }}
       className="space-y-4"
     >
-      {/* Image Gallery */}
-      <div className="relative">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-xl overflow-hidden">
-          {/* Main Image */}
-          <div className="md:col-span-3 relative aspect-[16/10] md:aspect-[16/9]">
-            <img 
-              src={images[selectedImageIndex]} 
-              alt={property.title}
-              className="w-full h-full object-cover"
-            />
-            {/* Overlay Actions */}
-            <div className="absolute top-4 right-4 flex gap-2">
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="bg-background/90 backdrop-blur-sm hover:bg-background"
-                onClick={onShare}
-              >
-                <Share2 className="h-4 w-4 mr-1" />
-                Share
-              </Button>
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className={`bg-background/90 backdrop-blur-sm hover:bg-background ${isSaved ? 'text-red-500' : ''}`}
-                onClick={onSave}
-              >
-                <Heart className={`h-4 w-4 mr-1 ${isSaved ? 'fill-current' : ''}`} />
-                Save
-              </Button>
-            </div>
-            {/* Badge */}
-            <div className="absolute top-4 left-4">
-              <Badge className="text-sm px-3 py-1">
-                {property.listing_status === 'for_sale' ? 'For Sale' : 'For Rent'}
-              </Badge>
-            </div>
+      {/* Main Image */}
+      <div className="relative rounded-xl overflow-hidden">
+        <div className="relative aspect-[16/10] md:aspect-[16/9]">
+          <img 
+            src={images[selectedImageIndex]} 
+            alt={property.title}
+            className="w-full h-full object-cover"
+          />
+          
+          {/* Badge */}
+          <div className="absolute top-4 left-4">
+            <Badge className="text-sm px-3 py-1">
+              {property.listing_status === 'for_sale' ? 'For Sale' : 'For Rent'}
+            </Badge>
           </div>
 
-          {/* Thumbnail Grid */}
-          <div className="hidden md:grid grid-rows-3 gap-2">
-            {images.slice(1, 4).map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedImageIndex(i + 1)}
-                className={`relative aspect-[4/3] overflow-hidden rounded-lg transition-all ${
-                  selectedImageIndex === i + 1 ? 'ring-2 ring-primary' : 'hover:opacity-80'
-                }`}
-              >
-                <img src={img} alt="" className="w-full h-full object-cover" />
-                {i === 2 && images.length > 4 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <span className="text-white font-semibold">+{images.length - 4} more</span>
-                  </div>
-                )}
-              </button>
-            ))}
+          {/* Overlay Actions */}
+          <div className="absolute top-4 right-4 flex gap-2">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="bg-background/90 backdrop-blur-sm hover:bg-background"
+              onClick={onShare}
+            >
+              <Share2 className="h-4 w-4 mr-1" />
+              Share
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className={`bg-background/90 backdrop-blur-sm hover:bg-background ${isSaved ? 'text-red-500' : ''}`}
+              onClick={onSave}
+            >
+              <Heart className={`h-4 w-4 mr-1 ${isSaved ? 'fill-current' : ''}`} />
+              Save
+            </Button>
           </div>
-        </div>
 
-        {/* Mobile Image Dots */}
-        <div className="flex justify-center gap-1.5 mt-3 md:hidden">
-          {images.slice(0, 5).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setSelectedImageIndex(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                selectedImageIndex === i ? 'bg-primary w-4' : 'bg-muted-foreground/30'
-              }`}
-            />
-          ))}
+          {/* Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background disabled:opacity-50"
+                onClick={scrollPrev}
+                disabled={selectedImageIndex === 0}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background disabled:opacity-50"
+                onClick={scrollNext}
+                disabled={selectedImageIndex === images.length - 1}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </>
+          )}
+
+          {/* Image Counter */}
+          <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+            {selectedImageIndex + 1} / {images.length}
+          </div>
         </div>
       </div>
+
+      {/* Horizontal Thumbnail Carousel */}
+      {images.length > 1 && (
+        <div className="relative">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex gap-2">
+              {images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSelectedImageIndex(i)}
+                  className={`flex-shrink-0 relative w-20 h-16 md:w-24 md:h-18 rounded-lg overflow-hidden transition-all ${
+                    selectedImageIndex === i 
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
+                      : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Price & Title Section */}
       <div className="space-y-3">
