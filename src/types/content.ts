@@ -21,6 +21,17 @@ export interface BlogPost {
   created_at: string;
   updated_at: string;
   category?: BlogCategory;
+  city?: string | null;
+  audiences?: string[];
+  reading_time_minutes?: number;
+  saves_count?: number;
+}
+
+export interface SavedArticle {
+  id: string;
+  user_id: string;
+  post_id: string;
+  created_at: string;
 }
 
 export interface Neighborhood {
@@ -42,3 +53,14 @@ export interface City {
   created_at: string;
   updated_at: string;
 }
+
+export type BlogSortOption = 'newest' | 'most_viewed' | 'most_saved';
+export type BlogAudience = 'families' | 'investors' | 'olim' | 'first-time-buyers' | 'retirees';
+
+export const AUDIENCE_OPTIONS: { value: BlogAudience; label: string }[] = [
+  { value: 'families', label: 'Families' },
+  { value: 'investors', label: 'Investors' },
+  { value: 'olim', label: 'Olim' },
+  { value: 'first-time-buyers', label: 'First-Time Buyers' },
+  { value: 'retirees', label: 'Retirees' },
+];
