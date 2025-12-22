@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type Currency = 'ILS' | 'USD' | 'both';
-type AreaUnit = 'sqm' | 'sqft';
+type AreaUnit = 'sqm' | 'sqft' | 'both';
 
 interface PreferencesContextType {
   currency: Currency;
@@ -144,6 +144,10 @@ export function useFormatArea() {
     if (areaUnit === 'sqft') {
       const sqft = Math.round(sqm * SQM_TO_SQFT);
       return `${sqft.toLocaleString()} ft²`;
+    }
+    if (areaUnit === 'both') {
+      const sqft = Math.round(sqm * SQM_TO_SQFT);
+      return `${sqm.toLocaleString()} m² (${sqft.toLocaleString()} ft²)`;
     }
     return `${sqm.toLocaleString()} m²`;
   };

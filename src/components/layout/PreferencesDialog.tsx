@@ -1,18 +1,45 @@
-import { Settings } from 'lucide-react';
+import { Settings, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { cn } from '@/lib/utils';
 
 interface PreferencesDialogProps {
   trigger?: React.ReactNode;
+}
+
+interface RadioOptionProps {
+  value: string;
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}
+
+function RadioOption({ value, selected, onClick, children }: RadioOptionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-3 w-full py-2 px-1 text-left hover:bg-muted/50 rounded-md transition-colors"
+    >
+      <div
+        className={cn(
+          'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
+          selected ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+        )}
+      >
+        {selected && <div className="w-2 h-2 rounded-full bg-background" />}
+      </div>
+      <span className="flex-1 text-sm text-foreground">{children}</span>
+      {selected && <Check className="h-4 w-4 text-primary" />}
+    </button>
+  );
 }
 
 export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
@@ -53,22 +80,17 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
         <h3 className="text-lg font-semibold mb-4">Preferences</h3>
 
         {/* Currency Section */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Currency</h4>
-          <DropdownMenuRadioGroup
-            value={currency}
-            onValueChange={(value) => setCurrency(value as 'ILS' | 'USD' | 'both')}
-          >
-            <DropdownMenuRadioItem value="ILS" className="cursor-pointer">
-              ₪ NIS
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="USD" className="cursor-pointer">
-              $ USD
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="both" className="cursor-pointer">
-              ₪+$ Both
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
+        <div className="space-y-1">
+          <h4 className="font-medium text-foreground mb-2">Currency</h4>
+          <RadioOption value="ILS" selected={currency === 'ILS'} onClick={() => setCurrency('ILS')}>
+            ₪ NIS
+          </RadioOption>
+          <RadioOption value="USD" selected={currency === 'USD'} onClick={() => setCurrency('USD')}>
+            $ USD
+          </RadioOption>
+          <RadioOption value="both" selected={currency === 'both'} onClick={() => setCurrency('both')}>
+            ₪+$ Both
+          </RadioOption>
         </div>
 
         <DropdownMenuSeparator className="my-4" />
@@ -77,7 +99,7 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
         <div className="space-y-3">
           <h4 className="font-medium text-foreground">Exchange Rate</h4>
           <p className="text-sm text-muted-foreground">
-            Default rate updated weekly. Enter current rate for most accurate conversions (ILS per $1 USD)
+            Default rate updated weekly. Enter current rate for most accurate conversions ({currency === 'USD' ? 'USD per 1 ₪' : 'ILS per $1 USD'})
           </p>
           <Input
             type="number"
@@ -85,7 +107,7 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
             min="0.01"
             value={isCustomRate ? exchangeRate : ''}
             onChange={handleRateChange}
-            placeholder={`Default: ${defaultExchangeRate.toFixed(2)}`}
+            placeholder={`Default: ${currency === 'USD' ? (1 / defaultExchangeRate).toFixed(3) : defaultExchangeRate.toFixed(2)}`}
             className="h-10"
           />
         </div>
@@ -93,19 +115,17 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
         <DropdownMenuSeparator className="my-4" />
 
         {/* Units Section */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Units</h4>
-          <DropdownMenuRadioGroup
-            value={areaUnit}
-            onValueChange={(value) => setAreaUnit(value as 'sqm' | 'sqft')}
-          >
-            <DropdownMenuRadioItem value="sqm" className="cursor-pointer">
-              Square Meters (m²)
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="sqft" className="cursor-pointer">
-              Square Feet (sq ft)
-            </DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
+        <div className="space-y-1">
+          <h4 className="font-medium text-foreground mb-2">Units</h4>
+          <RadioOption value="sqm" selected={areaUnit === 'sqm'} onClick={() => setAreaUnit('sqm')}>
+            Square Meters (m²)
+          </RadioOption>
+          <RadioOption value="sqft" selected={areaUnit === 'sqft'} onClick={() => setAreaUnit('sqft')}>
+            Square Feet (sq ft)
+          </RadioOption>
+          <RadioOption value="both" selected={areaUnit === 'both'} onClick={() => setAreaUnit('both')}>
+            Both
+          </RadioOption>
         </div>
 
         <DropdownMenuSeparator className="my-4" />
