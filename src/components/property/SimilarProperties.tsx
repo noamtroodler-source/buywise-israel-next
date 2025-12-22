@@ -84,16 +84,16 @@ export function SimilarProperties({ currentProperty }: SimilarPropertiesProps) {
       </div>
 
       <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4">
+        <div className="flex -ml-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex-[0_0_280px] md:flex-[0_0_300px]">
+              <div key={i} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4">
                 <Skeleton className="h-[320px] w-full rounded-xl" />
               </div>
             ))
           ) : (
             properties?.map((property) => (
-              <div key={property.id} className="flex-[0_0_280px] md:flex-[0_0_300px]">
+              <div key={property.id} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4">
                 <PropertyCard property={property} showCompareButton={false} />
               </div>
             ))
