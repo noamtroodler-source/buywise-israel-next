@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
 const tools = [
-  { icon: Calculator, label: 'Mortgage Calculator' },
-  { icon: Home, label: 'Rent vs Buy' },
-  { icon: TrendingUp, label: 'Investment Returns' },
-  { icon: Compass, label: 'Neighborhood Match' },
+  { id: 'mortgage', icon: Calculator, label: 'Mortgage Calculator' },
+  { id: 'rentvsbuy', icon: Home, label: 'Rent vs Buy' },
+  { id: 'investment', icon: TrendingUp, label: 'Investment Returns' },
+  { id: 'neighborhood', icon: Compass, label: 'Neighborhood Match' },
 ];
 
 export const ToolsPromo = () => {
@@ -31,13 +31,14 @@ export const ToolsPromo = () => {
 
           <div className="flex flex-wrap justify-center gap-3">
             {tools.map((tool) => (
-              <div
-                key={tool.label}
-                className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border border-border/50 text-sm text-muted-foreground"
+              <Link
+                key={tool.id}
+                to={`/tools?tool=${tool.id}`}
+                className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border border-border/50 text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground transition-all"
               >
                 <tool.icon className="h-4 w-4 text-primary" />
                 <span>{tool.label}</span>
-              </div>
+              </Link>
             ))}
           </div>
 

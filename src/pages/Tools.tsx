@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
@@ -81,7 +82,15 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
 }
 
 export default function Tools() {
+  const [searchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
+
+  useEffect(() => {
+    const toolParam = searchParams.get('tool');
+    if (toolParam && toolComponents[toolParam]) {
+      setActiveTool(toolParam);
+    }
+  }, [searchParams]);
 
   const ActiveComponent = activeTool ? toolComponents[activeTool] : null;
 
