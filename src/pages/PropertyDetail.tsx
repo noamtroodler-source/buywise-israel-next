@@ -11,6 +11,7 @@ import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapsh
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { CalculatorCTA } from '@/components/property/CalculatorCTA';
+import { CityMarketCTA } from '@/components/property/CityMarketCTA';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { motion } from 'framer-motion';
 
@@ -122,6 +123,9 @@ export default function PropertyDetail() {
                 longitude={property.longitude}
               />
             </motion.div>
+
+            {/* City Market CTA */}
+            <CityMarketCTA cityName={property.city} />
 
             {/* Calculator Quick Links */}
             <CalculatorCTA propertyPrice={property.price} />
