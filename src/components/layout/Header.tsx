@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, TrendingUp, Shield, ChevronDown } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { PreferencesDialog } from './PreferencesDialog';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -76,7 +77,9 @@ export function Header() {
         </nav>
 
         {/* Right Side */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* Preferences Button */}
+          <PreferencesDialog />
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -189,6 +192,15 @@ export function Header() {
             >
               Blog
             </Link>
+            <hr className="my-2 border-border" />
+            <PreferencesDialog 
+              trigger={
+                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full text-left">
+                  <Settings className="h-4 w-4" />
+                  Preferences
+                </button>
+              }
+            />
             {!user && (
               <>
                 <hr className="my-2 border-border" />
