@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
+import { AgentContactSection } from '@/components/property/AgentContactSection';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
@@ -79,6 +80,12 @@ export default function PropertyDetail() {
               isFurnished={property.is_furnished}
               isAccessible={property.is_accessible}
               parking={property.parking}
+            />
+
+            {/* Agent Contact Section */}
+            <AgentContactSection 
+              agent={property.agent}
+              propertyTitle={property.title}
             />
 
             {/* Zone 3: Collapsible Detail Sections */}
