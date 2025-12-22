@@ -341,22 +341,22 @@ export default function CityDetail() {
             </CollapsibleSection>
           )}
 
-          {/* Worth Watching - Collapsible, default closed */}
+          {/* Worth Watching - Collapsible, default open */}
           {worthWatching.length > 0 && (
             <CollapsibleSection 
               title={`What to Watch in ${city.name}`}
               icon={<Eye className="h-5 w-5" />}
-              defaultOpen={false}
+              defaultOpen={true}
             >
               <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
             </CollapsibleSection>
           )}
 
-          {/* Run the Numbers - Collapsible, default closed */}
+          {/* Run the Numbers - Collapsible, default open */}
           <CollapsibleSection 
             title="Run the Numbers" 
             icon={<Calculator className="h-5 w-5" />}
-            defaultOpen={false}
+            defaultOpen={true}
           >
             <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
           </CollapsibleSection>
