@@ -11,7 +11,7 @@ interface CompareContextType {
 
 const CompareContext = createContext<CompareContextType | undefined>(undefined);
 
-const MAX_COMPARE_ITEMS = 4;
+const MAX_COMPARE_ITEMS = 3;
 const STORAGE_KEY = 'property-compare';
 
 export function CompareProvider({ children }: { children: ReactNode }) {
