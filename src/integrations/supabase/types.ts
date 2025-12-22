@@ -94,8 +94,10 @@ export type Database = {
       }
       blog_posts: {
         Row: {
+          audiences: string[] | null
           author_id: string | null
           category_id: string | null
+          city: string | null
           content: string
           cover_image: string | null
           created_at: string
@@ -103,14 +105,17 @@ export type Database = {
           id: string
           is_published: boolean | null
           published_at: string | null
+          reading_time_minutes: number | null
           slug: string
           title: string
           updated_at: string
           views_count: number | null
         }
         Insert: {
+          audiences?: string[] | null
           author_id?: string | null
           category_id?: string | null
+          city?: string | null
           content: string
           cover_image?: string | null
           created_at?: string
@@ -118,14 +123,17 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           published_at?: string | null
+          reading_time_minutes?: number | null
           slug: string
           title: string
           updated_at?: string
           views_count?: number | null
         }
         Update: {
+          audiences?: string[] | null
           author_id?: string | null
           category_id?: string | null
+          city?: string | null
           content?: string
           cover_image?: string | null
           created_at?: string
@@ -133,6 +141,7 @@ export type Database = {
           id?: string
           is_published?: boolean | null
           published_at?: string | null
+          reading_time_minutes?: number | null
           slug?: string
           title?: string
           updated_at?: string
@@ -686,6 +695,35 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      saved_articles: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_articles_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_alerts: {
         Row: {
