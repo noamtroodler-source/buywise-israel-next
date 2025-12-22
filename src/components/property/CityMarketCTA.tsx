@@ -25,7 +25,7 @@ export function CityMarketCTA({ cityName }: CityMarketCTAProps) {
             Curious about {cityName}'s market?
           </p>
           <p className="text-xs text-muted-foreground">
-            Price trends, neighborhoods & market insights
+            Price trends, market stats & what to watch
           </p>
         </div>
       </div>
