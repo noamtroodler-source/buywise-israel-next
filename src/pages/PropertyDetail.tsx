@@ -1,109 +1,137 @@
 import { useParams } from 'react-router-dom';
-import { MapPin, Bed, Bath, Maximize, Calendar, Phone, Mail } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { useMarketData } from '@/hooks/useMarketData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PropertyHero } from '@/components/property/PropertyHero';
+import { PropertyDescription } from '@/components/property/PropertyDescription';
+import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
+import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
+import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
+import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { motion } from 'framer-motion';
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: property, isLoading } = useProperty(id || '');
-
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat(currency === 'ILS' ? 'he-IL' : 'en-US', {
-      style: 'currency', currency, maximumFractionDigits: 0,
-    }).format(price);
-  };
+  const { data: marketData } = useMarketData(property?.city || '');
 
   if (isLoading) {
-    return <Layout><div className="container py-8"><Skeleton className="h-96 w-full rounded-xl" /></div></Layout>;
+    return (
+      <Layout>
+        <div className="container py-8 space-y-6">
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-6 w-1/2" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   if (!property) {
-    return <Layout><div className="container py-16 text-center"><h1 className="text-2xl font-bold">Property not found</h1></div></Layout>;
+    return (
+      <Layout>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-bold text-foreground">Property not found</h1>
+          <p className="text-muted-foreground mt-2">The property you're looking for doesn't exist or has been removed.</p>
+        </div>
+      </Layout>
+    );
   }
 
-  const images = property.images?.length ? property.images : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
+  // Get latest market data for the city
+  const latestMarketData = marketData?.[0];
 
   return (
     <Layout>
-      <div className="container py-8">
-        {/* Image Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <img src={images[0]} alt={property.title} className="w-full h-96 object-cover rounded-xl" />
-          <div className="grid grid-cols-2 gap-4">
-            {images.slice(1, 5).map((img, i) => (
-              <img key={i} src={img} alt="" className="w-full h-44 object-cover rounded-lg" />
-            ))}
-          </div>
-        </div>
-
+      <div className="container py-6 md:py-8 pb-24 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <Badge className="mb-2">{property.listing_status === 'for_sale' ? 'For Sale' : 'For Rent'}</Badge>
-              <h1 className="text-3xl font-bold text-foreground">{property.title}</h1>
-              <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                <MapPin className="h-4 w-4" />
-                <span>{property.address}, {property.city}</span>
-              </div>
-            </div>
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Zone 1: Hero - Above the Fold */}
+            <PropertyHero 
+              property={property}
+              onSave={() => console.log('Save property')}
+              onShare={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: property.title,
+                    url: window.location.href,
+                  });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                }
+              }}
+            />
 
-            <div className="text-3xl font-bold text-primary">
-              {formatPrice(property.price, property.currency)}
-              {property.listing_status === 'for_rent' && <span className="text-lg text-muted-foreground">/month</span>}
-            </div>
+            {/* Zone 2: Description & Features */}
+            <PropertyDescription 
+              description={property.description}
+              features={property.features}
+              condition={property.condition}
+              yearBuilt={property.year_built}
+              isFurnished={property.is_furnished}
+              isAccessible={property.is_accessible}
+              parking={property.parking}
+            />
 
-            <div className="flex gap-6 py-4 border-y border-border">
-              <div className="flex items-center gap-2"><Bed className="h-5 w-5 text-muted-foreground" /><span>{property.bedrooms} Beds</span></div>
-              <div className="flex items-center gap-2"><Bath className="h-5 w-5 text-muted-foreground" /><span>{property.bathrooms} Baths</span></div>
-              {property.size_sqm && <div className="flex items-center gap-2"><Maximize className="h-5 w-5 text-muted-foreground" /><span>{property.size_sqm} m²</span></div>}
-              {property.year_built && <div className="flex items-center gap-2"><Calendar className="h-5 w-5 text-muted-foreground" /><span>Built {property.year_built}</span></div>}
-            </div>
+            {/* Zone 3: Collapsible Detail Sections */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="space-y-4"
+            >
+              {/* AI Value Snapshot */}
+              <PropertyValueSnapshot 
+                price={property.price}
+                sizeSqm={property.size_sqm}
+                city={property.city}
+                averagePriceSqm={latestMarketData?.average_price_sqm}
+                priceChange={latestMarketData?.price_change_percent}
+              />
 
-            <div>
-              <h2 className="text-xl font-semibold mb-3">Description</h2>
-              <p className="text-muted-foreground">{property.description || 'No description available.'}</p>
-            </div>
+              {/* Cost Breakdown */}
+              <PropertyCostBreakdown 
+                price={property.price}
+                currency={property.currency || 'ILS'}
+                listingStatus={property.listing_status}
+              />
 
-            {property.features?.length && (
-              <div>
-                <h2 className="text-xl font-semibold mb-3">Features</h2>
-                <div className="flex flex-wrap gap-2">
-                  {property.features.map((f, i) => <Badge key={i} variant="secondary">{f}</Badge>)}
-                </div>
-              </div>
-            )}
+              {/* Location */}
+              <PropertyLocation 
+                address={property.address}
+                city={property.city}
+                neighborhood={property.neighborhood}
+                latitude={property.latitude}
+                longitude={property.longitude}
+              />
+            </motion.div>
           </div>
 
-          {/* Agent Card */}
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4">Contact Agent</h3>
-              {property.agent ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      {property.agent.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-medium">{property.agent.name}</p>
-                      <p className="text-sm text-muted-foreground">{property.agent.agency_name}</p>
-                    </div>
-                  </div>
-                  <Button className="w-full gap-2"><Phone className="h-4 w-4" /> Call Agent</Button>
-                  <Button variant="outline" className="w-full gap-2"><Mail className="h-4 w-4" /> Send Message</Button>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No agent assigned</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Sticky Sidebar - Desktop Only */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24">
+              <StickyContactCard 
+                agent={property.agent}
+                propertyTitle={property.title}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Contact Bar */}
+      <MobileContactBar 
+        agent={property.agent}
+        propertyTitle={property.title}
+      />
     </Layout>
   );
 }
