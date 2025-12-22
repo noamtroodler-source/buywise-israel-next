@@ -130,7 +130,7 @@ export function PropertyCarousel({
                   key={property.id}
                   className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4"
                 >
-                  <PropertyCard property={property} />
+                  <PropertyCard property={property} showCompareButton={false} />
                 </div>
               ))}
             </div>

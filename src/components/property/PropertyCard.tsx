@@ -12,9 +12,10 @@ import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 interface PropertyCardProps {
   property: Property;
   className?: string;
+  showCompareButton?: boolean;
 }
 
-export function PropertyCard({ property, className }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
 
@@ -78,7 +79,7 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
               )}
             </div>
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              <CompareButton propertyId={property.id} />
+              {showCompareButton && <CompareButton propertyId={property.id} />}
               <FavoriteButton propertyId={property.id} />
             </div>
           </div>
