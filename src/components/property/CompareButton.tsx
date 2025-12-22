@@ -30,18 +30,18 @@ export function CompareButton({ propertyId, className }: CompareButtonProps) {
 
   return (
     <Button
-      variant="secondary"
+      variant="ghost"
       size="icon"
       onClick={handleClick}
       className={cn(
-        "h-8 w-8 rounded-full transition-all",
+        "bg-background/80 hover:bg-background transition-colors",
         isSelected 
-          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-          : "bg-background/80 backdrop-blur-sm hover:bg-background",
+          ? "text-primary" 
+          : "text-muted-foreground hover:text-primary",
         className
       )}
     >
-      <GitCompare className="h-4 w-4" />
+      <GitCompare className={cn("h-4 w-4", isSelected && "fill-current")} />
     </Button>
   );
 }
