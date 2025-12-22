@@ -21,24 +21,6 @@ const categories = [
     icon: Castle,
     description: 'Luxury living'
   },
-  { 
-    id: 'cottage', 
-    label: 'Cottages', 
-    icon: Trees,
-    description: 'Rural retreats'
-  },
-  { 
-    id: 'land', 
-    label: 'Land', 
-    icon: Landmark,
-    description: 'Build your dream'
-  },
-  { 
-    id: 'commercial', 
-    label: 'Commercial', 
-    icon: Store,
-    description: 'Business spaces'
-  },
 ];
 
 export function CategoryButtons() {
