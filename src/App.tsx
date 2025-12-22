@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -46,6 +47,7 @@ const App = () => (
             <Toaster />
             <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/listings" element={<Listings />} />
