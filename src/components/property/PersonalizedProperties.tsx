@@ -28,8 +28,8 @@ export function PersonalizedProperties({ currentProperty }: PersonalizedProperti
         
         <div className="relative">
           {/* Blurred preview cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 blur-sm opacity-60 pointer-events-none select-none">
-            {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 blur-sm opacity-60 pointer-events-none select-none">
+            {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="overflow-hidden">
                 <div className="aspect-[4/3] bg-muted animate-pulse" />
                 <div className="p-4 space-y-3">
@@ -79,8 +79,8 @@ export function PersonalizedProperties({ currentProperty }: PersonalizedProperti
           <Sparkles className="h-5 w-5 text-primary" />
           <h2 className="text-2xl font-bold text-foreground">Personalized for You</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="overflow-hidden animate-pulse">
               <div className="aspect-[4/3] bg-muted" />
               <div className="p-4 space-y-3">
@@ -110,18 +110,18 @@ export function PersonalizedProperties({ currentProperty }: PersonalizedProperti
       <Carousel
         opts={{
           align: 'start',
-          loop: properties.length > 3,
+          loop: properties.length > 4,
         }}
         className="w-full"
       >
         <CarouselContent className="-ml-4">
           {properties.map((property) => (
-            <CarouselItem key={property.id} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+            <CarouselItem key={property.id} className="pl-4 basis-full md:basis-1/2 lg:basis-1/4">
               <PropertyCard property={property} showCompareButton={false} />
             </CarouselItem>
           ))}
         </CarouselContent>
-        {properties.length > 3 && (
+        {properties.length > 4 && (
           <>
             <CarouselPrevious className="hidden md:flex -left-4" />
             <CarouselNext className="hidden md:flex -right-4" />
