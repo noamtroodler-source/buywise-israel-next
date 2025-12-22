@@ -1,6 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/home/HeroSection';
-import { CategoryButtons } from '@/components/home/CategoryButtons';
 import { PropertyCarousel } from '@/components/home/PropertyCarousel';
 import { ProjectCarousel } from '@/components/home/ProjectCarousel';
 import { PopularCities } from '@/components/home/PopularCities';
@@ -21,7 +20,6 @@ const Index = () => {
   return (
     <Layout>
       <HeroSection />
-      <CategoryButtons />
       
       {/* Best Picks For You */}
       <PropertyCarousel
