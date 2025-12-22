@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
+import { CompareButton } from './CompareButton';
 
 interface PropertyCardProps {
   property: Property;
@@ -87,10 +88,10 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
                 </Badge>
               )}
             </div>
-            <FavoriteButton
-              propertyId={property.id}
-              className="absolute top-3 right-3"
-            />
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+              <CompareButton propertyId={property.id} />
+              <FavoriteButton propertyId={property.id} />
+            </div>
           </div>
 
           {/* Content */}
