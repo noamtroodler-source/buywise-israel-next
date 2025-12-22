@@ -19,14 +19,12 @@ export function CompareButton({ propertyId, className }: CompareButtonProps) {
 
     if (isSelected) {
       removeFromCompare(propertyId);
-      toast.success('Removed from comparison');
     } else {
       if (compareIds.length >= maxItems) {
         toast.error(`You can compare up to ${maxItems} properties`);
         return;
       }
       addToCompare(propertyId);
-      toast.success('Added to comparison');
     }
   };
 
