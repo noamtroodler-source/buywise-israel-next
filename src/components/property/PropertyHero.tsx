@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
+import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 
 interface Agent {
   name: string;
@@ -44,17 +45,13 @@ export function PropertyHero({ property, onSave, onShare, isSaved = false }: Pro
     dragFree: true
   });
   
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
+  const formatPricePerArea = useFormatPricePerArea();
+  
   const images = property.images?.length 
     ? property.images 
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
-
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat(currency === 'ILS' ? 'he-IL' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
 
   const pricePerSqm = property.size_sqm 
     ? Math.round(property.price / property.size_sqm)
@@ -202,7 +199,7 @@ export function PropertyHero({ property, onSave, onShare, isSaved = false }: Pro
           </h1>
           {pricePerSqm && (
             <span className="text-muted-foreground">
-              {formatPrice(pricePerSqm, property.currency)}/m²
+              {formatPricePerArea(pricePerSqm, property.currency)}
             </span>
           )}
         </div>
@@ -259,8 +256,8 @@ export function PropertyHero({ property, onSave, onShare, isSaved = false }: Pro
           <div className="flex items-center gap-2.5 px-3 border-l border-border">
             <Maximize className="h-5 w-5 text-primary" />
             <div>
-              <p className="text-lg font-semibold">{property.size_sqm}</p>
-              <p className="text-xs text-muted-foreground">m²</p>
+              <p className="text-lg font-semibold">{formatArea(property.size_sqm)}</p>
+              <p className="text-xs text-muted-foreground">Size</p>
             </div>
           </div>
         )}

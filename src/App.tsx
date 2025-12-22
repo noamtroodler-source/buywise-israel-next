@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
+import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
@@ -39,10 +40,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <CompareProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+      <PreferencesProvider>
+        <CompareProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -110,8 +112,9 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </CompareProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+    </PreferencesProvider>
+  </AuthProvider>
+</QueryClientProvider>
 );
 
 export default App;

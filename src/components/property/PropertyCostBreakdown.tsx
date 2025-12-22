@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calculator, DollarSign, Receipt, Calendar } from 'lucide-react';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -11,14 +12,7 @@ interface PropertyCostBreakdownProps {
 
 export function PropertyCostBreakdown({ price, currency, listingStatus }: PropertyCostBreakdownProps) {
   const [buyerType, setBuyerType] = useState<'first' | 'second'>('first');
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(currency === 'ILS' ? 'he-IL' : 'en-US', {
-      style: 'currency',
-      currency,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const formatPrice = useFormatPrice();
 
   // Calculate costs based on buyer type (Israel tax brackets simplified)
   const calculatePurchaseTax = () => {
@@ -60,19 +54,19 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
           <div className="space-y-2">
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Rent</span>
-              <span className="font-medium">{formatCurrency(price)}</span>
+              <span className="font-medium">{formatPrice(price, currency)}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Arnona (est.)</span>
-              <span className="font-medium">{formatCurrency(arnona)}</span>
+              <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Va'ad Bayit (est.)</span>
-              <span className="font-medium">{formatCurrency(vaad)}</span>
+              <span className="font-medium">{formatPrice(vaad, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-3">
               <span className="font-semibold">Total Monthly</span>
-              <span className="font-bold text-primary">{formatCurrency(price + arnona + vaad)}</span>
+              <span className="font-bold text-primary">{formatPrice(price + arnona + vaad, currency)}</span>
             </div>
           </div>
         </div>
@@ -103,23 +97,23 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Purchase Tax (Mas Rechisha)</span>
-              <span className="font-medium">{formatCurrency(purchaseTax)}</span>
+              <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Lawyer Fees (~0.5%)</span>
-              <span className="font-medium">{formatCurrency(lawyerFees)}</span>
+              <span className="font-medium">{formatPrice(lawyerFees, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Agent Fees (~2%)</span>
-              <span className="font-medium">{formatCurrency(agentFees)}</span>
+              <span className="font-medium">{formatPrice(agentFees, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Mortgage Fees (est.)</span>
-              <span className="font-medium">{formatCurrency(mortgageFees)}</span>
+              <span className="font-medium">{formatPrice(mortgageFees, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-2">
               <span className="font-semibold">Total One-Time</span>
-              <span className="font-bold text-primary">{formatCurrency(totalOneTime)}</span>
+              <span className="font-bold text-primary">{formatPrice(totalOneTime, 'ILS')}</span>
             </div>
           </div>
         </div>
@@ -133,19 +127,19 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Arnona (est.)</span>
-              <span className="font-medium">{formatCurrency(arnona)}</span>
+              <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Va'ad Bayit (est.)</span>
-              <span className="font-medium">{formatCurrency(vaad)}</span>
+              <span className="font-medium">{formatPrice(vaad, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
               <span className="text-muted-foreground">Home Insurance (est.)</span>
-              <span className="font-medium">{formatCurrency(insurance)}</span>
+              <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-2">
               <span className="font-semibold">Total Monthly</span>
-              <span className="font-bold text-primary">{formatCurrency(totalMonthly)}</span>
+              <span className="font-bold text-primary">{formatPrice(totalMonthly, 'ILS')}</span>
             </div>
           </div>
         </div>

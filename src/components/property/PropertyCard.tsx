@@ -7,6 +7,7 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
+import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 
 interface PropertyCardProps {
   property: Property;
@@ -14,20 +15,8 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property, className }: PropertyCardProps) {
-  const formatPrice = (price: number, currency: string) => {
-    if (currency === 'ILS') {
-      return new Intl.NumberFormat('he-IL', {
-        style: 'currency',
-        currency: 'ILS',
-        maximumFractionDigits: 0,
-      }).format(price);
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -99,7 +88,7 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
             {/* Price */}
             <div className="flex items-baseline justify-between">
               <span className="text-2xl font-bold text-foreground">
-                {formatPrice(property.price, property.currency)}
+                {formatPrice(property.price, property.currency || 'ILS')}
               </span>
               {property.listing_status === 'for_rent' && (
                 <span className="text-sm text-muted-foreground">/month</span>
@@ -132,7 +121,7 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
               {property.size_sqm && (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Maximize className="h-4 w-4" />
-                  <span className="text-sm">{property.size_sqm} m²</span>
+                  <span className="text-sm">{formatArea(property.size_sqm)}</span>
                 </div>
               )}
             </div>
