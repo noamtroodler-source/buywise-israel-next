@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type Currency = 'ILS' | 'USD' | 'both';
-type AreaUnit = 'sqm' | 'sqft' | 'both';
+type Currency = 'ILS' | 'USD';
+type AreaUnit = 'sqm' | 'sqft';
 
 interface PreferencesContextType {
   currency: Currency;
@@ -134,16 +134,10 @@ export function useFormatPrice() {
     const formatUSD = (val: number) => 
       `$${val.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
-    switch (currency) {
-      case 'ILS':
-        return formatILS(amountInILS);
-      case 'USD':
-        return formatUSD(amountInUSD);
-      case 'both':
-        return `${formatILS(amountInILS)} (~${formatUSD(amountInUSD)})`;
-      default:
-        return formatILS(amountInILS);
+    if (currency === 'USD') {
+      return formatUSD(amountInUSD);
     }
+    return formatILS(amountInILS);
   };
 }
 
@@ -155,10 +149,6 @@ export function useFormatArea() {
     if (areaUnit === 'sqft') {
       const sqft = Math.round(sqm * SQM_TO_SQFT);
       return `${sqft.toLocaleString()} ft²`;
-    }
-    if (areaUnit === 'both') {
-      const sqft = Math.round(sqm * SQM_TO_SQFT);
-      return `${sqm.toLocaleString()} m² (${sqft.toLocaleString()} ft²)`;
     }
     return `${sqm.toLocaleString()} m²`;
   };
@@ -190,15 +180,9 @@ export function useFormatPricePerArea() {
     const formatUSD = (val: number) => 
       `$${val.toLocaleString('en-US', { maximumFractionDigits: 0 })}/${unit}`;
 
-    switch (currency) {
-      case 'ILS':
-        return formatILS(displayPrice);
-      case 'USD':
-        return formatUSD(priceInUSD);
-      case 'both':
-        return `${formatILS(displayPrice)} (~${formatUSD(priceInUSD)})`;
-      default:
-        return formatILS(displayPrice);
+    if (currency === 'USD') {
+      return formatUSD(priceInUSD);
     }
+    return formatILS(displayPrice);
   };
 }

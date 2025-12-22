@@ -88,9 +88,6 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
           <RadioOption value="USD" selected={currency === 'USD'} onClick={() => setCurrency('USD')}>
             $ USD
           </RadioOption>
-          <RadioOption value="both" selected={currency === 'both'} onClick={() => setCurrency('both')}>
-            ₪+$ Both
-          </RadioOption>
         </div>
 
         <DropdownMenuSeparator className="my-4" />
@@ -122,9 +119,6 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
           </RadioOption>
           <RadioOption value="sqft" selected={areaUnit === 'sqft'} onClick={() => setAreaUnit('sqft')}>
             Square Feet (sq ft)
-          </RadioOption>
-          <RadioOption value="both" selected={areaUnit === 'both'} onClick={() => setAreaUnit('both')}>
-            Both
           </RadioOption>
         </div>
 
