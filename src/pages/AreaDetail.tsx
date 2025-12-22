@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
+import { CollapsibleSection } from '@/components/property/CollapsibleSection';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -304,8 +305,8 @@ export default function CityDetail() {
         </div>
 
         {/* Main Content - Interactive Dashboard */}
-        <div className="container py-8 space-y-8">
-          {/* Market Stats Cards */}
+        <div className="container py-8 space-y-6">
+          {/* Market Stats Cards - Always visible */}
           {marketLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -314,30 +315,53 @@ export default function CityDetail() {
             <MarketStatsCards marketData={marketData} cityName={city.name} />
           ) : null}
 
-          {/* Two Column Layout for Chart and Tabs */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Price Trend Chart */}
-            {marketData.length > 0 && (
+          {/* Price History & Trends - Collapsible, default open */}
+          {marketData.length > 0 && (
+            <CollapsibleSection 
+              title="Price History & Trends" 
+              icon={<BarChart3 className="h-5 w-5" />}
+              defaultOpen={true}
+            >
               <PriceTrendChart marketData={marketData} cityName={city.name} />
-            )}
+            </CollapsibleSection>
+          )}
 
-            {/* Market Reality Tabs */}
-            {marketData.length > 0 && (
+          {/* Market Reality - Collapsible, default open */}
+          {marketData.length > 0 && (
+            <CollapsibleSection 
+              title="Market Reality Check" 
+              icon={<Target className="h-5 w-5" />}
+              defaultOpen={true}
+            >
               <MarketRealityTabs 
                 marketData={marketData} 
                 cityName={city.name}
                 propertiesCount={properties.length}
               />
-            )}
-          </div>
+            </CollapsibleSection>
+          )}
 
-          {/* Worth Watching */}
-          <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
+          {/* Worth Watching - Collapsible, default closed */}
+          {worthWatching.length > 0 && (
+            <CollapsibleSection 
+              title={`What to Watch in ${city.name}`}
+              icon={<Eye className="h-5 w-5" />}
+              defaultOpen={false}
+            >
+              <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
+            </CollapsibleSection>
+          )}
 
-          {/* Run the Numbers - Calculators */}
-          <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
+          {/* Run the Numbers - Collapsible, default closed */}
+          <CollapsibleSection 
+            title="Run the Numbers" 
+            icon={<Calculator className="h-5 w-5" />}
+            defaultOpen={false}
+          >
+            <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
+          </CollapsibleSection>
 
-          {/* Browse Listings CTA */}
+          {/* Browse Listings CTA - Always visible */}
           <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
         </div>
       </div>
