@@ -4,6 +4,8 @@ import { PropertyCarousel } from '@/components/home/PropertyCarousel';
 import { ProjectCarousel } from '@/components/home/ProjectCarousel';
 import { PopularCities } from '@/components/home/PopularCities';
 import { ToolsPromo } from '@/components/home/ToolsPromo';
+import { SignUpCTA } from '@/components/home/SignUpCTA';
+import { WhyBuyWiseSection } from '@/components/home/WhyBuyWiseSection';
 import {
   useRecommendedProperties, 
   useFeaturedSaleProperties, 
@@ -31,6 +33,9 @@ const Index = () => {
         viewAllText="View All"
       />
 
+      {/* Break 1: Sign Up CTA */}
+      <SignUpCTA />
+
       {/* Featured Resale Homes */}
       <PropertyCarousel
         title="Featured Resale Homes"
@@ -40,6 +45,9 @@ const Index = () => {
         viewAllLink="/listings?status=for_sale"
         viewAllText="View All Sales"
       />
+
+      {/* Break 2: Tools Promo (moved here) */}
+      <ToolsPromo />
 
       {/* Featured New Projects */}
       <ProjectCarousel
@@ -51,6 +59,9 @@ const Index = () => {
         viewAllText="View All Projects"
       />
 
+      {/* Break 3: Why BuyWise Israel */}
+      <WhyBuyWiseSection />
+
       {/* Featured Long-Term Rentals */}
       <PropertyCarousel
         title="Featured Long-Term Rentals"
@@ -60,8 +71,6 @@ const Index = () => {
         viewAllLink="/listings?status=for_rent"
         viewAllText="View All Rentals"
       />
-
-      <ToolsPromo />
 
       <PopularCities />
     </Layout>
