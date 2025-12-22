@@ -98,7 +98,18 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 export function usePreferences() {
   const context = useContext(PreferencesContext);
   if (!context) {
-    throw new Error('usePreferences must be used within a PreferencesProvider');
+    // Return default values if context is not available (e.g., during HMR or testing)
+    return {
+      currency: 'ILS' as Currency,
+      setCurrency: () => {},
+      exchangeRate: DEFAULT_EXCHANGE_RATE,
+      setExchangeRate: () => {},
+      isCustomRate: false,
+      setIsCustomRate: () => {},
+      areaUnit: 'sqm' as AreaUnit,
+      setAreaUnit: () => {},
+      defaultExchangeRate: DEFAULT_EXCHANGE_RATE,
+    };
   }
   return context;
 }
