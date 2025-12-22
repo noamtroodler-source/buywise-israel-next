@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,23 @@ interface PropertyCardProps {
 export function PropertyCard({ property, className, showCompareButton = true }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const images = property.images?.length ? property.images : [];
+  const hasMultipleImages = images.length > 1;
+  const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -48,8 +66,6 @@ export function PropertyCard({ property, className, showCompareButton = true }: 
     }
   };
 
-  const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -64,10 +80,47 @@ export function PropertyCard({ property, className, showCompareButton = true }: 
           {/* Image */}
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
-              src={property.images?.[0] || placeholderImage}
+              src={images[currentImageIndex] || placeholderImage}
               alt={property.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
+            
+            {/* Image Navigation Arrows */}
+            {hasMultipleImages && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5 text-foreground" />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5 text-foreground" />
+                </button>
+                
+                {/* Image Dots Indicator */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {images.slice(0, 5).map((_, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-colors",
+                        index === currentImageIndex ? "bg-background" : "bg-background/50"
+                      )}
+                    />
+                  ))}
+                  {images.length > 5 && (
+                    <span className="text-[10px] text-background font-medium ml-1">+{images.length - 5}</span>
+                  )}
+                </div>
+              </>
+            )}
+            
             <div className="absolute top-3 left-3 flex gap-2">
               <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
                 {getStatusLabel(property.listing_status)}
