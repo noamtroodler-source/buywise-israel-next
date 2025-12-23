@@ -7,6 +7,7 @@ interface PasswordStrengthInputProps {
   value: string;
   onChange: (value: string) => void;
   showRequirements?: boolean;
+  showStrengthMeter?: boolean;
   placeholder?: string;
   id?: string;
 }
@@ -20,6 +21,7 @@ export function PasswordStrengthInput({
   value,
   onChange,
   showRequirements = false,
+  showStrengthMeter = true,
   placeholder = "••••••••",
   id,
 }: PasswordStrengthInputProps) {
@@ -74,7 +76,7 @@ export function PasswordStrengthInput({
       </div>
 
       {/* Strength Meter */}
-      {value && (
+      {showStrengthMeter && value && (
         <div className="space-y-1.5">
           <div className="flex gap-1">
             {[1, 2, 3, 4].map((level) => (

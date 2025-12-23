@@ -167,6 +167,7 @@ export default function Auth() {
                             value={field.value}
                             onChange={field.onChange}
                             showRequirements={activeTab === 'signup'}
+                            showStrengthMeter={activeTab === 'signup'}
                             id="password"
                           />
                         </FormControl>
