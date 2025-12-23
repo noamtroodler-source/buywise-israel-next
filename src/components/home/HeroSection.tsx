@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Building, Key, HardHat } from 'lucide-react';
+import { Search, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,27 +79,24 @@ export function HeroSection() {
                   type="button"
                   variant={searchType === 'for_sale' ? 'default' : 'outline'}
                   onClick={() => setSearchType('for_sale')}
-                  className="flex-1 md:flex-none gap-1.5"
+                  className="flex-1 md:flex-none"
                 >
-                  <Building className="h-4 w-4" />
                   Buy
                 </Button>
                 <Button
                   type="button"
                   variant={searchType === 'for_rent' ? 'default' : 'outline'}
                   onClick={() => setSearchType('for_rent')}
-                  className="flex-1 md:flex-none gap-1.5"
+                  className="flex-1 md:flex-none"
                 >
-                  <Key className="h-4 w-4" />
                   Rent
                 </Button>
                 <Button
                   type="button"
                   variant={searchType === 'projects' ? 'default' : 'outline'}
                   onClick={() => setSearchType('projects')}
-                  className="flex-1 md:flex-none gap-1.5"
+                  className="flex-1 md:flex-none"
                 >
-                  <HardHat className="h-4 w-4" />
                   Projects
                 </Button>
               </div>
