@@ -198,46 +198,118 @@ export type Database = {
       }
       cities: {
         Row: {
+          anglo_presence: string | null
+          arnona_monthly_avg: number | null
+          arnona_rate_sqm: number | null
           average_price: number | null
+          average_price_sqm: number | null
+          average_vaad_bayit: number | null
+          buyer_profile_match: string[] | null
+          commute_time_tel_aviv: number | null
           created_at: string
           description: string | null
+          gross_yield_percent: number | null
+          has_train_station: boolean | null
           hero_image: string | null
           highlights: string[] | null
           id: string
+          investment_score: number | null
           is_featured: boolean | null
+          key_developments: string | null
+          market_outlook: string | null
+          median_apartment_price: number | null
           name: string
           neighborhoods: Json | null
+          net_yield_percent: number | null
           population: number | null
+          price_range_max: number | null
+          price_range_min: number | null
+          renovation_cost_basic: number | null
+          renovation_cost_premium: number | null
+          rental_3_room_max: number | null
+          rental_3_room_min: number | null
+          rental_4_room_max: number | null
+          rental_4_room_min: number | null
           slug: string
+          socioeconomic_rank: number | null
           updated_at: string
+          yoy_price_change: number | null
         }
         Insert: {
+          anglo_presence?: string | null
+          arnona_monthly_avg?: number | null
+          arnona_rate_sqm?: number | null
           average_price?: number | null
+          average_price_sqm?: number | null
+          average_vaad_bayit?: number | null
+          buyer_profile_match?: string[] | null
+          commute_time_tel_aviv?: number | null
           created_at?: string
           description?: string | null
+          gross_yield_percent?: number | null
+          has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
           id?: string
+          investment_score?: number | null
           is_featured?: boolean | null
+          key_developments?: string | null
+          market_outlook?: string | null
+          median_apartment_price?: number | null
           name: string
           neighborhoods?: Json | null
+          net_yield_percent?: number | null
           population?: number | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          renovation_cost_basic?: number | null
+          renovation_cost_premium?: number | null
+          rental_3_room_max?: number | null
+          rental_3_room_min?: number | null
+          rental_4_room_max?: number | null
+          rental_4_room_min?: number | null
           slug: string
+          socioeconomic_rank?: number | null
           updated_at?: string
+          yoy_price_change?: number | null
         }
         Update: {
+          anglo_presence?: string | null
+          arnona_monthly_avg?: number | null
+          arnona_rate_sqm?: number | null
           average_price?: number | null
+          average_price_sqm?: number | null
+          average_vaad_bayit?: number | null
+          buyer_profile_match?: string[] | null
+          commute_time_tel_aviv?: number | null
           created_at?: string
           description?: string | null
+          gross_yield_percent?: number | null
+          has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
           id?: string
+          investment_score?: number | null
           is_featured?: boolean | null
+          key_developments?: string | null
+          market_outlook?: string | null
+          median_apartment_price?: number | null
           name?: string
           neighborhoods?: Json | null
+          net_yield_percent?: number | null
           population?: number | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          renovation_cost_basic?: number | null
+          renovation_cost_premium?: number | null
+          rental_3_room_max?: number | null
+          rental_3_room_min?: number | null
+          rental_4_room_max?: number | null
+          rental_4_room_min?: number | null
           slug?: string
+          socioeconomic_rank?: number | null
           updated_at?: string
+          yoy_price_change?: number | null
         }
         Relationships: []
       }
@@ -289,6 +361,51 @@ export type Database = {
         }
         Relationships: []
       }
+      document_checklist_items: {
+        Row: {
+          created_at: string
+          document_name_english: string
+          document_name_hebrew: string | null
+          id: string
+          is_critical: boolean | null
+          notes: string | null
+          required_for: string[] | null
+          sort_order: number | null
+          stage: string
+          transliteration: string | null
+          typical_timeline: string | null
+          where_to_get: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_name_english: string
+          document_name_hebrew?: string | null
+          id?: string
+          is_critical?: boolean | null
+          notes?: string | null
+          required_for?: string[] | null
+          sort_order?: number | null
+          stage: string
+          transliteration?: string | null
+          typical_timeline?: string | null
+          where_to_get?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_name_english?: string
+          document_name_hebrew?: string | null
+          id?: string
+          is_critical?: boolean | null
+          notes?: string | null
+          required_for?: string[] | null
+          sort_order?: number | null
+          stage?: string
+          transliteration?: string | null
+          typical_timeline?: string | null
+          where_to_get?: string | null
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -317,6 +434,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      glossary_terms: {
+        Row: {
+          category: string | null
+          created_at: string
+          detailed_explanation: string | null
+          english_term: string
+          hebrew_term: string
+          id: string
+          pro_tip: string | null
+          simple_explanation: string | null
+          sort_order: number | null
+          transliteration: string | null
+          usage_context: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          detailed_explanation?: string | null
+          english_term: string
+          hebrew_term: string
+          id?: string
+          pro_tip?: string | null
+          simple_explanation?: string | null
+          sort_order?: number | null
+          transliteration?: string | null
+          usage_context?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          detailed_explanation?: string | null
+          english_term?: string
+          hebrew_term?: string
+          id?: string
+          pro_tip?: string | null
+          simple_explanation?: string | null
+          sort_order?: number | null
+          transliteration?: string | null
+          usage_context?: string | null
+        }
+        Relationships: []
+      }
+      historical_prices: {
+        Row: {
+          average_price: number | null
+          average_price_sqm: number | null
+          city: string
+          created_at: string
+          id: string
+          notes: string | null
+          transaction_count: number | null
+          year: number
+          yoy_change_percent: number | null
+        }
+        Insert: {
+          average_price?: number | null
+          average_price_sqm?: number | null
+          city: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          transaction_count?: number | null
+          year: number
+          yoy_change_percent?: number | null
+        }
+        Update: {
+          average_price?: number | null
+          average_price_sqm?: number | null
+          city?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          transaction_count?: number | null
+          year?: number
+          yoy_change_percent?: number | null
+        }
+        Relationships: []
       }
       inquiries: {
         Row: {
@@ -411,6 +606,185 @@ export type Database = {
           price_change_percent?: number | null
           total_transactions?: number | null
           year?: number
+        }
+        Relationships: []
+      }
+      mortgage_tracks: {
+        Row: {
+          best_use_case: string | null
+          boi_limit_percent: number | null
+          created_at: string
+          current_rate_max: number | null
+          current_rate_min: number | null
+          description: string | null
+          english_name: string
+          foreign_buyer_notes: string | null
+          hebrew_name: string
+          id: string
+          is_cpi_linked: boolean | null
+          prepayment_penalty: string | null
+          risk_level: string | null
+          track_type: string
+          updated_at: string
+        }
+        Insert: {
+          best_use_case?: string | null
+          boi_limit_percent?: number | null
+          created_at?: string
+          current_rate_max?: number | null
+          current_rate_min?: number | null
+          description?: string | null
+          english_name: string
+          foreign_buyer_notes?: string | null
+          hebrew_name: string
+          id?: string
+          is_cpi_linked?: boolean | null
+          prepayment_penalty?: string | null
+          risk_level?: string | null
+          track_type: string
+          updated_at?: string
+        }
+        Update: {
+          best_use_case?: string | null
+          boi_limit_percent?: number | null
+          created_at?: string
+          current_rate_max?: number | null
+          current_rate_min?: number | null
+          description?: string | null
+          english_name?: string
+          foreign_buyer_notes?: string | null
+          hebrew_name?: string
+          id?: string
+          is_cpi_linked?: boolean | null
+          prepayment_penalty?: string | null
+          risk_level?: string | null
+          track_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      neighborhoods: {
+        Row: {
+          anglo_presence: string | null
+          avg_price_sqm: number | null
+          character: string | null
+          city_id: string | null
+          city_name: string
+          cons: string[] | null
+          created_at: string
+          has_good_schools: boolean | null
+          hebrew_name: string | null
+          id: string
+          is_religious: boolean | null
+          name: string
+          near_beach: boolean | null
+          near_train: boolean | null
+          price_range_max: number | null
+          price_range_min: number | null
+          price_tier: string | null
+          pros: string[] | null
+          sort_order: number | null
+          target_buyers: string | null
+          updated_at: string
+          walkability_score: number | null
+        }
+        Insert: {
+          anglo_presence?: string | null
+          avg_price_sqm?: number | null
+          character?: string | null
+          city_id?: string | null
+          city_name: string
+          cons?: string[] | null
+          created_at?: string
+          has_good_schools?: boolean | null
+          hebrew_name?: string | null
+          id?: string
+          is_religious?: boolean | null
+          name: string
+          near_beach?: boolean | null
+          near_train?: boolean | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          price_tier?: string | null
+          pros?: string[] | null
+          sort_order?: number | null
+          target_buyers?: string | null
+          updated_at?: string
+          walkability_score?: number | null
+        }
+        Update: {
+          anglo_presence?: string | null
+          avg_price_sqm?: number | null
+          character?: string | null
+          city_id?: string | null
+          city_name?: string
+          cons?: string[] | null
+          created_at?: string
+          has_good_schools?: boolean | null
+          hebrew_name?: string | null
+          id?: string
+          is_religious?: boolean | null
+          name?: string
+          near_beach?: boolean | null
+          near_train?: boolean | null
+          price_range_max?: number | null
+          price_range_min?: number | null
+          price_tier?: string | null
+          pros?: string[] | null
+          sort_order?: number | null
+          target_buyers?: string | null
+          updated_at?: string
+          walkability_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "neighborhoods_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_fees: {
+        Row: {
+          applies_to: string[] | null
+          created_at: string
+          fee_type: string
+          flat_fee_max: number | null
+          flat_fee_min: number | null
+          hebrew_name: string | null
+          id: string
+          includes_vat: boolean | null
+          notes: string | null
+          rate_max_percent: number | null
+          rate_min_percent: number | null
+        }
+        Insert: {
+          applies_to?: string[] | null
+          created_at?: string
+          fee_type: string
+          flat_fee_max?: number | null
+          flat_fee_min?: number | null
+          hebrew_name?: string | null
+          id?: string
+          includes_vat?: boolean | null
+          notes?: string | null
+          rate_max_percent?: number | null
+          rate_min_percent?: number | null
+        }
+        Update: {
+          applies_to?: string[] | null
+          created_at?: string
+          fee_type?: string
+          flat_fee_max?: number | null
+          flat_fee_min?: number | null
+          hebrew_name?: string | null
+          id?: string
+          includes_vat?: boolean | null
+          notes?: string | null
+          rate_max_percent?: number | null
+          rate_min_percent?: number | null
         }
         Relationships: []
       }
@@ -701,6 +1075,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      purchase_tax_brackets: {
+        Row: {
+          bracket_max: number | null
+          bracket_min: number
+          buyer_type: string
+          created_at: string
+          effective_from: string
+          effective_until: string | null
+          id: string
+          is_current: boolean | null
+          notes: string | null
+          rate_percent: number
+        }
+        Insert: {
+          bracket_max?: number | null
+          bracket_min: number
+          buyer_type: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          rate_percent: number
+        }
+        Update: {
+          bracket_max?: number | null
+          bracket_min?: number
+          buyer_type?: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          is_current?: boolean | null
+          notes?: string | null
+          rate_percent?: number
+        }
+        Relationships: []
+      }
+      renovation_costs: {
+        Row: {
+          category: string | null
+          cost_range_max: number | null
+          cost_range_min: number | null
+          created_at: string
+          hebrew_name: string | null
+          id: string
+          item_name: string
+          notes: string | null
+          quality_level: string | null
+          unit: string | null
+        }
+        Insert: {
+          category?: string | null
+          cost_range_max?: number | null
+          cost_range_min?: number | null
+          created_at?: string
+          hebrew_name?: string | null
+          id?: string
+          item_name: string
+          notes?: string | null
+          quality_level?: string | null
+          unit?: string | null
+        }
+        Update: {
+          category?: string | null
+          cost_range_max?: number | null
+          cost_range_min?: number | null
+          created_at?: string
+          hebrew_name?: string | null
+          id?: string
+          item_name?: string
+          notes?: string | null
+          quality_level?: string | null
+          unit?: string | null
+        }
+        Relationships: []
       }
       rental_prices: {
         Row: {
