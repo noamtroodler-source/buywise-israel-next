@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Calendar, Settings } from 'lucide-react';
+import { User, Mail, Calendar, Settings, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -103,7 +103,7 @@ export default function Profile() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
+                        <Label htmlFor="phone">WhatsApp Number</Label>
                         <Input
                           id="phone"
                           value={formData.phone}
@@ -139,9 +139,9 @@ export default function Profile() {
                       </div>
                       <Separator />
                       <div className="flex items-center gap-3">
-                        <Phone className="h-5 w-5 text-muted-foreground" />
+                        <MessageCircle className="h-5 w-5 text-muted-foreground" />
                         <div>
-                          <p className="text-sm text-muted-foreground">Phone</p>
+                          <p className="text-sm text-muted-foreground">WhatsApp Number</p>
                           <p className="font-medium">{profile?.phone || 'Not set'}</p>
                         </div>
                       </div>
