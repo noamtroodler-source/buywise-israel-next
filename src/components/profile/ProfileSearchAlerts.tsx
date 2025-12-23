@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, BellOff, Trash2, MapPin, Home, DollarSign, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useSearchAlerts, useDeleteSearchAlert, useToggleSearchAlert } from '@/hooks/useSearchAlerts';
 import { SearchAlert } from '@/types/database';
+import { CreateAlertFromProfileDialog } from './CreateAlertFromProfileDialog';
 
 function formatPrice(price: number): string {
   if (price >= 1000000) {
@@ -101,6 +103,7 @@ function AlertCard({ alert, onToggle, onDelete, isToggling, isDeleting }: AlertC
 }
 
 export function ProfileSearchAlerts() {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { data: alerts = [], isLoading } = useSearchAlerts();
   const deleteAlert = useDeleteSearchAlert();
   const toggleAlert = useToggleSearchAlert();
@@ -119,45 +122,50 @@ export function ProfileSearchAlerts() {
   }
 
   return (
-    <Card id="search-alerts-section">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-          <Bell className="h-4 w-4 text-primary" />
-          Search Alerts
-        </CardTitle>
-        <Button variant="outline" size="sm" className="h-8" asChild>
-          <a href="/listings?createAlert=true">
+    <>
+      <Card id="search-alerts-section">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Bell className="h-4 w-4 text-primary" />
+            Search Alerts
+          </CardTitle>
+          <Button variant="outline" size="sm" className="h-8" onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-1" />
             New Alert
-          </a>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {alerts.length === 0 ? (
-          <div className="text-center py-6">
-            <BellOff className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground mb-3">
-              No search alerts yet. Create one to get notified about new listings.
-            </p>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/listings?createAlert=true">Create Your First Alert</a>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {alerts.map((alert) => (
-              <AlertCard
-                key={alert.id}
-                alert={alert}
-                onToggle={(id, isActive) => toggleAlert.mutate({ alertId: id, isActive })}
-                onDelete={(id) => deleteAlert.mutate(id)}
-                isToggling={toggleAlert.isPending}
-                isDeleting={deleteAlert.isPending}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {alerts.length === 0 ? (
+            <div className="text-center py-6">
+              <BellOff className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground mb-3">
+                No search alerts yet. Create one to get notified about new listings.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+                Create Your First Alert
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {alerts.map((alert) => (
+                <AlertCard
+                  key={alert.id}
+                  alert={alert}
+                  onToggle={(id, isActive) => toggleAlert.mutate({ alertId: id, isActive })}
+                  onDelete={(id) => deleteAlert.mutate(id)}
+                  isToggling={toggleAlert.isPending}
+                  isDeleting={deleteAlert.isPending}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <CreateAlertFromProfileDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+      />
+    </>
   );
 }

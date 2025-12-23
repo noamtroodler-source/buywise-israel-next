@@ -2,7 +2,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { SearchAlert } from '@/types/database';
+import { SearchAlert, ListingType, AlertFrequency, PropertyFilters } from '@/types/database';
+
+export interface CreateSearchAlertInput {
+  name?: string;
+  filters: PropertyFilters;
+  listing_type: ListingType;
+  frequency: AlertFrequency;
+  notify_email: boolean;
+  notify_whatsapp: boolean;
+  notify_sms: boolean;
+  phone?: string;
+}
 
 export function useSearchAlerts() {
   const { user } = useAuth();
@@ -22,6 +33,44 @@ export function useSearchAlerts() {
       return data as SearchAlert[];
     },
     enabled: !!user,
+  });
+}
+
+export function useCreateSearchAlert() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: CreateSearchAlertInput) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('search_alerts')
+        .insert({
+          user_id: user.id,
+          name: input.name || null,
+          filters: input.filters as any,
+          listing_type: input.listing_type,
+          frequency: input.frequency,
+          notify_email: input.notify_email,
+          notify_whatsapp: input.notify_whatsapp,
+          notify_sms: input.notify_sms,
+          phone: input.phone || null,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['searchAlerts'] });
+      toast.success('Search alert created!');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to create alert: ' + error.message);
+    },
   });
 }
 
