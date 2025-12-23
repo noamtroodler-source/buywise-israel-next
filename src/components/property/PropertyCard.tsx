@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,15 +8,17 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
+import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 
 interface PropertyCardProps {
   property: Property;
   className?: string;
   showCompareButton?: boolean;
+  showMonthlyEstimate?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -144,9 +146,14 @@ export function PropertyCard({ property, className, showCompareButton = true }: 
               <span className="text-2xl font-bold text-foreground">
                 {formatPrice(property.price, property.currency || 'ILS')}
               </span>
-              {property.listing_status === 'for_rent' && (
-                <span className="text-sm text-muted-foreground">/month</span>
-              )}
+              <div className="flex items-center gap-2">
+                {property.listing_status === 'for_rent' && (
+                  <span className="text-sm text-muted-foreground">/month</span>
+                )}
+                {property.listing_status === 'for_sale' && showMonthlyEstimate && (
+                  <MonthlyEstimate price={property.price} />
+                )}
+              </div>
             </div>
 
             {/* Title */}
