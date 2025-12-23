@@ -11,6 +11,7 @@ import { useCreateBuyerProfile, BuyerProfileInsert } from '@/hooks/useBuyerProfi
 interface BuyerOnboardingProps {
   open: boolean;
   onComplete: () => void;
+  onClose?: () => void;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -18,7 +19,7 @@ type Step = 1 | 2 | 3 | 4;
 const currentYear = new Date().getFullYear();
 const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-export function BuyerOnboarding({ open, onComplete }: BuyerOnboardingProps) {
+export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingProps) {
   const [step, setStep] = useState<Step>(1);
   const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>({
     residency_status: undefined,
@@ -92,8 +93,14 @@ export function BuyerOnboarding({ open, onComplete }: BuyerOnboardingProps) {
     return answers.residency_status === 'oleh_hadash' ? 4 : 3;
   };
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-xl">Let's personalize your experience</DialogTitle>
