@@ -34,6 +34,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
+import Glossary from "./pages/Glossary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/areas" element={<Areas />} />
             <Route path="/areas/:slug" element={<AreaDetail />} />
             <Route path="/tools" element={<Tools />} />
+            <Route path="/glossary" element={<Glossary />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers/:slug" element={<DeveloperDetail />} />
             <Route path="/projects" element={<Projects />} />

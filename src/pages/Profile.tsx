@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { ProfileStatsGrid } from '@/components/profile/ProfileStatsGrid';
 import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
 import { ProfileSearchAlerts } from '@/components/profile/ProfileSearchAlerts';
+import { BuyerCostSummary } from '@/components/profile/BuyerCostSummary';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -170,6 +171,9 @@ export default function Profile() {
             <div className="space-y-6">
               {/* Buyer Profile Card */}
               <BuyerProfileCard />
+
+              {/* Buyer Cost Summary */}
+              <BuyerCostSummary />
 
               {/* Quick Actions */}
               <Card>
