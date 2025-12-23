@@ -35,6 +35,7 @@ export interface RentalTaxResult {
   method: 'exemption' | 'flat_10' | 'progressive';
   taxableIncome: number;
   taxAmount: number;
+  annualTax: number; // Alias for taxAmount
   effectiveRate: number;
   netIncome: number;
 }
@@ -220,9 +221,11 @@ export function projectROI(
 export function calculateRentalIncomeTax(
   monthlyRent: number,
   method: 'exemption' | 'flat_10' | 'progressive',
-  estimatedDeductions?: number
+  estimatedDeductions?: number,
+  totalDeductions?: number
 ): RentalTaxResult {
   const annualRent = monthlyRent * 12;
+  const deductions = totalDeductions || estimatedDeductions || 0;
   
   // Method 1: Exemption (up to ₪5,471/month tax-free)
   if (method === 'exemption') {
@@ -231,6 +234,7 @@ export function calculateRentalIncomeTax(
         method: 'exemption',
         taxableIncome: 0,
         taxAmount: 0,
+        annualTax: 0,
         effectiveRate: 0,
         netIncome: annualRent,
       };
@@ -245,6 +249,7 @@ export function calculateRentalIncomeTax(
       method: 'exemption',
       taxableIncome: Math.round(taxableAnnual),
       taxAmount: Math.round(taxAmount),
+      annualTax: Math.round(taxAmount),
       effectiveRate: Math.round((taxAmount / annualRent) * 100 * 10) / 10,
       netIncome: Math.round(annualRent - taxAmount),
     };
@@ -257,13 +262,13 @@ export function calculateRentalIncomeTax(
       method: 'flat_10',
       taxableIncome: annualRent,
       taxAmount: Math.round(taxAmount),
+      annualTax: Math.round(taxAmount),
       effectiveRate: 10,
       netIncome: Math.round(annualRent - taxAmount),
     };
   }
   
   // Method 3: Progressive tax with deductions
-  const deductions = estimatedDeductions || 0;
   const taxableIncome = Math.max(0, annualRent - deductions);
   
   let taxAmount = 0;
@@ -284,6 +289,7 @@ export function calculateRentalIncomeTax(
     method: 'progressive',
     taxableIncome: Math.round(taxableIncome),
     taxAmount: Math.round(taxAmount),
+    annualTax: Math.round(taxAmount),
     effectiveRate: annualRent > 0 ? Math.round((taxAmount / annualRent) * 100 * 10) / 10 : 0,
     netIncome: Math.round(annualRent - taxAmount),
   };
@@ -372,4 +378,106 @@ export function calculateBreakEvenOccupancy(
   const breakEvenRate = (totalMonthlyNeeded / monthlyRent) * 100;
   
   return Math.min(100, Math.round(breakEvenRate * 10) / 10);
+}
+
+/**
+ * Compare all rental tax methods
+ */
+export function compareRentalTaxMethods(
+  monthlyRent: number,
+  marginalRate?: number,
+  totalDeductions?: number
+): {
+  exemption: RentalTaxResult;
+  flat_10: RentalTaxResult;
+  progressive: RentalTaxResult;
+  recommended: 'exemption' | 'flat_10' | 'progressive';
+  savings: number;
+} {
+  const exemption = calculateRentalIncomeTax(monthlyRent, 'exemption', marginalRate, totalDeductions);
+  const flat_10 = calculateRentalIncomeTax(monthlyRent, 'flat_10', marginalRate, totalDeductions);
+  const progressive = calculateRentalIncomeTax(monthlyRent, 'progressive', marginalRate, totalDeductions);
+
+  const methods = [
+    { key: 'exemption' as const, result: exemption },
+    { key: 'flat_10' as const, result: flat_10 },
+    { key: 'progressive' as const, result: progressive },
+  ];
+
+  const best = methods.reduce((min, curr) => 
+    curr.result.taxAmount < min.result.taxAmount ? curr : min
+  );
+
+  const worst = methods.reduce((max, curr) => 
+    curr.result.taxAmount > max.result.taxAmount ? curr : max
+  );
+
+  return {
+    exemption,
+    flat_10,
+    progressive,
+    recommended: best.key,
+    savings: worst.result.taxAmount - best.result.taxAmount,
+  };
+}
+
+/**
+ * Project ROI over multiple years with detailed expenses
+ */
+export function projectMultiYearROI(options: {
+  purchasePrice: number;
+  monthlyRent: number;
+  appreciationRate: number;
+  years: number;
+  expenses: {
+    arnona: number;
+    vaadBayit: number;
+    insurance: number;
+    maintenance: number;
+    vacancy: number;
+    tax: number;
+  };
+  mortgagePayment?: number;
+  downPayment?: number;
+}): ROIProjection[] {
+  const {
+    purchasePrice,
+    monthlyRent,
+    appreciationRate,
+    years,
+    expenses,
+    mortgagePayment = 0,
+    downPayment = purchasePrice,
+  } = options;
+
+  const projections: ROIProjection[] = [];
+  let cumulativeCashFlow = 0;
+  const totalAnnualExpenses = 
+    expenses.arnona + expenses.vaadBayit + expenses.insurance + 
+    expenses.maintenance + expenses.vacancy + expenses.tax;
+
+  for (let year = 1; year <= years; year++) {
+    const propertyValue = purchasePrice * Math.pow(1 + appreciationRate, year);
+    const annualRent = monthlyRent * 12 * Math.pow(1.03, year - 1);
+    const yearExpenses = totalAnnualExpenses * Math.pow(1.02, year - 1);
+    const netCashFlow = annualRent - yearExpenses - mortgagePayment;
+    cumulativeCashFlow += netCashFlow;
+
+    const appreciation = propertyValue - purchasePrice;
+    const totalReturn = cumulativeCashFlow + appreciation;
+    const roi = (totalReturn / downPayment) * 100;
+
+    projections.push({
+      year,
+      propertyValue: Math.round(propertyValue),
+      annualRent: Math.round(annualRent),
+      annualExpenses: Math.round(yearExpenses),
+      netCashFlow: Math.round(netCashFlow),
+      cumulativeCashFlow: Math.round(cumulativeCashFlow),
+      totalReturn: Math.round(totalReturn),
+      roi: Math.round(roi * 10) / 10,
+    });
+  }
+
+  return projections;
 }

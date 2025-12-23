@@ -65,7 +65,7 @@ export function RentalIncomeCalculator() {
     const aboveExemption = monthlyRent - TAX_FREE_THRESHOLD;
     
     // City yield benchmark
-    const grossYield = calculateGrossYield(propertyValue, monthlyRent);
+    const grossYieldValue = calculateGrossYield(propertyValue, monthlyRent);
     const cityBenchmarkYield = selectedCityData?.gross_yield_percent || 3.5;
     
     // Net yield after tax (using best method)
@@ -82,7 +82,7 @@ export function RentalIncomeCalculator() {
       methods,
       breakEvenRent,
       aboveExemption,
-      grossYield: grossYield.grossYield,
+      grossYield: grossYieldValue,
       cityBenchmarkYield,
       netYieldAfterTax,
       comparison,

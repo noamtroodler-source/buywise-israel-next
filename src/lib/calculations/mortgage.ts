@@ -7,11 +7,17 @@ export type MortgageTrackType =
   | 'prime'           // Variable rate linked to BoI prime
   | 'fixed_unlinked'  // Fixed rate, not CPI linked
   | 'fixed_linked'    // Fixed rate, CPI linked
+  | 'fixed_cpi'       // Alias for fixed_linked
   | 'variable_linked' // Variable rate, CPI linked (5-year adjustable)
   | 'variable_unlinked' // Variable rate, not CPI linked
-  | 'foreign_currency'; // USD/EUR denominated
+  | 'variable_cpi'    // Alias for variable_linked
+  | 'foreign_currency' // USD/EUR denominated
+  | 'eligibility';    // Government subsidized loan
 
-export type BuyerCategory = 'first_time' | 'upgrader' | 'investor' | 'foreign';
+// Alias for components using TrackType
+export type TrackType = MortgageTrackType;
+
+export type BuyerCategory = 'first_time' | 'upgrader' | 'investor' | 'foreign' | 'oleh' | 'company';
 
 export interface MortgageTrack {
   type: MortgageTrackType;
@@ -58,6 +64,8 @@ const LTV_LIMITS: Record<BuyerCategory, number> = {
   upgrader: 0.70,    // 70% max
   investor: 0.50,    // 50% max
   foreign: 0.50,     // 50% max
+  oleh: 0.75,        // Same as first-time
+  company: 0.50,     // Same as investor
 };
 
 // Maximum Payment-to-Income ratio
@@ -68,9 +76,12 @@ const CURRENT_RATES: Record<MortgageTrackType, { min: number; max: number }> = {
   prime: { min: 6.0, max: 7.0 },
   fixed_unlinked: { min: 5.5, max: 6.5 },
   fixed_linked: { min: 3.5, max: 4.5 },
+  fixed_cpi: { min: 3.5, max: 4.5 },
   variable_linked: { min: 3.0, max: 4.0 },
   variable_unlinked: { min: 5.0, max: 6.0 },
+  variable_cpi: { min: 3.0, max: 4.0 },
   foreign_currency: { min: 4.0, max: 5.5 },
+  eligibility: { min: 3.0, max: 4.0 },
 };
 
 /**
@@ -391,10 +402,27 @@ export function stressTestPayment(
 }
 
 /**
+ * Alias for stressTestPayment for component compatibility
+ */
+export function stressTestMortgage(
+  principal: number,
+  currentRate: number,
+  termYears: number,
+  rateIncrease: number = 2
+): {
+  currentPayment: number;
+  stressedPayment: number;
+  increase: number;
+  increasePercent: number;
+} {
+  return stressTestPayment(principal, currentRate, termYears, rateIncrease);
+}
+
+/**
  * Get current rate range for a track type
  */
 export function getCurrentRateRange(trackType: MortgageTrackType): { min: number; max: number } {
-  return CURRENT_RATES[trackType];
+  return CURRENT_RATES[trackType] || CURRENT_RATES.prime;
 }
 
 /**
@@ -405,10 +433,13 @@ export function getTrackTypeLabel(trackType: MortgageTrackType): string {
     prime: 'Prime (Variable)',
     fixed_unlinked: 'Fixed (Non-Linked)',
     fixed_linked: 'Fixed (CPI-Linked)',
+    fixed_cpi: 'Fixed (CPI-Linked)',
     variable_linked: 'Variable (CPI-Linked)',
     variable_unlinked: 'Variable (Non-Linked)',
+    variable_cpi: 'Variable (CPI-Linked)',
     foreign_currency: 'Foreign Currency',
+    eligibility: 'Eligibility Loan',
   };
   
-  return labels[trackType];
+  return labels[trackType] || trackType;
 }
