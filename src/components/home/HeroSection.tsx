@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, Building, Key, HardHat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,19 +13,28 @@ import {
 } from '@/components/ui/select';
 import heroImage from '@/assets/hero-real-estate.jpg';
 
+type SearchType = 'for_sale' | 'for_rent' | 'projects';
+
 export function HeroSection() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [listingType, setListingType] = useState<'for_sale' | 'for_rent'>('for_sale');
+  const [searchType, setSearchType] = useState<SearchType>('for_sale');
   const [propertyType, setPropertyType] = useState<string>('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (searchQuery) params.set('city', searchQuery);
-    if (listingType) params.set('status', listingType);
-    if (propertyType) params.set('type', propertyType);
-    navigate(`/listings?${params.toString()}`);
+    
+    if (searchType === 'projects') {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('city', searchQuery);
+      navigate(`/projects?${params.toString()}`);
+    } else {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('city', searchQuery);
+      if (searchType) params.set('status', searchType);
+      if (propertyType) params.set('type', propertyType);
+      navigate(`/listings?${params.toString()}`);
+    }
   };
 
   return (
@@ -52,7 +61,7 @@ export function HeroSection() {
             Find Your Perfect Home in Israel
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            Discover thousands of properties across Israel. Whether you're buying or renting, 
+            Discover thousands of properties across Israel. Whether you're buying, renting, or looking for new developments, 
             we'll help you find the right place to call home.
           </p>
 
@@ -68,19 +77,30 @@ export function HeroSection() {
               <div className="flex gap-2 mb-4">
                 <Button
                   type="button"
-                  variant={listingType === 'for_sale' ? 'default' : 'outline'}
-                  onClick={() => setListingType('for_sale')}
-                  className="flex-1 md:flex-none"
+                  variant={searchType === 'for_sale' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('for_sale')}
+                  className="flex-1 md:flex-none gap-1.5"
                 >
+                  <Building className="h-4 w-4" />
                   Buy
                 </Button>
                 <Button
                   type="button"
-                  variant={listingType === 'for_rent' ? 'default' : 'outline'}
-                  onClick={() => setListingType('for_rent')}
-                  className="flex-1 md:flex-none"
+                  variant={searchType === 'for_rent' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('for_rent')}
+                  className="flex-1 md:flex-none gap-1.5"
                 >
+                  <Key className="h-4 w-4" />
                   Rent
+                </Button>
+                <Button
+                  type="button"
+                  variant={searchType === 'projects' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('projects')}
+                  className="flex-1 md:flex-none gap-1.5"
+                >
+                  <HardHat className="h-4 w-4" />
+                  Projects
                 </Button>
               </div>
 
@@ -96,16 +116,18 @@ export function HeroSection() {
                     className="pl-10 h-12"
                   />
                 </div>
-                <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="w-full md:w-[180px] h-12">
-                    <SelectValue placeholder="Property Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="apartment">Apartment</SelectItem>
-                    <SelectItem value="house">House</SelectItem>
-                    <SelectItem value="penthouse">Penthouse</SelectItem>
-                  </SelectContent>
-                </Select>
+                {searchType !== 'projects' && (
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger className="w-full md:w-[180px] h-12">
+                      <SelectValue placeholder="Property Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="apartment">Apartment</SelectItem>
+                      <SelectItem value="house">House</SelectItem>
+                      <SelectItem value="penthouse">Penthouse</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
                 <Button type="submit" size="lg" className="h-12 px-8 gap-2">
                   <Search className="h-5 w-5" />
                   Search
