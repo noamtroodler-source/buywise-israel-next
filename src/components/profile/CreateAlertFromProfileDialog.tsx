@@ -82,10 +82,10 @@ export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlert
   const [showCityDropdown, setShowCityDropdown] = useState(false);
 
   const filteredCities = useMemo(() => {
-    if (!citySearch) return cities.slice(0, 10);
+    if (!citySearch) return cities;
     return cities.filter(city => 
       city.name.toLowerCase().includes(citySearch.toLowerCase())
-    ).slice(0, 10);
+    );
   }, [cities, citySearch]);
 
   const handleCitySelect = (cityName: string) => {
