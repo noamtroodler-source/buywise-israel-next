@@ -316,9 +316,21 @@ export default function CityDetail() {
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : marketData.length > 0 ? (
-            <MarketStatsCards marketData={marketData} cityName={city.name} />
-          ) : null}
+          ) : (
+            <MarketStatsCards 
+              marketData={marketData} 
+              cityName={city.name}
+              cityData={{
+                average_price_sqm: city.average_price_sqm,
+                median_apartment_price: city.median_apartment_price,
+                yoy_price_change: city.yoy_price_change,
+                rental_3_room_min: city.rental_3_room_min,
+                rental_3_room_max: city.rental_3_room_max,
+                rental_4_room_min: city.rental_4_room_min,
+                rental_4_room_max: city.rental_4_room_max,
+              }}
+            />
+          )}
 
           {/* Price History & Trends - Collapsible, default open */}
           {marketData.length > 0 && (
