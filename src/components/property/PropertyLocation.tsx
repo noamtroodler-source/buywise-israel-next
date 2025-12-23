@@ -1,5 +1,4 @@
 import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building } from 'lucide-react';
-import { CollapsibleSection } from './CollapsibleSection';
 import { Button } from '@/components/ui/button';
 
 interface PropertyLocationProps {
@@ -42,17 +41,19 @@ export function PropertyLocation({
   ];
 
   return (
-    <CollapsibleSection 
-      title="Location" 
-      icon={<MapPin className="h-5 w-5" />}
-    >
-      <div className="space-y-5">
-        {/* Address & Map Links */}
-        <div className="space-y-3">
-          <div className="flex items-start gap-2">
-            <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-foreground">{fullAddress}</p>
-          </div>
+    <div className="border border-border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-3 p-4 bg-muted/30">
+        <MapPin className="h-5 w-5 text-primary" />
+        <h3 className="font-semibold text-foreground">Location</h3>
+      </div>
+      <div className="p-4 border-t border-border">
+        <div className="space-y-5">
+          {/* Address & Map Links */}
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <p className="text-foreground">{fullAddress}</p>
+            </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={openGoogleMaps} className="gap-2">
               <ExternalLink className="h-4 w-4" />
@@ -88,17 +89,18 @@ export function PropertyLocation({
           </div>
         </div>
 
-        {/* About the City */}
-        <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
-          <h4 className="font-medium text-foreground mb-2">About {city}</h4>
-          <p className="text-sm text-muted-foreground">
-            Discover more about life in {city}, including community information, local amenities, and market trends.
-          </p>
-          <Button variant="link" className="px-0 mt-2 h-auto text-primary">
-            View City Guide →
-          </Button>
+          {/* About the City */}
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+            <h4 className="font-medium text-foreground mb-2">About {city}</h4>
+            <p className="text-sm text-muted-foreground">
+              Discover more about life in {city}, including community information, local amenities, and market trends.
+            </p>
+            <Button variant="link" className="px-0 mt-2 h-auto text-primary">
+              View City Guide →
+            </Button>
+          </div>
         </div>
       </div>
-    </CollapsibleSection>
+    </div>
   );
 }
