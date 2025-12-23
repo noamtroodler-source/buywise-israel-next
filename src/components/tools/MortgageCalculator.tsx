@@ -26,7 +26,7 @@ interface TrackAllocation {
   rate: number;
 }
 
-const TRACK_INFO: Record<TrackType, { name: string; hebrewName: string; description: string; riskLevel: string }> = {
+const TRACK_INFO: Partial<Record<TrackType, { name: string; hebrewName: string; description: string; riskLevel: string }>> = {
   prime: { name: 'Prime (Variable)', hebrewName: 'פריים', description: 'Tied to Bank of Israel rate + bank margin', riskLevel: 'Medium-High' },
   fixed_unlinked: { name: 'Fixed Non-Linked', hebrewName: 'קבועה לא צמודה', description: 'Fixed rate, not linked to CPI', riskLevel: 'Low' },
   fixed_cpi: { name: 'Fixed CPI-Linked', hebrewName: 'קבועה צמודה', description: 'Fixed rate + CPI adjustment', riskLevel: 'Medium' },
@@ -35,7 +35,7 @@ const TRACK_INFO: Record<TrackType, { name: string; hebrewName: string; descript
   eligibility: { name: 'Eligibility Loan', hebrewName: 'הלוואת זכאות', description: 'Government subsidized for eligible buyers', riskLevel: 'Low' },
 };
 
-const DEFAULT_RATES: Record<TrackType, number> = {
+const DEFAULT_RATES: Partial<Record<TrackType, number>> = {
   prime: 6.0, // Prime + 1.5%
   fixed_unlinked: 5.5,
   fixed_cpi: 3.5,
@@ -66,8 +66,9 @@ export function MortgageCalculator() {
     { trackType: 'variable_cpi', percentage: 33, rate: 2.8 },
   ]);
 
-  const maxLTV = getMaxLTV(buyerType);
-  const minDownPayment = 100 - maxLTV;
+  const buyerCategory = (buyerType === 'oleh' ? 'first_time' : buyerType === 'company' ? 'investor' : buyerType) as 'first_time' | 'upgrader' | 'investor' | 'foreign';
+  const maxLTV = getMaxLTV(buyerCategory);
+  const minDownPayment = 100 - (maxLTV * 100);
 
   const loanAmount = useMemo(() => {
     const effectiveDownPayment = Math.max(downPaymentPercent, minDownPayment);
@@ -76,9 +77,28 @@ export function MortgageCalculator() {
 
   const calculations = useMemo(() => {
     if (useMultiTrack) {
-      return calculateMultiTrackMortgage(loanAmount, loanTerm, trackAllocations);
+      const tracks = trackAllocations.map(alloc => ({
+        type: alloc.trackType,
+        principal: Math.round(loanAmount * alloc.percentage / 100),
+        interestRate: alloc.rate,
+        termYears: loanTerm,
+        isCpiLinked: alloc.trackType.includes('cpi') || alloc.trackType.includes('linked'),
+      }));
+      const multiResult = calculateMultiTrackMortgage(tracks);
+      return {
+        totalMonthlyPayment: multiResult.totalMonthlyPayment,
+        totalPayment: multiResult.totalPayment,
+        totalInterest: multiResult.totalInterest,
+        trackDetails: multiResult.trackBreakdown.map(b => ({
+          trackType: b.track.type,
+          monthlyPayment: b.monthlyPayment,
+          totalPayment: b.totalPayment,
+          totalInterest: b.totalInterest,
+          loanPortion: b.track.principal,
+        })),
+      };
     } else {
-      const result = calculateMortgagePayment(loanAmount, interestRate, loanTerm, selectedTrack);
+      const result = calculateMortgagePayment(loanAmount, interestRate, loanTerm);
       return {
         totalMonthlyPayment: result.monthlyPayment,
         totalPayment: result.totalPayment,
@@ -308,7 +328,7 @@ export function MortgageCalculator() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Portion: {formatCurrency(loanAmount * track.percentage / 100)} • 
-                      Payment: {formatCurrency(calculateMortgagePayment(loanAmount * track.percentage / 100, track.rate, loanTerm, track.trackType).monthlyPayment)}
+                      Payment: {formatCurrency(calculateMortgagePayment(loanAmount * track.percentage / 100, track.rate, loanTerm).monthlyPayment)}
                     </p>
                   </div>
                 ))}
@@ -349,7 +369,7 @@ export function MortgageCalculator() {
             <AlertTriangle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800 text-sm">
               <strong>BOI Stress Test (+2%):</strong> If rates increase by 2%, your payment would be {formatCurrency(stressTest.stressedPayment)} 
-              ({stressTest.paymentIncrease > 0 ? '+' : ''}{formatCurrency(stressTest.paymentIncrease)}/month, +{stressTest.percentageIncrease.toFixed(1)}%)
+              ({stressTest.increase > 0 ? '+' : ''}{formatCurrency(stressTest.increase)}/month, +{stressTest.increasePercent.toFixed(1)}%)
             </AlertDescription>
           </Alert>
 

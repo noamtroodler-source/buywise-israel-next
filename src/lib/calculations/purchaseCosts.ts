@@ -33,6 +33,7 @@ export interface CostItem {
 export interface TotalPurchaseCostsResult {
   totalMin: number;
   totalMax: number;
+  totalOneTimeCosts: number; // Alias for totalMin
   costs: CostItem[];
   purchaseTax: number;
   closingCosts: number;
@@ -41,6 +42,16 @@ export interface TotalPurchaseCostsResult {
     min: number;
     max: number;
   };
+  // Convenience properties for individual fee access
+  lawyerFees: number;
+  agentFees: number;
+  developerLawyerFees: number;
+  bankGuarantee: number;
+  mortgageOriginationFee: number;
+  appraisalFee: number;
+  mortgageRegistration: number;
+  tabuRegistration: number;
+  caveatRegistration: number;
 }
 
 export interface MonthlyCostsResult {
@@ -274,21 +285,35 @@ export function calculateTotalPurchaseCosts(
   const closingCosts = costs
     .filter(c => c.category !== 'tax' && c.category !== 'mortgage')
     .reduce((sum, c) => sum + c.amount, 0);
-  const mortgageCosts = costs
+  const mortgageCostsTotal = costs
     .filter(c => c.category === 'mortgage')
     .reduce((sum, c) => sum + c.amount, 0);
+
+  // Extract individual fee amounts from costs array
+  const findCost = (name: string) => costs.find(c => c.name === name)?.amount || 0;
 
   return {
     totalMin: Math.round(totalMin),
     totalMax: Math.round(totalMax),
+    totalOneTimeCosts: Math.round(totalMin),
     costs,
     purchaseTax,
     closingCosts: Math.round(closingCosts),
-    mortgageCosts: Math.round(mortgageCosts),
+    mortgageCosts: Math.round(mortgageCostsTotal),
     percentOfPrice: {
       min: Math.round((totalMin / price) * 1000) / 10,
       max: Math.round((totalMax / price) * 1000) / 10,
     },
+    // Individual fee access
+    lawyerFees: findCost('Lawyer Fees'),
+    agentFees: findCost('Agent Commission'),
+    developerLawyerFees: findCost('Developer Lawyer'),
+    bankGuarantee: findCost('Bank Guarantee'),
+    mortgageOriginationFee: findCost('Mortgage Origination'),
+    appraisalFee: findCost('Property Appraisal'),
+    mortgageRegistration: findCost('Mortgage Registration'),
+    tabuRegistration: findCost('Tabu Registration'),
+    caveatRegistration: findCost('Caveat Registration'),
   };
 }
 
@@ -335,6 +360,32 @@ export function calculateNewConstructionPremium(
     finalPrice: Math.round(basePrice + madadIncrease),
     madadIncrease,
     percentIncrease: Math.round(totalIncrease * 100 * 10) / 10,
+  };
+}
+
+/**
+ * Alias for calculateNewConstructionPremium for component compatibility
+ */
+export function calculateNewConstructionLinkage(
+  basePrice: number,
+  buildTimeMonths: number,
+  annualRate: number = 0.02
+): {
+  totalLinkedCost: number;
+  linkageAmount: number;
+  annualRate: number;
+  finalPrice: number;
+  percentIncrease: number;
+} {
+  const buildTimeYears = buildTimeMonths / 12;
+  const result = calculateNewConstructionPremium(basePrice, buildTimeYears, annualRate);
+  
+  return {
+    totalLinkedCost: result.finalPrice,
+    linkageAmount: result.madadIncrease,
+    annualRate: annualRate * 100,
+    finalPrice: result.finalPrice,
+    percentIncrease: result.percentIncrease,
   };
 }
 

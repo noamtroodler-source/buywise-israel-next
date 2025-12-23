@@ -57,7 +57,7 @@ export function InvestmentROICalculator() {
     
     // Calculate mortgage payment if using leverage
     const mortgagePayment = useLeverage && loanAmount > 0
-      ? calculateMortgagePayment(loanAmount, mortgageRate, mortgageTerm, 'fixed_unlinked')
+      ? calculateMortgagePayment(loanAmount, mortgageRate, mortgageTerm)
       : { monthlyPayment: 0, totalPayment: 0, totalInterest: 0 };
     
     // Calculate vacancy loss
@@ -73,7 +73,7 @@ export function InvestmentROICalculator() {
     const netOperatingIncome = effectiveRent - annualOperatingCosts - maintenanceCost;
     
     // Calculate tax based on method
-    const taxCalc = calculateRentalIncomeTax(monthlyRent, taxMethod, marginalTaxRate / 100);
+    const taxCalc = calculateRentalIncomeTax(monthlyRent, taxMethod);
     const annualTax = taxCalc.annualTax;
     
     // Annual cash flow after all expenses and mortgage
@@ -81,22 +81,13 @@ export function InvestmentROICalculator() {
     const annualCashFlow = netOperatingIncome - annualMortgagePayments - annualTax;
     
     // Yields
-    const grossYield = calculateGrossYield(purchasePrice, monthlyRent);
-    const netYieldResult = calculateNetYield(
-      purchasePrice, 
-      monthlyRent, 
-      { 
-        arnona: monthlyArnona * 12, 
-        vaadBayit: monthlyVaadBayit * 12, 
-        insurance: monthlyInsurance * 12,
-        maintenance: maintenanceCost,
-        vacancy: vacancyLoss,
-        tax: annualTax,
-      }
-    );
+    const grossYieldValue = calculateGrossYield(purchasePrice, monthlyRent);
+    const totalExpenses = annualOperatingCosts + maintenanceCost + vacancyLoss;
+    const netYieldResult = calculateNetYield(purchasePrice, monthlyRent, totalExpenses);
     
-    // Cash-on-Cash Return
-    const cashOnCash = calculateCashOnCash(downPayment, annualCashFlow);
+    // Cash-on-Cash Return (needs 3 args: downPayment, closingCosts, annualCashFlow)
+    const closingCostsEstimate = purchasePrice * 0.05; // ~5% estimate
+    const cashOnCash = calculateCashOnCash(downPayment, closingCostsEstimate, annualCashFlow);
     
     // Multi-year projection
     const projection = projectMultiYearROI({
@@ -119,12 +110,20 @@ export function InvestmentROICalculator() {
     // Cap Rate (based on purchase price, not cash invested)
     const capRate = (netOperatingIncome / purchasePrice) * 100;
     
+    // Calculate summary from projection
+    const lastYear = projection[projection.length - 1];
+    const futureValue = lastYear?.propertyValue || purchasePrice;
+    const totalRentalIncome = projection.reduce((sum, p) => sum + p.netCashFlow, 0);
+    const equityGain = futureValue - purchasePrice;
+    const totalROI = lastYear?.roi || 0;
+    const annualizedReturn = holdingYears > 0 ? (Math.pow(1 + totalROI / 100, 1 / holdingYears) - 1) * 100 : 0;
+    
     // Compare to city benchmark
     const cityBenchmarkYield = selectedCityData?.gross_yield_percent || 3.5;
-    const yieldVsBenchmark = grossYield.grossYield - cityBenchmarkYield;
+    const yieldVsBenchmark = grossYieldValue - cityBenchmarkYield;
 
     return {
-      grossYield: grossYield.grossYield,
+      grossYield: grossYieldValue,
       netYield: netYieldResult.netYield,
       capRate,
       cashOnCash,
@@ -138,7 +137,14 @@ export function InvestmentROICalculator() {
       mortgagePayment: mortgagePayment.monthlyPayment,
       downPayment,
       loanAmount,
-      projection,
+      projection: {
+        years: projection,
+        futureValue,
+        totalRentalIncome,
+        equityGain,
+        totalROI,
+        annualizedReturn,
+      },
       cityBenchmarkYield,
       yieldVsBenchmark,
     };

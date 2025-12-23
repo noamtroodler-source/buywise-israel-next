@@ -52,6 +52,31 @@ export interface City {
   is_featured: boolean;
   created_at: string;
   updated_at: string;
+  // Additional fields from database
+  arnona_monthly_avg?: number | null;
+  arnona_rate_sqm?: number | null;
+  average_vaad_bayit?: number | null;
+  gross_yield_percent?: number | null;
+  net_yield_percent?: number | null;
+  average_price_sqm?: number | null;
+  yoy_price_change?: number | null;
+  investment_score?: number | null;
+  commute_time_tel_aviv?: number | null;
+  has_train_station?: boolean | null;
+  anglo_presence?: string | null;
+  socioeconomic_rank?: number | null;
+  price_range_min?: number | null;
+  price_range_max?: number | null;
+  rental_3_room_min?: number | null;
+  rental_3_room_max?: number | null;
+  rental_4_room_min?: number | null;
+  rental_4_room_max?: number | null;
+  median_apartment_price?: number | null;
+  buyer_profile_match?: string[] | null;
+  market_outlook?: string | null;
+  key_developments?: string | null;
+  renovation_cost_basic?: number | null;
+  renovation_cost_premium?: number | null;
 }
 
 export type BlogSortOption = 'newest' | 'most_viewed' | 'most_saved';
