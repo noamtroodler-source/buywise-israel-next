@@ -427,23 +427,16 @@ export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlert
                   </div>
                   <Switch checked={notifyWhatsApp} onCheckedChange={setNotifyWhatsApp} />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">SMS</span>
-                  </div>
-                  <Switch checked={notifySms} onCheckedChange={setNotifySms} />
-                </div>
               </div>
 
-              {(notifyWhatsApp || notifySms) && (
+              {notifyWhatsApp && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                 >
                   <Input
-                    placeholder="Phone number"
+                    placeholder="WhatsApp number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="mt-2"
