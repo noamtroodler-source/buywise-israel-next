@@ -76,6 +76,7 @@ export function BuyerProfileCard() {
         <BuyerOnboarding 
           open={showOnboarding} 
           onComplete={() => setShowOnboarding(false)}
+          onClose={() => setShowOnboarding(false)}
         />
       </>
     );
@@ -156,7 +157,8 @@ export function BuyerProfileCard() {
 
       <BuyerOnboarding 
         open={showOnboarding}
-        onComplete={() => setShowOnboarding(false)} 
+        onComplete={() => setShowOnboarding(false)}
+        onClose={() => setShowOnboarding(false)}
       />
     </>
   );
