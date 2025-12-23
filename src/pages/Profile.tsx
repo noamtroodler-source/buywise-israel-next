@@ -193,15 +193,6 @@ export default function Profile() {
                   </Button>
                 )}
 
-                {!isAgent && (
-                  <Button
-                    variant="default"
-                    className="w-full"
-                    onClick={() => navigate('/agent/register')}
-                  >
-                    Become an Agent
-                  </Button>
-                )}
               </CardContent>
             </Card>
           </div>
