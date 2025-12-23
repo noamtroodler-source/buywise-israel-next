@@ -55,23 +55,15 @@ export const SignUpCTA = () => {
               ))}
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            {/* CTA */}
+            <div className="flex justify-center pt-4">
               <Button
                 asChild
                 size="lg"
                 variant="secondary"
-                className="w-full sm:w-auto text-base font-semibold px-8"
+                className="text-base font-semibold px-8"
               >
                 <Link to="/auth">Create Free Account</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="ghost"
-                className="w-full sm:w-auto text-base text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <Link to="/tools">Explore Tools</Link>
               </Button>
             </div>
           </div>
