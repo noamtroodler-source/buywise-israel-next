@@ -80,6 +80,7 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
       <CollapsibleSection 
         title="Cost Breakdown" 
         icon={<Calculator className="h-5 w-5" />}
+        defaultOpen={true}
       >
         <div className="space-y-4">
           <h4 className="font-medium text-foreground">Monthly Costs (Estimates)</h4>
@@ -110,6 +111,7 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
     <CollapsibleSection 
       title="Cost Breakdown" 
       icon={<Calculator className="h-5 w-5" />}
+      defaultOpen={true}
     >
       <div className="space-y-5">
         {/* Show personalization prompt if no profile set */}
