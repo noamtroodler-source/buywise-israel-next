@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -30,14 +30,43 @@ export function TrueCostWalkthrough() {
   const [usesAgent, setUsesAgent] = useState(true);
   const [showResults, setShowResults] = useState(false);
 
-  const { calculatePurchaseTax } = usePurchaseTaxBrackets();
+  const { data: taxBrackets = [] } = usePurchaseTaxBrackets(buyerType);
+
+  const calculatePurchaseTax = useMemo(() => {
+    return (price: number): number => {
+      if (!taxBrackets.length) {
+        // Fallback estimates when no brackets loaded
+        if (buyerType === 'first_time') {
+          if (price <= 1919155) return 0;
+          return Math.round(price * 0.035);
+        }
+        return Math.round(price * 0.08);
+      }
+      
+      let tax = 0;
+      let remainingPrice = price;
+      
+      for (const bracket of taxBrackets) {
+        const bracketMax = bracket.bracket_max ?? Infinity;
+        const bracketMin = bracket.bracket_min;
+        const bracketSize = bracketMax - bracketMin;
+        const amountInBracket = Math.min(Math.max(remainingPrice - bracketMin, 0), bracketSize);
+        
+        if (amountInBracket > 0) {
+          tax += amountInBracket * (bracket.rate_percent / 100);
+        }
+      }
+      
+      return Math.round(tax);
+    };
+  }, [taxBrackets, buyerType]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 }).format(amount);
   };
 
   const calculateCosts = (): CostBreakdown => {
-    const purchaseTax = calculatePurchaseTax(propertyPrice, buyerType);
+    const purchaseTax = calculatePurchaseTax(propertyPrice);
     const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * 1.17; // 1% + VAT, min 15k
     const agentFees = usesAgent ? propertyPrice * 0.02 * 1.17 : 0; // 2% + VAT
     const mortgageFees = 5000; // Approximate: appraisal + opening fees
@@ -138,10 +167,10 @@ export function TrueCostWalkthrough() {
           <div className="bg-primary/5 rounded-lg p-4">
             <h4 className="font-semibold mb-2">Your Estimated Purchase Tax</h4>
             <p className="text-2xl font-bold text-primary">
-              {formatCurrency(calculatePurchaseTax(propertyPrice, buyerType))}
+              {formatCurrency(calculatePurchaseTax(propertyPrice))}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {((calculatePurchaseTax(propertyPrice, buyerType) / propertyPrice) * 100).toFixed(2)}% of property price
+              {((calculatePurchaseTax(propertyPrice) / propertyPrice) * 100).toFixed(2)}% of property price
             </p>
           </div>
 

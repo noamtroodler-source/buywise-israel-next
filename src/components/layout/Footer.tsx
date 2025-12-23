@@ -30,8 +30,30 @@ export function Footer() {
               <Link to="/listings?status=for_rent" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Rent Property
               </Link>
-              <Link to="/listings" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Browse All
+              <Link to="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Tools & Calculators
+              </Link>
+              <Link to="/areas" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Explore Areas
+              </Link>
+            </nav>
+          </div>
+
+          {/* Buyer Guides */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold text-foreground">Buyer Guides</h4>
+            <nav className="flex flex-col gap-2">
+              <Link to="/guides/buying-in-israel" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Complete Buying Guide
+              </Link>
+              <Link to="/guides/oleh-first-time" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Oleh Buyer Guide
+              </Link>
+              <Link to="/guides/investment-property" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Investment Guide
+              </Link>
+              <Link to="/glossary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Hebrew Glossary
               </Link>
             </nav>
           </div>

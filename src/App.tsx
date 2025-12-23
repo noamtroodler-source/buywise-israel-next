@@ -35,6 +35,11 @@ import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
 import Glossary from "./pages/Glossary";
+import Guides from "./pages/Guides";
+import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
+import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
+import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
+import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +66,12 @@ const App = () => (
             <Route path="/areas/:slug" element={<AreaDetail />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/glossary" element={<Glossary />} />
+            <Route path="/guides" element={<Guides />} />
+            <Route path="/guides/buying-in-israel" element={<BuyingInIsraelGuide />} />
+            <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
+            <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
+            <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
+            <Route path="/developers" element={<Developers />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers/:slug" element={<DeveloperDetail />} />
             <Route path="/projects" element={<Projects />} />
