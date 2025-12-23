@@ -1,8 +1,12 @@
 import { useState } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar } from 'lucide-react';
+import { Calculator, DollarSign, Receipt, Calendar, Info, Settings } from 'lucide-react';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useBuyerProfile, getBuyerTaxCategory, calculatePurchaseTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -11,27 +15,18 @@ interface PropertyCostBreakdownProps {
 }
 
 export function PropertyCostBreakdown({ price, currency, listingStatus }: PropertyCostBreakdownProps) {
-  const [buyerType, setBuyerType] = useState<'first' | 'second'>('first');
+  const { user } = useAuth();
+  const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
-
-  // Calculate costs based on buyer type (Israel tax brackets simplified)
-  const calculatePurchaseTax = () => {
-    if (listingStatus === 'for_rent') return 0;
-    
-    if (buyerType === 'first') {
-      // First-time buyer exemptions
-      if (price <= 1978745) return 0;
-      if (price <= 2347040) return (price - 1978745) * 0.035;
-      if (price <= 6055070) return (2347040 - 1978745) * 0.035 + (price - 2347040) * 0.05;
-      return (2347040 - 1978745) * 0.035 + (6055070 - 2347040) * 0.05 + (price - 6055070) * 0.08;
-    } else {
-      // Additional property buyer
-      if (price <= 6055070) return price * 0.08;
-      return 6055070 * 0.08 + (price - 6055070) * 0.10;
-    }
-  };
-
-  const purchaseTax = calculatePurchaseTax();
+  
+  // Determine buyer category from profile or use fallback
+  const buyerCategory = getBuyerTaxCategory(buyerProfile);
+  const hasProfile = !!buyerProfile?.onboarding_completed;
+  
+  // Calculate purchase tax based on profile
+  const purchaseTax = listingStatus === 'for_rent' ? 0 : calculatePurchaseTax(price, buyerCategory);
+  
+  // Other costs
   const lawyerFees = price * 0.005; // ~0.5%
   const agentFees = price * 0.02; // ~2%
   const mortgageFees = price * 0.005; // Estimate
@@ -42,6 +37,43 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
   const vaad = 250; // Building maintenance
   const insurance = 150;
   const totalMonthly = arnona + vaad + insurance;
+
+  // Profile prompt banner
+  const ProfilePrompt = () => (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+      <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+      <div className="flex-1 space-y-1">
+        <p className="text-sm text-foreground">
+          {user ? (
+            <>Costs shown for <span className="font-medium">{getBuyerCategoryLabel(buyerCategory)}</span> (default)</>
+          ) : (
+            <>Assuming <span className="font-medium">First-Time Buyer</span> rates</>
+          )}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {user ? (
+            'Set your buyer profile for personalized calculations'
+          ) : (
+            'Sign up to get personalized tax calculations'
+          )}
+        </p>
+      </div>
+      {user ? (
+        <Link to="/profile">
+          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs">
+            <Settings className="h-3.5 w-3.5" />
+            Personalize
+          </Button>
+        </Link>
+      ) : (
+        <Link to="/auth?tab=signup">
+          <Button variant="ghost" size="sm" className="h-8 text-xs">
+            Sign Up
+          </Button>
+        </Link>
+      )}
+    </div>
+  );
 
   if (listingStatus === 'for_rent') {
     return (
@@ -80,13 +112,25 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
       icon={<Calculator className="h-5 w-5" />}
     >
       <div className="space-y-5">
-        {/* Buyer Type Selector */}
-        <Tabs value={buyerType} onValueChange={(v) => setBuyerType(v as 'first' | 'second')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="first">First-Time Buyer</TabsTrigger>
-            <TabsTrigger value="second">Additional Property</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Show personalization prompt if no profile set */}
+        {!hasProfile && !isLoading && <ProfilePrompt />}
+        
+        {/* Buyer category indicator if profile exists */}
+        {hasProfile && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="text-sm text-foreground">
+                Calculating for: <span className="font-medium">{getBuyerCategoryLabel(buyerCategory)}</span>
+              </span>
+            </div>
+            <Link to="/profile">
+              <Button variant="ghost" size="sm" className="h-7 text-xs">
+                Change
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* One-Time Costs */}
         <div className="space-y-3">
@@ -96,7 +140,10 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Purchase Tax (Mas Rechisha)</span>
+              <span className="text-muted-foreground">
+                Purchase Tax (Mas Rechisha)
+                {buyerCategory === 'oleh' && <span className="ml-1 text-xs text-green-600">(Oleh rate)</span>}
+              </span>
               <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
@@ -145,7 +192,7 @@ export function PropertyCostBreakdown({ price, currency, listingStatus }: Proper
         </div>
 
         <p className="text-xs text-muted-foreground">
-          * These are estimates only. Actual costs may vary based on specific circumstances.
+          * Estimates based on 2025 tax brackets. Actual costs may vary.
         </p>
       </div>
     </CollapsibleSection>

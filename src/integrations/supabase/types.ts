@@ -157,6 +157,45 @@ export type Database = {
           },
         ]
       }
+      buyer_profiles: {
+        Row: {
+          aliyah_year: number | null
+          buyer_entity: string
+          created_at: string
+          id: string
+          is_first_property: boolean
+          onboarding_completed: boolean
+          purchase_purpose: string
+          residency_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aliyah_year?: number | null
+          buyer_entity?: string
+          created_at?: string
+          id?: string
+          is_first_property?: boolean
+          onboarding_completed?: boolean
+          purchase_purpose?: string
+          residency_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aliyah_year?: number | null
+          buyer_entity?: string
+          created_at?: string
+          id?: string
+          is_first_property?: boolean
+          onboarding_completed?: boolean
+          purchase_purpose?: string
+          residency_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           average_price: number | null
