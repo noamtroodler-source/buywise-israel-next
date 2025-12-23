@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
 import { toast } from 'sonner';
 
 const authSchema = z.object({
@@ -24,8 +26,11 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, signIn, signUp, loading } = useAuth();
+  const { data: buyerProfile, isLoading: profileLoading } = useBuyerProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [justSignedUp, setJustSignedUp] = useState(false);
 
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
@@ -33,10 +38,22 @@ export default function Auth() {
   });
 
   useEffect(() => {
-    if (user && !loading) {
-      navigate('/');
+    if (user && !loading && !profileLoading) {
+      // If user just signed up and has no buyer profile, show onboarding
+      if (justSignedUp && !buyerProfile) {
+        setShowOnboarding(true);
+      } else if (!showOnboarding) {
+        // Otherwise redirect to home
+        navigate('/');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, navigate]);
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    toast.success('Welcome to BuyWise Israel!');
+    navigate('/');
+  };
 
   const handleSubmit = async (data: AuthFormData) => {
     setIsSubmitting(true);
@@ -50,8 +67,8 @@ export default function Auth() {
             toast.error(error.message);
           }
         } else {
+          setJustSignedUp(true);
           toast.success('Account created successfully!');
-          navigate('/');
         }
       } else {
         const { error } = await signIn(data.email, data.password);
@@ -137,6 +154,11 @@ export default function Auth() {
           </CardContent>
         </Card>
       </div>
+      
+      <BuyerOnboarding 
+        open={showOnboarding} 
+        onComplete={handleOnboardingComplete} 
+      />
     </Layout>
   );
 }
