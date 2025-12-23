@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion';
-import { Heart, Bell, TrendingUp, GitCompare } from 'lucide-react';
+import { Heart, Bell, Sparkles, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 const benefits = [
   { icon: Heart, label: 'Save Favorites' },
-  { icon: Bell, label: 'Get Alerts' },
-  { icon: TrendingUp, label: 'Track Market' },
-  { icon: GitCompare, label: 'Compare Properties' },
+  { icon: Bell, label: 'Never Miss a Listing' },
+  { icon: Sparkles, label: 'Personalized Picks' },
+  { icon: Smartphone, label: 'Sync Across Devices' },
 ];
 
 export const SignUpCTA = () => {
