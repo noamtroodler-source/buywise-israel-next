@@ -1,15 +1,22 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { DollarSign, Building2, Receipt, Info } from 'lucide-react';
+import { DollarSign, Building2, Receipt, Info, Plus, X, Search, Check } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
+import { useCities } from '@/hooks/useCities';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface MarketRealityTabsProps {
   marketData: MarketData[];
   cityName: string;
+  citySlug?: string;
   propertyTypes?: { name: string; value: number }[];
   arnonaRateSqm?: number | null;
 }
@@ -20,14 +27,67 @@ const NATIONAL_AVG_ARNONA = 25; // National average arnona rate per sqm
 export function MarketRealityTabs({ 
   marketData, 
   cityName, 
+  citySlug = '',
   propertyTypes = [],
   arnonaRateSqm
 }: MarketRealityTabsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
+  const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  
+  const { data: allCities = [] } = useCities();
   
   const latestData = marketData[0];
   const pricePerSqm = latestData?.average_price_sqm || 0;
   const percentAboveNational = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
+  
+  // Get comparison cities data
+  const comparisonCities = useMemo(() => {
+    return selectedCities.map(cityNameItem => {
+      const cityData = allCities.find(c => c.name === cityNameItem);
+      return {
+        name: cityNameItem,
+        pricePerSqm: cityData?.average_price_sqm || 0,
+        isCurrent: cityNameItem === cityName
+      };
+    }).filter(c => c.pricePerSqm > 0);
+  }, [selectedCities, allCities, cityName]);
+
+  const maxPrice = Math.max(...comparisonCities.map(c => c.pricePerSqm), pricePerSqm);
+
+  // Filtered cities for search
+  const filteredCities = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    return allCities
+      .filter(c => c.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        // Current city first, then selected cities, then alphabetically
+        if (a.name === cityName) return -1;
+        if (b.name === cityName) return 1;
+        const aSelected = selectedCities.includes(a.name);
+        const bSelected = selectedCities.includes(b.name);
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        return a.name.localeCompare(b.name);
+      });
+  }, [allCities, searchQuery, selectedCities, cityName]);
+
+  const handleCityToggle = (cityNameItem: string) => {
+    if (cityNameItem === cityName) return; // Can't deselect current city
+    setSelectedCities(prev => {
+      if (prev.includes(cityNameItem)) {
+        return prev.filter(c => c !== cityNameItem);
+      }
+      if (prev.length >= 3) return prev; // Max 3 cities
+      return [...prev, cityNameItem];
+    });
+  };
+
+  const handleRemoveCity = (cityNameItem: string) => {
+    if (cityNameItem === cityName) return;
+    setSelectedCities(prev => prev.filter(c => c !== cityNameItem));
+  };
   
   // Arnona calculations
   const rate = arnonaRateSqm || NATIONAL_AVG_ARNONA;
@@ -109,6 +169,109 @@ export function MarketRealityTabs({
                 </div>
               </div>
 
+              {/* City Price Comparison */}
+              <div className="space-y-3">
+                {/* Selected cities badges and add button */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {selectedCities.map((city) => (
+                    <Badge 
+                      key={city} 
+                      variant={city === cityName ? "default" : "secondary"}
+                      className="flex items-center gap-1"
+                    >
+                      {city}
+                      {city === cityName ? (
+                        <span className="text-xs opacity-70 ml-1">(current)</span>
+                      ) : (
+                        <button 
+                          onClick={() => handleRemoveCity(city)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  ))}
+                  
+                  {selectedCities.length < 3 && (
+                    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-6 px-2 text-xs gap-1"
+                        >
+                          <Plus className="h-3 w-3" />
+                          Compare City
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-0 bg-background border-border z-50" align="start">
+                        <div className="p-2 border-b border-border">
+                          <div className="flex items-center gap-2 px-2">
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder="Search cities..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="h-8 border-0 p-0 focus-visible:ring-0"
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-[250px] overflow-y-auto">
+                          {filteredCities.map((city) => {
+                            const isSelected = selectedCities.includes(city.name);
+                            const isCurrent = city.name === cityName;
+                            const isDisabled = isCurrent || (selectedCities.length >= 3 && !isSelected);
+                            
+                            return (
+                              <div
+                                key={city.id}
+                                className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50 ${
+                                  isDisabled ? 'opacity-50' : ''
+                                }`}
+                                onClick={() => !isDisabled && handleCityToggle(city.name)}
+                              >
+                                <Checkbox 
+                                  checked={isSelected}
+                                  disabled={isDisabled}
+                                  className="pointer-events-none"
+                                />
+                                <span className="flex-1">{city.name}</span>
+                                {isCurrent && (
+                                  <span className="text-xs text-muted-foreground">(current)</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+
+                {/* Comparison bars */}
+                {comparisonCities.length > 1 && (
+                  <div className="space-y-2">
+                    {comparisonCities.map((city) => (
+                      <div key={city.name} className="flex items-center gap-3">
+                        <span className={`text-xs w-20 truncate ${city.isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                          {city.name}
+                        </span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all ${city.isCurrent ? 'bg-primary' : 'bg-muted-foreground/50'}`}
+                            style={{ width: `${(city.pricePerSqm / maxPrice) * 100}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs w-20 text-right ${city.isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                          ₪{city.pricePerSqm.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Insight Card */}
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                 <div className="flex items-start gap-3">
@@ -116,11 +279,20 @@ export function MarketRealityTabs({
                   <div>
                     <p className="font-medium text-foreground">What This Means For You</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {percentAboveNational > 50 
-                        ? `${cityName} is a premium market. Expect higher prices but also strong property value retention.`
-                        : percentAboveNational > 0
-                          ? `${cityName} prices are above average. Look for value in emerging neighborhoods.`
-                          : `${cityName} offers competitive pricing compared to major cities.`
+                      {comparisonCities.length > 1 
+                        ? (() => {
+                            const sortedCities = [...comparisonCities].sort((a, b) => b.pricePerSqm - a.pricePerSqm);
+                            const currentRank = sortedCities.findIndex(c => c.isCurrent) + 1;
+                            if (currentRank === 1) {
+                              return `${cityName} has the highest prices among selected cities. Consider looking at ${sortedCities[1]?.name} for more affordable options.`;
+                            }
+                            return `${cityName} is ${currentRank === sortedCities.length ? 'the most affordable' : `#${currentRank}`} among selected cities.`;
+                          })()
+                        : percentAboveNational > 50 
+                          ? `${cityName} is a premium market. Expect higher prices but also strong property value retention.`
+                          : percentAboveNational > 0
+                            ? `${cityName} prices are above average. Look for value in emerging neighborhoods.`
+                            : `${cityName} offers competitive pricing compared to major cities.`
                       }
                     </p>
                   </div>
