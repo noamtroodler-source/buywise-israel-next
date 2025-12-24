@@ -303,76 +303,93 @@ export default function CityDetail() {
         </div>
 
         {/* Main Content - Interactive Dashboard */}
-        <div className="container py-8 space-y-6">
-          {/* Market Stats Cards - Always visible */}
-          {marketLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="space-y-0">
+          {/* Section 1: Market Stats - White background */}
+          <div className="bg-background py-10">
+            <div className="container">
+              {marketLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <MarketStatsCards 
+                  marketData={marketData} 
+                  cityName={city.name}
+                  cityData={{
+                    average_price_sqm: city.average_price_sqm,
+                    median_apartment_price: city.median_apartment_price,
+                    yoy_price_change: city.yoy_price_change,
+                    rental_3_room_min: city.rental_3_room_min,
+                    rental_3_room_max: city.rental_3_room_max,
+                    rental_4_room_min: city.rental_4_room_min,
+                    rental_4_room_max: city.rental_4_room_max,
+                  }}
+                />
+              )}
             </div>
-          ) : (
-            <MarketStatsCards 
-              marketData={marketData} 
-              cityName={city.name}
-              cityData={{
-                average_price_sqm: city.average_price_sqm,
-                median_apartment_price: city.median_apartment_price,
-                yoy_price_change: city.yoy_price_change,
-                rental_3_room_min: city.rental_3_room_min,
-                rental_3_room_max: city.rental_3_room_max,
-                rental_4_room_min: city.rental_4_room_min,
-                rental_4_room_max: city.rental_4_room_max,
-              }}
-            />
-          )}
+          </div>
 
-          {/* Price History & Trends */}
+          {/* Section 2: Price History & Market Reality - Two column on desktop, muted background */}
           {marketData.length > 0 && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-3">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold text-foreground">Price History & Trends</h2>
+            <div className="bg-muted/40 py-10">
+              <div className="container">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                  {/* Price History - Takes 3/5 on large screens */}
+                  <div className="lg:col-span-3 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-semibold text-foreground">Price History & Trends</h2>
+                    </div>
+                    <PriceTrendChart marketData={marketData} cityName={city.name} />
+                  </div>
+
+                  {/* Market Reality - Takes 2/5 on large screens */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Target className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-semibold text-foreground">Market Reality</h2>
+                    </div>
+                    <MarketRealityTabs 
+                      marketData={marketData} 
+                      cityName={city.name}
+                      arnonaRateSqm={city.arnona_rate_sqm}
+                    />
+                  </div>
+                </div>
               </div>
-              <PriceTrendChart marketData={marketData} cityName={city.name} />
-            </section>
+            </div>
           )}
 
-          {/* Market Reality Check */}
-          {marketData.length > 0 && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Target className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold text-foreground">Market Reality Check</h2>
-              </div>
-              <MarketRealityTabs 
-                marketData={marketData} 
-                cityName={city.name}
-                arnonaRateSqm={city.arnona_rate_sqm}
-              />
-            </section>
-          )}
-
-          {/* Worth Watching */}
+          {/* Section 3: Worth Watching - White background */}
           {worthWatching.length > 0 && (
-            <section className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Eye className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold text-foreground">What to Watch in {city.name}</h2>
+            <div className="bg-background py-10">
+              <div className="container space-y-4">
+                <div className="flex items-center gap-3">
+                  <Eye className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold text-foreground">What to Watch in {city.name}</h2>
+                </div>
+                <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
               </div>
-              <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
-            </section>
+            </div>
           )}
 
-          {/* Run the Numbers */}
-          <section className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Calculator className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">Run the Numbers</h2>
+          {/* Section 4: Run the Numbers - Muted background */}
+          <div className="bg-muted/40 py-10">
+            <div className="container space-y-4">
+              <div className="flex items-center gap-3">
+                <Calculator className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Run the Numbers</h2>
+              </div>
+              <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
             </div>
-            <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
-          </section>
+          </div>
 
-          {/* Browse Listings CTA - Always visible */}
-          <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
+          {/* Section 5: Browse Listings CTA - White background */}
+          <div className="bg-background py-10">
+            <div className="container">
+              <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
