@@ -313,6 +313,96 @@ export type Database = {
         }
         Relationships: []
       }
+      city_canonical_metrics: {
+        Row: {
+          arnona_monthly_avg: number | null
+          arnona_rate_sqm: number | null
+          average_price_sqm: number | null
+          city_slug: string
+          created_at: string
+          gross_yield_percent: number | null
+          id: string
+          median_apartment_price: number | null
+          net_yield_percent: number | null
+          rental_2_room_max: number | null
+          rental_2_room_min: number | null
+          rental_3_room_max: number | null
+          rental_3_room_min: number | null
+          rental_4_room_max: number | null
+          rental_4_room_min: number | null
+          rental_5_room_max: number | null
+          rental_5_room_min: number | null
+          report_version_key: string
+          source_page_ref: string | null
+          source_priority: string | null
+          updated_at: string
+          yoy_price_change: number | null
+        }
+        Insert: {
+          arnona_monthly_avg?: number | null
+          arnona_rate_sqm?: number | null
+          average_price_sqm?: number | null
+          city_slug: string
+          created_at?: string
+          gross_yield_percent?: number | null
+          id?: string
+          median_apartment_price?: number | null
+          net_yield_percent?: number | null
+          rental_2_room_max?: number | null
+          rental_2_room_min?: number | null
+          rental_3_room_max?: number | null
+          rental_3_room_min?: number | null
+          rental_4_room_max?: number | null
+          rental_4_room_min?: number | null
+          rental_5_room_max?: number | null
+          rental_5_room_min?: number | null
+          report_version_key: string
+          source_page_ref?: string | null
+          source_priority?: string | null
+          updated_at?: string
+          yoy_price_change?: number | null
+        }
+        Update: {
+          arnona_monthly_avg?: number | null
+          arnona_rate_sqm?: number | null
+          average_price_sqm?: number | null
+          city_slug?: string
+          created_at?: string
+          gross_yield_percent?: number | null
+          id?: string
+          median_apartment_price?: number | null
+          net_yield_percent?: number | null
+          rental_2_room_max?: number | null
+          rental_2_room_min?: number | null
+          rental_3_room_max?: number | null
+          rental_3_room_min?: number | null
+          rental_4_room_max?: number | null
+          rental_4_room_min?: number | null
+          rental_5_room_max?: number | null
+          rental_5_room_min?: number | null
+          report_version_key?: string
+          source_page_ref?: string | null
+          source_priority?: string | null
+          updated_at?: string
+          yoy_price_change?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_canonical_metrics_city_slug_fk"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "city_canonical_metrics_report_version_fk"
+            columns: ["report_version_key"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["version_key"]
+          },
+        ]
+      }
       developers: {
         Row: {
           created_at: string
@@ -1184,6 +1274,33 @@ export type Database = {
           price_min?: number
           rooms?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      report_versions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          source_notes: string | null
+          title: string | null
+          version_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          source_notes?: string | null
+          title?: string | null
+          version_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          source_notes?: string | null
+          title?: string | null
+          version_key?: string
         }
         Relationships: []
       }
