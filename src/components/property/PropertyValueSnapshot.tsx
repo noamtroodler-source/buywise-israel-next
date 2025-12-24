@@ -27,16 +27,27 @@ export function PropertyValueSnapshot({
     ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
     : null;
 
+  // Determine if we have the 12-month trend data
+  const hasTrendData = priceChange !== null && priceChange !== undefined;
+  
+  // Card component for reuse
+  const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+    <div className={`p-4 rounded-lg bg-muted/30 border border-border/50 ${className}`}>
+      {children}
+    </div>
+  );
+
   return (
     <CollapsibleSection 
       title="AI Value Snapshot" 
       icon={<BarChart3 className="h-5 w-5" />}
       defaultOpen={true}
     >
+      {/* Top row - always 2 cards side by side */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Price per m² */}
         {propertyPricePerSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <Card>
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <DollarSign className="h-4 w-4" />
               <span className="text-sm">Price per area</span>
@@ -44,12 +55,12 @@ export function PropertyValueSnapshot({
             <p className="text-2xl font-bold text-foreground">
               {formatPricePerArea(propertyPricePerSqm, 'ILS')}
             </p>
-          </div>
+          </Card>
         )}
 
         {/* Area Benchmark */}
         {averagePriceSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <Card>
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Home className="h-4 w-4" />
               <span className="text-sm">{city} Average</span>
@@ -57,12 +68,15 @@ export function PropertyValueSnapshot({
             <p className="text-2xl font-bold text-foreground">
               {formatPricePerArea(averagePriceSqm, 'ILS')}
             </p>
-          </div>
+          </Card>
         )}
+      </div>
 
-        {/* Comparison */}
+      {/* Bottom row - layout depends on whether we have trend data */}
+      <div className={`mt-4 grid gap-4 ${hasTrendData ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+        {/* Comparison - centered when alone, left when with trend */}
         {comparisonPercent !== null && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <Card className={!hasTrendData ? 'sm:col-start-1 sm:col-end-2 sm:mx-auto sm:w-[calc(50%-0.5rem)]' : ''}>
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {comparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4 text-orange-500" />
@@ -89,12 +103,12 @@ export function PropertyValueSnapshot({
                   ? 'Below area average' 
                   : 'At area average'}
             </p>
-          </div>
+          </Card>
         )}
 
         {/* 12-Month Trend */}
-        {priceChange !== null && priceChange !== undefined && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+        {hasTrendData && (
+          <Card>
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {priceChange > 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-500" />
@@ -117,7 +131,7 @@ export function PropertyValueSnapshot({
             <p className="text-xs text-muted-foreground mt-1">
               Area price change
             </p>
-          </div>
+          </Card>
         )}
       </div>
     </CollapsibleSection>
