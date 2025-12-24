@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { DollarSign, Building2, Receipt, Info, Plus, X, Search, Check } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { DollarSign, Building2, Receipt, Info, Plus, X, Search } from 'lucide-react';
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
 import { useCities } from '@/hooks/useCities';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -105,14 +106,15 @@ export function MarketRealityTabs({
   const typesData = propertyTypes.length > 0 ? propertyTypes : defaultListingTypes;
   const COLORS = ['hsl(213, 94%, 45%)', 'hsl(142, 76%, 36%)', 'hsl(45, 100%, 51%)'];
 
-  const getPricePosition = () => {
-    // Returns 0-100 position on affordability scale
-    if (percentAboveNational >= 70) return 95;
-    if (percentAboveNational >= 50) return 80;
-    if (percentAboveNational >= 30) return 65;
-    if (percentAboveNational >= 10) return 50;
-    if (percentAboveNational >= 0) return 40;
-    if (percentAboveNational >= -20) return 25;
+  const getPricePosition = (priceVal: number) => {
+    // Returns 0-100 position on affordability scale based on price vs national average
+    const percentAbove = ((priceVal - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
+    if (percentAbove >= 70) return 95;
+    if (percentAbove >= 50) return 80;
+    if (percentAbove >= 30) return 65;
+    if (percentAbove >= 10) return 50;
+    if (percentAbove >= 0) return 40;
+    if (percentAbove >= -20) return 25;
     return 10;
   };
 
@@ -155,17 +157,44 @@ export function MarketRealityTabs({
                 </p>
               </div>
 
-              {/* Affordability Slider */}
+              {/* Affordability Slider with Comparison Markers */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Affordable</span>
                   <span>Premium</span>
                 </div>
                 <div className="relative h-3 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500">
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-foreground rounded-full shadow-lg transition-all"
-                    style={{ left: `calc(${getPricePosition()}% - 8px)` }}
-                  />
+                  <TooltipProvider delayDuration={0}>
+                    {/* Current city marker - always visible and highlighted */}
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white border-2 border-primary rounded-full shadow-lg transition-all z-20 cursor-pointer ring-2 ring-primary/30"
+                          style={{ left: `calc(${getPricePosition(pricePerSqm)}% - 10px)` }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-background border-border">
+                        <p className="font-medium">{cityName}</p>
+                        <p className="text-primary">₪{pricePerSqm.toLocaleString()}/m²</p>
+                      </TooltipContent>
+                    </UITooltip>
+                    
+                    {/* Comparison city markers */}
+                    {comparisonCities.filter(c => !c.isCurrent).map((city) => (
+                      <UITooltip key={city.name}>
+                        <TooltipTrigger asChild>
+                          <div 
+                            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-muted border-2 border-muted-foreground/60 rounded-full shadow transition-all cursor-pointer hover:scale-110 z-10"
+                            style={{ left: `calc(${getPricePosition(city.pricePerSqm)}% - 8px)` }}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-background border-border">
+                          <p className="font-medium">{city.name}</p>
+                          <p className="text-muted-foreground">₪{city.pricePerSqm.toLocaleString()}/m²</p>
+                        </TooltipContent>
+                      </UITooltip>
+                    ))}
+                  </TooltipProvider>
                 </div>
               </div>
 
@@ -249,27 +278,6 @@ export function MarketRealityTabs({
                   )}
                 </div>
 
-                {/* Comparison bars */}
-                {comparisonCities.length > 1 && (
-                  <div className="space-y-2">
-                    {comparisonCities.map((city) => (
-                      <div key={city.name} className="flex items-center gap-3">
-                        <span className={`text-xs w-20 truncate ${city.isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                          {city.name}
-                        </span>
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all ${city.isCurrent ? 'bg-primary' : 'bg-muted-foreground/50'}`}
-                            style={{ width: `${(city.pricePerSqm / maxPrice) * 100}%` }}
-                          />
-                        </div>
-                        <span className={`text-xs w-20 text-right ${city.isCurrent ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                          ₪{city.pricePerSqm.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Insight Card */}
@@ -317,7 +325,7 @@ export function MarketRealityTabs({
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <RechartsTooltip 
                       formatter={(value: number) => `${value}%`}
                       contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))', 
