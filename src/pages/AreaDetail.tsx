@@ -17,7 +17,6 @@ import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatching
 import { CollapsibleSection } from '@/components/property/CollapsibleSection';
 // New City Info Components
 import { CityArnonaCard } from '@/components/city/CityArnonaCard';
-import { CityTransportInfo } from '@/components/city/CityTransportInfo';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -365,18 +364,11 @@ export default function CityDetail() {
             icon={<Info className="h-5 w-5" />}
             defaultOpen={true}
           >
-            <div className="grid md:grid-cols-2 gap-4">
-              <CityArnonaCard 
-                arnonaRateSqm={city.arnona_rate_sqm}
-                arnonaMonthlyAvg={city.arnona_monthly_avg}
-                cityName={city.name}
-              />
-              <CityTransportInfo 
-                commuteTimeTelAviv={city.commute_time_tel_aviv}
-                hasTrainStation={city.has_train_station}
-                cityName={city.name}
-              />
-            </div>
+            <CityArnonaCard 
+              arnonaRateSqm={city.arnona_rate_sqm}
+              arnonaMonthlyAvg={city.arnona_monthly_avg}
+              cityName={city.name}
+            />
           </CollapsibleSection>
 
           {/* Worth Watching - Collapsible, default open */}
