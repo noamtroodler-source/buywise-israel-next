@@ -14,8 +14,6 @@ import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
-import { CollapsibleSection } from '@/components/property/CollapsibleSection';
-
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
   'tel-aviv': [
@@ -327,51 +325,51 @@ export default function CityDetail() {
             />
           )}
 
-          {/* Price History & Trends - Collapsible, default open */}
+          {/* Price History & Trends */}
           {marketData.length > 0 && (
-            <CollapsibleSection 
-              title="Price History & Trends" 
-              icon={<BarChart3 className="h-5 w-5" />}
-              defaultOpen={true}
-            >
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Price History & Trends</h2>
+              </div>
               <PriceTrendChart marketData={marketData} cityName={city.name} />
-            </CollapsibleSection>
+            </section>
           )}
 
-          {/* Market Reality - Collapsible, default open */}
+          {/* Market Reality Check */}
           {marketData.length > 0 && (
-            <CollapsibleSection 
-              title="Market Reality Check" 
-              icon={<Target className="h-5 w-5" />}
-              defaultOpen={true}
-            >
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Target className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Market Reality Check</h2>
+              </div>
               <MarketRealityTabs 
                 marketData={marketData} 
                 cityName={city.name}
                 arnonaRateSqm={city.arnona_rate_sqm}
               />
-            </CollapsibleSection>
+            </section>
           )}
 
-          {/* Worth Watching - Collapsible, default open */}
+          {/* Worth Watching */}
           {worthWatching.length > 0 && (
-            <CollapsibleSection 
-              title={`What to Watch in ${city.name}`}
-              icon={<Eye className="h-5 w-5" />}
-              defaultOpen={true}
-            >
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Eye className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">What to Watch in {city.name}</h2>
+              </div>
               <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
-            </CollapsibleSection>
+            </section>
           )}
 
-          {/* Run the Numbers - Collapsible, default open */}
-          <CollapsibleSection 
-            title="Run the Numbers" 
-            icon={<Calculator className="h-5 w-5" />}
-            defaultOpen={true}
-          >
+          {/* Run the Numbers */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Calculator className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">Run the Numbers</h2>
+            </div>
             <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
-          </CollapsibleSection>
+          </section>
 
           {/* Browse Listings CTA - Always visible */}
           <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
