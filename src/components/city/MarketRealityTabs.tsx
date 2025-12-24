@@ -1,14 +1,13 @@
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Building2, Zap, TrendingUp, Info } from 'lucide-react';
+import { DollarSign, Building2, TrendingUp, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
 
 interface MarketRealityTabsProps {
   marketData: MarketData[];
   cityName: string;
-  propertiesCount: number;
   propertyTypes?: { name: string; value: number }[];
   grossYieldPercent?: number | null;
   netYieldPercent?: number | null;
@@ -22,7 +21,6 @@ const NATIONAL_AVG_YIELD = 3.2; // National average gross yield
 export function MarketRealityTabs({ 
   marketData, 
   cityName, 
-  propertiesCount,
   propertyTypes = [],
   grossYieldPercent,
   netYieldPercent,
@@ -52,16 +50,6 @@ export function MarketRealityTabs({
     if (percentAboveNational >= -20) return 25;
     return 10;
   };
-
-  const getMarketSpeed = () => {
-    const transactions = latestData?.total_transactions || 0;
-    if (transactions > 400) return { label: 'Very Active', color: 'text-emerald-600', days: '30-45' };
-    if (transactions > 200) return { label: 'Active', color: 'text-primary', days: '45-60' };
-    if (transactions > 100) return { label: 'Moderate', color: 'text-amber-600', days: '60-90' };
-    return { label: 'Slow', color: 'text-muted-foreground', days: '90+' };
-  };
-
-  const marketSpeed = getMarketSpeed();
   
   const getInvestmentRating = () => {
     if (!investmentScore) return { label: 'Moderate', color: 'text-amber-600' };
@@ -86,7 +74,7 @@ export function MarketRealityTabs({
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="prices" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 bg-muted">
+            <TabsList className="grid w-full grid-cols-3 bg-muted">
               <TabsTrigger value="prices" className="flex items-center gap-1.5">
                 <DollarSign className="h-4 w-4" />
                 <span className="hidden sm:inline">Prices</span>
@@ -94,10 +82,6 @@ export function MarketRealityTabs({
               <TabsTrigger value="types" className="flex items-center gap-1.5">
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Types</span>
-              </TabsTrigger>
-              <TabsTrigger value="speed" className="flex items-center gap-1.5">
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Speed</span>
               </TabsTrigger>
               <TabsTrigger value="investment" className="flex items-center gap-1.5">
                 <TrendingUp className="h-4 w-4" />
@@ -184,41 +168,6 @@ export function MarketRealityTabs({
                   <strong className="text-foreground">Resell properties lead</strong> {cityName}'s market. 
                   New projects offer modern options, while long-term rentals provide flexibility.
                 </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="speed" className="mt-6 space-y-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Market Activity Level</p>
-                <p className={`text-3xl font-bold ${marketSpeed.color}`}>
-                  {marketSpeed.label}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">{propertiesCount}</p>
-                  <p className="text-sm text-muted-foreground">Active Listings</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">{marketSpeed.days}</p>
-                  <p className="text-sm text-muted-foreground">Avg. Days to Sell</p>
-                </div>
-              </div>
-
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Zap className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">Market Insight</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {latestData?.total_transactions 
-                        ? `With ${latestData.total_transactions} transactions last month, ${cityName} shows ${marketSpeed.label.toLowerCase()} market activity.`
-                        : `${cityName} market data is being collected to provide accurate insights.`
-                      }
-                    </p>
-                  </div>
-                </div>
               </div>
             </TabsContent>
 

@@ -350,7 +350,6 @@ export default function CityDetail() {
               <MarketRealityTabs 
                 marketData={marketData} 
                 cityName={city.name}
-                propertiesCount={properties.length}
                 grossYieldPercent={city.gross_yield_percent}
                 netYieldPercent={city.net_yield_percent}
                 investmentScore={city.investment_score}
