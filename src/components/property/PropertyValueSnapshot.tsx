@@ -1,5 +1,4 @@
 import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home } from 'lucide-react';
-import { CollapsibleSection } from './CollapsibleSection';
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 
 interface PropertyValueSnapshotProps {
@@ -40,15 +39,16 @@ export function PropertyValueSnapshot({
     : 'grid-cols-1 sm:grid-cols-2';
 
   return (
-    <CollapsibleSection 
-      title="AI Value Snapshot" 
-      icon={<BarChart3 className="h-5 w-5" />}
-      defaultOpen={true}
-    >
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <BarChart3 className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">AI Value Snapshot</h3>
+      </div>
+      
       <div className={`grid ${gridCols} gap-4`}>
         {/* Price per m² */}
         {propertyPricePerSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <DollarSign className="h-4 w-4" />
               <span className="text-sm">Price per area</span>
@@ -61,7 +61,7 @@ export function PropertyValueSnapshot({
 
         {/* Area Benchmark */}
         {averagePriceSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Home className="h-4 w-4" />
               <span className="text-sm">{city} Average</span>
@@ -74,7 +74,7 @@ export function PropertyValueSnapshot({
 
         {/* Comparison */}
         {comparisonPercent !== null && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {comparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4 text-orange-500" />
@@ -106,7 +106,7 @@ export function PropertyValueSnapshot({
 
         {/* 12-Month Trend */}
         {priceChange !== null && priceChange !== undefined && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {priceChange > 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-500" />
@@ -132,6 +132,6 @@ export function PropertyValueSnapshot({
           </div>
         )}
       </div>
-    </CollapsibleSection>
+    </div>
   );
 }
