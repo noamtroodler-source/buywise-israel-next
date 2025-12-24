@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator, Info, Scale } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator, Info } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +18,6 @@ import { CollapsibleSection } from '@/components/property/CollapsibleSection';
 // New City Info Components
 import { CityArnonaCard } from '@/components/city/CityArnonaCard';
 import { CityTransportInfo } from '@/components/city/CityTransportInfo';
-import { AngloFriendlinessScore } from '@/components/city/AngloFriendlinessScore';
-import { CityComparison } from '@/components/city/CityComparison';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -367,7 +365,7 @@ export default function CityDetail() {
             icon={<Info className="h-5 w-5" />}
             defaultOpen={true}
           >
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               <CityArnonaCard 
                 arnonaRateSqm={city.arnona_rate_sqm}
                 arnonaMonthlyAvg={city.arnona_monthly_avg}
@@ -378,24 +376,7 @@ export default function CityDetail() {
                 hasTrainStation={city.has_train_station}
                 cityName={city.name}
               />
-              <AngloFriendlinessScore 
-                angloPresence={city.anglo_presence}
-                socioeconomicRank={city.socioeconomic_rank}
-                cityName={city.name}
-              />
             </div>
-          </CollapsibleSection>
-
-          {/* City Comparison */}
-          <CollapsibleSection 
-            title="Compare Cities" 
-            icon={<Scale className="h-5 w-5" />}
-            defaultOpen={false}
-          >
-            <CityComparison 
-              currentCitySlug={slug || ''}
-              currentCityName={city.name}
-            />
           </CollapsibleSection>
 
           {/* Worth Watching - Collapsible, default open */}
