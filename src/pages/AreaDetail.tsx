@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
+import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChart } from '@/components/city/PriceTrendChart';
@@ -185,6 +186,7 @@ export default function CityDetail() {
     city ? { city: city.name } : undefined
   );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
+  const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
 
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
@@ -316,6 +318,8 @@ export default function CityDetail() {
                 <MarketStatsCards 
                   marketData={marketData} 
                   cityName={city.name}
+                  citySlug={slug}
+                  canonicalMetrics={canonicalMetrics}
                   cityData={{
                     average_price_sqm: city.average_price_sqm,
                     median_apartment_price: city.median_apartment_price,

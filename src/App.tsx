@@ -34,6 +34,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
+import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import Glossary from "./pages/Glossary";
 import Guides from "./pages/Guides";
 import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
@@ -121,6 +122,7 @@ const App = () => (
               <Route path="properties" element={<AdminProperties />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
+              <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
