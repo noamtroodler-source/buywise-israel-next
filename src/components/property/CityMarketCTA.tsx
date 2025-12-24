@@ -15,26 +15,28 @@ export function CityMarketCTA({ cityName }: CityMarketCTAProps) {
   const citySlug = cityToSlug(cityName);
   
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-lg bg-muted/30 border border-border/50">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-full bg-primary/10">
-          <TrendingUp className="h-4 w-4 text-primary" />
+    <div className="p-5 rounded-xl bg-muted/30 border border-border/50">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-full bg-primary/10">
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-base font-semibold text-foreground">
+              Curious about {cityName}'s market?
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Explore price trends, market stats, neighborhood guides & what to watch
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            Curious about {cityName}'s market?
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Price trends, market stats & what to watch
-          </p>
-        </div>
+        <Button asChild variant="default" size="default" className="shrink-0">
+          <Link to={`/areas/${citySlug}`}>
+            Explore {cityName}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
       </div>
-      <Button asChild variant="outline" size="sm" className="shrink-0">
-        <Link to={`/areas/${citySlug}`}>
-          Explore {cityName}
-          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-        </Link>
-      </Button>
     </div>
   );
 }

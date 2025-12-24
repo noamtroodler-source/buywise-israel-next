@@ -89,16 +89,6 @@ export function PropertyLocation({
           </div>
         </div>
 
-        {/* About the City */}
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-          <h4 className="font-medium text-foreground mb-2">About {city}</h4>
-          <p className="text-sm text-muted-foreground">
-            Discover more about life in {city}, including community information, local amenities, and market trends.
-          </p>
-          <Button variant="link" className="px-0 mt-2 h-auto text-primary">
-            View City Guide →
-          </Button>
-        </div>
       </div>
     </div>
   );
