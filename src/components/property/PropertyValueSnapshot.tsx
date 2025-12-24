@@ -33,10 +33,10 @@ export function PropertyValueSnapshot({
       icon={<BarChart3 className="h-5 w-5" />}
       defaultOpen={true}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="flex flex-wrap justify-center gap-4">
         {/* Price per m² */}
         {propertyPricePerSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50 w-full sm:w-[calc(50%-0.5rem)]">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <DollarSign className="h-4 w-4" />
               <span className="text-sm">Price per area</span>
@@ -49,7 +49,7 @@ export function PropertyValueSnapshot({
 
         {/* Area Benchmark */}
         {averagePriceSqm && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50 w-full sm:w-[calc(50%-0.5rem)]">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <Home className="h-4 w-4" />
               <span className="text-sm">{city} Average</span>
@@ -62,7 +62,7 @@ export function PropertyValueSnapshot({
 
         {/* Comparison */}
         {comparisonPercent !== null && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50 w-full sm:w-[calc(50%-0.5rem)]">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {comparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4 text-orange-500" />
@@ -94,7 +94,7 @@ export function PropertyValueSnapshot({
 
         {/* 12-Month Trend */}
         {priceChange !== null && priceChange !== undefined && (
-          <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
+          <div className="p-4 rounded-lg bg-muted/30 border border-border/50 w-full sm:w-[calc(50%-0.5rem)]">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {priceChange > 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-500" />
