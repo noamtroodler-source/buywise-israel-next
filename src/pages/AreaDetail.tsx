@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Eye, Calculator } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,7 @@ import { useMarketData } from '@/hooks/useMarketData';
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChart } from '@/components/city/PriceTrendChart';
-import { PriceSummaryCard } from '@/components/city/PriceSummaryCard';
-import { PropertyTypesCard } from '@/components/city/PropertyTypesCard';
-import { ArnonaEstimatorCard } from '@/components/city/ArnonaEstimatorCard';
+import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
@@ -331,12 +329,12 @@ export default function CityDetail() {
             </div>
           </div>
 
-          {/* Section 2: Price History & Price Summary - Row 1 */}
+          {/* Section 2: Price History & Market Reality - Two column on desktop, muted background */}
           {marketData.length > 0 && (
             <div className="bg-muted/40 py-10">
-              <div className="container space-y-8">
-                {/* Row 1: Price Trend + Price Summary */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              <div className="container">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                  {/* Price History - Takes 3/5 on large screens */}
                   <div className="lg:col-span-3 space-y-4">
                     <div className="flex items-center gap-3">
                       <BarChart3 className="h-5 w-5 text-primary" />
@@ -344,15 +342,19 @@ export default function CityDetail() {
                     </div>
                     <PriceTrendChart marketData={marketData} cityName={city.name} />
                   </div>
-                  <div className="lg:col-span-2">
-                    <PriceSummaryCard marketData={marketData} cityName={city.name} />
-                  </div>
-                </div>
 
-                {/* Row 2: Property Types + Arnona */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <PropertyTypesCard cityName={city.name} />
-                  <ArnonaEstimatorCard cityName={city.name} arnonaRateSqm={city.arnona_rate_sqm} />
+                  {/* Market Reality - Takes 2/5 on large screens */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Target className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-semibold text-foreground">Market Reality</h2>
+                    </div>
+                    <MarketRealityTabs 
+                      marketData={marketData} 
+                      cityName={city.name}
+                      arnonaRateSqm={city.arnona_rate_sqm}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
