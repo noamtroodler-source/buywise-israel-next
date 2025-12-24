@@ -27,13 +27,25 @@ export function PropertyValueSnapshot({
     ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
     : null;
 
+  // Count how many cards will be shown
+  const hasPropertyPrice = !!propertyPricePerSqm;
+  const hasAreaAverage = !!averagePriceSqm;
+  const hasComparison = comparisonPercent !== null;
+  const hasTrend = priceChange !== null && priceChange !== undefined;
+  const cardCount = [hasPropertyPrice, hasAreaAverage, hasComparison, hasTrend].filter(Boolean).length;
+  
+  // Use 3-column layout when exactly 3 cards, otherwise 2-column
+  const gridCols = cardCount === 3 
+    ? 'grid-cols-1 sm:grid-cols-3' 
+    : 'grid-cols-1 sm:grid-cols-2';
+
   return (
     <CollapsibleSection 
       title="AI Value Snapshot" 
       icon={<BarChart3 className="h-5 w-5" />}
       defaultOpen={true}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className={`grid ${gridCols} gap-4`}>
         {/* Price per m² */}
         {propertyPricePerSqm && (
           <div className="p-4 rounded-lg bg-muted/30 border border-border/50">
