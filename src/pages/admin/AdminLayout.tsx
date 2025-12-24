@@ -17,6 +17,7 @@ const adminNavItems = [
   { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
   { href: '/admin/cities', label: 'Cities', icon: MapPin },
   { href: '/admin/market-data', label: 'Market Data', icon: BarChart3 },
+  { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
 ];
 
 export function AdminLayout() {

@@ -4,11 +4,13 @@ import { TrendingUp, TrendingDown, DollarSign, Home, Zap, Calendar } from 'lucid
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MarketData } from '@/types/projects';
-import { useRentalPrices } from '@/hooks/useRentalPrices';
+import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 
 interface MarketStatsCardsProps {
   marketData: MarketData[];
   cityName: string;
+  citySlug?: string;
+  canonicalMetrics?: CanonicalMetrics | null;
   cityData?: {
     average_price_sqm?: number | null;
     median_apartment_price?: number | null;
@@ -26,17 +28,27 @@ const getMonthName = (month: number | null) => {
   return months[month - 1] || '';
 };
 
-export function MarketStatsCards({ marketData, cityName, cityData }: MarketStatsCardsProps) {
+export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetrics, cityData }: MarketStatsCardsProps) {
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
-  const { data: rentalPrices } = useRentalPrices(cityName);
   
   const latestData = marketData[0];
   const previousData = marketData[1];
   
-  // Use city data as fallback for price per sqm
-  const pricePerSqm = latestData?.average_price_sqm || cityData?.average_price_sqm || null;
-  const medianPrice = latestData?.median_price || cityData?.median_apartment_price || null;
-  const priceChange = latestData?.price_change_percent || cityData?.yoy_price_change || null;
+  // Priority: Canonical metrics > cityData > marketData
+  const pricePerSqm = canonicalMetrics?.average_price_sqm 
+    ?? cityData?.average_price_sqm 
+    ?? latestData?.average_price_sqm 
+    ?? null;
+    
+  const medianPrice = canonicalMetrics?.median_apartment_price 
+    ?? cityData?.median_apartment_price 
+    ?? latestData?.median_price 
+    ?? null;
+    
+  const priceChange = canonicalMetrics?.yoy_price_change 
+    ?? cityData?.yoy_price_change 
+    ?? latestData?.price_change_percent 
+    ?? null;
 
   const formatPrice = (value: number | null) => {
     if (!value) return 'N/A';
@@ -55,38 +67,42 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
     return `₪${value.toLocaleString()}`;
   };
 
-  const getPriceChange = () => {
-    return priceChange;
+  // Get rental range - priority: canonical > cityData
+  const getSelectedRentalRange = () => {
+    // First try canonical metrics
+    if (canonicalMetrics) {
+      const range = getRentalRange(canonicalMetrics, selectedRooms);
+      if (range.min && range.max) {
+        return `${formatRentalPrice(range.min)}–${formatRentalPrice(range.max)}`;
+      }
+    }
+    
+    // Fallback to cityData for rooms 3 and 4
+    if (selectedRooms === 3 && cityData?.rental_3_room_min && cityData?.rental_3_room_max) {
+      return `${formatRentalPrice(cityData.rental_3_room_min)}–${formatRentalPrice(cityData.rental_3_room_max)}`;
+    }
+    if (selectedRooms === 4 && cityData?.rental_4_room_min && cityData?.rental_4_room_max) {
+      return `${formatRentalPrice(cityData.rental_4_room_min)}–${formatRentalPrice(cityData.rental_4_room_max)}`;
+    }
+    
+    return 'N/A';
   };
 
-  // Get rental prices from city data if rental_prices table doesn't have data
-  const getCityRentalRange = (rooms: number) => {
-    if (rooms === 3 && cityData?.rental_3_room_min && cityData?.rental_3_room_max) {
-      return { min: cityData.rental_3_room_min, max: cityData.rental_3_room_max };
-    }
-    if (rooms === 4 && cityData?.rental_4_room_min && cityData?.rental_4_room_max) {
-      return { min: cityData.rental_4_room_min, max: cityData.rental_4_room_max };
-    }
-    return null;
-  };
-
-  const selectedRentalPrice = rentalPrices?.find(rp => rp.rooms === selectedRooms);
-  const cityRentalRange = getCityRentalRange(selectedRooms);
-  
-  const rentalPriceRange = selectedRentalPrice 
-    ? `${formatRentalPrice(selectedRentalPrice.price_min)}–${formatRentalPrice(selectedRentalPrice.price_max)}`
-    : cityRentalRange
-      ? `${formatRentalPrice(cityRentalRange.min)}–${formatRentalPrice(cityRentalRange.max)}`
-      : 'N/A';
-
+  const rentalPriceRange = getSelectedRentalRange();
   const dataDate = latestData ? `${getMonthName(latestData.month)} ${latestData.year}` : null;
+  const isCanonicalData = !!canonicalMetrics;
 
   return (
     <div className="space-y-3">
-      {dataDate && (
+      {(dataDate || isCanonicalData) && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3 w-3" />
-          <span>Data from {dataDate} • Trends are month-over-month</span>
+          <span>
+            {isCanonicalData 
+              ? 'Data from verified research report (Q4 2024)' 
+              : `Data from ${dataDate}`}
+            {priceChange !== null && ' • Year-over-year change'}
+          </span>
         </div>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -102,18 +118,18 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
                 <div className="p-2 rounded-lg bg-primary/10">
                   <DollarSign className="h-4 w-4 text-primary" />
                 </div>
-                {getPriceChange() !== null && (
+                {priceChange !== null && (
                   <div className={`flex items-center text-xs font-medium ${
-                    getPriceChange()! > 0 ? 'text-emerald-600' : getPriceChange()! < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
                   }`}>
-                    {getPriceChange()! > 0 ? (
+                    {priceChange > 0 ? (
                       <TrendingUp className="h-3 w-3 mr-0.5" />
-                    ) : getPriceChange()! < 0 ? (
+                    ) : priceChange < 0 ? (
                       <TrendingDown className="h-3 w-3 mr-0.5" />
                     ) : null}
-                    {getPriceChange() !== 0 && (
-                      <span title="Month-over-Month">
-                        {Math.abs(getPriceChange()!).toFixed(1)}%
+                    {priceChange !== 0 && (
+                      <span title="Year-over-Year">
+                        {Math.abs(priceChange).toFixed(1)}%
                       </span>
                     )}
                   </div>
@@ -140,7 +156,7 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Home className="h-4 w-4 text-primary" />
                 </div>
-                {previousData && latestData?.median_price && previousData?.median_price && (
+                {previousData && latestData?.median_price && previousData?.median_price && !canonicalMetrics && (
                   <div className={`flex items-center text-xs font-medium ${
                     (latestData.median_price - previousData.median_price) > 0 ? 'text-emerald-600' : 
                     (latestData.median_price - previousData.median_price) < 0 ? 'text-red-500' : 'text-muted-foreground'
@@ -189,9 +205,9 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7].map((rooms) => (
+                      {[2, 3, 4, 5].map((rooms) => (
                         <SelectItem key={rooms} value={rooms.toString()}>
-                          {rooms} {rooms === 1 ? 'room' : 'rooms'}
+                          {rooms} rooms
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -216,18 +232,18 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Zap className="h-4 w-4 text-primary" />
                 </div>
-                {getPriceChange() !== null && (
+                {priceChange !== null && (
                   <div className={`flex items-center text-xs font-medium ${
-                    getPriceChange()! > 0 ? 'text-emerald-600' : getPriceChange()! < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
                   }`}>
-                    {getPriceChange()! > 0 ? (
+                    {priceChange > 0 ? (
                       <TrendingUp className="h-3 w-3 mr-0.5" />
-                    ) : getPriceChange()! < 0 ? (
+                    ) : priceChange < 0 ? (
                       <TrendingDown className="h-3 w-3 mr-0.5" />
                     ) : null}
-                    {getPriceChange() !== 0 && (
-                      <span title="Month-over-Month">
-                        {Math.abs(getPriceChange()!).toFixed(1)}%
+                    {priceChange !== 0 && (
+                      <span title="Year-over-Year">
+                        {Math.abs(priceChange).toFixed(1)}%
                       </span>
                     )}
                   </div>
@@ -235,9 +251,9 @@ export function MarketStatsCards({ marketData, cityName, cityData }: MarketStats
               </div>
               <div className="space-y-1">
                 <p className="text-2xl font-bold text-foreground">
-                  {getPriceChange() ? `${getPriceChange()! > 0 ? '+' : ''}${getPriceChange()?.toFixed(1)}%` : 'Stable'}
+                  {priceChange !== null ? `${priceChange > 0 ? '+' : ''}${priceChange.toFixed(1)}%` : 'Stable'}
                 </p>
-                <p className="text-sm font-medium text-foreground/80">Market Trend</p>
+                <p className="text-sm font-medium text-foreground/80">YoY Trend</p>
                 <p className="text-xs text-muted-foreground">Price momentum</p>
               </div>
             </CardContent>
