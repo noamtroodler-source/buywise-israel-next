@@ -322,10 +322,10 @@ export function PropertyCostBreakdown({
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
               <div>
-                <span className="text-muted-foreground">Arnona</span>
+                <span className="text-muted-foreground">Arnona (monthly)</span>
                 {sizeSqm && cityData?.arnona_rate_sqm && (
                   <p className="text-xs text-muted-foreground">
-                    ₪{cityData.arnona_rate_sqm}/sqm × {sizeSqm}sqm
+                    ₪{cityData.arnona_rate_sqm}/sqm/yr × {sizeSqm}sqm ÷ 12
                   </p>
                 )}
               </div>
