@@ -353,6 +353,7 @@ export default function CityDetail() {
                     <MarketRealityTabs 
                       marketData={marketData} 
                       cityName={city.name}
+                      citySlug={slug}
                       arnonaRateSqm={city.arnona_rate_sqm}
                     />
                   </div>
