@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, TrendingUp, Building2 } from 'lucide-react';
-import { CollapsibleSection } from './CollapsibleSection';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -181,11 +180,12 @@ export function PropertyCostBreakdown({
 
   if (listingStatus === 'for_rent') {
     return (
-      <CollapsibleSection 
-        title="Cost Breakdown" 
-        icon={<Calculator className="h-5 w-5" />}
-        defaultOpen={true}
-      >
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calculator className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
+        </div>
+        
         <div className="space-y-4">
           <h4 className="font-medium text-foreground">Monthly Costs (Estimates)</h4>
           <div className="space-y-2">
@@ -206,29 +206,30 @@ export function PropertyCostBreakdown({
               <span className="text-muted-foreground">Va'ad Bayit</span>
               <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
             </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-3">
+            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-3">
               <span className="font-semibold">Total Monthly</span>
               <span className="font-bold text-primary">{formatPrice(price + arnona + vaadBayit, currency)}</span>
             </div>
           </div>
         </div>
-      </CollapsibleSection>
+      </div>
     );
   }
 
   return (
-    <CollapsibleSection 
-      title="Cost Breakdown" 
-      icon={<Calculator className="h-5 w-5" />}
-      defaultOpen={true}
-    >
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Calculator className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
+      </div>
+      
       <div className="space-y-5">
         {/* Show personalization prompt if no profile set */}
         {!hasProfile && !isLoading && <ProfilePrompt />}
         
         {/* Buyer category indicator if profile exists */}
         {hasProfile && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
               <span className="text-sm text-foreground">
@@ -245,7 +246,7 @@ export function PropertyCostBreakdown({
 
         {/* Tax Savings Alert */}
         {taxSavings > 10000 && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
             <TrendingUp className="h-4 w-4 text-green-600 mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-green-700 dark:text-green-400">
@@ -300,7 +301,7 @@ export function PropertyCostBreakdown({
               <span className="text-muted-foreground">Mortgage & Registration Fees</span>
               <span className="font-medium">{formatPrice(mortgageFees + registrationFees, 'ILS')}</span>
             </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-2">
+            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-2">
               <span className="font-semibold">Total One-Time</span>
               <span className="font-bold text-primary">{formatPrice(totalOneTime, 'ILS')}</span>
             </div>
@@ -339,7 +340,7 @@ export function PropertyCostBreakdown({
               <span className="text-muted-foreground">Home Insurance</span>
               <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
             </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-2">
+            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-2">
               <span className="font-semibold">Total Monthly (excl. mortgage)</span>
               <span className="font-bold text-primary">{formatPrice(totalMonthly, 'ILS')}</span>
             </div>
@@ -350,6 +351,6 @@ export function PropertyCostBreakdown({
           * Based on 2025 tax brackets{cityData ? ` and ${city} municipal rates` : ''}. Actual costs may vary.
         </p>
       </div>
-    </CollapsibleSection>
+    </div>
   );
 }
