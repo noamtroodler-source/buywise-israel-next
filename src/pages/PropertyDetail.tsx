@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
-import { useMarketData } from '@/hooks/useMarketData';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyDescription } from '@/components/property/PropertyDescription';
@@ -19,7 +19,10 @@ import { motion } from 'framer-motion';
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: property, isLoading } = useProperty(id || '');
-  const { data: marketData } = useMarketData(property?.city || '');
+  
+  // Get city slug for fetching city data
+  const citySlug = property?.city?.toLowerCase().replace(/\s+/g, '-') || '';
+  const { data: cityData } = useCityDetails(citySlug);
 
   if (isLoading) {
     return (
@@ -49,9 +52,6 @@ export default function PropertyDetail() {
       </Layout>
     );
   }
-
-  // Get latest market data for the city
-  const latestMarketData = marketData?.[0];
 
   return (
     <Layout>
@@ -104,8 +104,8 @@ export default function PropertyDetail() {
                 price={property.price}
                 sizeSqm={property.size_sqm}
                 city={property.city}
-                averagePriceSqm={latestMarketData?.average_price_sqm}
-                priceChange={latestMarketData?.price_change_percent}
+                averagePriceSqm={cityData?.average_price_sqm}
+                priceChange={cityData?.yoy_price_change}
               />
 
               {/* Cost Breakdown */}
@@ -113,6 +113,8 @@ export default function PropertyDetail() {
                 price={property.price}
                 currency={property.currency || 'ILS'}
                 listingStatus={property.listing_status}
+                city={property.city}
+                sizeSqm={property.size_sqm}
               />
 
               {/* Location */}
