@@ -100,8 +100,13 @@ export function PropertyCostBreakdown({
   const lawyerVat = lawyerFees * 0.17;
   const agentFees = price * 0.02; // ~2%
   const agentVat = agentFees * 0.17;
-  const mortgageFees = price * 0.005; // Estimate for origination, appraisal, etc.
-  const registrationFees = 500; // Tabu registration
+  
+  // Fixed mortgage & registration fees per PDF research:
+  // Appraisal: ₪1,500, Origination: ₪360, Tabu registration: ₪500
+  const appraisalFee = 1500;
+  const originationFee = 360;
+  const registrationFees = 500;
+  const mortgageFees = appraisalFee + originationFee; // Total: ₪1,860
   
   // Developer lawyer fees for new construction
   const developerLawyerFees = isNewConstruction ? price * 0.015 : 0;
@@ -110,15 +115,16 @@ export function PropertyCostBreakdown({
                        mortgageFees + registrationFees + developerLawyerFees;
 
   // Monthly costs - use city-specific data where available
+  // arnona_rate_sqm is ANNUAL rate per sqm, so divide by 12 for monthly
   const arnona = useMemo(() => {
     if (cityData?.arnona_monthly_avg) {
       return cityData.arnona_monthly_avg;
     }
     if (cityData?.arnona_rate_sqm && sizeSqm) {
-      return cityData.arnona_rate_sqm * sizeSqm;
+      return (cityData.arnona_rate_sqm * sizeSqm) / 12; // Convert annual to monthly
     }
-    // Fallback: estimate based on size or default
-    return sizeSqm ? sizeSqm * 3.5 : 350;
+    // Fallback: estimate based on size or default (annual ~70/sqm avg)
+    return sizeSqm ? (sizeSqm * 70) / 12 : 350;
   }, [cityData, sizeSqm]);
   
   const vaadBayit = cityData?.average_vaad_bayit || 300;
