@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator, Info } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,6 @@ import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
 import { CollapsibleSection } from '@/components/property/CollapsibleSection';
-// New City Info Components
-import { CityArnonaCard } from '@/components/city/CityArnonaCard';
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -350,25 +348,10 @@ export default function CityDetail() {
               <MarketRealityTabs 
                 marketData={marketData} 
                 cityName={city.name}
-                grossYieldPercent={city.gross_yield_percent}
-                netYieldPercent={city.net_yield_percent}
-                investmentScore={city.investment_score}
+                arnonaRateSqm={city.arnona_rate_sqm}
               />
             </CollapsibleSection>
           )}
-
-          {/* City Info Cards Row */}
-          <CollapsibleSection 
-            title="City Living Info" 
-            icon={<Info className="h-5 w-5" />}
-            defaultOpen={true}
-          >
-            <CityArnonaCard 
-              arnonaRateSqm={city.arnona_rate_sqm}
-              arnonaMonthlyAvg={city.arnona_monthly_avg}
-              cityName={city.name}
-            />
-          </CollapsibleSection>
 
           {/* Worth Watching - Collapsible, default open */}
           {worthWatching.length > 0 && (

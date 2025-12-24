@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Building2, TrendingUp, Info } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { DollarSign, Building2, Receipt, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
 
@@ -9,26 +11,29 @@ interface MarketRealityTabsProps {
   marketData: MarketData[];
   cityName: string;
   propertyTypes?: { name: string; value: number }[];
-  grossYieldPercent?: number | null;
-  netYieldPercent?: number | null;
-  investmentScore?: number | null;
+  arnonaRateSqm?: number | null;
 }
 
 const NATIONAL_AVG_PRICE_SQM = 32000; // National average for comparison
-
-const NATIONAL_AVG_YIELD = 3.2; // National average gross yield
+const NATIONAL_AVG_ARNONA = 25; // National average arnona rate per sqm
 
 export function MarketRealityTabs({ 
   marketData, 
   cityName, 
   propertyTypes = [],
-  grossYieldPercent,
-  netYieldPercent,
-  investmentScore
+  arnonaRateSqm
 }: MarketRealityTabsProps) {
+  const [apartmentSize, setApartmentSize] = useState(80);
+  
   const latestData = marketData[0];
   const pricePerSqm = latestData?.average_price_sqm || 0;
   const percentAboveNational = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
+  
+  // Arnona calculations
+  const rate = arnonaRateSqm || NATIONAL_AVG_ARNONA;
+  const monthlyEstimate = Math.round((rate * apartmentSize) / 12);
+  const annualEstimate = Math.round(rate * apartmentSize);
+  const arnonaVsNational = ((rate - NATIONAL_AVG_ARNONA) / NATIONAL_AVG_ARNONA) * 100;
   
   // Default listing types if none provided
   const defaultListingTypes = [
@@ -50,17 +55,6 @@ export function MarketRealityTabs({
     if (percentAboveNational >= -20) return 25;
     return 10;
   };
-  
-  const getInvestmentRating = () => {
-    if (!investmentScore) return { label: 'Moderate', color: 'text-amber-600' };
-    if (investmentScore >= 80) return { label: 'Excellent', color: 'text-emerald-600' };
-    if (investmentScore >= 70) return { label: 'Good', color: 'text-primary' };
-    if (investmentScore >= 60) return { label: 'Moderate', color: 'text-amber-600' };
-    return { label: 'Speculative', color: 'text-muted-foreground' };
-  };
-  
-  const investmentRating = getInvestmentRating();
-  const yieldVsNational = grossYieldPercent ? ((grossYieldPercent - NATIONAL_AVG_YIELD) / NATIONAL_AVG_YIELD) * 100 : 0;
 
   return (
     <motion.div
@@ -83,9 +77,9 @@ export function MarketRealityTabs({
                 <Building2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Types</span>
               </TabsTrigger>
-              <TabsTrigger value="investment" className="flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Invest</span>
+              <TabsTrigger value="living" className="flex items-center gap-1.5">
+                <Receipt className="h-4 w-4" />
+                <span className="hidden sm:inline">Arnona</span>
               </TabsTrigger>
             </TabsList>
 
@@ -171,65 +165,61 @@ export function MarketRealityTabs({
               </div>
             </TabsContent>
 
-            <TabsContent value="investment" className="mt-6 space-y-6">
+            <TabsContent value="living" className="mt-6 space-y-6">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Investment Score</p>
-                <p className={`text-4xl font-bold ${investmentRating.color}`}>
-                  {investmentScore || 'N/A'}
-                  <span className="text-lg font-normal text-muted-foreground">/100</span>
+                <p className="text-sm text-muted-foreground mb-2">Estimated Monthly Arnona</p>
+                <p className="text-4xl font-bold text-foreground">
+                  ₪{monthlyEstimate.toLocaleString()}
+                  <span className="text-lg font-normal text-muted-foreground">/month</span>
                 </p>
-                <p className={`text-sm mt-2 font-medium ${investmentRating.color}`}>
-                  {investmentRating.label} Investment Potential
+                <p className="text-sm text-muted-foreground mt-1">
+                  ₪{annualEstimate.toLocaleString()} annually
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {grossYieldPercent ? `${grossYieldPercent}%` : 'N/A'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Gross Yield</p>
-                  {grossYieldPercent && (
-                    <p className={`text-xs mt-1 ${yieldVsNational >= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {yieldVsNational >= 0 ? '+' : ''}{yieldVsNational.toFixed(0)}% vs avg
-                    </p>
-                  )}
+              {/* Size Slider */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Apartment Size</span>
+                  <span className="text-sm font-medium text-foreground">{apartmentSize} m²</span>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold text-foreground">
-                    {netYieldPercent ? `${netYieldPercent}%` : 'N/A'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Net Yield</p>
-                  <p className="text-xs mt-1 text-muted-foreground">After expenses</p>
-                </div>
-              </div>
-
-              {/* Investment Score Gauge */}
-              <div className="space-y-2">
+                <Slider
+                  value={[apartmentSize]}
+                  onValueChange={(value) => setApartmentSize(value[0])}
+                  min={40}
+                  max={200}
+                  step={5}
+                  className="w-full"
+                />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Speculative</span>
-                  <span>Excellent</span>
-                </div>
-                <div className="relative h-3 rounded-full bg-gradient-to-r from-slate-400 via-amber-500 to-emerald-500">
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-2 border-foreground rounded-full shadow-lg transition-all"
-                    style={{ left: `calc(${Math.min((investmentScore || 50), 100)}% - 8px)` }}
-                  />
+                  <span>40 m²</span>
+                  <span>200 m²</span>
                 </div>
               </div>
 
+              {/* Comparison */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Rate per m²</span>
+                  <span className="font-medium text-foreground">₪{rate.toFixed(0)}/m²</span>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm text-muted-foreground">vs National Avg</span>
+                  <span className={`text-sm font-medium ${arnonaVsNational > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                    {arnonaVsNational > 0 ? '+' : ''}{arnonaVsNational.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Insight Card */}
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="h-5 w-5 text-primary mt-0.5" />
+                  <Info className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <p className="font-medium text-foreground">Investment Insight</p>
+                    <p className="font-medium text-foreground">About Arnona</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {investmentScore && investmentScore >= 75
-                        ? `${cityName} offers strong investment fundamentals with good yields and growth potential.`
-                        : investmentScore && investmentScore >= 65
-                          ? `${cityName} is a balanced market suitable for long-term investment strategies.`
-                          : `${cityName} may suit investors seeking higher risk/reward profiles or value opportunities.`
-                      }
+                      Arnona is Israel's municipal property tax, paid by residents to fund local services. 
+                      Rates vary by city and property size. New olim may qualify for discounts.
                     </p>
                   </div>
                 </div>
