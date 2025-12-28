@@ -10,20 +10,14 @@ import telAvivImg from '@/assets/cities/tel-aviv.jpg';
 import herzliyaImg from '@/assets/cities/herzliya.jpg';
 import netanyaImg from '@/assets/cities/netanya.jpg';
 import haifaImg from '@/assets/cities/haifa.jpg';
-import batYamImg from '@/assets/cities/bat-yam.jpg';
-import holonImg from '@/assets/cities/holon.jpg';
 import ramatGanImg from '@/assets/cities/ramat-gan.jpg';
-import givatayimImg from '@/assets/cities/givatayim.jpg';
 import ashdodImg from '@/assets/cities/ashdod.jpg';
-import nahariyaImg from '@/assets/cities/nahariya.jpg';
 import raananaImg from '@/assets/cities/raanana.jpg';
 import kfarSabaImg from '@/assets/cities/kfar-saba.jpg';
 import modiinImg from '@/assets/cities/modiin.jpg';
 import givatShmuelImg from '@/assets/cities/givat-shmuel.jpg';
 import hodHasharonImg from '@/assets/cities/hod-hasharon.jpg';
-import roshHaayinImg from '@/assets/cities/rosh-haayin.jpg';
 import petahTikvaImg from '@/assets/cities/petah-tikva.jpg';
-import shohamImg from '@/assets/cities/shoham.jpg';
 import haderaImg from '@/assets/cities/hadera.jpg';
 import caesareaImg from '@/assets/cities/caesarea.jpg';
 import jerusalemImg from '@/assets/cities/jerusalem.jpg';
@@ -32,11 +26,8 @@ import efratImg from '@/assets/cities/efrat.jpg';
 import gushEtzionImg from '@/assets/cities/gush-etzion.jpg';
 import maaleAdumimImg from '@/assets/cities/maale-adumim.jpg';
 import mevaseretZionImg from '@/assets/cities/mevaseret-zion.jpg';
-import givatZeevImg from '@/assets/cities/givat-zeev.jpg';
 import zichronYaakovImg from '@/assets/cities/zichron-yaakov.jpg';
 import pardesHannaImg from '@/assets/cities/pardes-hanna.jpg';
-import kiryatTivonImg from '@/assets/cities/kiryat-tivon.jpg';
-import yokneamImg from '@/assets/cities/yokneam.jpg';
 import ashkelonImg from '@/assets/cities/ashkelon.jpg';
 import beerShevaImg from '@/assets/cities/beer-sheva.jpg';
 import eilatImg from '@/assets/cities/eilat.jpg';
@@ -70,12 +61,8 @@ const regions: Region[] = [
       { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, description: 'Herzliya is a premium coastal market with distinct neighborhoods...', tags: ['Coastal premium', 'High demand'] },
       { name: 'Netanya', slug: 'netanya', image: netanyaImg, description: 'Netanya offers coastal living with more varied price points...', tags: ['Coastal variety', 'Range of price points'] },
       { name: 'Haifa', slug: 'haifa', image: haifaImg, description: 'Haifa offers urban living at significantly lower prices...', tags: ['Northern metro', 'Value positioning'] },
-      { name: 'Bat Yam', slug: 'bat-yam', image: batYamImg, description: 'Affordable coastal living south of Tel Aviv with beach access...', tags: ['Affordable coast', 'Urban renewal'] },
-      { name: 'Holon', slug: 'holon', image: holonImg, description: 'Family-friendly city with growing cultural scene...', tags: ['Family city', 'Cultural growth'] },
       { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, description: 'Diamond exchange district with high-rise living...', tags: ['Business hub', 'High-rise living'] },
-      { name: 'Givatayim', slug: 'givatayim', image: givatayimImg, description: 'Quiet residential area adjacent to Tel Aviv...', tags: ['Quiet residential', 'Tel Aviv adjacent'] },
       { name: 'Ashdod', slug: 'ashdod', image: ashdodImg, description: 'Major port city with beaches and affordable housing...', tags: ['Port city', 'Beach access'] },
-      { name: 'Nahariya', slug: 'nahariya', image: nahariyaImg, description: 'Northern coastal town with relaxed atmosphere...', tags: ['Northern coast', 'Relaxed lifestyle'] },
     ],
   },
   {
@@ -90,9 +77,7 @@ const regions: Region[] = [
       { name: "Modi'in", slug: 'modiin', image: modiinImg, description: "Modi'in is a planned city built primarily since the 1990s...", tags: ['Planned city', 'Central location'] },
       { name: 'Givat Shmuel', slug: 'givat-shmuel', image: givatShmuelImg, description: 'Givat Shmuel is a small city with significant development...', tags: ['Compact city', 'Developing market'] },
       { name: 'Hod HaSharon', slug: 'hod-hasharon', image: hodHasharonImg, description: 'Growing suburb with excellent schools and parks...', tags: ['Quality schools', 'Green spaces'] },
-      { name: "Rosh HaAyin", slug: 'rosh-haayin', image: roshHaayinImg, description: 'Rapidly developing city with mixed housing options...', tags: ['Rapid growth', 'Mixed housing'] },
       { name: 'Petah Tikva', slug: 'petah-tikva', image: petahTikvaImg, description: 'Historic city with diverse neighborhoods and pricing...', tags: ['Historic city', 'Diverse options'] },
-      { name: 'Shoham', slug: 'shoham', image: shohamImg, description: 'Upscale community with excellent quality of life...', tags: ['Upscale community', 'High quality'] },
       { name: 'Hadera', slug: 'hadera', image: haderaImg, description: 'Affordable option with improving infrastructure...', tags: ['Affordable', 'Improving area'] },
       { name: 'Caesarea', slug: 'caesarea', image: caesareaImg, description: 'Exclusive community with luxury properties...', tags: ['Luxury market', 'Exclusive area'] },
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, description: "Jerusalem's real estate market is characterized by high demand and varied neighborhoods...", tags: ['High demand', 'Varied neighborhoods'] },
@@ -101,7 +86,6 @@ const regions: Region[] = [
       { name: 'Gush Etzion', slug: 'gush-etzion', image: gushEtzionImg, description: 'Gush Etzion encompasses multiple distinct communities...', tags: ['Multiple communities', 'Varied options'] },
       { name: "Ma'ale Adumim", slug: 'maale-adumim', image: maaleAdumimImg, description: 'Large suburban city east of Jerusalem with established infrastructure...', tags: ['Established suburb', 'Jerusalem access'] },
       { name: 'Mevaseret Zion', slug: 'mevaseret-zion', image: mevaseretZionImg, description: 'Upscale suburb on the outskirts of Jerusalem...', tags: ['Upscale suburb', 'Nature access'] },
-      { name: "Givat Ze'ev", slug: 'givat-zeev', image: givatZeevImg, description: 'Growing community north of Jerusalem with affordable options...', tags: ['Growing community', 'Affordable'] },
     ],
   },
   {
@@ -113,8 +97,6 @@ const regions: Region[] = [
     cities: [
       { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: 'Zichron Yaakov is a historic town on the Carmel coast...', tags: ['Wine country', 'Historic charm'] },
       { name: 'Pardes Hanna-Karkur', slug: 'pardes-hanna', image: pardesHannaImg, description: 'Pardes Hanna-Karkur offers quiet, affordable living in the north...', tags: ['Quiet living', 'Value north'] },
-      { name: 'Kiryat Tivon', slug: 'kiryat-tivon', image: kiryatTivonImg, description: 'Kiryat Tivon is a small, green town on the Carmel slopes...', tags: ['Carmel suburbs', 'Nature access'] },
-      { name: 'Yokneam', slug: 'yokneam', image: yokneamImg, description: 'Yokneam is a growing high-tech center in the Jezreel Valley...', tags: ['Tech hub north', 'Growing city'] },
     ],
   },
   {
