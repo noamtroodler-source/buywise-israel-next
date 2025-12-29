@@ -2,11 +2,13 @@ import { ReactNode } from 'react';
 import { Share2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface ToolLayoutProps {
   title: string;
   subtitle?: string;
   icon?: ReactNode;
+  headerActions?: ReactNode;
   infoBanner?: ReactNode;
   leftColumn: ReactNode;
   rightColumn: ReactNode;
@@ -19,6 +21,7 @@ export function ToolLayout({
   title,
   subtitle,
   icon,
+  headerActions,
   infoBanner,
   leftColumn,
   rightColumn,
@@ -34,16 +37,17 @@ export function ToolLayout({
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard');
     }
   };
 
   return (
     <div className={cn("w-full max-w-6xl mx-auto", className)}>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
           {onBack && (
-            <Button variant="ghost" size="icon" onClick={onBack} className="mt-1">
+            <Button variant="ghost" size="icon" onClick={onBack} className="mt-1 shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
@@ -57,10 +61,13 @@ export function ToolLayout({
             )}
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
-          <Share2 className="h-4 w-4" />
-          <span className="hidden sm:inline">Share</span>
-        </Button>
+        <div className="flex items-center gap-3 sm:shrink-0">
+          {headerActions}
+          <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
+            <Share2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Share</span>
+          </Button>
+        </div>
       </div>
 
       {/* Info Banner */}
@@ -71,14 +78,14 @@ export function ToolLayout({
       )}
 
       {/* Main Content - Two Column Layout */}
-      <div className="grid lg:grid-cols-[1fr,400px] gap-8">
+      <div className="grid lg:grid-cols-[1fr,420px] gap-8">
         {/* Left Column - Inputs */}
-        <div className="space-y-6">
+        <div className="space-y-6 order-2 lg:order-1">
           {leftColumn}
         </div>
 
-        {/* Right Column - Results (Sticky on desktop) */}
-        <div className="lg:sticky lg:top-4 lg:self-start space-y-4">
+        {/* Right Column - Results (Sticky on desktop, first on mobile) */}
+        <div className="lg:sticky lg:top-4 lg:self-start space-y-4 order-1 lg:order-2">
           {rightColumn}
         </div>
       </div>
