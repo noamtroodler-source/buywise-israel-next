@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Info, ChevronDown, TrendingUp, Wallet, PiggyBank } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { Calculator, Info, ChevronDown, TrendingUp, Wallet, PiggyBank, RotateCcw, Share2, Save, ExternalLink, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 import { 
   ToolLayout, 
   CurrencyProvider, 
@@ -41,6 +43,22 @@ const BUYER_TYPE_OPTIONS: {
 
 const LOAN_TERMS = [5, 10, 15, 20, 25, 30];
 
+// Default values for reset
+const DEFAULTS = {
+  propertyPrice: 3000000,
+  downPaymentPercent: 25,
+  buyerType: 'first_time' as BuyerType,
+  loanTermYears: 25,
+  interestRate: 5.0,
+  legalFeesPercent: 0.5,
+  appraisalFee: 3000,
+  bufferAmount: 0,
+  includeTaxesInCash: true,
+};
+
+// Median Israeli household income (monthly) for context
+const MEDIAN_HOUSEHOLD_INCOME = 18000;
+
 // Format number with commas
 const formatNumber = (num: number): string => {
   return num.toLocaleString('en-US');
@@ -52,30 +70,42 @@ const parseFormattedNumber = (str: string): number => {
   return Number(cleaned) || 0;
 };
 
+// Storage key for saved calculations
+const STORAGE_KEY = 'mortgage-calculator-saved';
+
 function MortgageCalculatorContent() {
   const { formatCurrency, formatCurrencyShort } = useCurrency();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
+  const { toast } = useToast();
   
   // Core inputs
-  const [propertyPrice, setPropertyPrice] = useState(3000000);
-  const [propertyPriceInput, setPropertyPriceInput] = useState('3,000,000');
-  const [downPaymentPercent, setDownPaymentPercent] = useState(25);
-  const [downPaymentInput, setDownPaymentInput] = useState('25');
+  const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
+  const [propertyPriceInput, setPropertyPriceInput] = useState(formatNumber(DEFAULTS.propertyPrice));
+  const [downPaymentPercent, setDownPaymentPercent] = useState(DEFAULTS.downPaymentPercent);
+  const [downPaymentInput, setDownPaymentInput] = useState(DEFAULTS.downPaymentPercent.toString());
   const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
-  const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
-  const [loanTermYears, setLoanTermYears] = useState(25);
-  const [interestRate, setInterestRate] = useState(5.0);
-  const [interestRateInput, setInterestRateInput] = useState('5.0');
+  const [buyerType, setBuyerType] = useState<BuyerType>(DEFAULTS.buyerType);
+  const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
+  const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
+  const [interestRateInput, setInterestRateInput] = useState(DEFAULTS.interestRate.toFixed(1));
   
   // Assumptions (hidden by default)
   const [showAssumptions, setShowAssumptions] = useState(false);
-  const [includeTaxesInCash, setIncludeTaxesInCash] = useState(true);
-  const [legalFeesPercent, setLegalFeesPercent] = useState(0.5);
-  const [legalFeesInput, setLegalFeesInput] = useState('0.5');
-  const [appraisalFee, setAppraisalFee] = useState(3000);
-  const [appraisalFeeInput, setAppraisalFeeInput] = useState('3,000');
-  const [bufferAmount, setBufferAmount] = useState(0);
-  const [bufferAmountInput, setBufferAmountInput] = useState('0');
+  const [includeTaxesInCash, setIncludeTaxesInCash] = useState(DEFAULTS.includeTaxesInCash);
+  const [legalFeesPercent, setLegalFeesPercent] = useState(DEFAULTS.legalFeesPercent);
+  const [legalFeesInput, setLegalFeesInput] = useState(DEFAULTS.legalFeesPercent.toFixed(1));
+  const [appraisalFee, setAppraisalFee] = useState(DEFAULTS.appraisalFee);
+  const [appraisalFeeInput, setAppraisalFeeInput] = useState(formatNumber(DEFAULTS.appraisalFee));
+  const [bufferAmount, setBufferAmount] = useState(DEFAULTS.bufferAmount);
+  const [bufferAmountInput, setBufferAmountInput] = useState(formatNumber(DEFAULTS.bufferAmount));
+
+  // Validation states
+  const [validationStates, setValidationStates] = useState<Record<string, boolean>>({});
+
+  // Update validation state helper
+  const updateValidation = useCallback((field: string, isValid: boolean) => {
+    setValidationStates(prev => ({ ...prev, [field]: isValid }));
+  }, []);
 
   // Set buyer type from profile when loaded
   useEffect(() => {
@@ -136,6 +166,50 @@ function MortgageCalculatorContent() {
   const purchaseTaxAmount = includeTaxesInCash ? purchaseTaxResult.totalTax : 0;
   const totalCashNeeded = downPaymentAmount + purchaseTaxAmount + legalFees + bankFees + appraisalFee + bufferAmount;
 
+  // Payment as percentage of median income (for context)
+  const paymentToIncomePercent = Math.round((mortgageResult.monthlyPayment / MEDIAN_HOUSEHOLD_INCOME) * 100);
+
+  // Stress test calculations (+0.5%, +1%, +1.5%)
+  const stressTestResults = useMemo(() => {
+    const rateIncreases = [0.5, 1.0, 1.5];
+    return rateIncreases.map(increase => {
+      const newRate = interestRate + increase;
+      const result = calculateMortgagePayment(loanAmount, newRate, loanTermYears);
+      const diff = result.monthlyPayment - mortgageResult.monthlyPayment;
+      return {
+        rateIncrease: increase,
+        newRate,
+        monthlyPayment: result.monthlyPayment,
+        difference: diff,
+        percentIncrease: Math.round((diff / mortgageResult.monthlyPayment) * 100),
+      };
+    });
+  }, [loanAmount, interestRate, loanTermYears, mortgageResult.monthlyPayment]);
+
+  // What-if scenarios for down payment
+  const whatIfScenarios = useMemo(() => {
+    const scenarios = [
+      { label: '+5%', addPercent: 5 },
+      { label: '+10%', addPercent: 10 },
+      { label: 'Max', addPercent: 80 - effectiveDownPaymentPercent },
+    ].filter(s => effectiveDownPaymentPercent + s.addPercent <= 80);
+
+    return scenarios.map(scenario => {
+      const newPercent = Math.min(80, effectiveDownPaymentPercent + scenario.addPercent);
+      const newDown = (propertyPrice * newPercent) / 100;
+      const newLoan = propertyPrice - newDown;
+      const result = calculateMortgagePayment(newLoan, interestRate, loanTermYears);
+      const diff = mortgageResult.monthlyPayment - result.monthlyPayment;
+      return {
+        label: scenario.label === 'Max' ? `Max (${Math.round(newPercent)}%)` : scenario.label,
+        newPercent,
+        monthlyPayment: result.monthlyPayment,
+        savings: diff,
+        extraCash: newDown - downPaymentAmount,
+      };
+    });
+  }, [propertyPrice, effectiveDownPaymentPercent, interestRate, loanTermYears, mortgageResult.monthlyPayment, downPaymentAmount]);
+
   const cashBreakdownItems = [
     { 
       label: 'Down Payment', 
@@ -177,9 +251,27 @@ function MortgageCalculatorContent() {
     }
   };
 
+  // Live update helper - update value immediately as user types
+  const handleLiveUpdate = useCallback((
+    value: string,
+    setter: (v: number) => void,
+    min: number,
+    max: number,
+    isFormatted: boolean = false
+  ) => {
+    const parsed = isFormatted ? parseFormattedNumber(value) : parseFloat(value);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(min, Math.min(max, parsed));
+      setter(clamped);
+    }
+  }, []);
+
   // Property price handlers
   const handlePropertyPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPropertyPriceInput(e.target.value);
+    const value = e.target.value;
+    setPropertyPriceInput(value);
+    handleLiveUpdate(value, setPropertyPrice, 500000, 15000000, true);
+    updateValidation('propertyPrice', parseFormattedNumber(value) >= 500000 && parseFormattedNumber(value) <= 15000000);
   };
 
   const handlePropertyPriceBlur = () => {
@@ -187,6 +279,7 @@ function MortgageCalculatorContent() {
     value = Math.max(500000, Math.min(15000000, value));
     setPropertyPrice(value);
     setPropertyPriceInput(formatNumber(value));
+    updateValidation('propertyPrice', true);
     
     if (downPaymentMode === 'amount') {
       const newDownAmount = (value * effectiveDownPaymentPercent) / 100;
@@ -196,7 +289,22 @@ function MortgageCalculatorContent() {
 
   // Down payment handlers
   const handleDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDownPaymentInput(e.target.value);
+    const value = e.target.value;
+    setDownPaymentInput(value);
+    if (downPaymentMode === 'percent') {
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed)) {
+        setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, parsed)));
+        updateValidation('downPayment', parsed >= minDownPayment && parsed <= 80);
+      }
+    } else {
+      const parsed = parseFormattedNumber(value);
+      if (!isNaN(parsed)) {
+        const percent = (parsed / propertyPrice) * 100;
+        setDownPaymentPercent(Math.max(minDownPayment, Math.min(80, percent)));
+        updateValidation('downPayment', percent >= minDownPayment && percent <= 80);
+      }
+    }
   };
 
   const handleDownPaymentBlur = () => {
@@ -214,6 +322,7 @@ function MortgageCalculatorContent() {
       setDownPaymentPercent(percent);
       setDownPaymentInput(formatNumber(Math.round(amount)));
     }
+    updateValidation('downPayment', true);
   };
 
   const toggleDownPaymentMode = () => {
@@ -226,9 +335,26 @@ function MortgageCalculatorContent() {
     }
   };
 
+  // Apply what-if scenario
+  const applyWhatIfScenario = (newPercent: number) => {
+    setDownPaymentPercent(newPercent);
+    setDownPaymentInput(downPaymentMode === 'percent' 
+      ? newPercent.toString() 
+      : formatNumber(Math.round((propertyPrice * newPercent) / 100))
+    );
+    toast({
+      title: "Down payment updated",
+      description: `Set to ${newPercent.toFixed(0)}%`,
+    });
+  };
+
   // Interest rate handlers
   const handleInterestRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInterestRateInput(e.target.value);
+    const value = e.target.value;
+    setInterestRateInput(value);
+    handleLiveUpdate(value, setInterestRate, 3, 8, false);
+    const parsed = parseFloat(value);
+    updateValidation('interestRate', !isNaN(parsed) && parsed >= 3 && parsed <= 8);
   };
 
   const handleInterestRateBlur = () => {
@@ -236,11 +362,14 @@ function MortgageCalculatorContent() {
     value = Math.max(3, Math.min(8, value));
     setInterestRate(value);
     setInterestRateInput(value.toFixed(1));
+    updateValidation('interestRate', true);
   };
 
   // Legal fees handlers
   const handleLegalFeesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLegalFeesInput(e.target.value);
+    const value = e.target.value;
+    setLegalFeesInput(value);
+    handleLiveUpdate(value, setLegalFeesPercent, 0.3, 1, false);
   };
 
   const handleLegalFeesBlur = () => {
@@ -252,7 +381,9 @@ function MortgageCalculatorContent() {
 
   // Appraisal fee handlers
   const handleAppraisalFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAppraisalFeeInput(e.target.value);
+    const value = e.target.value;
+    setAppraisalFeeInput(value);
+    handleLiveUpdate(value, setAppraisalFee, 1500, 6000, true);
   };
 
   const handleAppraisalFeeBlur = () => {
@@ -264,7 +395,9 @@ function MortgageCalculatorContent() {
 
   // Buffer amount handlers
   const handleBufferAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBufferAmountInput(e.target.value);
+    const value = e.target.value;
+    setBufferAmountInput(value);
+    handleLiveUpdate(value, setBufferAmount, 0, 500000, true);
   };
 
   const handleBufferAmountBlur = () => {
@@ -274,7 +407,120 @@ function MortgageCalculatorContent() {
     setBufferAmountInput(formatNumber(value));
   };
 
-  // Input field component for cleaner code
+  // Reset to defaults
+  const handleReset = () => {
+    setPropertyPrice(DEFAULTS.propertyPrice);
+    setPropertyPriceInput(formatNumber(DEFAULTS.propertyPrice));
+    setDownPaymentPercent(DEFAULTS.downPaymentPercent);
+    setDownPaymentInput(DEFAULTS.downPaymentPercent.toString());
+    setDownPaymentMode('percent');
+    setBuyerType(DEFAULTS.buyerType);
+    setLoanTermYears(DEFAULTS.loanTermYears);
+    setInterestRate(DEFAULTS.interestRate);
+    setInterestRateInput(DEFAULTS.interestRate.toFixed(1));
+    setLegalFeesPercent(DEFAULTS.legalFeesPercent);
+    setLegalFeesInput(DEFAULTS.legalFeesPercent.toFixed(1));
+    setAppraisalFee(DEFAULTS.appraisalFee);
+    setAppraisalFeeInput(formatNumber(DEFAULTS.appraisalFee));
+    setBufferAmount(DEFAULTS.bufferAmount);
+    setBufferAmountInput(formatNumber(DEFAULTS.bufferAmount));
+    setIncludeTaxesInCash(DEFAULTS.includeTaxesInCash);
+    setShowAssumptions(false);
+    setValidationStates({});
+    toast({
+      title: "Reset complete",
+      description: "All values restored to defaults",
+    });
+  };
+
+  // Save calculation to localStorage
+  const handleSave = () => {
+    const savedData = {
+      propertyPrice,
+      downPaymentPercent,
+      buyerType,
+      loanTermYears,
+      interestRate,
+      legalFeesPercent,
+      appraisalFee,
+      bufferAmount,
+      includeTaxesInCash,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
+    toast({
+      title: "Calculation saved",
+      description: "Your inputs have been saved locally",
+    });
+  };
+
+  // Load saved calculation
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        // Only auto-load if saved recently (within 7 days)
+        const savedAt = new Date(data.savedAt);
+        const daysSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceSave < 7) {
+          setPropertyPrice(data.propertyPrice || DEFAULTS.propertyPrice);
+          setPropertyPriceInput(formatNumber(data.propertyPrice || DEFAULTS.propertyPrice));
+          setDownPaymentPercent(data.downPaymentPercent || DEFAULTS.downPaymentPercent);
+          setDownPaymentInput((data.downPaymentPercent || DEFAULTS.downPaymentPercent).toString());
+          setBuyerType(data.buyerType || DEFAULTS.buyerType);
+          setLoanTermYears(data.loanTermYears || DEFAULTS.loanTermYears);
+          setInterestRate(data.interestRate || DEFAULTS.interestRate);
+          setInterestRateInput((data.interestRate || DEFAULTS.interestRate).toFixed(1));
+          setLegalFeesPercent(data.legalFeesPercent || DEFAULTS.legalFeesPercent);
+          setLegalFeesInput((data.legalFeesPercent || DEFAULTS.legalFeesPercent).toFixed(1));
+          setAppraisalFee(data.appraisalFee || DEFAULTS.appraisalFee);
+          setAppraisalFeeInput(formatNumber(data.appraisalFee || DEFAULTS.appraisalFee));
+          setBufferAmount(data.bufferAmount || DEFAULTS.bufferAmount);
+          setBufferAmountInput(formatNumber(data.bufferAmount || DEFAULTS.bufferAmount));
+          setIncludeTaxesInCash(data.includeTaxesInCash ?? DEFAULTS.includeTaxesInCash);
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+  }, []);
+
+  // Share calculation via URL
+  const handleShare = async () => {
+    const params = new URLSearchParams({
+      price: propertyPrice.toString(),
+      down: downPaymentPercent.toString(),
+      buyer: buyerType,
+      term: loanTermYears.toString(),
+      rate: interestRate.toString(),
+    });
+    const url = `${window.location.origin}/tools?tool=mortgage&${params.toString()}`;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Mortgage Calculation - BuyWise Israel',
+          text: `Monthly Payment: ${formatCurrency(mortgageResult.monthlyPayment)}`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({
+          title: "Link copied",
+          description: "Share this link with others to show your calculation",
+        });
+      }
+    } catch (e) {
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied",
+        description: "Share this link with others to show your calculation",
+      });
+    }
+  };
+
+  // Input field component with validation styling
   const InputField = ({ 
     label, 
     tooltip, 
@@ -285,7 +531,8 @@ function MortgageCalculatorContent() {
     onBlur, 
     placeholder,
     helperText,
-    inputMode = 'numeric'
+    inputMode = 'numeric',
+    fieldKey,
   }: {
     label: string;
     tooltip?: string;
@@ -297,43 +544,50 @@ function MortgageCalculatorContent() {
     placeholder: string;
     helperText?: string;
     inputMode?: 'numeric' | 'decimal' | 'text';
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5">
-        <Label className="text-sm font-medium text-foreground">{label}</Label>
-        {tooltip && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-3.5 w-3.5 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-sm">{tooltip}</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-      <div className="relative">
-        {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{prefix}</span>
-        )}
-        <Input
-          type="text"
-          inputMode={inputMode}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          className={cn(
-            "text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20",
-            prefix && "pl-8",
-            suffix && "pr-8"
+    fieldKey?: string;
+  }) => {
+    const isValid = fieldKey ? validationStates[fieldKey] : undefined;
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5">
+          <Label className="text-sm font-medium text-foreground">{label}</Label>
+          {tooltip && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">{tooltip}</TooltipContent>
+            </Tooltip>
           )}
-          placeholder={placeholder}
-        />
-        {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{suffix}</span>
-        )}
+        </div>
+        <div className="relative">
+          {prefix && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{prefix}</span>
+          )}
+          <Input
+            type="text"
+            inputMode={inputMode}
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            className={cn(
+              "text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20",
+              prefix && "pl-8",
+              suffix && "pr-8",
+              isValid === true && "border-green-500/50 focus:border-green-500",
+              isValid === false && "border-destructive/50 focus:border-destructive"
+            )}
+            placeholder={placeholder}
+          />
+          {suffix && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{suffix}</span>
+          )}
+        </div>
+        {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
       </div>
-      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
-    </div>
-  );
+    );
+  };
 
   const leftColumn = (
     <div className="space-y-5">
@@ -352,6 +606,7 @@ function MortgageCalculatorContent() {
           onBlur={handlePropertyPriceBlur}
           placeholder="3,000,000"
           helperText="₪500K – ₪15M"
+          fieldKey="propertyPrice"
         />
 
         <div className="space-y-2">
@@ -418,7 +673,11 @@ function MortgageCalculatorContent() {
               value={downPaymentInput}
               onChange={handleDownPaymentChange}
               onBlur={handleDownPaymentBlur}
-              className="pl-8 text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20"
+              className={cn(
+                "pl-8 text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20",
+                validationStates['downPayment'] === true && "border-green-500/50",
+                validationStates['downPayment'] === false && "border-destructive/50"
+              )}
               placeholder={downPaymentMode === 'percent' ? '25' : '750,000'}
             />
           </div>
@@ -428,6 +687,25 @@ function MortgageCalculatorContent() {
               : `= ${effectiveDownPaymentPercent.toFixed(1)}% of price`
             }
           </p>
+
+          {/* What-If Scenario Buttons */}
+          {whatIfScenarios.length > 0 && (
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs text-muted-foreground">What if:</span>
+              {whatIfScenarios.map((scenario, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => applyWhatIfScenario(scenario.newPercent)}
+                >
+                  {scenario.label}
+                  <span className="ml-1 text-green-600">-{formatCurrencyShort(scenario.savings)}/mo</span>
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -464,6 +742,7 @@ function MortgageCalculatorContent() {
             onBlur={handleInterestRateBlur}
             placeholder="5.0"
             inputMode="decimal"
+            fieldKey="interestRate"
           />
         </div>
         <p className="text-xs text-muted-foreground">Typical rates: 4.0% – 6.0%</p>
@@ -532,11 +811,36 @@ function MortgageCalculatorContent() {
           </Card>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Reset Button */}
+      <div className="flex justify-center pt-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={handleReset}
+        >
+          <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+          Reset to defaults
+        </Button>
+      </div>
     </div>
   );
 
   const rightColumn = (
     <div className="space-y-4">
+      {/* Save/Share Buttons */}
+      <div className="flex gap-2 justify-end">
+        <Button variant="outline" size="sm" onClick={handleSave}>
+          <Save className="h-3.5 w-3.5 mr-1.5" />
+          Save
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleShare}>
+          <Share2 className="h-3.5 w-3.5 mr-1.5" />
+          Share
+        </Button>
+      </div>
+
       {/* Hero: Monthly Payment */}
       <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-sm">
         <p className="text-sm font-medium text-muted-foreground mb-1">Monthly Payment</p>
@@ -546,6 +850,13 @@ function MortgageCalculatorContent() {
         <p className="text-sm text-muted-foreground mt-2">
           Over {loanTermYears} years at {interestRate.toFixed(1)}% interest
         </p>
+        {/* Context for international buyers */}
+        <div className="mt-3 pt-3 border-t border-primary/10">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">Context:</span> This is ~{paymentToIncomePercent}% of median Israeli household income (₪{formatNumber(MEDIAN_HOUSEHOLD_INCOME)}/mo). 
+            Banks typically approve up to 35-40%.
+          </p>
+        </div>
       </Card>
 
       {/* Payment Breakdown Pie Chart */}
@@ -565,6 +876,39 @@ function MortgageCalculatorContent() {
             <p className="text-xs text-muted-foreground">Interest</p>
             <p className="text-base font-semibold">{formatCurrency(monthlyInterest)}</p>
           </div>
+        </div>
+      </Card>
+
+      {/* Rate Stress Test */}
+      <Card className="p-5 shadow-sm">
+        <p className="text-sm font-medium text-muted-foreground mb-3">If Rates Change...</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Israeli Prime rate fluctuates. Here's how your payment changes:
+        </p>
+        <div className="space-y-2">
+          {stressTestResults.map((result, i) => (
+            <div key={i} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-md">
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-xs font-medium px-1.5 py-0.5 rounded",
+                  i === 0 && "bg-yellow-100 text-yellow-700",
+                  i === 1 && "bg-orange-100 text-orange-700",
+                  i === 2 && "bg-red-100 text-red-700"
+                )}>
+                  +{result.rateIncrease}%
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  ({result.newRate.toFixed(1)}% rate)
+                </span>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-semibold">{formatCurrency(result.monthlyPayment)}</p>
+                <p className="text-xs text-destructive">
+                  +{formatCurrency(result.difference)}/mo (+{result.percentIncrease}%)
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
 
@@ -600,6 +944,43 @@ function MortgageCalculatorContent() {
           title="Cash Needed to Close"
           items={cashBreakdownItems}
         />
+      </Card>
+
+      {/* Next Steps CTAs */}
+      <Card className="p-5 shadow-sm bg-muted/30">
+        <p className="text-sm font-medium text-foreground mb-3">Continue Your Research</p>
+        <div className="space-y-2">
+          <Link 
+            to="/tools?tool=total-cost"
+            className="flex items-center justify-between p-3 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Total Cost Calculator</p>
+              <p className="text-xs text-muted-foreground">See all purchase costs including taxes and fees</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+          <Link 
+            to="/tools?tool=affordability"
+            className="flex items-center justify-between p-3 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">Affordability Calculator</p>
+              <p className="text-xs text-muted-foreground">Find out how much you can borrow</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+          <Link 
+            to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}
+            className="flex items-center justify-between p-3 rounded-md bg-primary/5 hover:bg-primary/10 transition-colors border border-primary/20"
+          >
+            <div>
+              <p className="text-sm font-medium text-primary">Browse Properties</p>
+              <p className="text-xs text-muted-foreground">Explore listings in your budget</p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-primary" />
+          </Link>
+        </div>
       </Card>
     </div>
   );
