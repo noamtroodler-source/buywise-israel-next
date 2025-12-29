@@ -3,24 +3,11 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
-  MapPinned, Clock, Hammer, ClipboardList, ArrowRight, ArrowLeft,
-  GraduationCap, Footprints, HelpCircle
+  MapPinned, Clock, Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
-import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalculator';
-import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
-import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
-import { TotalCostCalculator } from '@/components/tools/TotalCostCalculator';
-import { FindYourPlaceWorkshop } from '@/components/tools/FindYourPlaceWorkshop';
-import { NeighborhoodMatch } from '@/components/tools/NeighborhoodMatch';
-import { RealEstateTimeMachine } from '@/components/tools/RealEstateTimeMachine';
-import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
-import { DocumentChecklist } from '@/components/tools/DocumentChecklist';
-import { MortgageWizard } from '@/components/tools/MortgageWizard';
-import { TrueCostWalkthrough } from '@/components/tools/TrueCostWalkthrough';
-import { NeighborhoodQuiz } from '@/components/tools/NeighborhoodQuiz';
+import { ToolPlaceholder } from '@/components/tools/ToolPlaceholder';
 
 interface Tool {
   id: string;
@@ -31,35 +18,30 @@ interface Tool {
 }
 
 const tools: Tool[] = [
-  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Discover what truly matters for your Israel home before you start searching', icon: Compass, category: 'discovery' },
-  { id: 'neighborhood', label: 'Neighborhood Match', description: 'Find the perfect Israeli neighborhood based on your lifestyle preferences', icon: MapPinned, category: 'discovery' },
-  { id: 'neighborhood-quiz', label: 'Which Neighborhood Quiz', description: 'Quick quiz to find your ideal neighborhood in Israel', icon: HelpCircle, category: 'tutorial' },
-  { id: 'mortgage-wizard', label: 'Understanding Your Mortgage', description: 'Step-by-step guide to Israeli mortgage tracks and what\'s right for you', icon: GraduationCap, category: 'tutorial' },
-  { id: 'true-cost', label: 'Calculate Your True Costs', description: 'Walkthrough of all purchase costs explained step-by-step', icon: Footprints, category: 'tutorial' },
-  { id: 'affordability', label: 'Affordability Calculator', description: 'Calculate your maximum affordable home price based on income, savings, and Israeli mortgage rules', icon: Wallet, category: 'calculator' },
-  { id: 'investment', label: 'Investment Return Calculator', description: 'Calculate potential returns, cash flow, and ROI on investment properties in Israel', icon: TrendingUp, category: 'calculator' },
   { id: 'mortgage', label: 'Mortgage Calculator', description: 'Calculate monthly payments, total interest, and view detailed amortization schedules', icon: Calculator, category: 'calculator' },
   { id: 'totalcost', label: 'Total Cost Calculator', description: 'Calculate all one-time and monthly costs for buying property in Israel including taxes, fees, and mortgage', icon: Receipt, category: 'calculator' },
+  { id: 'affordability', label: 'Affordability Calculator', description: 'Calculate your maximum affordable home price based on income, savings, and Israeli mortgage rules', icon: Wallet, category: 'calculator' },
+  { id: 'investment', label: 'Investment Return Calculator', description: 'Calculate potential returns, cash flow, and ROI on investment properties in Israel', icon: TrendingUp, category: 'calculator' },
   { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare the true cost of renting versus buying property in Israel over time', icon: Scale, category: 'calculator' },
   { id: 'timemachine', label: 'Real Estate Time Machine', description: 'Explore how Israeli real estate has historically performed by area and time', icon: Clock, category: 'calculator' },
   { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs for Israeli properties including materials, labor, and permits', icon: Hammer, category: 'calculator' },
-  { id: 'documents', label: 'Document Checklist & Tracker', description: 'Track all required documents for your Israel property purchase with status updates', icon: ClipboardList, category: 'discovery' },
+  { id: 'neighborhood', label: 'Neighborhood Match', description: 'Find the perfect Israeli neighborhood based on your lifestyle preferences', icon: MapPinned, category: 'discovery' },
+  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Discover what truly matters for your Israel home before you start searching', icon: Compass, category: 'discovery' },
+  { id: 'documents', label: 'Document Checklist', description: 'Track all required documents for your Israel property purchase with status updates', icon: ClipboardList, category: 'discovery' },
 ];
 
+// All tools start as placeholders - will be built one by one
 const toolComponents: Record<string, React.ComponentType> = {
-  mortgage: MortgageCalculator,
-  affordability: AffordabilityCalculator,
-  rentvsbuy: RentVsBuyCalculator,
-  investment: InvestmentReturnCalculator,
-  totalcost: TotalCostCalculator,
-  workshop: FindYourPlaceWorkshop,
-  neighborhood: NeighborhoodMatch,
-  timemachine: RealEstateTimeMachine,
-  renovation: RenovationCostEstimator,
-  documents: DocumentChecklist,
-  'mortgage-wizard': MortgageWizard,
-  'true-cost': TrueCostWalkthrough,
-  'neighborhood-quiz': NeighborhoodQuiz,
+  mortgage: () => <ToolPlaceholder toolName="Mortgage Calculator" />,
+  totalcost: () => <ToolPlaceholder toolName="Total Cost Calculator" />,
+  affordability: () => <ToolPlaceholder toolName="Affordability Calculator" />,
+  investment: () => <ToolPlaceholder toolName="Investment Return Calculator" />,
+  rentvsbuy: () => <ToolPlaceholder toolName="Rent vs Buy Calculator" />,
+  timemachine: () => <ToolPlaceholder toolName="Real Estate Time Machine" />,
+  renovation: () => <ToolPlaceholder toolName="Renovation Cost Estimator" />,
+  neighborhood: () => <ToolPlaceholder toolName="Neighborhood Match" />,
+  workshop: () => <ToolPlaceholder toolName="Find Your Place Workshop" />,
+  documents: () => <ToolPlaceholder toolName="Document Checklist" />,
 };
 
 function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
