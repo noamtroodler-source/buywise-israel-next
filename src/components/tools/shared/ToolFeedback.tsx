@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { MessageSquare, CheckCircle, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, CheckCircle, Star, ChevronUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 
 interface ToolFeedbackProps {
   toolName: string;
@@ -88,73 +89,25 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
     </div>
   );
 
-  // Inline variant - minimal, elegant design
+  // Inline variant - link to contact page
   if (variant === 'inline') {
-    if (!isExpanded) {
-      return (
-        <div className={cn("text-center py-4", className)}>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(true)}
-            className="group inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:via-primary/15 hover:to-primary/10 transition-all duration-300"
-          >
-            <div className="p-2 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
-              <MessageSquare className="h-4 w-4 text-primary" />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-foreground">Help us improve this tool</p>
-              <p className="text-xs text-muted-foreground">Share your feedback or feature ideas</p>
-            </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
-          </button>
-        </div>
-      );
-    }
-
     return (
-      <div className={cn(
-        "p-4 rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 space-y-4 animate-in fade-in-50 slide-in-from-bottom-2 duration-300",
-        className
-      )}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-md bg-primary/10">
-              <MessageSquare className="h-4 w-4 text-primary" />
-            </div>
-            <span className="font-medium text-foreground">Share your feedback</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsExpanded(false)}
-            className="text-muted-foreground/60 hover:text-foreground transition-colors"
-          >
-            <ChevronUp className="h-4 w-4" />
-          </button>
+      <Link
+        to="/contact"
+        className={cn(
+          "group flex items-center justify-center gap-3 py-4 px-6 rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:to-primary/15 transition-all duration-300",
+          className
+        )}
+      >
+        <div className="p-2 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
+          <MessageSquare className="h-4 w-4 text-primary" />
         </div>
-        
-        <Textarea
-          placeholder="What would make this tool more useful? Any features you'd like to see?"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="min-h-[80px] resize-none text-sm bg-background/50 border-border/50 focus:border-primary/50"
-        />
-        
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-muted-foreground">Rate this tool</span>
-            <StarRating />
-          </div>
-          
-          <Button
-            size="sm"
-            onClick={submitFeedback}
-            disabled={isSubmitting || (!comment.trim() && rating === 0)}
-            className="h-8 px-4"
-          >
-            {isSubmitting ? 'Sending...' : 'Send'}
-          </Button>
+        <div className="text-left">
+          <p className="text-sm font-semibold text-foreground">Your feedback shapes what we build next</p>
+          <p className="text-xs text-muted-foreground">Tell us how to make this tool better for you</p>
         </div>
-      </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all ml-2" />
+      </Link>
     );
   }
 
