@@ -80,6 +80,12 @@ export function Header() {
           >
             Blog
           </Link>
+          <Link 
+            to="/contact" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Contact
+          </Link>
         </nav>
 
         {/* Right Side */}
@@ -204,6 +210,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
+            </Link>
+            <Link 
+              to="/contact" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
             </Link>
             <hr className="my-2 border-border" />
             <PreferencesDialog 
