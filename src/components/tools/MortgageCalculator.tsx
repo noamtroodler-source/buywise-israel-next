@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
@@ -23,6 +22,7 @@ import {
   ToolDisclaimer,
   InfoBanner,
 } from './shared';
+import { SliderWithInput, DownPaymentSlider, InterestRateSlider } from './shared/SliderWithInput';
 
 // Buyer types with their max LTV limits and descriptions
 const BUYER_TYPE_OPTIONS: { 
@@ -156,22 +156,17 @@ function MortgageCalculatorContent() {
     <div className="space-y-6">
       {/* Property Price */}
       <Card className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Property Price</Label>
-            <span className="text-lg font-bold text-foreground">{formatCurrencyShort(propertyPrice)}</span>
-          </div>
-          <Slider
-            value={[propertyPrice]}
-            onValueChange={([v]) => setPropertyPrice(v)}
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Property Price</Label>
+          <SliderWithInput
+            value={propertyPrice}
+            onChange={setPropertyPrice}
             min={500000}
             max={15000000}
             step={50000}
+            prefix="₪"
+            formatDisplay={(v) => v.toLocaleString('en-US')}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatCurrencyShort(500000)}</span>
-            <span>{formatCurrencyShort(15000000)}</span>
-          </div>
         </div>
       </Card>
 
@@ -212,35 +207,25 @@ function MortgageCalculatorContent() {
 
       {/* Down Payment */}
       <Card className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-medium">Down Payment</Label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  The cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type to manage lending risk.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="text-right">
-              <span className="text-lg font-bold text-foreground">{effectiveDownPaymentPercent}%</span>
-              <span className="text-sm text-muted-foreground ml-2">({formatCurrencyShort(downPaymentAmount)})</span>
-            </div>
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">Down Payment</Label>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                The cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type to manage lending risk.
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Slider
-            value={[effectiveDownPaymentPercent]}
-            onValueChange={([v]) => setDownPaymentPercent(v)}
-            min={minDownPayment}
-            max={80}
-            step={1}
+          <DownPaymentSlider
+            percent={effectiveDownPaymentPercent}
+            propertyPrice={propertyPrice}
+            onPercentChange={setDownPaymentPercent}
+            minPercent={minDownPayment}
+            formatCurrency={formatCurrency}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{minDownPayment}% (min)</span>
-            <span>80%</span>
-          </div>
         </div>
       </Card>
 
@@ -265,32 +250,22 @@ function MortgageCalculatorContent() {
 
       {/* Interest Rate */}
       <Card className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-medium">Interest Rate</Label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks with rates ranging 4-6%.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <span className="text-lg font-bold text-foreground">{interestRate.toFixed(1)}%</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">Interest Rate</Label>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks with rates ranging 4-6%.
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Slider
-            value={[interestRate]}
-            onValueChange={([v]) => setInterestRate(v)}
-            min={3}
-            max={8}
-            step={0.1}
+          <InterestRateSlider
+            rate={interestRate}
+            onChange={setInterestRate}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>3%</span>
-            <span>8%</span>
-          </div>
         </div>
       </Card>
 
