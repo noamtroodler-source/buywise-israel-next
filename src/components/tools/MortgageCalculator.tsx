@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Calculator, Info, ChevronDown } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Calculator, Info, ChevronDown, TrendingUp, Wallet, PiggyBank } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,13 @@ import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { 
   ToolLayout, 
   CurrencyProvider, 
-  useCurrency, 
-  ResultCard, 
+  useCurrency,
+  CurrencyToggle,
   CashBreakdownTable, 
   LTVIndicator,
   ToolDisclaimer,
   InfoBanner,
+  PaymentPieChart,
 } from './shared';
 
 // Buyer types with their max LTV limits and descriptions
@@ -120,6 +121,13 @@ function MortgageCalculatorContent() {
     return calculatePurchaseTax(propertyPrice, buyerType);
   }, [propertyPrice, buyerType]);
 
+  // Monthly principal & interest breakdown
+  const monthlyPrincipal = useMemo(() => {
+    return mortgageResult.monthlyPayment - (loanAmount * (interestRate / 100 / 12));
+  }, [mortgageResult.monthlyPayment, loanAmount, interestRate]);
+
+  const monthlyInterest = mortgageResult.monthlyPayment - monthlyPrincipal;
+
   // Additional fees
   const legalFees = Math.round((propertyPrice * legalFeesPercent) / 100);
   const bankFees = Math.round(loanAmount * 0.004);
@@ -180,7 +188,6 @@ function MortgageCalculatorContent() {
     setPropertyPrice(value);
     setPropertyPriceInput(formatNumber(value));
     
-    // Update down payment amount display if in amount mode
     if (downPaymentMode === 'amount') {
       const newDownAmount = (value * effectiveDownPaymentPercent) / 100;
       setDownPaymentInput(formatNumber(Math.round(newDownAmount)));
@@ -267,44 +274,100 @@ function MortgageCalculatorContent() {
     setBufferAmountInput(formatNumber(value));
   };
 
-  const leftColumn = (
-    <div className="space-y-6">
-      {/* Property Price */}
-      <Card className="p-5">
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Property Price</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₪</span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              value={propertyPriceInput}
-              onChange={handlePropertyPriceChange}
-              onBlur={handlePropertyPriceBlur}
-              className="pl-8 text-base font-medium h-11"
-              placeholder="3,000,000"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Between ₪500,000 – ₪15,000,000</p>
-        </div>
-      </Card>
+  // Input field component for cleaner code
+  const InputField = ({ 
+    label, 
+    tooltip, 
+    prefix, 
+    suffix, 
+    value, 
+    onChange, 
+    onBlur, 
+    placeholder,
+    helperText,
+    inputMode = 'numeric'
+  }: {
+    label: string;
+    tooltip?: string;
+    prefix?: string;
+    suffix?: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBlur: () => void;
+    placeholder: string;
+    helperText?: string;
+    inputMode?: 'numeric' | 'decimal' | 'text';
+  }) => (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <Label className="text-sm font-medium text-foreground">{label}</Label>
+        {tooltip && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-sm">{tooltip}</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <div className="relative">
+        {prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{prefix}</span>
+        )}
+        <Input
+          type="text"
+          inputMode={inputMode}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          className={cn(
+            "text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20",
+            prefix && "pl-8",
+            suffix && "pr-8"
+          )}
+          placeholder={placeholder}
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{suffix}</span>
+        )}
+      </div>
+      {helperText && <p className="text-xs text-muted-foreground">{helperText}</p>}
+    </div>
+  );
 
-      {/* Buyer Type */}
-      <Card className="p-5">
-        <div className="space-y-3">
+  const leftColumn = (
+    <div className="space-y-5">
+      {/* Card 1: Property & Financing */}
+      <Card className="p-6 space-y-5 shadow-sm">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <Wallet className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold text-foreground">Property & Financing</h3>
+        </div>
+
+        <InputField
+          label="Property Price"
+          prefix="₪"
+          value={propertyPriceInput}
+          onChange={handlePropertyPriceChange}
+          onBlur={handlePropertyPriceBlur}
+          placeholder="3,000,000"
+          helperText="₪500K – ₪15M"
+        />
+
+        <div className="space-y-2">
           <div className="flex items-center gap-1.5">
-            <Label className="text-sm font-medium">Buyer Type</Label>
+            <Label className="text-sm font-medium text-foreground">Buyer Type</Label>
             <Tooltip>
               <TooltipTrigger>
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
+              <TooltipContent className="max-w-xs text-sm">
                 Your buyer type determines maximum loan-to-value ratio (LTV) and purchase tax rates under Israeli regulations.
               </TooltipContent>
             </Tooltip>
           </div>
           <Select value={buyerType} onValueChange={handleBuyerTypeChange}>
-            <SelectTrigger className="h-11">
+            <SelectTrigger className="h-11 transition-all focus:ring-2 focus:ring-primary/20">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -319,30 +382,27 @@ function MortgageCalculatorContent() {
             </SelectContent>
           </Select>
           <p className="text-xs text-primary font-medium">
-            Max LTV: {maxLtv}% · Min down payment: {minDownPayment}%
+            Max LTV: {maxLtv}% · Min down: {minDownPayment}%
           </p>
         </div>
-      </Card>
 
-      {/* Down Payment */}
-      <Card className="p-5">
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-medium">Down Payment</Label>
+              <Label className="text-sm font-medium text-foreground">Down Payment</Label>
               <Tooltip>
                 <TooltipTrigger>
                   <Info className="h-3.5 w-3.5 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  The cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type.
+                <TooltipContent className="max-w-xs text-sm">
+                  Cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type.
                 </TooltipContent>
               </Tooltip>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2 text-xs font-medium text-primary hover:text-primary"
+              className="h-7 px-2 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10"
               onClick={toggleDownPaymentMode}
             >
               Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
@@ -358,88 +418,80 @@ function MortgageCalculatorContent() {
               value={downPaymentInput}
               onChange={handleDownPaymentChange}
               onBlur={handleDownPaymentBlur}
-              className="pl-8 text-base font-medium h-11"
+              className="pl-8 text-base font-medium h-11 transition-all focus:ring-2 focus:ring-primary/20"
               placeholder={downPaymentMode === 'percent' ? '25' : '750,000'}
             />
           </div>
           <p className="text-xs text-muted-foreground">
             {downPaymentMode === 'percent' 
-              ? `= ${formatCurrencyShort(downPaymentAmount)} · Min ${minDownPayment}%, Max 80%`
-              : `= ${effectiveDownPaymentPercent.toFixed(1)}% · Min ${formatCurrencyShort((propertyPrice * minDownPayment) / 100)}`
+              ? `= ${formatCurrencyShort(downPaymentAmount)} · Min ${minDownPayment}%`
+              : `= ${effectiveDownPaymentPercent.toFixed(1)}% of price`
             }
           </p>
         </div>
       </Card>
 
-      {/* Loan Term */}
-      <Card className="p-5">
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Loan Term</Label>
-          <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {LOAN_TERMS.map(term => (
-                <SelectItem key={term} value={term.toString()}>
-                  {term} years
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Card 2: Loan Terms */}
+      <Card className="p-6 space-y-5 shadow-sm">
+        <div className="flex items-center gap-2 pb-2 border-b border-border">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <h3 className="font-semibold text-foreground">Loan Terms</h3>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground">Loan Term</Label>
+            <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
+              <SelectTrigger className="h-11 transition-all focus:ring-2 focus:ring-primary/20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOAN_TERMS.map(term => (
+                  <SelectItem key={term} value={term.toString()}>
+                    {term} years
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <InputField
+            label="Interest Rate"
+            tooltip="Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks."
+            suffix="%"
+            value={interestRateInput}
+            onChange={handleInterestRateChange}
+            onBlur={handleInterestRateBlur}
+            placeholder="5.0"
+            inputMode="decimal"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">Typical rates: 4.0% – 6.0%</p>
       </Card>
 
-      {/* Interest Rate */}
-      <Card className="p-5">
-        <div className="space-y-3">
-          <div className="flex items-center gap-1.5">
-            <Label className="text-sm font-medium">Interest Rate</Label>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3.5 w-3.5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks with rates ranging 4-6%.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="relative">
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={interestRateInput}
-              onChange={handleInterestRateChange}
-              onBlur={handleInterestRateBlur}
-              className="pr-8 text-base font-medium h-11"
-              placeholder="5.0"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
-          </div>
-          <p className="text-xs text-muted-foreground">Typical range: 4.0% – 6.0%</p>
-        </div>
-      </Card>
-
-      {/* Edit Assumptions */}
+      {/* Card 3: Advanced Options */}
       <Collapsible open={showAssumptions} onOpenChange={setShowAssumptions}>
         <CollapsibleTrigger asChild>
-          <Card className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+          <Card className="p-4 cursor-pointer hover:bg-muted/30 transition-colors shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Advanced Options</span>
-              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showAssumptions && "rotate-180")} />
+              <div className="flex items-center gap-2">
+                <PiggyBank className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Advanced Options</span>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", showAssumptions && "rotate-180")} />
             </div>
           </Card>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <Card className="p-5 mt-2 space-y-5">
-            <div className="flex items-center justify-between">
+          <Card className="p-6 mt-2 space-y-5 shadow-sm">
+            <div className="flex items-center justify-between py-1">
               <div className="flex items-center gap-1.5">
-                <Label className="text-sm">Include Purchase Tax</Label>
+                <Label className="text-sm text-foreground">Include Purchase Tax</Label>
                 <Tooltip>
                   <TooltipTrigger>
                     <Info className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  <TooltipContent className="max-w-xs text-sm">
                     Include Mas Rechisha in total cash needed calculation
                   </TooltipContent>
                 </Tooltip>
@@ -447,56 +499,36 @@ function MortgageCalculatorContent() {
               <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
             </div>
             
-            <div className="space-y-2">
-              <Label className="text-sm">Legal & Registration Fees</Label>
-              <div className="relative">
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={legalFeesInput}
-                  onChange={handleLegalFeesChange}
-                  onBlur={handleLegalFeesBlur}
-                  className="pr-8 h-10"
-                  placeholder="0.5"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Range: 0.3% – 1.0%</p>
-            </div>
+            <InputField
+              label="Legal & Registration Fees"
+              suffix="%"
+              value={legalFeesInput}
+              onChange={handleLegalFeesChange}
+              onBlur={handleLegalFeesBlur}
+              placeholder="0.5"
+              helperText="0.3% – 1.0%"
+              inputMode="decimal"
+            />
             
-            <div className="space-y-2">
-              <Label className="text-sm">Appraisal Fee</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  value={appraisalFeeInput}
-                  onChange={handleAppraisalFeeChange}
-                  onBlur={handleAppraisalFeeBlur}
-                  className="pl-8 h-10"
-                  placeholder="3,000"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">Typical: ₪1,500 – ₪6,000</p>
-            </div>
+            <InputField
+              label="Appraisal Fee"
+              prefix="₪"
+              value={appraisalFeeInput}
+              onChange={handleAppraisalFeeChange}
+              onBlur={handleAppraisalFeeBlur}
+              placeholder="3,000"
+              helperText="Typical: ₪1,500 – ₪6,000"
+            />
             
-            <div className="space-y-2">
-              <Label className="text-sm">Reserve Buffer</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  value={bufferAmountInput}
-                  onChange={handleBufferAmountChange}
-                  onBlur={handleBufferAmountBlur}
-                  className="pl-8 h-10"
-                  placeholder="0"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">Optional emergency fund</p>
-            </div>
+            <InputField
+              label="Reserve Buffer"
+              prefix="₪"
+              value={bufferAmountInput}
+              onChange={handleBufferAmountChange}
+              onBlur={handleBufferAmountBlur}
+              placeholder="0"
+              helperText="Optional emergency fund"
+            />
           </Card>
         </CollapsibleContent>
       </Collapsible>
@@ -505,35 +537,67 @@ function MortgageCalculatorContent() {
 
   const rightColumn = (
     <div className="space-y-4">
-      {/* Monthly Payment - Hero Result */}
-      <ResultCard
-        label="Monthly Payment"
-        value={formatCurrency(mortgageResult.monthlyPayment)}
-        variant="primary"
-        size="lg"
-      />
+      {/* Hero: Monthly Payment */}
+      <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-sm">
+        <p className="text-sm font-medium text-muted-foreground mb-1">Monthly Payment</p>
+        <p className="text-4xl font-bold text-primary tracking-tight">
+          {formatCurrency(mortgageResult.monthlyPayment)}
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Over {loanTermYears} years at {interestRate.toFixed(1)}% interest
+        </p>
+      </Card>
+
+      {/* Payment Breakdown Pie Chart */}
+      <Card className="p-5 shadow-sm">
+        <p className="text-sm font-medium text-muted-foreground mb-2">First Month Breakdown</p>
+        <PaymentPieChart
+          principal={Math.max(0, monthlyPrincipal)}
+          interest={monthlyInterest}
+          formatValue={formatCurrency}
+        />
+        <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-border">
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Principal</p>
+            <p className="text-base font-semibold">{formatCurrency(Math.max(0, monthlyPrincipal))}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">Interest</p>
+            <p className="text-base font-semibold">{formatCurrency(monthlyInterest)}</p>
+          </div>
+        </div>
+      </Card>
 
       {/* Loan Amount & LTV */}
-      <Card className="p-5 space-y-4">
+      <Card className="p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Loan Amount</span>
-          <span className="text-base font-semibold">{formatCurrency(loanAmount)}</span>
+          <span className="text-lg font-bold">{formatCurrency(loanAmount)}</span>
         </div>
         <LTVIndicator ltv={ltv} maxLTV={maxLtv} />
       </Card>
 
       {/* Total Interest */}
-      <ResultCard
-        label="Total Interest Over Term"
-        value={formatCurrency(mortgageResult.totalInterest)}
-        sublabel={`${loanTermYears} years · ${interestRate.toFixed(1)}% rate`}
-        variant="default"
-      />
+      <Card className="p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Total Interest Paid</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Over {loanTermYears} years</p>
+          </div>
+          <p className="text-xl font-bold text-foreground">{formatCurrency(mortgageResult.totalInterest)}</p>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Total Repayment</span>
+            <span className="font-semibold">{formatCurrency(mortgageResult.totalPayment)}</span>
+          </div>
+        </div>
+      </Card>
 
       {/* Cash Needed Breakdown */}
-      <Card className="p-5">
+      <Card className="p-5 shadow-sm">
         <CashBreakdownTable
-          title="Total Cash Needed to Close"
+          title="Cash Needed to Close"
           items={cashBreakdownItems}
         />
       </Card>
@@ -543,12 +607,13 @@ function MortgageCalculatorContent() {
   return (
     <ToolLayout
       title="Mortgage Calculator"
-      subtitle="Estimate your monthly payment and total cash needed to close"
+      subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
+      headerActions={<CurrencyToggle />}
       infoBanner={
         buyerProfile ? (
           <InfoBanner variant="info">
-            Your buyer profile has been loaded. Calculations reflect your status as a {currentBuyerType?.label.toLowerCase()}.
+            Calculations reflect your profile as a <strong>{currentBuyerType?.label.toLowerCase()}</strong>.
           </InfoBanner>
         ) : undefined
       }
@@ -556,7 +621,7 @@ function MortgageCalculatorContent() {
       rightColumn={rightColumn}
       disclaimer={
         <ToolDisclaimer 
-          text="This calculator provides estimates based on Israeli mortgage regulations as of 2024. Actual terms depend on your bank, credit profile, and market conditions. Consult a licensed mortgage advisor for personalized advice."
+          text="Estimates based on Israeli mortgage regulations (2024). Actual terms depend on your bank, credit profile, and market conditions. Consult a licensed mortgage advisor for personalized advice."
         />
       }
     />

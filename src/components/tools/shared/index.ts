@@ -1,4 +1,5 @@
 export { ToolLayout } from './ToolLayout';
+export { PaymentPieChart } from './PaymentPieChart';
 export { CurrencyToggle, CurrencyProvider, useCurrency } from './CurrencyToggle';
 export { ResultCard } from './ResultCard';
 export { CashBreakdownTable } from './CashBreakdownTable';
