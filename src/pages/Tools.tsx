@@ -9,6 +9,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { ToolPlaceholder } from '@/components/tools/ToolPlaceholder';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
+import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalculator';
 
 interface Tool {
   id: string;
@@ -31,11 +32,10 @@ const tools: Tool[] = [
   { id: 'documents', label: 'Document Checklist', description: 'Track all required documents for your Israel property purchase with status updates', icon: ClipboardList, category: 'discovery' },
 ];
 
-// Mortgage Calculator is now active, others are placeholders
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
   totalcost: () => <ToolPlaceholder toolName="Total Cost Calculator" />,
-  affordability: () => <ToolPlaceholder toolName="Affordability Calculator" />,
+  affordability: AffordabilityCalculator,
   investment: () => <ToolPlaceholder toolName="Investment Return Calculator" />,
   rentvsbuy: () => <ToolPlaceholder toolName="Rent vs Buy Calculator" />,
   timemachine: () => <ToolPlaceholder toolName="Real Estate Time Machine" />,
