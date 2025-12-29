@@ -570,39 +570,61 @@ function MortgageCalculatorContent() {
         <CashBreakdownTable title="Cash Needed to Close" items={cashBreakdownItems} />
       </Card>
 
-      {/* CTAs and Feedback */}
-      <div className="grid md:grid-cols-[1fr,240px] gap-4">
-        <Card className="p-5 shadow-sm">
-          <p className="text-sm font-medium mb-3">Continue Your Research</p>
-          <div className="flex flex-wrap gap-3">
-            <Link 
-              to="/tools?tool=total-cost"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-sm font-medium"
-            >
-              Total Cost Calculator
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <Link 
-              to="/tools?tool=affordability"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-sm font-medium"
-            >
-              Affordability Calculator
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-            <Link 
-              to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-sm font-medium text-primary"
-            >
-              Browse Properties
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
+      {/* Next Steps Grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Affordability Calculator */}
+        <Link 
+          to="/tools?tool=affordability"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Affordability Calculator</p>
           </div>
-        </Card>
+          <p className="text-sm text-muted-foreground">
+            See how much home you can afford based on your income
+          </p>
+        </Link>
 
-        <Card className="p-5 shadow-sm">
-          <ToolFeedback toolName="mortgage-calculator" variant="inline" />
-        </Card>
+        {/* Browse Properties */}
+        <Link 
+          to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <ExternalLink className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Browse Properties</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Find listings in your budget range
+          </p>
+        </Link>
+
+        {/* Explore Areas */}
+        <Link 
+          to="/areas"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <ArrowRight className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Explore Areas</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Discover neighborhoods and market trends
+          </p>
+        </Link>
       </div>
+
+      {/* Feedback Section */}
+      <Card className="p-5 shadow-sm">
+        <ToolFeedback toolName="mortgage-calculator" variant="inline" />
+      </Card>
     </div>
   );
 
