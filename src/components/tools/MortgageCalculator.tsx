@@ -1,3 +1,4 @@
+// Mortgage Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -401,10 +402,6 @@ function MortgageCalculatorContent() {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleDownPaymentMode}>
-              Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
-            </Button>
-          </div>
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleDownPaymentMode}>
               Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
             </Button>
