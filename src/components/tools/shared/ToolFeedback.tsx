@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ThumbsUp, ThumbsDown, MessageSquare, CheckCircle, X } from 'lucide-react';
+import { MessageSquare, CheckCircle, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -15,28 +15,25 @@ interface ToolFeedbackProps {
 
 export function ToolFeedback({ toolName, className, variant = 'default' }: ToolFeedbackProps) {
   const { user } = useAuth();
-  const [rating, setRating] = useState<number | null>(null);
-  const [showComment, setShowComment] = useState(false);
+  const [rating, setRating] = useState<number>(0);
+  const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(variant === 'default');
 
-  const handleRating = async (value: number) => {
-    setRating(value);
-    
-    // Auto-submit simple rating
-    if (!showComment) {
-      await submitFeedback(value, '');
+  const submitFeedback = async () => {
+    if (!comment.trim() && rating === 0) {
+      toast.error('Please add a comment or rating');
+      return;
     }
-  };
 
-  const submitFeedback = async (ratingValue: number, commentText: string) => {
     setIsSubmitting(true);
     try {
       const { error } = await supabase.from('tool_feedback').insert({
         tool_name: toolName,
-        rating: ratingValue,
-        comment: commentText.trim() || null,
+        rating: rating || null,
+        comment: comment.trim() || null,
         user_id: user?.id || null,
       });
 
@@ -52,175 +49,121 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
     }
   };
 
-  const handleSubmitWithComment = async () => {
-    if (rating === null) return;
-    await submitFeedback(rating, comment);
-  };
-
+  // Success state
   if (isSubmitted) {
     return (
       <div className={cn(
         "flex items-center gap-2 text-primary",
-        variant === 'inline' ? "py-2" : "p-4 rounded-lg bg-muted/30",
+        variant === 'inline' ? "py-3" : "p-5 rounded-lg bg-muted/30",
         className
       )}>
-        <CheckCircle className="h-4 w-4" />
-        <span className="text-sm font-medium">Thanks for your feedback!</span>
+        <CheckCircle className="h-5 w-5" />
+        <span className="text-sm font-medium">Thanks for helping us improve!</span>
       </div>
     );
   }
 
-  // Inline variant - compact single row
+  // Star rating component
+  const StarRating = () => (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className="p-0.5 transition-transform hover:scale-110"
+          onMouseEnter={() => setHoveredRating(star)}
+          onMouseLeave={() => setHoveredRating(0)}
+          onClick={() => setRating(star)}
+        >
+          <Star
+            className={cn(
+              "h-5 w-5 transition-colors",
+              (hoveredRating || rating) >= star
+                ? "fill-amber-400 text-amber-400"
+                : "text-muted-foreground/40"
+            )}
+          />
+        </button>
+      ))}
+    </div>
+  );
+
+  // Inline variant - collapsed by default, expands on click
   if (variant === 'inline') {
     return (
       <div className={cn("space-y-3", className)}>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Was this helpful?</span>
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant={rating === 5 ? "default" : "ghost"}
-              size="sm"
-              className={cn(
-                "h-8 w-8 p-0",
-                rating === 5 && "bg-green-600 hover:bg-green-700"
-              )}
-              onClick={() => handleRating(5)}
-              disabled={isSubmitting}
-            >
-              <ThumbsUp className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={rating === 1 ? "default" : "ghost"}
-              size="sm"
-              className={cn(
-                "h-8 w-8 p-0",
-                rating === 1 && "bg-red-600 hover:bg-red-700"
-              )}
-              onClick={() => handleRating(1)}
-              disabled={isSubmitting}
-            >
-              <ThumbsDown className="h-4 w-4" />
-            </Button>
-          </div>
-          {!showComment && rating === null && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-              onClick={() => setShowComment(true)}
-            >
-              <MessageSquare className="h-3.5 w-3.5" />
-              Leave a comment
-            </Button>
+        <button
+          type="button"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Share feedback about this tool</span>
+          {isExpanded ? (
+            <ChevronUp className="h-3.5 w-3.5 opacity-60" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           )}
-        </div>
+        </button>
 
-        {showComment && !isSubmitted && (
-          <div className="space-y-2 animate-in fade-in-50 duration-200">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Optional feedback</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={() => setShowComment(false)}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+        {isExpanded && (
+          <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-200">
             <Textarea
-              placeholder="How can we improve this tool?"
+              placeholder="What would make this calculator more useful? Any features you'd like to see?"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="min-h-[60px] resize-none text-sm"
+              className="min-h-[80px] resize-none text-sm"
             />
-            <Button
-              size="sm"
-              onClick={handleSubmitWithComment}
-              disabled={isSubmitting || rating === null}
-              className="h-8 text-xs"
-            >
-              {isSubmitting ? 'Sending...' : 'Submit'}
-            </Button>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Rating (optional)</span>
+                <StarRating />
+              </div>
+              
+              <Button
+                size="sm"
+                onClick={submitFeedback}
+                disabled={isSubmitting || (!comment.trim() && rating === 0)}
+                className="h-8"
+              >
+                {isSubmitting ? 'Sending...' : 'Send Feedback'}
+              </Button>
+            </div>
           </div>
         )}
       </div>
     );
   }
 
-  // Default variant - card style
+  // Default variant - always expanded, card style
   return (
-    <div className={cn("p-4 rounded-lg bg-muted/30 space-y-3", className)}>
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">Was this helpful?</span>
-        <div className="flex items-center gap-1.5">
-          <Button
-            variant={rating === 5 ? "default" : "outline"}
-            size="sm"
-            className={cn(
-              "h-8 w-8 p-0",
-              rating === 5 && "bg-green-600 hover:bg-green-700 border-green-600"
-            )}
-            onClick={() => handleRating(5)}
-            disabled={isSubmitting}
-          >
-            <ThumbsUp className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={rating === 1 ? "default" : "outline"}
-            size="sm"
-            className={cn(
-              "h-8 w-8 p-0",
-              rating === 1 && "bg-red-600 hover:bg-red-700 border-red-600"
-            )}
-            onClick={() => handleRating(1)}
-            disabled={isSubmitting}
-          >
-            <ThumbsDown className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className={cn("p-5 rounded-lg bg-muted/30 space-y-4", className)}>
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+        <span className="font-medium text-foreground">Help us improve this tool</span>
       </div>
 
-      {!showComment && !isSubmitted && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5 p-0"
-          onClick={() => setShowComment(true)}
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Add a comment
-        </Button>
-      )}
+      <Textarea
+        placeholder="What would make this calculator more useful? Any features you'd like to see?"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        className="min-h-[100px] resize-none"
+      />
 
-      {showComment && !isSubmitted && (
-        <div className="space-y-2 animate-in fade-in-50 duration-200">
-          <Textarea
-            placeholder="How can we improve this tool?"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="min-h-[60px] resize-none text-sm"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowComment(false)}
-              className="h-8 text-xs"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSubmitWithComment}
-              disabled={isSubmitting || rating === null}
-              className="h-8 text-xs"
-            >
-              {isSubmitting ? 'Sending...' : 'Submit'}
-            </Button>
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Rating (optional)</span>
+          <StarRating />
         </div>
-      )}
+        
+        <Button
+          onClick={submitFeedback}
+          disabled={isSubmitting || (!comment.trim() && rating === 0)}
+        >
+          {isSubmitting ? 'Sending...' : 'Send Feedback'}
+        </Button>
+      </div>
     </div>
   );
 }
