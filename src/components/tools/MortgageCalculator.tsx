@@ -1,458 +1,272 @@
 import { useState, useMemo } from 'react';
-import { Calculator, Landmark, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Calculator, Info, ChevronDown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { 
-  ToolLayout,
-  CurrencyProvider,
-  CurrencyToggle,
-  useCurrency,
-  ResultCard,
-  CashBreakdownTable,
-  ToolDisclaimer,
-  InputSection,
-  SliderInput,
-  CTACard,
-  InfoBanner,
-  LTVIndicator,
-} from './shared';
-import { 
-  calculateMortgagePayment, 
-  calculateMultiTrackMortgage, 
-  getMaxLTV, 
-  stressTestMortgage,
-  type TrackType 
-} from '@/lib/calculations/mortgage';
-import type { BuyerType } from '@/lib/calculations/purchaseTax';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { calculatePurchaseTax } from '@/lib/calculations/purchaseTax';
+import { 
+  ToolLayout, 
+  CurrencyProvider, 
+  useCurrency, 
+  ResultCard, 
+  CashBreakdownTable, 
+  LTVIndicator 
+} from './shared';
 
-interface TrackAllocation {
-  trackType: TrackType;
-  percentage: number;
-  rate: number;
-}
+type BuyerType = 'first_time' | 'upgrader' | 'investor' | 'oleh' | 'foreign' | 'company';
 
-const TRACK_INFO: Partial<Record<TrackType, { name: string; hebrewName: string; description: string; riskLevel: string }>> = {
-  prime: { name: 'Prime (Variable)', hebrewName: 'פריים', description: 'Tied to Bank of Israel rate + bank margin', riskLevel: 'Medium-High' },
-  fixed_unlinked: { name: 'Fixed Non-Linked', hebrewName: 'קבועה לא צמודה', description: 'Fixed rate, not linked to CPI', riskLevel: 'Low' },
-  fixed_cpi: { name: 'Fixed CPI-Linked', hebrewName: 'קבועה צמודה', description: 'Fixed rate + CPI adjustment', riskLevel: 'Medium' },
-  variable_unlinked: { name: 'Variable Non-Linked', hebrewName: 'משתנה לא צמודה', description: 'Rate changes every 5 years', riskLevel: 'Medium' },
-  variable_cpi: { name: 'Variable CPI-Linked', hebrewName: 'משתנה צמודה', description: 'Variable rate + CPI adjustment', riskLevel: 'High' },
-  eligibility: { name: 'Eligibility Loan', hebrewName: 'הלוואת זכאות', description: 'Government subsidized for eligible buyers', riskLevel: 'Low' },
-};
+const BUYER_TYPE_OPTIONS: { value: BuyerType; label: string; maxLtv: number }[] = [
+  { value: 'first_time', label: 'First-Time Buyer', maxLtv: 75 },
+  { value: 'upgrader', label: 'Upgrading (Selling Current)', maxLtv: 70 },
+  { value: 'investor', label: 'Additional Property', maxLtv: 50 },
+  { value: 'oleh', label: 'Oleh Hadash (within 7 years)', maxLtv: 75 },
+  { value: 'foreign', label: 'Non-Resident / Foreign', maxLtv: 50 },
+  { value: 'company', label: 'Company Purchase', maxLtv: 50 },
+];
 
-const DEFAULT_RATES: Partial<Record<TrackType, number>> = {
-  prime: 6.0,
-  fixed_unlinked: 5.5,
-  fixed_cpi: 3.5,
-  variable_unlinked: 4.5,
-  variable_cpi: 2.8,
-  eligibility: 3.0,
-};
-
-const BUYER_TYPE_LABELS: Record<BuyerType, { label: string; maxLTV: number }> = {
-  first_time: { label: 'First-Time Buyer', maxLTV: 75 },
-  upgrader: { label: 'Upgrader', maxLTV: 70 },
-  investor: { label: 'Investor', maxLTV: 50 },
-  foreign: { label: 'Foreign Resident', maxLTV: 50 },
-  oleh: { label: 'New Oleh', maxLTV: 75 },
-  company: { label: 'Company', maxLTV: 50 },
-};
+const LOAN_TERMS = [5, 10, 15, 20, 25, 30];
 
 function MortgageCalculatorContent() {
   const { formatCurrency } = useCurrency();
   
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState(2500000);
-  const [downPaymentPercent, setDownPaymentPercent] = useState(30);
-  const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
-  const [loanTerm, setLoanTerm] = useState(25);
+  const [downPaymentPercent, setDownPaymentPercent] = useState(25);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
+  const [loanTermYears, setLoanTermYears] = useState(25);
+  const [interestRate, setInterestRate] = useState(4.5);
   
-  // Track selection
-  const [useMultiTrack, setUseMultiTrack] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<TrackType>('fixed_unlinked');
-  const [interestRate, setInterestRate] = useState(DEFAULT_RATES.fixed_unlinked || 5.5);
-  const [trackAllocations, setTrackAllocations] = useState<TrackAllocation[]>([
-    { trackType: 'fixed_unlinked', percentage: 34, rate: 5.5 },
-    { trackType: 'prime', percentage: 33, rate: 6.0 },
-    { trackType: 'variable_cpi', percentage: 33, rate: 2.8 },
-  ]);
-
-  // Advanced assumptions
+  // Assumptions (hidden by default)
   const [showAssumptions, setShowAssumptions] = useState(false);
-  const [includeTaxesAndFees, setIncludeTaxesAndFees] = useState(true);
-  const [bankLegalFeesPercent, setBankLegalFeesPercent] = useState(2);
-  const [appraisalFee, setAppraisalFee] = useState(3500);
-  const [bufferReserve, setBufferReserve] = useState(50000);
+  const [includeTaxesInCash, setIncludeTaxesInCash] = useState(true);
+  const [legalFeesPercent, setLegalFeesPercent] = useState(0.5);
+  const [appraisalFee, setAppraisalFee] = useState(3000);
+  const [bufferAmount, setBufferAmount] = useState(0);
+
+  // Get max LTV for current buyer type
+  const maxLtv = BUYER_TYPE_OPTIONS.find(b => b.value === buyerType)?.maxLtv || 75;
+  const minDownPayment = 100 - maxLtv;
+
+  // Ensure down payment respects buyer type limits
+  const effectiveDownPaymentPercent = Math.max(downPaymentPercent, minDownPayment);
   
-  // Educational content
-  const [showTrackInfo, setShowTrackInfo] = useState(false);
+  // Calculate amounts
+  const downPaymentAmount = (propertyPrice * effectiveDownPaymentPercent) / 100;
+  const loanAmount = propertyPrice - downPaymentAmount;
+  const ltv = ((loanAmount / propertyPrice) * 100);
 
-  // Derived values
-  const buyerCategory = (buyerType === 'oleh' ? 'first_time' : buyerType === 'company' ? 'investor' : buyerType) as 'first_time' | 'upgrader' | 'investor' | 'foreign';
-  const maxLTV = getMaxLTV(buyerCategory);
-  const minDownPayment = 100 - (maxLTV * 100);
+  // Mortgage calculation
+  const mortgageResult = useMemo(() => {
+    return calculateMortgagePayment(loanAmount, interestRate, loanTermYears);
+  }, [loanAmount, interestRate, loanTermYears]);
 
-  const downPaymentAmount = useMemo(() => {
-    return propertyPrice * downPaymentPercent / 100;
-  }, [propertyPrice, downPaymentPercent]);
-
-  const loanAmount = useMemo(() => {
-    const effectiveDownPayment = Math.max(downPaymentPercent, minDownPayment);
-    return propertyPrice * (1 - effectiveDownPayment / 100);
-  }, [propertyPrice, downPaymentPercent, minDownPayment]);
-
-  const ltv = useMemo(() => {
-    return (loanAmount / propertyPrice) * 100;
-  }, [loanAmount, propertyPrice]);
-
-  const calculations = useMemo(() => {
-    if (useMultiTrack) {
-      const tracks = trackAllocations.map(alloc => ({
-        type: alloc.trackType,
-        principal: Math.round(loanAmount * alloc.percentage / 100),
-        interestRate: alloc.rate,
-        termYears: loanTerm,
-        isCpiLinked: alloc.trackType.includes('cpi') || alloc.trackType.includes('linked'),
-      }));
-      const multiResult = calculateMultiTrackMortgage(tracks);
-      return {
-        totalMonthlyPayment: multiResult.totalMonthlyPayment,
-        totalPayment: multiResult.totalPayment,
-        totalInterest: multiResult.totalInterest,
-      };
-    } else {
-      const result = calculateMortgagePayment(loanAmount, interestRate, loanTerm);
-      return {
-        totalMonthlyPayment: result.monthlyPayment,
-        totalPayment: result.totalPayment,
-        totalInterest: result.totalInterest,
-      };
-    }
-  }, [loanAmount, loanTerm, useMultiTrack, trackAllocations, interestRate]);
-
-  const stressTest = useMemo(() => {
-    return stressTestMortgage(loanAmount, interestRate, loanTerm, 2);
-  }, [loanAmount, interestRate, loanTerm]);
-
-  // Purchase tax estimate
+  // Purchase tax calculation
   const purchaseTaxResult = useMemo(() => {
     return calculatePurchaseTax(propertyPrice, buyerType);
   }, [propertyPrice, buyerType]);
-  const purchaseTaxAmount = purchaseTaxResult.totalTax;
 
-  // Total cash needed
-  const bankLegalFees = (loanAmount * bankLegalFeesPercent) / 100;
-  const totalCashNeeded = downPaymentAmount + (includeTaxesAndFees ? (purchaseTaxAmount + bankLegalFees + appraisalFee + bufferReserve) : 0);
+  // Cash needed breakdown
+  const legalFees = (propertyPrice * legalFeesPercent) / 100;
+  const purchaseTaxAmount = includeTaxesInCash ? purchaseTaxResult.totalTax : 0;
+  const totalCashNeeded = downPaymentAmount + purchaseTaxAmount + legalFees + appraisalFee + bufferAmount;
 
-  const updateTrackAllocation = (index: number, field: 'percentage' | 'rate', value: number) => {
-    const newAllocations = [...trackAllocations];
-    newAllocations[index] = { ...newAllocations[index], [field]: value };
-    setTrackAllocations(newAllocations);
-  };
+  const cashBreakdownItems = [
+    { label: 'Down Payment', value: formatCurrency(downPaymentAmount), percentage: `${effectiveDownPaymentPercent.toFixed(0)}%` },
+    ...(includeTaxesInCash ? [{ label: 'Purchase Tax (Mas Rechisha)', value: formatCurrency(purchaseTaxAmount) }] : []),
+    { label: 'Legal & Bank Fees', value: formatCurrency(legalFees) },
+    { label: 'Appraisal Fee', value: formatCurrency(appraisalFee) },
+    ...(bufferAmount > 0 ? [{ label: 'Buffer/Reserve', value: formatCurrency(bufferAmount) }] : []),
+    { label: '', value: '', isSeparator: true },
+    { label: 'Total Cash Needed', value: formatCurrency(totalCashNeeded), isTotal: true },
+  ];
 
-  const totalAllocation = trackAllocations.reduce((sum, t) => sum + t.percentage, 0);
-
-  // Handle buyer type change
-  const handleBuyerTypeChange = (newType: BuyerType) => {
-    setBuyerType(newType);
-    const newMaxLTV = getMaxLTV(newType as any);
-    if (downPaymentPercent < 100 - newMaxLTV) {
-      setDownPaymentPercent(100 - newMaxLTV);
+  // Handle buyer type change - adjust down payment if needed
+  const handleBuyerTypeChange = (value: BuyerType) => {
+    setBuyerType(value);
+    const newMinDown = 100 - (BUYER_TYPE_OPTIONS.find(b => b.value === value)?.maxLtv || 75);
+    if (downPaymentPercent < newMinDown) {
+      setDownPaymentPercent(newMinDown);
     }
   };
 
-  const cashBreakdownItems = [
-    { 
-      label: 'Down Payment', 
-      value: formatCurrency(downPaymentAmount),
-      percentage: `${downPaymentPercent}%`,
-    },
-    ...(includeTaxesAndFees ? [
-      { 
-        label: 'Est. Purchase Tax', 
-        value: formatCurrency(purchaseTaxAmount),
-        percentage: `${((purchaseTaxAmount / propertyPrice) * 100).toFixed(1)}%`,
-        tooltip: 'Based on your buyer type and property price',
-      },
-      { 
-        label: 'Bank + Legal Fees', 
-        value: formatCurrency(bankLegalFees),
-        percentage: `${bankLegalFeesPercent}%`,
-      },
-      { 
-        label: 'Appraisal Fee', 
-        value: formatCurrency(appraisalFee),
-      },
-      { 
-        label: 'Buffer/Reserve', 
-        value: formatCurrency(bufferReserve),
-        tooltip: 'Recommended emergency fund for unexpected costs',
-      },
-    ] : []),
-    { label: '', value: '', isSeparator: true },
-    { 
-      label: 'Total Cash Needed', 
-      value: formatCurrency(totalCashNeeded),
-      isTotal: true,
-    },
-  ];
-
   const leftColumn = (
-    <div className="space-y-8">
-      {/* Currency Toggle */}
-      <div className="flex justify-end">
-        <CurrencyToggle />
-      </div>
-
-      {/* Mortgage Basics Section */}
-      <div className="space-y-6">
-        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" />
-          Mortgage Basics
-        </h2>
-
-        <SliderInput
-          label="Property Price"
-          value={propertyPrice}
-          onChange={setPropertyPrice}
-          min={500000}
-          max={20000000}
-          step={50000}
-          formatValue={formatCurrency}
-        />
-
-        <InputSection label="Buyer Profile" tooltip="Bank of Israel limits maximum loan-to-value based on buyer type">
-          <Select value={buyerType} onValueChange={(v) => handleBuyerTypeChange(v as BuyerType)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(BUYER_TYPE_LABELS).map(([key, info]) => (
-                <SelectItem key={key} value={key}>
-                  {info.label} (max {info.maxLTV}% LTV)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-primary">Min {minDownPayment.toFixed(0)}% down for {BUYER_TYPE_LABELS[buyerType].label}</p>
-        </InputSection>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium text-foreground">Down Payment</Label>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDownPaymentMode('percent')}
-                className={`px-2 py-1 text-xs rounded ${downPaymentMode === 'percent' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-              >
-                %
-              </button>
-              <button
-                onClick={() => setDownPaymentMode('amount')}
-                className={`px-2 py-1 text-xs rounded ${downPaymentMode === 'amount' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-              >
-                ₪
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{downPaymentPercent}%</span>
-            <span className="font-semibold">{formatCurrency(downPaymentAmount)}</span>
-          </div>
-          <Slider
-            value={[downPaymentPercent]}
-            onValueChange={([v]) => setDownPaymentPercent(Math.max(v, minDownPayment))}
-            min={minDownPayment}
-            max={80}
-            step={1}
-          />
-        </div>
-
-        <SliderInput
-          label="Loan Term"
-          value={loanTerm}
-          onChange={setLoanTerm}
-          min={5}
-          max={30}
-          step={1}
-          formatValue={(v) => `${v} years`}
-        />
-      </div>
-
-      {/* Mortgage Track Section */}
-      <div className="space-y-6">
+    <div className="space-y-6">
+      {/* Property Price */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Mortgage Track</h2>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="multi-track" className="text-sm text-muted-foreground">Multi-Track</Label>
-            <Switch id="multi-track" checked={useMultiTrack} onCheckedChange={setUseMultiTrack} />
-          </div>
+          <Label className="text-sm font-medium">Property Price</Label>
+          <span className="text-lg font-semibold">{formatCurrency(propertyPrice)}</span>
         </div>
-
-        {!useMultiTrack ? (
-          <div className="space-y-4">
-            <InputSection label="Mortgage Track (מסלול)">
-              <Select value={selectedTrack} onValueChange={(v) => {
-                setSelectedTrack(v as TrackType);
-                setInterestRate(DEFAULT_RATES[v as TrackType] || 5.5);
-              }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TRACK_INFO).map(([key, info]) => (
-                    <SelectItem key={key} value={key}>
-                      {info?.name} ({info?.hebrewName})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {TRACK_INFO[selectedTrack]?.description} • Risk: {TRACK_INFO[selectedTrack]?.riskLevel}
-              </p>
-            </InputSection>
-
-            <SliderInput
-              label="Interest Rate"
-              value={interestRate}
-              onChange={setInterestRate}
-              min={1}
-              max={10}
-              step={0.1}
-              formatValue={(v) => `${v.toFixed(1)}%`}
-            />
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Track Mix (תמהיל)</Label>
-              {totalAllocation !== 100 && (
-                <Badge variant="destructive" className="text-xs">Total: {totalAllocation}%</Badge>
-              )}
-            </div>
-            {trackAllocations.map((track, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-muted/50 border border-border space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">{TRACK_INFO[track.trackType]?.name}</span>
-                  <Badge variant="outline">{track.percentage}%</Badge>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Allocation</Label>
-                    <Slider
-                      value={[track.percentage]}
-                      onValueChange={([v]) => updateTrackAllocation(idx, 'percentage', v)}
-                      min={0}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Rate: {track.rate}%</Label>
-                    <Slider
-                      value={[track.rate]}
-                      onValueChange={([v]) => updateTrackAllocation(idx, 'rate', v)}
-                      min={1}
-                      max={10}
-                      step={0.1}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Portion: {formatCurrency(loanAmount * track.percentage / 100)} • 
-                  Payment: {formatCurrency(calculateMortgagePayment(loanAmount * track.percentage / 100, track.rate, loanTerm).monthlyPayment)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+        <Slider
+          value={[propertyPrice]}
+          onValueChange={([v]) => setPropertyPrice(v)}
+          min={500000}
+          max={10000000}
+          step={50000}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{formatCurrency(500000)}</span>
+          <span>{formatCurrency(10000000)}</span>
+        </div>
       </div>
 
-      {/* Edit Assumptions Collapsible */}
+      {/* Buyer Type */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5">
+          <Label className="text-sm font-medium">Buyer Type</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Your buyer type affects maximum loan-to-value (LTV) ratio and purchase tax rates.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <Select value={buyerType} onValueChange={handleBuyerTypeChange}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {BUYER_TYPE_OPTIONS.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Max LTV: {maxLtv}% · Min down payment: {minDownPayment}%
+        </p>
+      </div>
+
+      {/* Down Payment */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">Down Payment</Label>
+          <div className="text-right">
+            <span className="text-lg font-semibold">{formatCurrency(downPaymentAmount)}</span>
+            <span className="text-sm text-muted-foreground ml-2">({effectiveDownPaymentPercent}%)</span>
+          </div>
+        </div>
+        <Slider
+          value={[effectiveDownPaymentPercent]}
+          onValueChange={([v]) => setDownPaymentPercent(v)}
+          min={minDownPayment}
+          max={80}
+          step={1}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{minDownPayment}%</span>
+          <span>80%</span>
+        </div>
+      </div>
+
+      {/* Loan Term */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Loan Term</Label>
+        <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LOAN_TERMS.map(term => (
+              <SelectItem key={term} value={term.toString()}>
+                {term} years
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Interest Rate */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">Interest Rate</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Blended rate across mortgage tracks. Typical rates range 4-6% depending on track mix.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <span className="text-lg font-semibold">{interestRate.toFixed(1)}%</span>
+        </div>
+        <Slider
+          value={[interestRate]}
+          onValueChange={([v]) => setInterestRate(v)}
+          min={3}
+          max={8}
+          step={0.1}
+          className="w-full"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>3%</span>
+          <span>8%</span>
+        </div>
+      </div>
+
+      {/* Edit Assumptions */}
       <Collapsible open={showAssumptions} onOpenChange={setShowAssumptions}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between h-12 px-4 bg-muted/30 hover:bg-muted/50">
-            <span className="font-medium">Edit Assumptions</span>
-            {showAssumptions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
+            <span>Edit Assumptions</span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${showAssumptions ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-4 px-1">
+        <CollapsibleContent className="space-y-4 pt-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm">Include taxes + fees in total</Label>
-            <Switch checked={includeTaxesAndFees} onCheckedChange={setIncludeTaxesAndFees} />
+            <Label className="text-sm">Include taxes in cash needed</Label>
+            <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
           </div>
           
-          {includeTaxesAndFees && (
-            <>
-              <SliderInput
-                label="Bank + Legal Fees"
-                value={bankLegalFeesPercent}
-                onChange={setBankLegalFeesPercent}
-                min={0.5}
-                max={4}
-                step={0.1}
-                formatValue={(v) => `${v}% (${formatCurrency(loanAmount * v / 100)})`}
-              />
-              
-              <SliderInput
-                label="Appraisal Fee"
-                value={appraisalFee}
-                onChange={setAppraisalFee}
-                min={2000}
-                max={8000}
-                step={500}
-                formatValue={formatCurrency}
-              />
-              
-              <SliderInput
-                label="Buffer/Reserve"
-                value={bufferReserve}
-                onChange={setBufferReserve}
-                min={0}
-                max={200000}
-                step={10000}
-                formatValue={formatCurrency}
-                tooltip="Emergency fund for unexpected costs during the purchase process"
-              />
-            </>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/* Educational Content */}
-      <Collapsible open={showTrackInfo} onOpenChange={setShowTrackInfo}>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between h-12 px-4 bg-muted/30 hover:bg-muted/50">
-            <span className="font-medium flex items-center gap-2">
-              <HelpCircle className="h-4 w-4" />
-              How Mortgage Tracks Affect Your Payment
-            </span>
-            {showTrackInfo ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pt-4 px-1">
-          <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Israeli Mortgage Tracks Explained</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p><strong className="text-foreground">Fixed Non-Linked:</strong> Predictable payments, no inflation risk. Best for stability seekers.</p>
-                <p><strong className="text-foreground">Prime:</strong> Variable rate tied to BOI base rate. Can go up or down.</p>
-                <p><strong className="text-foreground">CPI-Linked:</strong> Lower rate but payments adjust with inflation.</p>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm text-foreground">
-                <strong>Rule of Thumb:</strong> Max ⅓ in variable tracks (Prime), max ⅓ in CPI-linked. 
-                The rest should be fixed for stability.
-              </p>
-            </div>
+          <div className="space-y-2">
+            <Label className="text-sm">Legal & Bank Fees (%)</Label>
+            <Input 
+              type="number" 
+              value={legalFeesPercent} 
+              onChange={(e) => setLegalFeesPercent(Number(e.target.value))}
+              step={0.1}
+              min={0}
+              max={2}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-sm">Appraisal Fee (₪)</Label>
+            <Input 
+              type="number" 
+              value={appraisalFee} 
+              onChange={(e) => setAppraisalFee(Number(e.target.value))}
+              step={500}
+              min={0}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-sm">Buffer/Reserve (₪)</Label>
+            <Input 
+              type="number" 
+              value={bufferAmount} 
+              onChange={(e) => setBufferAmount(Number(e.target.value))}
+              step={5000}
+              min={0}
+            />
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -460,95 +274,48 @@ function MortgageCalculatorContent() {
   );
 
   const rightColumn = (
-    <div className="space-y-4">
-      {/* Main Result */}
+    <div className="space-y-6">
+      {/* Monthly Payment - Hero Result */}
       <ResultCard
-        label="Monthly Mortgage Payment"
-        value={formatCurrency(calculations.totalMonthlyPayment)}
-        sublabel={`Over ${loanTerm} years at ${interestRate}%`}
+        label="Monthly Payment"
+        value={formatCurrency(mortgageResult.monthlyPayment)}
         variant="primary"
         size="lg"
       />
 
-      {/* Loan Details */}
-      <div className="grid grid-cols-2 gap-3">
-        <ResultCard
-          label="Loan Amount"
-          value={formatCurrency(loanAmount)}
-          size="sm"
-          variant="muted"
-        />
-        <ResultCard
-          label="Total Interest"
-          value={formatCurrency(calculations.totalInterest)}
-          size="sm"
-          variant="muted"
-          badge={{ text: `+${((calculations.totalInterest / loanAmount) * 100).toFixed(0)}%`, variant: 'warning' }}
-        />
+      {/* Loan Amount & LTV */}
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <div>
+          <p className="text-sm text-muted-foreground">Loan Amount</p>
+          <p className="text-lg font-semibold">{formatCurrency(loanAmount)}</p>
+        </div>
+        <LTVIndicator ltv={ltv} maxLTV={maxLtv} />
       </div>
 
-      {/* LTV Indicator */}
-      <div className="p-4 rounded-xl border border-border bg-card">
-        <LTVIndicator ltv={ltv} maxLTV={maxLTV * 100} />
-      </div>
-
-      {/* Stress Test Alert */}
-      <div className="p-4 rounded-xl bg-warning/10 border border-warning/30">
-        <div className="flex items-start gap-3">
-          <span className="text-warning-foreground text-lg">⚠️</span>
-          <div>
-            <p className="font-medium text-foreground text-sm">BOI Stress Test (+2%)</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              If rates rise 2%, payment becomes {formatCurrency(stressTest.stressedPayment)}{' '}
-              <span className="text-destructive">(+{formatCurrency(stressTest.increase)}/mo)</span>
-            </p>
-          </div>
+      {/* Total Interest */}
+      <div className="p-4 bg-muted/30 rounded-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Total Interest Over {loanTermYears} Years</span>
+          <span className="font-medium">{formatCurrency(mortgageResult.totalInterest)}</span>
         </div>
       </div>
 
-      {/* Cash Breakdown */}
+      {/* Cash Needed Breakdown */}
       <CashBreakdownTable
         title="Total Cash Needed to Close"
         items={cashBreakdownItems}
       />
-
-      {/* CTA */}
-      <CTACard
-        title="Get Mortgage Guidance"
-        description="Connect with an English-speaking mortgage advisor who specializes in olim"
-        buttonText="Find an Advisor"
-        buttonLink="/guides"
-        icon={<Landmark className="h-5 w-5" />}
-        trustMessage="Free consultation • No obligation"
-        variant="primary"
-      />
     </div>
-  );
-
-  const infoBanner = (
-    <InfoBanner variant="info">
-      <span>
-        <strong>Israeli mortgages work differently.</strong> Banks offer 6 track types with different risk profiles. 
-        Most buyers use a mix of 2-3 tracks for optimal balance.
-      </span>
-    </InfoBanner>
-  );
-
-  const disclaimer = (
-    <ToolDisclaimer 
-      text="This calculator provides estimates for informational purposes only. Actual mortgage rates, terms, and eligibility depend on your personal financial situation and the lender. Bank of Israel regulations may change. Consult with a licensed mortgage advisor for personalized advice."
-    />
   );
 
   return (
     <ToolLayout
       title="Mortgage Calculator"
-      subtitle="Calculate payments across all Israeli mortgage track types"
+      subtitle="Estimate your monthly payment and cash needed to close"
       icon={<Calculator className="h-6 w-6" />}
-      infoBanner={infoBanner}
       leftColumn={leftColumn}
       rightColumn={rightColumn}
-      disclaimer={disclaimer}
+      disclaimer="Estimates based on typical Israeli mortgage terms. Actual rates and terms depend on your bank and financial profile."
     />
   );
 }
