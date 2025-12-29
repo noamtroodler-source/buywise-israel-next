@@ -88,50 +88,69 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
     </div>
   );
 
-  // Inline variant - collapsed by default, expands on click
+  // Inline variant - minimal, elegant design
   if (variant === 'inline') {
-    return (
-      <div className={cn("space-y-3", className)}>
+    if (!isExpanded) {
+      return (
         <button
           type="button"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span>Share feedback about this tool</span>
-          {isExpanded ? (
-            <ChevronUp className="h-3.5 w-3.5 opacity-60" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          onClick={() => setIsExpanded(true)}
+          className={cn(
+            "group flex items-center gap-2.5 text-sm text-muted-foreground/70 hover:text-primary transition-all duration-200",
+            className
           )}
-        </button>
-
-        {isExpanded && (
-          <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-200">
-            <Textarea
-              placeholder="What would make this calculator more useful? Any features you'd like to see?"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="min-h-[80px] resize-none text-sm"
-            />
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Rating (optional)</span>
-                <StarRating />
-              </div>
-              
-              <Button
-                size="sm"
-                onClick={submitFeedback}
-                disabled={isSubmitting || (!comment.trim() && rating === 0)}
-                className="h-8"
-              >
-                {isSubmitting ? 'Sending...' : 'Send Feedback'}
-              </Button>
-            </div>
+        >
+          <div className="p-1.5 rounded-md bg-muted/50 group-hover:bg-primary/10 transition-colors">
+            <MessageSquare className="h-3.5 w-3.5" />
           </div>
-        )}
+          <span className="font-medium">Help us improve this tool</span>
+        </button>
+      );
+    }
+
+    return (
+      <div className={cn(
+        "p-4 rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 space-y-4 animate-in fade-in-50 slide-in-from-bottom-2 duration-300",
+        className
+      )}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <span className="font-medium text-foreground">Share your feedback</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(false)}
+            className="text-muted-foreground/60 hover:text-foreground transition-colors"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+        </div>
+        
+        <Textarea
+          placeholder="What would make this tool more useful? Any features you'd like to see?"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="min-h-[80px] resize-none text-sm bg-background/50 border-border/50 focus:border-primary/50"
+        />
+        
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-muted-foreground">Rate this tool</span>
+            <StarRating />
+          </div>
+          
+          <Button
+            size="sm"
+            onClick={submitFeedback}
+            disabled={isSubmitting || (!comment.trim() && rating === 0)}
+            className="h-8 px-4"
+          >
+            {isSubmitting ? 'Sending...' : 'Send'}
+          </Button>
+        </div>
       </div>
     );
   }
