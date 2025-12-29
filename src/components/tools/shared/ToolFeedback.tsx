@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, CheckCircle, Star, ArrowRight, X } from 'lucide-react';
+import { MessageSquare, CheckCircle, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -53,25 +53,19 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
   if (isSubmitted) {
     return (
       <div className={cn(
-        "relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 p-6",
+        "flex items-center gap-2 text-primary",
+        variant === 'inline' ? "py-3" : "p-5 rounded-lg bg-muted/30",
         className
       )}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">Thanks for your feedback!</p>
-            <p className="text-sm text-muted-foreground">You're helping us build something better.</p>
-          </div>
-        </div>
+        <CheckCircle className="h-5 w-5" />
+        <span className="text-sm font-medium">Thanks for helping us improve!</span>
       </div>
     );
   }
 
   // Star rating component
   const StarRating = () => (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -86,7 +80,7 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
               "h-5 w-5 transition-colors",
               (hoveredRating || rating) >= star
                 ? "fill-amber-400 text-amber-400"
-                : "text-muted-foreground/30"
+                : "text-muted-foreground/40"
             )}
           />
         </button>
@@ -94,83 +88,68 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
     </div>
   );
 
-  // Inline variant - polished card design
+  // Inline variant - minimal, elegant design
   if (variant === 'inline') {
     if (!isExpanded) {
       return (
-        <div className={cn(
-          "relative overflow-hidden rounded-xl border-l-4 border-l-primary border border-border/50 bg-gradient-to-br from-primary/5 via-background to-accent/5",
-          className
-        )}>
-          <div className="p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="font-semibold text-foreground">Got thoughts on this tool?</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Your feedback shapes what we build next. Share ideas, report bugs, or just say hi.
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => setIsExpanded(true)}
-                size="sm"
-                className="shrink-0 gap-1.5"
-              >
-                Share Feedback
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+        <button
+          type="button"
+          onClick={() => setIsExpanded(true)}
+          className={cn(
+            "group flex items-center gap-2.5 text-sm text-muted-foreground/70 hover:text-primary transition-all duration-200",
+            className
+          )}
+        >
+          <div className="p-1.5 rounded-md bg-muted/50 group-hover:bg-primary/10 transition-colors">
+            <MessageSquare className="h-3.5 w-3.5" />
           </div>
-        </div>
+          <span className="font-medium">Help us improve this tool</span>
+        </button>
       );
     }
 
     return (
       <div className={cn(
-        "relative overflow-hidden rounded-xl border-l-4 border-l-primary border border-border/50 bg-gradient-to-br from-primary/5 via-background to-accent/5 animate-in fade-in-50 duration-300",
+        "p-4 rounded-xl border border-border/50 bg-gradient-to-br from-muted/30 to-muted/10 space-y-4 animate-in fade-in-50 slide-in-from-bottom-2 duration-300",
         className
       )}>
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <MessageSquare className="h-5 w-5 text-primary" />
-              </div>
-              <h4 className="font-semibold text-foreground">Share your feedback</h4>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <MessageSquare className="h-4 w-4 text-primary" />
             </div>
-            <button
-              type="button"
-              onClick={() => setIsExpanded(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <span className="font-medium text-foreground">Share your feedback</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(false)}
+            className="text-muted-foreground/60 hover:text-foreground transition-colors"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+        </div>
+        
+        <Textarea
+          placeholder="What would make this tool more useful? Any features you'd like to see?"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="min-h-[80px] resize-none text-sm bg-background/50 border-border/50 focus:border-primary/50"
+        />
+        
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-muted-foreground">Rate this tool</span>
+            <StarRating />
           </div>
           
-          <Textarea
-            placeholder="What would make this tool more useful? Any features you'd like to see?"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="min-h-[100px] resize-none bg-background/80 border-border/60 focus:border-primary/50"
-          />
-          
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Rate this tool</span>
-              <StarRating />
-            </div>
-            
-            <Button
-              onClick={submitFeedback}
-              disabled={isSubmitting || (!comment.trim() && rating === 0)}
-            >
-              {isSubmitting ? 'Sending...' : 'Send Feedback'}
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={submitFeedback}
+            disabled={isSubmitting || (!comment.trim() && rating === 0)}
+            className="h-8 px-4"
+          >
+            {isSubmitting ? 'Sending...' : 'Send'}
+          </Button>
         </div>
       </div>
     );

@@ -599,7 +599,9 @@ function MortgageCalculatorContent() {
           </div>
         </Card>
 
-        <ToolFeedback toolName="mortgage-calculator" variant="inline" />
+        <Card className="p-5 shadow-sm">
+          <ToolFeedback toolName="mortgage-calculator" variant="inline" />
+        </Card>
       </div>
     </div>
   );
