@@ -928,16 +928,10 @@ function MortgageCalculatorContent() {
       subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
       headerActions={
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleSave}>
-            <Save className="h-3.5 w-3.5 mr-1.5" />
-            Save
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleShare}>
-            <Share2 className="h-3.5 w-3.5 mr-1.5" />
-            Share
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={handleSave}>
+          <Save className="h-3.5 w-3.5 mr-1.5" />
+          Save
+        </Button>
       }
       infoBanner={
         buyerProfile ? (
