@@ -37,6 +37,7 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import Glossary from "./pages/Glossary";
 import Guides from "./pages/Guides";
+import Contact from "./pages/Contact";
 import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
 import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/developers/:slug" element={<DeveloperDetail />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/contact" element={<Contact />} />
             
             <Route path="/profile" element={
               <ProtectedRoute>
