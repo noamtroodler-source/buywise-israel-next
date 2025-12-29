@@ -92,19 +92,22 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
   if (variant === 'inline') {
     if (!isExpanded) {
       return (
-        <button
-          type="button"
-          onClick={() => setIsExpanded(true)}
-          className={cn(
-            "group flex items-center gap-2.5 text-sm text-muted-foreground/70 hover:text-primary transition-all duration-200",
-            className
-          )}
-        >
-          <div className="p-1.5 rounded-md bg-muted/50 group-hover:bg-primary/10 transition-colors">
-            <MessageSquare className="h-3.5 w-3.5" />
-          </div>
-          <span className="font-medium">Help us improve this tool</span>
-        </button>
+        <div className={cn("text-center py-4", className)}>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="group inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 hover:from-primary/10 hover:via-primary/15 hover:to-primary/10 transition-all duration-300"
+          >
+            <div className="p-2 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
+              <MessageSquare className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-foreground">Help us improve this tool</p>
+              <p className="text-xs text-muted-foreground">Share your feedback or feature ideas</p>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
+          </button>
+        </div>
       );
     }
 
