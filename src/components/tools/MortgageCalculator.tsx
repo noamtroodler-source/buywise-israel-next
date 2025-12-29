@@ -566,9 +566,7 @@ function MortgageCalculatorContent() {
   const bottomSection = (
     <div className="space-y-6">
       {/* Cash Needed Breakdown */}
-      <Card className="p-5 shadow-sm">
-        <CashBreakdownTable title="Cash Needed to Close" items={cashBreakdownItems} />
-      </Card>
+      <CashBreakdownTable title="Cash Needed to Close" items={cashBreakdownItems} />
 
       {/* Next Steps Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
