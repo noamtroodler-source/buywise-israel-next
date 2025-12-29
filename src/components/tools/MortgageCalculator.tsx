@@ -1,8 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Calculator, Info, ChevronDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -41,29 +40,46 @@ const BUYER_TYPE_OPTIONS: {
 
 const LOAN_TERMS = [5, 10, 15, 20, 25, 30];
 
+// Format number with commas
+const formatNumber = (num: number): string => {
+  return num.toLocaleString('en-US');
+};
+
+// Parse formatted number string to number
+const parseFormattedNumber = (str: string): number => {
+  const cleaned = str.replace(/[^\d.-]/g, '');
+  return Number(cleaned) || 0;
+};
+
 function MortgageCalculatorContent() {
   const { formatCurrency, formatCurrencyShort } = useCurrency();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState(3000000);
+  const [propertyPriceInput, setPropertyPriceInput] = useState('3,000,000');
   const [downPaymentPercent, setDownPaymentPercent] = useState(25);
+  const [downPaymentInput, setDownPaymentInput] = useState('25');
+  const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
   const [loanTermYears, setLoanTermYears] = useState(25);
   const [interestRate, setInterestRate] = useState(5.0);
+  const [interestRateInput, setInterestRateInput] = useState('5.0');
   
   // Assumptions (hidden by default)
   const [showAssumptions, setShowAssumptions] = useState(false);
   const [includeTaxesInCash, setIncludeTaxesInCash] = useState(true);
   const [legalFeesPercent, setLegalFeesPercent] = useState(0.5);
+  const [legalFeesInput, setLegalFeesInput] = useState('0.5');
   const [appraisalFee, setAppraisalFee] = useState(3000);
+  const [appraisalFeeInput, setAppraisalFeeInput] = useState('3,000');
   const [bufferAmount, setBufferAmount] = useState(0);
+  const [bufferAmountInput, setBufferAmountInput] = useState('0');
 
   // Set buyer type from profile when loaded
   useEffect(() => {
     if (buyerProfile && !isProfileLoading) {
       const profileCategory = getBuyerTaxCategory(buyerProfile);
-      // Map profile category to our buyer types
       const categoryMapping: Record<string, BuyerType> = {
         'first_time': 'first_time',
         'oleh': 'oleh',
@@ -73,10 +89,10 @@ function MortgageCalculatorContent() {
       const mappedType = categoryMapping[profileCategory] || 'first_time';
       setBuyerType(mappedType);
       
-      // Adjust down payment if needed
       const newMinDown = 100 - (BUYER_TYPE_OPTIONS.find(b => b.value === mappedType)?.maxLtv || 75);
       if (downPaymentPercent < newMinDown) {
         setDownPaymentPercent(newMinDown);
+        setDownPaymentInput(newMinDown.toString());
       }
     }
   }, [buyerProfile, isProfileLoading]);
@@ -106,7 +122,7 @@ function MortgageCalculatorContent() {
 
   // Additional fees
   const legalFees = Math.round((propertyPrice * legalFeesPercent) / 100);
-  const bankFees = Math.round(loanAmount * 0.004); // ~0.4% of loan amount
+  const bankFees = Math.round(loanAmount * 0.004);
 
   // Cash needed breakdown
   const purchaseTaxAmount = includeTaxesInCash ? purchaseTaxResult.totalTax : 0;
@@ -143,35 +159,133 @@ function MortgageCalculatorContent() {
     { label: 'Total Cash Needed', value: formatCurrency(totalCashNeeded), isTotal: true, highlight: 'positive' as const },
   ];
 
-  // Handle buyer type change - adjust down payment if needed
+  // Handle buyer type change
   const handleBuyerTypeChange = (value: BuyerType) => {
     setBuyerType(value);
     const newMinDown = 100 - (BUYER_TYPE_OPTIONS.find(b => b.value === value)?.maxLtv || 75);
     if (downPaymentPercent < newMinDown) {
       setDownPaymentPercent(newMinDown);
+      setDownPaymentInput(newMinDown.toString());
     }
+  };
+
+  // Property price handlers
+  const handlePropertyPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPropertyPriceInput(e.target.value);
+  };
+
+  const handlePropertyPriceBlur = () => {
+    let value = parseFormattedNumber(propertyPriceInput);
+    value = Math.max(500000, Math.min(15000000, value));
+    setPropertyPrice(value);
+    setPropertyPriceInput(formatNumber(value));
+    
+    // Update down payment amount display if in amount mode
+    if (downPaymentMode === 'amount') {
+      const newDownAmount = (value * effectiveDownPaymentPercent) / 100;
+      setDownPaymentInput(formatNumber(Math.round(newDownAmount)));
+    }
+  };
+
+  // Down payment handlers
+  const handleDownPaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDownPaymentInput(e.target.value);
+  };
+
+  const handleDownPaymentBlur = () => {
+    if (downPaymentMode === 'percent') {
+      let value = parseFloat(downPaymentInput) || minDownPayment;
+      value = Math.max(minDownPayment, Math.min(80, value));
+      setDownPaymentPercent(value);
+      setDownPaymentInput(value.toString());
+    } else {
+      let amount = parseFormattedNumber(downPaymentInput);
+      const minAmount = (propertyPrice * minDownPayment) / 100;
+      const maxAmount = propertyPrice * 0.8;
+      amount = Math.max(minAmount, Math.min(maxAmount, amount));
+      const percent = (amount / propertyPrice) * 100;
+      setDownPaymentPercent(percent);
+      setDownPaymentInput(formatNumber(Math.round(amount)));
+    }
+  };
+
+  const toggleDownPaymentMode = () => {
+    if (downPaymentMode === 'percent') {
+      setDownPaymentMode('amount');
+      setDownPaymentInput(formatNumber(Math.round(downPaymentAmount)));
+    } else {
+      setDownPaymentMode('percent');
+      setDownPaymentInput(effectiveDownPaymentPercent.toFixed(0));
+    }
+  };
+
+  // Interest rate handlers
+  const handleInterestRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInterestRateInput(e.target.value);
+  };
+
+  const handleInterestRateBlur = () => {
+    let value = parseFloat(interestRateInput) || 5.0;
+    value = Math.max(3, Math.min(8, value));
+    setInterestRate(value);
+    setInterestRateInput(value.toFixed(1));
+  };
+
+  // Legal fees handlers
+  const handleLegalFeesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLegalFeesInput(e.target.value);
+  };
+
+  const handleLegalFeesBlur = () => {
+    let value = parseFloat(legalFeesInput) || 0.5;
+    value = Math.max(0.3, Math.min(1, value));
+    setLegalFeesPercent(value);
+    setLegalFeesInput(value.toFixed(1));
+  };
+
+  // Appraisal fee handlers
+  const handleAppraisalFeeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAppraisalFeeInput(e.target.value);
+  };
+
+  const handleAppraisalFeeBlur = () => {
+    let value = parseFormattedNumber(appraisalFeeInput);
+    value = Math.max(1500, Math.min(6000, value));
+    setAppraisalFee(value);
+    setAppraisalFeeInput(formatNumber(value));
+  };
+
+  // Buffer amount handlers
+  const handleBufferAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBufferAmountInput(e.target.value);
+  };
+
+  const handleBufferAmountBlur = () => {
+    let value = parseFormattedNumber(bufferAmountInput);
+    value = Math.max(0, Math.min(500000, value));
+    setBufferAmount(value);
+    setBufferAmountInput(formatNumber(value));
   };
 
   const leftColumn = (
     <div className="space-y-6">
       {/* Property Price */}
       <Card className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Property Price</Label>
-            <span className="text-lg font-bold text-foreground">{formatCurrencyShort(propertyPrice)}</span>
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Property Price</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₪</span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={propertyPriceInput}
+              onChange={handlePropertyPriceChange}
+              onBlur={handlePropertyPriceBlur}
+              className="pl-8 text-base font-medium h-11"
+              placeholder="3,000,000"
+            />
           </div>
-          <Slider
-            value={[propertyPrice]}
-            onValueChange={([v]) => setPropertyPrice(v)}
-            min={500000}
-            max={15000000}
-            step={50000}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{formatCurrencyShort(500000)}</span>
-            <span>{formatCurrencyShort(15000000)}</span>
-          </div>
+          <p className="text-xs text-muted-foreground">Between ₪500,000 – ₪15,000,000</p>
         </div>
       </Card>
 
@@ -190,7 +304,7 @@ function MortgageCalculatorContent() {
             </Tooltip>
           </div>
           <Select value={buyerType} onValueChange={handleBuyerTypeChange}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,7 +326,7 @@ function MortgageCalculatorContent() {
 
       {/* Down Payment */}
       <Card className="p-5">
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Label className="text-sm font-medium">Down Payment</Label>
@@ -221,26 +335,39 @@ function MortgageCalculatorContent() {
                   <Info className="h-3.5 w-3.5 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
-                  The cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type to manage lending risk.
+                  The cash you pay upfront. Bank of Israel sets minimum requirements based on buyer type.
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="text-right">
-              <span className="text-lg font-bold text-foreground">{effectiveDownPaymentPercent}%</span>
-              <span className="text-sm text-muted-foreground ml-2">({formatCurrencyShort(downPaymentAmount)})</span>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs font-medium text-primary hover:text-primary"
+              onClick={toggleDownPaymentMode}
+            >
+              Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
+            </Button>
           </div>
-          <Slider
-            value={[effectiveDownPaymentPercent]}
-            onValueChange={([v]) => setDownPaymentPercent(v)}
-            min={minDownPayment}
-            max={80}
-            step={1}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{minDownPayment}% (min)</span>
-            <span>80%</span>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+              {downPaymentMode === 'percent' ? '%' : '₪'}
+            </span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={downPaymentInput}
+              onChange={handleDownPaymentChange}
+              onBlur={handleDownPaymentBlur}
+              className="pl-8 text-base font-medium h-11"
+              placeholder={downPaymentMode === 'percent' ? '25' : '750,000'}
+            />
           </div>
+          <p className="text-xs text-muted-foreground">
+            {downPaymentMode === 'percent' 
+              ? `= ${formatCurrencyShort(downPaymentAmount)} · Min ${minDownPayment}%, Max 80%`
+              : `= ${effectiveDownPaymentPercent.toFixed(1)}% · Min ${formatCurrencyShort((propertyPrice * minDownPayment) / 100)}`
+            }
+          </p>
         </div>
       </Card>
 
@@ -249,7 +376,7 @@ function MortgageCalculatorContent() {
         <div className="space-y-3">
           <Label className="text-sm font-medium">Loan Term</Label>
           <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
-            <SelectTrigger>
+            <SelectTrigger className="h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -265,32 +392,31 @@ function MortgageCalculatorContent() {
 
       {/* Interest Rate */}
       <Card className="p-5">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-medium">Interest Rate</Label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks with rates ranging 4-6%.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <span className="text-lg font-bold text-foreground">{interestRate.toFixed(1)}%</span>
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">Interest Rate</Label>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                Blended rate across mortgage tracks. Israeli mortgages typically combine Prime, Fixed, and CPI-linked tracks with rates ranging 4-6%.
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Slider
-            value={[interestRate]}
-            onValueChange={([v]) => setInterestRate(v)}
-            min={3}
-            max={8}
-            step={0.1}
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>3%</span>
-            <span>8%</span>
+          <div className="relative">
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={interestRateInput}
+              onChange={handleInterestRateChange}
+              onBlur={handleInterestRateBlur}
+              className="pr-8 text-base font-medium h-11"
+              placeholder="5.0"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
           </div>
+          <p className="text-xs text-muted-foreground">Typical range: 4.0% – 6.0%</p>
         </div>
       </Card>
 
@@ -322,45 +448,54 @@ function MortgageCalculatorContent() {
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="text-sm">Legal & Registration Fees</Label>
-                <span className="text-sm font-medium">{legalFeesPercent}%</span>
+              <Label className="text-sm">Legal & Registration Fees</Label>
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={legalFeesInput}
+                  onChange={handleLegalFeesChange}
+                  onBlur={handleLegalFeesBlur}
+                  className="pr-8 h-10"
+                  placeholder="0.5"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
               </div>
-              <Slider
-                value={[legalFeesPercent]}
-                onValueChange={([v]) => setLegalFeesPercent(v)}
-                min={0.3}
-                max={1}
-                step={0.1}
-              />
+              <p className="text-xs text-muted-foreground">Range: 0.3% – 1.0%</p>
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="text-sm">Appraisal Fee</Label>
-                <span className="text-sm font-medium">{formatCurrency(appraisalFee)}</span>
+              <Label className="text-sm">Appraisal Fee</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={appraisalFeeInput}
+                  onChange={handleAppraisalFeeChange}
+                  onBlur={handleAppraisalFeeBlur}
+                  className="pl-8 h-10"
+                  placeholder="3,000"
+                />
               </div>
-              <Slider
-                value={[appraisalFee]}
-                onValueChange={([v]) => setAppraisalFee(v)}
-                min={1500}
-                max={6000}
-                step={500}
-              />
+              <p className="text-xs text-muted-foreground">Typical: ₪1,500 – ₪6,000</p>
             </div>
             
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="text-sm">Reserve Buffer</Label>
-                <span className="text-sm font-medium">{formatCurrency(bufferAmount)}</span>
+              <Label className="text-sm">Reserve Buffer</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={bufferAmountInput}
+                  onChange={handleBufferAmountChange}
+                  onBlur={handleBufferAmountBlur}
+                  className="pl-8 h-10"
+                  placeholder="0"
+                />
               </div>
-              <Slider
-                value={[bufferAmount]}
-                onValueChange={([v]) => setBufferAmount(v)}
-                min={0}
-                max={100000}
-                step={5000}
-              />
+              <p className="text-xs text-muted-foreground">Optional emergency fund</p>
             </div>
           </Card>
         </CollapsibleContent>
