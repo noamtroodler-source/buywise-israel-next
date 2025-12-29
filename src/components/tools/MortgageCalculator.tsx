@@ -327,7 +327,17 @@ function MortgageCalculatorContent() {
       <div className="space-y-6">
         {/* Property Price */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Property Price</Label>
+          <div className="flex items-center gap-1.5">
+            <Label className="text-sm font-medium">Property Price</Label>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3.5 w-3.5 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                The full purchase price in Israeli Shekels. Average apartment prices range from ₪1.5M in peripheral areas to ₪4M+ in Tel Aviv.
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
             <Input
@@ -351,7 +361,12 @@ function MortgageCalculatorContent() {
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-sm">
-                Determines your maximum LTV ratio and purchase tax rates
+                <p className="font-medium mb-1">Bank of Israel regulations set different LTV limits:</p>
+                <ul className="text-xs space-y-0.5">
+                  <li>• First-time buyers: up to 75% financing</li>
+                  <li>• Upgraders (selling current): up to 70%</li>
+                  <li>• Investors/Foreign: up to 50%</li>
+                </ul>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -375,7 +390,21 @@ function MortgageCalculatorContent() {
         {/* Down Payment */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">Down Payment</Label>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-medium">Down Payment</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Israeli banks require minimum down payments based on buyer type. Higher down payments reduce your monthly costs and total interest paid.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleDownPaymentMode}>
+              Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
+            </Button>
+          </div>
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleDownPaymentMode}>
               Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
             </Button>
@@ -407,7 +436,17 @@ function MortgageCalculatorContent() {
         {/* Loan Terms - Inline */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Loan Term</Label>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-medium">Loan Term</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Most Israeli mortgages are 20-30 years. Shorter terms mean higher payments but less total interest. Max term is typically 30 years.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
               <SelectTrigger className="h-11">
                 <SelectValue />
@@ -421,7 +460,17 @@ function MortgageCalculatorContent() {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Interest Rate</Label>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-medium">Interest Rate</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Israeli mortgages typically use a mix of fixed and variable rate "tracks". This calculator uses a blended average rate for simplicity.
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="relative">
               <Input
                 type="text"
@@ -445,13 +494,33 @@ function MortgageCalculatorContent() {
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4 space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-sm">Include Purchase Tax</Label>
+              <div className="flex items-center gap-1.5">
+                <Label className="text-sm">Include Purchase Tax</Label>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-sm">
+                    Mas Rechisha (Purchase Tax) is paid to the Tax Authority within 50 days of signing. Rates vary by buyer type and property value.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Legal Fees (%)</Label>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs text-muted-foreground">Legal Fees (%)</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-sm">
+                      Attorney fees (Orech Din) typically range 0.5-1% + VAT. Covers contract review, due diligence, and Land Registry (Tabu) registration.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="relative">
                   <Input
                     type="text"
@@ -466,7 +535,17 @@ function MortgageCalculatorContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Appraisal Fee</Label>
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs text-muted-foreground">Appraisal Fee</Label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-sm">
+                      Shuman (Property Appraisal) is required by the bank to confirm property value. Cost varies by property size and location.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="relative">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
                   <Input
@@ -483,7 +562,17 @@ function MortgageCalculatorContent() {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Reserve Buffer (optional)</Label>
+              <div className="flex items-center gap-1">
+                <Label className="text-xs text-muted-foreground">Reserve Buffer (optional)</Label>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-sm">
+                    Extra cash reserve for unexpected costs like minor repairs, furniture, or moving expenses. Recommended: ₪30,000-50,000.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <div className="relative">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
                 <Input
@@ -537,14 +626,34 @@ function MortgageCalculatorContent() {
       {/* Summary Stats */}
       <div className="pt-5 space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Loan Amount</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground">Loan Amount</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                The amount you're borrowing from the bank (property price minus your down payment).
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <span className="font-semibold">{formatCurrency(loanAmount)}</span>
         </div>
         
         <LTVIndicator ltv={ltv} maxLTV={maxLtv} />
         
         <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Total Interest</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground">Total Interest</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                The total interest you'll pay over the life of the loan. Increasing your down payment or shortening the term reduces this significantly.
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <span className="font-semibold">{formatCurrency(mortgageResult.totalInterest)}</span>
         </div>
         
