@@ -12,6 +12,7 @@ interface ToolLayoutProps {
   infoBanner?: ReactNode;
   leftColumn: ReactNode;
   rightColumn: ReactNode;
+  bottomSection?: ReactNode;
   disclaimer?: ReactNode;
   onBack?: () => void;
   className?: string;
@@ -25,6 +26,7 @@ export function ToolLayout({
   infoBanner,
   leftColumn,
   rightColumn,
+  bottomSection,
   disclaimer,
   onBack,
   className,
@@ -89,6 +91,13 @@ export function ToolLayout({
           {rightColumn}
         </div>
       </div>
+
+      {/* Bottom Section - Full Width */}
+      {bottomSection && (
+        <div className="mt-8">
+          {bottomSection}
+        </div>
+      )}
 
       {/* Disclaimer */}
       {disclaimer && (

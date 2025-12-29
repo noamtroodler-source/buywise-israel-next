@@ -21,6 +21,7 @@ import {
   ToolDisclaimer,
   InfoBanner,
   PaymentPieChart,
+  ToolFeedback,
 } from './shared';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 
@@ -805,6 +806,14 @@ function MortgageCalculatorContent() {
           Reset to defaults
         </Button>
       </div>
+
+      {/* Cash Needed Breakdown */}
+      <Card className="p-5 shadow-sm">
+        <CashBreakdownTable
+          title="Cash Needed to Close"
+          items={cashBreakdownItems}
+        />
+      </Card>
     </div>
   );
 
@@ -874,51 +883,44 @@ function MortgageCalculatorContent() {
           </div>
         </div>
       </Card>
+    </div>
+  );
 
-      {/* Cash Needed Breakdown */}
-      <Card className="p-5 shadow-sm">
-        <CashBreakdownTable
-          title="Cash Needed to Close"
-          items={cashBreakdownItems}
-        />
-      </Card>
-
-      {/* Next Steps CTAs */}
+  const bottomSection = (
+    <div className="grid md:grid-cols-[1fr,300px] gap-6">
+      {/* Continue Research CTAs */}
       <Card className="p-5 shadow-sm bg-muted/30">
         <p className="text-sm font-medium text-foreground mb-3">Continue Your Research</p>
-        <div className="space-y-2">
+        <div className="grid sm:grid-cols-3 gap-3">
           <Link 
             to="/tools?tool=total-cost"
-            className="flex items-center justify-between p-3 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
+            className="flex flex-col p-4 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
           >
-            <div>
-              <p className="text-sm font-medium text-foreground">Total Cost Calculator</p>
-              <p className="text-xs text-muted-foreground">See all purchase costs including taxes and fees</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Total Cost Calculator</p>
+            <p className="text-xs text-muted-foreground mt-1">See all purchase costs</p>
+            <ArrowRight className="h-4 w-4 text-muted-foreground mt-auto pt-2" />
           </Link>
           <Link 
             to="/tools?tool=affordability"
-            className="flex items-center justify-between p-3 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
+            className="flex flex-col p-4 rounded-md bg-background hover:bg-muted/50 transition-colors border border-border"
           >
-            <div>
-              <p className="text-sm font-medium text-foreground">Affordability Calculator</p>
-              <p className="text-xs text-muted-foreground">Find out how much you can borrow</p>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Affordability Calculator</p>
+            <p className="text-xs text-muted-foreground mt-1">Find what you can borrow</p>
+            <ArrowRight className="h-4 w-4 text-muted-foreground mt-auto pt-2" />
           </Link>
           <Link 
             to={`/listings?max_price=${Math.round(propertyPrice * 1.1)}`}
-            className="flex items-center justify-between p-3 rounded-md bg-primary/5 hover:bg-primary/10 transition-colors border border-primary/20"
+            className="flex flex-col p-4 rounded-md bg-primary/5 hover:bg-primary/10 transition-colors border border-primary/20"
           >
-            <div>
-              <p className="text-sm font-medium text-primary">Browse Properties</p>
-              <p className="text-xs text-muted-foreground">Explore listings in your budget</p>
-            </div>
-            <ExternalLink className="h-4 w-4 text-primary" />
+            <p className="text-sm font-medium text-primary">Browse Properties</p>
+            <p className="text-xs text-muted-foreground mt-1">Explore listings in budget</p>
+            <ExternalLink className="h-4 w-4 text-primary mt-auto pt-2" />
           </Link>
         </div>
       </Card>
+
+      {/* Feedback */}
+      <ToolFeedback toolName="mortgage-calculator" />
     </div>
   );
 
@@ -942,6 +944,7 @@ function MortgageCalculatorContent() {
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}
+      bottomSection={bottomSection}
       disclaimer={
         <ToolDisclaimer 
           text="Estimates based on Israeli mortgage regulations (2024). Actual terms depend on your bank, credit profile, and market conditions. Consult a licensed mortgage advisor for personalized advice."
