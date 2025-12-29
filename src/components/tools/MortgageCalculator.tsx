@@ -16,15 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { 
   ToolLayout, 
-  CurrencyProvider, 
-  useCurrency,
-  CurrencyToggle,
   CashBreakdownTable, 
   LTVIndicator,
   ToolDisclaimer,
   InfoBanner,
   PaymentPieChart,
 } from './shared';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 // Buyer types with their max LTV limits and descriptions
 const BUYER_TYPE_OPTIONS: { 
@@ -74,7 +72,7 @@ const parseFormattedNumber = (str: string): number => {
 const STORAGE_KEY = 'mortgage-calculator-saved';
 
 function MortgageCalculatorContent() {
-  const { formatCurrency, formatCurrencyShort } = useCurrency();
+  const formatCurrency = useFormatPrice();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { toast } = useToast();
   
@@ -666,7 +664,7 @@ function MortgageCalculatorContent() {
           </div>
           <p className="text-xs text-muted-foreground">
             {downPaymentMode === 'percent' 
-              ? `= ${formatCurrencyShort(downPaymentAmount)} · Min ${minDownPayment}%`
+              ? `= ${formatCurrency(downPaymentAmount)} · Min ${minDownPayment}%`
               : `= ${effectiveDownPaymentPercent.toFixed(1)}% of price`
             }
           </p>
@@ -684,7 +682,7 @@ function MortgageCalculatorContent() {
                   onClick={() => applyWhatIfScenario(scenario.newPercent)}
                 >
                   {scenario.label}
-                  <span className="ml-1 text-green-600">-{formatCurrencyShort(scenario.savings)}/mo</span>
+                  <span className="ml-1 text-green-600">-{formatCurrency(scenario.savings)}/mo</span>
                 </Button>
               ))}
             </div>
@@ -812,18 +810,6 @@ function MortgageCalculatorContent() {
 
   const rightColumn = (
     <div className="space-y-4">
-      {/* Save/Share Buttons */}
-      <div className="flex gap-2 justify-end">
-        <Button variant="outline" size="sm" onClick={handleSave}>
-          <Save className="h-3.5 w-3.5 mr-1.5" />
-          Save
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleShare}>
-          <Share2 className="h-3.5 w-3.5 mr-1.5" />
-          Share
-        </Button>
-      </div>
-
       {/* Hero: Monthly Payment */}
       <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 shadow-sm">
         <p className="text-sm font-medium text-muted-foreground mb-1">Monthly Payment</p>
@@ -941,7 +927,18 @@ function MortgageCalculatorContent() {
       title="Mortgage Calculator"
       subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
-      headerActions={<CurrencyToggle />}
+      headerActions={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleSave}>
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            Save
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="h-3.5 w-3.5 mr-1.5" />
+            Share
+          </Button>
+        </div>
+      }
       infoBanner={
         buyerProfile ? (
           <InfoBanner variant="info">
@@ -961,9 +958,5 @@ function MortgageCalculatorContent() {
 }
 
 export function MortgageCalculator() {
-  return (
-    <CurrencyProvider>
-      <MortgageCalculatorContent />
-    </CurrencyProvider>
-  );
+  return <MortgageCalculatorContent />;
 }
