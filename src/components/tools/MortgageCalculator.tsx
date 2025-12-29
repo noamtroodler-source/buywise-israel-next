@@ -169,23 +169,6 @@ function MortgageCalculatorContent() {
   // Payment as percentage of median income (for context)
   const paymentToIncomePercent = Math.round((mortgageResult.monthlyPayment / MEDIAN_HOUSEHOLD_INCOME) * 100);
 
-  // Stress test calculations (+0.5%, +1%, +1.5%)
-  const stressTestResults = useMemo(() => {
-    const rateIncreases = [0.5, 1.0, 1.5];
-    return rateIncreases.map(increase => {
-      const newRate = interestRate + increase;
-      const result = calculateMortgagePayment(loanAmount, newRate, loanTermYears);
-      const diff = result.monthlyPayment - mortgageResult.monthlyPayment;
-      return {
-        rateIncrease: increase,
-        newRate,
-        monthlyPayment: result.monthlyPayment,
-        difference: diff,
-        percentIncrease: Math.round((diff / mortgageResult.monthlyPayment) * 100),
-      };
-    });
-  }, [loanAmount, interestRate, loanTermYears, mortgageResult.monthlyPayment]);
-
   // What-if scenarios for down payment
   const whatIfScenarios = useMemo(() => {
     const scenarios = [
@@ -879,38 +862,6 @@ function MortgageCalculatorContent() {
         </div>
       </Card>
 
-      {/* Rate Stress Test */}
-      <Card className="p-5 shadow-sm">
-        <p className="text-sm font-medium text-muted-foreground mb-3">If Rates Change...</p>
-        <p className="text-xs text-muted-foreground mb-3">
-          Israeli Prime rate fluctuates. Here's how your payment changes:
-        </p>
-        <div className="space-y-2">
-          {stressTestResults.map((result, i) => (
-            <div key={i} className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-md">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-xs font-medium px-1.5 py-0.5 rounded",
-                  i === 0 && "bg-yellow-100 text-yellow-700",
-                  i === 1 && "bg-orange-100 text-orange-700",
-                  i === 2 && "bg-red-100 text-red-700"
-                )}>
-                  +{result.rateIncrease}%
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  ({result.newRate.toFixed(1)}% rate)
-                </span>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold">{formatCurrency(result.monthlyPayment)}</p>
-                <p className="text-xs text-destructive">
-                  +{formatCurrency(result.difference)}/mo (+{result.percentIncrease}%)
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
 
       {/* Loan Amount & LTV */}
       <Card className="p-5 space-y-4 shadow-sm">
