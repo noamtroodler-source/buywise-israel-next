@@ -12,13 +12,15 @@ import {
   Clock,
   Calculator,
   CheckCircle2,
-  Lightbulb,
   Users,
   Shield,
   Paintbrush,
   RefreshCw,
   AlertCircle,
-  ChevronDown,
+  Settings2,
+  Globe,
+  Percent,
+  Banknote,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,50 +29,31 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { 
-  ToolLayout, 
   ToolDisclaimer, 
   ToolFeedback, 
   CTACard,
-  InfoBanner,
 } from './shared';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { calculatePurchaseTax as calcTax } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
+const STORAGE_KEY = 'buywise_rent_vs_buy_v2';
 const STORAGE_EXPIRY_DAYS = 7;
 
 type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
 
-// Fee estimates
-const FEES = {
-  lawyerRate: 0.005, // 0.5% of price
-  lawyerMinimum: 5000,
-  agentRate: 0.02, // 2% + VAT
-  vatRate: 0.17,
-  arnonaDefault: 400, // Monthly estimate when city data not available
-  vaadBayitDefault: 350, // Monthly building maintenance
-  homeInsurance: 150, // Monthly
-  maintenanceRate: 0.005, // 0.5% of property value annually
-};
-
 // Time horizon options
 const TIME_HORIZONS = [5, 10, 15, 20, 25];
 
-// Room options for rental matching
-const ROOM_OPTIONS = [
-  { value: '2', label: '2 Rooms' },
-  { value: '3', label: '3 Rooms' },
-  { value: '4', label: '4 Rooms' },
-  { value: '5', label: '5+ Rooms' },
-];
-
-// Estimated sqm per room count
+// Room estimate for default pricing
 const SQM_BY_ROOMS: Record<string, number> = {
   '2': 50,
   '3': 75,
@@ -78,12 +61,44 @@ const SQM_BY_ROOMS: Record<string, number> = {
   '5': 130,
 };
 
+// Minimum down payment requirements by buyer type
+const MIN_DOWN_PAYMENT: Record<BuyerCategory, number> = {
+  first_time: 25,
+  oleh: 25,
+  additional: 30,
+  non_resident: 50,
+};
+
+// Default values
+const DEFAULTS = {
+  legalFees: 15000,
+  bankAndAppraisalFees: 5000,
+  brokerFeePercent: 0,
+  sellingCostsPercent: 2.34, // 2% + VAT
+  monthlyArnona: 400,
+  monthlyVaadAndInsurance: 500,
+  annualMaintenanceReservePercent: 1.0,
+  annualHomeAppreciationPercent: 3.0,
+  annualRentIncreasePercent: 3.0,
+  annualInvestmentReturnPercent: 5.0,
+};
+
+const VAT_RATE = 0.17;
+
 function formatNumber(num: number): string {
-  return num.toLocaleString('en-IL');
+  if (!isFinite(num) || isNaN(num)) return '0';
+  return Math.round(num).toLocaleString('en-IL');
 }
 
-function parseFormattedNumber(str: string): number {
-  return Number(str.replace(/,/g, '')) || 0;
+function sanitizeCurrency(str: string): number {
+  const cleaned = str.replace(/[₪,\s]/g, '');
+  const num = parseFloat(cleaned);
+  return isNaN(num) || !isFinite(num) ? 0 : num;
+}
+
+function sanitizePercent(str: string): number {
+  const num = parseFloat(str);
+  return isNaN(num) || !isFinite(num) ? 0 : num;
 }
 
 function InfoTooltip({ content }: { content: string }) {
@@ -101,7 +116,7 @@ function InfoTooltip({ content }: { content: string }) {
   );
 }
 
-// Pros and Cons data - qualitative benefits
+// Pros and Cons data
 const BUYING_PROS = [
   { icon: TrendingUp, text: 'Build equity over time', detail: 'Every payment increases ownership stake' },
   { icon: Shield, text: 'Protection from rising rents', detail: 'Lock in housing costs with fixed mortgage' },
@@ -116,30 +131,46 @@ const RENTING_PROS = [
   { icon: Building2, text: 'Try neighborhoods first', detail: 'Explore different areas before committing' },
 ];
 
-// Minimum down payment requirements by buyer type
-const MIN_DOWN_PAYMENT: Record<BuyerCategory, number> = {
-  first_time: 25,
-  oleh: 25,
-  additional: 30,
-  non_resident: 50,
-};
+interface YearlyData {
+  year: number;
+  buyNetWorth: number;
+  rentNetWorth: number;
+  difference: number;
+}
 
 export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
   
-  // Form state
+  // Primary inputs
+  const [buyerType, setBuyerType] = useState<BuyerCategory>('first_time');
   const [selectedCity, setSelectedCity] = useState('');
-  const [rooms, setRooms] = useState('3');
   const [propertyPrice, setPropertyPrice] = useState('');
   const [monthlyRent, setMonthlyRent] = useState('');
-  const [buyerType, setBuyerType] = useState<BuyerCategory>('first_time');
   const [downPaymentPercent, setDownPaymentPercent] = useState('25');
-  const [interestRate, setInterestRate] = useState('5.0');
-  const [timeHorizon, setTimeHorizon] = useState(10);
-  const [appreciation, setAppreciation] = useState('3.0');
-  const [rentIncrease, setRentIncrease] = useState('3.0');
-  const [investmentReturn, setInvestmentReturn] = useState('5.0');
+  const [mortgageRate, setMortgageRate] = useState('5.0');
+  const [loanTermYears, setLoanTermYears] = useState('25');
+  const [timeHorizonYears, setTimeHorizonYears] = useState(10);
+  
+  // Market assumptions
+  const [annualHomeAppreciationPercent, setAnnualHomeAppreciationPercent] = useState(DEFAULTS.annualHomeAppreciationPercent.toString());
+  const [annualRentIncreasePercent, setAnnualRentIncreasePercent] = useState(DEFAULTS.annualRentIncreasePercent.toString());
+  const [annualInvestmentReturnPercent, setAnnualInvestmentReturnPercent] = useState(DEFAULTS.annualInvestmentReturnPercent.toString());
+  
+  // Transaction costs
+  const [purchaseTaxOverride, setPurchaseTaxOverride] = useState('');
+  const [legalFees, setLegalFees] = useState(DEFAULTS.legalFees.toString());
+  const [brokerEnabled, setBrokerEnabled] = useState(false);
+  const [brokerFeePercent, setBrokerFeePercent] = useState('2');
+  const [bankAndAppraisalFees, setBankAndAppraisalFees] = useState(DEFAULTS.bankAndAppraisalFees.toString());
+  const [sellingCostsPercent, setSellingCostsPercent] = useState(DEFAULTS.sellingCostsPercent.toString());
+  const [capitalGainsMode, setCapitalGainsMode] = useState<'ignore' | 'estimate'>('ignore');
+  const [capitalGainsTaxPercent, setCapitalGainsTaxPercent] = useState('25');
+  
+  // Ownership costs
+  const [monthlyArnona, setMonthlyArnona] = useState(DEFAULTS.monthlyArnona.toString());
+  const [monthlyVaadAndInsurance, setMonthlyVaadAndInsurance] = useState(DEFAULTS.monthlyVaadAndInsurance.toString());
+  const [annualMaintenanceReservePercent, setAnnualMaintenanceReservePercent] = useState(DEFAULTS.annualMaintenanceReservePercent.toString());
   
   // Get canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
@@ -166,10 +197,17 @@ export function RentVsBuyCalculator() {
     }
   }, [buyerProfile]);
   
-  // Auto-suggest appreciation from city data
+  // Auto-update arnona from city
+  useEffect(() => {
+    if (cityMetrics?.arnona_monthly_avg) {
+      setMonthlyArnona(Math.round(cityMetrics.arnona_monthly_avg).toString());
+    }
+  }, [cityMetrics]);
+  
+  // Auto-update appreciation from city YoY
   useEffect(() => {
     if (cityMetrics?.yoy_price_change) {
-      setAppreciation(cityMetrics.yoy_price_change.toFixed(1));
+      setAnnualHomeAppreciationPercent(cityMetrics.yoy_price_change.toFixed(1));
     }
   }, [cityMetrics]);
   
@@ -180,18 +218,15 @@ export function RentVsBuyCalculator() {
       if (saved) {
         const { data, timestamp } = JSON.parse(saved);
         const expiryMs = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-        if (Date.now() - timestamp < expiryMs) {
+        if (Date.now() - timestamp < expiryMs && data) {
+          if (data.buyerType) setBuyerType(data.buyerType);
           if (data.selectedCity) setSelectedCity(data.selectedCity);
-          if (data.rooms) setRooms(data.rooms);
           if (data.propertyPrice) setPropertyPrice(data.propertyPrice);
           if (data.monthlyRent) setMonthlyRent(data.monthlyRent);
-          if (data.buyerType) setBuyerType(data.buyerType);
           if (data.downPaymentPercent) setDownPaymentPercent(data.downPaymentPercent);
-          if (data.interestRate) setInterestRate(data.interestRate);
-          if (data.timeHorizon) setTimeHorizon(data.timeHorizon);
-          if (data.appreciation) setAppreciation(data.appreciation);
-          if (data.rentIncrease) setRentIncrease(data.rentIncrease);
-          if (data.investmentReturn) setInvestmentReturn(data.investmentReturn);
+          if (data.mortgageRate) setMortgageRate(data.mortgageRate);
+          if (data.loanTermYears) setLoanTermYears(data.loanTermYears);
+          if (data.timeHorizonYears) setTimeHorizonYears(data.timeHorizonYears);
         }
       }
     } catch (e) {
@@ -199,870 +234,987 @@ export function RentVsBuyCalculator() {
     }
   }, []);
   
-  // Get suggested values from city metrics
+  // Suggested values from city data
   const suggestedRent = useMemo(() => {
     if (!cityMetrics) return null;
-    const range = getRentalRange(cityMetrics, parseInt(rooms));
+    const range = getRentalRange(cityMetrics, 3); // Default 3 rooms
     if (range.min && range.max) {
       return Math.round((range.min + range.max) / 2);
     }
     return null;
-  }, [cityMetrics, rooms]);
+  }, [cityMetrics]);
   
   const suggestedPrice = useMemo(() => {
     if (!cityMetrics?.average_price_sqm) return null;
-    const estimatedSize = SQM_BY_ROOMS[rooms] || 75;
-    return Math.round(cityMetrics.average_price_sqm * estimatedSize);
-  }, [cityMetrics, rooms]);
-  
-  // Handle city-based suggestions
-  const handleUseSuggestedRent = () => {
-    if (suggestedRent) {
-      setMonthlyRent(formatNumber(suggestedRent));
-    }
-  };
-  
-  const handleUseSuggestedPrice = () => {
-    if (suggestedPrice) {
-      setPropertyPrice(formatNumber(suggestedPrice));
-    }
-  };
+    return Math.round(cityMetrics.average_price_sqm * SQM_BY_ROOMS['3']);
+  }, [cityMetrics]);
   
   // Save inputs
   const handleSave = useCallback(() => {
     const data = {
+      buyerType,
       selectedCity,
-      rooms,
       propertyPrice,
       monthlyRent,
-      buyerType,
       downPaymentPercent,
-      interestRate,
-      timeHorizon,
-      appreciation,
-      rentIncrease,
-      investmentReturn,
+      mortgageRate,
+      loanTermYears,
+      timeHorizonYears,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
     toast.success('Inputs saved for 7 days');
-  }, [selectedCity, rooms, propertyPrice, monthlyRent, buyerType, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn]);
+  }, [buyerType, selectedCity, propertyPrice, monthlyRent, downPaymentPercent, mortgageRate, loanTermYears, timeHorizonYears]);
   
   // Reset inputs
   const handleReset = useCallback(() => {
+    setBuyerType('first_time');
     setSelectedCity('');
-    setRooms('3');
     setPropertyPrice('');
     setMonthlyRent('');
-    setBuyerType('first_time');
     setDownPaymentPercent('25');
-    setInterestRate('5.0');
-    setTimeHorizon(10);
-    setAppreciation('3.0');
-    setRentIncrease('3.0');
-    setInvestmentReturn('5.0');
+    setMortgageRate('5.0');
+    setLoanTermYears('25');
+    setTimeHorizonYears(10);
+    setAnnualHomeAppreciationPercent(DEFAULTS.annualHomeAppreciationPercent.toString());
+    setAnnualRentIncreasePercent(DEFAULTS.annualRentIncreasePercent.toString());
+    setAnnualInvestmentReturnPercent(DEFAULTS.annualInvestmentReturnPercent.toString());
+    setPurchaseTaxOverride('');
+    setLegalFees(DEFAULTS.legalFees.toString());
+    setBrokerEnabled(false);
+    setBrokerFeePercent('2');
+    setBankAndAppraisalFees(DEFAULTS.bankAndAppraisalFees.toString());
+    setSellingCostsPercent(DEFAULTS.sellingCostsPercent.toString());
+    setCapitalGainsMode('ignore');
+    setCapitalGainsTaxPercent('25');
+    setMonthlyArnona(DEFAULTS.monthlyArnona.toString());
+    setMonthlyVaadAndInsurance(DEFAULTS.monthlyVaadAndInsurance.toString());
+    setAnnualMaintenanceReservePercent(DEFAULTS.annualMaintenanceReservePercent.toString());
     localStorage.removeItem(STORAGE_KEY);
     toast.success('Reset to defaults');
   }, []);
   
+  // Calculate auto purchase tax
+  const autoPurchaseTax = useMemo(() => {
+    const price = sanitizeCurrency(propertyPrice);
+    if (price <= 0) return 0;
+    return calcTax(price, buyerType);
+  }, [propertyPrice, buyerType]);
+  
   // Main calculations
   const calculations = useMemo(() => {
-    const price = parseFormattedNumber(propertyPrice);
-    const rent = parseFormattedNumber(monthlyRent);
-    const downPaymentPct = parseFloat(downPaymentPercent) || 25;
-    const rate = parseFloat(interestRate) || 5.0;
-    const years = timeHorizon;
-    const appreciationRate = parseFloat(appreciation) || 3.0;
-    const rentIncreaseRate = parseFloat(rentIncrease) || 3.0;
-    const investmentReturnRate = parseFloat(investmentReturn) || 5.0;
+    const price = sanitizeCurrency(propertyPrice);
+    const rent = sanitizeCurrency(monthlyRent);
+    const downPct = sanitizePercent(downPaymentPercent);
+    const rate = sanitizePercent(mortgageRate);
+    const term = sanitizePercent(loanTermYears);
+    const horizon = timeHorizonYears;
+    const appreciationRate = sanitizePercent(annualHomeAppreciationPercent);
+    const rentIncreaseRate = sanitizePercent(annualRentIncreasePercent);
+    const investmentReturnRate = sanitizePercent(annualInvestmentReturnPercent);
+    const arnonaMonthly = sanitizeCurrency(monthlyArnona);
+    const vaadInsMonthly = sanitizeCurrency(monthlyVaadAndInsurance);
+    const maintenancePct = sanitizePercent(annualMaintenanceReservePercent);
+    const legal = sanitizeCurrency(legalFees);
+    const bankFees = sanitizeCurrency(bankAndAppraisalFees);
+    const brokerPct = brokerEnabled ? sanitizePercent(brokerFeePercent) : 0;
+    const sellCostPct = sanitizePercent(sellingCostsPercent);
+    const capGainsPct = capitalGainsMode === 'estimate' ? sanitizePercent(capitalGainsTaxPercent) : 0;
     
     if (price <= 0 || rent <= 0) return null;
     
-    // Buying calculations
-    const downPayment = price * (downPaymentPct / 100);
+    // Purchase costs
+    const downPayment = price * (downPct / 100);
     const loanAmount = price - downPayment;
-    const monthlyRate = rate / 100 / 12;
-    const numPayments = years * 12;
+    const purchaseTax = purchaseTaxOverride ? sanitizeCurrency(purchaseTaxOverride) : autoPurchaseTax;
+    const brokerFee = brokerPct > 0 ? price * (brokerPct / 100) * (1 + VAT_RATE) : 0;
+    const totalPurchaseCosts = purchaseTax + legal + brokerFee + bankFees;
+    const totalCashUpfront = downPayment + totalPurchaseCosts;
     
-    // Monthly mortgage payment (P&I)
+    // Monthly mortgage payment
+    const monthlyRate = rate / 100 / 12;
+    const numPayments = term * 12;
     const monthlyMortgage = monthlyRate > 0
-      ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-        (Math.pow(1 + monthlyRate, numPayments) - 1)
+      ? (loanAmount * monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1)
       : loanAmount / numPayments;
     
-    // One-time purchase costs
-    const purchaseTax = calcTax(price, buyerType);
-    const lawyerFee = Math.max(price * FEES.lawyerRate * (1 + FEES.vatRate), FEES.lawyerMinimum);
-    const agentFee = price * FEES.agentRate * (1 + FEES.vatRate);
-    const totalPurchaseCosts = purchaseTax + lawyerFee + agentFee;
+    // Monthly ownership costs
+    const maintenanceMonthly = (price * (maintenancePct / 100)) / 12;
+    const totalMonthlyOwnership = arnonaMonthly + vaadInsMonthly + maintenanceMonthly;
+    const totalMonthlyBuying = monthlyMortgage + totalMonthlyOwnership;
     
-    // Monthly ownership costs (beyond mortgage)
-    const monthlyArnona = cityMetrics?.arnona_monthly_avg || FEES.arnonaDefault;
-    const monthlyVaadBayit = FEES.vaadBayitDefault;
-    const monthlyInsurance = FEES.homeInsurance;
-    const monthlyMaintenance = (price * FEES.maintenanceRate) / 12;
-    const totalMonthlyOwnershipCosts = monthlyArnona + monthlyVaadBayit + monthlyInsurance + monthlyMaintenance;
+    // Year-by-year simulation
+    const yearlyData: YearlyData[] = [];
+    let breakEvenYear: number | null = null;
     
-    // Total monthly if buying
-    const totalMonthlyBuying = monthlyMortgage + totalMonthlyOwnershipCosts;
-    
-    // Property value at end of period
-    const futurePropertyValue = price * Math.pow(1 + appreciationRate / 100, years);
-    const appreciation$ = futurePropertyValue - price;
-    
-    // Calculate remaining loan balance after X years
-    const remainingBalance = loanAmount * 
-      (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, years * 12)) /
-      (Math.pow(1 + monthlyRate, numPayments) - 1);
-    
-    // Equity built
-    const equityBuilt = futurePropertyValue - remainingBalance;
-    
-    // Total cost of buying over period
-    const totalMortgagePayments = monthlyMortgage * years * 12;
-    const totalOwnershipCosts = totalMonthlyOwnershipCosts * years * 12;
-    const totalBuyingCost = downPayment + totalPurchaseCosts + totalMortgagePayments + totalOwnershipCosts;
-    
-    // Net wealth from buying (equity - what you spent)
-    const netBuyingWealth = equityBuilt;
-    
-    // Renting calculations
-    // Total rent paid with annual increases
-    let totalRentPaid = 0;
-    let currentRent = rent;
-    for (let year = 0; year < years; year++) {
-      totalRentPaid += currentRent * 12;
-      currentRent *= (1 + rentIncreaseRate / 100);
-    }
-    const finalYearRent = rent * Math.pow(1 + rentIncreaseRate / 100, years - 1);
-    
-    // Opportunity cost: what if down payment + purchase costs were invested?
-    const totalCashNotSpent = downPayment + totalPurchaseCosts;
-    const investedSavingsValue = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, years);
-    const investmentGains = investedSavingsValue - totalCashNotSpent;
-    
-    // Net wealth from renting (invested savings - rent paid)
-    const netRentingWealth = investedSavingsValue - totalRentPaid;
-    
-    // Comparison
-    const buyingIsBetter = netBuyingWealth > netRentingWealth;
-    const wealthDifference = Math.abs(netBuyingWealth - netRentingWealth);
-    
-    // Calculate break-even year
-    let breakEvenYear = null;
-    for (let year = 1; year <= 30; year++) {
-      const propertyValueAtYear = price * Math.pow(1 + appreciationRate / 100, year);
-      const remainingLoanAtYear = year >= years ? 0 : loanAmount * 
-        (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, year * 12)) /
-        (Math.pow(1 + monthlyRate, numPayments) - 1);
-      const buyingEquityAtYear = propertyValueAtYear - remainingLoanAtYear;
+    for (let year = 1; year <= Math.max(horizon, 30); year++) {
+      // BUY SIDE
+      const homeValueAtYear = price * Math.pow(1 + appreciationRate / 100, year);
       
-      let rentPaidAtYear = 0;
-      let rentAtYear = rent;
+      // Remaining loan balance
+      const monthsElapsed = Math.min(year * 12, numPayments);
+      let remainingBalance = loanAmount;
+      if (monthlyRate > 0 && monthsElapsed < numPayments) {
+        remainingBalance = loanAmount * (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, monthsElapsed)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+      } else if (monthsElapsed >= numPayments) {
+        remainingBalance = 0;
+      }
+      
+      // Selling costs
+      const sellingCosts = homeValueAtYear * (sellCostPct / 100);
+      
+      // Capital gains estimate
+      let capitalGainsTax = 0;
+      if (capitalGainsMode === 'estimate' && capGainsPct > 0) {
+        const gain = homeValueAtYear - price;
+        if (gain > 0) {
+          capitalGainsTax = gain * (capGainsPct / 100);
+        }
+      }
+      
+      // Buy net worth = home value - remaining loan - selling costs - cap gains
+      const buyNetWorth = homeValueAtYear - remainingBalance - sellingCosts - capitalGainsTax;
+      
+      // RENT SIDE
+      // Total rent paid over years
+      let totalRentPaid = 0;
+      let currentRentYear = rent;
       for (let y = 0; y < year; y++) {
-        rentPaidAtYear += rentAtYear * 12;
-        rentAtYear *= (1 + rentIncreaseRate / 100);
+        totalRentPaid += currentRentYear * 12;
+        currentRentYear *= (1 + rentIncreaseRate / 100);
       }
-      const investedValueAtYear = totalCashNotSpent * Math.pow(1 + investmentReturnRate / 100, year);
-      const rentingWealthAtYear = investedValueAtYear - rentPaidAtYear;
       
-      if (buyingEquityAtYear > rentingWealthAtYear) {
+      // Renter invests the cash not spent on buying
+      const investedPrincipal = totalCashUpfront;
+      const investedValue = investedPrincipal * Math.pow(1 + investmentReturnRate / 100, year);
+      
+      // Monthly savings if renting is cheaper
+      let accumulatedMonthlySavings = 0;
+      let rentAtYearStart = rent;
+      for (let y = 0; y < year; y++) {
+        // Owner costs grow with maintenance linked to home value
+        const homeValueMidYear = price * Math.pow(1 + appreciationRate / 100, y + 0.5);
+        const maintenanceAtYear = (homeValueMidYear * (maintenancePct / 100)) / 12;
+        const ownerMonthlyAtYear = monthlyMortgage + arnonaMonthly + vaadInsMonthly + maintenanceAtYear;
+        
+        const monthlySavings = ownerMonthlyAtYear - rentAtYearStart;
+        if (monthlySavings > 0) {
+          // These savings earn returns for remaining years
+          const yearsToGrow = year - y - 0.5;
+          const savingsWithReturn = monthlySavings * 12 * Math.pow(1 + investmentReturnRate / 100, Math.max(0, yearsToGrow));
+          accumulatedMonthlySavings += savingsWithReturn;
+        }
+        rentAtYearStart *= (1 + rentIncreaseRate / 100);
+      }
+      
+      // Rent net worth = invested savings - rent paid
+      const rentNetWorth = investedValue + accumulatedMonthlySavings - totalRentPaid;
+      
+      yearlyData.push({
+        year,
+        buyNetWorth: Math.round(buyNetWorth),
+        rentNetWorth: Math.round(rentNetWorth),
+        difference: Math.round(buyNetWorth - rentNetWorth),
+      });
+      
+      // Find break-even
+      if (!breakEvenYear && buyNetWorth >= rentNetWorth) {
         breakEvenYear = year;
-        break;
       }
     }
     
-    // Lifestyle comparison calculations
-    const avgPricePerSqm = cityMetrics?.average_price_sqm || (price / (SQM_BY_ROOMS[rooms] || 75));
+    const atHorizon = yearlyData.find(d => d.year === horizon) || yearlyData[yearlyData.length - 1];
+    const buyingWins = atHorizon.buyNetWorth >= atHorizon.rentNetWorth;
+    const wealthDifference = Math.abs(atHorizon.buyNetWorth - atHorizon.rentNetWorth);
     
-    // What size property can you BUY with this budget?
-    const buyingSqm = price / avgPricePerSqm;
-    
-    // What size property can you RENT with the same monthly budget?
-    // If buying costs X/month, what size rental does X/month get you?
-    const rentPricePerSqm = rent / (SQM_BY_ROOMS[rooms] || 75); // estimate rent per sqm
-    const rentingSqmForBuyingBudget = totalMonthlyBuying / rentPricePerSqm;
-    
-    // Space advantage for renters
-    const spaceAdvantagePercent = Math.round(((rentingSqmForBuyingBudget - buyingSqm) / buyingSqm) * 100);
-    
-    // Monthly equity being built (principal portion of mortgage - rough estimate)
-    const monthlyEquityBuilding = monthlyMortgage * 0.3; // Rough estimate, early years are mostly interest
-    
-    // Price to rent ratio (common metric - lower favors buying)
-    const priceToRentRatio = price / (rent * 12);
+    // Monthly cashflow difference (Year 1)
+    const monthlyCashflowDiff = totalMonthlyBuying - rent;
     
     return {
-      // Core comparison
-      buyingIsBetter,
+      // Scoreboard
+      winner: buyingWins ? 'Buying' : 'Renting',
       wealthDifference,
       breakEvenYear,
+      monthlyCashflowDiff,
       
-      // Monthly comparison
-      monthlyMortgage,
-      totalMonthlyBuying,
-      totalMonthlyOwnershipCosts,
-      currentMonthlyRent: rent,
-      finalYearRent,
-      
-      // Buying details
+      // Purchase costs
       downPayment,
       loanAmount,
       purchaseTax,
-      lawyerFee,
-      agentFee,
+      legal,
+      brokerFee,
+      bankFees,
       totalPurchaseCosts,
-      totalMortgagePayments,
-      totalOwnershipCosts,
-      futurePropertyValue,
-      appreciation: appreciation$,
-      equityBuilt,
-      netBuyingWealth,
-      totalBuyingCost,
+      totalCashUpfront,
       
-      // Renting details
-      totalRentPaid,
-      investedSavingsValue,
-      investmentGains,
-      netRentingWealth,
-      totalCashNotSpent,
+      // Monthly
+      monthlyMortgage,
+      arnonaMonthly,
+      vaadInsMonthly,
+      maintenanceMonthly,
+      totalMonthlyOwnership,
+      totalMonthlyBuying,
+      currentRent: rent,
       
-      // Monthly costs breakdown
-      monthlyArnona,
-      monthlyVaadBayit,
-      monthlyInsurance,
-      monthlyMaintenance,
+      // At horizon
+      atHorizon,
       
-      // Lifestyle comparison
-      buyingSqm,
-      rentingSqmForBuyingBudget,
-      spaceAdvantagePercent,
-      monthlyEquityBuilding,
-      priceToRentRatio,
+      // Yearly data for chart/table
+      yearlyData: yearlyData.filter(d => d.year <= horizon),
     };
-  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
+  }, [
+    propertyPrice, monthlyRent, downPaymentPercent, mortgageRate, loanTermYears, timeHorizonYears,
+    annualHomeAppreciationPercent, annualRentIncreasePercent, annualInvestmentReturnPercent,
+    purchaseTaxOverride, autoPurchaseTax, legalFees, brokerEnabled, brokerFeePercent,
+    bankAndAppraisalFees, sellingCostsPercent, capitalGainsMode, capitalGainsTaxPercent,
+    monthlyArnona, monthlyVaadAndInsurance, annualMaintenanceReservePercent, buyerType
+  ]);
   
-  // Header actions
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
-        <RotateCcw className="h-4 w-4" />
-        <span className="hidden sm:inline">Reset</span>
-      </Button>
-      <Button variant="outline" size="sm" onClick={handleSave} className="gap-2">
-        <Save className="h-4 w-4" />
-        <span className="hidden sm:inline">Save</span>
-      </Button>
-    </div>
-  );
+  const minDownRequired = MIN_DOWN_PAYMENT[buyerType];
+  const downPaymentWarning = sanitizePercent(downPaymentPercent) < minDownRequired;
   
-  // Info banner
-  const infoBanner = (
-    <InfoBanner>
-      Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
-    </InfoBanner>
-  );
+  const chartConfig = {
+    buyNetWorth: {
+      label: 'Buying',
+      color: 'hsl(var(--primary))',
+    },
+    rentNetWorth: {
+      label: 'Renting',
+      color: 'hsl(var(--muted-foreground))',
+    },
+  };
   
-  // Left column - Inputs
-  const leftColumn = (
-    <div className="space-y-6">
-      {/* Property & Location */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Property Details</h3>
-        </div>
-        
-        <div className="space-y-4">
-          {/* City Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="city" className="flex items-center text-sm font-medium">
-              City
-              <span className="text-muted-foreground font-normal ml-1">(optional)</span>
-              <InfoTooltip content="Select a city to auto-suggest typical rents and property prices based on current market data." />
-            </Label>
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select city for market data" />
-              </SelectTrigger>
-              <SelectContent>
-                {cities?.map((city) => (
-                  <SelectItem key={city.slug} value={city.slug}>
-                    {city.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Rooms */}
-          <div className="space-y-2">
-            <Label htmlFor="rooms" className="flex items-center text-sm font-medium">
-              Property Size (Rooms)
-              <InfoTooltip content="Israeli room count includes living room and bedrooms. A '3-room' apartment typically has 2 bedrooms + living room." />
-            </Label>
-            <Select value={rooms} onValueChange={setRooms}>
-              <SelectTrigger className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROOM_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Property Price */}
-          <div className="space-y-2">
-            <Label htmlFor="propertyPrice" className="flex items-center text-sm font-medium">
-              Property Price
-              <InfoTooltip content="Full purchase price of the property you're considering." />
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
-              <Input
-                id="propertyPrice"
-                type="text"
-                value={propertyPrice}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/,/g, '');
-                  if (/^\d*$/.test(raw)) {
-                    setPropertyPrice(raw ? formatNumber(parseInt(raw)) : '');
-                  }
-                }}
-                placeholder="2,500,000"
-                className="h-11 pl-8"
-              />
-            </div>
-            {suggestedPrice && !propertyPrice && (
-              <button
-                onClick={handleUseSuggestedPrice}
-                className="text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                Use city estimate: ₪{formatNumber(suggestedPrice)}
-              </button>
-            )}
-          </div>
-          
-          {/* Monthly Rent */}
-          <div className="space-y-2">
-            <Label htmlFor="monthlyRent" className="flex items-center text-sm font-medium">
-              Current Monthly Rent
-              <InfoTooltip content="Your current or expected monthly rent payment. This will be compared against ownership costs." />
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
-              <Input
-                id="monthlyRent"
-                type="text"
-                value={monthlyRent}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/,/g, '');
-                  if (/^\d*$/.test(raw)) {
-                    setMonthlyRent(raw ? formatNumber(parseInt(raw)) : '');
-                  }
-                }}
-                placeholder="6,000"
-                className="h-11 pl-8"
-              />
-            </div>
-            {suggestedRent && !monthlyRent && selectedCity && (
-              <button
-                onClick={handleUseSuggestedRent}
-                className="text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                Use city average: ₪{formatNumber(suggestedRent)}/mo
-              </button>
-            )}
-          </div>
-        </div>
-      </Card>
-      
-      {/* Financing */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Wallet className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Financing</h3>
-        </div>
-        
-        <div className="space-y-4">
-          {/* Buyer Type */}
-          <div className="space-y-2">
-            <Label htmlFor="buyerType" className="flex items-center text-sm font-medium">
-              Buyer Status
-              <InfoTooltip content="Your buyer status determines Purchase Tax (Mas Rechisha) rates and maximum mortgage LTV." />
-            </Label>
-            <Select value={buyerType} onValueChange={(v) => setBuyerType(v as BuyerCategory)}>
-              <SelectTrigger className="h-11">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="first_time">First-Time Buyer</SelectItem>
-                <SelectItem value="oleh">Oleh Hadash (within 7 years)</SelectItem>
-                <SelectItem value="additional">Upgrader / Additional Property</SelectItem>
-                <SelectItem value="non_resident">Non-Resident</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            {/* Down Payment */}
-            <div className="space-y-2">
-              <Label htmlFor="downPayment" className="flex items-center text-sm font-medium">
-                Down Payment
-                <InfoTooltip content="Israeli banks require minimum 25% for first-time buyers, 30% for additional properties, 50% for non-residents." />
-              </Label>
-              <div className="relative">
-                <Input
-                  id="downPayment"
-                  type="text"
-                  value={downPaymentPercent}
-                  onChange={(e) => setDownPaymentPercent(e.target.value)}
-                  className="h-11 pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-              </div>
-            </div>
-            
-            {/* Interest Rate */}
-            <div className="space-y-2">
-              <Label htmlFor="interestRate" className="flex items-center text-sm font-medium">
-                Interest Rate
-                <InfoTooltip content="Blended mortgage rate. Israeli banks offer various 'tracks' with different rate structures." />
-              </Label>
-              <div className="relative">
-                <Input
-                  id="interestRate"
-                  type="text"
-                  value={interestRate}
-                  onChange={(e) => setInterestRate(e.target.value)}
-                  className="h-11 pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-      
-      {/* Assumptions */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">Time & Growth Assumptions</h3>
-        </div>
-        
-        <div className="space-y-4">
-          {/* Time Horizon */}
-          <div className="space-y-2">
-            <Label className="flex items-center text-sm font-medium">
-              Time Horizon (Years)
-              <InfoTooltip content="How long you plan to stay. Buying typically becomes more favorable over longer periods." />
-            </Label>
-            <div className="flex gap-2">
-              {TIME_HORIZONS.map((years) => (
-                <Button
-                  key={years}
-                  variant={timeHorizon === years ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setTimeHorizon(years)}
-                  className="flex-1"
-                >
-                  {years}
-                </Button>
-              ))}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            {/* Appreciation */}
-            <div className="space-y-2">
-              <Label htmlFor="appreciation" className="flex items-center text-sm font-medium">
-                Appreciation
-                <InfoTooltip content="Expected annual property value increase. Pre-filled from city's recent performance if available." />
-              </Label>
-              <div className="relative">
-                <Input
-                  id="appreciation"
-                  type="text"
-                  value={appreciation}
-                  onChange={(e) => setAppreciation(e.target.value)}
-                  className="h-11 pr-10"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%/yr</span>
-              </div>
-            </div>
-            
-            {/* Rent Increase */}
-            <div className="space-y-2">
-              <Label htmlFor="rentIncrease" className="flex items-center text-sm font-medium">
-                Rent Increase
-                <InfoTooltip content="Expected annual rent increase. Israeli contracts typically allow 3-5% annual increases." />
-              </Label>
-              <div className="relative">
-                <Input
-                  id="rentIncrease"
-                  type="text"
-                  value={rentIncrease}
-                  onChange={(e) => setRentIncrease(e.target.value)}
-                  className="h-11 pr-10"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%/yr</span>
-              </div>
-            </div>
-            
-            {/* Investment Return */}
-            <div className="space-y-2">
-              <Label htmlFor="investmentReturn" className="flex items-center text-sm font-medium">
-                Savings Return
-                <InfoTooltip content="If you rent, what return could your down payment earn if invested elsewhere?" />
-              </Label>
-              <div className="relative">
-                <Input
-                  id="investmentReturn"
-                  type="text"
-                  value={investmentReturn}
-                  onChange={(e) => setInvestmentReturn(e.target.value)}
-                  className="h-11 pr-10"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%/yr</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
+  const hasInputs = sanitizeCurrency(propertyPrice) > 0 && sanitizeCurrency(monthlyRent) > 0;
   
-  // Right column - Results
-  const rightColumn = (
-    <div className="space-y-6">
-      {calculations ? (
-        <>
-          {/* Down Payment Validation Warning */}
-          {parseFloat(downPaymentPercent) < MIN_DOWN_PAYMENT[buyerType] && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
-              <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-warning-foreground">Down payment below bank requirements</p>
-                <p className="text-muted-foreground mt-1">
-                  Israeli banks require minimum {MIN_DOWN_PAYMENT[buyerType]}% down for {buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'}. 
-                  You've entered {downPaymentPercent}%.
-                </p>
-              </div>
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <Scale className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Rent vs Buy Calculator</h1>
             </div>
-          )}
-          
-          {/* Card 1: Monthly Reality Check - What users want first */}
-          <Card className="p-6 border">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-primary" />
-              Your Monthly Comparison
-            </h4>
-            
-            {/* Buying Monthly Costs */}
-            <div className="space-y-3 mb-4">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">If You Buy This Property</div>
-              <div className="space-y-1.5 pl-3 border-l-2 border-primary/30">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Mortgage (P&I)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMortgage))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Arnona (property tax)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyArnona))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Va'ad Bayit + Insurance</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Maintenance reserve</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMaintenance))}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border/50">
-                  <span>Total monthly</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Renting Monthly Cost */}
-            <div className="space-y-3 mb-4">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                If You Rent Similar ({rooms} rooms{selectedCity ? ` in ${cities?.find(c => c.slug === selectedCity)?.name}` : ''})
-              </div>
-              <div className="space-y-1.5 pl-3 border-l-2 border-muted-foreground/30">
-                <div className="flex justify-between font-semibold text-sm">
-                  <span>Monthly rent</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Monthly Difference Highlight */}
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Monthly difference</span>
-                <span className="text-lg font-bold tabular-nums">
-                  ₪{formatNumber(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
-                  <span className="text-xs text-muted-foreground font-normal ml-1">
-                    {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
-                  </span>
-                </span>
-              </div>
-              
-              {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
-                <p className="text-xs text-muted-foreground">
-                  ~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} of your mortgage builds equity you keep. 
-                  Effective "extra cost" is closer to ₪{formatNumber(Math.round(calculations.totalMonthlyBuying - calculations.currentMonthlyRent - calculations.monthlyEquityBuilding))}/mo.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Buying actually costs less monthly AND you build ₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} in equity each month.
-                </p>
-              )}
-            </div>
-          </Card>
-          
-          {/* Card 2: The Long Game - Simplified Verdict */}
-          <Card className="p-6 border">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              After {timeHorizon} Years
-            </h4>
-            
-            {/* Net Wealth Comparison */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">If You Buy</p>
-                <p className="text-2xl font-bold text-foreground">₪{formatNumber(Math.round(calculations.equityBuilt))}</p>
-                <p className="text-xs text-muted-foreground">equity built</p>
-              </div>
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">If You Rent</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
-                </p>
-                <p className="text-xs text-muted-foreground">net position</p>
-              </div>
-            </div>
-            
-            {/* Wealth Difference */}
-            <div className="text-center py-3 px-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm text-muted-foreground">
-                {calculations.buyingIsBetter 
-                  ? `Buying builds ₪${formatNumber(Math.round(calculations.wealthDifference))} more wealth`
-                  : `Renting saves ₪${formatNumber(Math.round(calculations.wealthDifference))} overall`}
-              </p>
-            </div>
-            
-            {/* Break-even */}
-            {calculations.breakEvenYear && (
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                Buying breaks even at ~{calculations.breakEvenYear} years
-                {calculations.breakEvenYear > timeHorizon && ' (beyond your time horizon)'}
-              </p>
-            )}
-          </Card>
-          
-          {/* Card 3: Key Insight - Dynamic personalized advice */}
-          <Card className="p-6 border bg-muted/30">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Lightbulb className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold mb-2">Key Insight</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {/* Dynamic insight based on user's specific numbers */}
-                  {calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon ? (
-                    // Buying makes sense financially
-                    timeHorizon >= 10 ? (
-                      `With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster than renting would.`
-                    ) : (
-                      `You reach break-even in ~${calculations.breakEvenYear} years. If you're confident you'll stay at least that long, buying is likely the stronger financial path.`
-                    )
-                  ) : calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon ? (
-                    // Renting makes more sense for this timeline
-                    `At ${timeHorizon} years, renting still comes out ahead financially. Consider buying if you plan to stay ${calculations.breakEvenYear}+ years, or if stability matters more than optimizing returns.`
-                  ) : (
-                    // No break-even found (buying always better)
-                    calculations.buyingIsBetter ? (
-                      `Given your inputs, buying builds more wealth at every point. If you have the down payment, buying is likely the stronger financial choice.`
-                    ) : (
-                      `Renting provides financial flexibility here. You can invest your would-be down payment and still come out ahead over ${timeHorizon} years.`
-                    )
-                  )}
-                </p>
-              </div>
-            </div>
-          </Card>
-        </>
-      ) : (
-        <Card className="p-6">
-          <div className="text-center py-8 text-muted-foreground">
-            <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="font-medium">Enter property price and rent</p>
-            <p className="text-sm mt-1">
-              We'll show you the full picture—monthly costs AND long-term wealth
+            <p className="text-muted-foreground mt-1">
+              Compare the long-term wealth impact of renting versus buying in Israel
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+            <RotateCcw className="h-4 w-4" />
+            <span className="hidden sm:inline">Reset</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSave} className="gap-2">
+            <Save className="h-4 w-4" />
+            <span className="hidden sm:inline">Save</span>
+          </Button>
+        </div>
+      </div>
+      
+      {/* ROW 1: Inputs & Scoreboard */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Inputs Card */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <Calculator className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold text-lg">Inputs</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {/* Buyer Type */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm font-medium">
+                Buyer Status
+                <InfoTooltip content="Determines Purchase Tax (Mas Rechisha) rates and minimum down payment requirements." />
+              </Label>
+              <Select value={buyerType} onValueChange={(v) => setBuyerType(v as BuyerCategory)}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first_time">Resident (First Property)</SelectItem>
+                  <SelectItem value="oleh">Oleh Hadash (within 7 years)</SelectItem>
+                  <SelectItem value="additional">Resident (Additional Property)</SelectItem>
+                  <SelectItem value="non_resident">Foreign Non-Resident</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* City (optional) */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm font-medium">
+                City <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                <InfoTooltip content="Select a city to auto-fill typical prices, rents, and appreciation rates." />
+              </Label>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select city for defaults" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities?.map((city) => (
+                    <SelectItem key={city.slug} value={city.slug}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedCity && suggestedPrice && suggestedRent && (
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setPropertyPrice(formatNumber(suggestedPrice))}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Use price: ₪{formatNumber(suggestedPrice)}
+                  </button>
+                  <button
+                    onClick={() => setMonthlyRent(formatNumber(suggestedRent))}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Use rent: ₪{formatNumber(suggestedRent)}/mo
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Property Price */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Property Price</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                  <Input
+                    value={propertyPrice}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[₪,\s]/g, '');
+                      if (/^\d*$/.test(raw)) {
+                        setPropertyPrice(raw ? formatNumber(parseInt(raw)) : '');
+                      }
+                    }}
+                    placeholder="2,500,000"
+                    className="h-10 pl-7"
+                  />
+                </div>
+              </div>
+              
+              {/* Monthly Rent */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Monthly Rent</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                  <Input
+                    value={monthlyRent}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[₪,\s]/g, '');
+                      if (/^\d*$/.test(raw)) {
+                        setMonthlyRent(raw ? formatNumber(parseInt(raw)) : '');
+                      }
+                    }}
+                    placeholder="6,000"
+                    className="h-10 pl-7"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Down Payment */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center text-sm font-medium">
+                  Down Payment
+                  <InfoTooltip content={`Israeli banks require minimum ${minDownRequired}% for ${buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'}.`} />
+                </Label>
+                <div className="relative">
+                  <Input
+                    value={downPaymentPercent}
+                    onChange={(e) => setDownPaymentPercent(e.target.value)}
+                    className="h-10 pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                </div>
+                {downPaymentWarning && (
+                  <p className="text-xs text-warning flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Min {minDownRequired}% required
+                  </p>
+                )}
+              </div>
+              
+              {/* Mortgage Rate */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Mortgage Rate</Label>
+                <div className="relative">
+                  <Input
+                    value={mortgageRate}
+                    onChange={(e) => setMortgageRate(e.target.value)}
+                    className="h-10 pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Loan Term */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Loan Term (years)</Label>
+              <Input
+                value={loanTermYears}
+                onChange={(e) => setLoanTermYears(e.target.value)}
+                className="h-10"
+              />
+            </div>
+            
+            {/* Time Horizon */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Time Horizon (years)</Label>
+              <div className="flex gap-2">
+                {TIME_HORIZONS.map((years) => (
+                  <Button
+                    key={years}
+                    variant={timeHorizonYears === years ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setTimeHorizonYears(years)}
+                    className="flex-1"
+                  >
+                    {years}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         </Card>
-      )}
-    </div>
-  );
-  
-  // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
-  const bottomSection = calculations && (
-    <div className="space-y-10">
-      {/* Pros & Cons Section - Neutral, no recommendations */}
-      <div>
-        <h3 className="text-lg font-semibold mb-6">Beyond the Numbers</h3>
         
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Buying Pros - No conditional styling */}
-          <Card className="p-6 border border-l-4 border-l-muted-foreground/30">
-            <h4 className="font-semibold flex items-center gap-2 mb-4">
+        {/* Scoreboard Card */}
+        <Card className="p-6 bg-muted/30">
+          <div className="flex items-center gap-2 mb-5">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold text-lg">Scoreboard</h2>
+          </div>
+          
+          {calculations ? (
+            <div className="space-y-5">
+              {/* Winner */}
+              <div className="text-center py-4 px-6 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Winner at {timeHorizonYears} Years</p>
+                <p className="text-3xl font-bold text-primary">{calculations.winner}</p>
+              </div>
+              
+              {/* Key Metrics */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-background rounded-lg border">
+                  <p className="text-xs text-muted-foreground mb-1">Net Worth Difference</p>
+                  <p className="text-xl font-bold tabular-nums">₪{formatNumber(calculations.wealthDifference)}</p>
+                  <p className="text-xs text-muted-foreground">{calculations.winner} is ahead</p>
+                </div>
+                
+                <div className="p-4 bg-background rounded-lg border">
+                  <p className="text-xs text-muted-foreground mb-1">Break-Even Year</p>
+                  <p className="text-xl font-bold">
+                    {calculations.breakEvenYear 
+                      ? `Year ${calculations.breakEvenYear}` 
+                      : `No break-even within ${Math.max(timeHorizonYears, 30)}yr`}
+                  </p>
+                  {calculations.breakEvenYear && calculations.breakEvenYear > timeHorizonYears && (
+                    <p className="text-xs text-warning">Beyond horizon</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Monthly Cashflow */}
+              <div className="p-4 bg-background rounded-lg border">
+                <p className="text-xs text-muted-foreground mb-1">Monthly Cashflow Difference (Year 1)</p>
+                <p className="text-xl font-bold tabular-nums">
+                  ₪{formatNumber(Math.abs(calculations.monthlyCashflowDiff))}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">
+                    {calculations.monthlyCashflowDiff > 0 ? 'more to buy' : 'more to rent'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium">Enter property price and rent</p>
+              <p className="text-sm mt-1">to see comparison results</p>
+            </div>
+          )}
+        </Card>
+      </div>
+      
+      {/* ROW 2: Assumptions Grid */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <Settings2 className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold text-lg">Assumptions</h2>
+          <span className="text-sm text-muted-foreground">(all visible)</span>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Market Assumptions */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Market</h3>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Annual Home Appreciation</Label>
+              <div className="relative">
+                <Input
+                  value={annualHomeAppreciationPercent}
+                  onChange={(e) => setAnnualHomeAppreciationPercent(e.target.value)}
+                  className="h-9 pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Annual Rent Increase</Label>
+              <div className="relative">
+                <Input
+                  value={annualRentIncreasePercent}
+                  onChange={(e) => setAnnualRentIncreasePercent(e.target.value)}
+                  className="h-9 pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm">
+                Investment Return
+                <InfoTooltip content="If you rent, what annual return could your down payment earn if invested elsewhere?" />
+              </Label>
+              <div className="relative">
+                <Input
+                  value={annualInvestmentReturnPercent}
+                  onChange={(e) => setAnnualInvestmentReturnPercent(e.target.value)}
+                  className="h-9 pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Transaction Costs */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Transaction Costs</h3>
+            
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm">
+                Purchase Tax
+                <InfoTooltip content={`Auto-calculated based on buyer type. For ${buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'}: ₪${formatNumber(autoPurchaseTax)}`} />
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₪</span>
+                <Input
+                  value={purchaseTaxOverride}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[₪,\s]/g, '');
+                    if (/^\d*$/.test(raw)) {
+                      setPurchaseTaxOverride(raw ? formatNumber(parseInt(raw)) : '');
+                    }
+                  }}
+                  placeholder={formatNumber(autoPurchaseTax)}
+                  className="h-9 pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Legal Fees</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₪</span>
+                <Input
+                  value={legalFees}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[₪,\s]/g, '');
+                    if (/^\d*$/.test(raw)) {
+                      setLegalFees(raw);
+                    }
+                  }}
+                  className="h-9 pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Broker Fee (2% + VAT)</Label>
+              <Switch checked={brokerEnabled} onCheckedChange={setBrokerEnabled} />
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Bank & Appraisal Fees</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₪</span>
+                <Input
+                  value={bankAndAppraisalFees}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[₪,\s]/g, '');
+                    if (/^\d*$/.test(raw)) {
+                      setBankAndAppraisalFees(raw);
+                    }
+                  }}
+                  className="h-9 pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm">
+                Selling Costs
+                <InfoTooltip content="Typical agent commission (2%) plus VAT when selling. Applied at end of horizon." />
+              </Label>
+              <div className="relative">
+                <Input
+                  value={sellingCostsPercent}
+                  onChange={(e) => setSellingCostsPercent(e.target.value)}
+                  className="h-9 pr-8"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Capital Gains</Label>
+              <Select value={capitalGainsMode} onValueChange={(v) => setCapitalGainsMode(v as 'ignore' | 'estimate')}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ignore">Ignore</SelectItem>
+                  <SelectItem value="estimate">Estimate</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {capitalGainsMode === 'estimate' && (
+              <div className="space-y-1.5">
+                <Label className="text-sm">Cap Gains Tax Rate</Label>
+                <div className="relative">
+                  <Input
+                    value={capitalGainsTaxPercent}
+                    onChange={(e) => setCapitalGainsTaxPercent(e.target.value)}
+                    className="h-9 pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Ownership Costs */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Ownership Costs</h3>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Monthly Arnona</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₪</span>
+                <Input
+                  value={monthlyArnona}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[₪,\s]/g, '');
+                    if (/^\d*$/.test(raw)) {
+                      setMonthlyArnona(raw);
+                    }
+                  }}
+                  className="h-9 pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-sm">Monthly Va'ad + Insurance</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">₪</span>
+                <Input
+                  value={monthlyVaadAndInsurance}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[₪,\s]/g, '');
+                    if (/^\d*$/.test(raw)) {
+                      setMonthlyVaadAndInsurance(raw);
+                    }
+                  }}
+                  className="h-9 pl-7"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="flex items-center text-sm">
+                Maintenance Reserve
+                <InfoTooltip content="Annual maintenance reserve as percentage of property value. Typical is 1% for routine repairs and upkeep." />
+              </Label>
+              <div className="relative">
+                <Input
+                  value={annualMaintenanceReservePercent}
+                  onChange={(e) => setAnnualMaintenanceReservePercent(e.target.value)}
+                  className="h-9 pr-10"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%/yr</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+      
+      {/* ROW 3: Monthly Comparison & After X Years */}
+      {calculations && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Monthly Comparison */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Wallet className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold text-lg">Monthly Comparison</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Buying Costs */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">If You Buy</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mortgage (P&I)</span>
+                    <span className="tabular-nums">₪{formatNumber(calculations.monthlyMortgage)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Arnona</span>
+                    <span className="tabular-nums">₪{formatNumber(calculations.arnonaMonthly)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Va'ad + Insurance</span>
+                    <span className="tabular-nums">₪{formatNumber(calculations.vaadInsMonthly)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Maintenance Reserve</span>
+                    <span className="tabular-nums">₪{formatNumber(calculations.maintenanceMonthly)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex justify-between font-semibold">
+                    <span>Total Monthly</span>
+                    <span className="tabular-nums">₪{formatNumber(calculations.totalMonthlyBuying)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Renting Cost */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">If You Rent</p>
+                <div className="flex justify-between font-semibold text-sm">
+                  <span>Monthly Rent</span>
+                  <span className="tabular-nums">₪{formatNumber(calculations.currentRent)}</span>
+                </div>
+              </div>
+              
+              {/* Difference */}
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Difference</span>
+                  <span className="text-lg font-bold tabular-nums">
+                    ₪{formatNumber(Math.abs(calculations.monthlyCashflowDiff))}
+                    <span className="text-xs text-muted-foreground font-normal ml-1">
+                      {calculations.monthlyCashflowDiff > 0 ? 'more to buy' : 'more to rent'}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          {/* After X Years */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Clock className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold text-lg">After {timeHorizonYears} Years</h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 text-center">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Buy Net Worth</p>
+                <p className="text-2xl font-bold tabular-nums">₪{formatNumber(calculations.atHorizon.buyNetWorth)}</p>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg border text-center">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Rent Net Worth</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {calculations.atHorizon.rentNetWorth >= 0 ? '₪' : '-₪'}
+                  {formatNumber(Math.abs(calculations.atHorizon.rentNetWorth))}
+                </p>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-muted/30 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-1">Difference</p>
+              <p className="text-xl font-bold">
+                {calculations.winner} is ahead by ₪{formatNumber(calculations.wealthDifference)}
+              </p>
+            </div>
+          </Card>
+        </div>
+      )}
+      
+      {/* ROW 4: Chart & Table */}
+      {calculations && calculations.yearlyData.length > 0 && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Chart */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold text-lg">Net Worth Over Time</h2>
+            </div>
+            
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={calculations.yearlyData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="year" 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `Y${value}`}
+                  />
+                  <YAxis 
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `₪${(value / 1000000).toFixed(1)}M`}
+                  />
+                  <ChartTooltip 
+                    content={<ChartTooltipContent 
+                      formatter={(value, name) => {
+                        const numValue = Number(value);
+                        return [
+                          `₪${formatNumber(numValue)}`,
+                          name === 'buyNetWorth' ? 'Buying' : 'Renting'
+                        ];
+                      }}
+                    />}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="buyNetWorth" 
+                    name="Buying"
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="rentNetWorth" 
+                    name="Renting"
+                    stroke="hsl(var(--muted-foreground))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </Card>
+          
+          {/* Year-by-Year Table */}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Calculator className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold text-lg">Year-by-Year Comparison</h2>
+            </div>
+            
+            <div className="max-h-[300px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Year</TableHead>
+                    <TableHead className="text-right">Buy</TableHead>
+                    <TableHead className="text-right">Rent</TableHead>
+                    <TableHead className="text-right">Diff</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {calculations.yearlyData.map((row) => (
+                    <TableRow key={row.year} className={row.year === timeHorizonYears ? 'bg-primary/5' : ''}>
+                      <TableCell className="font-medium">{row.year}</TableCell>
+                      <TableCell className="text-right tabular-nums">₪{formatNumber(row.buyNetWorth)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {row.rentNetWorth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(row.rentNetWorth))}
+                      </TableCell>
+                      <TableCell className={cn(
+                        "text-right tabular-nums font-medium",
+                        row.difference > 0 ? "text-success" : row.difference < 0 ? "text-destructive" : ""
+                      )}>
+                        {row.difference > 0 ? '+' : ''}{row.difference !== 0 ? `₪${formatNumber(row.difference)}` : '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        </div>
+      )}
+      
+      {/* ROW 5: Beyond the Numbers */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Beyond the Numbers</h2>
+        
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Why People Buy */}
+          <Card className="p-5">
+            <h3 className="font-semibold flex items-center gap-2 mb-3">
               <Home className="h-4 w-4 text-muted-foreground" />
               Why People Buy
-            </h4>
-            
-            <ul className="space-y-2.5">
+            </h3>
+            <ul className="space-y-2">
               {BUYING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2.5">
+                <li key={idx} className="flex items-start gap-2 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{pro.detail}</p>
-                  </div>
+                  <span>{pro.text}</span>
                 </li>
               ))}
             </ul>
           </Card>
           
-          {/* Renting Pros - No conditional styling */}
-          <Card className="p-6 border border-l-4 border-l-muted-foreground/30">
-            <h4 className="font-semibold flex items-center gap-2 mb-4">
+          {/* Why People Rent */}
+          <Card className="p-5">
+            <h3 className="font-semibold flex items-center gap-2 mb-3">
               <Building2 className="h-4 w-4 text-muted-foreground" />
               Why People Rent
-            </h4>
-            
-            <ul className="space-y-2.5">
+            </h3>
+            <ul className="space-y-2">
               {RENTING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2.5">
+                <li key={idx} className="flex items-start gap-2 text-sm">
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{pro.detail}</p>
-                  </div>
+                  <span>{pro.text}</span>
                 </li>
               ))}
             </ul>
-            
-            {/* Israel note inline */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium">Note:</span> Most Israeli rentals are 1-2 year contracts without renewal guarantees.
-              </p>
-            </div>
+          </Card>
+          
+          {/* Reality Checks for Internationals */}
+          <Card className="p-5">
+            <h3 className="font-semibold flex items-center gap-2 mb-3">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              Reality Checks (Israel)
+            </h3>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <span>Rental contracts typically 1-2 years, no renewal guarantee</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <span>Non-residents require 50% down payment minimum</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <span>Olim get tax benefits for 7 years after Aliyah</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <span>Prices linked to shekel; currency risk for USD/EUR earners</span>
+              </li>
+            </ul>
           </Card>
         </div>
       </div>
       
-      {/* Detailed Breakdown - Collapsible */}
-      <Collapsible>
-        <Card className="p-6 border">
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Detailed {timeHorizon}-Year Breakdown</h3>
-              <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
-            </div>
-            <p className="text-sm text-muted-foreground text-left mt-1">See complete cost breakdown for both paths</p>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <div className="grid md:grid-cols-2 gap-6 pt-6">
-              {/* Buying Breakdown */}
-              <div className="space-y-2.5 text-sm p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-3">If You Buy</h4>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Down payment</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.downPayment))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Purchase Tax</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.purchaseTax))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Legal & agent fees</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.lawyerFee + calculations.agentFee))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Mortgage payments</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalMortgagePayments))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Running costs</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalOwnershipCosts))}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between">
-                  <span>Total spent</span>
-                  <span className="tabular-nums font-medium">₪{formatNumber(Math.round(calculations.totalBuyingCost))}</span>
-                </div>
-                <div className="flex justify-between text-success">
-                  <span>Appreciation gain</span>
-                  <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.appreciation))}</span>
-                </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-border">
-                  <span>Net equity</span>
-                  <span className="text-success tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</span>
-                </div>
-              </div>
-              
-              {/* Renting Breakdown */}
-              <div className="space-y-2.5 text-sm p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-3">If You Rent</h4>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rent (Year 1)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}/mo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rent (Year {timeHorizon})</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.finalYearRent))}/mo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total housing cost</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalRentPaid))}</span>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cash kept (not spent on purchase)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalCashNotSpent))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment growth</span>
-                  <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.investmentGains))}</span>
-                </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-border">
-                  <span>Net position</span>
-                  <span className="tabular-nums">
-                    {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-      
-      {/* Navigation Cards */}
+      {/* Navigation & Feedback */}
       <div className="grid md:grid-cols-3 gap-4">
         <CTACard
           title="Calculate Your Mortgage"
@@ -1090,34 +1242,12 @@ export function RentVsBuyCalculator() {
         />
       </div>
       
-      {/* Feedback */}
       <div className="text-center">
-        <ToolFeedback 
-          toolName="rent-vs-buy-calculator" 
-          variant="inline" 
-        />
+        <ToolFeedback toolName="rent-vs-buy-calculator" variant="inline" />
       </div>
+      
+      {/* Disclaimer */}
+      <ToolDisclaimer text="Estimates only. Actual terms vary by lender, property, and residency status. Consult with local professionals for personalized advice." />
     </div>
-  );
-  
-  // Disclaimer
-  const disclaimer = (
-    <ToolDisclaimer 
-      text="This calculator provides estimates for educational purposes. Actual costs vary based on specific properties, lender terms, and market conditions. Consult with local professionals for personalized advice."
-    />
-  );
-  
-  return (
-    <ToolLayout
-      title="Rent vs Buy Calculator"
-      subtitle="Compare the true cost of renting versus buying in Israel—finances AND lifestyle"
-      icon={<Scale className="h-6 w-6" />}
-      headerActions={headerActions}
-      infoBanner={infoBanner}
-      leftColumn={leftColumn}
-      rightColumn={rightColumn}
-      bottomSection={bottomSection}
-      disclaimer={disclaimer}
-    />
   );
 }
