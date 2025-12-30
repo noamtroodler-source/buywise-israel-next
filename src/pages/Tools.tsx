@@ -83,6 +83,8 @@ export default function Tools() {
     const toolParam = searchParams.get('tool');
     if (toolParam && toolComponents[toolParam]) {
       setActiveTool(toolParam);
+    } else {
+      setActiveTool(null);
     }
   }, [searchParams]);
 
