@@ -1052,36 +1052,6 @@ function AffordabilityCalculatorContent() {
         </div>
       )}
 
-      {/* Improvement Recommendations */}
-      {calculations.improvements.length > 0 && (
-        <div className="mt-5 pt-5 border-t border-border">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Ways to Increase Your Budget</span>
-          </div>
-          <div className="space-y-2">
-            {calculations.improvements.slice(0, 3).map((improvement, idx) => (
-              <div 
-                key={idx}
-                className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-transparent border border-primary/10 hover:border-primary/20 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
-                    <improvement.icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium">{improvement.title}</p>
-                      <span className="text-xs font-semibold text-green-600 shrink-0">{improvement.impact}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{improvement.description}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </Card>
   );
 
