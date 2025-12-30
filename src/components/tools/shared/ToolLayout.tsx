@@ -80,16 +80,14 @@ export function ToolLayout({
       )}
 
       {/* Main Content - Two Column Layout */}
-      <div className="grid lg:grid-cols-[1fr,420px] gap-8 items-stretch">
+      <div className="grid lg:grid-cols-[1fr,420px] gap-8 items-start">
         {/* Left Column - Inputs */}
         <div className="flex flex-col order-2 lg:order-1">
-          <div className="flex-1 flex flex-col [&>*]:flex-1">
-            {leftColumn}
-          </div>
+          {leftColumn}
         </div>
 
-        {/* Right Column - Results (Sticky on desktop, first on mobile) */}
-        <div className="lg:sticky lg:top-4 lg:self-start space-y-4 order-1 lg:order-2">
+        {/* Right Column - Results */}
+        <div className="space-y-4 order-1 lg:order-2">
           {rightColumn}
         </div>
       </div>
