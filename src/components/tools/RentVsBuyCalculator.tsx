@@ -13,6 +13,15 @@ import {
   Clock,
   PiggyBank,
   Calculator,
+  CheckCircle2,
+  XCircle,
+  Lightbulb,
+  ArrowRight,
+  Users,
+  Shield,
+  Paintbrush,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -63,6 +72,14 @@ const ROOM_OPTIONS = [
   { value: '5', label: '5+ Rooms' },
 ];
 
+// Estimated sqm per room count
+const SQM_BY_ROOMS: Record<string, number> = {
+  '2': 50,
+  '3': 75,
+  '4': 100,
+  '5': 130,
+};
+
 function formatNumber(num: number): string {
   return num.toLocaleString('en-IL');
 }
@@ -85,6 +102,21 @@ function InfoTooltip({ content }: { content: string }) {
     </TooltipProvider>
   );
 }
+
+// Pros and Cons data
+const BUYING_PROS = [
+  { icon: TrendingUp, text: 'Build equity over time', detail: 'Every payment increases ownership stake' },
+  { icon: Shield, text: 'Protection from rising rents', detail: 'Lock in housing costs with fixed mortgage' },
+  { icon: Paintbrush, text: 'Freedom to renovate', detail: 'Customize your home as you wish' },
+  { icon: Home, text: 'Long-term stability', detail: 'Create roots and community connections' },
+];
+
+const RENTING_PROS = [
+  { icon: Building2, text: 'More space for same budget', detail: 'Renters typically get 20-40% more sqm' },
+  { icon: RefreshCw, text: 'Flexibility to relocate', detail: 'Move easily for career or lifestyle changes' },
+  { icon: Wallet, text: 'Lower upfront capital', detail: 'No down payment or purchase costs' },
+  { icon: Users, text: 'Landlord handles repairs', detail: 'Major maintenance is not your responsibility' },
+];
 
 export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
@@ -173,11 +205,7 @@ export function RentVsBuyCalculator() {
   
   const suggestedPrice = useMemo(() => {
     if (!cityMetrics?.average_price_sqm) return null;
-    // Estimate size based on rooms
-    const estimatedSize = parseInt(rooms) === 2 ? 50 
-      : parseInt(rooms) === 3 ? 75 
-      : parseInt(rooms) === 4 ? 100 
-      : 130;
+    const estimatedSize = SQM_BY_ROOMS[rooms] || 75;
     return Math.round(cityMetrics.average_price_sqm * estimatedSize);
   }, [cityMetrics, rooms]);
   
@@ -319,7 +347,6 @@ export function RentVsBuyCalculator() {
     // Calculate break-even year
     let breakEvenYear = null;
     for (let year = 1; year <= 30; year++) {
-      // Calculate cumulative costs/gains for each scenario at this year
       const propertyValueAtYear = price * Math.pow(1 + appreciationRate / 100, year);
       const remainingLoanAtYear = year >= years ? 0 : loanAmount * 
         (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, year * 12)) /
@@ -340,6 +367,26 @@ export function RentVsBuyCalculator() {
         break;
       }
     }
+    
+    // Lifestyle comparison calculations
+    const avgPricePerSqm = cityMetrics?.average_price_sqm || (price / (SQM_BY_ROOMS[rooms] || 75));
+    
+    // What size property can you BUY with this budget?
+    const buyingSqm = price / avgPricePerSqm;
+    
+    // What size property can you RENT with the same monthly budget?
+    // If buying costs X/month, what size rental does X/month get you?
+    const rentPricePerSqm = rent / (SQM_BY_ROOMS[rooms] || 75); // estimate rent per sqm
+    const rentingSqmForBuyingBudget = totalMonthlyBuying / rentPricePerSqm;
+    
+    // Space advantage for renters
+    const spaceAdvantagePercent = Math.round(((rentingSqmForBuyingBudget - buyingSqm) / buyingSqm) * 100);
+    
+    // Monthly equity being built (principal portion of mortgage - rough estimate)
+    const monthlyEquityBuilding = monthlyMortgage * 0.3; // Rough estimate, early years are mostly interest
+    
+    // Price to rent ratio (common metric - lower favors buying)
+    const priceToRentRatio = price / (rent * 12);
     
     return {
       // Core comparison
@@ -381,8 +428,15 @@ export function RentVsBuyCalculator() {
       monthlyVaadBayit,
       monthlyInsurance,
       monthlyMaintenance,
+      
+      // Lifestyle comparison
+      buyingSqm,
+      rentingSqmForBuyingBudget,
+      spaceAdvantagePercent,
+      monthlyEquityBuilding,
+      priceToRentRatio,
     };
-  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics]);
+  }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
   
   // Header actions
   const headerActions = (
@@ -401,7 +455,7 @@ export function RentVsBuyCalculator() {
   // Info banner
   const infoBanner = (
     <InfoBanner>
-      Israeli rental contracts typically allow 3-5% annual increases. Property appreciation has historically outpaced many Western markets.
+      In Israel, renters often get more space for the same monthly budget—but buyers build long-term wealth. This tool helps you see the full picture.
     </InfoBanner>
   );
   
@@ -684,7 +738,7 @@ export function RentVsBuyCalculator() {
     <div className="space-y-4">
       {calculations ? (
         <>
-          {/* Hero Result */}
+          {/* Enhanced Hero Verdict */}
           <Card className={cn(
             "p-6 border-2",
             calculations.buyingIsBetter 
@@ -703,7 +757,7 @@ export function RentVsBuyCalculator() {
               )}
               <div>
                 <h3 className="text-lg font-bold">
-                  {calculations.buyingIsBetter ? 'Buying is Better' : 'Renting May Be Better'}
+                  {calculations.buyingIsBetter ? 'Buying Wins Financially' : 'Renting May Be Smarter'}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   Over {timeHorizon} years
@@ -717,30 +771,124 @@ export function RentVsBuyCalculator() {
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {calculations.buyingIsBetter 
-                  ? 'More wealth from buying'
-                  : 'Saved by continuing to rent'}
+                  ? 'more wealth from buying'
+                  : 'saved by continuing to rent'}
               </p>
             </div>
             
-            {/* Break-even */}
-            {calculations.breakEvenYear && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
-                    Break-even point
-                  </span>
-                  <span className="font-semibold">
-                    ~{calculations.breakEvenYear} years
+            {/* Quick Insights */}
+            <div className="mt-4 pt-4 border-t border-border space-y-2">
+              {/* Break-even insight */}
+              {calculations.breakEvenYear && (
+                <div className="flex items-start gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    {calculations.breakEvenYear <= timeHorizon ? (
+                      <>Break-even in <span className="font-medium text-foreground">~{calculations.breakEvenYear} years</span></>
+                    ) : (
+                      <>Break-even is beyond your {timeHorizon}-year horizon</>
+                    )}
                   </span>
                 </div>
-                {calculations.breakEvenYear > timeHorizon && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Break-even is beyond your {timeHorizon}-year horizon
-                  </p>
+              )}
+              
+              {/* Space insight */}
+              {calculations.spaceAdvantagePercent > 0 && (
+                <div className="flex items-start gap-2 text-sm">
+                  <Building2 className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground">
+                    Renters get <span className="font-medium text-foreground">~{calculations.spaceAdvantagePercent}% more space</span> for the same monthly cost
+                  </span>
+                </div>
+              )}
+              
+              {/* Equity insight */}
+              <div className="flex items-start gap-2 text-sm">
+                <Lightbulb className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <span className="text-muted-foreground">
+                  Buying builds <span className="font-medium text-foreground">~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))}/mo</span> in equity
+                </span>
+              </div>
+            </div>
+            
+            {/* Who is this best for */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Best For</p>
+              <div className="flex flex-wrap gap-2">
+                {calculations.buyingIsBetter ? (
+                  <>
+                    <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success">Long-term residents</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">Stability seekers</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">Flexibility seekers</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">Short-term stays</span>
+                  </>
                 )}
               </div>
+            </div>
+          </Card>
+          
+          {/* What Can You Get? - Lifestyle Comparison */}
+          <Card className="p-6">
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <Scale className="h-4 w-4 text-primary" />
+              What Can You Get?
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* If You Buy */}
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Home className="h-5 w-5 text-primary" />
+                  <p className="font-medium">If You Buy</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold">{rooms} Rooms</div>
+                  <div className="text-sm text-muted-foreground">~{Math.round(calculations.buyingSqm)} sqm</div>
+                  <div className="text-xs text-muted-foreground">
+                    ₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}/mo
+                  </div>
+                </div>
+              </div>
+              
+              {/* If You Rent (same budget) */}
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2 mb-3">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <p className="font-medium">If You Rent</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-2xl font-bold">{parseInt(rooms) + 1}+ Rooms</div>
+                  <div className="text-sm text-muted-foreground">~{Math.round(calculations.rentingSqmForBuyingBudget)} sqm</div>
+                  <div className="text-xs text-muted-foreground">
+                    Same ₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}/mo
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Space advantage bar */}
+            {calculations.spaceAdvantagePercent > 0 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                  <span>Renter space advantage</span>
+                  <span className="font-medium text-primary">+{calculations.spaceAdvantagePercent}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${Math.min(calculations.spaceAdvantagePercent, 100)}%` }}
+                  />
+                </div>
+              </div>
             )}
+            
+            <p className="text-xs text-muted-foreground mt-3">
+              <AlertCircle className="h-3 w-3 inline mr-1" />
+              For the same monthly budget, renters typically get more living space
+            </p>
           </Card>
           
           {/* Monthly Comparison */}
@@ -783,54 +931,16 @@ export function RentVsBuyCalculator() {
                 </div>
               </div>
             </div>
-          </Card>
-          
-          {/* Wealth Projection */}
-          <Card className="p-6">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              After {timeHorizon} Years
-            </h4>
             
-            <div className="space-y-4">
-              {/* If Buying */}
-              <div className="p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    If You Buy
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Property value</span>
-                    <span className="text-foreground">₪{formatNumber(Math.round(calculations.futurePropertyValue))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Equity built</span>
-                    <span className="text-success">₪{formatNumber(Math.round(calculations.equityBuilt))}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* If Renting */}
-              <div className="p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    If You Rent
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <div className="flex justify-between">
-                    <span>Total rent paid</span>
-                    <span className="text-destructive">-₪{formatNumber(Math.round(calculations.totalRentPaid))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Savings invested</span>
-                    <span className="text-success">₪{formatNumber(Math.round(calculations.investedSavingsValue))}</span>
-                  </div>
-                </div>
+            {/* Quick insight */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-start gap-2 text-sm">
+                <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <span className="text-muted-foreground">
+                  Monthly cost is ₪{formatNumber(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))} 
+                  {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? ' more' : ' less'} if you buy, 
+                  but you're building equity
+                </span>
               </div>
             </div>
           </Card>
@@ -841,7 +951,7 @@ export function RentVsBuyCalculator() {
             <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p className="font-medium">Enter property price and rent</p>
             <p className="text-sm mt-1">
-              We'll calculate the true cost of each option
+              We'll show you the full picture—money AND lifestyle
             </p>
           </div>
         </Card>
@@ -849,9 +959,94 @@ export function RentVsBuyCalculator() {
     </div>
   );
   
-  // Bottom section - Cost breakdowns and navigation
+  // Bottom section - Pros/Cons, Cost breakdowns and navigation
   const bottomSection = calculations && (
     <div className="space-y-8">
+      {/* Pros & Cons Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Scale className="h-5 w-5 text-primary" />
+          Beyond the Numbers: What to Consider
+        </h3>
+        
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Buying Pros */}
+          <Card className={cn(
+            "p-6",
+            calculations.buyingIsBetter && "ring-2 ring-success/30"
+          )}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-full bg-success/10">
+                <Home className="h-5 w-5 text-success" />
+              </div>
+              <h4 className="font-semibold">Why Buy</h4>
+              {calculations.buyingIsBetter && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success ml-auto">Recommended</span>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              {BUYING_PROS.map((pro, idx) => (
+                <div key={idx} className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-md bg-success/10 shrink-0">
+                    <pro.icon className="h-4 w-4 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{pro.text}</p>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+          
+          {/* Renting Pros */}
+          <Card className={cn(
+            "p-6",
+            !calculations.buyingIsBetter && "ring-2 ring-primary/30"
+          )}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 rounded-full bg-primary/10">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <h4 className="font-semibold">Why Rent</h4>
+              {!calculations.buyingIsBetter && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary ml-auto">Recommended</span>
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              {RENTING_PROS.map((pro, idx) => (
+                <div key={idx} className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-md bg-primary/10 shrink-0">
+                    <pro.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{pro.text}</p>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+        
+        {/* Israel-specific callout */}
+        <Card className="p-4 mt-4 bg-muted/30 border-dashed">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Israel-Specific Considerations</p>
+              <ul className="space-y-1 list-disc list-inside text-xs">
+                <li><span className="font-medium">Unprotected Rentals:</span> Most Israeli leases are 1-2 years, landlords can choose not to renew</li>
+                <li><span className="font-medium">Renovation Culture:</span> Buyers often renovate before move-in; renters cannot make structural changes</li>
+                <li><span className="font-medium">Exit Costs:</span> Selling incurs agent fees (2%) and potential capital gains tax; leaving a rental has minimal cost</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      </div>
+      
       {/* Detailed Breakdown */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Buying Breakdown */}
@@ -960,7 +1155,7 @@ export function RentVsBuyCalculator() {
           title="Full Purchase Costs"
           description="See all one-time and closing costs"
           buttonText="True Cost Calculator"
-          buttonLink="/tools?tool=truecost"
+          buttonLink="/tools?tool=totalcost"
           icon={<Calculator className="h-5 w-5" />}
           variant="muted"
         />
@@ -994,7 +1189,7 @@ export function RentVsBuyCalculator() {
   return (
     <ToolLayout
       title="Rent vs Buy Calculator"
-      subtitle="Compare the true cost of renting versus buying in Israel over time"
+      subtitle="Compare the true cost of renting versus buying in Israel—finances AND lifestyle"
       icon={<Scale className="h-6 w-6" />}
       headerActions={headerActions}
       infoBanner={infoBanner}
