@@ -39,6 +39,7 @@ import {
 import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
+import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
@@ -106,6 +107,45 @@ export function TrueCostCalculator() {
   const [propertyPrice, setPropertyPrice] = useState('2500000');
   const [propertySize, setPropertySize] = useState('85');
   const [selectedCity, setSelectedCity] = useState('');
+  
+  // Fetch canonical metrics for selected city
+  const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
+  
+  // Calculate suggested price based on city metrics
+  const suggestedPrice = useMemo(() => {
+    if (!cityMetrics || !propertySize) return null;
+    const size = parseFormattedNumber(propertySize);
+    if (size <= 0) return null;
+    
+    // Use average price per sqm if available
+    if (cityMetrics.average_price_sqm) {
+      return Math.round(size * cityMetrics.average_price_sqm);
+    }
+    return null;
+  }, [cityMetrics, propertySize]);
+  
+  // Calculate price comparison to median
+  const priceComparison = useMemo(() => {
+    if (!cityMetrics?.median_apartment_price || !propertyPrice) return null;
+    const price = parseFormattedNumber(propertyPrice);
+    if (price <= 0) return null;
+    
+    const median = cityMetrics.median_apartment_price;
+    const diff = ((price - median) / median) * 100;
+    return {
+      percentDiff: Math.abs(diff).toFixed(0),
+      isAbove: diff > 0,
+      isBelow: diff < 0,
+      median,
+    };
+  }, [cityMetrics?.median_apartment_price, propertyPrice]);
+  
+  const handleUseEstimate = useCallback(() => {
+    if (suggestedPrice) {
+      setPropertyPrice(String(suggestedPrice));
+    }
+  }, [suggestedPrice]);
+
   
   // Buyer profile
   const [buyerCategory, setBuyerCategory] = useState<BuyerCategory>('first_time');
@@ -445,6 +485,38 @@ export function TrueCostCalculator() {
                   className="h-11 pl-8"
                 />
               </div>
+              
+              {/* City-based price intelligence */}
+              {selectedCity && cityMetrics && (
+                <div className="space-y-1.5">
+                  {/* Suggested price based on city avg/sqm */}
+                  {suggestedPrice && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5">
+                      <span>
+                        {cities?.find(c => c.slug === selectedCity)?.name} avg: ₪{formatNumber(cityMetrics.average_price_sqm || 0)}/sqm → ₪{formatNumber(suggestedPrice)}
+                      </span>
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="h-auto p-0 text-xs text-primary hover:no-underline"
+                        onClick={handleUseEstimate}
+                      >
+                        Use estimate
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Price comparison to median */}
+                  {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
+                    <p className={cn(
+                      "text-xs px-2.5",
+                      priceComparison.isAbove ? "text-amber-600" : "text-emerald-600"
+                    )}>
+                      {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median (₪{formatNumber(priceComparison.median)})
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4">
