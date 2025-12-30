@@ -739,171 +739,158 @@ export function RentVsBuyCalculator() {
     </div>
   );
   
-  // Right column - Results
+  // Right column - Results (One unified card with internal sections)
   const rightColumn = (
-    <div className="space-y-6">
+    <div>
       {calculations ? (
-        <>
-          {/* Down Payment Validation Warning */}
+        <Card className="overflow-hidden">
+          {/* Down Payment Warning Banner - inside card */}
           {parseFloat(downPaymentPercent) < MIN_DOWN_PAYMENT[buyerType] && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
-              <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-warning-foreground">Down payment below bank requirements</p>
-                <p className="text-muted-foreground mt-1">
-                  Israeli banks require minimum {MIN_DOWN_PAYMENT[buyerType]}% down for {buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'}. 
-                  You've entered {downPaymentPercent}%.
-                </p>
-              </div>
+            <div className="flex items-center gap-2 px-6 py-3 bg-warning/10 border-b border-warning/20">
+              <AlertCircle className="h-4 w-4 text-warning shrink-0" />
+              <p className="text-xs text-warning-foreground">
+                Banks require min {MIN_DOWN_PAYMENT[buyerType]}% down for {buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'} — you entered {downPaymentPercent}%
+              </p>
             </div>
           )}
           
-          {/* Card 1: Monthly Reality Check - What users want first */}
-          <Card className="p-6 border">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-primary" />
-              Your Monthly Comparison
-            </h4>
-            
-            {/* Buying Monthly Costs */}
-            <div className="space-y-3 mb-4">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">If You Buy This Property</div>
-              <div className="space-y-1.5 pl-3 border-l-2 border-primary/30">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Mortgage (P&I)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMortgage))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Arnona (property tax)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyArnona))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Va'ad Bayit + Insurance</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Maintenance reserve</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMaintenance))}</span>
-                </div>
-                <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border/50">
-                  <span>Total monthly</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</span>
-                </div>
+          {/* HERO: Monthly Comparison */}
+          <div className="p-6">
+            <div className="flex items-center gap-4 justify-center mb-4">
+              <div className="text-center">
+                <p className="text-3xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to buy</p>
+              </div>
+              <div className="text-muted-foreground text-sm font-medium">vs</div>
+              <div className="text-center">
+                <p className="text-3xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to rent</p>
               </div>
             </div>
             
-            {/* Renting Monthly Cost */}
-            <div className="space-y-3 mb-4">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                If You Rent Similar ({rooms} rooms{selectedCity ? ` in ${cities?.find(c => c.slug === selectedCity)?.name}` : ''})
-              </div>
-              <div className="space-y-1.5 pl-3 border-l-2 border-muted-foreground/30">
-                <div className="flex justify-between font-semibold text-sm">
-                  <span>Monthly rent</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Monthly Difference Highlight */}
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium">Monthly difference</span>
-                <span className="text-lg font-bold tabular-nums">
+            {/* Monthly difference badge */}
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm">
+                <span className="font-medium tabular-nums">
                   ₪{formatNumber(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
-                  <span className="text-xs text-muted-foreground font-normal ml-1">
-                    {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
-                  </span>
+                </span>
+                <span className="text-muted-foreground">
+                  {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
                 </span>
               </div>
-              
-              {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
-                <p className="text-xs text-muted-foreground">
-                  ~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} of your mortgage builds equity you keep. 
-                  Effective "extra cost" is closer to ₪{formatNumber(Math.round(calculations.totalMonthlyBuying - calculations.currentMonthlyRent - calculations.monthlyEquityBuilding))}/mo.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Buying actually costs less monthly AND you build ₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} in equity each month.
-                </p>
-              )}
             </div>
-          </Card>
+          </div>
           
-          {/* Card 2: The Long Game - Simplified Verdict */}
-          <Card className="p-6 border">
-            <h4 className="font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              After {timeHorizon} Years
-            </h4>
-            
-            {/* Net Wealth Comparison */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">If You Buy</p>
-                <p className="text-2xl font-bold text-foreground">₪{formatNumber(Math.round(calculations.equityBuilt))}</p>
-                <p className="text-xs text-muted-foreground">equity built</p>
+          {/* BREAKDOWN: Monthly cost details */}
+          <div className="px-6 py-5 border-t border-border bg-muted/20">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Buying costs */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Buying includes</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mortgage</span>
+                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMortgage))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Arnona</span>
+                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyArnona))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Va'ad + Ins.</span>
+                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Maintenance</span>
+                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMaintenance))}</span>
+                  </div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-muted/30 rounded-lg">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">If You Rent</p>
-                <p className="text-2xl font-bold text-foreground">
+              
+              {/* Renting */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                  Renting {rooms}rm{selectedCity ? ` · ${cities?.find(c => c.slug === selectedCity)?.name}` : ''}
+                </p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Rent</span>
+                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Equity insight */}
+            <div className="mt-4 pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">
+                {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
+                  <>~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} of your mortgage payment builds equity you keep.</>
+                ) : (
+                  <>Buying costs less monthly AND builds ₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} equity/mo.</>
+                )}
+              </p>
+            </div>
+          </div>
+          
+          {/* LONG GAME: After X Years */}
+          <div className="px-6 py-5 border-t border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <h4 className="font-semibold text-sm">After {timeHorizon} Years</h4>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="text-center p-3 bg-muted/40 rounded-lg">
+                <p className="text-xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">equity if you buy</p>
+              </div>
+              <div className="text-center p-3 bg-muted/40 rounded-lg">
+                <p className="text-xl font-bold tabular-nums">
                   {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
                 </p>
-                <p className="text-xs text-muted-foreground">net position</p>
+                <p className="text-xs text-muted-foreground mt-0.5">net if you rent</p>
               </div>
             </div>
             
-            {/* Wealth Difference */}
-            <div className="text-center py-3 px-4 rounded-lg bg-primary/5 border border-primary/20">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center text-sm">
+              <span className={calculations.buyingIsBetter ? 'text-success' : 'text-primary'}>
                 {calculations.buyingIsBetter 
-                  ? `Buying builds ₪${formatNumber(Math.round(calculations.wealthDifference))} more wealth`
-                  : `Renting saves ₪${formatNumber(Math.round(calculations.wealthDifference))} overall`}
-              </p>
+                  ? `Buying builds ₪${formatNumber(Math.round(calculations.wealthDifference))} more`
+                  : `Renting saves ₪${formatNumber(Math.round(calculations.wealthDifference))}`}
+              </span>
+              {calculations.breakEvenYear && (
+                <span className="text-muted-foreground ml-1">
+                  · break-even ~{calculations.breakEvenYear}yr
+                </span>
+              )}
             </div>
-            
-            {/* Break-even */}
-            {calculations.breakEvenYear && (
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                Buying breaks even at ~{calculations.breakEvenYear} years
-                {calculations.breakEvenYear > timeHorizon && ' (beyond your time horizon)'}
-              </p>
-            )}
-          </Card>
+          </div>
           
-          {/* Card 3: Key Insight - Dynamic personalized advice */}
-          <Card className="p-6 border bg-muted/30">
+          {/* KEY INSIGHT */}
+          <div className="px-6 py-5 border-t border-border bg-muted/30">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-primary/10">
-                <Lightbulb className="h-5 w-5 text-primary" />
+              <div className="p-1.5 rounded-full bg-primary/10 shrink-0">
+                <Lightbulb className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold mb-2">Key Insight</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {/* Dynamic insight based on user's specific numbers */}
-                  {calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon ? (
-                    // Buying makes sense financially
-                    timeHorizon >= 10 ? (
-                      `With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster than renting would.`
-                    ) : (
-                      `You reach break-even in ~${calculations.breakEvenYear} years. If you're confident you'll stay at least that long, buying is likely the stronger financial path.`
-                    )
-                  ) : calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon ? (
-                    // Renting makes more sense for this timeline
-                    `At ${timeHorizon} years, renting still comes out ahead financially. Consider buying if you plan to stay ${calculations.breakEvenYear}+ years, or if stability matters more than optimizing returns.`
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon ? (
+                  timeHorizon >= 10 ? (
+                    `With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster.`
                   ) : (
-                    // No break-even found (buying always better)
-                    calculations.buyingIsBetter ? (
-                      `Given your inputs, buying builds more wealth at every point. If you have the down payment, buying is likely the stronger financial choice.`
-                    ) : (
-                      `Renting provides financial flexibility here. You can invest your would-be down payment and still come out ahead over ${timeHorizon} years.`
-                    )
-                  )}
-                </p>
-              </div>
+                    `You reach break-even in ~${calculations.breakEvenYear} years. If staying that long, buying is likely the stronger path.`
+                  )
+                ) : calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon ? (
+                  `At ${timeHorizon} years, renting still wins financially. Consider buying if you'll stay ${calculations.breakEvenYear}+ years.`
+                ) : calculations.buyingIsBetter ? (
+                  `Given your inputs, buying builds more wealth at every point. Strong financial choice if you have the down payment.`
+                ) : (
+                  `Renting provides flexibility here. Invest your would-be down payment and still come out ahead over ${timeHorizon} years.`
+                )}
+              </p>
             </div>
-          </Card>
-        </>
+          </div>
+        </Card>
       ) : (
         <Card className="p-6">
           <div className="text-center py-8 text-muted-foreground">
@@ -920,77 +907,73 @@ export function RentVsBuyCalculator() {
   
   // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
   const bottomSection = calculations && (
-    <div className="space-y-10">
-      {/* Pros & Cons Section - Neutral, no recommendations */}
+    <div className="space-y-8">
+      {/* Pros & Cons Section - Cleaner without heavy cards */}
       <div>
-        <h3 className="text-lg font-semibold mb-6">Beyond the Numbers</h3>
+        <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
         
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Buying Pros - No conditional styling */}
-          <Card className="p-6 border border-l-4 border-l-muted-foreground/30">
-            <h4 className="font-semibold flex items-center gap-2 mb-4">
+        <div className="grid md:grid-cols-2 gap-5">
+          {/* Buying Pros */}
+          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
+            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
               <Home className="h-4 w-4 text-muted-foreground" />
               Why People Buy
             </h4>
             
-            <ul className="space-y-2.5">
+            <ul className="space-y-2">
               {BUYING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <li key={idx} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
                     <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{pro.detail}</p>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
                   </div>
                 </li>
               ))}
             </ul>
-          </Card>
+          </div>
           
-          {/* Renting Pros - No conditional styling */}
-          <Card className="p-6 border border-l-4 border-l-muted-foreground/30">
-            <h4 className="font-semibold flex items-center gap-2 mb-4">
+          {/* Renting Pros */}
+          <div className="p-5 rounded-lg bg-muted/30 border border-border/50">
+            <h4 className="font-medium flex items-center gap-2 mb-3 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground" />
               Why People Rent
             </h4>
             
-            <ul className="space-y-2.5">
+            <ul className="space-y-2">
               {RENTING_PROS.map((pro, idx) => (
-                <li key={idx} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                <li key={idx} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
                     <span className="text-sm">{pro.text}</span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{pro.detail}</p>
+                    <p className="text-xs text-muted-foreground">{pro.detail}</p>
                   </div>
                 </li>
               ))}
             </ul>
             
-            {/* Israel note inline */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium">Note:</span> Most Israeli rentals are 1-2 year contracts without renewal guarantees.
-              </p>
-            </div>
-          </Card>
+            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
+              <span className="font-medium">Note:</span> Most Israeli rentals are 1-2 year contracts.
+            </p>
+          </div>
         </div>
       </div>
       
-      {/* Detailed Breakdown - Collapsible */}
+      {/* Detailed Breakdown - Lighter styling, no heavy card */}
       <Collapsible>
-        <Card className="p-6 border">
-          <CollapsibleTrigger className="w-full">
+        <div className="rounded-lg border border-border/50 bg-muted/20">
+          <CollapsibleTrigger className="w-full px-5 py-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Detailed {timeHorizon}-Year Breakdown</h3>
-              <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+              <h3 className="text-sm font-medium">Detailed {timeHorizon}-Year Breakdown</h3>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
             </div>
-            <p className="text-sm text-muted-foreground text-left mt-1">See complete cost breakdown for both paths</p>
           </CollapsibleTrigger>
           
           <CollapsibleContent>
-            <div className="grid md:grid-cols-2 gap-6 pt-6">
+            <div className="grid md:grid-cols-2 gap-5 px-5 pb-5">
               {/* Buying Breakdown */}
-              <div className="space-y-2.5 text-sm p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-3">If You Buy</h4>
+              <div className="space-y-2 text-sm">
+                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-2">If You Buy</h4>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Down payment</span>
                   <span className="tabular-nums">₪{formatNumber(Math.round(calculations.downPayment))}</span>
@@ -1020,15 +1003,15 @@ export function RentVsBuyCalculator() {
                   <span>Appreciation gain</span>
                   <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.appreciation))}</span>
                 </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-border">
+                <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net equity</span>
                   <span className="text-success tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</span>
                 </div>
               </div>
               
               {/* Renting Breakdown */}
-              <div className="space-y-2.5 text-sm p-4 bg-muted/30 rounded-lg">
-                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-3">If You Rent</h4>
+              <div className="space-y-2 text-sm">
+                <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-2">If You Rent</h4>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Rent (Year 1)</span>
                   <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}/mo</span>
@@ -1043,14 +1026,14 @@ export function RentVsBuyCalculator() {
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cash kept (not spent on purchase)</span>
+                  <span className="text-muted-foreground">Cash kept</span>
                   <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Investment growth</span>
                   <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.investmentGains))}</span>
                 </div>
-                <div className="flex justify-between font-semibold pt-2 border-t border-border">
+                <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net position</span>
                   <span className="tabular-nums">
                     {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
@@ -1059,7 +1042,7 @@ export function RentVsBuyCalculator() {
               </div>
             </div>
           </CollapsibleContent>
-        </Card>
+        </div>
       </Collapsible>
       
       {/* Navigation Cards */}
