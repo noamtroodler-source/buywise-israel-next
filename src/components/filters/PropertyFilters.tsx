@@ -17,6 +17,9 @@ interface PropertyFiltersProps {
   onFiltersChange: (filters: PropertyFiltersType) => void;
   listingType: 'for_sale' | 'for_rent' | 'projects';
   onCreateAlert?: () => void;
+  showSoldToggle?: boolean;
+  isSoldView?: boolean;
+  onSoldToggle?: (showSold: boolean) => void;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -60,7 +63,7 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert }: PropertyFiltersProps) {
+export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [roomsOpen, setRoomsOpen] = useState(false);
@@ -127,6 +130,34 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   return (
     <TooltipProvider>
       <div className="flex flex-wrap gap-2 items-center">
+        {/* Active/Sold Toggle - Only shown on for_sale listings */}
+        {showSoldToggle && (
+          <div className="flex items-center rounded-full border border-border/60 bg-background shadow-sm overflow-hidden mr-1">
+            <button
+              className={cn(
+                "px-4 py-2.5 text-sm font-medium transition-all",
+                !isSoldView 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+              )}
+              onClick={() => onSoldToggle?.(false)}
+            >
+              Active
+            </button>
+            <button
+              className={cn(
+                "px-4 py-2.5 text-sm font-medium transition-all",
+                isSoldView 
+                  ? "bg-muted text-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+              )}
+              onClick={() => onSoldToggle?.(true)}
+            >
+              Sold
+            </button>
+          </div>
+        )}
+
         {/* City Filter */}
         <Popover open={cityOpen} onOpenChange={setCityOpen}>
           <PopoverTrigger asChild>
