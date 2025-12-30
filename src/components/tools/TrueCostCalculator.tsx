@@ -518,14 +518,17 @@ export function TrueCostCalculator() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="size" className="text-sm font-medium">
+                <Label htmlFor="size" className="flex items-center text-sm font-medium">
                   Size (sqm)
+                  <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                  <InfoTooltip content="Size helps estimate Arnona (property tax) based on city rates. Leave blank for a rough estimate — the property price drives most costs." />
                 </Label>
                 <Input
                   id="size"
                   type="number"
                   value={propertySize}
                   onChange={(e) => setPropertySize(e.target.value)}
+                  placeholder="e.g., 85"
                   min={20}
                   max={500}
                   className="h-11"
