@@ -1,31 +1,45 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Calculator, Home, Wallet, Info, Save, PiggyBank, FileText, Building2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Calculator, 
+  Home, 
+  TrendingUp, 
+  Info, 
+  Save, 
+  Lightbulb, 
+  MapPin,
+  ChevronDown,
+  RotateCcw,
+  Building2,
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { ToolLayout } from './shared/ToolLayout';
-import { ToolDisclaimer } from './shared/ToolDisclaimer';
-import { ToolFeedback } from './shared/ToolFeedback';
-import { CTACard } from './shared/CTACard';
-import { CashBreakdownTable } from './shared/CashBreakdownTable';
+import { Link } from 'react-router-dom';
+import { 
+  ToolLayout, 
+  ToolDisclaimer, 
+  ToolFeedback, 
+  CashBreakdownTable,
+} from './shared';
 import { 
   calculateOlehEligibility,
-  type BuyerType 
 } from '@/lib/calculations/purchaseTax';
 import { 
   calculateMonthlyCosts,
   calculateNewConstructionLinkage 
 } from '@/lib/calculations/purchaseCosts';
-import { useBuyerProfile, calculatePurchaseTax as calcTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_true_cost_inputs';
@@ -65,26 +79,28 @@ function parseFormattedNumber(str: string): number {
   return Number(str.replace(/,/g, '')) || 0;
 }
 
-function InfoTooltip({ children, content }: { children: React.ReactNode; content: string }) {
+function InfoTooltip({ content }: { content: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex items-center gap-1 cursor-help">
-          {children}
-          <Info className="h-3.5 w-3.5 text-muted-foreground" />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-sm">
-        {content}
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help ml-1 inline-block" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-sm">
+          {content}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
 export function TrueCostCalculator() {
-  const navigate = useNavigate();
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
+  const { currency } = usePreferences();
+  
+  // Format price helper
+  const formatPrice = (value: number) => `₪${formatNumber(value)}`;
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2500000');
@@ -198,7 +214,6 @@ export function TrueCostCalculator() {
   const calculations = useMemo(() => {
     const price = parseFormattedNumber(propertyPrice);
     const size = parseFormattedNumber(propertySize);
-    const loan = parseFormattedNumber(loanAmount);
     const months = parseInt(constructionMonths) || 24;
 
     // Purchase tax calculation
@@ -263,6 +278,7 @@ export function TrueCostCalculator() {
       totalOneTime,
       allCostsAbovePrice,
       percentAbovePrice,
+      cityName: cities?.find(c => c.slug === selectedCity)?.name,
     };
   }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, cities]);
 
@@ -279,18 +295,18 @@ export function TrueCostCalculator() {
     }> = [
       {
         label: 'Property Price',
-        value: `₪${formatNumber(calculations.price)}`,
+        value: formatPrice(calculations.price),
       },
       { isSeparator: true, label: '', value: '' },
       {
         label: 'Purchase Tax (מס רכישה)',
-        value: `₪${formatNumber(Math.round(calculations.purchaseTax))}`,
+        value: formatPrice(Math.round(calculations.purchaseTax)),
         percentage: calculations.effectiveTaxRate.toFixed(2) + '%',
         tooltip: `Based on ${getBuyerCategoryLabel(buyerCategory)} tax brackets`,
       },
       {
         label: 'Lawyer Fees (שכ"ט עו"ד)',
-        value: `₪${formatNumber(Math.round(calculations.lawyerFee))}`,
+        value: formatPrice(Math.round(calculations.lawyerFee)),
         tooltip: '0.5% of property price + VAT',
       },
     ];
@@ -299,7 +315,7 @@ export function TrueCostCalculator() {
     if (calculations.agentFee > 0) {
       items.push({
         label: 'Agent Commission (עמלת תיווך)',
-        value: `₪${formatNumber(Math.round(calculations.agentFee))}`,
+        value: formatPrice(Math.round(calculations.agentFee)),
         tooltip: '2% of property price + VAT',
       });
     }
@@ -309,7 +325,7 @@ export function TrueCostCalculator() {
       if (calculations.developerLawyerFee > 0) {
         items.push({
           label: 'Developer Lawyer (עו"ד קבלן)',
-          value: `₪${formatNumber(Math.round(calculations.developerLawyerFee))}`,
+          value: formatPrice(Math.round(calculations.developerLawyerFee)),
           tooltip: "Legal fees paid to developer's attorney",
         });
       }
@@ -317,7 +333,7 @@ export function TrueCostCalculator() {
       if (calculations.bankGuaranteeFee > 0) {
         items.push({
           label: 'Bank Guarantee (ערבות בנקאית)',
-          value: `₪${formatNumber(Math.round(calculations.bankGuaranteeFee))}`,
+          value: formatPrice(Math.round(calculations.bankGuaranteeFee)),
           tooltip: 'Required guarantee for off-plan purchases',
         });
       }
@@ -325,7 +341,7 @@ export function TrueCostCalculator() {
       if (calculations.madadCost > 0) {
         items.push({
           label: 'Index Linkage (הצמדה למדד)',
-          value: `₪${formatNumber(Math.round(calculations.madadCost))}`,
+          value: formatPrice(Math.round(calculations.madadCost)),
           tooltip: 'Estimated price increase linked to construction cost index',
           highlight: 'negative',
         });
@@ -336,7 +352,7 @@ export function TrueCostCalculator() {
     if (calculations.mortgageCosts > 0) {
       items.push({
         label: 'Mortgage Fees (Appraisal, Registration)',
-        value: `₪${formatNumber(Math.round(calculations.mortgageCosts))}`,
+        value: formatPrice(Math.round(calculations.mortgageCosts)),
         tooltip: 'Includes appraisal, registration, and bank fees',
       });
     }
@@ -344,21 +360,21 @@ export function TrueCostCalculator() {
     // Registration
     items.push({
       label: 'Tabu Registration (רישום בטאבו)',
-      value: `₪${formatNumber(calculations.tabuRegistration)}`,
+      value: formatPrice(calculations.tabuRegistration),
     });
 
     // Optional extras
     if (calculations.movingCost > 0) {
       items.push({
         label: 'Moving Costs',
-        value: `₪${formatNumber(calculations.movingCost)}`,
+        value: formatPrice(calculations.movingCost),
       });
     }
 
     if (calculations.furnitureCost > 0) {
       items.push({
         label: `Furniture (${furnitureLevel})`,
-        value: `₪${formatNumber(calculations.furnitureCost)}`,
+        value: formatPrice(calculations.furnitureCost),
       });
     }
 
@@ -368,12 +384,12 @@ export function TrueCostCalculator() {
     // Total
     items.push({
       label: 'Total One-Time Costs',
-      value: `₪${formatNumber(Math.round(calculations.totalOneTime))}`,
+      value: formatPrice(Math.round(calculations.totalOneTime)),
       isTotal: true,
     });
 
     return items;
-  }, [calculations, buyerCategory, isNewConstruction, furnitureLevel]);
+  }, [calculations, buyerCategory, isNewConstruction, furnitureLevel, formatPrice]);
 
   // Monthly costs breakdown
   const monthlyItems = useMemo(() => {
@@ -381,351 +397,422 @@ export function TrueCostCalculator() {
     return [
       {
         label: 'Arnona (ארנונה)',
-        value: `₪${formatNumber(Math.round(calculations.monthlyCosts.arnona))}`,
+        value: formatPrice(Math.round(calculations.monthlyCosts.arnona)),
         tooltip: selectedCity ? 'Based on selected city rates' : 'Average estimate - select city for accuracy',
       },
       {
         label: "Va'ad Bayit (ועד בית)",
-        value: `₪${formatNumber(Math.round(calculations.monthlyCosts.vaadBayit))}`,
+        value: formatPrice(Math.round(calculations.monthlyCosts.vaadBayit)),
         tooltip: 'Building maintenance committee fees',
       },
       {
         label: 'Home Insurance',
-        value: `₪${formatNumber(insuranceEstimate)}`,
+        value: formatPrice(insuranceEstimate),
       },
       { isSeparator: true, label: '', value: '' },
       {
         label: 'Est. Monthly Total',
-        value: `₪${formatNumber(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + insuranceEstimate))}`,
+        value: formatPrice(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + insuranceEstimate)),
         isTotal: true,
       },
     ];
-  }, [calculations.monthlyCosts, selectedCity]);
+  }, [calculations.monthlyCosts, selectedCity, formatPrice]);
 
-  const headerActions = (
-    <Button variant="outline" size="sm" onClick={handleSave} className="gap-2">
-      <Save className="h-4 w-4" />
-      <span className="hidden sm:inline">Save</span>
-    </Button>
+  // Left column - inputs
+  const leftColumn = (
+    <Card className="p-6 shadow-sm">
+      <div className="space-y-6">
+        {/* Property Details Section */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <Home className="h-4 w-4 text-primary" />
+            Property Details
+          </h3>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="price" className="flex items-center text-sm font-medium">
+                Property Price
+                <InfoTooltip content="Enter the full purchase price in Israeli Shekels" />
+              </Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                <Input
+                  id="price"
+                  type="text"
+                  value={formatNumber(parseFormattedNumber(propertyPrice))}
+                  onChange={(e) => setPropertyPrice(e.target.value.replace(/[^\d]/g, ''))}
+                  className="h-11 pl-8"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="size" className="text-sm font-medium">
+                  Size (sqm)
+                </Label>
+                <Input
+                  id="size"
+                  type="number"
+                  value={propertySize}
+                  onChange={(e) => setPropertySize(e.target.value)}
+                  min={20}
+                  max={500}
+                  className="h-11"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="city" className="text-sm font-medium">
+                  City
+                </Label>
+                <Select value={selectedCity} onValueChange={setSelectedCity}>
+                  <SelectTrigger id="city" className="h-11">
+                    <SelectValue placeholder="Select city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities?.map((city) => (
+                      <SelectItem key={city.slug} value={city.slug}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Buyer Profile Section */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Buyer Profile
+          </h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="buyerType" className="flex items-center text-sm font-medium">
+              Buyer Type
+              <InfoTooltip content="Your buyer status determines your purchase tax rate. First-time buyers and Olim pay significantly less." />
+            </Label>
+            <Select value={buyerCategory} onValueChange={(v) => setBuyerCategory(v as BuyerCategory)}>
+              <SelectTrigger id="buyerType" className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="first_time">First-Time Buyer (דירה יחידה)</SelectItem>
+                <SelectItem value="oleh">Oleh Hadash (עולה חדש)</SelectItem>
+                <SelectItem value="additional">Additional Property (דירה נוספת)</SelectItem>
+                <SelectItem value="non_resident">Foreign Resident (תושב חוץ)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {buyerCategory === 'oleh' && (
+            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+              <Label htmlFor="aliyahYear" className="text-sm font-medium">
+                Year of Aliyah
+              </Label>
+              <Input
+                id="aliyahYear"
+                type="number"
+                value={aliyahYear}
+                onChange={(e) => setAliyahYear(e.target.value)}
+                placeholder="e.g., 2022"
+                min={2000}
+                max={new Date().getFullYear()}
+                className="h-11"
+              />
+              {aliyahYear && !calculateOlehEligibility(parseInt(aliyahYear)) && (
+                <p className="text-xs text-destructive">
+                  Oleh benefits expire 7 years after Aliyah
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Purchase Type Section */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            Purchase Type
+          </h3>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="newConstruction" className="text-sm font-medium">
+                New Construction
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Includes developer fees & index linkage
+              </p>
+            </div>
+            <Switch
+              id="newConstruction"
+              checked={isNewConstruction}
+              onCheckedChange={setIsNewConstruction}
+            />
+          </div>
+
+          {isNewConstruction && (
+            <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+              <div className="space-y-2">
+                <Label htmlFor="constructionMonths" className="flex items-center text-sm font-medium">
+                  Construction Period (months)
+                  <InfoTooltip content="Estimated time until delivery. Affects index linkage calculation." />
+                </Label>
+                <Input
+                  id="constructionMonths"
+                  type="number"
+                  value={constructionMonths}
+                  onChange={(e) => setConstructionMonths(e.target.value)}
+                  min={6}
+                  max={60}
+                  className="h-11"
+                />
+              </div>
+              <Alert className="bg-amber-500/10 border-amber-500/30">
+                <Building2 className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+                  New construction prices are linked to the building cost index. The final price may be 3-8% higher.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Advanced Options */}
+        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <span>Advanced Options</span>
+            <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="space-y-4 pt-4">
+            {!isNewConstruction && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Include Agent Fee</Label>
+                  <p className="text-xs text-muted-foreground">2% + VAT commission</p>
+                </div>
+                <Switch
+                  checked={includeAgentFee}
+                  onCheckedChange={setIncludeAgentFee}
+                />
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Include Mortgage Costs</Label>
+                  <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
+                </div>
+                <Switch
+                  checked={includeMortgageCosts}
+                  onCheckedChange={setIncludeMortgageCosts}
+                />
+              </div>
+              
+              {includeMortgageCosts && (
+                <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                  <Label htmlFor="loanAmount" className="text-sm font-medium">
+                    Loan Amount
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                    <Input
+                      id="loanAmount"
+                      type="text"
+                      value={formatNumber(parseFormattedNumber(loanAmount))}
+                      onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
+                      className="h-11 pl-8"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Moving Costs</Label>
+                <p className="text-xs text-muted-foreground">~{formatPrice(MOVING_COST_ESTIMATE)} estimate</p>
+              </div>
+              <Switch
+                checked={includeMoving}
+                onCheckedChange={setIncludeMoving}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Include Furniture</Label>
+                  <p className="text-xs text-muted-foreground">Furnishing your new home</p>
+                </div>
+                <Switch
+                  checked={includeFurniture}
+                  onCheckedChange={setIncludeFurniture}
+                />
+              </div>
+              
+              {includeFurniture && (
+                <div className="pl-4 border-l-2 border-primary/20">
+                  <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="basic">Basic ({formatPrice(FURNITURE_COSTS.basic)})</SelectItem>
+                      <SelectItem value="standard">Standard ({formatPrice(FURNITURE_COSTS.standard)})</SelectItem>
+                      <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Reset Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground gap-1.5"
+            onClick={handleReset}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset to defaults
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+
+  // Right column - results
+  const rightColumn = (
+    <Card className="p-6 shadow-sm border-t-4 border-t-primary">
+      <div className="space-y-6">
+        {/* Hero Result */}
+        <div className="text-center pb-5 border-b border-border">
+          <p className="text-sm text-muted-foreground mb-1">Total One-Time Costs</p>
+          <p className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
+            {formatPrice(Math.round(calculations.totalOneTime))}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            +{formatPrice(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above property price
+          </p>
+        </div>
+
+        {/* Tax Savings Alert */}
+        {calculations.taxSavings > 0 && buyerCategory !== 'additional' && buyerCategory !== 'non_resident' && (
+          <Alert className="bg-green-500/10 border-green-500/30">
+            <Lightbulb className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700 dark:text-green-400">
+              As a {getBuyerCategoryLabel(buyerCategory).toLowerCase()}, you save{' '}
+              <span className="font-semibold">{formatPrice(Math.round(calculations.taxSavings))}</span>{' '}
+              on purchase tax compared to investor rates.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Cost Breakdown */}
+        <div>
+          <h4 className="font-semibold text-foreground mb-3">Cost Breakdown</h4>
+          <CashBreakdownTable items={breakdownItems} />
+        </div>
+
+        <Separator />
+
+        {/* Monthly Costs */}
+        <div>
+          <h4 className="font-semibold text-foreground mb-1">Estimated Monthly Costs</h4>
+          <p className="text-xs text-muted-foreground mb-3">
+            {calculations.cityName ? `Based on ${calculations.cityName} averages` : 'Select a city for accurate estimates'}
+          </p>
+          <CashBreakdownTable items={monthlyItems} />
+        </div>
+      </div>
+    </Card>
+  );
+
+  // Bottom section - navigation cards
+  const bottomSection = (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Link 
+          to="/tools?tool=mortgage"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Plan Your Financing</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Calculate monthly mortgage payments
+          </p>
+        </Link>
+
+        <Link 
+          to="/tools?tool=affordability"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Check Affordability</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            See your maximum budget
+          </p>
+        </Link>
+
+        <Link 
+          to="/listings"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Browse Properties</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Find properties in your range
+          </p>
+        </Link>
+      </div>
+
+      <ToolFeedback toolName="True Cost Calculator" variant="inline" />
+    </div>
   );
 
   return (
     <ToolLayout
       title="True Cost Calculator"
       subtitle="See the complete cost of buying property in Israel — beyond just the price"
-      icon={<Calculator className="h-6 w-6" />}
-      headerActions={headerActions}
-      leftColumn={
-        <Card className="border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Home className="h-5 w-5 text-primary" />
-              Property & Buyer Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Property Details */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="price">Property Price</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
-                  <Input
-                    id="price"
-                    type="text"
-                    value={formatNumber(parseFormattedNumber(propertyPrice))}
-                    onChange={(e) => setPropertyPrice(e.target.value.replace(/[^\d]/g, ''))}
-                    className="pl-8"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="size">Size (sqm)</Label>
-                  <Input
-                    id="size"
-                    type="number"
-                    value={propertySize}
-                    onChange={(e) => setPropertySize(e.target.value)}
-                    min={20}
-                    max={500}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City (for Arnona)</Label>
-                  <Select value={selectedCity} onValueChange={setSelectedCity}>
-                    <SelectTrigger id="city">
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.map((city) => (
-                        <SelectItem key={city.slug} value={city.slug}>
-                          {city.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Buyer Profile */}
-            <div className="space-y-4 pt-4 border-t">
-              <div className="space-y-2">
-                <Label htmlFor="buyerType">
-                  <InfoTooltip content="Your buyer status determines your purchase tax rate. First-time buyers and Olim pay significantly less.">
-                    Buyer Type
-                  </InfoTooltip>
-                </Label>
-                <Select value={buyerCategory} onValueChange={(v) => setBuyerCategory(v as BuyerCategory)}>
-                  <SelectTrigger id="buyerType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="first_time">First-Time Buyer (דירה יחידה)</SelectItem>
-                    <SelectItem value="oleh">Oleh Hadash (עולה חדש)</SelectItem>
-                    <SelectItem value="additional">Additional Property (דירה נוספת)</SelectItem>
-                    <SelectItem value="non_resident">Foreign Resident (תושב חוץ)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {buyerCategory === 'oleh' && (
-                <div className="space-y-2">
-                  <Label htmlFor="aliyahYear">Year of Aliyah</Label>
-                  <Input
-                    id="aliyahYear"
-                    type="number"
-                    value={aliyahYear}
-                    onChange={(e) => setAliyahYear(e.target.value)}
-                    placeholder="e.g., 2022"
-                    min={2000}
-                    max={new Date().getFullYear()}
-                  />
-                  {aliyahYear && !calculateOlehEligibility(parseInt(aliyahYear)) && (
-                    <p className="text-xs text-destructive">
-                      Oleh benefits expire 7 years after Aliyah
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Purchase Type */}
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="newConstruction" className="flex-1">
-                  <InfoTooltip content="New construction (off-plan) purchases include additional costs like index linkage and developer attorney fees.">
-                    New Construction
-                  </InfoTooltip>
-                </Label>
-                <Switch
-                  id="newConstruction"
-                  checked={isNewConstruction}
-                  onCheckedChange={setIsNewConstruction}
-                />
-              </div>
-
-              {isNewConstruction && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="constructionMonths">Construction Period (months)</Label>
-                    <Input
-                      id="constructionMonths"
-                      type="number"
-                      value={constructionMonths}
-                      onChange={(e) => setConstructionMonths(e.target.value)}
-                      min={6}
-                      max={60}
-                    />
-                  </div>
-                  <Alert className="bg-warning/10 border-warning/20">
-                    <Building2 className="h-4 w-4 text-warning-foreground" />
-                    <AlertDescription className="text-sm">
-                      New construction prices are linked to the building cost index (מדד תשומות הבנייה). 
-                      The final price may be 3-8% higher than the contract price.
-                    </AlertDescription>
-                  </Alert>
-                </>
-              )}
-            </div>
-
-            {/* Advanced Options */}
-            <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen} className="pt-4 border-t">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
-                  <span className="font-medium">Advanced Options</span>
-                  <span className="text-muted-foreground text-sm">
-                    {advancedOpen ? '−' : '+'}
-                  </span>
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 pt-4">
-                {!isNewConstruction && (
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="agentFee">
-                      <InfoTooltip content="Agent commission is typically 2% + VAT for resale properties.">
-                        Include Agent Fee
-                      </InfoTooltip>
-                    </Label>
-                    <Switch
-                      id="agentFee"
-                      checked={includeAgentFee}
-                      onCheckedChange={setIncludeAgentFee}
-                    />
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="mortgageCosts">
-                    <InfoTooltip content="Includes appraisal, mortgage registration, and bank fees.">
-                      Include Mortgage Costs
-                    </InfoTooltip>
-                  </Label>
-                  <Switch
-                    id="mortgageCosts"
-                    checked={includeMortgageCosts}
-                    onCheckedChange={setIncludeMortgageCosts}
-                  />
-                </div>
-
-                {includeMortgageCosts && (
-                  <div className="space-y-2">
-                    <Label htmlFor="loanAmount">Loan Amount</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
-                      <Input
-                        id="loanAmount"
-                        type="text"
-                        value={formatNumber(parseFormattedNumber(loanAmount))}
-                        onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="moving">Include Moving Costs</Label>
-                  <Switch
-                    id="moving"
-                    checked={includeMoving}
-                    onCheckedChange={setIncludeMoving}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="furniture">Include Furniture</Label>
-                  <Switch
-                    id="furniture"
-                    checked={includeFurniture}
-                    onCheckedChange={setIncludeFurniture}
-                  />
-                </div>
-
-                {includeFurniture && (
-                  <div className="space-y-2">
-                    <Label htmlFor="furnitureLevel">Furniture Level</Label>
-                    <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
-                      <SelectTrigger id="furnitureLevel">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="basic">Basic (~₪30,000)</SelectItem>
-                        <SelectItem value="standard">Standard (~₪60,000)</SelectItem>
-                        <SelectItem value="premium">Premium (~₪120,000)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <Button variant="outline" size="sm" onClick={handleReset} className="w-full">
-                  Reset to Defaults
-                </Button>
-              </CollapsibleContent>
-            </Collapsible>
-          </CardContent>
-        </Card>
+      icon={<Calculator className="h-6 w-6 text-primary" />}
+      headerActions={
+        <Button variant="outline" size="sm" onClick={handleSave} className="gap-1.5">
+          <Save className="h-4 w-4" />
+          <span className="hidden sm:inline">Save</span>
+        </Button>
       }
-      rightColumn={
-        <div className="space-y-4">
-          {/* Hero Result */}
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-            <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground mb-1">Total One-Time Costs</p>
-              <p className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                ₪{formatNumber(Math.round(calculations.totalOneTime))}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                +₪{formatNumber(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above property price
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Tax Savings Alert */}
-          {calculations.taxSavings > 0 && buyerCategory !== 'additional' && buyerCategory !== 'non_resident' && (
-            <Alert className="bg-success/10 border-success/20">
-              <PiggyBank className="h-4 w-4 text-success" />
-              <AlertDescription className="text-sm">
-                As a {getBuyerCategoryLabel(buyerCategory).toLowerCase()}, you save{' '}
-                <span className="font-semibold text-success">₪{formatNumber(Math.round(calculations.taxSavings))}</span>{' '}
-                on purchase tax compared to investor rates.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Cost Breakdown */}
-          <CashBreakdownTable 
-            title="One-Time Costs (עלויות חד-פעמיות)"
-            items={breakdownItems} 
-          />
-
-          {/* Monthly Costs */}
-          <CashBreakdownTable 
-            title="Estimated Monthly Costs (עלויות חודשיות)"
-            items={monthlyItems} 
-          />
-          {!selectedCity && (
-            <p className="text-xs text-muted-foreground text-center -mt-2">
-              Select a city above for accurate Arnona estimates
-            </p>
-          )}
-        </div>
-      }
-      bottomSection={
-        <div className="space-y-8">
-          {/* Navigation Cards */}
-          <div className="grid sm:grid-cols-3 gap-4">
-            <CTACard
-              title="Plan Your Financing"
-              description="Calculate monthly mortgage payments"
-              icon={<Calculator className="h-5 w-5" />}
-              buttonText="Open Calculator"
-              buttonLink="/tools?tool=mortgage"
-            />
-            <CTACard
-              title="Check Your Budget"
-              description="See what you can afford"
-              icon={<Wallet className="h-5 w-5" />}
-              buttonText="Check Affordability"
-              buttonLink="/tools?tool=affordability"
-            />
-            <CTACard
-              title="Browse Properties"
-              description="Find your next home"
-              icon={<Home className="h-5 w-5" />}
-              buttonText="View Listings"
-              buttonLink="/listings"
-            />
-          </div>
-
-          {/* Feedback */}
-          <div className="flex justify-center">
-            <ToolFeedback toolName="True Cost Calculator" variant="inline" />
-          </div>
-        </div>
-      }
+      leftColumn={leftColumn}
+      rightColumn={rightColumn}
+      bottomSection={bottomSection}
       disclaimer={
         <ToolDisclaimer 
           text="These estimates are based on current market rates and may vary. Consult with a lawyer and accountant for precise figures. Tax brackets are updated annually by the Israel Tax Authority."
@@ -734,3 +821,5 @@ export function TrueCostCalculator() {
     />
   );
 }
+
+export default TrueCostCalculator;
