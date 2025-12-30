@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
-  MapPinned, Clock, Hammer, ClipboardList, ArrowRight, ArrowLeft
+  MapPinned, Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalculator';
 import { TrueCostCalculator } from '@/components/tools/TrueCostCalculator';
 import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
-import { RealEstateTimeMachine } from '@/components/tools/RealEstateTimeMachine';
+import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 
 interface Tool {
   id: string;
@@ -28,14 +28,11 @@ const tools: Tool[] = [
   { id: 'affordability', label: 'Affordability Calculator', description: 'Calculate your maximum affordable home price based on income, savings, and Israeli mortgage rules', icon: Wallet, category: 'calculator' },
   { id: 'investment', label: 'Investment Return Calculator', description: 'Calculate potential returns, cash flow, and ROI on investment properties in Israel', icon: TrendingUp, category: 'calculator' },
   { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare the true cost of renting versus buying property in Israel over time', icon: Scale, category: 'calculator' },
-  { id: 'timemachine', label: 'Real Estate Time Machine', description: 'Explore how Israeli real estate has historically performed by area and time', icon: Clock, category: 'calculator' },
   { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs for Israeli properties including materials, labor, and permits', icon: Hammer, category: 'calculator' },
   { id: 'neighborhood', label: 'Neighborhood Match', description: 'Find the perfect Israeli neighborhood based on your lifestyle preferences', icon: MapPinned, category: 'discovery' },
   { id: 'workshop', label: 'Find Your Place Workshop', description: 'Discover what truly matters for your Israel home before you start searching', icon: Compass, category: 'discovery' },
   { id: 'documents', label: 'Document Checklist', description: 'Track all required documents for your Israel property purchase with status updates', icon: ClipboardList, category: 'discovery' },
 ];
-
-import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 
 const toolComponents: Record<string, React.ComponentType> = {
   mortgage: MortgageCalculator,
@@ -43,7 +40,6 @@ const toolComponents: Record<string, React.ComponentType> = {
   affordability: AffordabilityCalculator,
   investment: InvestmentReturnCalculator,
   rentvsbuy: RentVsBuyCalculator,
-  timemachine: RealEstateTimeMachine,
   renovation: () => <ToolPlaceholder toolName="Renovation Cost Estimator" />,
   neighborhood: () => <ToolPlaceholder toolName="Neighborhood Match" />,
   workshop: () => <ToolPlaceholder toolName="Find Your Place Workshop" />,
