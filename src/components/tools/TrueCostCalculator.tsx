@@ -7,7 +7,6 @@ import {
   Save, 
   Lightbulb, 
   MapPin,
-  ChevronDown,
   RotateCcw,
   Building2,
 } from 'lucide-react';
@@ -19,7 +18,6 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -156,7 +154,6 @@ export function TrueCostCalculator() {
   const [constructionMonths, setConstructionMonths] = useState('24');
   
   // Advanced options
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [includeAgentFee, setIncludeAgentFee] = useState(true);
   const [includeMortgageCosts, setIncludeMortgageCosts] = useState(false);
   const [loanAmount, setLoanAmount] = useState('1500000');
@@ -661,98 +658,95 @@ export function TrueCostCalculator() {
 
         <Separator />
 
-        {/* Advanced Options */}
-        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <span>Advanced Options</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", advancedOpen && "rotate-180")} />
-          </CollapsibleTrigger>
+        {/* Advanced Options - Always Open */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-foreground text-sm">
+            Advanced Options
+          </h3>
           
-          <CollapsibleContent className="space-y-4 pt-4">
-            {!isNewConstruction && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Include Agent Fee</Label>
-                  <p className="text-xs text-muted-foreground">2% + VAT commission</p>
-                </div>
-                <Switch
-                  checked={includeAgentFee}
-                  onCheckedChange={setIncludeAgentFee}
-                />
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Include Mortgage Costs</Label>
-                  <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
-                </div>
-                <Switch
-                  checked={includeMortgageCosts}
-                  onCheckedChange={setIncludeMortgageCosts}
-                />
-              </div>
-              
-              {includeMortgageCosts && (
-                <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                  <Label htmlFor="loanAmount" className="text-sm font-medium">
-                    Loan Amount
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
-                    <Input
-                      id="loanAmount"
-                      type="text"
-                      value={formatNumber(parseFormattedNumber(loanAmount))}
-                      onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                      className="h-11 pl-8"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
+          {!isNewConstruction && (
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-medium">Include Moving Costs</Label>
-                <p className="text-xs text-muted-foreground">~{formatPrice(MOVING_COST_ESTIMATE)} estimate</p>
+                <Label className="text-sm font-medium">Include Agent Fee</Label>
+                <p className="text-xs text-muted-foreground">2% + VAT commission</p>
               </div>
               <Switch
-                checked={includeMoving}
-                onCheckedChange={setIncludeMoving}
+                checked={includeAgentFee}
+                onCheckedChange={setIncludeAgentFee}
               />
             </div>
+          )}
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium">Include Furniture</Label>
-                  <p className="text-xs text-muted-foreground">Furnishing your new home</p>
-                </div>
-                <Switch
-                  checked={includeFurniture}
-                  onCheckedChange={setIncludeFurniture}
-                />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Mortgage Costs</Label>
+                <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
               </div>
-              
-              {includeFurniture && (
-                <div className="pl-4 border-l-2 border-primary/20">
-                  <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="basic">Basic ({formatPrice(FURNITURE_COSTS.basic)})</SelectItem>
-                      <SelectItem value="standard">Standard ({formatPrice(FURNITURE_COSTS.standard)})</SelectItem>
-                      <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <Switch
+                checked={includeMortgageCosts}
+                onCheckedChange={setIncludeMortgageCosts}
+              />
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+            
+            {includeMortgageCosts && (
+              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                <Label htmlFor="loanAmount" className="text-sm font-medium">
+                  Loan Amount
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                  <Input
+                    id="loanAmount"
+                    type="text"
+                    value={formatNumber(parseFormattedNumber(loanAmount))}
+                    onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
+                    className="h-11 pl-8"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-sm font-medium">Include Moving Costs</Label>
+              <p className="text-xs text-muted-foreground">~{formatPrice(MOVING_COST_ESTIMATE)} estimate</p>
+            </div>
+            <Switch
+              checked={includeMoving}
+              onCheckedChange={setIncludeMoving}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Furniture</Label>
+                <p className="text-xs text-muted-foreground">Furnishing your new home</p>
+              </div>
+              <Switch
+                checked={includeFurniture}
+                onCheckedChange={setIncludeFurniture}
+              />
+            </div>
+            
+            {includeFurniture && (
+              <div className="pl-4 border-l-2 border-primary/20">
+                <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Basic ({formatPrice(FURNITURE_COSTS.basic)})</SelectItem>
+                    <SelectItem value="standard">Standard ({formatPrice(FURNITURE_COSTS.standard)})</SelectItem>
+                    <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Reset Button */}
         <div className="flex justify-center pt-2">
@@ -772,8 +766,8 @@ export function TrueCostCalculator() {
 
   // Right column - results
   const rightColumn = (
-    <Card className="p-6 shadow-sm border-t-4 border-t-primary">
-      <div className="space-y-6">
+    <Card className="p-6 shadow-sm border-t-4 border-t-primary flex flex-col h-full">
+      <div className="space-y-6 flex flex-col flex-1">
         {/* Hero Result */}
         <div className="text-center pb-5 border-b border-border">
           <p className="text-sm text-muted-foreground mb-1">Total One-Time Costs</p>
@@ -805,8 +799,8 @@ export function TrueCostCalculator() {
 
         <Separator />
 
-        {/* Monthly Costs */}
-        <div>
+        {/* Monthly Costs - flex-1 to push to bottom and fill remaining space */}
+        <div className="flex-1 flex flex-col justify-end">
           <h4 className="font-semibold text-foreground mb-1">Estimated Monthly Costs</h4>
           <p className="text-xs text-muted-foreground mb-3">
             {calculations.cityName ? `Based on ${calculations.cityName} averages` : 'Select a city for accurate estimates'}
