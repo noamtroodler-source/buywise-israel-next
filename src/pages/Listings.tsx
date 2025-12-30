@@ -8,14 +8,20 @@ import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/d
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { CompareBar } from '@/components/property/CompareBar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { History } from 'lucide-react';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showAlertDialog, setShowAlertDialog] = useState(false);
 
   // Get listing status from URL, default to for_sale
-  const listingStatus = (searchParams.get('status') as ListingStatus) || 'for_sale';
-  const isRentals = listingStatus === 'for_rent';
+  const urlStatus = searchParams.get('status') || 'for_sale';
+  const isRentals = urlStatus === 'for_rent';
+  const isSoldView = urlStatus === 'sold';
+  
+  // Determine the actual listing_status for the query
+  const listingStatus: ListingStatus = isSoldView ? 'sold' : (urlStatus as ListingStatus);
 
   const [filters, setFilters] = useState<PropertyFiltersType>(() => {
     const initialFilters: PropertyFiltersType = {
@@ -60,7 +66,7 @@ export default function Listings() {
     
     // Update URL params
     const params = new URLSearchParams();
-    params.set('status', listingStatus);
+    params.set('status', urlStatus);
     if (updatedFilters.city) params.set('city', updatedFilters.city);
     if (updatedFilters.property_type) params.set('type', updatedFilters.property_type);
     if (updatedFilters.min_price) params.set('min_price', String(updatedFilters.min_price));
@@ -70,10 +76,32 @@ export default function Listings() {
     setSearchParams(params);
   };
 
-  const pageTitle = isRentals ? 'Long-term Rentals in Israel' : 'Properties for Sale in Israel';
-  const pageDescription = isRentals 
-    ? 'Find long-term rental apartments and homes across Israel. Search by city, price, rooms, and more.'
-    : 'Browse resell properties for sale in Israel. Find apartments, houses, penthouses and more.';
+  const handleSoldToggle = (showSold: boolean) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('status', showSold ? 'sold' : 'for_sale');
+    setSearchParams(params);
+  };
+
+  const getPageContent = () => {
+    if (isRentals) {
+      return {
+        title: 'Long-term Rentals',
+        subtitle: 'Find your perfect rental home in Israel with our comprehensive listings.',
+      };
+    }
+    if (isSoldView) {
+      return {
+        title: 'Recently Sold Properties',
+        subtitle: 'Research past sales to understand market prices and what\'s realistic in your target areas.',
+      };
+    }
+    return {
+      title: 'Properties for Sale',
+      subtitle: 'Discover resell properties across Israel - from modern apartments to family homes.',
+    };
+  };
+
+  const pageContent = getPageContent();
 
   return (
     <Layout>
@@ -81,16 +109,19 @@ export default function Listings() {
       <div className="container py-8">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">
-            {isRentals ? 'Long-term Rentals' : 'Properties for Sale'}
-          </h1>
-          <p className="text-muted-foreground">
-            {isRentals 
-              ? 'Find your perfect rental home in Israel with our comprehensive listings.'
-              : 'Discover resell properties across Israel - from modern apartments to family homes.'
-            }
-          </p>
+          <h1 className="text-3xl font-bold mb-2">{pageContent.title}</h1>
+          <p className="text-muted-foreground">{pageContent.subtitle}</p>
         </div>
+
+        {/* Sold View Info Banner */}
+        {isSoldView && (
+          <Alert className="mb-6 border-muted bg-muted/30">
+            <History className="h-4 w-4" />
+            <AlertDescription>
+              Viewing recently sold properties. Prices shown are final sale prices — use this to research realistic market values.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <div className="mb-8">
@@ -99,6 +130,9 @@ export default function Listings() {
             onFiltersChange={handleFiltersChange}
             listingType={isRentals ? 'for_rent' : 'for_sale'}
             onCreateAlert={() => setShowAlertDialog(true)}
+            showSoldToggle={!isRentals}
+            isSoldView={isSoldView}
+            onSoldToggle={handleSoldToggle}
           />
         </div>
 
