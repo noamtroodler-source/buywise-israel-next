@@ -6,9 +6,12 @@ interface CityMarketCTAProps {
   cityName: string;
 }
 
-// Convert city name to URL slug (e.g., "Tel Aviv" -> "tel-aviv")
+// Convert city name to URL slug (e.g., "Tel Aviv" -> "tel-aviv", "Modi'in" -> "modiin")
 const cityToSlug = (city: string): string => {
-  return city.toLowerCase().replace(/\s+/g, '-');
+  return city
+    .toLowerCase()
+    .replace(/['']/g, '')      // Remove apostrophes (Modi'in -> modiin, Ra'anana -> raanana)
+    .replace(/\s+/g, '-');     // Spaces to hyphens
 };
 
 export function CityMarketCTA({ cityName }: CityMarketCTAProps) {
