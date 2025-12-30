@@ -1,6 +1,6 @@
 // Affordability Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Wallet, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, Calculator, Building2, AlertTriangle } from 'lucide-react';
+import { Wallet, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, Calculator, Building2, AlertTriangle, TrendingUp, Lightbulb, Users, PiggyBank, CreditCard } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -233,6 +233,104 @@ function AffordabilityCalculatorContent() {
       ? Math.max(0, (maxPropertyByLoan - maxPropertyByDownPayment) * ((100 - maxLTV) / 100))
       : 0;
 
+    // Income breakdown for visualization
+    const totalStatedIncome = monthlyIncome + spouseIncome + selfEmployedIncome + 
+      (hasForeignIncome ? foreignIncomeAmount * ({ USD: 3.6, EUR: 3.9, GBP: 4.5 }[foreignCurrency] || 3.6) : 0);
+    
+    const incomeBreakdown: Record<string, { stated: number; effective: number; label: string; discountReason?: string }> = {
+      salary: { stated: monthlyIncome, effective: monthlyIncome, label: 'Primary Salary' },
+      spouse: { stated: spouseIncome, effective: spouseIncome, label: 'Spouse Income' },
+      selfEmployed: { 
+        stated: selfEmployedIncome, 
+        effective: selfEmployedIncome * (selfEmployedMultiplier / 100), 
+        label: 'Self-Employment',
+        discountReason: selfEmployedIncome > 0 ? `Banks count ${selfEmployedMultiplier}%` : undefined
+      },
+      foreign: { 
+        stated: hasForeignIncome ? foreignIncomeAmount * ({ USD: 3.6, EUR: 3.9, GBP: 4.5 }[foreignCurrency] || 3.6) : 0, 
+        effective: foreignIncomeContribution, 
+        label: 'Foreign Income',
+        discountReason: foreignDiscountInfo ? `Banks count ${Math.round(foreignDiscountInfo.discountRate * 100)}%` : undefined
+      },
+    };
+
+    // Calculate improvement suggestions
+    const improvements = [];
+    
+    // Suggestion: Add spouse income
+    if (spouseIncome === 0) {
+      const additionalSpouseIncome = 15000;
+      const newEffective = effectiveMonthlyIncome + additionalSpouseIncome;
+      const newMaxPayment = Math.max(0, (newEffective - existingDebts) * PTI_LIMIT);
+      const newMaxLoan = newMaxPayment > 0 && monthlyRate > 0
+        ? (newMaxPayment * (Math.pow(1 + monthlyRate, numPayments) - 1)) / 
+          (monthlyRate * Math.pow(1 + monthlyRate, numPayments))
+        : 0;
+      const newMaxProperty = Math.min(newMaxLoan / (maxLTV / 100), (downPaymentSaved + additionalSpouseIncome * 12) / ((100 - maxLTV) / 100));
+      const increase = newMaxProperty - maxPropertyPrice;
+      if (increase > 50000) {
+        improvements.push({
+          icon: Users,
+          title: 'Add a co-borrower',
+          description: `Joint application with ₪${formatNumber(additionalSpouseIncome)}/mo income`,
+          impact: `+${formatNumber(Math.round(increase))} max budget`,
+          impactType: 'positive' as const
+        });
+      }
+    }
+
+    // Suggestion: Pay off debts
+    if (existingDebts > 0) {
+      const newMaxPayment = Math.max(0, effectiveMonthlyIncome * PTI_LIMIT);
+      const newMaxLoan = newMaxPayment > 0 && monthlyRate > 0
+        ? (newMaxPayment * (Math.pow(1 + monthlyRate, numPayments) - 1)) / 
+          (monthlyRate * Math.pow(1 + monthlyRate, numPayments))
+        : 0;
+      const newMaxProperty = Math.min(newMaxLoan / (maxLTV / 100), downPaymentSaved / ((100 - maxLTV) / 100));
+      const increase = newMaxProperty - maxPropertyPrice;
+      if (increase > 30000) {
+        improvements.push({
+          icon: CreditCard,
+          title: 'Pay off existing debts',
+          description: `Eliminate ₪${formatNumber(existingDebts)}/mo in monthly payments`,
+          impact: `+${formatNumber(Math.round(increase))} max budget`,
+          impactType: 'positive' as const
+        });
+      }
+    }
+
+    // Suggestion: Save more for down payment (if down payment limited)
+    if (limitingFactor === 'down_payment' && additionalDownPaymentNeeded > 0) {
+      improvements.push({
+        icon: PiggyBank,
+        title: 'Increase down payment',
+        description: `Save ₪${formatNumber(Math.round(additionalDownPaymentNeeded))} more`,
+        impact: `Unlock ₪${formatNumber(Math.round(additionalDownPaymentNeeded / ((100 - maxLTV) / 100)))} property`,
+        impactType: 'positive' as const
+      });
+    }
+
+    // Suggestion: Extend loan term (if not already at 30)
+    if (loanTerm < 30 && limitingFactor === 'income') {
+      const newNumPayments = 30 * 12;
+      const newMaxPayment = safePayment;
+      const newMaxLoan = newMaxPayment > 0 && monthlyRate > 0
+        ? (newMaxPayment * (Math.pow(1 + monthlyRate, newNumPayments) - 1)) / 
+          (monthlyRate * Math.pow(1 + monthlyRate, newNumPayments))
+        : 0;
+      const newMaxProperty = Math.min(newMaxLoan / (maxLTV / 100), downPaymentSaved / ((100 - maxLTV) / 100));
+      const increase = newMaxProperty - maxPropertyPrice;
+      if (increase > 50000) {
+        improvements.push({
+          icon: TrendingUp,
+          title: 'Extend loan to 30 years',
+          description: 'Lower monthly payments, more buying power',
+          impact: `+${formatNumber(Math.round(increase))} max budget`,
+          impactType: 'positive' as const
+        });
+      }
+    }
+
     return {
       effectiveMonthlyIncome,
       safePayment,
@@ -247,6 +345,9 @@ function AffordabilityCalculatorContent() {
       additionalDownPaymentNeeded,
       foreignDiscountInfo,
       selfEmployedMultiplier,
+      incomeBreakdown,
+      totalStatedIncome,
+      improvements,
     };
   }, [monthlyIncome, spouseIncome, selfEmployedIncome, selfEmployedYears, 
       existingDebts, downPaymentSaved, interestRate, loanTerm, maxLTV,
@@ -636,7 +737,8 @@ function AffordabilityCalculatorContent() {
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-sm">
-                Include all monthly debt payments: car loans, credit cards, student loans, etc. These reduce your available income for mortgage payments.
+                <p className="font-medium mb-1">התחייבויות קיימות - Existing Obligations</p>
+                <p>Include: car loans, credit card minimums, student loans, child support, other mortgages. Banks check all debts when calculating your 40% PTI limit.</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -663,7 +765,8 @@ function AffordabilityCalculatorContent() {
                 <Info className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-sm">
-                Your available cash for down payment (הון עצמי). This is a major factor in determining your maximum property price.
+                <p className="font-medium mb-1">הון עצמי (Hon Atzmi) - Equity/Down Payment</p>
+                <p>Banks accept: savings, gifts from family, inheritance, or proceeds from selling another property. Gift letters may be required for family contributions.</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -755,31 +858,48 @@ function AffordabilityCalculatorContent() {
 
   // Right column - single combined results card
   const rightColumn = (
-    <Card className="p-6 shadow-sm">
+    <Card className="p-6 shadow-sm border-t-4 border-t-primary">
       {/* Hero Max Property Price */}
       <div className="text-center pb-5 border-b border-border">
         <p className="text-sm text-muted-foreground mb-1">Max Property Price</p>
-        <p className="text-5xl font-bold text-primary tracking-tight">
+        <p className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
           {formatCurrency(calculations.maxPropertyPrice)}
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          based on income & savings
+          based on Bank of Israel PTI limits
         </p>
       </div>
 
       {/* Affordability Score */}
       <div className="py-5 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">Affordability Score</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground">Affordability Score</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                Combines your PTI ratio and down payment cushion. Higher scores indicate more financial flexibility and easier mortgage approval.
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <span className={cn("text-lg font-bold", getScoreColor(calculations.affordabilityScore))}>
             {getScoreLabel(calculations.affordabilityScore)}
           </span>
         </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-2.5 bg-muted rounded-full overflow-hidden shadow-inner">
           <div 
-            className={cn("h-full transition-all duration-500", getScoreProgressColor(calculations.affordabilityScore))}
+            className={cn(
+              "h-full transition-all duration-500 rounded-full",
+              getScoreProgressColor(calculations.affordabilityScore)
+            )}
             style={{ width: `${calculations.affordabilityScore}%` }}
           />
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="text-xs text-muted-foreground">Challenging</span>
+          <span className="text-xs text-muted-foreground">Excellent</span>
         </div>
       </div>
 
@@ -793,7 +913,8 @@ function AffordabilityCalculatorContent() {
                 <Info className="h-3 w-3 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs text-sm">
-                Maximum payment at 40% PTI limit (Bank of Israel regulation). Lenders won't approve payments exceeding this.
+                <p className="font-medium mb-1">יחס החזר (Yachas Hechzer) - Payment-to-Income Ratio</p>
+                <p>Bank of Israel limits total debt payments to 40% of net income. This is your maximum safe mortgage payment within that limit.</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -854,11 +975,19 @@ function AffordabilityCalculatorContent() {
       </div>
 
       {/* Limiting Factor Alert */}
-      <Alert className="mt-5">
-        <Info className="h-4 w-4" />
+      <Alert className={cn(
+        "mt-5",
+        calculations.limitingFactor === 'income' 
+          ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30"
+          : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
+      )}>
+        <Info className={cn(
+          "h-4 w-4",
+          calculations.limitingFactor === 'income' ? "text-amber-600" : "text-blue-600"
+        )} />
         <AlertDescription className="text-sm">
           {calculations.limitingFactor === 'income' ? (
-            <>Your <strong>income</strong> is the limiting factor. Increase income or reduce debts to afford more.</>
+            <>Your <strong>income</strong> is the limiting factor. Banks calculate your max mortgage based on the 40% PTI rule.</>
           ) : (
             <>Your <strong>down payment</strong> is the limiting factor. 
               {calculations.additionalDownPaymentNeeded > 0 && (
@@ -868,6 +997,91 @@ function AffordabilityCalculatorContent() {
           )}
         </AlertDescription>
       </Alert>
+
+      {/* Income Breakdown Visualization */}
+      {(calculations.totalStatedIncome > 0) && (
+        <div className="mt-5 pt-5 border-t border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Wallet className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">How Banks See Your Income</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                Banks apply discounts to certain income types when calculating mortgage eligibility. This shows your stated vs. effective (qualifying) income.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="space-y-2">
+            {Object.entries(calculations.incomeBreakdown).map(([key, data]) => {
+              if (data.stated === 0) return null;
+              const percentage = data.effective / data.stated * 100;
+              const isDiscounted = percentage < 100;
+              return (
+                <div key={key} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">{data.label}</span>
+                    <span className={cn(
+                      "font-medium",
+                      isDiscounted ? "text-amber-600" : "text-green-600"
+                    )}>
+                      {isDiscounted ? `${Math.round(percentage)}% counted` : '100% counted'}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={cn(
+                        "h-full transition-all duration-300 rounded-full",
+                        isDiscounted ? "bg-amber-500" : "bg-green-500"
+                      )}
+                      style={{ width: `${Math.min(100, percentage)}%` }}
+                    />
+                  </div>
+                  {data.discountReason && (
+                    <p className="text-xs text-muted-foreground">{data.discountReason}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
+            <span className="text-xs text-muted-foreground">Effective qualifying income</span>
+            <span className="text-sm font-semibold text-primary">{formatCurrency(calculations.effectiveMonthlyIncome)}/mo</span>
+          </div>
+        </div>
+      )}
+
+      {/* Improvement Recommendations */}
+      {calculations.improvements.length > 0 && (
+        <div className="mt-5 pt-5 border-t border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">Ways to Increase Your Budget</span>
+          </div>
+          <div className="space-y-2">
+            {calculations.improvements.slice(0, 3).map((improvement, idx) => (
+              <div 
+                key={idx}
+                className="p-3 rounded-lg bg-gradient-to-r from-primary/5 to-transparent border border-primary/10 hover:border-primary/20 transition-colors"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0 mt-0.5">
+                    <improvement.icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{improvement.title}</p>
+                      <span className="text-xs font-semibold text-green-600 shrink-0">{improvement.impact}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{improvement.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </Card>
   );
 
