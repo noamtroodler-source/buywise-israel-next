@@ -86,10 +86,10 @@ export function ToolLayout({
           {leftColumn}
         </div>
 
-        {/* Right Column - Results */}
-        <div className="space-y-4 order-1 lg:order-2">
-          {rightColumn}
-        </div>
+      {/* Right Column - Results (Sticky on desktop) */}
+      <div className="space-y-4 order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
+        {rightColumn}
+      </div>
       </div>
 
       {/* Bottom Section - Full Width */}
