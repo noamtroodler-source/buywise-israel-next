@@ -792,9 +792,112 @@ export function RentVsBuyCalculator() {
             </div>
           </Card>
           
+          {/* Monthly Payment Breakdown Card */}
+          <Card className="p-6 border">
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-primary" />
+              Monthly Payment Breakdown
+            </h4>
+            
+            {/* Buying Monthly Costs */}
+            <div className="space-y-3 mb-4">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">If You Buy</div>
+              <div className="space-y-1.5 pl-3 border-l-2 border-primary/30">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Mortgage (P&I)</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMortgage))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Arnona (property tax)</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyArnona))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Va'ad Bayit + Insurance</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Maintenance reserve</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMaintenance))}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-sm pt-1 border-t border-border/50">
+                  <span>Total monthly</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Renting Monthly Cost */}
+            <div className="space-y-3 mb-4">
+              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">If You Rent ({rooms} rooms in {selectedCity ? cities?.find(c => c.slug === selectedCity)?.name : 'same area'})</div>
+              <div className="space-y-1.5 pl-3 border-l-2 border-muted-foreground/30">
+                <div className="flex justify-between font-semibold text-sm">
+                  <span>Monthly rent</span>
+                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Comparison Insight */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Monthly difference</span>
+                <span className="text-sm font-semibold tabular-nums">
+                  ₪{formatNumber(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
+                  <span className="text-xs text-muted-foreground font-normal ml-1">
+                    {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
+                  </span>
+                </span>
+              </div>
+              
+              {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
+                <p className="text-xs text-muted-foreground">
+                  Buying costs ₪{formatNumber(Math.round(calculations.totalMonthlyBuying - calculations.currentMonthlyRent))} more per month, but ~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} of your mortgage builds equity.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Renting a similar {rooms}-room property costs more—you'd save ₪{formatNumber(Math.round(calculations.currentMonthlyRent - calculations.totalMonthlyBuying))} monthly by buying, plus build equity.
+                </p>
+              )}
+            </div>
+          </Card>
+          
+          {/* Lifestyle Comparison Card */}
+          <Card className="p-6 border">
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary" />
+              Same Budget, Different Lifestyle
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              {/* Buy Column */}
+              <div className="text-center p-4 bg-muted/30 rounded-lg">
+                <Home className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-lg font-bold">{rooms} rooms</p>
+                <p className="text-sm text-muted-foreground">~{Math.round(calculations.buyingSqm)} sqm</p>
+                <p className="text-xs text-muted-foreground mt-1">If you buy</p>
+              </div>
+              
+              {/* Rent Column */}
+              <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <Building2 className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <p className="text-lg font-bold">{parseInt(rooms) + 1}+ rooms</p>
+                <p className="text-sm text-muted-foreground">~{Math.round(calculations.rentingSqmForBuyingBudget)} sqm</p>
+                <p className="text-xs text-muted-foreground mt-1">If you rent for same cost</p>
+              </div>
+            </div>
+            
+            {calculations.spaceAdvantagePercent > 0 && (
+              <div className="mt-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Renters typically get <span className="font-semibold text-primary">+{calculations.spaceAdvantagePercent}% more space</span> for the same monthly budget
+                </p>
+              </div>
+            )}
+          </Card>
+          
           {/* Unified Comparison Card */}
           <Card className="p-6 border">
-            <h4 className="font-semibold mb-4">Side-by-Side Comparison</h4>
+            <h4 className="font-semibold mb-4">After {timeHorizon} Years</h4>
             
             {/* Comparison Table */}
             <div className="space-y-0">
@@ -805,45 +908,30 @@ export function RentVsBuyCalculator() {
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide text-right">Rent</div>
               </div>
               
-              {/* Monthly Cost */}
+              {/* Total Spent */}
               <div className="grid grid-cols-3 gap-4 py-3 border-b border-border/50">
-                <div className="text-sm text-muted-foreground">Monthly Cost</div>
-                <div className="text-sm font-semibold text-right">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</div>
-                <div className="text-sm font-semibold text-right">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</div>
+                <div className="text-sm text-muted-foreground">Total spent</div>
+                <div className="text-sm text-right tabular-nums">₪{formatNumber(Math.round(calculations.totalBuyingCost))}</div>
+                <div className="text-sm text-right tabular-nums">₪{formatNumber(Math.round(calculations.totalRentPaid))}</div>
               </div>
               
-              {/* Living Space */}
+              {/* Assets Built */}
               <div className="grid grid-cols-3 gap-4 py-3 border-b border-border/50">
-                <div className="text-sm text-muted-foreground">Est. Space</div>
-                <div className="text-sm text-right">~{Math.round(calculations.buyingSqm)} sqm</div>
-                <div className="text-sm text-right text-primary font-medium">~{Math.round(calculations.rentingSqmForBuyingBudget)} sqm</div>
-              </div>
-              
-              {/* Rooms */}
-              <div className="grid grid-cols-3 gap-4 py-3 border-b border-border/50">
-                <div className="text-sm text-muted-foreground">Typical Size</div>
-                <div className="text-sm text-right">{rooms} rooms</div>
-                <div className="text-sm text-right">{parseInt(rooms) + 1}+ rooms</div>
+                <div className="text-sm text-muted-foreground">Assets at end</div>
+                <div className="text-sm text-right tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</div>
+                <div className="text-sm text-right tabular-nums">₪{formatNumber(Math.round(calculations.investedSavingsValue))}</div>
               </div>
               
               {/* Net Position */}
               <div className="grid grid-cols-3 gap-4 pt-3">
-                <div className="text-sm font-medium">After {timeHorizon} Years</div>
-                <div className="text-sm font-semibold text-right">
+                <div className="text-sm font-medium">Net position</div>
+                <div className="text-sm font-semibold text-right tabular-nums">
                   ₪{formatNumber(Math.round(calculations.equityBuilt))}
                 </div>
-                <div className="text-sm font-semibold text-right">
+                <div className="text-sm font-semibold text-right tabular-nums">
                   {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
                 </div>
               </div>
-            </div>
-            
-            {/* Insight Footer - Neutral */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground flex items-start gap-2">
-                <Lightbulb className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
-                Renters often get more space for the same budget. Buyers build equity over time. Different paths for different priorities.
-              </p>
             </div>
           </Card>
         </>
