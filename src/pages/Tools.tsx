@@ -76,7 +76,7 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
 }
 
 export default function Tools() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,7 +100,11 @@ export default function Tools() {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto space-y-4"
             >
-              <Button variant="ghost" onClick={() => setActiveTool(null)} className="gap-2 -ml-2">
+              <Button
+                variant="ghost"
+                onClick={() => setSearchParams({})}
+                className="gap-2 -ml-2"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back to all tools
               </Button>
@@ -139,7 +143,7 @@ export default function Tools() {
                 >
                   <ToolCard 
                     tool={tool} 
-                    onClick={() => setActiveTool(tool.id)} 
+                    onClick={() => setSearchParams({ tool: tool.id })}
                   />
                 </motion.div>
               ))}
