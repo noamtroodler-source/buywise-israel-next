@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
@@ -95,7 +95,7 @@ export function InvestmentReturnCalculator() {
   useEffect(() => { setVacancyRate(getVacancyRate(selectedCity) * 100); }, [selectedCity]);
   
   const maxLTV = useMemo(() => buyerType === 'oleh' ? 75 : 50, [buyerType]);
-  useEffect(() => { if (downPaymentPercent < (100 - maxLTV)) setDownPaymentPercent(100 - maxLTV); }, [maxLTV]);
+  useEffect(() => { if (downPaymentPercent < (100 - maxLTV)) setDownPaymentPercent(100 - maxLTV); }, [maxLTV, downPaymentPercent]);
   
   const calculations = useMemo(() => {
     const annualRent = monthlyRent * 12;
@@ -113,7 +113,8 @@ export function InvestmentReturnCalculator() {
     const netIncomeAfterTax = noi - annualTax;
     const downPayment = purchasePrice * (downPaymentPercent / 100);
     const loanAmount = useLeverage ? purchasePrice - downPayment : 0;
-    const monthlyMortgage = useLeverage ? calculateMortgagePayment(loanAmount, interestRate, loanTermYears) : 0;
+    const mortgageResult = useLeverage ? calculateMortgagePayment(loanAmount, interestRate, loanTermYears) : null;
+    const monthlyMortgage = mortgageResult?.monthlyPayment ?? 0;
     const annualMortgage = monthlyMortgage * 12;
     const annualCashFlow = netIncomeAfterTax - annualMortgage;
     const monthlyCashFlow = annualCashFlow / 12;
@@ -168,7 +169,7 @@ export function InvestmentReturnCalculator() {
             <div className="flex items-center justify-between"><Label className="text-sm font-medium">Expected Monthly Rent</Label>{suggestedRent && <Badge variant="secondary" className="text-xs cursor-pointer" onClick={() => setMonthlyRent(suggestedRent)}>Market: ₪{suggestedRent.toLocaleString()}</Badge>}</div>
             <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span><Input type="text" value={monthlyRent.toLocaleString()} onChange={(e) => setMonthlyRent(parseNumericInput(e.target.value))} className="pl-8 h-11 tabular-nums" /></div>
           </div>
-          <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Vacancy Rate</Label><span className="text-sm tabular-nums font-medium">{vacancyRate}%</span></div><Slider value={[vacancyRate]} onValueChange={([v]) => setVacancyRate(v)} min={2} max={15} step={1} className="py-2" /></div>
+          <div className="space-y-2"><Label className="text-sm font-medium">Vacancy Rate</Label><div className="relative"><Input type="number" value={vacancyRate} onChange={(e) => setVacancyRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={0} max={15} step={1} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div></div>
         </CardContent>
       </Card>
       
@@ -179,8 +180,8 @@ export function InvestmentReturnCalculator() {
             <div className="space-y-2"><Label className="text-sm font-medium">Monthly Arnona<InfoTooltip content="Municipal property tax. Auto-calculated from city data." /></Label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span><Input type="text" value={monthlyArnona.toLocaleString()} onChange={(e) => setMonthlyArnona(parseNumericInput(e.target.value))} className="pl-8 h-11 tabular-nums" /></div></div>
             <div className="space-y-2"><Label className="text-sm font-medium">Monthly Va'ad Bayit<InfoTooltip content="Building maintenance fee covering shared spaces." /></Label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span><Input type="text" value={monthlyVaadBayit.toLocaleString()} onChange={(e) => setMonthlyVaadBayit(parseNumericInput(e.target.value))} className="pl-8 h-11 tabular-nums" /></div></div>
             <div className="space-y-2"><Label className="text-sm font-medium">Monthly Insurance</Label><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span><Input type="text" value={monthlyInsurance.toLocaleString()} onChange={(e) => setMonthlyInsurance(parseNumericInput(e.target.value))} className="pl-8 h-11 tabular-nums" /></div></div>
-            <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Maintenance Reserve</Label><span className="text-sm tabular-nums">{maintenancePercent}%</span></div><Slider value={[maintenancePercent]} onValueChange={([v]) => setMaintenancePercent(v)} min={0.5} max={3} step={0.5} className="py-2" /><p className="text-xs text-muted-foreground">= {formatCurrency(calculations.annualMaintenance)}/year</p></div>
-            <div className="space-y-3"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Property Management</Label><Switch checked={usePropertyManagement} onCheckedChange={setUsePropertyManagement} /></div>{usePropertyManagement && <div className="space-y-2 pl-4 border-l-2 border-primary/20"><div className="flex items-center justify-between"><Label className="text-sm text-muted-foreground">Management Fee</Label><span className="text-sm tabular-nums">{managementFeePercent}%</span></div><Slider value={[managementFeePercent]} onValueChange={([v]) => setManagementFeePercent(v)} min={6} max={12} step={1} className="py-2" /></div>}</div>
+            <div className="space-y-2"><Label className="text-sm font-medium">Maintenance Reserve</Label><div className="relative"><Input type="number" value={maintenancePercent} onChange={(e) => setMaintenancePercent(Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={0} max={5} step={0.5} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div><p className="text-xs text-muted-foreground">= {formatCurrency(calculations.annualMaintenance)}/year</p></div>
+            <div className="space-y-3"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Property Management</Label><Switch checked={usePropertyManagement} onCheckedChange={setUsePropertyManagement} /></div>{usePropertyManagement && <div className="space-y-2 pl-4 border-l-2 border-primary/20"><Label className="text-sm text-muted-foreground">Management Fee</Label><div className="relative"><Input type="number" value={managementFeePercent} onChange={(e) => setManagementFeePercent(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={0} max={15} step={1} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div></div>}</div>
           </CardContent></CollapsibleContent>
         </Card>
       </Collapsible>
@@ -191,9 +192,9 @@ export function InvestmentReturnCalculator() {
           <div className="flex items-center justify-between"><Label className="text-sm font-medium">Use Mortgage<InfoTooltip content="Leverage your investment with a mortgage." /></Label><Switch checked={useLeverage} onCheckedChange={setUseLeverage} /></div>
           {useLeverage && <div className="space-y-4 pt-2">
             <div className="space-y-2"><Label className="text-sm font-medium">Buyer Type<InfoTooltip content="Investors limited to 50% LTV. Olim can borrow up to 75%." /></Label><Select value={buyerType} onValueChange={(v) => setBuyerType(v as typeof buyerType)}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="investor">Israeli Investor (max 50% LTV)</SelectItem><SelectItem value="foreign">Foreign Buyer (max 50% LTV)</SelectItem><SelectItem value="oleh">Oleh Hadash (max 75% LTV)</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Down Payment</Label><span className="text-sm tabular-nums font-medium">{downPaymentPercent}%</span></div><Slider value={[downPaymentPercent]} onValueChange={([v]) => setDownPaymentPercent(Math.max(v, 100 - maxLTV))} min={100 - maxLTV} max={100} step={5} className="py-2" /><p className="text-xs text-muted-foreground">= {formatCurrency(calculations.downPayment)}</p></div>
-            <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Interest Rate</Label><span className="text-sm tabular-nums font-medium">{interestRate}%</span></div><Slider value={[interestRate]} onValueChange={([v]) => setInterestRate(v)} min={3} max={8} step={0.25} className="py-2" /></div>
-            <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Loan Term</Label><span className="text-sm tabular-nums font-medium">{loanTermYears} years</span></div><Slider value={[loanTermYears]} onValueChange={([v]) => setLoanTermYears(v)} min={5} max={30} step={5} className="py-2" /></div>
+            <div className="space-y-2"><Label className="text-sm font-medium">Down Payment</Label><div className="relative"><Input type="number" value={downPaymentPercent} onChange={(e) => setDownPaymentPercent(Math.min(100, Math.max(100 - maxLTV, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={100 - maxLTV} max={100} step={5} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div><p className="text-xs text-muted-foreground">= {formatCurrency(calculations.downPayment)}</p></div>
+            <div className="space-y-2"><Label className="text-sm font-medium">Interest Rate</Label><div className="relative"><Input type="number" value={interestRate} onChange={(e) => setInterestRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={0} max={15} step={0.25} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div></div>
+            <div className="space-y-2"><Label className="text-sm font-medium">Loan Term</Label><div className="relative"><Input type="number" value={loanTermYears} onChange={(e) => setLoanTermYears(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} className="h-11 tabular-nums pr-16" min={1} max={30} step={1} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span></div></div>
           </div>}
         </CardContent>
       </Card>
@@ -211,8 +212,8 @@ export function InvestmentReturnCalculator() {
       <Card>
         <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" />Projection Settings</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Holding Period</Label><span className="text-sm tabular-nums font-medium">{holdingPeriod} years</span></div><Slider value={[holdingPeriod]} onValueChange={([v]) => setHoldingPeriod(v)} min={3} max={20} step={1} className="py-2" /></div>
-          <div className="space-y-2"><div className="flex items-center justify-between"><Label className="text-sm font-medium">Annual Appreciation</Label><span className="text-sm tabular-nums font-medium">{appreciationRate}%</span></div><Slider value={[appreciationRate]} onValueChange={([v]) => setAppreciationRate(v)} min={0} max={10} step={0.5} className="py-2" />{cityData?.yoy_price_change && <p className="text-xs text-muted-foreground">Recent YoY change: {cityData.yoy_price_change > 0 ? '+' : ''}{cityData.yoy_price_change}%</p>}</div>
+          <div className="space-y-2"><Label className="text-sm font-medium">Holding Period</Label><div className="relative"><Input type="number" value={holdingPeriod} onChange={(e) => setHoldingPeriod(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} className="h-11 tabular-nums pr-16" min={1} max={30} step={1} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span></div></div>
+          <div className="space-y-2"><Label className="text-sm font-medium">Annual Appreciation</Label><div className="relative"><Input type="number" value={appreciationRate} onChange={(e) => setAppreciationRate(Math.min(20, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-11 tabular-nums pr-8" min={0} max={20} step={0.5} /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span></div>{cityData?.yoy_price_change && <p className="text-xs text-muted-foreground">Recent YoY change: {cityData.yoy_price_change > 0 ? '+' : ''}{cityData.yoy_price_change}%</p>}</div>
         </CardContent>
       </Card>
     </div>
@@ -247,5 +248,5 @@ export function InvestmentReturnCalculator() {
     </div>
   );
 
-  return (<ToolLayout title="Investment Return Calculator" subtitle="Analyze potential returns on Israeli investment properties" icon={<TrendingUp className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} disclaimer={<ToolDisclaimer>This calculator provides estimates for informational purposes only. Consult with a financial advisor before making investment decisions.</ToolDisclaimer>} />);
+  return (<ToolLayout title="Investment Return Calculator" subtitle="Analyze potential returns on Israeli investment properties" icon={<TrendingUp className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} disclaimer={<ToolDisclaimer text="This calculator provides estimates for informational purposes only. Consult with a financial advisor before making investment decisions." />} />);
 }
