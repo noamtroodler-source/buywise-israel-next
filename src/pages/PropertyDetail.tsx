@@ -8,6 +8,7 @@ import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
 import { AgentContactSection } from '@/components/property/AgentContactSection';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
+import { PropertyTimeMachine } from '@/components/property/PropertyTimeMachine';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { CalculatorCTA } from '@/components/property/CalculatorCTA';
@@ -107,6 +108,15 @@ export default function PropertyDetail() {
                 averagePriceSqm={cityData?.average_price_sqm}
                 priceChange={cityData?.yoy_price_change}
               />
+
+              {/* Time Machine - Only for sold properties */}
+              {property.listing_status === 'sold' && (
+                <PropertyTimeMachine
+                  salePrice={property.price}
+                  city={property.city}
+                  sizeSqm={property.size_sqm}
+                />
+              )}
 
               {/* Cost Breakdown */}
               <PropertyCostBreakdown 
