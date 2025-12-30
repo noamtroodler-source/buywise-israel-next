@@ -76,13 +76,13 @@ export function PropertyTimeMachine({ salePrice, city, sizeSqm }: PropertyTimeMa
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Clock className="h-5 w-5 text-primary" />
-          Real Estate Time Machine
+          Historical Value Context
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
           This property sold for <span className="font-semibold text-foreground">{formatPrice(salePrice)}</span>. 
-          See what it would have cost in previous years:
+          See estimated costs in previous years based on city-wide averages:
         </p>
 
         {/* Historical price cards */}
@@ -121,10 +121,15 @@ export function PropertyTimeMachine({ salePrice, city, sizeSqm }: PropertyTimeMa
           </div>
         </div>
 
-        {/* Link to full tool */}
+        {/* Disclaimer */}
+        <p className="text-xs text-muted-foreground italic">
+          Estimates based on {city} city-wide averages. Actual values vary significantly by neighborhood and property condition.
+        </p>
+
+        {/* Link to city market page */}
         <Button variant="outline" size="sm" className="w-full" asChild>
-          <Link to={`/tools?tool=timemachine&city=${citySlug}`}>
-            View Full Market History
+          <Link to={`/areas/${citySlug}`}>
+            Explore {city} Market Data
             <ArrowRight className="h-4 w-4 ml-2" />
           </Link>
         </Button>
