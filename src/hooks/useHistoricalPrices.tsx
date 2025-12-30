@@ -12,35 +12,46 @@ export interface HistoricalPrice {
   notes: string | null;
 }
 
-export function useHistoricalPrices(city: string, years: number = 10) {
+// Convert slug to city name format (e.g., 'tel-aviv' -> 'Tel Aviv')
+function slugToCityName(slug: string): string {
+  return slug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+export function useHistoricalPrices(citySlug: string, years: number = 10) {
   return useQuery({
-    queryKey: ['historical-prices', city, years],
+    queryKey: ['historical-prices', citySlug, years],
     queryFn: async () => {
       const currentYear = new Date().getFullYear();
       const startYear = currentYear - years;
+      const cityName = slugToCityName(citySlug);
 
       const { data, error } = await supabase
         .from('historical_prices')
         .select('*')
-        .eq('city', city)
+        .eq('city', cityName)
         .gte('year', startYear)
         .order('year', { ascending: true });
 
       if (error) throw error;
       return data as HistoricalPrice[];
     },
-    enabled: !!city,
+    enabled: !!citySlug,
   });
 }
 
-export function useCityPriceComparison(cities: string[], startYear: number, endYear: number) {
+export function useCityPriceComparison(citySlugs: string[], startYear: number, endYear: number) {
   return useQuery({
-    queryKey: ['city-price-comparison', cities, startYear, endYear],
+    queryKey: ['city-price-comparison', citySlugs, startYear, endYear],
     queryFn: async () => {
+      const cityNames = citySlugs.map(slugToCityName);
+      
       const { data, error } = await supabase
         .from('historical_prices')
         .select('*')
-        .in('city', cities)
+        .in('city', cityNames)
         .gte('year', startYear)
         .lte('year', endYear)
         .order('year', { ascending: true });
@@ -48,7 +59,7 @@ export function useCityPriceComparison(cities: string[], startYear: number, endY
       if (error) throw error;
       return data as HistoricalPrice[];
     },
-    enabled: cities.length > 0,
+    enabled: citySlugs.length > 0,
   });
 }
 
