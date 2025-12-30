@@ -190,35 +190,36 @@ export function RealEstateTimeMachine() {
         </div>
 
         {/* Purchase Year */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-1.5">
-              Purchase Year
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Select when you would have hypothetically purchased. Earlier years show more dramatic appreciation.</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
-            </Label>
-            <span className="text-sm font-medium text-primary">{purchaseYear}</span>
-          </div>
-          <Slider
-            value={[purchaseYear]}
-            onValueChange={(v) => setPurchaseYear(v[0])}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            Purchase Year
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Select when you would have hypothetically purchased. Earlier years show more dramatic appreciation.</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+          </Label>
+          <Input
+            type="number"
+            value={purchaseYear}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              if (val >= MIN_YEAR && val <= CURRENT_YEAR - 1) {
+                setPurchaseYear(val);
+              }
+            }}
+            className="h-11"
             min={MIN_YEAR}
             max={CURRENT_YEAR - 1}
-            step={1}
-            className="w-full"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{MIN_YEAR}</span>
-            <span>{CURRENT_YEAR - 1}</span>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Enter a year between {MIN_YEAR} and {CURRENT_YEAR - 1}
+          </p>
         </div>
 
         {/* Input Mode Selection */}
