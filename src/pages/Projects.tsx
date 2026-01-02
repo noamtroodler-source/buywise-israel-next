@@ -48,7 +48,7 @@ export default function Projects() {
         >
           {/* Header */}
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground">New Construction</h1>
+            <h1 className="text-4xl font-bold text-foreground">New Projects</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Explore new development projects across Israel. Buy directly from developers with flexible payment plans.
             </p>
