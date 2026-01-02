@@ -13,6 +13,7 @@ import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalcula
 import { TrueCostCalculator } from '@/components/tools/TrueCostCalculator';
 import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
+import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 
 interface Tool {
   id: string;
@@ -40,7 +41,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   affordability: AffordabilityCalculator,
   investment: InvestmentReturnCalculator,
   rentvsbuy: RentVsBuyCalculator,
-  renovation: () => <ToolPlaceholder toolName="Renovation Cost Estimator" />,
+  renovation: RenovationCostEstimator,
   neighborhood: () => <ToolPlaceholder toolName="Neighborhood Match" />,
   workshop: () => <ToolPlaceholder toolName="Find Your Place Workshop" />,
   documents: () => <ToolPlaceholder toolName="Document Checklist" />,
