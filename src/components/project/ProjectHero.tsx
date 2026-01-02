@@ -225,10 +225,6 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
             <Eye className="h-4 w-4" />
             <span>{project.views_count || 0} views</span>
           </div>
-          <div className="flex items-center gap-1">
-            <Home className="h-4 w-4" />
-            <span>{project.available_units || 0} units available</span>
-          </div>
         </div>
 
         {/* Key Stats Bar */}
@@ -240,15 +236,6 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
             <div>
               <p className="text-xs text-muted-foreground">Total Units</p>
               <p className="font-semibold">{project.total_units || 0}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Home className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Available</p>
-              <p className="font-semibold text-green-600">{project.available_units || 0}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
