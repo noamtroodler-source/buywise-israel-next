@@ -100,16 +100,18 @@ export default function PropertyDetail() {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="space-y-4"
             >
-              {/* AI Value Snapshot - Purchase properties only */}
-              {property.listing_status !== 'for_rent' && (
-                <PropertyValueSnapshot 
-                  price={property.price}
-                  sizeSqm={property.size_sqm}
-                  city={property.city}
-                  averagePriceSqm={cityData?.average_price_sqm}
-                  priceChange={cityData?.yoy_price_change}
-                />
-              )}
+              {/* AI Value Snapshot - Adapts for rentals vs purchases */}
+              <PropertyValueSnapshot 
+                price={property.price}
+                sizeSqm={property.size_sqm}
+                city={property.city}
+                averagePriceSqm={cityData?.average_price_sqm}
+                priceChange={cityData?.yoy_price_change}
+                listingStatus={property.listing_status}
+                bedrooms={property.bedrooms}
+                cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
+                cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+              />
 
               {/* Time Machine - Only for sold properties */}
               {property.listing_status === 'sold' && (
