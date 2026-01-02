@@ -113,10 +113,6 @@ export default function Projects() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Home className="h-4 w-4" />
-                            <span>{project.available_units}/{project.total_units} units</span>
-                          </div>
                           {project.completion_date && (
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Calendar className="h-4 w-4" />

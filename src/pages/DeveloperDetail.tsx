@@ -183,9 +183,6 @@ export default function DeveloperDetail() {
                           <Badge className={getStatusColor(project.status)}>
                             {getStatusLabel(project.status)}
                           </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {project.available_units}/{project.total_units} available
-                          </span>
                         </div>
                         <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
                           {project.name}
