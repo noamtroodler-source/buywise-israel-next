@@ -26,10 +26,10 @@ export default function Projects() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planning': return 'bg-muted text-muted-foreground';
-      case 'pre_sale': return 'bg-accent text-accent-foreground';
-      case 'under_construction': return 'bg-primary text-primary-foreground';
-      case 'completed': return 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300';
+      case 'planning': return 'bg-project/70 text-project-foreground';
+      case 'pre_sale': return 'bg-project text-project-foreground';
+      case 'under_construction': return 'bg-project text-project-foreground';
+      case 'completed': return 'bg-muted text-muted-foreground';
       default: return 'bg-secondary text-secondary-foreground';
     }
   };
