@@ -33,7 +33,10 @@ const Index = () => {
         viewAllText="View All"
       />
 
-      {/* Break 1: Sign Up CTA */}
+      {/* Why BuyWise Israel */}
+      <WhyBuyWiseSection />
+
+      {/* Sign Up CTA */}
       <SignUpCTA />
 
       {/* Featured Resale Homes */}
@@ -46,7 +49,7 @@ const Index = () => {
         viewAllText="View All Sales"
       />
 
-      {/* Break 2: Tools Promo (moved here) */}
+      {/* Tools Promo */}
       <ToolsPromo />
 
       {/* Featured New Projects */}
@@ -59,8 +62,8 @@ const Index = () => {
         viewAllText="View All Projects"
       />
 
-      {/* Break 3: Why BuyWise Israel */}
-      <WhyBuyWiseSection />
+      {/* Popular Areas */}
+      <PopularCities />
 
       {/* Featured Long-Term Rentals */}
       <PropertyCarousel
@@ -71,8 +74,6 @@ const Index = () => {
         viewAllLink="/listings?status=for_rent"
         viewAllText="View All Rentals"
       />
-
-      <PopularCities />
     </Layout>
   );
 };
