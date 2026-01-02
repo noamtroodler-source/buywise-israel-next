@@ -26,7 +26,7 @@ const valueProps = [
 
 export const WhyBuyWiseSection = () => {
   return (
-    <section className="py-10 md:py-12 bg-muted/30">
+    <section className="py-8 md:py-10 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
