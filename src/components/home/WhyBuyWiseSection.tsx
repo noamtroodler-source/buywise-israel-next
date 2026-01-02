@@ -26,19 +26,19 @@ const valueProps = [
 
 export const WhyBuyWiseSection = () => {
   return (
-    <section className="py-16 md:py-20 bg-muted/30">
+    <section className="py-10 md:py-12 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10 md:mb-12"
+          className="text-center mb-6 md:mb-8"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             Why BuyWise Israel?
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             We're more than listings — we're your partner in finding the right property
           </p>
         </motion.div>
