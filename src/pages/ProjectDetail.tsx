@@ -82,7 +82,7 @@ export default function ProjectDetail() {
               <BuyerInsightsTips />
               
               {/* Floor Plans - Read-only table */}
-              <ProjectFloorPlans units={units} />
+              <ProjectFloorPlans units={units} developer={project.developer} />
               
               {/* Cost Breakdown with unit selector */}
               <ProjectCostBreakdown 
