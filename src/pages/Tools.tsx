@@ -14,6 +14,7 @@ import { TrueCostCalculator } from '@/components/tools/TrueCostCalculator';
 import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
+import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
 
 interface Tool {
   id: string;
@@ -44,7 +45,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   renovation: RenovationCostEstimator,
   neighborhood: () => <ToolPlaceholder toolName="Neighborhood Match" />,
   workshop: () => <ToolPlaceholder toolName="Find Your Place Workshop" />,
-  documents: () => <ToolPlaceholder toolName="Document Checklist" />,
+  documents: DocumentChecklistTool,
 };
 
 function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
