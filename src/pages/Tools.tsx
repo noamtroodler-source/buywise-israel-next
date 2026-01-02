@@ -115,20 +115,25 @@ export default function Tools() {
             </motion.div>
           </div>
         ) : (
-          <div className="container py-10 md:py-16">
-            {/* Header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center max-w-2xl mx-auto mb-12"
-            >
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-                Property Tools & Calculators
-              </h1>
-              <p className="text-muted-foreground">
-                Powerful tools to help you make informed decisions about your property purchase in Israel
-              </p>
-            </motion.div>
+          <>
+            {/* Page Header */}
+            <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
+              <div className="container py-8 md:py-10 text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                    Property Tools & Calculators
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Powerful tools to help you make informed decisions about your property purchase in Israel
+                  </p>
+                </motion.div>
+              </div>
+            </div>
+
+            <div className="container py-8">
 
             {/* Tools Grid */}
             <motion.div 
@@ -166,7 +171,8 @@ export default function Tools() {
                 </p>
               </div>
             </motion.div>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </Layout>

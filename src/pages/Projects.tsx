@@ -109,19 +109,27 @@ export default function Projects() {
 
   return (
     <Layout>
-      <div className="container py-8">
+      {/* Page Header */}
+      <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
+        <div className="container py-8 md:py-10 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">New Projects</h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Explore new development projects across Israel. Buy directly from developers with flexible payment plans.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="container py-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Header */}
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground">New Projects</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explore new development projects across Israel. Buy directly from developers with flexible payment plans.
-            </p>
-          </div>
 
           {/* New Construction Info Banner */}
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">

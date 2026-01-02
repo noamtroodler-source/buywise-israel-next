@@ -105,13 +105,15 @@ export default function Listings() {
 
   return (
     <Layout>
-
-      <div className="container py-8">
-        {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">{pageContent.title}</h1>
+      {/* Page Header */}
+      <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
+        <div className="container py-8 md:py-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{pageContent.title}</h1>
           <p className="text-muted-foreground">{pageContent.subtitle}</p>
         </div>
+      </div>
+
+      <div className="container py-6">
 
         {/* Sold View Info Banner */}
         {isSoldView && (
