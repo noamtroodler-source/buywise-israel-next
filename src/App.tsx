@@ -42,6 +42,7 @@ import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
 import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
 import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
+import NewConstructionGuide from "./pages/guides/NewConstructionGuide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
             <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
+            <Route path="/guides/new-construction" element={<NewConstructionGuide />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers/:slug" element={<DeveloperDetail />} />

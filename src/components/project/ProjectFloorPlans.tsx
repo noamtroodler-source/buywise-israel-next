@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { Building2 } from 'lucide-react';
+import { Building2, Mail, Phone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
-import { ProjectUnit } from '@/types/projects';
+import { ProjectUnit, Developer } from '@/types/projects';
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import {
 
 interface ProjectFloorPlansProps {
   units: ProjectUnit[];
+  developer?: Developer | null;
 }
 
 interface UnitTypeGroup {
@@ -28,7 +29,7 @@ interface UnitTypeGroup {
   outdoor: string;
 }
 
-export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
+export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) {
   const formatPrice = useFormatPrice();
   
   // Group units by type with aggregated data
@@ -46,7 +47,7 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
           floorRange: { min: Infinity, max: 0 },
           priceRange: { min: Infinity, max: 0 },
           pricePerSqm: 0,
-          outdoor: 'Balcony', // Default, could be enhanced with DB field
+          outdoor: (unit as any).outdoor_space || 'Balcony',
         };
       }
       
@@ -74,7 +75,7 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
         group.pricePerSqm = Math.round(avgPrice / avgSize);
       }
       
-      // Set outdoor type based on unit type
+      // Set outdoor type based on unit type if not provided
       if (group.type.toLowerCase().includes('penthouse')) {
         group.outdoor = 'Roof Terrace';
       } else if (group.type.toLowerCase().includes('garden')) {
@@ -91,6 +92,12 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
     return `${min}-${max}${suffix}`;
   };
 
+  const handleScrollToContact = () => {
+    const section = document.getElementById('developer-section');
+    section?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Empty state with CTA
   if (units.length === 0) {
     return (
       <Card>
@@ -100,9 +107,31 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
             Floor Plans & Units
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-center py-8">
-          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Unit details coming soon</p>
+        <CardContent>
+          <div className="text-center py-8 space-y-4">
+            <Building2 className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div className="space-y-2">
+              <p className="font-medium text-foreground">Unit details coming soon</p>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Detailed floor plans and pricing for this project are being finalized. 
+                Contact the developer directly for the latest availability and unit options.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Button onClick={handleScrollToContact}>
+                <Mail className="h-4 w-4 mr-2" />
+                Request Unit Availability
+              </Button>
+              {developer?.phone && (
+                <Button variant="outline" asChild>
+                  <a href={`tel:${developer.phone}`}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Call Developer
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -185,6 +214,17 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* CTA at bottom */}
+        <div className="mt-6 pt-4 border-t border-border text-center">
+          <p className="text-sm text-muted-foreground mb-3">
+            Want more details on specific units or availability?
+          </p>
+          <Button variant="outline" onClick={handleScrollToContact}>
+            <Mail className="h-4 w-4 mr-2" />
+            Request Full Floor Plans
+          </Button>
         </div>
       </CardContent>
     </Card>
