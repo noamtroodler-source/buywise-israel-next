@@ -31,7 +31,7 @@ export function FloatingWhatsApp() {
         >
           <MessageCircle className="w-6 h-6 md:w-7 md:h-7 fill-current" />
           <span className="absolute right-full mr-3 px-3 py-1.5 bg-card text-foreground text-sm rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Chat with us
+            WhatsApp with us
           </span>
         </motion.button>
       )}
