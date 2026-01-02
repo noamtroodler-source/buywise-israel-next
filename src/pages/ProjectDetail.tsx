@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
@@ -7,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
-import { ProjectUnit } from '@/types/projects';
 import {
   ProjectHero,
   ProjectHighlights,
@@ -18,14 +16,13 @@ import {
   ProjectAmenities,
   ProjectStickyCard,
   ProjectMobileContactBar,
-  ProjectEducationBanner,
+  BuyerInsightsTips,
 } from '@/components/project';
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: project, isLoading, error } = useProject(slug || '');
   const { data: units = [] } = useProjectUnits(project?.id || '');
-  const [selectedUnit, setSelectedUnit] = useState<ProjectUnit | null>(null);
 
   if (isLoading) {
     return (
@@ -78,20 +75,23 @@ export default function ProjectDetail() {
                 </div>
               )}
 
-              <ProjectEducationBanner variant="compact" />
+              {/* Project Highlights - Moved from sidebar */}
+              <ProjectHighlights project={projectWithProgress} />
+
+              {/* Buyer Insights - Contextual tips */}
+              <BuyerInsightsTips />
               
-              <ProjectFloorPlans 
-                units={units} 
-                onSelectUnit={setSelectedUnit}
-                selectedUnitId={selectedUnit?.id}
-              />
+              {/* Floor Plans - Read-only table */}
+              <ProjectFloorPlans units={units} />
               
+              {/* Cost Breakdown with unit selector */}
               <ProjectCostBreakdown 
-                selectedUnit={selectedUnit}
+                units={units}
                 defaultPrice={project.price_from || 0}
                 currency={project.currency || 'ILS'}
               />
               
+              {/* Compact Timeline */}
               <ProjectTimeline project={projectWithProgress} />
               
               <PropertyLocation
@@ -111,19 +111,15 @@ export default function ProjectDetail() {
                   <ProjectDeveloperCard developer={project.developer} />
                 </div>
               )}
-              
-              <ProjectEducationBanner />
             </div>
 
-            {/* Right Column - Sticky Sidebar */}
+            {/* Right Column - Sticky Sidebar (Simplified) */}
             <div className="hidden lg:block">
-              <div className="sticky top-6 space-y-4">
+              <div className="sticky top-6">
                 <ProjectStickyCard 
                   project={project}
                   developer={project.developer}
-                  selectedUnit={selectedUnit}
                 />
-                <ProjectHighlights project={projectWithProgress} />
               </div>
             </div>
           </motion.div>

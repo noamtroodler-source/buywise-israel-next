@@ -6,4 +6,4 @@ export { ProjectTimeline } from './ProjectTimeline';
 export { ProjectDeveloperCard } from './ProjectDeveloperCard';
 export { ProjectAmenities } from './ProjectAmenities';
 export { ProjectStickyCard, ProjectMobileContactBar } from './ProjectStickyCard';
-export { ProjectEducationBanner } from './ProjectEducationBanner';
+export { BuyerInsightsTips } from './BuyerInsightsTips';
