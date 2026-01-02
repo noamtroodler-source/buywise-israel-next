@@ -14,14 +14,14 @@ const cities = [
 
 export function PopularCities() {
   return (
-    <section className="py-16 bg-muted/30">
+    <section className="py-8 md:py-10 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-10"
+          className="text-center mb-6"
         >
           <h2 className="text-3xl font-bold text-foreground mb-3">
             Popular Areas
