@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface BreakdownItem {
+export interface BreakdownItem {
   label: string;
   value: string;
   percentage?: string;
