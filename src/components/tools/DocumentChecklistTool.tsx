@@ -18,13 +18,21 @@ type TransactionType = 'buy' | 'rent';
 type BuyerTypeFilter = 'all' | 'israeli' | 'oleh' | 'foreign';
 
 const STAGE_CONFIG: Record<string, { label: string; description: string; icon: string }> = {
+  // Purchase stages
+  pre_approval: { label: 'Pre-Approval & ID', description: 'Documents for mortgage pre-approval', icon: '🔍' },
   pre_purchase: { label: 'Pre-Purchase Research', description: 'Documents to gather before signing', icon: '🔍' },
   contract_signing: { label: 'Contract & Due Diligence', description: 'When signing the purchase agreement', icon: '📝' },
   closing: { label: 'Closing & Financing', description: 'Completing the transaction', icon: '🏦' },
   post_purchase: { label: 'Post-Purchase', description: 'After receiving your keys', icon: '🔑' },
+  // Rental stages
+  rental_search: { label: 'Prepare Your Application', description: 'Documents landlords will request', icon: '📋' },
+  rental_guarantor: { label: 'Guarantor Documents', description: 'Required in most Israeli rentals', icon: '🤝' },
+  rental_contract: { label: 'Signing & Payment', description: 'Contract and move-in costs', icon: '✍️' },
+  rental_movein: { label: 'Move-In Setup', description: 'Utilities and registration', icon: '🏠' },
 };
 
-const STAGE_ORDER = ['pre_purchase', 'contract_signing', 'closing', 'post_purchase'];
+const BUY_STAGE_ORDER = ['pre_approval', 'contract_signing', 'closing', 'post_purchase'];
+const RENT_STAGE_ORDER = ['rental_search', 'rental_guarantor', 'rental_contract', 'rental_movein'];
 
 const BUYER_TYPE_OPTIONS = [
   { value: 'all', label: 'All Documents', description: 'Show everything' },
@@ -57,7 +65,7 @@ export function DocumentChecklistTool() {
   const [transactionType, setTransactionType] = useState<TransactionType>(() => loadStoredState().transactionType);
   const [buyerType, setBuyerType] = useState<BuyerTypeFilter>(() => loadStoredState().buyerType);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(() => new Set(loadStoredState().checkedItems));
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(['pre_purchase']));
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(['pre_approval', 'rental_search']));
 
   // Save to localStorage
   useEffect(() => {
@@ -88,11 +96,15 @@ export function DocumentChecklistTool() {
     });
   };
 
-  // Calculate stats
+  // Calculate stats - filtered by transaction type
   const stats = useMemo(() => {
     if (!documentsByStage) return { total: 0, completed: 0, critical: 0, criticalCompleted: 0 };
     
-    const allDocs = Object.values(documentsByStage).flat();
+    const relevantStages = transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER;
+    const allDocs = relevantStages
+      .filter(stage => documentsByStage[stage])
+      .flatMap(stage => documentsByStage[stage]);
+    
     const filteredDocs = allDocs.filter(doc => {
       if (buyerType === 'all') return true;
       if (!doc.required_for || doc.required_for.length === 0) return true;
@@ -107,7 +119,7 @@ export function DocumentChecklistTool() {
       critical: critical.length,
       criticalCompleted: critical.filter(d => checkedItems.has(d.id)).length,
     };
-  }, [documentsByStage, checkedItems, buyerType]);
+  }, [documentsByStage, checkedItems, buyerType, transactionType]);
 
   const progressPercent = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
   const criticalPercent = stats.critical > 0 ? (stats.criticalCompleted / stats.critical) * 100 : 0;
@@ -145,7 +157,8 @@ export function DocumentChecklistTool() {
   };
 
   const generatePrintContent = () => {
-    const sortedStages = STAGE_ORDER.filter(stage => documentsByStage?.[stage]);
+    const stageOrder = transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER;
+    const sortedStages = stageOrder.filter(stage => documentsByStage?.[stage]);
     const buyerLabel = BUYER_TYPE_OPTIONS.find(o => o.value === buyerType)?.label || 'All';
 
     let html = `<!DOCTYPE html><html><head><title>Document Checklist - BuyWise Israel</title>
@@ -272,7 +285,7 @@ export function DocumentChecklistTool() {
               <p className="text-sm text-muted-foreground">Loading documents...</p>
             </div>
           ) : (
-            STAGE_ORDER.filter(stage => documentsByStage?.[stage]).map((stage) => {
+            (transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER).filter(stage => documentsByStage?.[stage]).map((stage) => {
               const docs = filterDocuments(documentsByStage![stage]);
               if (docs.length === 0) return null;
 
@@ -371,45 +384,32 @@ export function DocumentChecklistTool() {
           <h4 className="font-medium text-sm mb-2">💡 Pro Tips</h4>
           <ul className="text-xs text-muted-foreground space-y-2">
             <li>• Your progress saves automatically</li>
-            <li>• Documents marked "Required" are essential for closing</li>
-            <li>• Ask your lawyer about timeline for each stage</li>
-            <li>• Print this list for your meetings</li>
+            <li>• Documents marked "Required" are essential</li>
+            {transactionType === 'buy' ? (
+              <>
+                <li>• Ask your lawyer about timeline for each stage</li>
+                <li>• Print this list for your meetings</li>
+              </>
+            ) : (
+              <>
+                <li>• Finding a guarantor is often the hardest part</li>
+                <li>• Post-dated checks are standard in Israel</li>
+              </>
+            )}
           </ul>
         </CardContent>
       </Card>
     </div>
   );
 
-  if (transactionType === 'rent') {
-    return (
-      <ToolLayout
-        title="Document Checklist"
-        subtitle="Track documents for your Israel property journey"
-        icon={<FileText className="h-6 w-6" />}
-        leftColumn={
-          <Card>
-            <CardContent className="py-12 text-center">
-              <span className="text-4xl mb-4 block">🚧</span>
-              <h3 className="font-semibold mb-2">Rental Checklist Coming Soon</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                We're preparing a comprehensive rental document checklist for Israel.
-              </p>
-              <Button variant="outline" onClick={() => setTransactionType('buy')}>
-                View Purchase Checklist
-              </Button>
-            </CardContent>
-          </Card>
-        }
-        rightColumn={rightColumn}
-        disclaimer={<ToolDisclaimer text="This checklist is for informational purposes. Consult with your lawyer for your specific situation." />}
-      />
-    );
-  }
+  const subtitle = transactionType === 'buy' 
+    ? 'Track all documents needed for your Israel property purchase'
+    : 'Track all documents needed for renting in Israel';
 
   return (
     <ToolLayout
       title="Document Checklist"
-      subtitle="Track all documents needed for your Israel property purchase"
+      subtitle={subtitle}
       icon={<FileText className="h-6 w-6" />}
       leftColumn={leftColumn}
       rightColumn={rightColumn}
