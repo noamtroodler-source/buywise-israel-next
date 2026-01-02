@@ -1001,6 +1001,7 @@ export type Database = {
           available_units: number | null
           city: string
           completion_date: string | null
+          construction_progress_percent: number | null
           construction_start: string | null
           created_at: string
           currency: string | null
@@ -1029,6 +1030,7 @@ export type Database = {
           available_units?: number | null
           city: string
           completion_date?: string | null
+          construction_progress_percent?: number | null
           construction_start?: string | null
           created_at?: string
           currency?: string | null
@@ -1057,6 +1059,7 @@ export type Database = {
           available_units?: number | null
           city?: string
           completion_date?: string | null
+          construction_progress_percent?: number | null
           construction_start?: string | null
           created_at?: string
           currency?: string | null
