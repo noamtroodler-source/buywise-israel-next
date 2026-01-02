@@ -47,13 +47,17 @@
     
     --radius: 0.5rem;
     
-    /* Success state */
+    /* Success state - Rentals */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     
     /* Warning state */
     --warning: 45 100% 51%;
     --warning-foreground: 0 0% 10%;
+    
+    /* Project state - New Construction */
+    --project: 270 60% 50%;
+    --project-foreground: 0 0% 100%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
@@ -111,6 +115,10 @@
     
     --warning: 45 100% 51%;
     --warning-foreground: 0 0% 10%;
+    
+    /* Project state - New Construction */
+    --project: 270 60% 55%;
+    --project-foreground: 0 0% 100%;
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 98%;

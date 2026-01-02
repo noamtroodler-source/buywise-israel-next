@@ -59,7 +59,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
       case 'for_sale':
         return 'bg-primary text-primary-foreground';
       case 'for_rent':
-        return 'bg-accent text-accent-foreground';
+        return 'bg-success text-success-foreground';
       case 'sold':
       case 'rented':
         return 'bg-muted text-muted-foreground';

@@ -69,11 +69,13 @@ const getStatusLabel = (status: string) => {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pre_sale':
-      return 'bg-accent text-accent-foreground';
+      return 'bg-project text-project-foreground';
     case 'under_construction':
-      return 'bg-primary text-primary-foreground';
+      return 'bg-project text-project-foreground';
+    case 'planning':
+      return 'bg-project/70 text-project-foreground';
     case 'completed':
-      return 'bg-secondary text-secondary-foreground';
+      return 'bg-muted text-muted-foreground';
     default:
       return 'bg-muted text-muted-foreground';
   }
