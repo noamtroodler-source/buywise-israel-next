@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, HelpCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { Calculator, Receipt, Calendar, Info, Settings, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
@@ -12,9 +13,15 @@ import { Link } from 'react-router-dom';
 import { ProjectUnit } from '@/types/projects';
 
 interface ProjectCostBreakdownProps {
-  selectedUnit?: ProjectUnit | null;
+  units: ProjectUnit[];
   defaultPrice?: number;
   currency?: string;
+}
+
+interface UnitOption {
+  type: string;
+  price: number;
+  label: string;
 }
 
 // Calculate tax using actual brackets from DB or fallback
@@ -55,12 +62,38 @@ function mapCategoryToTaxType(category: 'first_time' | 'oleh' | 'additional' | '
   }
 }
 
-export function ProjectCostBreakdown({ selectedUnit, defaultPrice = 0, currency = 'ILS' }: ProjectCostBreakdownProps) {
+export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS' }: ProjectCostBreakdownProps) {
   const { user } = useAuth();
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
   
-  const price = selectedUnit?.price || defaultPrice;
+  // Build unit options for selector
+  const unitOptions = useMemo<UnitOption[]>(() => {
+    const groups: Record<string, UnitOption> = {};
+    
+    units.forEach(unit => {
+      const type = unit.unit_type;
+      if (!groups[type] || (unit.price && unit.price < groups[type].price)) {
+        groups[type] = {
+          type,
+          price: unit.price || 0,
+          label: `${type} (from ${formatPrice(unit.price || 0, 'ILS')})`,
+        };
+      }
+    });
+    
+    return Object.values(groups).sort((a, b) => a.price - b.price);
+  }, [units, formatPrice]);
+
+  const [selectedType, setSelectedType] = useMemo(() => {
+    const initial = unitOptions[0]?.type || '';
+    return [initial, (val: string) => val];
+  }, [unitOptions]);
+  
+  // Use state for selected unit type
+  const selectedOption = unitOptions.find(o => o.type === selectedType) || unitOptions[0];
+  const price = selectedOption?.price || defaultPrice;
+  
   const buyerCategory = getBuyerTaxCategory(buyerProfile);
   const hasProfile = !!buyerProfile?.onboarding_completed;
   
@@ -71,12 +104,10 @@ export function ProjectCostBreakdown({ selectedUnit, defaultPrice = 0, currency 
     return calculateTaxFromBrackets(price, taxBrackets);
   }, [price, taxBrackets]);
   
-  const effectiveTaxRate = price > 0 ? (purchaseTax / price) * 100 : 0;
-  
   // New construction specific costs
   const lawyerFees = price * 0.005;
   const lawyerVat = lawyerFees * 0.17;
-  const developerLawyerFees = price * 0.015; // Developer's lawyer fee
+  const developerLawyerFees = price * 0.015;
   const developerLawyerVat = developerLawyerFees * 0.17;
   const registrationFees = 500;
   
@@ -96,18 +127,48 @@ export function ProjectCostBreakdown({ selectedUnit, defaultPrice = 0, currency 
         <CardTitle className="flex items-center gap-2">
           <Calculator className="h-5 w-5 text-primary" />
           Cost Breakdown
-          {selectedUnit && (
-            <Badge variant="outline" className="ml-auto font-normal">
-              {selectedUnit.unit_type} • Floor {selectedUnit.floor}
-            </Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
+        {/* Unit Type Selector */}
+        {unitOptions.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Unit Type</label>
+            <Select 
+              value={selectedOption?.type || ''} 
+              onValueChange={(val) => {
+                // This is a controlled component workaround
+                const event = new CustomEvent('unitTypeChange', { detail: val });
+                window.dispatchEvent(event);
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a unit type" />
+              </SelectTrigger>
+              <SelectContent>
+                {unitOptions.map((option) => (
+                  <SelectItem key={option.type} value={option.type}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Selected Unit Price */}
         <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="text-sm text-muted-foreground">Unit Price</p>
-          <p className="text-2xl font-bold text-primary">{formatPrice(price, currency)}</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm text-muted-foreground">Unit Price</p>
+              <p className="text-2xl font-bold text-primary">{formatPrice(price, currency)}</p>
+            </div>
+            {selectedOption && (
+              <Badge variant="outline" className="font-normal">
+                {selectedOption.type}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Profile Banner */}
