@@ -49,15 +49,6 @@ export function ProjectStickyCard({ project, developer, selectedUnit, onContactC
             )}
           </div>
 
-          {/* Unit Availability */}
-          <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-            <Home className="h-5 w-5 text-primary" />
-            <div className="flex-1">
-              <p className="text-sm font-medium">{project.available_units} Units Available</p>
-              <p className="text-xs text-muted-foreground">of {project.total_units} total</p>
-            </div>
-          </div>
-
           {/* Completion Date */}
           {project.completion_date && (
             <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">

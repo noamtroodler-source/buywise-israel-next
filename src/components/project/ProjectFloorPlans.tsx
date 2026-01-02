@@ -25,8 +25,6 @@ interface UnitTypeGroup {
   floorRange: { min: number; max: number };
   priceRange: { min: number; max: number };
   pricePerSqm: number;
-  availableCount: number;
-  totalCount: number;
   outdoor: string;
 }
 
@@ -48,13 +46,9 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
           floorRange: { min: Infinity, max: 0 },
           priceRange: { min: Infinity, max: 0 },
           pricePerSqm: 0,
-          availableCount: 0,
-          totalCount: 0,
           outdoor: 'Balcony', // Default, could be enhanced with DB field
         };
       }
-      
-      groups[type].totalCount++;
       
       if (unit.price) {
         groups[type].priceRange.min = Math.min(groups[type].priceRange.min, unit.price);
@@ -69,10 +63,6 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
       if (unit.floor) {
         groups[type].floorRange.min = Math.min(groups[type].floorRange.min, unit.floor);
         groups[type].floorRange.max = Math.max(groups[type].floorRange.max, unit.floor);
-      }
-      
-      if (unit.status === 'available') {
-        groups[type].availableCount++;
       }
     });
     
@@ -99,16 +89,6 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
     if (min === Infinity || max === 0) return 'N/A';
     if (min === max) return `${min}${suffix}`;
     return `${min}-${max}${suffix}`;
-  };
-
-  const getAvailabilityBadge = (available: number, total: number) => {
-    if (available === 0) {
-      return <Badge variant="destructive" className="text-xs">Sold Out</Badge>;
-    }
-    if (available <= 2) {
-      return <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 text-xs">{available} left</Badge>;
-    }
-    return <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 text-xs">{available} available</Badge>;
   };
 
   if (units.length === 0) {
@@ -150,7 +130,6 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
                 <TableHead className="text-center">Outdoor</TableHead>
                 <TableHead className="text-right">Price From</TableHead>
                 <TableHead className="text-right">₪/m²</TableHead>
-                <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -168,9 +147,6 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
                   <TableCell className="text-right text-muted-foreground">
                     {group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}
                   </TableCell>
-                  <TableCell className="text-center">
-                    {getAvailabilityBadge(group.availableCount, group.totalCount)}
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -181,14 +157,11 @@ export function ProjectFloorPlans({ units }: ProjectFloorPlansProps) {
         <div className="md:hidden space-y-3">
           {unitGroups.map((group) => (
             <div key={group.type} className="p-4 rounded-lg border border-border bg-muted/20">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-semibold">{group.type}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {group.bedrooms} Bed • {group.bathrooms} Bath • {formatRange(group.sizeRange.min, group.sizeRange.max)} m²
-                  </p>
-                </div>
-                {getAvailabilityBadge(group.availableCount, group.totalCount)}
+              <div className="mb-3">
+                <h4 className="font-semibold">{group.type}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {group.bedrooms} Bed • {group.bathrooms} Bath • {formatRange(group.sizeRange.min, group.sizeRange.max)} m²
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
