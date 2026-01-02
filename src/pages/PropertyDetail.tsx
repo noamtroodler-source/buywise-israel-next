@@ -100,14 +100,16 @@ export default function PropertyDetail() {
               transition={{ duration: 0.4, delay: 0.2 }}
               className="space-y-4"
             >
-              {/* AI Value Snapshot */}
-              <PropertyValueSnapshot 
-                price={property.price}
-                sizeSqm={property.size_sqm}
-                city={property.city}
-                averagePriceSqm={cityData?.average_price_sqm}
-                priceChange={cityData?.yoy_price_change}
-              />
+              {/* AI Value Snapshot - Purchase properties only */}
+              {property.listing_status !== 'for_rent' && (
+                <PropertyValueSnapshot 
+                  price={property.price}
+                  sizeSqm={property.size_sqm}
+                  city={property.city}
+                  averagePriceSqm={cityData?.average_price_sqm}
+                  priceChange={cityData?.yoy_price_change}
+                />
+              )}
 
               {/* Time Machine - Only for sold properties */}
               {property.listing_status === 'sold' && (
