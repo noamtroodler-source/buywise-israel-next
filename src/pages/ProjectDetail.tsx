@@ -17,6 +17,7 @@ import {
   ProjectStickyCard,
   ProjectMobileContactBar,
   BuyerInsightsTips,
+  ProjectBuyerProtections,
 } from '@/components/project';
 
 export default function ProjectDetail() {
@@ -90,6 +91,9 @@ export default function ProjectDetail() {
                 defaultPrice={project.price_from || 0}
                 currency={project.currency || 'ILS'}
               />
+
+              {/* Buyer Protections - After costs to show payment security */}
+              <ProjectBuyerProtections />
               
               {/* Compact Timeline */}
               <ProjectTimeline project={projectWithProgress} />

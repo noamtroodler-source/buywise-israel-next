@@ -144,56 +144,6 @@ export function ProjectStickyCard({ project, developer, selectedUnit, onContactC
             )}
           </CardContent>
         </Card>
-
-        {/* Buyer Protection Info */}
-        <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="font-medium text-green-800 dark:text-green-300">Buyer Protections</span>
-            </div>
-            <ul className="space-y-2 text-sm text-green-700 dark:text-green-400">
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✓</span>
-                <span>
-                  Bank Guarantee
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 inline ml-1 text-green-600/60" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-sm">Israeli law requires developers to provide bank guarantees protecting your payments until the property is registered in your name.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✓</span>
-                <span>1-Year Warranty</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 dark:text-green-400">✓</span>
-                <span>
-                  Staged Payments
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 inline ml-1 text-green-600/60" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-sm">Pay in milestones as construction progresses, typically 10/15/25/50% at key stages.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </span>
-              </li>
-            </ul>
-            <Link 
-              to="/guides/new-construction" 
-              className="text-xs text-green-700 dark:text-green-400 hover:underline font-medium inline-block"
-            >
-              Learn more about buyer protections →
-            </Link>
-          </CardContent>
-        </Card>
       </motion.div>
     </TooltipProvider>
   );
