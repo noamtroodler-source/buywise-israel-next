@@ -3,6 +3,9 @@ import doorway2 from '@/assets/hero-options/doorway-2.jpg';
 import doorway3 from '@/assets/hero-options/doorway-3.jpg';
 import coupleKeysWarm from '@/assets/hero-options/couple-keys-warm.jpg';
 import familyDoorwayWarm from '@/assets/hero-options/family-doorway-warm.jpg';
+import familyOrthodox1 from '@/assets/hero-options/family-doorway-orthodox-1.jpg';
+import familyOrthodox2 from '@/assets/hero-options/family-doorway-orthodox-2.jpg';
+import familyOrthodox3 from '@/assets/hero-options/family-doorway-orthodox-3.jpg';
 import coupleBalconySunset from '@/assets/hero-options/couple-balcony-sunset.jpg';
 import womanSeaviewDoor from '@/assets/hero-options/woman-seaview-door.jpg';
 import multigenerationalWelcome from '@/assets/hero-options/multigenerational-welcome.jpg';
@@ -10,8 +13,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 const images = [
+  { src: familyOrthodox1, label: '⭐ Modern Orthodox Family 1 - Tichel & kippah, sunset doorway' },
+  { src: familyOrthodox2, label: '⭐ Modern Orthodox Family 2 - Headband & kippah with tzitzit' },
+  { src: familyOrthodox3, label: '⭐ Modern Orthodox Family 3 - Beret & colorful kippah' },
+  { src: familyDoorwayWarm, label: 'Family Doorway (Original) - Parents & daughter, sunset glow' },
   { src: coupleKeysWarm, label: 'Couple Receiving Keys - Warm golden light, genuine joy' },
-  { src: familyDoorwayWarm, label: 'Family Doorway - Parents & daughter, sunset glow' },
   { src: coupleBalconySunset, label: 'Balcony Sunset - Couple with Tel Aviv view' },
   { src: womanSeaviewDoor, label: 'Sea View Discovery - Woman in awe, coastal view' },
   { src: multigenerationalWelcome, label: 'Multi-generational - Family gathering, warm stone' },
