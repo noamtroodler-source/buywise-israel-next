@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import heroImage from '@/assets/hero-options/family-doorway-orthodox-2.jpg';
+import heroImage from '@/assets/hero-real-estate.jpg';
 
 type SearchType = 'for_sale' | 'for_rent' | 'projects';
 
@@ -38,129 +38,122 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-[600px] lg:min-h-[650px]">
-      <div className="flex flex-col lg:flex-row">
-        {/* Left Content Side */}
-        <div className="relative z-10 w-full lg:w-[45%] bg-primary flex items-center justify-center">
-          <div className="w-full max-w-xl px-6 py-16 lg:py-20 mx-auto lg:mx-0 lg:px-12 xl:px-16">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-6"
-            >
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground leading-tight">
-                Find Your Perfect Home in Israel
-              </h1>
-              <p className="text-base md:text-lg text-primary-foreground/90 max-w-lg">
-                Discover thousands of properties across Israel. Whether you're buying, renting, or looking for new developments, 
-                we'll help you find the right place to call home.
-              </p>
+    <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+      {/* Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${heroImage})`,
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/70 to-primary/50" />
+      </div>
 
-              {/* Search Box */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="pt-2"
-              >
-                <form onSubmit={handleSearch} className="bg-background rounded-xl p-4 shadow-xl">
-                  {/* Tabs */}
-                  <div className="flex gap-2 mb-4">
-                    <Button
-                      type="button"
-                      variant={searchType === 'for_sale' ? 'default' : 'outline'}
-                      onClick={() => setSearchType('for_sale')}
-                      className="flex-1"
-                    >
-                      Buy
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={searchType === 'for_rent' ? 'default' : 'outline'}
-                      onClick={() => setSearchType('for_rent')}
-                      className="flex-1"
-                    >
-                      Rent
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={searchType === 'projects' ? 'default' : 'outline'}
-                      onClick={() => setSearchType('projects')}
-                      className="flex-1"
-                    >
-                      Projects
-                    </Button>
-                  </div>
+      {/* Content */}
+      <div className="container relative z-10 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mx-auto text-center space-y-6"
+        >
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
+            Find Your Perfect Home in Israel
+          </h1>
+          <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
+            Discover thousands of properties across Israel. Whether you're buying, renting, or looking for new developments, 
+            we'll help you find the right place to call home.
+          </p>
 
-                  {/* Search Fields */}
-                  <div className="flex flex-col gap-3">
-                    <div className="relative flex-1">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        type="text"
-                        placeholder="Enter city, neighborhood, or address"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-12"
-                      />
-                    </div>
-                    <div className="flex gap-3">
-                      {searchType !== 'projects' && (
-                        <Select value={propertyType} onValueChange={setPropertyType}>
-                          <SelectTrigger className="flex-1 h-12">
-                            <SelectValue placeholder="Property Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="apartment">Apartment</SelectItem>
-                            <SelectItem value="house">House</SelectItem>
-                            <SelectItem value="penthouse">Penthouse</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                      <Button type="submit" size="lg" className="h-12 px-6 gap-2 flex-1 lg:flex-none">
-                        <Search className="h-5 w-5" />
-                        Search
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </motion.div>
+          {/* Search Box */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-8"
+          >
+            <form onSubmit={handleSearch} className="bg-background rounded-xl p-4 shadow-xl">
+              {/* Tabs */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant={searchType === 'for_sale' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('for_sale')}
+                  className="flex-1 md:flex-none"
+                >
+                  Buy
+                </Button>
+                <Button
+                  type="button"
+                  variant={searchType === 'for_rent' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('for_rent')}
+                  className="flex-1 md:flex-none"
+                >
+                  Rent
+                </Button>
+                <Button
+                  type="button"
+                  variant={searchType === 'projects' ? 'default' : 'outline'}
+                  onClick={() => setSearchType('projects')}
+                  className="flex-1 md:flex-none"
+                >
+                  Projects
+                </Button>
+              </div>
 
-              {/* Stats */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex flex-wrap gap-6 pt-6"
-              >
-                <div>
-                  <div className="text-2xl font-bold text-accent">10K+</div>
-                  <div className="text-sm text-primary-foreground/80">Properties</div>
+              {/* Search Fields */}
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Enter city, neighborhood, or address"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-12"
+                  />
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-accent">500+</div>
-                  <div className="text-sm text-primary-foreground/80">Agents</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-accent">50+</div>
-                  <div className="text-sm text-primary-foreground/80">Cities</div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </div>
-        </div>
+                {searchType !== 'projects' && (
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger className="w-full md:w-[180px] h-12">
+                      <SelectValue placeholder="Property Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="apartment">Apartment</SelectItem>
+                      <SelectItem value="house">House</SelectItem>
+                      <SelectItem value="penthouse">Penthouse</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+                <Button type="submit" size="lg" className="h-12 px-8 gap-2">
+                  <Search className="h-5 w-5" />
+                  Search
+                </Button>
+              </div>
+            </form>
+          </motion.div>
 
-        {/* Right Image Side */}
-        <div className="relative w-full lg:w-[55%] min-h-[300px] lg:min-h-[650px]">
-          <img
-            src={heroImage}
-            alt="Family at their new home"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Subtle left edge gradient for seamless blend */}
-          <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-primary to-transparent hidden lg:block" />
-        </div>
+          {/* Stats */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-wrap justify-center gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
+          >
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">10K+</div>
+              <div className="text-sm text-primary-foreground/80">Properties Listed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">500+</div>
+              <div className="text-sm text-primary-foreground/80">Trusted Agents</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">50+</div>
+              <div className="text-sm text-primary-foreground/80">Cities Covered</div>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
