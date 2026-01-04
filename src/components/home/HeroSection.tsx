@@ -41,8 +41,8 @@ export function HeroSection() {
     <section className="relative min-h-[600px] lg:min-h-[650px]">
       <div className="flex flex-col lg:flex-row">
         {/* Left Content Side */}
-        <div className="relative z-10 w-full lg:w-[45%] bg-primary flex items-center">
-          <div className="w-full px-6 py-16 lg:py-20 lg:pl-12 xl:pl-20 lg:pr-12">
+        <div className="relative z-10 w-full lg:w-[45%] bg-primary flex items-center justify-center">
+          <div className="w-full max-w-xl px-6 py-16 lg:py-20 mx-auto lg:mx-0 lg:px-12 xl:px-16">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
