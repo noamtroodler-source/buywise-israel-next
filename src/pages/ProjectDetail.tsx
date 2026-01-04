@@ -8,7 +8,6 @@ import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import {
   ProjectHero,
-  ProjectHighlights,
   ProjectFloorPlans,
   ProjectCostBreakdown,
   ProjectTimeline,
@@ -16,8 +15,6 @@ import {
   ProjectAmenities,
   ProjectStickyCard,
   ProjectMobileContactBar,
-  BuyerInsightsTips,
-  ProjectBuyerProtections,
 } from '@/components/project';
 
 export default function ProjectDetail() {
@@ -75,27 +72,18 @@ export default function ProjectDetail() {
                   </p>
                 </div>
               )}
-
-              {/* Project Highlights - Moved from sidebar */}
-              <ProjectHighlights project={projectWithProgress} />
-
-              {/* Buyer Insights - Contextual tips */}
-              <BuyerInsightsTips />
               
-              {/* Floor Plans - Read-only table */}
+              {/* Floor Plans - What's available */}
               <ProjectFloorPlans units={units} developer={project.developer} />
               
-              {/* Cost Breakdown with unit selector */}
+              {/* Cost Breakdown with buyer protections integrated */}
               <ProjectCostBreakdown 
                 units={units}
                 defaultPrice={project.price_from || 0}
                 currency={project.currency || 'ILS'}
               />
-
-              {/* Buyer Protections - After costs to show payment security */}
-              <ProjectBuyerProtections />
               
-              {/* Compact Timeline */}
+              {/* Construction Timeline */}
               <ProjectTimeline project={projectWithProgress} />
               
               <PropertyLocation
