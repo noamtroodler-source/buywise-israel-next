@@ -348,7 +348,23 @@ export function MarketRealityTabs({
 
             <TabsContent value="living" className="mt-6 space-y-6">
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-2">Estimated Monthly Arnona</p>
+                <div className="flex items-center justify-center gap-1.5 mb-2">
+                  <p className="text-sm text-muted-foreground">Estimated Monthly Arnona</p>
+                  <TooltipProvider delayDuration={0}>
+                    <UITooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[260px] bg-background border-border">
+                        <p className="font-medium mb-1">About Arnona</p>
+                        <p className="text-xs text-muted-foreground">
+                          Israel's municipal property tax, paid by residents to fund local services. 
+                          Rates vary by city and property size. New olim may qualify for discounts.
+                        </p>
+                      </TooltipContent>
+                    </UITooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-4xl font-bold text-foreground">
                   ₪{monthlyEstimate.toLocaleString()}
                   <span className="text-lg font-normal text-muted-foreground">/month</span>
@@ -389,20 +405,6 @@ export function MarketRealityTabs({
                   <span className={`text-sm font-medium ${arnonaVsNational > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                     {arnonaVsNational > 0 ? '+' : ''}{arnonaVsNational.toFixed(0)}%
                   </span>
-                </div>
-              </div>
-
-              {/* Insight Card */}
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-primary mt-0.5" />
-                  <div>
-                    <p className="font-medium text-foreground">About Arnona</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Arnona is Israel's municipal property tax, paid by residents to fund local services. 
-                      Rates vary by city and property size. New olim may qualify for discounts.
-                    </p>
-                  </div>
                 </div>
               </div>
             </TabsContent>
