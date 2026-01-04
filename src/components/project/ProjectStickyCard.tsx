@@ -1,4 +1,4 @@
-import { Phone, Mail, Calendar, Building, Shield, Clock, HelpCircle } from 'lucide-react';
+import { MessageCircle, Mail, Calendar, Building, Shield, Clock, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,9 +100,13 @@ export function ProjectStickyCard({ project, developer, selectedUnit, onContactC
               </Button>
               {developer?.phone && (
                 <Button variant="outline" className="w-full" size="lg" asChild>
-                  <a href={`tel:${developer.phone}`}>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Call Developer
+                  <a 
+                    href={`https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp Developer
                   </a>
                 </Button>
               )}
@@ -160,8 +164,12 @@ export function ProjectMobileContactBar({ project, developer }: { project: Proje
         </Button>
         {developer?.phone && (
           <Button variant="outline" size="lg" asChild>
-            <a href={`tel:${developer.phone}`}>
-              <Phone className="h-4 w-4" />
+            <a 
+              href={`https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="h-4 w-4" />
             </a>
           </Button>
         )}
