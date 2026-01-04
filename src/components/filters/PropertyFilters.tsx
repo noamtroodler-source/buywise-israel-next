@@ -465,9 +465,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           {/* Create Alert Button */}
           {onCreateAlert && (
             <Button 
-              variant="outline"
               onClick={handleCreateAlertClick}
-              className="h-11 gap-2 rounded-full border-amber-400 text-amber-600 hover:bg-amber-50 hover:text-amber-700 px-5 font-medium shadow-sm"
+              className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
             >
               <Bell className="h-4 w-4" />
               <span>Create Alert</span>
