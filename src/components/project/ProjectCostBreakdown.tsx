@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Calculator, Receipt, Calendar, Info, Settings, HelpCircle } from 'lucide-react';
+import { Calculator, Receipt, Calendar, Info, Settings, HelpCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -274,8 +274,60 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
           </div>
         </div>
 
+        {/* Buyer Protections - Integrated */}
+        <div className="space-y-3 pt-2 border-t border-border/50">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            Buyer Protections
+          </h4>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary">✓</span>
+              <span>
+                Bank Guarantee
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3 w-3 inline ml-1 text-muted-foreground/60 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">Israeli law requires developers to provide bank guarantees protecting your payments until the property is registered in your name.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">✓</span>
+              <span>1-Year Warranty</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">✓</span>
+              <span>
+                Staged Payments
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3 w-3 inline ml-1 text-muted-foreground/60 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">Pay in milestones as construction progresses, typically 10/15/25/50% at key stages.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
+            </li>
+          </ul>
+          <Link 
+            to="/guides/new-construction" 
+            className="text-xs text-primary hover:underline font-medium inline-block"
+          >
+            Learn more about buyer protections →
+          </Link>
+        </div>
+
         <p className="text-xs text-muted-foreground">
-          * Based on 2025 tax brackets. Payment schedules vary by developer. Always verify with your lawyer.
+          * Based on 2026 tax brackets. Payment schedules vary by developer. Always verify with your lawyer.
         </p>
       </CardContent>
     </Card>
