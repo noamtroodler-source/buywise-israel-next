@@ -118,6 +118,9 @@ const App = () => (
                 <EditProperty />
               </ProtectedRoute>
             } />
+            {/* Dev tool - temporarily public for hero image generation */}
+            <Route path="/admin/hero-images" element={<HeroImageGenerator />} />
+            
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
                 <AdminLayout />
@@ -128,7 +131,6 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
-              <Route path="hero-images" element={<HeroImageGenerator />} />
             </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
