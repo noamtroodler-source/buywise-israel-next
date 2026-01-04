@@ -54,13 +54,15 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
       }
       
       const entry = dateMap.get(dateKey)!;
-      entry[d.city] = d.average_price_sqm || 0;
+      // Use cityName for single-city view to ensure key matches selectedCities
+      const cityKey = selectedCities.length === 1 ? cityName : d.city;
+      entry[cityKey] = d.average_price_sqm || 0;
     });
 
     // Sort by date and return
     return Array.from(dateMap.values())
       .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  }, [marketData, comparisonData, selectedCities]);
+  }, [marketData, comparisonData, selectedCities, cityName]);
 
   // Filter based on period
   const filteredData = useMemo(() => {
