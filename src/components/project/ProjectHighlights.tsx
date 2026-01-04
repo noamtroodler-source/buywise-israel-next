@@ -125,8 +125,8 @@ export function ProjectHighlights({ project }: ProjectHighlightsProps) {
         )}
 
         {/* Investment Potential */}
-        <div className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg border border-accent/20">
-          <TrendingUp className="h-5 w-5 text-accent-foreground mt-0.5" />
+        <div className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+          <TrendingUp className="h-5 w-5 text-primary mt-0.5" />
           <div>
             <p className="text-sm font-medium">New Construction Advantage</p>
             <p className="text-xs text-muted-foreground mt-1">
