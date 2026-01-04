@@ -23,46 +23,51 @@ const LINE_COLORS = [
 ];
 
 export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) {
+  const normalizedCityName = cityName.trim();
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('6m');
-  const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([normalizedCityName]);
   
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
 
   // Reset selection when city changes
   useEffect(() => {
-    setSelectedCities([cityName]);
-  }, [cityName]);
+    setSelectedCities([normalizedCityName]);
+  }, [normalizedCityName]);
 
   const availableCities = useMemo(() => {
     return allCities.map(c => ({ name: c.name, slug: c.slug }));
   }, [allCities]);
 
+  // Only use monthly points with a month (keeps the chart stable and predictable)
+  const monthlyMarketData = useMemo(() => {
+    return marketData.filter((d) => d.data_type === 'monthly' && d.month != null);
+  }, [marketData]);
+
   // Process data for multi-city chart
   const chartData = useMemo(() => {
-    const dataToUse = selectedCities.length > 1 ? comparisonData : marketData;
-    
+    const dataToUse = selectedCities.length > 1 ? comparisonData : monthlyMarketData;
+
     // Group data by date across all cities
     const dateMap = new Map<string, { name: string; sortKey: string; [key: string]: string | number }>();
-    
+
     dataToUse.forEach((d) => {
       const dateKey = `${d.year}-${String(d.month || 1).padStart(2, '0')}`;
       const displayKey = `${months[(d.month || 1) - 1]} ${d.year}`;
-      
+
       if (!dateMap.has(dateKey)) {
         dateMap.set(dateKey, { name: displayKey, sortKey: dateKey });
       }
-      
+
       const entry = dateMap.get(dateKey)!;
       // Use cityName for single-city view to ensure key matches selectedCities
-      const cityKey = selectedCities.length === 1 ? cityName : d.city;
+      const cityKey = (selectedCities.length === 1 ? normalizedCityName : d.city).trim();
       entry[cityKey] = d.average_price_sqm || 0;
     });
 
     // Sort by date and return
-    return Array.from(dateMap.values())
-      .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  }, [marketData, comparisonData, selectedCities, cityName]);
+    return Array.from(dateMap.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [monthlyMarketData, comparisonData, selectedCities, cityName]);
 
   // Filter based on period
   const filteredData = useMemo(() => {
@@ -106,8 +111,8 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className="border-border/50 h-full flex flex-col">
-        <CardHeader className="pb-2 flex-shrink-0">
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="flex items-center gap-2 text-foreground">
@@ -132,10 +137,10 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
             />
           </div>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <div className="flex-1 min-h-[300px] w-full">
+        <CardContent>
+          <div className="h-[300px] w-full">
             {filteredData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                   <XAxis 
@@ -153,18 +158,21 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
                     tickLine={{ className: 'stroke-border' }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  {selectedCities.map((city, index) => (
-                    <Line
-                      key={city}
-                      type="monotone"
-                      dataKey={city}
-                      name={city}
-                      stroke={LINE_COLORS[index]}
-                      strokeWidth={2.5}
-                      dot={{ fill: LINE_COLORS[index], strokeWidth: 0, r: 3 }}
-                      activeDot={{ r: 5, strokeWidth: 0 }}
-                    />
-                  ))}
+                  {(isComparing ? selectedCities : [normalizedCityName]).map((city, index) => {
+                    const color = LINE_COLORS[index % LINE_COLORS.length];
+                    return (
+                      <Line
+                        key={city}
+                        type="monotone"
+                        dataKey={city}
+                        name={city}
+                        stroke={color}
+                        strokeWidth={2.5}
+                        dot={{ fill: color, strokeWidth: 0, r: 3 }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
+                      />
+                    );
+                  })}
                 </LineChart>
               </ResponsiveContainer>
             ) : (
