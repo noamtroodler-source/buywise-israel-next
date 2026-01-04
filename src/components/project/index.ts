@@ -7,3 +7,4 @@ export { ProjectDeveloperCard } from './ProjectDeveloperCard';
 export { ProjectAmenities } from './ProjectAmenities';
 export { ProjectStickyCard, ProjectMobileContactBar } from './ProjectStickyCard';
 export { BuyerInsightsTips } from './BuyerInsightsTips';
+export { ProjectBuyerProtections } from './ProjectBuyerProtections';
