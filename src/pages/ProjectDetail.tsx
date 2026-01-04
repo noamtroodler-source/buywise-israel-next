@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { CityMarketCTA } from '@/components/property/CityMarketCTA';
+import { CalculatorCTA } from '@/components/property/CalculatorCTA';
 import {
   ProjectHero,
   ProjectFloorPlans,
@@ -15,6 +17,9 @@ import {
   ProjectAmenities,
   ProjectStickyCard,
   ProjectMobileContactBar,
+  SimilarProjects,
+  ProjectFAQ,
+  ProjectBreadcrumb,
 } from '@/components/project';
 
 export default function ProjectDetail() {
@@ -54,6 +59,9 @@ export default function ProjectDetail() {
     <Layout>
       <div className="min-h-screen pb-24 lg:pb-8">
         <div className="container py-6">
+          {/* Breadcrumb Navigation */}
+          <ProjectBreadcrumb projectName={project.name} city={project.city} />
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,6 +91,9 @@ export default function ProjectDetail() {
                 currency={project.currency || 'ILS'}
               />
               
+              {/* Calculator Quick Links */}
+              <CalculatorCTA propertyPrice={project.price_from || undefined} />
+              
               {/* Construction Timeline */}
               <ProjectTimeline project={projectWithProgress} />
               
@@ -94,9 +105,15 @@ export default function ProjectDetail() {
                 longitude={project.longitude || undefined}
               />
               
+              {/* City Market Context */}
+              <CityMarketCTA cityName={project.city} />
+              
               {project.amenities && project.amenities.length > 0 && (
                 <ProjectAmenities amenities={project.amenities} />
               )}
+              
+              {/* FAQ Section */}
+              <ProjectFAQ />
               
               {project.developer && (
                 <div id="developer-section">
@@ -115,6 +132,9 @@ export default function ProjectDetail() {
               </div>
             </div>
           </motion.div>
+          
+          {/* Similar Projects Section - Full Width */}
+          <SimilarProjects currentProject={project} />
         </div>
       </div>
       

@@ -5,3 +5,6 @@ export { ProjectTimeline } from './ProjectTimeline';
 export { ProjectDeveloperCard } from './ProjectDeveloperCard';
 export { ProjectAmenities } from './ProjectAmenities';
 export { ProjectStickyCard, ProjectMobileContactBar } from './ProjectStickyCard';
+export { SimilarProjects } from './SimilarProjects';
+export { ProjectFAQ } from './ProjectFAQ';
+export { ProjectBreadcrumb } from './ProjectBreadcrumb';
