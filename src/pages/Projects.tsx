@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building, MapPin, Calendar, Loader2, Home, HelpCircle } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -9,10 +9,15 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProjects } from '@/hooks/useProjects';
 import { ProjectFilters, ProjectFiltersType } from '@/components/filters/ProjectFilters';
+import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Projects() {
   const { data: projects = [], isLoading } = useProjects();
   const [filters, setFilters] = useState<ProjectFiltersType>({});
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -73,6 +78,11 @@ export default function Projects() {
       });
     }
 
+    // Apply developer filter
+    if (filters.developer_id) {
+      result = result.filter(p => p.developer_id === filters.developer_id);
+    }
+
     // Apply sorting
     switch (filters.sort_by) {
       case 'price_asc':
@@ -96,6 +106,14 @@ export default function Projects() {
 
     return result;
   }, [projects, filters]);
+
+  const handleCreateAlert = () => {
+    if (!user) {
+      navigate('/auth?redirect=/projects');
+      return;
+    }
+    setAlertDialogOpen(true);
+  };
 
   // Extract unit type ranges from project data (mock based on price range)
   const getUnitTypeLabel = (project: typeof projects[0]) => {
@@ -155,7 +173,7 @@ export default function Projects() {
           </div>
 
           {/* Filters */}
-          <ProjectFilters filters={filters} onFiltersChange={setFilters} />
+          <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
 
           {/* Results Count */}
           {!isLoading && (
@@ -264,6 +282,18 @@ export default function Projects() {
             </div>
           )}
         </motion.div>
+
+        {/* Create Alert Dialog */}
+        <CreateAlertDialog 
+          open={alertDialogOpen} 
+          onOpenChange={setAlertDialogOpen}
+          filters={{
+            city: filters.city,
+            min_price: filters.min_price,
+            max_price: filters.max_price,
+          }}
+          listingType="projects"
+        />
       </div>
     </Layout>
   );

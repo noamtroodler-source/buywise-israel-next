@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, Home, HelpCircle, Bell, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCities } from '@/hooks/useCities';
+import { useDevelopers } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
@@ -13,12 +15,15 @@ export interface ProjectFiltersType {
   min_price?: number;
   max_price?: number;
   completion_year?: number;
+  min_rooms?: number;
+  developer_id?: string;
   sort_by?: 'newest' | 'price_asc' | 'price_desc' | 'completion';
 }
 
 interface ProjectFiltersProps {
   filters: ProjectFiltersType;
   onFiltersChange: (filters: ProjectFiltersType) => void;
+  onCreateAlert?: () => void;
 }
 
 const PROJECT_STATUSES = [
@@ -47,15 +52,29 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-export function ProjectFilters({ filters, onFiltersChange }: ProjectFiltersProps) {
+const ROOM_OPTIONS = [
+  { value: 3, label: '3+ Rooms' },
+  { value: 4, label: '4+ Rooms' },
+  { value: 5, label: '5+ Rooms' },
+];
+
+export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: ProjectFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
+  const [roomsOpen, setRoomsOpen] = useState(false);
+  const [developerOpen, setDeveloperOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+  const [developerSearch, setDeveloperSearch] = useState('');
   
   const { data: cities } = useCities();
+  const { data: developers } = useDevelopers();
+
+  const filteredDevelopers = developers?.filter(dev => 
+    dev.name.toLowerCase().includes(developerSearch.toLowerCase())
+  );
 
   const updateFilter = <K extends keyof ProjectFiltersType>(key: K, value: ProjectFiltersType[K]) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -201,6 +220,67 @@ export function ProjectFilters({ filters, onFiltersChange }: ProjectFiltersProps
         </PopoverContent>
       </Popover>
 
+      {/* Rooms Filter */}
+      <Popover open={roomsOpen} onOpenChange={setRoomsOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(filterButtonBase, (roomsOpen || filters.min_rooms) && filterButtonActive)}
+          >
+            <Home className="h-4 w-4" />
+            <span>{filters.min_rooms ? `${filters.min_rooms}+ Rooms` : 'Rooms'}</span>
+            {roomsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[260px] p-0 bg-background border shadow-xl z-50" align="start">
+          <div className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg">Rooms</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>In Israel, rooms are counted differently. A "3-room" apartment typically means 2 bedrooms + living room.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              {filters.min_rooms && (
+                <button 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => updateFilter('min_rooms', undefined)}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              {ROOM_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  className={cn(
+                    "flex-1 h-10 rounded-lg border text-sm font-medium transition-all",
+                    filters.min_rooms === option.value 
+                      ? "bg-primary text-primary-foreground border-primary" 
+                      : "border-border hover:bg-muted"
+                  )}
+                  onClick={() => {
+                    updateFilter('min_rooms', filters.min_rooms === option.value ? undefined : option.value);
+                    setRoomsOpen(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
       {/* Price Filter */}
       <Popover open={priceOpen} onOpenChange={setPriceOpen}>
         <PopoverTrigger asChild>
@@ -308,40 +388,128 @@ export function ProjectFilters({ filters, onFiltersChange }: ProjectFiltersProps
         </PopoverContent>
       </Popover>
 
-      {/* Sort */}
-      <div className="flex items-center gap-1 ml-auto">
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-        <Popover open={sortOpen} onOpenChange={setSortOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
+      {/* Developer Filter */}
+      <Popover open={developerOpen} onOpenChange={setDeveloperOpen}>
+        <PopoverTrigger asChild>
+          <Button 
+            variant="outline" 
+            className={cn(filterButtonBase, (developerOpen || filters.developer_id) && filterButtonActive)}
+          >
+            <Briefcase className="h-4 w-4" />
+            <span>{filters.developer_id ? developers?.find(d => d.id === filters.developer_id)?.name || 'Developer' : 'Developer'}</span>
+            {developerOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <div className="p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg">Developer</h3>
+              {filters.developer_id && (
+                <button 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    updateFilter('developer_id', undefined);
+                    setDeveloperOpen(false);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search developer..."
+                value={developerSearch}
+                onChange={(e) => setDeveloperSearch(e.target.value)}
+                className="pl-10 rounded-lg"
+              />
+            </div>
+
+            <div className="max-h-[200px] overflow-y-auto space-y-1">
+              {filteredDevelopers?.map(dev => (
+                <button
+                  key={dev.id}
+                  className={cn(
+                    "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center justify-between",
+                    filters.developer_id === dev.id 
+                      ? "bg-amber-400 text-foreground font-medium" 
+                      : "hover:bg-muted"
+                  )}
+                  onClick={() => {
+                    updateFilter('developer_id', dev.id);
+                    setDeveloperOpen(false);
+                    setDeveloperSearch('');
+                  }}
+                >
+                  <span>{dev.name}</span>
+                  {dev.is_verified && (
+                    <span className="text-xs text-primary">✓ Verified</span>
+                  )}
+                </button>
+              ))}
+              {filteredDevelopers?.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No developers found</p>
+              )}
+            </div>
+
+            <Link 
+              to="/developers" 
+              className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
             >
-              <span className="text-sm">{getSortLabel()}</span>
-              {sortOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-2 bg-background border shadow-xl z-50" align="end">
-            {SORT_OPTIONS.map(option => (
-              <button
-                key={option.value}
-                className={cn(
-                  "w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-between",
-                  filters.sort_by === option.value 
-                    ? "bg-amber-100 text-foreground font-medium" 
-                    : "hover:bg-muted"
-                )}
-                onClick={() => {
-                  updateFilter('sort_by', option.value as ProjectFiltersType['sort_by']);
-                  setSortOpen(false);
-                }}
+              View all developers <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Sort & Create Alert */}
+      <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-1">
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <Popover open={sortOpen} onOpenChange={setSortOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
               >
-                {option.label}
-                {filters.sort_by === option.value && <Check className="h-4 w-4" />}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
+                <span className="text-sm">{getSortLabel()}</span>
+                {sortOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2 bg-background border shadow-xl z-50" align="end">
+              {SORT_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  className={cn(
+                    "w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-between",
+                    filters.sort_by === option.value 
+                      ? "bg-amber-100 text-foreground font-medium" 
+                      : "hover:bg-muted"
+                  )}
+                  onClick={() => {
+                    updateFilter('sort_by', option.value as ProjectFiltersType['sort_by']);
+                    setSortOpen(false);
+                  }}
+                >
+                  {option.label}
+                  {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {onCreateAlert && (
+          <Button 
+            onClick={onCreateAlert}
+            className="h-11 gap-2 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-4"
+          >
+            <Bell className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Alert</span>
+          </Button>
+        )}
       </div>
     </div>
   );
