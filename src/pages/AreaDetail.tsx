@@ -11,7 +11,7 @@ import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 // Market Dashboard Components
 import { MarketStatsCards } from '@/components/city/MarketStatsCards';
-import { PriceTrendChart } from '@/components/city/PriceTrendChart';
+import { PriceTrendChartSimple } from '@/components/city/PriceTrendChartSimple';
 import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
@@ -418,26 +418,30 @@ export default function CityDetail() {
               <div className="container">
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
                   {/* Price History - Takes 3/5 on large screens */}
-                  <div className="lg:col-span-3 space-y-4">
+                  <div className="lg:col-span-3 space-y-4 flex flex-col">
                     <div className="flex items-center gap-3">
                       <BarChart3 className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold text-foreground">Price History & Trends</h2>
                     </div>
-                    <PriceTrendChart marketData={marketData} cityName={city.name} />
+                    <div className="flex-1">
+                      <PriceTrendChartSimple marketData={marketData} cityName={city.name} />
+                    </div>
                   </div>
 
                   {/* Market Reality - Takes 2/5 on large screens */}
-                  <div className="lg:col-span-2 space-y-4">
+                  <div className="lg:col-span-2 space-y-4 flex flex-col">
                     <div className="flex items-center gap-3">
                       <Target className="h-5 w-5 text-primary" />
                       <h2 className="text-xl font-semibold text-foreground">Market Reality</h2>
                     </div>
-                    <MarketRealityTabs 
-                      marketData={marketData} 
-                      cityName={city.name}
-                      citySlug={slug}
-                      arnonaRateSqm={city.arnona_rate_sqm}
-                    />
+                    <div className="flex-1">
+                      <MarketRealityTabs 
+                        marketData={marketData} 
+                        cityName={city.name}
+                        citySlug={slug}
+                        arnonaRateSqm={city.arnona_rate_sqm}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

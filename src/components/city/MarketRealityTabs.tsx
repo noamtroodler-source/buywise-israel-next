@@ -123,12 +123,13 @@ export function MarketRealityTabs({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
+      className="h-full"
     >
-      <Card className="border-border/50">
+      <Card className="border-border/50 h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-foreground">Market Reality</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col">
           <Tabs defaultValue="prices" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-muted">
               <TabsTrigger value="prices" className="flex items-center gap-1.5">
