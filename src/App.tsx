@@ -35,6 +35,7 @@ import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
+import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import Glossary from "./pages/Glossary";
 import Guides from "./pages/Guides";
 import Contact from "./pages/Contact";
@@ -127,6 +128,7 @@ const App = () => (
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
+              <Route path="hero-images" element={<HeroImageGenerator />} />
             </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
