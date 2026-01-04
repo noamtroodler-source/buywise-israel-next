@@ -215,14 +215,11 @@ export default function Projects() {
                           alt={project.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute top-3 left-3 flex gap-2">
-                          <Badge className={getStatusColor(project.status)}>
-                            {getStatusLabel(project.status)}
-                          </Badge>
-                          {project.is_featured && (
+                        {project.is_featured && (
+                          <div className="absolute top-3 left-3">
                             <Badge className="bg-accent text-accent-foreground">Featured</Badge>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                       <CardContent className="p-5 space-y-3">
                         <div className="space-y-1">
@@ -257,16 +254,31 @@ export default function Projects() {
                           )}
                         </div>
 
-                        {/* Construction Progress Bar */}
-                        {project.status === 'under_construction' && (project as any).construction_progress_percent > 0 && (
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Construction Progress</span>
-                              <span className="font-medium text-primary">{(project as any).construction_progress_percent}%</span>
-                            </div>
-                            <Progress value={(project as any).construction_progress_percent} className="h-1.5" />
+                        {/* Project Status Progress Bar */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              {project.status === 'planning' && 'Planning Phase'}
+                              {project.status === 'pre_sale' && 'Pre-Sale'}
+                              {project.status === 'under_construction' && 'Construction Progress'}
+                              {project.status === 'completed' && 'Ready for Move-In'}
+                            </span>
+                            <span className="font-medium text-primary">
+                              {project.status === 'planning' && 'Coming Soon'}
+                              {project.status === 'pre_sale' && 'Starting Soon'}
+                              {project.status === 'under_construction' && `${(project as any).construction_progress_percent || 0}%`}
+                              {project.status === 'completed' && '100%'}
+                            </span>
                           </div>
-                        )}
+                          <Progress 
+                            value={
+                              project.status === 'completed' ? 100 :
+                              project.status === 'under_construction' ? ((project as any).construction_progress_percent || 0) :
+                              0
+                            } 
+                            className="h-1.5" 
+                          />
+                        </div>
 
                         <div className="pt-3 border-t border-border">
                           <p className="text-xs text-muted-foreground">Starting from</p>
