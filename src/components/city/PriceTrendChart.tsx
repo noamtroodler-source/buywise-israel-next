@@ -104,8 +104,8 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <Card className="border-border/50">
-        <CardHeader className="pb-2">
+      <Card className="border-border/50 h-full flex flex-col">
+        <CardHeader className="pb-2 flex-shrink-0">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="flex items-center gap-2 text-foreground">
@@ -130,8 +130,8 @@ export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) 
             />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
+        <CardContent className="flex-1 flex flex-col">
+          <div className="flex-1 min-h-[300px] w-full">
             {filteredData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={filteredData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

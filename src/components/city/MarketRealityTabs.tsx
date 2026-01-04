@@ -124,7 +124,7 @@ export function MarketRealityTabs({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
     >
-      <Card className="border-border/50">
+      <Card className="border-border/50 h-full">
         <CardHeader>
           <CardTitle className="text-foreground">Market Reality</CardTitle>
         </CardHeader>

@@ -416,7 +416,7 @@ export default function CityDetail() {
           {marketData.length > 0 && (
             <div className="bg-muted/40 py-10">
               <div className="container">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
                   {/* Price History - Takes 3/5 on large screens */}
                   <div className="lg:col-span-3 space-y-4">
                     <div className="flex items-center gap-3">
