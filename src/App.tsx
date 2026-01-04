@@ -36,6 +36,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
 import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
+import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
 import Guides from "./pages/Guides";
 import Contact from "./pages/Contact";
@@ -118,8 +119,9 @@ const App = () => (
                 <EditProperty />
               </ProtectedRoute>
             } />
-            {/* Dev tool - temporarily public for hero image generation */}
+            {/* Dev tools - temporarily public for hero image generation */}
             <Route path="/admin/hero-images" element={<HeroImageGenerator />} />
+            <Route path="/admin/hero-preview" element={<HeroPreview />} />
             
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
