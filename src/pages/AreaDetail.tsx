@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator, Scale } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
-import { CityComparison } from '@/components/city/CityComparison';
+
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
   'tel-aviv': [
@@ -440,17 +440,6 @@ export default function CityDetail() {
               </div>
             </div>
           )}
-
-          {/* Section 2.5: Compare Cities - White background */}
-          <div className="bg-background py-10">
-            <div className="container space-y-4">
-              <div className="flex items-center gap-3">
-                <Scale className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold text-foreground">Compare Cities</h2>
-              </div>
-              <CityComparison currentCitySlug={slug || ''} currentCityName={city.name} />
-            </div>
-          </div>
 
           {/* Section 3: Worth Watching - White background */}
           {worthWatching.length > 0 && (
