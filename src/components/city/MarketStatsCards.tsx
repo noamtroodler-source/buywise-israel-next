@@ -1,16 +1,23 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, Home, Zap, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Home, Zap, Calendar, Percent, ChartLine, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MarketData } from '@/types/projects';
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
+import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
+
+// National average for context (Israel-wide benchmark)
+const NATIONAL_AVG_PRICE_SQM = 22800;
+const NATIONAL_AVG_YIELD = 2.8;
 
 interface MarketStatsCardsProps {
   marketData: MarketData[];
   cityName: string;
   citySlug?: string;
   canonicalMetrics?: CanonicalMetrics | null;
+  historicalPrices?: HistoricalPrice[];
   cityData?: {
     average_price_sqm?: number | null;
     median_apartment_price?: number | null;
@@ -28,7 +35,7 @@ const getMonthName = (month: number | null) => {
   return months[month - 1] || '';
 };
 
-export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetrics, cityData }: MarketStatsCardsProps) {
+export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetrics, historicalPrices = [], cityData }: MarketStatsCardsProps) {
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
   
   const latestData = marketData[0];
@@ -49,6 +56,51 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
     ?? cityData?.yoy_price_change 
     ?? latestData?.price_change_percent 
     ?? null;
+
+  // Investment metrics
+  const grossYield = canonicalMetrics?.gross_yield_percent ?? null;
+  
+  // Calculate 10-year growth from historical prices
+  const calculateGrowthMetrics = () => {
+    if (historicalPrices.length < 2) return null;
+    
+    const sortedPrices = [...historicalPrices].sort((a, b) => a.year - b.year);
+    const firstValidPrice = sortedPrices.find(p => p.average_price_sqm && p.average_price_sqm > 0);
+    const lastValidPrice = sortedPrices.reverse().find(p => p.average_price_sqm && p.average_price_sqm > 0);
+    
+    if (!firstValidPrice || !lastValidPrice || firstValidPrice.year === lastValidPrice.year) return null;
+    
+    const startPrice = firstValidPrice.average_price_sqm!;
+    const endPrice = lastValidPrice.average_price_sqm!;
+    const years = lastValidPrice.year - firstValidPrice.year;
+    
+    const totalAppreciation = ((endPrice - startPrice) / startPrice) * 100;
+    const cagr = calculateCAGR(startPrice, endPrice, years);
+    
+    return {
+      totalAppreciation: Math.round(totalAppreciation),
+      cagr,
+      years,
+      startYear: firstValidPrice.year,
+      endYear: lastValidPrice.year,
+    };
+  };
+
+  const growthMetrics = calculateGrowthMetrics();
+
+  // What your budget buys - approximate sqm at median price
+  const typicalSqm = (medianPrice && pricePerSqm && pricePerSqm > 0) 
+    ? Math.round(medianPrice / pricePerSqm) 
+    : null;
+
+  // National context comparison
+  const priceVsNational = pricePerSqm 
+    ? Math.round(((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100) 
+    : null;
+
+  const yieldVsNational = grossYield 
+    ? (grossYield - NATIONAL_AVG_YIELD).toFixed(1) 
+    : null;
 
   const formatPrice = (value: number | null) => {
     if (!value) return 'N/A';
@@ -93,19 +145,20 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
   const isCanonicalData = !!canonicalMetrics;
 
   return (
-    <div className="space-y-3">
-      {(dataDate || isCanonicalData) && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3 w-3" />
-          <span>
-            {isCanonicalData 
-              ? 'Data from verified research report (Q4 2024)' 
-              : `Data from ${dataDate}`}
-            {priceChange !== null && ' • Year-over-year change'}
-          </span>
-        </div>
-      )}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <TooltipProvider>
+      <div className="space-y-4">
+        {(dataDate || isCanonicalData) && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>
+              {isCanonicalData 
+                ? 'Data from verified research report (Q4 2024)' 
+                : `Data from ${dataDate}`}
+              {priceChange !== null && ' • Year-over-year change'}
+            </span>
+          </div>
+        )}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Price per m² Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -144,42 +197,29 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
           </Card>
         </motion.div>
 
-        {/* Median Price Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Home className="h-4 w-4 text-primary" />
-                </div>
-                {previousData && latestData?.median_price && previousData?.median_price && !canonicalMetrics && (
-                  <div className={`flex items-center text-xs font-medium ${
-                    (latestData.median_price - previousData.median_price) > 0 ? 'text-emerald-600' : 
-                    (latestData.median_price - previousData.median_price) < 0 ? 'text-red-500' : 'text-muted-foreground'
-                  }`}>
-                    {(latestData.median_price - previousData.median_price) > 0 ? (
-                      <TrendingUp className="h-3 w-3 mr-0.5" />
-                    ) : (latestData.median_price - previousData.median_price) < 0 ? (
-                      <TrendingDown className="h-3 w-3 mr-0.5" />
-                    ) : null}
-                    <span title="Month-over-Month">
-                      {Math.abs((latestData.median_price - previousData.median_price) / previousData.median_price * 100).toFixed(1)}%
-                    </span>
+          {/* Median Price Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Home className="h-4 w-4 text-primary" />
                   </div>
-                )}
-              </div>
-              <div className="space-y-1">
-                <p className="text-2xl font-bold text-foreground">{formatMedianPrice(medianPrice)}</p>
-                <p className="text-sm font-medium text-foreground/80">Median Price</p>
-                <p className="text-xs text-muted-foreground">Typical property value</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-foreground">{formatMedianPrice(medianPrice)}</p>
+                  <p className="text-sm font-medium text-foreground/80">Median Price</p>
+                  <p className="text-xs text-muted-foreground">
+                    {typicalSqm ? `~${typicalSqm}m² at this price` : 'Typical property value'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
         {/* Rental Price Range Card */}
         <motion.div
@@ -220,46 +260,130 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
           </Card>
         </motion.div>
 
-        {/* Market Trend Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Zap className="h-4 w-4 text-primary" />
-                </div>
-                {priceChange !== null && (
-                  <div className={`flex items-center text-xs font-medium ${
-                    priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
-                  }`}>
-                    {priceChange > 0 ? (
-                      <TrendingUp className="h-3 w-3 mr-0.5" />
-                    ) : priceChange < 0 ? (
-                      <TrendingDown className="h-3 w-3 mr-0.5" />
-                    ) : null}
-                    {priceChange !== 0 && (
-                      <span title="Year-over-Year">
-                        {Math.abs(priceChange).toFixed(1)}%
-                      </span>
-                    )}
+          {/* Gross Yield Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Percent className="h-4 w-4 text-primary" />
                   </div>
-                )}
-              </div>
-              <div className="space-y-1">
-                <p className="text-2xl font-bold text-foreground">
-                  {priceChange !== null ? `${priceChange > 0 ? '+' : ''}${priceChange.toFixed(1)}%` : 'Stable'}
-                </p>
-                <p className="text-sm font-medium text-foreground/80">YoY Trend</p>
-                <p className="text-xs text-muted-foreground">Price momentum</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="p-1 rounded-full hover:bg-muted/50 transition-colors">
+                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[250px] text-xs">
+                      <p>Annual rental income as a percentage of property value. Higher yield = better immediate returns. Israel average is ~{NATIONAL_AVG_YIELD}%.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-foreground">
+                    {grossYield !== null ? `${grossYield.toFixed(1)}%` : 'N/A'}
+                  </p>
+                  <p className="text-sm font-medium text-foreground/80">Gross Yield</p>
+                  <p className="text-xs text-muted-foreground">
+                    {grossYield !== null && yieldVsNational 
+                      ? `${parseFloat(yieldVsNational) >= 0 ? 'Above' : 'Below'} national avg`
+                      : 'Annual rental return'
+                    }
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* 10-Year Growth Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <ChartLine className="h-4 w-4 text-primary" />
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="p-1 rounded-full hover:bg-muted/50 transition-colors">
+                        <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[250px] text-xs">
+                      <p>Total price appreciation over the past decade. CAGR (Compound Annual Growth Rate) shows average yearly growth accounting for compounding.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-foreground">
+                    {growthMetrics ? `+${growthMetrics.totalAppreciation}%` : 'N/A'}
+                  </p>
+                  <p className="text-sm font-medium text-foreground/80">
+                    {growthMetrics ? `${growthMetrics.years}-Year Growth` : '10-Year Growth'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {growthMetrics ? `${growthMetrics.cagr}% CAGR` : 'Long-term appreciation'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* YoY Trend Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 bg-card">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  {priceChange !== null && (
+                    <div className={`flex items-center text-xs font-medium ${
+                      priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    }`}>
+                      {priceChange > 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-0.5" />
+                      ) : priceChange < 0 ? (
+                        <TrendingDown className="h-3 w-3 mr-0.5" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold text-foreground">
+                    {priceChange !== null ? `${priceChange > 0 ? '+' : ''}${priceChange.toFixed(1)}%` : 'Stable'}
+                  </p>
+                  <p className="text-sm font-medium text-foreground/80">YoY Trend</p>
+                  <p className="text-xs text-muted-foreground">Current momentum</p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* National Context Benchmark */}
+        {priceVsNational !== null && (
+          <div className="text-sm text-muted-foreground text-center pt-2 border-t border-border/30">
+            {cityName} prices are{' '}
+            <span className={priceVsNational > 0 ? 'font-medium text-foreground' : 'font-medium text-emerald-600'}>
+              {priceVsNational > 0 ? `${priceVsNational}% above` : `${Math.abs(priceVsNational)}% below`}
+            </span>
+            {' '}the national average of ₪{(NATIONAL_AVG_PRICE_SQM / 1000).toFixed(1)}K/m²
+          </div>
+        )}
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
