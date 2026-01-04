@@ -17,12 +17,12 @@ export function BuyerInsightsTips() {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 text-amber-500" />
+        <Lightbulb className="h-4 w-4 text-primary" />
         Buyer Insights
       </h3>
       <div className="grid gap-2 sm:grid-cols-2">
         {displayInsights.map((insight, index) => (
-          <Card key={index} className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200/50 dark:border-amber-800/30">
+          <Card key={index} className="bg-muted/40 border-border/50">
             <CardContent className="p-3">
               <p className="text-sm text-foreground/80">{insight}</p>
             </CardContent>
