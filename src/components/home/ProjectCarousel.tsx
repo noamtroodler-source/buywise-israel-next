@@ -34,6 +34,7 @@ interface ProjectCarouselProps {
   isLoading: boolean;
   viewAllLink: string;
   viewAllText?: string;
+  hideStatusBadge?: boolean;
 }
 
 const formatPrice = (price: number, currency: string = 'ILS') => {
@@ -81,7 +82,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project, hideStatusBadge = false }: { project: Project; hideStatusBadge?: boolean }) {
   const placeholderImage = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=60';
   
   const completionDate = project.completion_date 
@@ -102,13 +103,13 @@ function ProjectCard({ project }: { project: Project }) {
               alt={project.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            <div className="absolute top-3 left-3 flex gap-2">
-              {project.status && (
+            {!hideStatusBadge && project.status && (
+              <div className="absolute top-3 left-3 flex gap-2">
                 <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
                   {getStatusLabel(project.status)}
                 </Badge>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <CardContent className="p-4 space-y-3">
@@ -163,6 +164,7 @@ export function ProjectCarousel({
   isLoading,
   viewAllLink,
   viewAllText = 'View All',
+  hideStatusBadge = false,
 }: ProjectCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
@@ -264,7 +266,7 @@ export function ProjectCarousel({
                   key={project.id}
                   className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4"
                 >
-                  <ProjectCard project={project} />
+                  <ProjectCard project={project} hideStatusBadge={hideStatusBadge} />
                 </div>
               ))}
             </div>
