@@ -20,6 +20,7 @@ interface PropertyCarouselProps {
   isLoading: boolean;
   viewAllLink: string;
   viewAllText?: string;
+  hideStatusBadge?: boolean;
 }
 
 export function PropertyCarousel({
@@ -29,6 +30,7 @@ export function PropertyCarousel({
   isLoading,
   viewAllLink,
   viewAllText = 'View All',
+  hideStatusBadge = false,
 }: PropertyCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
@@ -130,7 +132,7 @@ export function PropertyCarousel({
                   key={property.id}
                   className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4"
                 >
-                  <PropertyCard property={property} showCompareButton={false} />
+                  <PropertyCard property={property} showCompareButton={false} hideStatusBadge={hideStatusBadge} />
                 </div>
               ))}
             </div>

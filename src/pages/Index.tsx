@@ -47,6 +47,7 @@ const Index = () => {
         isLoading={loadingSale}
         viewAllLink="/listings?status=for_sale"
         viewAllText="View All Sales"
+        hideStatusBadge
       />
 
       {/* Tools Promo */}
@@ -60,6 +61,7 @@ const Index = () => {
         isLoading={loadingProjects}
         viewAllLink="/projects"
         viewAllText="View All Projects"
+        hideStatusBadge
       />
 
       {/* Popular Areas */}
@@ -73,6 +75,7 @@ const Index = () => {
         isLoading={loadingRental}
         viewAllLink="/listings?status=for_rent"
         viewAllText="View All Rentals"
+        hideStatusBadge
       />
     </Layout>
   );

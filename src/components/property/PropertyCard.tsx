@@ -16,9 +16,10 @@ interface PropertyCardProps {
   className?: string;
   showCompareButton?: boolean;
   showMonthlyEstimate?: boolean;
+  hideStatusBadge?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true, hideStatusBadge = false }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -124,9 +125,11 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
             )}
             
             <div className="absolute top-3 left-3 flex gap-2">
-              <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
-                {getStatusLabel(property.listing_status)}
-              </Badge>
+              {!hideStatusBadge && (
+                <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                  {getStatusLabel(property.listing_status)}
+                </Badge>
+              )}
               {property.is_featured && (
                 <Badge className="bg-accent text-accent-foreground text-xs font-medium">
                   Featured
