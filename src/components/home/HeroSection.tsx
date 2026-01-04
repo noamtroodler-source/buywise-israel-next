@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import heroImage from '@/assets/hero-real-estate.jpg';
+import heroImage from '@/assets/hero-options/doorway-3.jpg';
 
 type SearchType = 'for_sale' | 'for_rent' | 'projects';
 
