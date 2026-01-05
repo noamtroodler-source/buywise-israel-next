@@ -1188,13 +1188,17 @@ function AffordabilityCalculatorContent() {
             buyerType as BuyerCategory
           }
           onTypeChange={(type) => {
-            const mapping: Record<BuyerCategory, BuyerType> = {
+            const mapping: Partial<Record<BuyerCategory, BuyerType>> = {
               'first_time': 'first_time',
               'oleh': 'oleh',
               'additional': 'investor',
               'non_resident': 'foreign',
+              'upgrader': 'upgrader',
+              'investor': 'investor',
+              'foreign': 'foreign',
+              'company': 'company',
             };
-            setBuyerType(mapping[type]);
+            setBuyerType(mapping[type] || 'first_time');
           }}
           profileType={buyerProfile ? (
             getBuyerTaxCategory(buyerProfile) as BuyerCategory

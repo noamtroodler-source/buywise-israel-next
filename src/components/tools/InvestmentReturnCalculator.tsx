@@ -959,13 +959,17 @@ export function InvestmentReturnCalculator() {
             buyerType as BuyerCategory
           }
           onTypeChange={(type) => {
-            const mapping: Record<BuyerCategory, 'investor' | 'foreign' | 'oleh'> = {
+            const mapping: Partial<Record<BuyerCategory, 'investor' | 'foreign' | 'oleh'>> = {
               'first_time': 'investor', // Investment calc defaults non-applicable types to investor
               'oleh': 'oleh',
               'additional': 'investor',
               'non_resident': 'foreign',
+              'upgrader': 'investor',
+              'investor': 'investor',
+              'foreign': 'foreign',
+              'company': 'investor',
             };
-            setBuyerType(mapping[type]);
+            setBuyerType(mapping[type] || 'investor');
           }}
           profileType={buyerProfile ? buyerCategory : undefined}
         />
