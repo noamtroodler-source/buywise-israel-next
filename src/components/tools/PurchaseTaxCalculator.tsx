@@ -17,8 +17,11 @@ import {
   getBuyerTypeLabel,
   getTaxBrackets
 } from '@/lib/calculations/purchaseTax';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 export function PurchaseTaxCalculator() {
+  const formatCurrency = useFormatPrice();
+  
   const [propertyPrice, setPropertyPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
   const [aliyahYear, setAliyahYear] = useState<number | undefined>(undefined);
@@ -50,14 +53,6 @@ export function PurchaseTaxCalculator() {
   const brackets = useMemo(() => {
     return getTaxBrackets(buyerType);
   }, [buyerType]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const formatPercent = (value: number) => {
     return `${value.toFixed(2)}%`;

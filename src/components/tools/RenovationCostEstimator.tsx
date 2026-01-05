@@ -13,6 +13,7 @@ import { InfoBanner } from './shared/InfoBanner';
 import { CashBreakdownTable, BreakdownItem } from './shared/CashBreakdownTable';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
+import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 
 type QualityLevel = 'basic' | 'standard' | 'premium';
 type PropertyType = 'apartment' | 'house' | 'penthouse';
@@ -187,6 +188,10 @@ const qualityExamples = {
 };
 
 export function RenovationCostEstimator() {
+  const { areaUnit } = usePreferences();
+  const formatCurrency = useFormatPrice();
+  const formatArea = useFormatArea();
+  
   // Property basics
   const [propertySize, setPropertySize] = useState(80);
   const [buildingYear, setBuildingYear] = useState(1995);
@@ -320,13 +325,6 @@ export function RenovationCostEstimator() {
     };
   }, [selectedCategories, qualityLevel, propertySize, bathroomCount, includePermits, includeContingency, contingencyPercent, includeTempHousing, includeArchitect]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   // Build breakdown items for table
   const breakdownItems: BreakdownItem[] = [
@@ -427,7 +425,7 @@ export function RenovationCostEstimator() {
                   onChange={(e) => setPropertySize(Number(e.target.value))}
                   className="h-11 pr-12"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">sqm</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnit}</span>
               </div>
             </div>
             <div className="space-y-2">

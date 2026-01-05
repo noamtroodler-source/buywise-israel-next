@@ -41,7 +41,7 @@ import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCate
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { usePreferences } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_true_cost_inputs';
@@ -99,10 +99,9 @@ function InfoTooltip({ content }: { content: string }) {
 export function TrueCostCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
-  const { currency } = usePreferences();
-  
-  // Format price helper
-  const formatPrice = (value: number) => `₪${formatNumber(value)}`;
+  const { areaUnit } = usePreferences();
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2500000');
@@ -337,17 +336,17 @@ export function TrueCostCalculator() {
     }
     
     if (taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
-      const formattedSavings = `₪${Math.round(taxSavings).toLocaleString()}`;
+      const formattedSavings = formatPrice(Math.round(taxSavings));
       messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formattedSavings} in purchase tax compared to investor rates. That's real money you get to keep.`);
     }
     
     if (isNewConstruction && calculations.madadCost > 0) {
-      const madadFormatted = `₪${Math.round(calculations.madadCost).toLocaleString()}`;
+      const madadFormatted = formatPrice(Math.round(calculations.madadCost));
       messages.push(`With construction index linkage, expect the final price to be ${madadFormatted} higher than the contract price. Factor this into your budget now.`);
     }
     
     return messages;
-  }, [calculations, buyerCategory, isNewConstruction]);
+  }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
 
   // Build cost breakdown items for CashBreakdownTable
   const breakdownItems = useMemo(() => {
@@ -520,7 +519,7 @@ export function TrueCostCalculator() {
                   {suggestedPrice && (
                     <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5">
                       <span>
-                        {cities?.find(c => c.slug === selectedCity)?.name} avg: ₪{formatNumber(cityMetrics.average_price_sqm || 0)}/sqm → ₪{formatNumber(suggestedPrice)}
+                        {cities?.find(c => c.slug === selectedCity)?.name} avg: {formatPrice(cityMetrics.average_price_sqm || 0)}/{areaUnit === 'sqft' ? 'sqft' : 'sqm'} → {formatPrice(suggestedPrice)}
                       </span>
                       <Button 
                         variant="link" 
@@ -539,7 +538,7 @@ export function TrueCostCalculator() {
                       "text-xs px-2.5",
                       priceComparison.isAbove ? "text-amber-600" : "text-emerald-600"
                     )}>
-                      {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median (₪{formatNumber(priceComparison.median)})
+                      {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
                     </p>
                   )}
                 </div>

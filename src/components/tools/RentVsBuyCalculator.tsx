@@ -43,6 +43,7 @@ import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCate
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
+import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
@@ -130,6 +131,9 @@ const MIN_DOWN_PAYMENT: Record<BuyerCategory, number> = {
 export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
+  const { areaUnit } = usePreferences();
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
   
   // Form state
   const [selectedCity, setSelectedCity] = useState('');
@@ -537,7 +541,6 @@ export function RentVsBuyCalculator() {
               <InfoTooltip content="Full purchase price of the property you're considering." />
             </Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
               <Input
                 id="propertyPrice"
                 type="text"
@@ -549,7 +552,7 @@ export function RentVsBuyCalculator() {
                   }
                 }}
                 placeholder="2,500,000"
-                className="h-11 pl-8"
+                className="h-11"
               />
             </div>
             {suggestedPrice && !propertyPrice && (
@@ -557,7 +560,7 @@ export function RentVsBuyCalculator() {
                 onClick={handleUseSuggestedPrice}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                Use city estimate: ₪{formatNumber(suggestedPrice)}
+                Use city estimate: {formatPrice(suggestedPrice)}
               </button>
             )}
           </div>
@@ -569,7 +572,6 @@ export function RentVsBuyCalculator() {
               <InfoTooltip content="Your current or expected monthly rent payment. This will be compared against ownership costs." />
             </Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
               <Input
                 id="monthlyRent"
                 type="text"
@@ -581,7 +583,7 @@ export function RentVsBuyCalculator() {
                   }
                 }}
                 placeholder="6,000"
-                className="h-11 pl-8"
+                className="h-11"
               />
             </div>
             {suggestedRent && !monthlyRent && selectedCity && (
@@ -589,7 +591,7 @@ export function RentVsBuyCalculator() {
                 onClick={handleUseSuggestedRent}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                Use city average: ₪{formatNumber(suggestedRent)}/mo
+                Use city average: {formatPrice(suggestedRent)}/mo
               </button>
             )}
           </div>
@@ -771,12 +773,12 @@ export function RentVsBuyCalculator() {
           <div className="p-6">
             <div className="flex items-center gap-4 justify-center mb-4">
               <div className="text-center">
-                <p className="text-3xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.totalMonthlyBuying))}</p>
+                <p className="text-3xl font-bold tabular-nums">{formatPrice(Math.round(calculations.totalMonthlyBuying))}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to buy</p>
               </div>
               <div className="text-muted-foreground text-sm font-medium">vs</div>
               <div className="text-center">
-                <p className="text-3xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</p>
+                <p className="text-3xl font-bold tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to rent</p>
               </div>
             </div>
@@ -785,7 +787,7 @@ export function RentVsBuyCalculator() {
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm">
                 <span className="font-medium tabular-nums">
-                  ₪{formatNumber(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
+                  {formatPrice(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
                 </span>
                 <span className="text-muted-foreground">
                   {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
@@ -803,19 +805,19 @@ export function RentVsBuyCalculator() {
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mortgage</span>
-                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMortgage))}</span>
+                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyMortgage))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Arnona</span>
-                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyArnona))}</span>
+                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyArnona))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Va'ad + Ins.</span>
-                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
+                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Maintenance</span>
-                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.monthlyMaintenance))}</span>
+                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyMaintenance))}</span>
                   </div>
                 </div>
               </div>
@@ -828,7 +830,7 @@ export function RentVsBuyCalculator() {
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Rent</span>
-                    <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}</span>
+                    <span className="tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}</span>
                   </div>
                 </div>
               </div>
@@ -838,9 +840,9 @@ export function RentVsBuyCalculator() {
             <div className="mt-4 pt-3 border-t border-border/50">
               <p className="text-xs text-muted-foreground">
                 {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
-                  <>~₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} of your mortgage payment builds equity you keep.</>
+                  <>~{formatPrice(Math.round(calculations.monthlyEquityBuilding))} of your mortgage payment builds equity you keep.</>
                 ) : (
-                  <>Buying costs less monthly AND builds ₪{formatNumber(Math.round(calculations.monthlyEquityBuilding))} equity/mo.</>
+                  <>Buying costs less monthly AND builds {formatPrice(Math.round(calculations.monthlyEquityBuilding))} equity/mo.</>
                 )}
               </p>
             </div>
@@ -855,12 +857,12 @@ export function RentVsBuyCalculator() {
             
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="text-center p-3 bg-muted/40 rounded-lg">
-                <p className="text-xl font-bold tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</p>
+                <p className="text-xl font-bold tabular-nums">{formatPrice(Math.round(calculations.equityBuilt))}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">equity if you buy</p>
               </div>
               <div className="text-center p-3 bg-muted/40 rounded-lg">
                 <p className="text-xl font-bold tabular-nums">
-                  {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
+                  {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">net if you rent</p>
               </div>
@@ -869,8 +871,8 @@ export function RentVsBuyCalculator() {
             <div className="text-center text-sm">
               <span className={calculations.buyingIsBetter ? 'text-success' : 'text-primary'}>
                 {calculations.buyingIsBetter 
-                  ? `Buying builds ₪${formatNumber(Math.round(calculations.wealthDifference))} more`
-                  : `Renting saves ₪${formatNumber(Math.round(calculations.wealthDifference))}`}
+                  ? `Buying builds ${formatPrice(Math.round(calculations.wealthDifference))} more`
+                  : `Renting saves ${formatPrice(Math.round(calculations.wealthDifference))}`}
               </span>
               {calculations.breakEvenYear && (
                 <span className="text-muted-foreground ml-1">
@@ -989,36 +991,36 @@ export function RentVsBuyCalculator() {
                 <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-2">If You Buy</h4>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Down payment</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.downPayment))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.downPayment))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Purchase Tax</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.purchaseTax))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.purchaseTax))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Legal & agent fees</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.lawyerFee + calculations.agentFee))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.lawyerFee + calculations.agentFee))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Mortgage payments</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalMortgagePayments))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalMortgagePayments))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Running costs</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalOwnershipCosts))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalOwnershipCosts))}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between">
                   <span>Total spent</span>
-                  <span className="tabular-nums font-medium">₪{formatNumber(Math.round(calculations.totalBuyingCost))}</span>
+                  <span className="tabular-nums font-medium">{formatPrice(Math.round(calculations.totalBuyingCost))}</span>
                 </div>
                 <div className="flex justify-between text-success">
                   <span>Appreciation gain</span>
-                  <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.appreciation))}</span>
+                  <span className="tabular-nums">+{formatPrice(Math.round(calculations.appreciation))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net equity</span>
-                  <span className="text-success tabular-nums">₪{formatNumber(Math.round(calculations.equityBuilt))}</span>
+                  <span className="text-success tabular-nums">{formatPrice(Math.round(calculations.equityBuilt))}</span>
                 </div>
               </div>
               
@@ -1027,29 +1029,29 @@ export function RentVsBuyCalculator() {
                 <h4 className="font-medium text-muted-foreground text-xs uppercase tracking-wide mb-2">If You Rent</h4>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Rent (Year 1)</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.currentMonthlyRent))}/mo</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}/mo</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Rent (Year {timeHorizon})</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.finalYearRent))}/mo</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.finalYearRent))}/mo</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total housing cost</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalRentPaid))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalRentPaid))}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Cash kept</span>
-                  <span className="tabular-nums">₪{formatNumber(Math.round(calculations.totalCashNotSpent))}</span>
+                  <span className="tabular-nums">{formatPrice(Math.round(calculations.totalCashNotSpent))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Investment growth</span>
-                  <span className="tabular-nums">+₪{formatNumber(Math.round(calculations.investmentGains))}</span>
+                  <span className="tabular-nums">+{formatPrice(Math.round(calculations.investmentGains))}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border/50">
                   <span>Net position</span>
                   <span className="tabular-nums">
-                    {calculations.netRentingWealth >= 0 ? '₪' : '-₪'}{formatNumber(Math.abs(Math.round(calculations.netRentingWealth)))}
+                    {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
                   </span>
                 </div>
               </div>
