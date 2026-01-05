@@ -24,6 +24,7 @@ import {
   InfoBanner,
   PaymentPieChart,
   ToolFeedback,
+  InsightCard,
 } from './shared';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 
@@ -162,6 +163,34 @@ function MortgageCalculatorContent() {
   const purchaseTaxAmount = includeTaxesInCash ? purchaseTaxResult.totalTax : 0;
   const totalCashNeeded = downPaymentAmount + purchaseTaxAmount + legalFees + bankFees + appraisalFee + bufferAmount;
   const paymentToIncomePercent = Math.round((mortgageResult.monthlyPayment / MEDIAN_HOUSEHOLD_INCOME) * 100);
+
+  // Generate personalized insights
+  const insights = useMemo(() => {
+    const messages: string[] = [];
+    const pti = paymentToIncomePercent;
+    const totalInterestPercent = Math.round((mortgageResult.totalInterest / propertyPrice) * 100);
+    
+    // PTI-based insights
+    if (pti > 45) {
+      messages.push(`This payment takes about ${pti}% of the median household income—that's on the higher end. Consider a smaller loan or longer term if you want more breathing room.`);
+    } else if (pti > 35) {
+      messages.push(`At ${pti}% of median income, this is manageable but tight. Make sure you've budgeted for unexpected expenses before committing.`);
+    } else if (pti <= 25) {
+      messages.push(`This payment is very comfortable relative to typical incomes. You'll have solid breathing room for other expenses and savings.`);
+    }
+    
+    // LTV insights
+    if (ltv >= 70) {
+      messages.push(`With ${ltv.toFixed(0)}% financing, you're borrowing close to the maximum. Less equity means less flexibility if you need to sell early—but it lets you keep more cash on hand.`);
+    }
+    
+    // Term and interest insights
+    if (loanTermYears >= 28 && totalInterestPercent > 80) {
+      messages.push(`Over ${loanTermYears} years, you'll pay ${formatCurrency(mortgageResult.totalInterest)} in interest—about ${totalInterestPercent}% of the property price. If your income grows, consider prepaying to save significantly.`);
+    }
+    
+    return messages;
+  }, [paymentToIncomePercent, ltv, loanTermYears, mortgageResult.totalInterest, propertyPrice, formatCurrency]);
 
   const cashBreakdownItems = [
     { label: 'Down Payment', value: formatCurrency(downPaymentAmount), percentage: `${effectiveDownPaymentPercent.toFixed(0)}%` },
@@ -665,6 +694,11 @@ function MortgageCalculatorContent() {
           ~{paymentToIncomePercent}% of median Israeli household income (₪{formatNumber(MEDIAN_HOUSEHOLD_INCOME)}/mo)
         </p>
       </div>
+      
+      {/* Insight Card */}
+      {insights.length > 0 && (
+        <InsightCard insights={insights} className="mt-5" />
+      )}
     </Card>
   );
 

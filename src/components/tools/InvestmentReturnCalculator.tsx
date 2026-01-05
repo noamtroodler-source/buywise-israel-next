@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { ToolLayout } from './shared/ToolLayout';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
+import { InsightCard } from './shared/InsightCard';
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -192,6 +193,35 @@ export function InvestmentReturnCalculator() {
     
     return { vacancyLoss, totalOperatingExpenses, noi, annualTax, annualMaintenance, annualManagement, monthlyMortgage, monthlyCashFlow, downPayment, loanAmount, closingCosts, totalCashInvested, grossYield, netYield, capRate, cashOnCash, taxComparison, projection, finalYear, totalReturn, annualizedROI: annualizedROI * 100, grade };
   }, [purchasePrice, monthlyRent, vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance, maintenancePercent, usePropertyManagement, managementFeePercent, useLeverage, downPaymentPercent, interestRate, loanTermYears, taxMethod, holdingPeriod, appreciationRate]);
+  
+  // Generate personalized insights
+  const investmentInsights = useMemo(() => {
+    const messages: string[] = [];
+    const grade = calculations.grade.grade;
+    const cashOnCash = calculations.cashOnCash;
+    const monthlyCashFlow = calculations.monthlyCashFlow;
+    
+    // Grade-based insights
+    if (grade === 'A+' || grade === 'A') {
+      messages.push(`This looks like a strong investment on paper. The numbers work well—now do your due diligence on the specific property and tenant market.`);
+    } else if (grade === 'B+' || grade === 'B') {
+      messages.push(`Solid, not spectacular. This could work well as a long-term hold, especially if you expect the area to appreciate.`);
+    } else if (grade.startsWith('C')) {
+      messages.push(`The returns here are modest. You might be paying for lifestyle location rather than pure investment return. Make sure that's what you want.`);
+    } else {
+      messages.push(`The numbers are weak on paper. Consider whether emotional factors or future potential justify this over alternatives.`);
+    }
+    
+    // Cash flow insights
+    if (monthlyCashFlow < 0 && useLeverage) {
+      const formatted = `₪${Math.abs(Math.round(monthlyCashFlow)).toLocaleString()}`;
+      messages.push(`This property will cost you ${formatted}/month beyond the mortgage. You're betting on appreciation, not income. Make sure you can carry it.`);
+    } else if (cashOnCash > 6) {
+      messages.push(`Your annual return on cash invested is healthy at ${cashOnCash.toFixed(1)}%. You're making your money work.`);
+    }
+    
+    return messages;
+  }, [calculations, useLeverage]);
   
   // Helpers
   const formatCurrency = (value: number) => currency === 'USD' ? `$${Math.round(value / exchangeRate).toLocaleString()}` : `₪${Math.round(value).toLocaleString()}`;
@@ -847,22 +877,10 @@ export function InvestmentReturnCalculator() {
           </div>
         </div>
         
-        {/* Investment Insight */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <div className="flex gap-3">
-            <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Investment Insight</p>
-              <p className="text-sm text-muted-foreground">
-                {calculations.grossYield > (cityMetrics?.gross_yield_percent || 3.5) 
-                  ? `This property's ${calculations.grossYield.toFixed(1)}% yield beats the city average.` 
-                  : `At ${calculations.grossYield.toFixed(1)}% yield, consider negotiating price.`}
-                {calculations.monthlyCashFlow < 0 && useLeverage && ` You'll cover ${formatCurrency(Math.abs(calculations.monthlyCashFlow))}/mo from other income.`}
-                {calculations.monthlyCashFlow > 0 && ` Positive cash flow of ${formatCurrency(calculations.monthlyCashFlow)}/mo from day one.`}
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Investment Insight - using InsightCard */}
+        {investmentInsights.length > 0 && (
+          <InsightCard insights={investmentInsights} />
+        )}
       </CardContent>
     </Card>
   );

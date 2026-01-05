@@ -35,6 +35,7 @@ import {
   ToolFeedback, 
   CTACard,
   InfoBanner,
+  InsightCard,
 } from './shared';
 import { calculatePurchaseTax as calcTax } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';

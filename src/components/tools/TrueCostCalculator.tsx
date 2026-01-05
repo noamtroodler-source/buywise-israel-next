@@ -26,6 +26,7 @@ import {
   ToolDisclaimer, 
   ToolFeedback, 
   CashBreakdownTable,
+  InsightCard,
 } from './shared';
 import { 
   calculateOlehEligibility,
@@ -318,6 +319,33 @@ export function TrueCostCalculator() {
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
     };
   }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, cities]);
+
+  // Generate personalized insights
+  const trueCostInsights = useMemo(() => {
+    const messages: string[] = [];
+    const overheadPercent = calculations.percentAbovePrice;
+    const taxSavings = calculations.taxSavings;
+    
+    if (overheadPercent > 10) {
+      messages.push(`Budget for about ${overheadPercent.toFixed(0)}% above the listing price in additional costs. This is typical in Israel, but surprises people coming from other markets.`);
+    } else if (overheadPercent < 7) {
+      messages.push(`Your total costs are relatively lean for an Israeli purchase—you've minimized the extras. Nice work.`);
+    } else {
+      messages.push(`Expect roughly ${overheadPercent.toFixed(0)}% in costs beyond the property price—that's standard for Israeli transactions.`);
+    }
+    
+    if (taxSavings > 50000 && (buyerCategory === 'first_time' || buyerCategory === 'oleh')) {
+      const formattedSavings = `₪${Math.round(taxSavings).toLocaleString()}`;
+      messages.push(`As a ${buyerCategory === 'oleh' ? 'new Oleh' : 'first-time buyer'}, you're saving ${formattedSavings} in purchase tax compared to investor rates. That's real money you get to keep.`);
+    }
+    
+    if (isNewConstruction && calculations.madadCost > 0) {
+      const madadFormatted = `₪${Math.round(calculations.madadCost).toLocaleString()}`;
+      messages.push(`With construction index linkage, expect the final price to be ${madadFormatted} higher than the contract price. Factor this into your budget now.`);
+    }
+    
+    return messages;
+  }, [calculations, buyerCategory, isNewConstruction]);
 
   // Build cost breakdown items for CashBreakdownTable
   const breakdownItems = useMemo(() => {
@@ -810,6 +838,11 @@ export function TrueCostCalculator() {
           </p>
           <CashBreakdownTable items={monthlyItems} />
         </div>
+        
+        {/* Insight Card */}
+        {trueCostInsights.length > 0 && (
+          <InsightCard insights={trueCostInsights} className="mt-2" />
+        )}
       </div>
     </Card>
   );

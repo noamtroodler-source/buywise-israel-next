@@ -12,6 +12,7 @@ import { ToolLayout } from './shared/ToolLayout';
 import { InfoBanner } from './shared/InfoBanner';
 import { CashBreakdownTable, BreakdownItem } from './shared/CashBreakdownTable';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
+import { InsightCard } from './shared/InsightCard';
 
 type QualityLevel = 'basic' | 'standard' | 'premium';
 type PropertyType = 'apartment' | 'house' | 'penthouse';
@@ -372,6 +373,34 @@ export function RenovationCostEstimator() {
     { phase: 'Completion', percent: 30, amount: calculations.totalMin * 0.3 },
   ];
 
+  // Generate personalized insights
+  const renovationInsights = useMemo(() => {
+    const messages: string[] = [];
+    const totalMax = calculations.totalMax;
+    const timelineMax = calculations.timelineMax;
+    
+    if (totalMax > 200000) {
+      messages.push(`This is a significant renovation. Consider living elsewhere during the work—it's worth the sanity and often speeds up the project.`);
+    } else if (selectedCategories.length > 0 && totalMax < 80000) {
+      messages.push(`This is a manageable project. Most contractors can handle this scope without major disruption to your life.`);
+    }
+    
+    if (timelineMax > 8) {
+      messages.push(`Expect some delays. Israeli holidays, material delays, and contractor schedules can push timelines. Budget time as carefully as money.`);
+    }
+    
+    if (qualityLevel === 'premium') {
+      messages.push(`Premium finishes look great, but consider where they matter most. A premium kitchen has more resale impact than premium painting.`);
+    }
+    
+    // Age-based alerts
+    if (ageAlerts.length > 0) {
+      messages.push(`Your building's age may require additional upgrades. Check the alerts above for mandatory considerations.`);
+    }
+    
+    return messages;
+  }, [calculations, selectedCategories.length, qualityLevel, ageAlerts]);
+
   const leftColumn = (
     <div className="space-y-6">
       {/* Property Basics */}
@@ -691,6 +720,11 @@ export function RenovationCostEstimator() {
             <p className="text-muted-foreground">Select renovation areas to see cost estimates</p>
           </CardContent>
         </Card>
+      )}
+      
+      {/* Insight Card */}
+      {renovationInsights.length > 0 && selectedCategories.length > 0 && (
+        <InsightCard insights={renovationInsights} />
       )}
     </div>
   );

@@ -27,6 +27,7 @@ import {
   ToolDisclaimer,
   InfoBanner,
   ToolFeedback,
+  InsightCard,
 } from './shared';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 
@@ -352,6 +353,32 @@ function AffordabilityCalculatorContent() {
   }, [monthlyIncome, spouseIncome, selfEmployedIncome, selfEmployedYears, 
       existingDebts, downPaymentSaved, interestRate, loanTerm, maxLTV,
       hasForeignIncome, foreignIncomeAmount, foreignCurrency, employmentType]);
+
+  // Generate personalized insights
+  const insights = useMemo(() => {
+    const messages: string[] = [];
+    const score = calculations.affordabilityScore;
+    const limitingFactor = calculations.limitingFactor;
+    
+    if (score >= 70) {
+      messages.push(`You're in a strong position. Banks will likely compete for your business—don't settle for the first mortgage offer you get.`);
+    } else if (score >= 50) {
+      messages.push(`Solid foundation. You can comfortably shop in your range, though you might want a small buffer for bidding flexibility.`);
+    } else if (score >= 30) {
+      messages.push(`This is doable but tight. Consider waiting 6-12 months to save more or increase income before committing.`);
+    } else {
+      messages.push(`The numbers are challenging right now. Focus on reducing debts or increasing savings before jumping in.`);
+    }
+    
+    if (limitingFactor === 'income') {
+      messages.push(`Your income is the bottleneck, not your savings. If you expect salary growth or can add a co-borrower, your budget expands significantly.`);
+    } else if (limitingFactor === 'down_payment' && calculations.additionalDownPaymentNeeded > 0) {
+      const additionalNeeded = Math.round(calculations.additionalDownPaymentNeeded / 1000) * 1000;
+      messages.push(`You've got the income—you just need more cash upfront. Every ₪100K more you save unlocks roughly ₪400K in property value.`);
+    }
+    
+    return messages;
+  }, [calculations]);
 
   // Score helpers
   const getScoreColor = (score: number) => {
@@ -1075,6 +1102,11 @@ function AffordabilityCalculatorContent() {
             <p className="text-xl font-bold">{formatCurrency(calculations.requiredLoan)}</p>
           </div>
         </div>
+
+        {/* Insight Card */}
+        {insights.length > 0 && (
+          <InsightCard insights={insights} className="mt-5" />
+        )}
       </Card>
 
       {/* Next Steps Grid */}
