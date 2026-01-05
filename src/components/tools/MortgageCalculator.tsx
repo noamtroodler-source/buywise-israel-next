@@ -610,13 +610,6 @@ function MortgageCalculatorContent() {
           </div>
         </div>
 
-        {/* Reset */}
-        <div className="flex justify-center pt-2">
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1.5" onClick={handleReset}>
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset to defaults
-          </Button>
-        </div>
       </div>
     </Card>
   );
@@ -837,10 +830,16 @@ function MortgageCalculatorContent() {
       subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
       headerActions={
-        <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
-          {saveToProfile.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
-          {saveToProfile.isPending ? 'Saving...' : 'Save'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+            <RotateCcw className="h-4 w-4" />
+            <span className="hidden sm:inline">Reset</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
+            {saveToProfile.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+            {saveToProfile.isPending ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
       }
       infoBanner={
         <BuyerTypeInfoBanner
