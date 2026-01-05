@@ -1,6 +1,6 @@
 // Mortgage Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,8 @@ import { calculateMortgagePayment, stressTestPayment, estimateMortgageMix } from
 import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
 import { 
   ToolLayout, 
@@ -72,6 +74,8 @@ function MortgageCalculatorContent() {
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const saveToProfile = useSaveCalculatorResult();
   
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
@@ -362,7 +366,23 @@ function MortgageCalculatorContent() {
       savedAt: new Date().toISOString(),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
-    toast({ title: "Calculation saved", description: "Your inputs have been saved locally" });
+    
+    // If logged in, also save to profile
+    if (user) {
+      saveToProfile.mutate({
+        calculatorType: 'mortgage',
+        inputs: savedData,
+        results: {
+          monthlyPayment: mortgageResult.monthlyPayment,
+          loanAmount,
+          totalInterest: mortgageResult.totalInterest,
+          totalCashNeeded,
+          ltv,
+        },
+      });
+    } else {
+      toast({ title: "Calculation saved", description: "Your inputs have been saved locally. Sign in to save to your profile." });
+    }
   };
 
   // Left column - single consolidated inputs card
@@ -817,9 +837,9 @@ function MortgageCalculatorContent() {
       subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
       headerActions={
-        <Button variant="outline" size="sm" onClick={handleSave}>
-          <Save className="h-3.5 w-3.5 mr-1.5" />
-          Save
+        <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
+          {saveToProfile.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+          {saveToProfile.isPending ? 'Saving...' : 'Save'}
         </Button>
       }
       infoBanner={

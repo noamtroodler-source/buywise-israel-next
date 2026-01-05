@@ -9,6 +9,7 @@ import {
   MapPin,
   RotateCcw,
   Building2,
+  Loader2,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,8 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
   ToolLayout, 
   ToolDisclaimer, 
@@ -104,6 +107,8 @@ export function TrueCostCalculator() {
   const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
+  const { user } = useAuth();
+  const saveToProfile = useSaveCalculatorResult();
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2500000');
@@ -215,26 +220,6 @@ export function TrueCostCalculator() {
     }
   }, [buyerProfile]);
 
-  const handleSave = useCallback(() => {
-    const data = {
-      propertyPrice,
-      propertySize,
-      selectedCity,
-      buyerCategory,
-      aliyahYear,
-      isNewConstruction,
-      constructionMonths,
-      includeAgentFee,
-      includeMortgageCosts,
-      loanAmount,
-      includeMoving,
-      includeFurniture,
-      furnitureLevel,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-    toast.success('Inputs saved! They\'ll be here when you return.');
-  }, [propertyPrice, propertySize, selectedCity, buyerCategory, aliyahYear, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel]);
-
   const handleReset = useCallback(() => {
     setPropertyPrice('2500000');
     setPropertySize('85');
@@ -249,6 +234,8 @@ export function TrueCostCalculator() {
     setIncludeMoving(false);
     setIncludeFurniture(false);
     setFurnitureLevel('standard');
+    setIncludeRenovation(false);
+    setRenovationAmount('100000');
     localStorage.removeItem(STORAGE_KEY);
     toast.success('Reset to defaults');
   }, []);
@@ -354,6 +341,44 @@ export function TrueCostCalculator() {
     
     return messages;
   }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
+
+  // Save inputs (defined after calculations to use its values)
+  const handleSave = () => {
+    const data = {
+      propertyPrice,
+      propertySize,
+      selectedCity,
+      buyerCategory,
+      aliyahYear,
+      isNewConstruction,
+      constructionMonths,
+      includeAgentFee,
+      includeMortgageCosts,
+      loanAmount,
+      includeMoving,
+      includeFurniture,
+      furnitureLevel,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    
+    // If logged in, also save to profile
+    if (user) {
+      saveToProfile.mutate({
+        calculatorType: 'truecost',
+        inputs: data,
+        results: {
+          totalCost: calculations.totalOneTime,
+          purchaseTax: calculations.purchaseTax,
+          allCostsAbovePrice: calculations.allCostsAbovePrice,
+          percentAbovePrice: calculations.percentAbovePrice,
+          lawyerFee: calculations.lawyerFee,
+          agentFee: calculations.agentFee,
+        },
+      });
+    } else {
+      toast.success('Inputs saved! Sign in to save to your profile.');
+    }
+  };
 
   // Build cost breakdown items for CashBreakdownTable
   const breakdownItems = useMemo(() => {
@@ -969,9 +994,9 @@ export function TrueCostCalculator() {
       subtitle="See the complete cost of buying property in Israel — beyond just the price"
       icon={<Calculator className="h-6 w-6 text-primary" />}
       headerActions={
-        <Button variant="outline" size="sm" onClick={handleSave} className="gap-1.5">
-          <Save className="h-4 w-4" />
-          <span className="hidden sm:inline">Save</span>
+        <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-1.5">
+          {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
         </Button>
       }
       infoBanner={
