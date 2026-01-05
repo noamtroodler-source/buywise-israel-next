@@ -1,6 +1,6 @@
 // Mortgage Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight } from 'lucide-react';
+import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
+import { calculateMortgagePayment, stressTestPayment, estimateMortgageMix } from '@/lib/calculations/mortgage';
 import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useToast } from '@/hooks/use-toast';
@@ -153,6 +153,19 @@ function MortgageCalculatorContent() {
   const purchaseTaxResult = useMemo(() => {
     return calculatePurchaseTax(propertyPrice, buyerType);
   }, [propertyPrice, buyerType]);
+
+  // Stress test calculations
+  const stressTest = useMemo(() => {
+    return {
+      plus1: stressTestPayment(loanAmount, interestRate, loanTermYears, 1),
+      plus2: stressTestPayment(loanAmount, interestRate, loanTermYears, 2),
+    };
+  }, [loanAmount, interestRate, loanTermYears]);
+
+  // Multi-track mortgage mix estimate
+  const mortgageMix = useMemo(() => {
+    return estimateMortgageMix(loanAmount, 'balanced', loanTermYears);
+  }, [loanAmount, loanTermYears]);
 
   const monthlyPrincipal = useMemo(() => {
     return mortgageResult.monthlyPayment - (loanAmount * (interestRate / 100 / 12));
@@ -690,11 +703,76 @@ function MortgageCalculatorContent() {
           <span className="font-semibold">{formatCurrency(mortgageResult.totalPayment)}</span>
         </div>
 
+        <Separator className="my-3" />
+
+        {/* Stress Test Section */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+            <span className="text-xs font-medium text-muted-foreground">If Rates Rise</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                Bank of Israel recommends stress-testing your budget. Israeli rates can fluctuate—especially the Prime-linked portion of your mortgage.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <p className="text-amber-700 dark:text-amber-300 font-medium">+1% Rate</p>
+              <p className="text-amber-600 dark:text-amber-400 tabular-nums">
+                {formatCurrency(stressTest.plus1.stressedPayment)}
+                <span className="text-amber-500 ml-1">(+{stressTest.plus1.increasePercent}%)</span>
+              </p>
+            </div>
+            <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+              <p className="text-red-700 dark:text-red-300 font-medium">+2% Rate</p>
+              <p className="text-red-600 dark:text-red-400 tabular-nums">
+                {formatCurrency(stressTest.plus2.stressedPayment)}
+                <span className="text-red-500 ml-1">(+{stressTest.plus2.increasePercent}%)</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-3" />
+
+        {/* Multi-Track Mortgage Preview */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-muted-foreground">Israeli Mortgage Mix</span>
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                Israeli mortgages typically combine 3 "tracks" (מסלולים): Prime, Fixed, and CPI-Linked. This balances stability with flexibility.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="p-3 rounded-md bg-muted/50 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Typical 3-Track Mix</span>
+              <span className="text-sm font-semibold tabular-nums">{formatCurrency(mortgageMix.totalMonthlyPayment)}/mo</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 text-[10px]">
+              {mortgageMix.tracks.map((track, i) => (
+                <div key={i} className="text-center p-1.5 rounded bg-background border">
+                  <p className="font-medium text-muted-foreground">{track.type === 'prime' ? 'Prime' : track.type === 'fixed_unlinked' ? 'Fixed' : 'CPI'}</p>
+                  <p className="tabular-nums">{track.interestRate.toFixed(1)}%</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground">{mortgageMix.rationale}</p>
+          </div>
+        </div>
+        
         <div className="flex-1" />
         
-        <Separator className="my-3" />
-        
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-xs text-muted-foreground text-center pt-3">
           ~{paymentToIncomePercent}% of median Israeli household income (₪{formatNumber(MEDIAN_HOUSEHOLD_INCOME)}/mo)
         </p>
       </div>
