@@ -465,7 +465,34 @@ export function RentVsBuyCalculator() {
       equityBuiltGross,
     };
   }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
-  
+
+  // Generate personalized insights
+  const insights = useMemo(() => {
+    if (!calculations) return [];
+    const messages: string[] = [];
+    
+    if (calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon) {
+      if (timeHorizon >= 10) {
+        messages.push(`With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster.`);
+      } else {
+        messages.push(`You reach break-even in ~${calculations.breakEvenYear} years. If staying that long, buying is likely the stronger path.`);
+      }
+    } else if (calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon) {
+      messages.push(`At ${timeHorizon} years, renting still wins financially. Consider buying if you'll stay ${calculations.breakEvenYear}+ years.`);
+    } else if (calculations.buyingIsBetter) {
+      messages.push(`Given your inputs, buying builds more wealth at every point. Strong financial choice if you have the down payment.`);
+    } else {
+      messages.push(`Renting provides flexibility here. Invest your would-be down payment and still come out ahead over ${timeHorizon} years.`);
+    }
+    
+    // Add lifestyle insight
+    if (calculations.spaceAdvantagePercent > 20) {
+      messages.push(`For the same monthly budget, renting gets you roughly ${calculations.spaceAdvantagePercent}% more space than buying. That's a lifestyle tradeoff worth considering.`);
+    }
+    
+    return messages;
+  }, [calculations, timeHorizon]);
+
   // Save inputs (defined after calculations to use its values)
   const handleSave = () => {
     const data = {
@@ -969,29 +996,6 @@ export function RentVsBuyCalculator() {
             )}
           </div>
           
-          {/* KEY INSIGHT */}
-          <div className="px-6 py-5 border-t border-border bg-muted/30">
-            <div className="flex items-start gap-3">
-              <div className="p-1.5 rounded-full bg-primary/10 shrink-0">
-                <Lightbulb className="h-4 w-4 text-primary" />
-              </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {calculations.breakEvenYear && calculations.breakEvenYear <= timeHorizon ? (
-                  timeHorizon >= 10 ? (
-                    `With a ${timeHorizon}-year horizon, buying builds significant equity. After break-even at ~${calculations.breakEvenYear} years, you're growing wealth faster.`
-                  ) : (
-                    `You reach break-even in ~${calculations.breakEvenYear} years. If staying that long, buying is likely the stronger path.`
-                  )
-                ) : calculations.breakEvenYear && calculations.breakEvenYear > timeHorizon ? (
-                  `At ${timeHorizon} years, renting still wins financially. Consider buying if you'll stay ${calculations.breakEvenYear}+ years.`
-                ) : calculations.buyingIsBetter ? (
-                  `Given your inputs, buying builds more wealth at every point. Strong financial choice if you have the down payment.`
-                ) : (
-                  `Renting provides flexibility here. Invest your would-be down payment and still come out ahead over ${timeHorizon} years.`
-                )}
-              </p>
-            </div>
-          </div>
         </Card>
       ) : (
         <Card className="p-6">
@@ -1010,6 +1014,11 @@ export function RentVsBuyCalculator() {
   // Bottom section - Collapsible breakdown, Pros/Cons, and navigation
   const bottomSection = calculations && (
     <div className="space-y-8">
+      {/* Insight Card */}
+      {insights.length > 0 && (
+        <InsightCard insights={insights} />
+      )}
+      
       {/* Pros & Cons Section - Cleaner without heavy cards */}
       <div>
         <h3 className="text-lg font-semibold mb-5">Beyond the Numbers</h3>
