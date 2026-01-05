@@ -1369,6 +1369,39 @@ export type Database = {
           },
         ]
       }
+      saved_calculator_results: {
+        Row: {
+          calculator_type: string
+          created_at: string | null
+          id: string
+          inputs: Json
+          name: string | null
+          results: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calculator_type: string
+          created_at?: string | null
+          id?: string
+          inputs?: Json
+          name?: string | null
+          results?: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calculator_type?: string
+          created_at?: string | null
+          id?: string
+          inputs?: Json
+          name?: string | null
+          results?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_alerts: {
         Row: {
           created_at: string | null

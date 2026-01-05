@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Bell, BookMarked, MessageSquare } from 'lucide-react';
+import { Heart, Bell, BookMarked, Calculator } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSearchAlerts } from '@/hooks/useSearchAlerts';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
+import { useSavedCalculatorResults } from '@/hooks/useSavedCalculatorResults';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -37,6 +38,7 @@ export function ProfileStatsGrid() {
   const { favoriteProperties } = useFavorites();
   const { data: searchAlerts = [] } = useSearchAlerts();
   const { savedArticles } = useSavedArticles();
+  const { data: savedCalcResults = [] } = useSavedCalculatorResults();
 
   const activeAlerts = searchAlerts.filter(alert => alert.is_active);
 
@@ -59,6 +61,16 @@ export function ProfileStatsGrid() {
       colorClass: 'bg-primary/10',
     },
     {
+      icon: <Calculator className="h-5 w-5 text-emerald-500" />,
+      value: savedCalcResults.length,
+      label: 'Saved Calculations',
+      onClick: () => {
+        const element = document.getElementById('saved-calculator-results');
+        element?.scrollIntoView({ behavior: 'smooth' });
+      },
+      colorClass: 'bg-emerald-500/10',
+    },
+    {
       icon: <BookMarked className="h-5 w-5 text-amber-500" />,
       value: savedArticles.length,
       label: 'Saved Articles',
@@ -68,7 +80,7 @@ export function ProfileStatsGrid() {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {stats.map((stat, index) => (
         <StatCard
           key={stat.label}

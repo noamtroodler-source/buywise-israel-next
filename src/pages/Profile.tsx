@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, Settings, MessageCircle } from 'lucide-react';
+import { User, Mail, Calendar, Settings, MessageCircle, Heart, Bell, Calculator } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { ProfileStatsGrid } from '@/components/profile/ProfileStatsGrid';
 import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
 import { ProfileSearchAlerts } from '@/components/profile/ProfileSearchAlerts';
+import { SavedCalculatorResults } from '@/components/profile/SavedCalculatorResults';
 
 
 export default function Profile() {
@@ -164,7 +165,14 @@ export default function Profile() {
               </Card>
 
               {/* Search Alerts */}
-              <ProfileSearchAlerts />
+              <div id="search-alerts-section">
+                <ProfileSearchAlerts />
+              </div>
+
+              {/* Saved Calculator Results */}
+              <div id="saved-calculator-results">
+                <SavedCalculatorResults />
+              </div>
             </div>
 
             {/* Right Column - Buyer Profile & Quick Actions */}
@@ -204,7 +212,32 @@ export default function Profile() {
                     className="w-full justify-start"
                     onClick={() => navigate('/favorites')}
                   >
+                    <Heart className="h-4 w-4 mr-2" />
                     View Saved Properties
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      const element = document.getElementById('search-alerts-section');
+                      element?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    View Saved Searches
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      const element = document.getElementById('saved-calculator-results');
+                      element?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                  >
+                    <Calculator className="h-4 w-4 mr-2" />
+                    View Saved Calculator Results
                   </Button>
 
                   <Button
