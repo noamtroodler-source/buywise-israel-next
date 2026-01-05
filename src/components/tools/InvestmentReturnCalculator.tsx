@@ -877,16 +877,17 @@ export function InvestmentReturnCalculator() {
           </div>
         </div>
         
-        {/* Investment Insight - using InsightCard */}
-        {investmentInsights.length > 0 && (
-          <InsightCard insights={investmentInsights} />
-        )}
       </CardContent>
     </Card>
   );
   
   const bottomSection = (
     <div className="space-y-6">
+      {/* Insight Card - Full Width */}
+      {investmentInsights.length > 0 && (
+        <InsightCard insights={investmentInsights} />
+      )}
+      
       {/* Year-by-Year Projection Table */}
       <Card>
         <CardContent className="p-6">

@@ -695,16 +695,17 @@ function MortgageCalculatorContent() {
         </p>
       </div>
       
-      {/* Insight Card */}
-      {insights.length > 0 && (
-        <InsightCard insights={insights} className="mt-5" />
-      )}
     </Card>
   );
 
   // Bottom section - full width
   const bottomSection = (
     <div className="space-y-6">
+      {/* Insight Card - Full Width */}
+      {insights.length > 0 && (
+        <InsightCard insights={insights} />
+      )}
+      
       {/* Cash Needed Breakdown */}
       <CashBreakdownTable title="Cash Needed to Close" items={cashBreakdownItems} />
 

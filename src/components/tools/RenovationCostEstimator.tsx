@@ -721,13 +721,13 @@ export function RenovationCostEstimator() {
           </CardContent>
         </Card>
       )}
-      
-      {/* Insight Card */}
-      {renovationInsights.length > 0 && selectedCategories.length > 0 && (
-        <InsightCard insights={renovationInsights} />
-      )}
     </div>
   );
+  
+  // Bottom section with insight card
+  const bottomSection = renovationInsights.length > 0 && selectedCategories.length > 0 ? (
+    <InsightCard insights={renovationInsights} />
+  ) : null;
 
   return (
     <ToolLayout
@@ -741,6 +741,7 @@ export function RenovationCostEstimator() {
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}
+      bottomSection={bottomSection}
       disclaimer={
         <ToolDisclaimer
           text="Cost estimates are for planning purposes only and based on average Israeli market rates. Always get multiple quotes from licensed contractors. Prices vary significantly by location (Tel Aviv typically 20-30% higher than peripheral areas), building age, and specific requirements."

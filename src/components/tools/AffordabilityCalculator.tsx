@@ -1085,6 +1085,11 @@ function AffordabilityCalculatorContent() {
   // Bottom section - full width
   const bottomSection = (
     <div className="space-y-6">
+      {/* Insight Card - Full Width */}
+      {insights.length > 0 && (
+        <InsightCard insights={insights} />
+      )}
+      
       {/* For Your Max Property Summary */}
       <Card className="p-6">
         <h3 className="font-semibold mb-4">For Your Max Property</h3>
@@ -1102,11 +1107,6 @@ function AffordabilityCalculatorContent() {
             <p className="text-xl font-bold">{formatCurrency(calculations.requiredLoan)}</p>
           </div>
         </div>
-
-        {/* Insight Card */}
-        {insights.length > 0 && (
-          <InsightCard insights={insights} className="mt-5" />
-        )}
       </Card>
 
       {/* Next Steps Grid */}
