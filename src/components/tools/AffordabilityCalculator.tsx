@@ -25,9 +25,10 @@ import {
   ToolLayout, 
   LTVIndicator,
   ToolDisclaimer,
-  InfoBanner,
   ToolFeedback,
   InsightCard,
+  BuyerTypeInfoBanner,
+  type BuyerCategory,
 } from './shared';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 
@@ -1177,11 +1178,27 @@ function AffordabilityCalculatorContent() {
         </Button>
       }
       infoBanner={
-        buyerProfile ? (
-          <InfoBanner variant="info">
-            Calculations reflect your profile as a <strong>{currentBuyerType?.label.toLowerCase()}</strong>.
-          </InfoBanner>
-        ) : undefined
+        <BuyerTypeInfoBanner
+          selectedType={
+            buyerType === 'investor' ? 'additional' :
+            buyerType === 'foreign' ? 'non_resident' :
+            buyerType === 'upgrader' ? 'additional' :
+            buyerType === 'company' ? 'non_resident' :
+            buyerType as BuyerCategory
+          }
+          onTypeChange={(type) => {
+            const mapping: Record<BuyerCategory, BuyerType> = {
+              'first_time': 'first_time',
+              'oleh': 'oleh',
+              'additional': 'investor',
+              'non_resident': 'foreign',
+            };
+            setBuyerType(mapping[type]);
+          }}
+          profileType={buyerProfile ? (
+            getBuyerTaxCategory(buyerProfile) as BuyerCategory
+          ) : undefined}
+        />
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}

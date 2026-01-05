@@ -13,7 +13,7 @@ import { ToolLayout } from './shared/ToolLayout';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
-import { InfoBanner } from './shared/InfoBanner';
+import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -949,11 +949,23 @@ export function InvestmentReturnCalculator() {
       subtitle="Analyze potential returns on Israeli investment properties" 
       icon={<TrendingUp className="h-6 w-6" />}
       infoBanner={
-        buyerProfile ? (
-          <InfoBanner variant="info">
-            Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
-          </InfoBanner>
-        ) : undefined
+        <BuyerTypeInfoBanner
+          selectedType={
+            buyerType === 'investor' ? 'additional' :
+            buyerType === 'foreign' ? 'non_resident' :
+            buyerType as BuyerCategory
+          }
+          onTypeChange={(type) => {
+            const mapping: Record<BuyerCategory, 'investor' | 'foreign' | 'oleh'> = {
+              'first_time': 'investor', // Investment calc defaults non-applicable types to investor
+              'oleh': 'oleh',
+              'additional': 'investor',
+              'non_resident': 'foreign',
+            };
+            setBuyerType(mapping[type]);
+          }}
+          profileType={buyerProfile ? buyerCategory : undefined}
+        />
       }
       leftColumn={leftColumn} 
       rightColumn={rightColumn} 

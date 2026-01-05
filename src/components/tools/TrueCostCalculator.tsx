@@ -27,7 +27,8 @@ import {
   ToolFeedback, 
   CashBreakdownTable,
   InsightCard,
-  InfoBanner,
+  BuyerTypeInfoBanner,
+  type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 import { 
   calculateOlehEligibility,
@@ -36,7 +37,7 @@ import {
   calculateMonthlyCosts,
   calculateNewConstructionLinkage 
 } from '@/lib/calculations/purchaseCosts';
-import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
@@ -914,11 +915,13 @@ export function TrueCostCalculator() {
         </Button>
       }
       infoBanner={
-        buyerProfile ? (
-          <InfoBanner variant="info">
-            Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
-          </InfoBanner>
-        ) : undefined
+        <BuyerTypeInfoBanner
+          selectedType={buyerCategory as SharedBuyerCategory}
+          onTypeChange={(type) => setBuyerCategory(type as BuyerCategory)}
+          profileType={buyerProfile ? (
+            getBuyerTaxCategory(buyerProfile) as SharedBuyerCategory
+          ) : undefined}
+        />
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}
