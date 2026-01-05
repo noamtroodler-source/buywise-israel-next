@@ -60,7 +60,7 @@ export function BuyerTypeInfoBanner({
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <button
-              className="inline-flex items-center gap-1 font-semibold border-b border-dashed border-current hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+              className="inline-flex items-center gap-1 font-semibold hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
               aria-label="Change buyer type"
             >
               {currentOption?.label || 'Unknown'}
