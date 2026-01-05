@@ -37,7 +37,7 @@ import {
   InfoBanner,
   InsightCard,
 } from './shared';
-import { calculatePurchaseTax as calcTax } from '@/hooks/useBuyerProfile';
+import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
@@ -460,10 +460,18 @@ export function RentVsBuyCalculator() {
   );
   
   // Info banner
+  const buyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) : 'first_time';
   const infoBanner = (
-    <InfoBanner>
-      Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
-    </InfoBanner>
+    <div className="space-y-3">
+      {buyerProfile && (
+        <InfoBanner variant="info">
+          Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
+        </InfoBanner>
+      )}
+      <InfoBanner variant="tip">
+        Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
+      </InfoBanner>
+    </div>
   );
   
   // Left column - Inputs

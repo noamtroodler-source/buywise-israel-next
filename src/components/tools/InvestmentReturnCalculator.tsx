@@ -13,9 +13,11 @@ import { ToolLayout } from './shared/ToolLayout';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
+import { InfoBanner } from './shared/InfoBanner';
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { 
   calculateGrossYield, 
   calculateRentalIncomeTax,
@@ -80,6 +82,8 @@ export function InvestmentReturnCalculator() {
   const { currency, exchangeRate } = usePreferences();
   const { data: canonicalMetrics } = useAllCanonicalMetrics();
   const { data: cities } = useCities();
+  const { data: buyerProfile } = useBuyerProfile();
+  const buyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) : 'additional';
   
   // State
   const [purchasePrice, setPurchasePrice] = useState(DEFAULTS.purchasePrice);
@@ -943,7 +947,14 @@ export function InvestmentReturnCalculator() {
     <ToolLayout 
       title="Investment Return Calculator" 
       subtitle="Analyze potential returns on Israeli investment properties" 
-      icon={<TrendingUp className="h-6 w-6" />} 
+      icon={<TrendingUp className="h-6 w-6" />}
+      infoBanner={
+        buyerProfile ? (
+          <InfoBanner variant="info">
+            Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
+          </InfoBanner>
+        ) : undefined
+      }
       leftColumn={leftColumn} 
       rightColumn={rightColumn} 
       bottomSection={bottomSection} 
