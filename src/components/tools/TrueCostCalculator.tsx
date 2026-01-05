@@ -838,11 +838,6 @@ export function TrueCostCalculator() {
           </p>
           <CashBreakdownTable items={monthlyItems} />
         </div>
-        
-        {/* Insight Card */}
-        {trueCostInsights.length > 0 && (
-          <InsightCard insights={trueCostInsights} className="mt-2" />
-        )}
       </div>
     </Card>
   );
@@ -850,6 +845,11 @@ export function TrueCostCalculator() {
   // Bottom section - navigation cards
   const bottomSection = (
     <div className="space-y-6">
+      {/* Insight Card - Full Width */}
+      {trueCostInsights.length > 0 && (
+        <InsightCard insights={trueCostInsights} />
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link 
           to="/tools?tool=mortgage"
