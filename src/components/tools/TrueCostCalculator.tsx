@@ -27,6 +27,7 @@ import {
   ToolFeedback, 
   CashBreakdownTable,
   InsightCard,
+  InfoBanner,
 } from './shared';
 import { 
   calculateOlehEligibility,
@@ -911,6 +912,13 @@ export function TrueCostCalculator() {
           <Save className="h-4 w-4" />
           <span className="hidden sm:inline">Save</span>
         </Button>
+      }
+      infoBanner={
+        buyerProfile ? (
+          <InfoBanner variant="info">
+            Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
+          </InfoBanner>
+        ) : undefined
       }
       leftColumn={leftColumn}
       rightColumn={rightColumn}
