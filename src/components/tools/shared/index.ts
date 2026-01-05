@@ -9,3 +9,4 @@ export { InputSection, SliderInput, NumberInput } from './InputSection';
 export { CTACard } from './CTACard';
 export { InfoBanner } from './InfoBanner';
 export { LTVIndicator } from './LTVIndicator';
+export { InsightCard } from './InsightCard';
