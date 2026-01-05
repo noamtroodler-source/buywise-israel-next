@@ -6,17 +6,28 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
+export type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident' | 'upgrader' | 'investor' | 'foreign' | 'company';
 
-const BUYER_TYPE_OPTIONS: {
+export interface BuyerTypeOption {
   value: BuyerCategory;
   label: string;
   description: string;
-}[] = [
+}
+
+const DEFAULT_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
   { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
   { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
   { value: 'additional', label: 'Additional Property', description: 'Already own property in Israel' },
   { value: 'non_resident', label: 'Non-Resident / Foreign', description: 'Not an Israeli tax resident' },
+];
+
+const EXTENDED_BUYER_TYPE_OPTIONS: BuyerTypeOption[] = [
+  { value: 'first_time', label: 'First-Time Buyer', description: 'Israeli resident, first property' },
+  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant (within 7 years)' },
+  { value: 'upgrader', label: 'Upgrader', description: 'Selling existing home within 18 months' },
+  { value: 'investor', label: 'Investor', description: 'Additional property in Israel' },
+  { value: 'foreign', label: 'Foreign Resident', description: 'Not an Israeli tax resident' },
+  { value: 'company', label: 'Corporate Buyer', description: 'Purchasing as a company' },
 ];
 
 interface BuyerTypeInfoBannerProps {
@@ -24,6 +35,8 @@ interface BuyerTypeInfoBannerProps {
   onTypeChange: (type: BuyerCategory) => void;
   profileType?: BuyerCategory | null;
   className?: string;
+  /** Use extended options including upgrader, investor, foreign, company */
+  extended?: boolean;
 }
 
 export function BuyerTypeInfoBanner({
@@ -31,10 +44,12 @@ export function BuyerTypeInfoBanner({
   onTypeChange,
   profileType,
   className,
+  extended = false,
 }: BuyerTypeInfoBannerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
-  const currentOption = BUYER_TYPE_OPTIONS.find(opt => opt.value === selectedType);
+  const options = extended ? EXTENDED_BUYER_TYPE_OPTIONS : DEFAULT_BUYER_TYPE_OPTIONS;
+  const currentOption = options.find(opt => opt.value === selectedType) || options[0];
   const isOverridden = profileType && profileType !== selectedType;
 
   const handleSelect = (value: BuyerCategory) => {
@@ -77,7 +92,7 @@ export function BuyerTypeInfoBanner({
               onValueChange={(value) => handleSelect(value as BuyerCategory)}
               className="space-y-1"
             >
-              {BUYER_TYPE_OPTIONS.map((option) => (
+              {options.map((option) => (
                 <Label
                   key={option.value}
                   htmlFor={option.value}
