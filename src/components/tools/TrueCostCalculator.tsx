@@ -866,18 +866,6 @@ export function TrueCostCalculator() {
           </div>
         </div>
 
-        {/* Reset Button */}
-        <div className="flex justify-center pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-foreground gap-1.5"
-            onClick={handleReset}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset to defaults
-          </Button>
-        </div>
       </div>
     </Card>
   );
@@ -994,10 +982,16 @@ export function TrueCostCalculator() {
       subtitle="See the complete cost of buying property in Israel — beyond just the price"
       icon={<Calculator className="h-6 w-6 text-primary" />}
       headerActions={
-        <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-1.5">
-          {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
+            <RotateCcw className="h-4 w-4" />
+            <span className="hidden sm:inline">Reset</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-1.5">
+            {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
+          </Button>
+        </div>
       }
       infoBanner={
         <BuyerTypeInfoBanner

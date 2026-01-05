@@ -784,15 +784,6 @@ export function InvestmentReturnCalculator() {
           </div>
         </div>
         
-        {/* Reset Button */}
-        <Button 
-          variant="outline" 
-          className="w-full" 
-          onClick={resetToDefaults}
-        >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Reset to Defaults
-        </Button>
       </CardContent>
     </Card>
   );
