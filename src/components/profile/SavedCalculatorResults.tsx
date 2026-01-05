@@ -10,31 +10,31 @@ const calculatorConfig: Record<CalculatorType, { label: string; icon: React.Reac
   mortgage: {
     label: 'Mortgage Calculator',
     icon: <Home className="h-4 w-4" />,
-    path: '/tools#mortgage',
+    path: '/tools?tool=mortgage',
     resultKey: 'monthlyPayment',
   },
   affordability: {
     label: 'Affordability Calculator',
     icon: <DollarSign className="h-4 w-4" />,
-    path: '/tools#affordability',
+    path: '/tools?tool=affordability',
     resultKey: 'maxPropertyPrice',
   },
   truecost: {
     label: 'True Cost Calculator',
     icon: <Calculator className="h-4 w-4" />,
-    path: '/tools#truecost',
+    path: '/tools?tool=totalcost',
     resultKey: 'totalCost',
   },
   rentvsbuy: {
     label: 'Rent vs Buy',
     icon: <Scale className="h-4 w-4" />,
-    path: '/tools#rentvsbuy',
+    path: '/tools?tool=rentvsbuy',
     resultKey: 'breakEvenYear',
   },
   investment: {
     label: 'Investment Calculator',
     icon: <TrendingUp className="h-4 w-4" />,
-    path: '/tools#investment',
+    path: '/tools?tool=investment',
     resultKey: 'netYield',
   },
 };

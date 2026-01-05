@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, Info, Building2, DollarSign, PiggyBank, Scale, Calendar, Lightbulb, RotateCcw, Percent, Home, Users, Wallet, Clock, LineChart, ArrowRight } from 'lucide-react';
+import { TrendingUp, Info, Building2, DollarSign, PiggyBank, Scale, Calendar, Lightbulb, RotateCcw, Percent, Home, Users, Wallet, Clock, LineChart, ArrowRight, Save, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,8 +18,11 @@ import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetr
 import { useCities } from '@/hooks/useCities';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useAuth } from '@/hooks/useAuth';
+import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
+import { toast } from 'sonner';
 import { 
-  calculateGrossYield, 
+  calculateGrossYield,
   calculateRentalIncomeTax,
   findOptimalTaxMethod,
   projectMultiYearROI,
@@ -89,6 +92,8 @@ export function InvestmentReturnCalculator() {
   const { data: cities } = useCities();
   const { data: buyerProfile } = useBuyerProfile();
   const buyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) : 'additional';
+  const { user } = useAuth();
+  const saveToProfile = useSaveCalculatorResult();
   
   // State
   const [purchasePrice, setPurchasePrice] = useState(DEFAULTS.purchasePrice);
@@ -273,6 +278,35 @@ export function InvestmentReturnCalculator() {
     
     return messages;
   }, [calculations, useLeverage, formatCurrency]);
+  
+  // Save inputs (defined after calculations to use its values)
+  const handleSave = () => {
+    const inputs = {
+      purchasePrice, selectedCity, propertySizeSqm, rooms, monthlyRent,
+      vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance,
+      maintenancePercent, usePropertyManagement, managementFeePercent,
+      useLeverage, buyerType, downPaymentPercent, interestRate, loanTermYears,
+      taxMethod, holdingPeriod, appreciationRate,
+    };
+    
+    if (user) {
+      saveToProfile.mutate({
+        calculatorType: 'investment',
+        inputs,
+        results: {
+          netYield: calculations.netYield,
+          grossYield: calculations.grossYield,
+          cashOnCash: calculations.cashOnCash,
+          monthlyCashFlow: calculations.monthlyCashFlow,
+          investmentGrade: calculations.grade.grade,
+          capRate: calculations.capRate,
+          annualizedROI: calculations.annualizedROI,
+        },
+      });
+    } else {
+      toast.info('Sign in to save results to your profile');
+    }
+  };
   
   // Helpers
   const parseNumericInput = (value: string): number => parseFloat(value.replace(/[^0-9.-]/g, '')) || 0;
@@ -1086,10 +1120,22 @@ export function InvestmentReturnCalculator() {
           profileType={buyerProfile ? buyerCategory : undefined}
         />
       }
+      headerActions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={resetToDefaults} className="gap-2">
+            <RotateCcw className="h-4 w-4" />
+            <span className="hidden sm:inline">Reset</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-2">
+            {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
+          </Button>
+        </div>
+      }
       leftColumn={leftColumn} 
       rightColumn={rightColumn} 
       bottomSection={bottomSection} 
-      disclaimer={<ToolDisclaimer text="This calculator provides estimates for informational purposes only. Actual returns may vary. Consult with a financial advisor before making investment decisions." />} 
+      disclaimer={<ToolDisclaimer text="This calculator provides estimates for informational purposes only. Actual returns may vary. Consult with a financial advisor before making investment decisions." />}
     />
   );
 }

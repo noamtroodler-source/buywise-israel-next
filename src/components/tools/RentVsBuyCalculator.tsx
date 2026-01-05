@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ChevronDown,
   Target,
+  Loader2,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,8 +31,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
-  ToolLayout, 
+  ToolLayout,
   ToolDisclaimer, 
   ToolFeedback, 
   CTACard,
@@ -137,6 +140,8 @@ export function RentVsBuyCalculator() {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
+  const { user } = useAuth();
+  const saveToProfile = useSaveCalculatorResult();
   
   // Form state
   const [selectedCity, setSelectedCity] = useState('');
@@ -237,28 +242,6 @@ export function RentVsBuyCalculator() {
       setPropertyPrice(formatNumber(suggestedPrice));
     }
   };
-  
-  // Save inputs
-  const handleSave = useCallback(() => {
-    const data = {
-      selectedCity,
-      rooms,
-      propertyPrice,
-      monthlyRent,
-      buyerType,
-      downPaymentPercent,
-      interestRate,
-      timeHorizon,
-      appreciation,
-      rentIncrease,
-      investmentReturn,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-    }));
-    toast.success('Inputs saved for 7 days');
-  }, [selectedCity, rooms, propertyPrice, monthlyRent, buyerType, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn]);
   
   // Reset inputs
   const handleReset = useCallback(() => {
@@ -483,6 +466,44 @@ export function RentVsBuyCalculator() {
     };
   }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
   
+  // Save inputs (defined after calculations to use its values)
+  const handleSave = () => {
+    const data = {
+      selectedCity,
+      rooms,
+      propertyPrice,
+      monthlyRent,
+      buyerType,
+      downPaymentPercent,
+      interestRate,
+      timeHorizon,
+      appreciation,
+      rentIncrease,
+      investmentReturn,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      data,
+      timestamp: Date.now(),
+    }));
+    
+    // If logged in, also save to profile
+    if (user && calculations) {
+      saveToProfile.mutate({
+        calculatorType: 'rentvsbuy',
+        inputs: data,
+        results: {
+          breakEvenYear: calculations.breakEvenYear,
+          buyingIsBetter: calculations.buyingIsBetter,
+          wealthDifference: calculations.wealthDifference,
+          netBuyingWealth: calculations.netBuyingWealth,
+          netRentingWealth: calculations.netRentingWealth,
+        },
+      });
+    } else {
+      toast.success('Inputs saved! Sign in to save to your profile.');
+    }
+  };
+  
   // Header actions
   const headerActions = (
     <div className="flex items-center gap-2">
@@ -490,9 +511,9 @@ export function RentVsBuyCalculator() {
         <RotateCcw className="h-4 w-4" />
         <span className="hidden sm:inline">Reset</span>
       </Button>
-      <Button variant="outline" size="sm" onClick={handleSave} className="gap-2">
-        <Save className="h-4 w-4" />
-        <span className="hidden sm:inline">Save</span>
+      <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-2">
+        {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
       </Button>
     </div>
   );
