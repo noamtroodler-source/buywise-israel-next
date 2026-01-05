@@ -628,7 +628,7 @@ function MortgageCalculatorContent() {
 
   // Right column - single combined results card
   const rightColumn = (
-    <Card className="p-6 shadow-sm">
+    <Card className="p-6 shadow-sm h-full flex flex-col">
       {/* Hero Monthly Payment */}
       <div className="text-center pb-5 border-b border-border">
         <p className="text-sm text-muted-foreground mb-1">Monthly Payment</p>
@@ -650,7 +650,7 @@ function MortgageCalculatorContent() {
       </div>
 
       {/* Summary Stats */}
-      <div className="pt-5 space-y-3">
+      <div className="pt-5 space-y-3 flex-1 flex flex-col">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1.5">
             <span className="text-sm text-muted-foreground">Loan Amount</span>
@@ -688,6 +688,8 @@ function MortgageCalculatorContent() {
           <span className="font-semibold">{formatCurrency(mortgageResult.totalPayment)}</span>
         </div>
 
+        <div className="flex-1" />
+        
         <Separator className="my-3" />
         
         <p className="text-xs text-muted-foreground text-center">
