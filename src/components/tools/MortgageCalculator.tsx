@@ -397,41 +397,6 @@ function MortgageCalculatorContent() {
           </div>
         </div>
 
-        {/* Buyer Type */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <Label className="text-sm font-medium">Buyer Type</Label>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3.5 w-3.5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                <p className="font-medium mb-1">Bank of Israel regulations set different LTV limits:</p>
-                <ul className="text-xs space-y-0.5">
-                  <li>• First-time buyers: up to 75% financing</li>
-                  <li>• Upgraders (selling current): up to 70%</li>
-                  <li>• Investors/Foreign: up to 50%</li>
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <Select value={buyerType} onValueChange={handleBuyerTypeChange}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {BUYER_TYPE_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  <span className="font-medium">{option.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Max LTV: {maxLtv}% · Min down payment: {minDownPayment}%
-          </p>
-        </div>
-
         {/* Down Payment */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -703,72 +668,6 @@ function MortgageCalculatorContent() {
           <span className="font-semibold">{formatCurrency(mortgageResult.totalPayment)}</span>
         </div>
 
-        <Separator className="my-3" />
-
-        {/* Stress Test Section */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-            <span className="text-xs font-medium text-muted-foreground">If Rates Rise</span>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3 w-3 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                Bank of Israel recommends stress-testing your budget. Israeli rates can fluctuate—especially the Prime-linked portion of your mortgage.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              <p className="text-amber-700 dark:text-amber-300 font-medium">+1% Rate</p>
-              <p className="text-amber-600 dark:text-amber-400 tabular-nums">
-                {formatCurrency(stressTest.plus1.stressedPayment)}
-                <span className="text-amber-500 ml-1">(+{stressTest.plus1.increasePercent}%)</span>
-              </p>
-            </div>
-            <div className="p-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-              <p className="text-red-700 dark:text-red-300 font-medium">+2% Rate</p>
-              <p className="text-red-600 dark:text-red-400 tabular-nums">
-                {formatCurrency(stressTest.plus2.stressedPayment)}
-                <span className="text-red-500 ml-1">(+{stressTest.plus2.increasePercent}%)</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-3" />
-
-        {/* Multi-Track Mortgage Preview */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-muted-foreground">Israeli Mortgage Mix</span>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3 w-3 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                Israeli mortgages typically combine 3 "tracks" (מסלולים): Prime, Fixed, and CPI-Linked. This balances stability with flexibility.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="p-3 rounded-md bg-muted/50 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Typical 3-Track Mix</span>
-              <span className="text-sm font-semibold tabular-nums">{formatCurrency(mortgageMix.totalMonthlyPayment)}/mo</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1 text-[10px]">
-              {mortgageMix.tracks.map((track, i) => (
-                <div key={i} className="text-center p-1.5 rounded bg-background border">
-                  <p className="font-medium text-muted-foreground">{track.type === 'prime' ? 'Prime' : track.type === 'fixed_unlinked' ? 'Fixed' : 'CPI'}</p>
-                  <p className="tabular-nums">{track.interestRate.toFixed(1)}%</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground">{mortgageMix.rationale}</p>
-          </div>
-        </div>
         
         <div className="flex-1" />
         
@@ -783,6 +682,76 @@ function MortgageCalculatorContent() {
   // Bottom section - full width
   const bottomSection = (
     <div className="space-y-6">
+      {/* Stress Test & Mortgage Mix - Collapsible Cards */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {/* Stress Test Card */}
+        <Collapsible defaultOpen={false}>
+          <Card className="p-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                <span className="font-medium">Stress Test: If Rates Rise</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <p className="text-xs text-muted-foreground mb-3">
+                Bank of Israel recommends stress-testing your budget. Israeli rates can fluctuate—especially the Prime-linked portion.
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <p className="text-amber-700 dark:text-amber-300 font-medium">+1% Rate</p>
+                  <p className="text-amber-600 dark:text-amber-400 tabular-nums text-lg font-semibold">
+                    {formatCurrency(stressTest.plus1.stressedPayment)}
+                  </p>
+                  <p className="text-amber-500 text-xs">+{stressTest.plus1.increasePercent}% increase</p>
+                </div>
+                <div className="p-3 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                  <p className="text-red-700 dark:text-red-300 font-medium">+2% Rate</p>
+                  <p className="text-red-600 dark:text-red-400 tabular-nums text-lg font-semibold">
+                    {formatCurrency(stressTest.plus2.stressedPayment)}
+                  </p>
+                  <p className="text-red-500 text-xs">+{stressTest.plus2.increasePercent}% increase</p>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Mortgage Mix Card */}
+        <Collapsible defaultOpen={false}>
+          <Card className="p-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span className="font-medium">Israeli Mortgage Mix</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-4">
+              <p className="text-xs text-muted-foreground mb-3">
+                Israeli mortgages typically combine 3 "tracks" (מסלולים): Prime, Fixed, and CPI-Linked. This balances stability with flexibility.
+              </p>
+              <div className="p-3 rounded-md bg-muted/50 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Typical 3-Track Mix</span>
+                  <span className="text-lg font-semibold tabular-nums">{formatCurrency(mortgageMix.totalMonthlyPayment)}/mo</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {mortgageMix.tracks.map((track, i) => (
+                    <div key={i} className="text-center p-2 rounded bg-background border">
+                      <p className="font-medium text-muted-foreground">{track.type === 'prime' ? 'Prime' : track.type === 'fixed_unlinked' ? 'Fixed' : 'CPI'}</p>
+                      <p className="tabular-nums text-sm font-medium">{track.interestRate.toFixed(1)}%</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{mortgageMix.rationale}</p>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </div>
+
       {/* Insight Card - Full Width */}
       {insights.length > 0 && (
         <InsightCard insights={insights} />

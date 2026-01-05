@@ -572,41 +572,6 @@ function AffordabilityCalculatorContent() {
   const leftColumn = (
     <Card className="p-6 shadow-sm">
       <div className="space-y-6">
-        {/* Buyer Type */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <Label className="text-sm font-medium">Buyer Type</Label>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3.5 w-3.5 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                <p className="font-medium mb-1">Bank of Israel regulations set different LTV limits:</p>
-                <ul className="text-xs space-y-0.5">
-                  <li>• First-time buyers: up to 75% financing</li>
-                  <li>• Upgraders (selling current): up to 70%</li>
-                  <li>• Investors/Foreign: up to 50%</li>
-                </ul>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <Select value={buyerType} onValueChange={(v) => setBuyerType(v as BuyerType)}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {BUYER_TYPE_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  <span className="font-medium">{option.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Max LTV: {maxLTV}% · Min down payment: {minDownPaymentPercent}%
-          </p>
-        </div>
-
         {/* Employment Type */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5">
