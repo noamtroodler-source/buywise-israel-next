@@ -834,168 +834,97 @@ export function RentVsBuyCalculator() {
     </div>
   );
   
-  // Right column - Results (One unified card with internal sections)
+  // Right column - Results (Simplified, cleaner layout)
   const rightColumn = (
     <div>
       {calculations ? (
-        <Card className="overflow-hidden">
-          {/* BREAK-EVEN HERO - Prominent display */}
-          {calculations.breakEvenYear && (
-            <div className={cn(
-              "flex items-center justify-center gap-3 px-6 py-4 border-b",
-              calculations.breakEvenYear <= 7 ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" :
-              calculations.breakEvenYear <= 12 ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" :
-              "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+        <Card className="overflow-hidden border-t-4 border-t-primary">
+          {/* HERO: Break-even verdict */}
+          <div className={cn(
+            "p-6 text-center",
+            calculations.breakEvenYear && calculations.breakEvenYear <= 7 ? "bg-green-50 dark:bg-green-950/30" :
+            calculations.breakEvenYear && calculations.breakEvenYear <= 12 ? "bg-amber-50 dark:bg-amber-950/30" :
+            "bg-red-50 dark:bg-red-950/30"
+          )}>
+            <p className="text-sm text-muted-foreground mb-1">Break-even Point</p>
+            <p className={cn(
+              "text-5xl font-bold tracking-tight",
+              calculations.breakEvenYear && calculations.breakEvenYear <= 7 ? "text-green-700 dark:text-green-300" :
+              calculations.breakEvenYear && calculations.breakEvenYear <= 12 ? "text-amber-700 dark:text-amber-300" : "text-red-700 dark:text-red-300"
             )}>
-              <Target className={cn(
-                "h-5 w-5",
-                calculations.breakEvenYear <= 7 ? "text-green-600" :
-                calculations.breakEvenYear <= 12 ? "text-amber-600" : "text-red-600"
-              )} />
-              <div className="text-center">
-                <span className={cn(
-                  "text-lg font-bold",
-                  calculations.breakEvenYear <= 7 ? "text-green-700 dark:text-green-300" :
-                  calculations.breakEvenYear <= 12 ? "text-amber-700 dark:text-amber-300" : "text-red-700 dark:text-red-300"
-                )}>
-                  Break-even: {calculations.breakEvenYear} years
-                </span>
-                <p className="text-xs text-muted-foreground">
-                  {calculations.breakEvenYear <= 7 ? "Buying wins relatively quickly" :
-                   calculations.breakEvenYear <= 12 ? "Consider your timeline carefully" :
-                   "Long horizon needed for buying to pay off"}
-                </p>
-              </div>
-            </div>
-          )}
+              {calculations.breakEvenYear ? `${calculations.breakEvenYear} years` : '30+ years'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {calculations.breakEvenYear && calculations.breakEvenYear <= 7 ? "Buying wins relatively quickly" :
+               calculations.breakEvenYear && calculations.breakEvenYear <= 12 ? "Consider your timeline carefully" :
+               "Long horizon needed for buying to pay off"}
+            </p>
+          </div>
           
-          {/* Down Payment Warning Banner - inside card */}
+          {/* Down Payment Warning */}
           {parseFloat(downPaymentPercent) < MIN_DOWN_PAYMENT[buyerType] && (
-            <div className="flex items-center gap-2 px-6 py-3 bg-warning/10 border-b border-warning/20">
+            <div className="flex items-center gap-2 px-6 py-3 bg-warning/10 border-y border-warning/20">
               <AlertCircle className="h-4 w-4 text-warning shrink-0" />
               <p className="text-xs text-warning-foreground">
-                Banks require min {MIN_DOWN_PAYMENT[buyerType]}% down for {buyerType === 'first_time' ? 'first-time buyers' : buyerType === 'oleh' ? 'Olim' : buyerType === 'additional' ? 'additional properties' : 'non-residents'} — you entered {downPaymentPercent}%
+                Banks require min {MIN_DOWN_PAYMENT[buyerType]}% down — you entered {downPaymentPercent}%
               </p>
             </div>
           )}
           
-          {/* HERO: Monthly Comparison */}
-          <div className="p-6">
-            <div className="flex items-center gap-4 justify-center mb-4">
-              <div className="text-center">
-                <p className="text-3xl font-bold tabular-nums">{formatPrice(Math.round(calculations.totalMonthlyBuying))}</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to buy</p>
-              </div>
-              <div className="text-muted-foreground text-sm font-medium">vs</div>
-              <div className="text-center">
-                <p className="text-3xl font-bold tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}</p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">to rent</p>
+          {/* Key Stats Grid */}
+          <div className="p-6 space-y-5">
+            {/* Monthly Comparison */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Monthly Cost</p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="text-center flex-1">
+                  <p className="text-2xl font-bold tabular-nums">{formatPrice(Math.round(calculations.totalMonthlyBuying))}</p>
+                  <p className="text-xs text-muted-foreground">to buy</p>
+                </div>
+                <div className="text-muted-foreground text-sm">vs</div>
+                <div className="text-center flex-1">
+                  <p className="text-2xl font-bold tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}</p>
+                  <p className="text-xs text-muted-foreground">to rent</p>
+                </div>
               </div>
             </div>
             
-            {/* Monthly difference badge */}
-            <div className="flex justify-center">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm">
-                <span className="font-medium tabular-nums">
-                  {formatPrice(Math.round(Math.abs(calculations.totalMonthlyBuying - calculations.currentMonthlyRent)))}
-                </span>
-                <span className="text-muted-foreground">
-                  {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? 'more to buy' : 'more to rent'}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          {/* BREAKDOWN: Monthly cost details */}
-          <div className="px-6 py-5 border-t border-border bg-muted/20">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Buying costs */}
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Buying includes</p>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Mortgage</span>
-                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyMortgage))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Arnona</span>
-                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyArnona))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Va'ad + Ins.</span>
-                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyVaadBayit + calculations.monthlyInsurance))}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Maintenance</span>
-                    <span className="tabular-nums">{formatPrice(Math.round(calculations.monthlyMaintenance))}</span>
-                  </div>
+            <Separator />
+            
+            {/* Long-term Wealth */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">After {timeHorizon} Years</p>
+              <div className="flex items-center justify-center gap-3">
+                <div className="text-center flex-1 p-3 bg-muted/40 rounded-lg">
+                  <p className="text-lg font-bold tabular-nums">{formatPrice(Math.round(calculations.equityBuilt))}</p>
+                  <p className="text-xs text-muted-foreground">equity if you buy</p>
+                </div>
+                <div className="text-center flex-1 p-3 bg-muted/40 rounded-lg">
+                  <p className="text-lg font-bold tabular-nums">
+                    {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">net if you rent</p>
                 </div>
               </div>
               
-              {/* Renting */}
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-                  Renting {rooms}rm{selectedCity ? ` · ${cities?.find(c => c.slug === selectedCity)?.name}` : ''}
-                </p>
-                <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Rent</span>
-                    <span className="tabular-nums">{formatPrice(Math.round(calculations.currentMonthlyRent))}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Equity insight */}
-            <div className="mt-4 pt-3 border-t border-border/50">
-              <p className="text-xs text-muted-foreground">
-                {calculations.totalMonthlyBuying > calculations.currentMonthlyRent ? (
-                  <>~{formatPrice(Math.round(calculations.monthlyEquityBuilding))} of your mortgage payment builds equity you keep.</>
-                ) : (
-                  <>Buying costs less monthly AND builds {formatPrice(Math.round(calculations.monthlyEquityBuilding))} equity/mo.</>
-                )}
-              </p>
-            </div>
-          </div>
-          
-          {/* LONG GAME: After X Years */}
-          <div className="px-6 py-5 border-t border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <h4 className="font-semibold text-sm">After {timeHorizon} Years</h4>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="text-center p-3 bg-muted/40 rounded-lg">
-                <p className="text-xl font-bold tabular-nums">{formatPrice(Math.round(calculations.equityBuilt))}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">equity if you buy</p>
-              </div>
-              <div className="text-center p-3 bg-muted/40 rounded-lg">
-                <p className="text-xl font-bold tabular-nums">
-                  {calculations.netRentingWealth >= 0 ? formatPrice(Math.round(calculations.netRentingWealth)) : `-${formatPrice(Math.abs(Math.round(calculations.netRentingWealth)))}`}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">net if you rent</p>
-              </div>
-            </div>
-            
-            <div className="text-center text-sm">
-              <span className={calculations.buyingIsBetter ? 'text-success' : 'text-primary'}>
+              <p className={cn(
+                "text-center text-sm font-medium mt-3",
+                calculations.buyingIsBetter ? "text-success" : "text-primary"
+              )}>
                 {calculations.buyingIsBetter 
                   ? `Buying builds ${formatPrice(Math.round(calculations.wealthDifference))} more`
                   : `Renting saves ${formatPrice(Math.round(calculations.wealthDifference))}`}
-              </span>
+              </p>
             </div>
             
             {/* Exit costs note */}
             {(calculations.sellingCosts > 0 || calculations.capitalGainsTax > 0) && (
-              <p className="text-[10px] text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
+              <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
                 <Info className="h-3 w-3" />
-                Includes ~{formatPrice(Math.round(calculations.sellingCosts))} selling costs
-                {calculations.capitalGainsTax > 0 && ` + ${formatPrice(Math.round(calculations.capitalGainsTax))} capital gains tax`}
+                Includes exit costs (selling fees{calculations.capitalGainsTax > 0 && ' + capital gains tax'})
               </p>
             )}
           </div>
-          
         </Card>
       ) : (
         <Card className="p-6">
