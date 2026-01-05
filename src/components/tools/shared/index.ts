@@ -10,3 +10,4 @@ export { CTACard } from './CTACard';
 export { InfoBanner } from './InfoBanner';
 export { LTVIndicator } from './LTVIndicator';
 export { InsightCard } from './InsightCard';
+export { BuyerTypeInfoBanner, type BuyerCategory } from './BuyerTypeInfoBanner';

@@ -36,6 +36,8 @@ import {
   CTACard,
   InfoBanner,
   InsightCard,
+  BuyerTypeInfoBanner,
+  type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
@@ -459,15 +461,17 @@ export function RentVsBuyCalculator() {
     </div>
   );
   
+  // Get profile buyer category for reset functionality
+  const profileBuyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) as SharedBuyerCategory : undefined;
+  
   // Info banner
-  const buyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) : 'first_time';
   const infoBanner = (
     <div className="space-y-3">
-      {buyerProfile && (
-        <InfoBanner variant="info">
-          Calculations reflect your profile as a <strong>{getBuyerCategoryLabel(buyerCategory).toLowerCase()}</strong>.
-        </InfoBanner>
-      )}
+      <BuyerTypeInfoBanner
+        selectedType={buyerType as SharedBuyerCategory}
+        onTypeChange={(type) => setBuyerType(type as BuyerCategory)}
+        profileType={profileBuyerCategory}
+      />
       <InfoBanner variant="tip">
         Both paths have real advantages. This tool helps you see what each offers—financially and in daily life—so you can decide what fits your priorities.
       </InfoBanner>
