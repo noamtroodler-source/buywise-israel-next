@@ -1,6 +1,6 @@
 // Affordability Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Wallet, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, Calculator, Building2, AlertTriangle, TrendingUp, Lightbulb, Users, PiggyBank, CreditCard, Loader2 } from 'lucide-react';
+import { Wallet, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, Calculator, Building2, AlertTriangle, TrendingUp, Users, PiggyBank, CreditCard, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -1061,59 +1061,6 @@ function AffordabilityCalculatorContent() {
         </AlertDescription>
       </Alert>
 
-      {/* Income Breakdown Visualization */}
-      {(calculations.totalStatedIncome > 0) && (
-        <div className="mt-5 pt-5 border-t border-border">
-          <div className="flex items-center gap-2 mb-3">
-            <Wallet className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">How Banks See Your Income</span>
-            <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-3 w-3 text-muted-foreground" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                Banks apply discounts to certain income types when calculating mortgage eligibility. This shows your stated vs. effective (qualifying) income.
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="space-y-2">
-            {Object.entries(calculations.incomeBreakdown).map(([key, data]) => {
-              if (data.stated === 0) return null;
-              const percentage = data.effective / data.stated * 100;
-              const isDiscounted = percentage < 100;
-              return (
-                <div key={key} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">{data.label}</span>
-                    <span className={cn(
-                      "font-medium",
-                      isDiscounted ? "text-amber-600" : "text-green-600"
-                    )}>
-                      {isDiscounted ? `${Math.round(percentage)}% counted` : '100% counted'}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className={cn(
-                        "h-full transition-all duration-300 rounded-full",
-                        isDiscounted ? "bg-amber-500" : "bg-green-500"
-                      )}
-                      style={{ width: `${Math.min(100, percentage)}%` }}
-                    />
-                  </div>
-                  {data.discountReason && (
-                    <p className="text-xs text-muted-foreground">{data.discountReason}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">Effective qualifying income</span>
-            <span className="text-sm font-semibold text-primary">{formatCurrency(calculations.effectiveMonthlyIncome)}/mo</span>
-          </div>
-        </div>
-      )}
 
     </Card>
   );
@@ -1126,68 +1073,6 @@ function AffordabilityCalculatorContent() {
         <InsightCard insights={insights} />
       )}
       
-      {/* Total Cash to Close Card */}
-      <Card className="p-6 border-t-4 border-t-primary">
-        <div className="flex items-center gap-2 mb-4">
-          <PiggyBank className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Total Cash Needed to Close</h3>
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="h-3.5 w-3.5 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs text-sm">
-              Beyond your down payment, you'll need cash for purchase tax, legal fees, and agent commission. This shows the full amount needed.
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="text-center mb-4">
-          <p className="text-3xl font-bold text-primary tabular-nums">{formatCurrency(calculations.totalCashToClose)}</p>
-          <p className="text-xs text-muted-foreground mt-1">For a {formatCurrency(calculations.maxPropertyPrice)} property</p>
-        </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Down Payment ({minDownPaymentPercent}%)</span>
-            <span className="tabular-nums">{formatCurrency(downPaymentSaved)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground flex items-center gap-1">
-              Purchase Tax
-              <Tooltip>
-                <TooltipTrigger><Info className="h-3 w-3" /></TooltipTrigger>
-                <TooltipContent className="max-w-xs text-sm">Mas Rechisha - varies by buyer type. First-time buyers pay less.</TooltipContent>
-              </Tooltip>
-            </span>
-            <span className="tabular-nums">{formatCurrency(Math.round(calculations.estimatedPurchaseTax))}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Lawyer Fees + VAT</span>
-            <span className="tabular-nums">{formatCurrency(Math.round(calculations.lawyerFees))}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Agent Commission + VAT</span>
-            <span className="tabular-nums">{formatCurrency(Math.round(calculations.agentFees))}</span>
-          </div>
-        </div>
-      </Card>
-      
-      {/* For Your Max Property Summary */}
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">For Your Max Property</h3>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground mb-1">Property Price</p>
-            <p className="text-xl font-bold">{formatCurrency(calculations.maxPropertyPrice)}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground mb-1">Required Down Payment ({minDownPaymentPercent}%)</p>
-            <p className="text-xl font-bold">{formatCurrency(calculations.maxPropertyPrice * minDownPaymentPercent / 100)}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground mb-1">Loan Amount ({maxLTV}%)</p>
-            <p className="text-xl font-bold">{formatCurrency(calculations.requiredLoan)}</p>
-          </div>
-        </div>
-      </Card>
 
       {/* Next Steps Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

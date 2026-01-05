@@ -1,17 +1,16 @@
 // Mortgage Calculator Component
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Calculator, Info, ChevronDown, RotateCcw, Save, ExternalLink, ArrowRight, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
+import { Calculator, Info, RotateCcw, Save, ExternalLink, ArrowRight, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { calculateMortgagePayment, stressTestPayment, estimateMortgageMix } from '@/lib/calculations/mortgage';
+import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +19,6 @@ import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
 import { 
   ToolLayout, 
-  CashBreakdownTable, 
   LTVIndicator,
   ToolDisclaimer,
   PaymentPieChart,
@@ -60,7 +58,6 @@ const DEFAULTS = {
   includeTaxesInCash: true,
 };
 
-const MEDIAN_HOUSEHOLD_INCOME = 18000;
 const STORAGE_KEY = 'mortgage-calculator-saved';
 
 const formatNumber = (num: number): string => num.toLocaleString('en-US');
@@ -157,18 +154,6 @@ function MortgageCalculatorContent() {
     return calculatePurchaseTax(propertyPrice, buyerType);
   }, [propertyPrice, buyerType]);
 
-  // Stress test calculations
-  const stressTest = useMemo(() => {
-    return {
-      plus1: stressTestPayment(loanAmount, interestRate, loanTermYears, 1),
-      plus2: stressTestPayment(loanAmount, interestRate, loanTermYears, 2),
-    };
-  }, [loanAmount, interestRate, loanTermYears]);
-
-  // Multi-track mortgage mix estimate
-  const mortgageMix = useMemo(() => {
-    return estimateMortgageMix(loanAmount, 'balanced', loanTermYears);
-  }, [loanAmount, loanTermYears]);
 
   const monthlyPrincipal = useMemo(() => {
     return mortgageResult.monthlyPayment - (loanAmount * (interestRate / 100 / 12));
@@ -176,50 +161,33 @@ function MortgageCalculatorContent() {
 
   const monthlyInterest = mortgageResult.monthlyPayment - monthlyPrincipal;
 
-  const legalFees = Math.round((propertyPrice * legalFeesPercent) / 100);
-  const bankFees = Math.round(loanAmount * 0.004);
-  const purchaseTaxAmount = includeTaxesInCash ? purchaseTaxResult.totalTax : 0;
-  const totalCashNeeded = downPaymentAmount + purchaseTaxAmount + legalFees + bankFees + appraisalFee + bufferAmount;
-  const paymentToIncomePercent = Math.round((mortgageResult.monthlyPayment / MEDIAN_HOUSEHOLD_INCOME) * 100);
 
   // Generate personalized insights
   const insights = useMemo(() => {
     const messages: string[] = [];
-    const pti = paymentToIncomePercent;
     const totalInterestPercent = Math.round((mortgageResult.totalInterest / propertyPrice) * 100);
-    
-    // PTI-based insights
-    if (pti > 45) {
-      messages.push(`This payment takes about ${pti}% of the median household income—that's on the higher end. Consider a smaller loan or longer term if you want more breathing room.`);
-    } else if (pti > 35) {
-      messages.push(`At ${pti}% of median income, this is manageable but tight. Make sure you've budgeted for unexpected expenses before committing.`);
-    } else if (pti <= 25) {
-      messages.push(`This payment is very comfortable relative to typical incomes. You'll have solid breathing room for other expenses and savings.`);
-    }
     
     // LTV insights
     if (ltv >= 70) {
       messages.push(`With ${ltv.toFixed(0)}% financing, you're borrowing close to the maximum. Less equity means less flexibility if you need to sell early—but it lets you keep more cash on hand.`);
+    } else if (ltv <= 50) {
+      messages.push(`At ${ltv.toFixed(0)}% LTV, you have significant equity from day one. This gives you flexibility and may help negotiate better rates.`);
     }
     
     // Term and interest insights
     if (loanTermYears >= 28 && totalInterestPercent > 80) {
       messages.push(`Over ${loanTermYears} years, you'll pay ${formatCurrency(mortgageResult.totalInterest)} in interest—about ${totalInterestPercent}% of the property price. If your income grows, consider prepaying to save significantly.`);
+    } else if (loanTermYears <= 15) {
+      messages.push(`A ${loanTermYears}-year term means higher payments but much less interest overall. You'll own your home outright relatively quickly.`);
+    }
+    
+    // Interest rate context
+    if (interestRate > 6) {
+      messages.push(`At ${interestRate}% interest, rates are on the higher side. Consider shopping around or looking at the mix of mortgage tracks to find better terms.`);
     }
     
     return messages;
-  }, [paymentToIncomePercent, ltv, loanTermYears, mortgageResult.totalInterest, propertyPrice, formatCurrency]);
-
-  const cashBreakdownItems = [
-    { label: 'Down Payment', value: formatCurrency(downPaymentAmount), percentage: `${effectiveDownPaymentPercent.toFixed(0)}%` },
-    ...(includeTaxesInCash ? [{ label: 'Purchase Tax', value: formatCurrency(purchaseTaxAmount) }] : []),
-    { label: 'Legal Fees', value: formatCurrency(legalFees) },
-    { label: 'Bank Fees', value: formatCurrency(bankFees) },
-    { label: 'Appraisal', value: formatCurrency(appraisalFee) },
-    ...(bufferAmount > 0 ? [{ label: 'Buffer', value: formatCurrency(bufferAmount) }] : []),
-    { label: '', value: '', isSeparator: true },
-    { label: 'Total Cash Needed', value: formatCurrency(totalCashNeeded), isTotal: true, highlight: 'positive' as const },
-  ];
+  }, [ltv, loanTermYears, mortgageResult.totalInterest, propertyPrice, formatCurrency, interestRate]);
 
   // Handlers
   const handleBuyerTypeChange = (value: BuyerType) => {
@@ -376,7 +344,6 @@ function MortgageCalculatorContent() {
           monthlyPayment: mortgageResult.monthlyPayment,
           loanAmount,
           totalInterest: mortgageResult.totalInterest,
-          totalCashNeeded,
           ltv,
         },
       });
@@ -671,17 +638,6 @@ function MortgageCalculatorContent() {
           <span className="font-semibold">{formatCurrency(mortgageResult.totalInterest)}</span>
         </div>
         
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">Total Repayment</span>
-          <span className="font-semibold">{formatCurrency(mortgageResult.totalPayment)}</span>
-        </div>
-
-        
-        <div className="flex-1" />
-        
-        <p className="text-xs text-muted-foreground text-center pt-3">
-          ~{paymentToIncomePercent}% of median Israeli household income (₪{formatNumber(MEDIAN_HOUSEHOLD_INCOME)}/mo)
-        </p>
       </div>
       
     </Card>
@@ -690,83 +646,10 @@ function MortgageCalculatorContent() {
   // Bottom section - full width
   const bottomSection = (
     <div className="space-y-6">
-      {/* Stress Test & Mortgage Mix - Collapsible Cards */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        {/* Stress Test Card */}
-        <Collapsible defaultOpen={false}>
-          <Card className="p-4">
-            <CollapsibleTrigger className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <span className="font-medium">Stress Test: If Rates Rise</span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-3">
-                Bank of Israel recommends stress-testing your budget. Israeli rates can fluctuate—especially the Prime-linked portion.
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <p className="text-amber-700 dark:text-amber-300 font-medium">+1% Rate</p>
-                  <p className="text-amber-600 dark:text-amber-400 tabular-nums text-lg font-semibold">
-                    {formatCurrency(stressTest.plus1.stressedPayment)}
-                  </p>
-                  <p className="text-amber-500 text-xs">+{stressTest.plus1.increasePercent}% increase</p>
-                </div>
-                <div className="p-3 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                  <p className="text-red-700 dark:text-red-300 font-medium">+2% Rate</p>
-                  <p className="text-red-600 dark:text-red-400 tabular-nums text-lg font-semibold">
-                    {formatCurrency(stressTest.plus2.stressedPayment)}
-                  </p>
-                  <p className="text-red-500 text-xs">+{stressTest.plus2.increasePercent}% increase</p>
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Mortgage Mix Card */}
-        <Collapsible defaultOpen={false}>
-          <Card className="p-4">
-            <CollapsibleTrigger className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <span className="font-medium">Israeli Mortgage Mix</span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform data-[state=open]:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-3">
-                Israeli mortgages typically combine 3 "tracks" (מסלולים): Prime, Fixed, and CPI-Linked. This balances stability with flexibility.
-              </p>
-              <div className="p-3 rounded-md bg-muted/50 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Typical 3-Track Mix</span>
-                  <span className="text-lg font-semibold tabular-nums">{formatCurrency(mortgageMix.totalMonthlyPayment)}/mo</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {mortgageMix.tracks.map((track, i) => (
-                    <div key={i} className="text-center p-2 rounded bg-background border">
-                      <p className="font-medium text-muted-foreground">{track.type === 'prime' ? 'Prime' : track.type === 'fixed_unlinked' ? 'Fixed' : 'CPI'}</p>
-                      <p className="tabular-nums text-sm font-medium">{track.interestRate.toFixed(1)}%</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">{mortgageMix.rationale}</p>
-              </div>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      </div>
-
       {/* Insight Card - Full Width */}
       {insights.length > 0 && (
         <InsightCard insights={insights} />
       )}
-      
-      {/* Cash Needed Breakdown */}
-      <CashBreakdownTable title="Cash Needed to Close" items={cashBreakdownItems} />
 
       {/* Next Steps Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
