@@ -164,6 +164,8 @@ export function TrueCostCalculator() {
   const [includeMoving, setIncludeMoving] = useState(false);
   const [includeFurniture, setIncludeFurniture] = useState(false);
   const [furnitureLevel, setFurnitureLevel] = useState<'basic' | 'standard' | 'premium'>('standard');
+  const [includeRenovation, setIncludeRenovation] = useState(false);
+  const [renovationAmount, setRenovationAmount] = useState('100000');
 
   // Load saved inputs on mount
   useEffect(() => {
@@ -288,6 +290,7 @@ export function TrueCostCalculator() {
     // Optional costs
     const movingCost = includeMoving ? MOVING_COST_ESTIMATE : 0;
     const furnitureCost = includeFurniture ? FURNITURE_COSTS[furnitureLevel] : 0;
+    const renovationCost = includeRenovation ? parseFormattedNumber(renovationAmount) : 0;
 
     // Monthly costs
     const cityData = cities?.find(c => c.slug === selectedCity);
@@ -295,7 +298,7 @@ export function TrueCostCalculator() {
 
     // Sum all costs above property price
     const allCostsAbovePrice = purchaseTax + lawyerFee + agentFee + developerLawyerFee + 
-      bankGuaranteeFee + madadCost + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost;
+      bankGuaranteeFee + madadCost + mortgageCosts + FEES.tabuRegistration + movingCost + furnitureCost + renovationCost;
     
     const totalOneTime = price + allCostsAbovePrice;
     const percentAbovePrice = price > 0 ? (allCostsAbovePrice / price) * 100 : 0;
@@ -315,11 +318,13 @@ export function TrueCostCalculator() {
       tabuRegistration: FEES.tabuRegistration,
       movingCost,
       furnitureCost,
+      renovationCost,
       monthlyCosts,
       totalOneTime,
       allCostsAbovePrice,
       percentAbovePrice,
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
+      isNewConstruction,
     };
   }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, cities]);
 
@@ -443,6 +448,14 @@ export function TrueCostCalculator() {
       items.push({
         label: `Furniture (${furnitureLevel})`,
         value: formatPrice(calculations.furnitureCost),
+      });
+    }
+
+    if (calculations.renovationCost > 0) {
+      items.push({
+        label: 'Renovation Budget',
+        value: formatPrice(calculations.renovationCost),
+        tooltip: 'Estimated renovation costs',
       });
     }
 
@@ -680,10 +693,17 @@ export function TrueCostCalculator() {
                   className="h-11"
                 />
               </div>
+              {/* VAT Clarity Banner */}
+              <Alert className="bg-blue-500/10 border-blue-500/30">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm text-blue-700 dark:text-blue-400">
+                  <strong>VAT is included:</strong> Unlike some countries, Israeli developer prices already include 17% VAT. The price you see is the price you pay.
+                </AlertDescription>
+              </Alert>
               <Alert className="bg-amber-500/10 border-amber-500/30">
                 <Building2 className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
-                  New construction prices are linked to the building cost index. The final price may be 3-8% higher.
+                  New construction prices are linked to the building cost index (מדד). The final price may be 3-8% higher.
                 </AlertDescription>
               </Alert>
             </div>
@@ -777,6 +797,45 @@ export function TrueCostCalculator() {
                     <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Renovation Budget */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-medium">Include Renovation</Label>
+                <p className="text-xs text-muted-foreground">Plan for property upgrades</p>
+              </div>
+              <Switch
+                checked={includeRenovation}
+                onCheckedChange={setIncludeRenovation}
+              />
+            </div>
+            
+            {includeRenovation && (
+              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                <Label htmlFor="renovationAmount" className="flex items-center text-sm font-medium">
+                  Renovation Budget
+                  <InfoTooltip content="Israeli properties often need upgrades. Budget ₪1,500-3,000/sqm for basic renovations, more for premium finishes." />
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                  <Input
+                    id="renovationAmount"
+                    type="text"
+                    value={formatNumber(parseFormattedNumber(renovationAmount))}
+                    onChange={(e) => setRenovationAmount(e.target.value.replace(/[^\d]/g, ''))}
+                    className="h-11 pl-8"
+                  />
+                </div>
+                <Link 
+                  to="/tools?tool=renovation" 
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  Get a detailed estimate →
+                </Link>
               </div>
             )}
           </div>

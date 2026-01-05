@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, Info, Building2, DollarSign, PiggyBank, Scale, Calendar, Lightbulb, RotateCcw, Percent, Home, Users, Wallet, Clock, LineChart } from 'lucide-react';
+import { TrendingUp, Info, Building2, DollarSign, PiggyBank, Scale, Calendar, Lightbulb, RotateCcw, Percent, Home, Users, Wallet, Clock, LineChart, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +26,7 @@ import {
   getVacancyRate,
 } from '@/lib/calculations/rentalYield';
 import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
+import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
 
 // Tooltip component with consistent styling
@@ -185,7 +186,18 @@ export function InvestmentReturnCalculator() {
     const grossYield = calculateGrossYield(purchasePrice, monthlyRent);
     const netYield = (noi / purchasePrice) * 100;
     const capRate = (noi / purchasePrice) * 100;
-    const closingCosts = purchasePrice * 0.08;
+    
+    // ITEMIZED CLOSING COSTS (instead of generic 8%)
+    // Purchase tax for investors is 8% up to ~6M
+    const purchaseTax = purchasePrice <= 5872725 
+      ? purchasePrice * 0.08 
+      : 5872725 * 0.08 + (purchasePrice - 5872725) * 0.10;
+    const lawyerFees = Math.max(5000, purchasePrice * 0.005) * 1.17; // 0.5% + VAT
+    const agentFees = purchasePrice * 0.02 * 1.17; // 2% + VAT
+    const appraisalFees = 3000;
+    const registrationFees = 1500;
+    const closingCosts = purchaseTax + lawyerFees + agentFees + appraisalFees + registrationFees;
+    
     const totalCashInvested = useLeverage ? downPayment + closingCosts : purchasePrice + closingCosts;
     const cashOnCash = useLeverage ? (annualCashFlow / totalCashInvested) * 100 : (netIncomeAfterTax / totalCashInvested) * 100;
     const taxComparison = findOptimalTaxMethod(monthlyRent);
@@ -199,7 +211,38 @@ export function InvestmentReturnCalculator() {
     const annualizedROI = Math.pow((finalYear.propertyValue + finalYear.cumulativeCashFlow) / totalCashInvested, 1 / holdingPeriod) - 1;
     const grade = calculateInvestmentGrade(netYield, cashOnCash, appreciationRate);
     
-    return { vacancyLoss, totalOperatingExpenses, noi, annualTax, annualMaintenance, annualManagement, monthlyMortgage, monthlyCashFlow, downPayment, loanAmount, closingCosts, totalCashInvested, grossYield, netYield, capRate, cashOnCash, taxComparison, projection, finalYear, totalReturn, annualizedROI: annualizedROI * 100, grade };
+    // EXIT ANALYSIS: Capital gains tax at end of holding period
+    const futurePropertyValue = purchasePrice * Math.pow(1 + appreciationRate / 100, holdingPeriod);
+    const purchaseYear = new Date().getFullYear();
+    const capitalGainsResult = calculateMasShevach(
+      purchasePrice,
+      futurePropertyValue,
+      purchaseYear,
+      'investor',
+      { ownedMonths: holdingPeriod * 12 }
+    );
+    const sellingCostsAtExit = futurePropertyValue * 0.03; // ~3% selling costs
+    const remainingMortgageAtExit = useLeverage 
+      ? loanAmount * (Math.pow(1 + interestRate / 100 / 12, loanTermYears * 12) - Math.pow(1 + interestRate / 100 / 12, holdingPeriod * 12)) /
+        (Math.pow(1 + interestRate / 100 / 12, loanTermYears * 12) - 1)
+      : 0;
+    const netProceedsAtExit = futurePropertyValue - remainingMortgageAtExit - sellingCostsAtExit - capitalGainsResult.taxAmount;
+    
+    return { 
+      vacancyLoss, totalOperatingExpenses, noi, annualTax, annualMaintenance, annualManagement, 
+      monthlyMortgage, monthlyCashFlow, downPayment, loanAmount, 
+      // Itemized closing costs
+      closingCosts, purchaseTax, lawyerFees, agentFees, appraisalFees, registrationFees,
+      totalCashInvested, grossYield, netYield, capRate, cashOnCash, taxComparison, projection, 
+      finalYear, totalReturn, annualizedROI: annualizedROI * 100, grade,
+      // Exit analysis
+      futurePropertyValue,
+      capitalGainsTax: capitalGainsResult.taxAmount,
+      sellingCostsAtExit,
+      remainingMortgageAtExit,
+      netProceedsAtExit,
+      inflationAdjustment: capitalGainsResult.inflationAdjustment,
+    };
   }, [purchasePrice, monthlyRent, vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance, maintenancePercent, usePropertyManagement, managementFeePercent, useLeverage, downPaymentPercent, interestRate, loanTermYears, taxMethod, holdingPeriod, appreciationRate]);
   
   // Generate personalized insights
@@ -852,9 +895,9 @@ export function InvestmentReturnCalculator() {
         
         <Separator />
         
-        {/* Cash to Close */}
+        {/* Cash to Close - ITEMIZED */}
         <div className="rounded-lg bg-muted/30 p-4 space-y-3">
-          <h4 className="text-sm font-semibold">Cash to Close</h4>
+          <h4 className="text-sm font-semibold">Cash to Close (Itemized)</h4>
           <div className="space-y-2 text-sm">
             {useLeverage ? (
               <>
@@ -862,24 +905,93 @@ export function InvestmentReturnCalculator() {
                   <span className="text-muted-foreground">Down Payment ({downPaymentPercent}%)</span>
                   <span className="tabular-nums">{formatCurrency(calculations.downPayment)}</span>
                 </div>
+                <Separator className="my-1" />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground flex items-center">
-                    Closing Costs (~8%)
-                    <InfoTooltip content="Includes purchase tax (Mas Rechisha), lawyer fees, agent commission, and other transaction costs." />
+                    Purchase Tax (8%)
+                    <Tooltip>
+                      <TooltipTrigger><Info className="h-3 w-3 ml-1" /></TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-sm">Mas Rechisha - Investors pay 8% on the first ~₪6M, then 10%.</TooltipContent>
+                    </Tooltip>
                   </span>
-                  <span className="tabular-nums">{formatCurrency(calculations.closingCosts)}</span>
+                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.purchaseTax))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Lawyer Fees + VAT</span>
+                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.lawyerFees))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Agent Commission + VAT</span>
+                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.agentFees))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Appraisal & Registration</span>
+                  <span className="tabular-nums">{formatCurrency(calculations.appraisalFees + calculations.registrationFees)}</span>
                 </div>
               </>
             ) : (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Purchase + Costs</span>
-                <span className="tabular-nums">{formatCurrency(calculations.totalCashInvested)}</span>
-              </div>
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Purchase Price</span>
+                  <span className="tabular-nums">{formatCurrency(purchasePrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Closing Costs</span>
+                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.closingCosts))}</span>
+                </div>
+              </>
             )}
             <Separator className="my-1" />
             <div className="flex justify-between font-semibold">
               <span>Total Cash Needed</span>
-              <span className="tabular-nums">{formatCurrency(calculations.totalCashInvested)}</span>
+              <span className="tabular-nums">{formatCurrency(Math.round(calculations.totalCashInvested))}</span>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* EXIT ANALYSIS */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <ArrowRight className="h-4 w-4 text-primary" />
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Exit After {holdingPeriod} Years</h4>
+            <Tooltip>
+              <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
+              <TooltipContent className="max-w-xs text-sm">
+                What you'd net if you sold at the end of your holding period, after selling costs and Mas Shevach (capital gains tax).
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Property Value</span>
+              <span className="tabular-nums">{formatCurrency(Math.round(calculations.futurePropertyValue))}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Less: Remaining Mortgage</span>
+              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.remainingMortgageAtExit))}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Less: Selling Costs (~3%)</span>
+              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.sellingCostsAtExit))}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground flex items-center">
+                Less: Capital Gains Tax
+                <Tooltip>
+                  <TooltipTrigger><Info className="h-3 w-3 ml-1" /></TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-sm">
+                    Mas Shevach: 25% on real (inflation-adjusted) gain. After {holdingPeriod} years, ~₪{(calculations.inflationAdjustment / 1000).toFixed(0)}K is deductible as inflation adjustment.
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.capitalGainsTax))}</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between font-semibold">
+              <span>Net Proceeds at Exit</span>
+              <span className="tabular-nums text-green-600 dark:text-green-400">{formatCurrency(Math.round(calculations.netProceedsAtExit))}</span>
             </div>
           </div>
         </div>

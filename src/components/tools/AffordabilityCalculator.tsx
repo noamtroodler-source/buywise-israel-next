@@ -225,6 +225,36 @@ function AffordabilityCalculatorContent() {
     const currentPTI = effectiveMonthlyIncome > 0 
       ? ((existingDebts + safePayment) / effectiveMonthlyIncome) * 100 
       : 0;
+
+    // STRESS TEST: Calculate affordability if rates rise 2%
+    const stressedRate = interestRate + 2;
+    const stressedMonthlyRate = stressedRate / 100 / 12;
+    const stressedMaxLoan = safePayment > 0 && stressedMonthlyRate > 0
+      ? (safePayment * (Math.pow(1 + stressedMonthlyRate, numPayments) - 1)) / 
+        (stressedMonthlyRate * Math.pow(1 + stressedMonthlyRate, numPayments))
+      : 0;
+    const stressedMaxPropertyByLoan = stressedMaxLoan / (maxLTV / 100);
+    const stressedMaxPropertyPrice = Math.max(downPaymentSaved, Math.min(stressedMaxPropertyByLoan, maxPropertyByDownPayment));
+
+    // FULL PURCHASE COSTS: Calculate total cash to close (not just down payment)
+    // Estimate purchase tax based on buyer type
+    const estimatedPurchaseTax = (() => {
+      const price = maxPropertyPrice;
+      if (buyerType === 'first_time' || buyerType === 'oleh') {
+        // First-time/Oleh: 0% up to ~1.8M, then graduated
+        if (price <= 1805545) return 0;
+        if (price <= 2141605) return (price - 1805545) * 0.035;
+        return (2141605 - 1805545) * 0.035 + (price - 2141605) * 0.05;
+      } else {
+        // Additional/Foreign: 8% up to ~6M, then 10%
+        if (price <= 5872725) return price * 0.08;
+        return 5872725 * 0.08 + (price - 5872725) * 0.10;
+      }
+    })();
+    const lawyerFees = Math.max(5000, maxPropertyPrice * 0.005) * 1.17; // 0.5% + VAT
+    const agentFees = maxPropertyPrice * 0.02 * 1.17; // 2% + VAT (resale)
+    const otherFees = 5000; // Appraisal, registration, etc.
+    const totalCashToClose = downPaymentSaved + estimatedPurchaseTax + lawyerFees + agentFees + otherFees;
     
     // Affordability score (0-100)
     const affordabilityScore = Math.min(100, Math.max(0, 
@@ -351,10 +381,17 @@ function AffordabilityCalculatorContent() {
       incomeBreakdown,
       totalStatedIncome,
       improvements,
+      // New stress test and cash-to-close
+      stressedMaxPropertyPrice,
+      stressedReduction: maxPropertyPrice - stressedMaxPropertyPrice,
+      totalCashToClose,
+      estimatedPurchaseTax,
+      lawyerFees,
+      agentFees,
     };
   }, [monthlyIncome, spouseIncome, selfEmployedIncome, selfEmployedYears, 
       existingDebts, downPaymentSaved, interestRate, loanTerm, maxLTV,
-      hasForeignIncome, foreignIncomeAmount, foreignCurrency, employmentType]);
+      hasForeignIncome, foreignIncomeAmount, foreignCurrency, employmentType, buyerType]);
 
   // Generate personalized insights
   const insights = useMemo(() => {
@@ -897,6 +934,24 @@ function AffordabilityCalculatorContent() {
         <p className="text-sm text-muted-foreground mt-2">
           based on Bank of Israel PTI limits
         </p>
+        
+        {/* Stress Test Warning */}
+        {calculations.stressedReduction > 50000 && (
+          <div className="mt-3 p-2 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>If rates rise 2%: {formatCurrency(calculations.stressedMaxPropertyPrice)}</span>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3 w-3" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Bank of Israel recommends stress-testing against a 2% rate increase. This shows your max budget if rates rise.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Affordability Score */}
@@ -1091,6 +1146,50 @@ function AffordabilityCalculatorContent() {
       {insights.length > 0 && (
         <InsightCard insights={insights} />
       )}
+      
+      {/* Total Cash to Close Card */}
+      <Card className="p-6 border-t-4 border-t-primary">
+        <div className="flex items-center gap-2 mb-4">
+          <PiggyBank className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Total Cash Needed to Close</h3>
+          <Tooltip>
+            <TooltipTrigger>
+              <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs text-sm">
+              Beyond your down payment, you'll need cash for purchase tax, legal fees, and agent commission. This shows the full amount needed.
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <div className="text-center mb-4">
+          <p className="text-3xl font-bold text-primary tabular-nums">{formatCurrency(calculations.totalCashToClose)}</p>
+          <p className="text-xs text-muted-foreground mt-1">For a {formatCurrency(calculations.maxPropertyPrice)} property</p>
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Down Payment ({minDownPaymentPercent}%)</span>
+            <span className="tabular-nums">{formatCurrency(downPaymentSaved)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground flex items-center gap-1">
+              Purchase Tax
+              <Tooltip>
+                <TooltipTrigger><Info className="h-3 w-3" /></TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">Mas Rechisha - varies by buyer type. First-time buyers pay less.</TooltipContent>
+              </Tooltip>
+            </span>
+            <span className="tabular-nums">{formatCurrency(Math.round(calculations.estimatedPurchaseTax))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Lawyer Fees + VAT</span>
+            <span className="tabular-nums">{formatCurrency(Math.round(calculations.lawyerFees))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Agent Commission + VAT</span>
+            <span className="tabular-nums">{formatCurrency(Math.round(calculations.agentFees))}</span>
+          </div>
+        </div>
+      </Card>
       
       {/* For Your Max Property Summary */}
       <Card className="p-6">

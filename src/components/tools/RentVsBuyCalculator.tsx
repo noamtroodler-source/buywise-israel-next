@@ -19,6 +19,7 @@ import {
   RefreshCw,
   AlertCircle,
   ChevronDown,
+  Target,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,6 +45,7 @@ import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
+import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
@@ -325,15 +327,33 @@ export function RentVsBuyCalculator() {
       (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, years * 12)) /
       (Math.pow(1 + monthlyRate, numPayments) - 1);
     
-    // Equity built
-    const equityBuilt = futurePropertyValue - remainingBalance;
+    // Equity built (before exit costs)
+    const equityBuiltGross = futurePropertyValue - remainingBalance;
+    
+    // EXIT COSTS: Selling costs (~3%) and Capital Gains Tax (Mas Shevach)
+    const sellingCosts = futurePropertyValue * 0.03; // Agent 2% + legal 1%
+    
+    // Calculate capital gains tax for investors
+    const purchaseYear = new Date().getFullYear();
+    const sellerCategory = buyerType === 'first_time' || buyerType === 'oleh' ? 'primary_residence' : 'investor';
+    const capitalGainsResult = calculateMasShevach(
+      price, 
+      futurePropertyValue, 
+      purchaseYear, 
+      sellerCategory as 'primary_residence' | 'investor',
+      { ownedMonths: years * 12 }
+    );
+    const capitalGainsTax = capitalGainsResult.taxAmount;
+    
+    // Net equity after exit costs
+    const equityBuilt = equityBuiltGross - sellingCosts - capitalGainsTax;
     
     // Total cost of buying over period
     const totalMortgagePayments = monthlyMortgage * years * 12;
     const totalOwnershipCosts = totalMonthlyOwnershipCosts * years * 12;
     const totalBuyingCost = downPayment + totalPurchaseCosts + totalMortgagePayments + totalOwnershipCosts;
     
-    // Net wealth from buying (equity - what you spent)
+    // Net wealth from buying (equity after exit costs)
     const netBuyingWealth = equityBuilt;
     
     // Renting calculations
@@ -358,14 +378,20 @@ export function RentVsBuyCalculator() {
     const buyingIsBetter = netBuyingWealth > netRentingWealth;
     const wealthDifference = Math.abs(netBuyingWealth - netRentingWealth);
     
-    // Calculate break-even year
+    // Calculate break-even year (now accounting for exit costs)
     let breakEvenYear = null;
     for (let year = 1; year <= 30; year++) {
       const propertyValueAtYear = price * Math.pow(1 + appreciationRate / 100, year);
       const remainingLoanAtYear = year >= years ? 0 : loanAmount * 
         (Math.pow(1 + monthlyRate, numPayments) - Math.pow(1 + monthlyRate, year * 12)) /
         (Math.pow(1 + monthlyRate, numPayments) - 1);
-      const buyingEquityAtYear = propertyValueAtYear - remainingLoanAtYear;
+      
+      // Exit costs at that year
+      const sellingCostsAtYear = propertyValueAtYear * 0.03;
+      const cgResult = calculateMasShevach(price, propertyValueAtYear, purchaseYear, sellerCategory as 'primary_residence' | 'investor', { ownedMonths: year * 12 });
+      const cgTaxAtYear = cgResult.taxAmount;
+      
+      const buyingEquityAtYear = propertyValueAtYear - remainingLoanAtYear - sellingCostsAtYear - cgTaxAtYear;
       
       let rentPaidAtYear = 0;
       let rentAtYear = rent;
@@ -449,6 +475,11 @@ export function RentVsBuyCalculator() {
       spaceAdvantagePercent,
       monthlyEquityBuilding,
       priceToRentRatio,
+      
+      // Exit costs (new)
+      sellingCosts,
+      capitalGainsTax,
+      equityBuiltGross,
     };
   }, [propertyPrice, monthlyRent, downPaymentPercent, interestRate, timeHorizon, appreciation, rentIncrease, investmentReturn, buyerType, cityMetrics, rooms]);
   
@@ -760,6 +791,36 @@ export function RentVsBuyCalculator() {
     <div>
       {calculations ? (
         <Card className="overflow-hidden">
+          {/* BREAK-EVEN HERO - Prominent display */}
+          {calculations.breakEvenYear && (
+            <div className={cn(
+              "flex items-center justify-center gap-3 px-6 py-4 border-b",
+              calculations.breakEvenYear <= 7 ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" :
+              calculations.breakEvenYear <= 12 ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800" :
+              "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+            )}>
+              <Target className={cn(
+                "h-5 w-5",
+                calculations.breakEvenYear <= 7 ? "text-green-600" :
+                calculations.breakEvenYear <= 12 ? "text-amber-600" : "text-red-600"
+              )} />
+              <div className="text-center">
+                <span className={cn(
+                  "text-lg font-bold",
+                  calculations.breakEvenYear <= 7 ? "text-green-700 dark:text-green-300" :
+                  calculations.breakEvenYear <= 12 ? "text-amber-700 dark:text-amber-300" : "text-red-700 dark:text-red-300"
+                )}>
+                  Break-even: {calculations.breakEvenYear} years
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  {calculations.breakEvenYear <= 7 ? "Buying wins relatively quickly" :
+                   calculations.breakEvenYear <= 12 ? "Consider your timeline carefully" :
+                   "Long horizon needed for buying to pay off"}
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* Down Payment Warning Banner - inside card */}
           {parseFloat(downPaymentPercent) < MIN_DOWN_PAYMENT[buyerType] && (
             <div className="flex items-center gap-2 px-6 py-3 bg-warning/10 border-b border-warning/20">
@@ -875,12 +936,16 @@ export function RentVsBuyCalculator() {
                   ? `Buying builds ${formatPrice(Math.round(calculations.wealthDifference))} more`
                   : `Renting saves ${formatPrice(Math.round(calculations.wealthDifference))}`}
               </span>
-              {calculations.breakEvenYear && (
-                <span className="text-muted-foreground ml-1">
-                  · break-even ~{calculations.breakEvenYear}yr
-                </span>
-              )}
             </div>
+            
+            {/* Exit costs note */}
+            {(calculations.sellingCosts > 0 || calculations.capitalGainsTax > 0) && (
+              <p className="text-[10px] text-muted-foreground text-center mt-2 flex items-center justify-center gap-1">
+                <Info className="h-3 w-3" />
+                Includes ~{formatPrice(Math.round(calculations.sellingCosts))} selling costs
+                {calculations.capitalGainsTax > 0 && ` + ${formatPrice(Math.round(calculations.capitalGainsTax))} capital gains tax`}
+              </p>
+            )}
           </div>
           
           {/* KEY INSIGHT */}
