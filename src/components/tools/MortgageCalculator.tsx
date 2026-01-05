@@ -85,7 +85,6 @@ function MortgageCalculatorContent() {
   const [interestRateInput, setInterestRateInput] = useState(DEFAULTS.interestRate.toFixed(1));
   
   // Advanced options
-  const [showAdvanced, setShowAdvanced] = useState(true);
   const [includeTaxesInCash, setIncludeTaxesInCash] = useState(DEFAULTS.includeTaxesInCash);
   const [legalFeesPercent, setLegalFeesPercent] = useState(DEFAULTS.legalFeesPercent);
   const [legalFeesInput, setLegalFeesInput] = useState(DEFAULTS.legalFeesPercent.toFixed(1));
@@ -352,7 +351,7 @@ function MortgageCalculatorContent() {
     setBufferAmount(DEFAULTS.bufferAmount);
     setBufferAmountInput(formatNumber(DEFAULTS.bufferAmount));
     setIncludeTaxesInCash(DEFAULTS.includeTaxesInCash);
-    setShowAdvanced(false);
+    
     toast({ title: "Reset complete", description: "All values restored to defaults" });
   };
 
@@ -492,90 +491,60 @@ function MortgageCalculatorContent() {
           </div>
         </div>
 
-        {/* Advanced Options - Collapsible */}
-        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <span>Advanced Options</span>
-            <ChevronDown className={cn("h-4 w-4 transition-transform", showAdvanced && "rotate-180")} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Label className="text-sm">Include Purchase Tax</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-sm">
-                    Mas Rechisha (Purchase Tax) is paid to the Tax Authority within 50 days of signing. Rates vary by buyer type and property value.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
+        <Separator />
+
+        {/* Advanced Options */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm">Include Purchase Tax</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Mas Rechisha (Purchase Tax) is paid to the Tax Authority within 50 days of signing. Rates vary by buyer type and property value.
+                </TooltipContent>
+              </Tooltip>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <Label className="text-xs text-muted-foreground">Legal Fees (%)</Label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-sm">
-                      Attorney fees (Orech Din) typically range 0.5-1% + VAT. Covers contract review, due diligence, and Land Registry (Tabu) registration.
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={legalFeesInput}
-                    onChange={handleLegalFeesChange}
-                    onBlur={handleLegalFeesBlur}
-                    className="pr-6 h-9 text-sm"
-                    placeholder="0.5"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1">
-                  <Label className="text-xs text-muted-foreground">Appraisal Fee</Label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-sm">
-                      Shuman (Property Appraisal) is required by the bank to confirm property value. Cost varies by property size and location.
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    value={appraisalFeeInput}
-                    onChange={handleAppraisalFeeChange}
-                    onBlur={handleAppraisalFeeBlur}
-                    className="pl-6 h-9 text-sm"
-                    placeholder="3,000"
-                  />
-                </div>
-              </div>
-            </div>
-            
+            <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-1">
-                <Label className="text-xs text-muted-foreground">Reserve Buffer (optional)</Label>
+                <Label className="text-xs text-muted-foreground">Legal Fees (%)</Label>
                 <Tooltip>
                   <TooltipTrigger>
                     <Info className="h-3 w-3 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-sm">
-                    Extra cash reserve for unexpected costs like minor repairs, furniture, or moving expenses. Recommended: ₪30,000-50,000.
+                    Attorney fees (Orech Din) typically range 0.5-1% + VAT. Covers contract review, due diligence, and Land Registry (Tabu) registration.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="relative">
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={legalFeesInput}
+                  onChange={handleLegalFeesChange}
+                  onBlur={handleLegalFeesBlur}
+                  className="pr-6 h-9 text-sm"
+                  placeholder="0.5"
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-1">
+                <Label className="text-xs text-muted-foreground">Appraisal Fee</Label>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-3 w-3 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-sm">
+                    Shuman (Property Appraisal) is required by the bank to confirm property value. Cost varies by property size and location.
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -584,16 +553,42 @@ function MortgageCalculatorContent() {
                 <Input
                   type="text"
                   inputMode="numeric"
-                  value={bufferAmountInput}
-                  onChange={handleBufferAmountChange}
-                  onBlur={handleBufferAmountBlur}
+                  value={appraisalFeeInput}
+                  onChange={handleAppraisalFeeChange}
+                  onBlur={handleAppraisalFeeBlur}
                   className="pl-6 h-9 text-sm"
-                  placeholder="0"
+                  placeholder="3,000"
                 />
               </div>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-1">
+              <Label className="text-xs text-muted-foreground">Reserve Buffer (optional)</Label>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="h-3 w-3 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-sm">
+                  Extra cash reserve for unexpected costs like minor repairs, furniture, or moving expenses. Recommended: ₪30,000-50,000.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={bufferAmountInput}
+                onChange={handleBufferAmountChange}
+                onBlur={handleBufferAmountBlur}
+                className="pl-6 h-9 text-sm"
+                placeholder="0"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Reset */}
         <div className="flex justify-center pt-2">
