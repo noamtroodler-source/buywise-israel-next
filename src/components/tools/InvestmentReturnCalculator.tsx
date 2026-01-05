@@ -16,7 +16,7 @@ import { InsightCard } from './shared/InsightCard';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
-import { usePreferences } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { 
   calculateGrossYield, 
@@ -79,7 +79,9 @@ const DEFAULTS = {
 };
 
 export function InvestmentReturnCalculator() {
-  const { currency, exchangeRate } = usePreferences();
+  const { areaUnit } = usePreferences();
+  const formatCurrency = useFormatPrice();
+  const formatArea = useFormatArea();
   const { data: canonicalMetrics } = useAllCanonicalMetrics();
   const { data: cities } = useCities();
   const { data: buyerProfile } = useBuyerProfile();
@@ -218,17 +220,16 @@ export function InvestmentReturnCalculator() {
     
     // Cash flow insights
     if (monthlyCashFlow < 0 && useLeverage) {
-      const formatted = `₪${Math.abs(Math.round(monthlyCashFlow)).toLocaleString()}`;
+      const formatted = formatCurrency(Math.abs(Math.round(monthlyCashFlow)));
       messages.push(`This property will cost you ${formatted}/month beyond the mortgage. You're betting on appreciation, not income. Make sure you can carry it.`);
     } else if (cashOnCash > 6) {
       messages.push(`Your annual return on cash invested is healthy at ${cashOnCash.toFixed(1)}%. You're making your money work.`);
     }
     
     return messages;
-  }, [calculations, useLeverage]);
+  }, [calculations, useLeverage, formatCurrency]);
   
   // Helpers
-  const formatCurrency = (value: number) => currency === 'USD' ? `$${Math.round(value / exchangeRate).toLocaleString()}` : `₪${Math.round(value).toLocaleString()}`;
   const parseNumericInput = (value: string): number => parseFloat(value.replace(/[^0-9.-]/g, '')) || 0;
   const availableCities = useMemo(() => canonicalMetrics?.filter(m => m.median_apartment_price).map(m => ({ slug: m.city_slug, name: m.city_slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), grossYield: m.gross_yield_percent })).sort((a, b) => a.name.localeCompare(b.name)) || [], [canonicalMetrics]);
 
@@ -299,7 +300,7 @@ export function InvestmentReturnCalculator() {
                     onChange={(e) => setPropertySizeSqm(parseInt(e.target.value) || 0)} 
                     className="h-11 tabular-nums pr-12" 
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">sqm</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnit}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -338,7 +339,7 @@ export function InvestmentReturnCalculator() {
                     className="text-xs cursor-pointer hover:bg-primary/20 transition-colors" 
                     onClick={() => setMonthlyRent(suggestedRent)}
                   >
-                    Market: ₪{suggestedRent.toLocaleString()}
+                    Market: {formatCurrency(suggestedRent)}
                   </Badge>
                 )}
               </div>
@@ -370,7 +371,7 @@ export function InvestmentReturnCalculator() {
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">= ₪{Math.round(calculations.vacancyLoss).toLocaleString()}/year lost income</p>
+              <p className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.vacancyLoss))}/year lost income</p>
             </div>
           </div>
         </div>
@@ -471,7 +472,7 @@ export function InvestmentReturnCalculator() {
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">= ₪{Math.round(calculations.annualManagement).toLocaleString()}/year</p>
+                  <p className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.annualManagement))}/year</p>
                 </div>
               )}
             </div>

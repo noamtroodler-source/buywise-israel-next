@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { calculateNewConstructionLinkage, calculateTotalPurchaseCosts } from '@/lib/calculations/purchaseCosts';
 import { calculatePurchaseTax, type BuyerType, getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 interface PaymentSchedule {
   stage: string;
@@ -35,6 +36,8 @@ const DEFAULT_PAYMENT_SCHEDULE = [
 ];
 
 export function NewConstructionCostCalculator() {
+  const formatCurrency = useFormatPrice();
+  
   const [contractPrice, setContractPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
   const [constructionMonths, setConstructionMonths] = useState(36);
@@ -97,14 +100,6 @@ export function NewConstructionCostCalculator() {
   const totalWithLinkage = useMemo(() => {
     return paymentSchedule.reduce((sum, stage) => sum + stage.estimatedLinkedAmount, 0);
   }, [paymentSchedule]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('he-IL', { month: 'short', year: 'numeric' });
