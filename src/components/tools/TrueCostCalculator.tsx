@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Building2,
   Loader2,
+  ChevronDown,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -737,133 +739,163 @@ export function TrueCostCalculator() {
 
         <Separator />
 
-        {/* Advanced Options - Always Open */}
-        <div className="space-y-4">
+        {/* Advanced Options - Grouped Collapsibles */}
+        <div className="space-y-3">
           <h3 className="font-semibold text-foreground text-sm">
             Advanced Options
           </h3>
           
-          {!isNewConstruction && (
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Agent Fee</Label>
-                <p className="text-xs text-muted-foreground">2% + VAT commission</p>
-              </div>
-              <Switch
-                checked={includeAgentFee}
-                onCheckedChange={setIncludeAgentFee}
-              />
-            </div>
-          )}
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Mortgage Costs</Label>
-                <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
-              </div>
-              <Switch
-                checked={includeMortgageCosts}
-                onCheckedChange={setIncludeMortgageCosts}
-              />
-            </div>
-            
-            {includeMortgageCosts && (
-              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                <Label htmlFor="loanAmount" className="text-sm font-medium">
-                  Loan Amount
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
-                  <Input
-                    id="loanAmount"
-                    type="text"
-                    value={formatNumber(parseFormattedNumber(loanAmount))}
-                    onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                    className="h-11 pl-8"
-                  />
+          {/* Transaction Costs Group */}
+          <Collapsible defaultOpen={includeMortgageCosts || (includeAgentFee && !isNewConstruction)}>
+            <div className="rounded-lg border border-border/50 bg-muted/20">
+              <CollapsibleTrigger className="w-full px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Transaction Costs</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
                 </div>
-              </div>
-            )}
-          </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4">
+                  {!isNewConstruction && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Include Agent Fee</Label>
+                        <p className="text-xs text-muted-foreground">2% + VAT commission</p>
+                      </div>
+                      <Switch
+                        checked={includeAgentFee}
+                        onCheckedChange={setIncludeAgentFee}
+                      />
+                    </div>
+                  )}
 
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="text-sm font-medium">Include Moving Costs</Label>
-              <p className="text-xs text-muted-foreground">~{formatPrice(MOVING_COST_ESTIMATE)} estimate</p>
-            </div>
-            <Switch
-              checked={includeMoving}
-              onCheckedChange={setIncludeMoving}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Furniture</Label>
-                <p className="text-xs text-muted-foreground">Furnishing your new home</p>
-              </div>
-              <Switch
-                checked={includeFurniture}
-                onCheckedChange={setIncludeFurniture}
-              />
-            </div>
-            
-            {includeFurniture && (
-              <div className="pl-4 border-l-2 border-primary/20">
-                <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">Basic ({formatPrice(FURNITURE_COSTS.basic)})</SelectItem>
-                    <SelectItem value="standard">Standard ({formatPrice(FURNITURE_COSTS.standard)})</SelectItem>
-                    <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          {/* Renovation Budget */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-medium">Include Renovation</Label>
-                <p className="text-xs text-muted-foreground">Plan for property upgrades</p>
-              </div>
-              <Switch
-                checked={includeRenovation}
-                onCheckedChange={setIncludeRenovation}
-              />
-            </div>
-            
-            {includeRenovation && (
-              <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                <Label htmlFor="renovationAmount" className="flex items-center text-sm font-medium">
-                  Renovation Budget
-                  <InfoTooltip content="Israeli properties often need upgrades. Budget ₪1,500-3,000/sqm for basic renovations, more for premium finishes." />
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
-                  <Input
-                    id="renovationAmount"
-                    type="text"
-                    value={formatNumber(parseFormattedNumber(renovationAmount))}
-                    onChange={(e) => setRenovationAmount(e.target.value.replace(/[^\d]/g, ''))}
-                    className="h-11 pl-8"
-                  />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Include Mortgage Costs</Label>
+                        <p className="text-xs text-muted-foreground">Appraisal & registration fees</p>
+                      </div>
+                      <Switch
+                        checked={includeMortgageCosts}
+                        onCheckedChange={setIncludeMortgageCosts}
+                      />
+                    </div>
+                    
+                    {includeMortgageCosts && (
+                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                        <Label htmlFor="loanAmount" className="text-sm font-medium">
+                          Loan Amount
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                          <Input
+                            id="loanAmount"
+                            type="text"
+                            value={formatNumber(parseFormattedNumber(loanAmount))}
+                            onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
+                            className="h-11 pl-8"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Link 
-                  to="/tools?tool=renovation" 
-                  className="text-xs text-primary hover:underline flex items-center gap-1"
-                >
-                  Get a detailed estimate →
-                </Link>
-              </div>
-            )}
-          </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
+          
+          {/* Moving & Setup Group */}
+          <Collapsible defaultOpen={includeMoving || includeFurniture || includeRenovation}>
+            <div className="rounded-lg border border-border/50 bg-muted/20">
+              <CollapsibleTrigger className="w-full px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Moving & Setup</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm font-medium">Include Moving Costs</Label>
+                      <p className="text-xs text-muted-foreground">~{formatPrice(MOVING_COST_ESTIMATE)} estimate</p>
+                    </div>
+                    <Switch
+                      checked={includeMoving}
+                      onCheckedChange={setIncludeMoving}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Include Furniture</Label>
+                        <p className="text-xs text-muted-foreground">Furnishing your new home</p>
+                      </div>
+                      <Switch
+                        checked={includeFurniture}
+                        onCheckedChange={setIncludeFurniture}
+                      />
+                    </div>
+                    
+                    {includeFurniture && (
+                      <div className="pl-4 border-l-2 border-primary/20">
+                        <Select value={furnitureLevel} onValueChange={(v) => setFurnitureLevel(v as typeof furnitureLevel)}>
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic">Basic ({formatPrice(FURNITURE_COSTS.basic)})</SelectItem>
+                            <SelectItem value="standard">Standard ({formatPrice(FURNITURE_COSTS.standard)})</SelectItem>
+                            <SelectItem value="premium">Premium ({formatPrice(FURNITURE_COSTS.premium)})</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Renovation Budget */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Include Renovation</Label>
+                        <p className="text-xs text-muted-foreground">Plan for property upgrades</p>
+                      </div>
+                      <Switch
+                        checked={includeRenovation}
+                        onCheckedChange={setIncludeRenovation}
+                      />
+                    </div>
+                    
+                    {includeRenovation && (
+                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                        <Label htmlFor="renovationAmount" className="flex items-center text-sm font-medium">
+                          Renovation Budget
+                          <InfoTooltip content="Israeli properties often need upgrades. Budget ₪1,500-3,000/sqm for basic renovations, more for premium finishes." />
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                          <Input
+                            id="renovationAmount"
+                            type="text"
+                            value={formatNumber(parseFormattedNumber(renovationAmount))}
+                            onChange={(e) => setRenovationAmount(e.target.value.replace(/[^\d]/g, ''))}
+                            className="h-11 pl-8"
+                          />
+                        </div>
+                        <Link 
+                          to="/tools?tool=renovation" 
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                        >
+                          Get a detailed estimate →
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         </div>
 
       </div>

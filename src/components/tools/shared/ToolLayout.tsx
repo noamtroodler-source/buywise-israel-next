@@ -87,7 +87,7 @@ export function ToolLayout({
         </div>
 
         {/* Right Column - Results */}
-        <div className="flex flex-col order-1 lg:order-2">
+        <div className="flex flex-col order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
           {rightColumn}
         </div>
       </div>
