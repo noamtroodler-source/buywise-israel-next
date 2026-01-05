@@ -41,7 +41,7 @@ import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCate
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_true_cost_inputs';
@@ -102,6 +102,8 @@ export function TrueCostCalculator() {
   const { areaUnit } = usePreferences();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const currencySymbol = useCurrencySymbol();
+  const areaUnitLabel = useAreaUnitLabel();
 
   // Core inputs
   const [propertyPrice, setPropertyPrice] = useState('2500000');
@@ -502,7 +504,7 @@ export function TrueCostCalculator() {
                 <InfoTooltip content="Enter the full purchase price in Israeli Shekels" />
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                 <Input
                   id="price"
                   type="text"
@@ -547,10 +549,10 @@ export function TrueCostCalculator() {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="size" className="flex items-center text-sm font-medium">
-                  Size (sqm)
-                  <span className="text-muted-foreground font-normal ml-1">(optional)</span>
-                  <InfoTooltip content="Size helps estimate Arnona (property tax) based on city rates. Leave blank for a rough estimate — the property price drives most costs." />
+              <Label htmlFor="size" className="flex items-center text-sm font-medium">
+                Size ({areaUnitLabel})
+                <span className="text-muted-foreground font-normal ml-1">(optional)</span>
+                <InfoTooltip content="Size helps estimate Arnona (property tax) based on city rates. Leave blank for a rough estimate — the property price drives most costs." />
                 </Label>
                 <Input
                   id="size"
@@ -727,7 +729,7 @@ export function TrueCostCalculator() {
                   Loan Amount
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                   <Input
                     id="loanAmount"
                     type="text"

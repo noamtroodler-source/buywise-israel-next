@@ -30,7 +30,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory,
 } from './shared';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 // Buyer types with their max LTV limits
 const BUYER_TYPE_OPTIONS: { 
@@ -78,6 +78,7 @@ const parseFormattedNumber = (str: string): number => {
 
 function AffordabilityCalculatorContent() {
   const formatCurrency = useFormatPrice();
+  const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { toast } = useToast();
   
@@ -610,7 +611,7 @@ function AffordabilityCalculatorContent() {
             </Tooltip>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             <Input
               type="text"
               inputMode="numeric"
@@ -637,7 +638,7 @@ function AffordabilityCalculatorContent() {
             </Tooltip>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             <Input
               type="text"
               inputMode="numeric"
@@ -661,7 +662,7 @@ function AffordabilityCalculatorContent() {
             <div className="space-y-2">
               <Label className="text-sm">Monthly Self-Employed Income</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -771,7 +772,7 @@ function AffordabilityCalculatorContent() {
             </Tooltip>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             <Input
               type="text"
               inputMode="numeric"
@@ -799,7 +800,7 @@ function AffordabilityCalculatorContent() {
             </Tooltip>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             <Input
               type="text"
               inputMode="numeric"
