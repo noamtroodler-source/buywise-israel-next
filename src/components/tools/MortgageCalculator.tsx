@@ -85,7 +85,7 @@ function MortgageCalculatorContent() {
   const [interestRateInput, setInterestRateInput] = useState(DEFAULTS.interestRate.toFixed(1));
   
   // Advanced options
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
   const [includeTaxesInCash, setIncludeTaxesInCash] = useState(DEFAULTS.includeTaxesInCash);
   const [legalFeesPercent, setLegalFeesPercent] = useState(DEFAULTS.legalFeesPercent);
   const [legalFeesInput, setLegalFeesInput] = useState(DEFAULTS.legalFeesPercent.toFixed(1));
