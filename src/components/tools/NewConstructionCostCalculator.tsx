@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { calculateNewConstructionLinkage, calculateTotalPurchaseCosts } from '@/lib/calculations/purchaseCosts';
 import { calculatePurchaseTax, type BuyerType, getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 interface PaymentSchedule {
   stage: string;
@@ -37,6 +37,7 @@ const DEFAULT_PAYMENT_SCHEDULE = [
 
 export function NewConstructionCostCalculator() {
   const formatCurrency = useFormatPrice();
+  const currencySymbol = useCurrencySymbol();
   
   const [contractPrice, setContractPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');

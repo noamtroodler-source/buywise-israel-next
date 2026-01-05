@@ -154,6 +154,18 @@ export function useFormatArea() {
   };
 }
 
+// Returns just the currency symbol for input prefixes
+export function useCurrencySymbol() {
+  const { currency } = usePreferences();
+  return currency === 'USD' ? '$' : '₪';
+}
+
+// Returns the area unit label for input suffixes
+export function useAreaUnitLabel() {
+  const { areaUnit } = usePreferences();
+  return areaUnit === 'sqft' ? 'sqft' : 'sqm';
+}
+
 export function useFormatPricePerArea() {
   const { currency, exchangeRate, areaUnit } = usePreferences();
   const SQM_TO_SQFT = 10.764;

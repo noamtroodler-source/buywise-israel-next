@@ -13,7 +13,7 @@ import { InfoBanner } from './shared/InfoBanner';
 import { CashBreakdownTable, BreakdownItem } from './shared/CashBreakdownTable';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
-import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 type QualityLevel = 'basic' | 'standard' | 'premium';
 type PropertyType = 'apartment' | 'house' | 'penthouse';
@@ -166,31 +166,37 @@ const renovationCategories: RenovationCategory[] = [
   },
 ];
 
-const qualityExamples = {
+// Quality examples - dynamic priceIndicator will be set in component
+const getQualityExamples = (symbol: string) => ({
   basic: {
     label: 'Basic',
     description: 'Functional, budget-friendly materials',
     examples: 'IKEA cabinets, Israeli-made fixtures, standard tiles, local appliances',
-    priceIndicator: '₪',
+    priceIndicator: symbol,
   },
   standard: {
     label: 'Standard',
     description: 'Good quality, durable materials',
     examples: 'Mid-range cabinets, Hansgrohe/Grohe fixtures, ceramic tiles, Bosch appliances',
-    priceIndicator: '₪₪',
+    priceIndicator: symbol + symbol,
   },
   premium: {
     label: 'Premium',
     description: 'High-end, luxury finishes',
     examples: 'Custom cabinetry, Caesarstone counters, imported tiles, Miele/Sub-Zero appliances',
-    priceIndicator: '₪₪₪',
+    priceIndicator: symbol + symbol + symbol,
   },
-};
+});
 
 export function RenovationCostEstimator() {
   const { areaUnit } = usePreferences();
   const formatCurrency = useFormatPrice();
   const formatArea = useFormatArea();
+  const currencySymbol = useCurrencySymbol();
+  const areaUnitLabel = useAreaUnitLabel();
+  
+  // Get quality examples with dynamic currency symbol
+  const qualityExamples = useMemo(() => getQualityExamples(currencySymbol), [currencySymbol]);
   
   // Property basics
   const [propertySize, setPropertySize] = useState(80);
@@ -425,7 +431,7 @@ export function RenovationCostEstimator() {
                   onChange={(e) => setPropertySize(Number(e.target.value))}
                   className="h-11 pr-12"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnit}</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnitLabel}</span>
               </div>
             </div>
             <div className="space-y-2">

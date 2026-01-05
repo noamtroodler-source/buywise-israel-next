@@ -43,7 +43,7 @@ import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCate
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
-import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
@@ -134,6 +134,7 @@ export function RentVsBuyCalculator() {
   const { areaUnit } = usePreferences();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const currencySymbol = useCurrencySymbol();
   
   // Form state
   const [selectedCity, setSelectedCity] = useState('');

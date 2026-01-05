@@ -27,7 +27,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory,
 } from './shared';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 // Buyer types with their max LTV limits
 const BUYER_TYPE_OPTIONS: { 
@@ -69,6 +69,7 @@ const parseFormattedNumber = (str: string): number => {
 
 function MortgageCalculatorContent() {
   const formatCurrency = useFormatPrice();
+  const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
   const { toast } = useToast();
   
@@ -370,7 +371,7 @@ function MortgageCalculatorContent() {
             </Tooltip>
           </div>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             <Input
               type="text"
               inputMode="numeric"
@@ -433,12 +434,12 @@ function MortgageCalculatorContent() {
               </Tooltip>
             </div>
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleDownPaymentMode}>
-              Switch to {downPaymentMode === 'percent' ? '₪' : '%'}
+              Switch to {downPaymentMode === 'percent' ? currencySymbol : '%'}
             </Button>
           </div>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              {downPaymentMode === 'percent' ? '%' : '₪'}
+              {downPaymentMode === 'percent' ? '%' : currencySymbol}
             </span>
             <Input
               type="text"
@@ -574,7 +575,7 @@ function MortgageCalculatorContent() {
                   </Tooltip>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -601,7 +602,7 @@ function MortgageCalculatorContent() {
                 </Tooltip>
               </div>
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{currencySymbol}</span>
                 <Input
                   type="text"
                   inputMode="numeric"

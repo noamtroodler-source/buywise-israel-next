@@ -16,7 +16,7 @@ import { InsightCard } from './shared/InsightCard';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
-import { usePreferences, useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { 
   calculateGrossYield, 
@@ -82,6 +82,8 @@ export function InvestmentReturnCalculator() {
   const { areaUnit } = usePreferences();
   const formatCurrency = useFormatPrice();
   const formatArea = useFormatArea();
+  const currencySymbol = useCurrencySymbol();
+  const areaUnitLabel = useAreaUnitLabel();
   const { data: canonicalMetrics } = useAllCanonicalMetrics();
   const { data: cities } = useCities();
   const { data: buyerProfile } = useBuyerProfile();
@@ -251,10 +253,10 @@ export function InvestmentReturnCalculator() {
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center">
                 Purchase Price
-                <InfoTooltip content="The full purchase price of the investment property. Investment properties in Israel typically range from ₪1.5M in peripheral cities to ₪4M+ in central areas." />
+                <InfoTooltip content="The full purchase price of the investment property." />
               </Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                 <Input 
                   type="text" 
                   value={purchasePrice.toLocaleString()} 
@@ -300,7 +302,7 @@ export function InvestmentReturnCalculator() {
                     onChange={(e) => setPropertySizeSqm(parseInt(e.target.value) || 0)} 
                     className="h-11 tabular-nums pr-12" 
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnit}</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnitLabel}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -344,7 +346,7 @@ export function InvestmentReturnCalculator() {
                 )}
               </div>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₪</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
                 <Input 
                   type="text" 
                   value={monthlyRent.toLocaleString()} 
@@ -387,7 +389,7 @@ export function InvestmentReturnCalculator() {
                   <InfoTooltip content="Municipal property tax (Arnona) paid monthly. Rates vary significantly by city - Tel Aviv is among the highest. Auto-calculated from city data." />
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
                   <Input 
                     type="text" 
                     value={monthlyArnona.toLocaleString()} 
@@ -402,7 +404,7 @@ export function InvestmentReturnCalculator() {
                   <InfoTooltip content="Building maintenance committee fee covering shared spaces, cleaning, elevator, and upkeep. Typically ₪200-800/month depending on building amenities." />
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
                   <Input 
                     type="text" 
                     value={monthlyVaadBayit.toLocaleString()} 
@@ -420,7 +422,7 @@ export function InvestmentReturnCalculator() {
                   <InfoTooltip content="Home contents and structure insurance. Required by most mortgage lenders. Budget ₪100-250/month for comprehensive coverage." />
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
                   <Input 
                     type="text" 
                     value={monthlyInsurance.toLocaleString()} 

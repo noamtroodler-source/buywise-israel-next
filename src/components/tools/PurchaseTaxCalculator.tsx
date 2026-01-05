@@ -17,10 +17,11 @@ import {
   getBuyerTypeLabel,
   getTaxBrackets
 } from '@/lib/calculations/purchaseTax';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 export function PurchaseTaxCalculator() {
   const formatCurrency = useFormatPrice();
+  const currencySymbol = useCurrencySymbol();
   
   const [propertyPrice, setPropertyPrice] = useState(2500000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
@@ -102,7 +103,9 @@ export function PurchaseTaxCalculator() {
                 value={propertyPrice}
                 onChange={(e) => setPropertyPrice(Number(e.target.value))}
                 min={0}
+                className="pl-8"
               />
+              <span className="absolute left-3 top-[calc(50%+18px)] -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
             </div>
 
             <div className="space-y-2">
