@@ -133,6 +133,19 @@ const MIN_DOWN_PAYMENT: Record<BuyerCategory, number> = {
   non_resident: 50,
 };
 
+// Default values for immediate results on load
+const DEFAULTS = {
+  propertyPrice: 3000000,
+  monthlyRent: 7500,
+  rooms: '3',
+  downPaymentPercent: '25',
+  interestRate: '5.0',
+  timeHorizon: 10,
+  appreciation: '3.0',
+  rentIncrease: '3.0',
+  investmentReturn: '5.0',
+};
+
 export function RentVsBuyCalculator() {
   const { data: buyerProfile } = useBuyerProfile();
   const { data: cities } = useCities();
@@ -143,18 +156,18 @@ export function RentVsBuyCalculator() {
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   
-  // Form state
+  // Form state - initialized with defaults for immediate results
   const [selectedCity, setSelectedCity] = useState('');
-  const [rooms, setRooms] = useState('3');
-  const [propertyPrice, setPropertyPrice] = useState('');
-  const [monthlyRent, setMonthlyRent] = useState('');
+  const [rooms, setRooms] = useState(DEFAULTS.rooms);
+  const [propertyPrice, setPropertyPrice] = useState(formatNumber(DEFAULTS.propertyPrice));
+  const [monthlyRent, setMonthlyRent] = useState(formatNumber(DEFAULTS.monthlyRent));
   const [buyerType, setBuyerType] = useState<BuyerCategory>('first_time');
-  const [downPaymentPercent, setDownPaymentPercent] = useState('25');
-  const [interestRate, setInterestRate] = useState('5.0');
-  const [timeHorizon, setTimeHorizon] = useState(10);
-  const [appreciation, setAppreciation] = useState('3.0');
-  const [rentIncrease, setRentIncrease] = useState('3.0');
-  const [investmentReturn, setInvestmentReturn] = useState('5.0');
+  const [downPaymentPercent, setDownPaymentPercent] = useState(DEFAULTS.downPaymentPercent);
+  const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
+  const [timeHorizon, setTimeHorizon] = useState(DEFAULTS.timeHorizon);
+  const [appreciation, setAppreciation] = useState(DEFAULTS.appreciation);
+  const [rentIncrease, setRentIncrease] = useState(DEFAULTS.rentIncrease);
+  const [investmentReturn, setInvestmentReturn] = useState(DEFAULTS.investmentReturn);
   
   // Get canonical metrics for selected city
   const { data: cityMetrics } = useCanonicalMetrics(selectedCity);
@@ -246,16 +259,16 @@ export function RentVsBuyCalculator() {
   // Reset inputs
   const handleReset = useCallback(() => {
     setSelectedCity('');
-    setRooms('3');
-    setPropertyPrice('');
-    setMonthlyRent('');
+    setRooms(DEFAULTS.rooms);
+    setPropertyPrice(formatNumber(DEFAULTS.propertyPrice));
+    setMonthlyRent(formatNumber(DEFAULTS.monthlyRent));
     setBuyerType('first_time');
-    setDownPaymentPercent('25');
-    setInterestRate('5.0');
-    setTimeHorizon(10);
-    setAppreciation('3.0');
-    setRentIncrease('3.0');
-    setInvestmentReturn('5.0');
+    setDownPaymentPercent(DEFAULTS.downPaymentPercent);
+    setInterestRate(DEFAULTS.interestRate);
+    setTimeHorizon(DEFAULTS.timeHorizon);
+    setAppreciation(DEFAULTS.appreciation);
+    setRentIncrease(DEFAULTS.rentIncrease);
+    setInvestmentReturn(DEFAULTS.investmentReturn);
     localStorage.removeItem(STORAGE_KEY);
     toast.success('Reset to defaults');
   }, []);
