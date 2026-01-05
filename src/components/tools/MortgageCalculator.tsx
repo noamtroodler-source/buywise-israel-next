@@ -353,7 +353,7 @@ function MortgageCalculatorContent() {
 
   // Left column - single consolidated inputs card
   const leftColumn = (
-    <Card className="p-6 shadow-sm">
+    <Card className="p-6 shadow-sm lg:mt-6">
       <div className="space-y-6">
         {/* Property Price */}
         <div className="space-y-2">
