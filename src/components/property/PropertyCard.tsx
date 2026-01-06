@@ -109,7 +109,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20",
           className
         )}>
-          {compact ? (
+        {compact ? (
             /* Compact Mode: Fully Square Card with Overlay */
             <div className="relative aspect-square overflow-hidden">
               {/* Loading skeleton */}
@@ -128,6 +128,29 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
+
+              {/* Progress Bar - At top of image, NOT in overlay */}
+              {hasMultipleImages && (
+                <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCurrentImageIndex(index);
+                      }}
+                      className={cn(
+                        "flex-1 h-1 rounded-full transition-colors duration-200",
+                        index === currentImageIndex 
+                          ? "bg-white" 
+                          : "bg-white/30"
+                      )}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
               
               {/* Image Navigation Arrows */}
               {hasMultipleImages && (
@@ -157,8 +180,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 </>
               )}
 
-              {/* Status Badge - Top Left */}
-              <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+              {/* Status Badge - Top Left (moved below progress bar) */}
+              <div className="absolute top-6 left-2 flex gap-1.5 z-10">
                 {!hideStatusBadge && (
                   <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
                     {getStatusLabel(property.listing_status)}
@@ -178,36 +201,14 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               </div>
 
               {/* Action Buttons - Top Right */}
-              <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+              <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
                 <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
                 {showCompareButton && <CompareButton propertyId={property.id} />}
                 <FavoriteButton propertyId={property.id} />
               </div>
 
-              {/* Bottom Overlay with Content */}
-              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 pt-3.5 transition-colors duration-200 relative">
-                {/* Progress Bar - Inside overlay at top */}
-                {hasMultipleImages && (
-                  <div className="absolute top-0 left-0 right-0 h-1 flex gap-0.5">
-                    {images.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setCurrentImageIndex(index);
-                        }}
-                        className={cn(
-                          "flex-1 h-full transition-colors duration-200",
-                          index === currentImageIndex 
-                            ? "bg-primary" 
-                            : "bg-primary/30"
-                        )}
-                        aria-label={`Go to image ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                )}
+              {/* Bottom Overlay with Content - NO progress bar here */}
+              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
