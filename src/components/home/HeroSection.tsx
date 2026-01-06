@@ -60,7 +60,10 @@ export function HeroSection() {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
             Where Buying in Israel Actually Begins
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
+          <p 
+            className="text-lg md:text-xl text-primary-foreground max-w-2xl mx-auto"
+            style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
+          >
             Get clarity on costs, neighborhoods, and timing — on your terms, at your pace.
           </p>
 
