@@ -129,9 +129,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 onError={handleImageError}
               />
 
-              {/* Progress Bar - At top of image, NOT in overlay */}
+              {/* Progress Bar - At top of image, hover-only */}
               {hasMultipleImages && (
-                <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10">
+                <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   {images.map((_, index) => (
                     <button
                       key={index}
@@ -270,8 +270,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                        <ChevronRight className="h-5 w-5 text-foreground" />
                      </button>
                     
-                    {/* Progress Bar Indicator */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 flex z-10">
+                    {/* Progress Bar Indicator - hover-only */}
+                    <div className="absolute bottom-0 left-0 right-0 h-1 flex z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {images.map((_, index) => (
                         <button
                           key={index}

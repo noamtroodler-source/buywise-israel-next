@@ -211,9 +211,9 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                onError={() => { setImageError(true); setImageLoaded(true); }}
              />
 
-            {/* Progress Bar - At top of image, NOT in overlay */}
+            {/* Progress Bar - hover-only */}
             {hasMultipleImages && (
-              <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10">
+              <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 {images.map((_, index) => (
                   <button
                     key={index}
