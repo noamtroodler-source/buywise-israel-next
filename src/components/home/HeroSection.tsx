@@ -59,7 +59,7 @@ export function HeroSection() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight"
             style={{ textShadow: '0 2px 12px rgba(0, 0, 0, 0.4)' }}
           >
-            Israeli Real Estate, Rebuilt for International Buyers
+            Israel Real Estate, Rebuilt for International Buyers
           </h1>
           <p 
             className="text-lg md:text-xl text-primary-foreground max-w-2xl mx-auto"
