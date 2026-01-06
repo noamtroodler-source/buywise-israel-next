@@ -126,11 +126,11 @@ export function PropertyCarousel({
           </div>
         ) : properties && properties.length > 0 ? (
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-6">
+            <div className="flex -ml-4">
               {properties.map((property) => (
                 <div
                   key={property.id}
-                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-6"
+                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
                 >
                   <PropertyCard property={property} showCompareButton={false} hideStatusBadge={hideStatusBadge} compact />
                 </div>
