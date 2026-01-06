@@ -159,7 +159,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
 
               {/* Progress Bar Indicator */}
               {hasMultipleImages && (
-                <div className="absolute bottom-[52px] left-0 right-0 h-1 flex z-10">
+                <div className="absolute bottom-[48px] left-0 right-0 h-1 flex gap-0.5 z-10">
                   {images.map((_, index) => (
                     <button
                       key={index}

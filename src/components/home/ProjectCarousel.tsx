@@ -239,28 +239,26 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
               </>
             )}
 
-            {/* Image Counter Badge - Bottom Left */}
+            {/* Progress Bar Indicator */}
             {hasMultipleImages && (
-              <div className="absolute bottom-14 left-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                {currentImageIndex + 1}/{images.length}
-              </div>
-            )}
-
-            {/* Image Dots Indicator */}
-            {hasMultipleImages && (
-              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-                {images.slice(0, 5).map((_, index) => (
-                  <div
+              <div className="absolute bottom-[48px] left-0 right-0 h-1 flex gap-0.5 z-10">
+                {images.map((_, index) => (
+                  <button
                     key={index}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-colors",
-                      index === currentImageIndex ? "bg-white" : "bg-white/50"
+                      "flex-1 h-full transition-colors duration-200",
+                      index === currentImageIndex 
+                        ? "bg-white" 
+                        : "bg-white/30"
                     )}
+                    aria-label={`Go to image ${index + 1}`}
                   />
                 ))}
-                {images.length > 5 && (
-                  <span className="text-[10px] text-white font-medium ml-1">+{images.length - 5}</span>
-                )}
               </div>
             )}
             
