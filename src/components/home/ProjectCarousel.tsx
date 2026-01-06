@@ -97,7 +97,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
-          <div className="relative aspect-square overflow-hidden">
+          <div className="relative aspect-[5/4] overflow-hidden">
             <img
               src={project.images?.[0] || placeholderImage}
               alt={project.name}
@@ -229,7 +229,7 @@ export function ProjectCarousel({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="aspect-square w-full rounded-xl" />
+                <Skeleton className="aspect-[5/4] w-full rounded-xl" />
                 <Skeleton className="h-5 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
               </div>
@@ -237,11 +237,11 @@ export function ProjectCarousel({
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-4">
+            <div className="flex -ml-6">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/4 pl-4"
+                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-6"
                 >
                   <ProjectCard project={project} hideStatusBadge={hideStatusBadge} />
                 </div>
