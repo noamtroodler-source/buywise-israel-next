@@ -135,7 +135,7 @@ export function HeroSection() {
                 
                 {/* Line 2 - Reinforcement */}
                 <span 
-                  className="text-sm font-normal text-primary-foreground/85 mt-2"
+                  className="text-sm font-medium text-primary-foreground/90 mt-2"
                   style={{ 
                     textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
                     letterSpacing: '0.3px'
