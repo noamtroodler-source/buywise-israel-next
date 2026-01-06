@@ -208,7 +208,7 @@ export default function Projects() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <Link to={`/projects/${project.slug}`}>
-                    <Card className="h-full overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
+                    <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
                       <div className="aspect-[16/10] overflow-hidden relative">
                         <img
                           src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
