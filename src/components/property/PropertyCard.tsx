@@ -157,29 +157,6 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 </>
               )}
 
-              {/* Progress Bar Indicator */}
-              {hasMultipleImages && (
-                <div className="absolute bottom-[48px] left-0 right-0 h-1 flex gap-0.5 z-10">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCurrentImageIndex(index);
-                      }}
-                      className={cn(
-                        "flex-1 h-full transition-colors duration-200",
-                        index === currentImageIndex 
-                          ? "bg-white" 
-                          : "bg-white/30"
-                      )}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-
               {/* Status Badge - Top Left */}
               <div className="absolute top-2 left-2 flex gap-1.5 z-10">
                 {!hideStatusBadge && (
@@ -208,7 +185,29 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               </div>
 
               {/* Bottom Overlay with Content */}
-              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
+              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 pt-3.5 transition-colors duration-200 relative">
+                {/* Progress Bar - Inside overlay at top */}
+                {hasMultipleImages && (
+                  <div className="absolute top-0 left-0 right-0 h-1 flex gap-0.5">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCurrentImageIndex(index);
+                        }}
+                        className={cn(
+                          "flex-1 h-full transition-colors duration-200",
+                          index === currentImageIndex 
+                            ? "bg-primary" 
+                            : "bg-primary/30"
+                        )}
+                        aria-label={`Go to image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
