@@ -4,7 +4,7 @@ import { PropertyCarousel } from '@/components/home/PropertyCarousel';
 import { ProjectCarousel } from '@/components/home/ProjectCarousel';
 import { PopularCities } from '@/components/home/PopularCities';
 import { ToolsPromo } from '@/components/home/ToolsPromo';
-import { SignUpCTA } from '@/components/home/SignUpCTA';
+import { StatementPanel } from '@/components/home/StatementPanel';
 import { WhyBuyWiseSection } from '@/components/home/WhyBuyWiseSection';
 import {
   useFeaturedSaleProperties, 
@@ -61,7 +61,10 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* 7. Why BuyWise Israel */}
+      {/* 7. Statement Panel */}
+      <StatementPanel />
+
+      {/* 8. Why BuyWise Israel */}
       <WhyBuyWiseSection />
     </Layout>
   );

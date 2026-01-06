@@ -14,16 +14,16 @@ const cities = [
 
 export function PopularCities() {
   return (
-    <section className="py-8 md:py-10 bg-muted/30">
+    <section className="py-16 md:py-20 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          className="text-center mb-8"
         >
-          <h2 className="text-3xl font-bold text-foreground mb-3">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
             Popular Areas
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -42,7 +42,7 @@ export function PopularCities() {
             >
               <Link
                 to={`/areas/${city.slug}`}
-                className="group block relative aspect-[4/3] rounded-xl overflow-hidden"
+                className="group block relative aspect-[4/3] rounded-2xl overflow-hidden ring-1 ring-black/5 shadow-md hover:shadow-xl transition-shadow duration-300"
               >
                 <img
                   src={city.image}
