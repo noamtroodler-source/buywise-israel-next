@@ -61,13 +61,13 @@ export function HeroSection() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight"
             style={{ textShadow: '0 2px 12px rgba(0, 0, 0, 0.4)' }}
           >
-            Where Buying in Israel Actually Begins
+            Israeli Real Estate, Rebuilt for International Buyers
           </h1>
           <p 
             className="text-lg md:text-xl text-primary-foreground max-w-2xl mx-auto"
             style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
           >
-            Get clarity on costs, neighborhoods, and timing — on your terms, at your pace.
+            English-first discovery. True cost transparency. Market context built into every listing.
           </p>
 
           {/* Search Box */}
