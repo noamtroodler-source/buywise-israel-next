@@ -226,18 +226,18 @@ export function ProjectCarousel({
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="aspect-square w-full rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
             ))}
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-4">
+            <div className="flex -ml-8">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5 pl-4"
+                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/3 pl-8"
                 >
                   <ProjectCard project={project} hideStatusBadge={hideStatusBadge} />
                 </div>
