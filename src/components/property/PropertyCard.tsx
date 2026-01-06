@@ -81,95 +81,149 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           "overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer",
           className
         )}>
-          {/* Image */}
-          <div className={cn("relative overflow-hidden", compact ? "aspect-square" : "aspect-[4/3]")}>
-            <img
-              src={images[currentImageIndex] || placeholderImage}
-              alt={property.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            
-            {/* Image Navigation Arrows */}
-            {hasMultipleImages && (
-              <>
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-5 w-5 text-foreground" />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-5 w-5 text-foreground" />
-                </button>
-                
-                {/* Image Dots Indicator */}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {images.slice(0, 5).map((_, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "w-1.5 h-1.5 rounded-full transition-colors",
-                        index === currentImageIndex ? "bg-background" : "bg-background/50"
-                      )}
-                    />
-                  ))}
-                  {images.length > 5 && (
-                    <span className="text-[10px] text-background font-medium ml-1">+{images.length - 5}</span>
-                  )}
-                </div>
-              </>
-            )}
-            
-            <div className="absolute top-3 left-3 flex gap-2">
-              {!hideStatusBadge && (
-                <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
-                  {getStatusLabel(property.listing_status)}
-                </Badge>
+          {compact ? (
+            /* Compact Mode: Fully Square Card with Overlay */
+            <div className="relative aspect-square overflow-hidden">
+              <img
+                src={images[currentImageIndex] || placeholderImage}
+                alt={property.title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              
+              {/* Image Navigation Arrows */}
+              {hasMultipleImages && (
+                <>
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-5 w-5 text-foreground" />
+                  </button>
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-5 w-5 text-foreground" />
+                  </button>
+                </>
               )}
-              {property.is_featured && (
-                <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                  Featured
-                </Badge>
-              )}
-            </div>
-            <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              {showCompareButton && <CompareButton propertyId={property.id} />}
-              <FavoriteButton propertyId={property.id} />
-            </div>
-          </div>
 
-          {/* Content */}
-          <CardContent className={cn("space-y-1", compact ? "p-2" : "p-4 space-y-3")}>
-            {/* Price */}
-            <div className="flex items-baseline justify-between">
-              <span className={cn("font-bold text-foreground", compact ? "text-lg" : "text-2xl")}>
-                {formatPrice(property.price, property.currency || 'ILS')}
-                {property.listing_status === 'for_rent' && (
-                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              {/* Status Badge - Top Left */}
+              <div className="absolute top-2 left-2 flex gap-2 z-10">
+                {!hideStatusBadge && (
+                  <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                    {getStatusLabel(property.listing_status)}
+                  </Badge>
                 )}
-              </span>
-              {!compact && property.listing_status === 'for_sale' && showMonthlyEstimate && (
-                <MonthlyEstimate price={property.price} />
-              )}
-            </div>
+                {property.is_featured && (
+                  <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                    Featured
+                  </Badge>
+                )}
+              </div>
 
-            {/* Compact: specs inline, then location */}
-            {compact ? (
-              <>
+              {/* Favorite Button - Top Right */}
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+                {showCompareButton && <CompareButton propertyId={property.id} />}
+                <FavoriteButton propertyId={property.id} />
+              </div>
+
+              {/* Bottom Overlay with Content */}
+              <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm p-2.5">
+                <p className="font-bold text-foreground text-lg">
+                  {formatPrice(property.price, property.currency || 'ILS')}
+                  {property.listing_status === 'for_rent' && (
+                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {property.bedrooms} bd | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
                 </p>
-                <p className="text-xs text-muted-foreground line-clamp-1">
+                <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
-              </>
-            ) : (
-              <>
+              </div>
+            </div>
+          ) : (
+            /* Non-Compact Mode: Standard Layout */
+            <>
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img
+                  src={images[currentImageIndex] || placeholderImage}
+                  alt={property.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                
+                {/* Image Navigation Arrows */}
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      onClick={handlePrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-5 w-5 text-foreground" />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-5 w-5 text-foreground" />
+                    </button>
+                    
+                    {/* Image Dots Indicator */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                      {images.slice(0, 5).map((_, index) => (
+                        <div
+                          key={index}
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full transition-colors",
+                            index === currentImageIndex ? "bg-background" : "bg-background/50"
+                          )}
+                        />
+                      ))}
+                      {images.length > 5 && (
+                        <span className="text-[10px] text-background font-medium ml-1">+{images.length - 5}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+                
+                <div className="absolute top-3 left-3 flex gap-2">
+                  {!hideStatusBadge && (
+                    <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                      {getStatusLabel(property.listing_status)}
+                    </Badge>
+                  )}
+                  {property.is_featured && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                      Featured
+                    </Badge>
+                  )}
+                </div>
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {showCompareButton && <CompareButton propertyId={property.id} />}
+                  <FavoriteButton propertyId={property.id} />
+                </div>
+              </div>
+
+              <CardContent className="p-4 space-y-3">
+                {/* Price */}
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-foreground text-2xl">
+                    {formatPrice(property.price, property.currency || 'ILS')}
+                    {property.listing_status === 'for_rent' && (
+                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    )}
+                  </span>
+                  {property.listing_status === 'for_sale' && showMonthlyEstimate && (
+                    <MonthlyEstimate price={property.price} />
+                  )}
+                </div>
+
                 {/* Title */}
                 <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                   {property.title}
@@ -200,9 +254,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     </div>
                   )}
                 </div>
-              </>
-            )}
-          </CardContent>
+              </CardContent>
+            </>
+          )}
         </Card>
       </Link>
     </motion.div>

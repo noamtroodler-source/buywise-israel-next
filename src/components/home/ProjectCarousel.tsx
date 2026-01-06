@@ -101,34 +101,34 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
             <img
               src={project.images?.[0] || placeholderImage}
               alt={project.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
+            
+            {/* Status Badge - Top Left */}
             {!hideStatusBadge && project.status && (
-              <div className="absolute top-2 left-2">
+              <div className="absolute top-2 left-2 z-10">
                 <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
                   {getStatusLabel(project.status)}
                 </Badge>
               </div>
             )}
+
+            {/* Bottom Overlay with Content */}
+            <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm p-2.5">
+              {project.price_from && (
+                <p className="text-lg font-bold text-foreground">
+                  From {formatPrice(project.price_from, project.currency || 'ILS')}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {project.name}
+              </p>
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+                {completionDate && ` · ${completionDate}`}
+              </p>
+            </div>
           </div>
-
-          <CardContent className="p-2 space-y-1">
-            {/* Price Range */}
-            {project.price_from && (
-              <span className="text-base font-bold text-foreground">
-                From {formatPrice(project.price_from, project.currency || 'ILS')}
-              </span>
-            )}
-
-            {/* Project Name & Location inline */}
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {project.name}
-            </p>
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-              {completionDate && ` · ${completionDate}`}
-            </p>
-          </CardContent>
         </Card>
       </Link>
     </motion.div>
