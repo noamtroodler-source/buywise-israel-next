@@ -111,104 +111,106 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           className
         )}>
         {compact ? (
-            /* Compact Mode: Fully Square Card with Overlay */
-            <div className="relative aspect-square overflow-hidden">
-              {/* Loading skeleton */}
-              {!imageLoaded && (
-                <div className="absolute inset-0 bg-muted animate-pulse" />
-              )}
-              <img
-                src={currentImage}
-                alt={property.title}
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                className={cn(
-                  "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
-                  imageLoaded ? "opacity-100" : "opacity-0"
+            /* Compact Mode: Stacked Layout - Image + Content Below (Zillow-style) */
+            <>
+              <div className="relative aspect-[4/3] overflow-hidden">
+                {/* Loading skeleton */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
-              />
+                <img
+                  src={currentImage}
+                  alt={property.title}
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  className={cn(
+                    "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
 
-              {/* Progress Bar - At top of image, hover-only */}
-              {hasMultipleImages && (
-                <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {images.map((_, index) => (
+                {/* Progress Bar - At top of image, hover-only */}
+                {hasMultipleImages && (
+                  <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCurrentImageIndex(index);
+                        }}
+                        className={cn(
+                          "flex-1 h-1 rounded-full transition-colors duration-200",
+                          index === currentImageIndex 
+                            ? "bg-white" 
+                            : "bg-white/30"
+                        )}
+                        aria-label={`Go to image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {/* Image Navigation Arrows */}
+                {hasMultipleImages && (
+                  <>
                     <button
-                      key={index}
-                      onClick={(e) => {
+                      onPointerDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        setCurrentImageIndex(index);
                       }}
-                      className={cn(
-                        "flex-1 h-1 rounded-full transition-colors duration-200",
-                        index === currentImageIndex 
-                          ? "bg-white" 
-                          : "bg-white/30"
-                      )}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
+                      onClick={handlePrevImage}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-4 w-4 text-foreground" />
+                    </button>
+                    <button
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={handleNextImage}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-4 w-4 text-foreground" />
+                    </button>
+                  </>
+                )}
+
+                {/* Status Badge - Top Left (moved below progress bar) */}
+                <div className="absolute top-6 left-2 flex gap-1.5 z-10">
+                  {!hideStatusBadge && (
+                    <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                      {getStatusLabel(property.listing_status)}
+                    </Badge>
+                  )}
+                  {isNewListing && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      New
+                    </Badge>
+                  )}
+                  {property.is_featured && !isNewListing && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                      Featured
+                    </Badge>
+                  )}
                 </div>
-              )}
-              
-              {/* Image Navigation Arrows */}
-              {hasMultipleImages && (
-                <>
-                  <button
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={handlePrevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="h-4 w-4 text-foreground" />
-                  </button>
-                  <button
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={handleNextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="h-4 w-4 text-foreground" />
-                  </button>
-                </>
-              )}
 
-              {/* Status Badge - Top Left (moved below progress bar) */}
-              <div className="absolute top-6 left-2 flex gap-1.5 z-10">
-                {!hideStatusBadge && (
-                  <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
-                    {getStatusLabel(property.listing_status)}
-                  </Badge>
-                )}
-                {isNewListing && (
-                  <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    New
-                  </Badge>
-                )}
-                {property.is_featured && !isNewListing && (
-                  <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                    Featured
-                  </Badge>
-                )}
+                {/* Action Buttons - Top Right */}
+                <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
+                  {showCompareButton && <CompareButton propertyId={property.id} />}
+                  <FavoriteButton propertyId={property.id} />
+                </div>
               </div>
 
-              {/* Action Buttons - Top Right */}
-              <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
-                {showCompareButton && <CompareButton propertyId={property.id} />}
-                <FavoriteButton propertyId={property.id} />
-              </div>
-
-              {/* Bottom Overlay with Content - NO progress bar here */}
-              <div className="absolute bottom-0 left-0 right-0 bg-white p-2.5">
+              {/* Content Section BELOW Image - Clean White Area */}
+              <div className="p-3 bg-white">
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
@@ -222,7 +224,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
               </div>
-            </div>
+            </>
           ) : (
             /* Non-Compact Mode: Standard Layout */
             <>
