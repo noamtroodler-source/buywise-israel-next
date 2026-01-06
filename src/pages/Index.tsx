@@ -21,10 +21,7 @@ const Index = () => {
       {/* 1. Hero Section */}
       <HeroSection />
       
-      {/* 2. Tools Promo */}
-      <ToolsPromo />
-
-      {/* 3. Resale Properties */}
+      {/* 2. Resale Properties */}
       <PropertyCarousel
         title="Resale Properties"
         description="Established homes across Israel's major markets"
@@ -34,6 +31,9 @@ const Index = () => {
         viewAllText="View All Sales"
         hideStatusBadge
       />
+
+      {/* 3. Tools Promo */}
+      <ToolsPromo />
 
       {/* 4. New Construction Projects */}
       <ProjectCarousel
