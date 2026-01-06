@@ -9,94 +9,98 @@ import {
   XCircle,
   CheckCircle2,
   ArrowRight,
-  Languages,
-  ShieldCheck,
-  Lightbulb,
+  Search,
+  Layers,
+  Scale,
   Compass,
   Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
+// Updated to reflect decision clarity, not fear
 const familiarFeelings = [
   {
-    feeling: "You've found properties you love but have no idea if the price is fair",
+    feeling: "You've found properties you like — but you're not sure what they really cost or whether the price makes sense.",
   },
   {
-    feeling: "You're worried about making an irreversible mistake in a system you don't fully understand",
+    feeling: "You're worried about making an expensive mistake in a system that works differently than what you're used to.",
   },
   {
-    feeling: "Every time you consider calling an agent, you wonder if you're ready",
+    feeling: "You keep wondering whether you're actually ready to reach out — or if there's more you should understand first.",
   },
 ];
 
+// Updated with new, more accurate framing
 const whatWeAre = [
   {
-    icon: Languages,
-    title: 'A Translator',
-    description: 'We translate the Israeli real estate system into decisions you can understand.',
+    icon: Search,
+    title: 'A Property Discovery Platform',
+    description: 'We give internationals a clean, English-first way to browse projects, resale homes, and rentals — without the friction, confusion, or poor UX of existing portals.',
   },
   {
-    icon: ShieldCheck,
-    title: 'A Buffer',
-    description: 'We stand between you and premature pressure — so you can think clearly.',
+    icon: Layers,
+    title: 'A Context Layer',
+    description: "We don't just show listings. We show what they mean — with market context, real cost visibility, buyer-specific considerations, and Israel-specific explanations built directly into the experience.",
   },
   {
-    icon: Lightbulb,
-    title: 'A Confidence Builder',
-    description: "We help you feel ready, not rush you to feel ready.",
+    icon: Scale,
+    title: 'A Decision Support System',
+    description: 'Through tools, calculators, explanations, and comparisons, we help you understand your options and tradeoffs so you can evaluate properties intelligently — not emotionally.',
   },
   {
     icon: Compass,
-    title: 'A Neutral Guide',
-    description: "We're not selling properties. We're helping you understand them.",
+    title: 'A Neutral Starting Point',
+    description: "We're not selling properties. We're helping you make sense of them — so when you do reach out to an agent or professional, you're informed, calm, and prepared.",
   },
 ];
 
+// Refined principles with small tweaks
 const principles = [
   {
-    icon: Shield,
+    icon: Heart,
     title: 'Trust Before Conversion',
-    description: 'We believe you should feel confident before you ever speak to anyone. Our job is to educate, not pressure.',
+    description: 'You should understand the market before you speak to anyone. Our job is to educate and clarify — not create pressure.',
   },
   {
     icon: Clock,
     title: 'Your Timeline, Not Ours',
-    description: "We'd rather you take 6 months to feel ready than rush into a decision you'll regret. There's no urgency here except yours.",
+    description: "We'd rather you take six months to feel ready than rush into a decision you'll regret. There's no urgency here except yours.",
   },
   {
-    icon: Heart,
+    icon: Shield,
     title: 'Honest Ranges, Not False Precision',
-    description: 'Real estate is messy. We show you ranges and explain why they vary — because fake certainty causes regret later.',
+    description: 'Real estate is messy. We show ranges and explain why they vary — because fake certainty causes regret later.',
   },
   {
     icon: Eye,
     title: 'Transparency as a Feature',
-    description: 'We tell you where our data comes from, what we estimate vs. know, and what we intentionally exclude.',
+    description: "We tell you what we know, what we estimate, where data comes from, and what we intentionally don't claim to know.",
   },
 ];
 
+// Updated for alignment
 const whatWeDo = [
-  'Curate listings for quality and accuracy',
-  'Provide Israel-specific calculations, not generic estimates',
-  'Show you the full picture, including the uncomfortable parts',
-  'Build tools that save you money and reduce anxiety',
-  'Educate before we sell',
+  'Curate listings for quality, clarity, and accuracy',
+  'Provide Israel-specific calculations and tools — not generic estimates',
+  'Show the full picture, including uncomfortable tradeoffs',
+  'Build tools that reduce anxiety and improve decision-making',
+  'Educate before asking you to take action',
 ];
 
 const whatWeDontDo = [
   'No paid ranking of listings',
   'No hidden agent incentives',
   'No pressure tactics or countdown timers',
-  'No fake precision — we show ranges when appropriate',
-  "No rushing you toward a decision you're not ready for",
+  'No fake precision when ranges are more honest',
+  "No pushing you toward decisions you're not ready for",
 ];
 
 export default function Principles() {
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Hero Section - The Anchor Definition */}
+        {/* Hero Section */}
         <section className="bg-gradient-to-b from-primary/5 to-background py-20 md:py-28">
           <div className="container">
             <motion.div
@@ -106,17 +110,16 @@ export default function Principles() {
             >
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
                 Clarity Before Commitment.
-                <span className="text-primary block mt-2">Trust Before Action.</span>
+                <span className="text-primary block mt-2">Confidence Before Action.</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-                BuyWise Israel is the operating system for buying confidence in Israeli real estate — 
-                designed for international buyers who need clarity before commitment, and trust before action.
+                BuyWise Israel is an English-first real estate discovery and decision platform for internationals buying or renting in Israel — built to help you understand the market, compare options intelligently, and move forward with confidence.
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* "We See You" Section - Emotional Acknowledgment */}
+        {/* "We See You" Section */}
         <section className="py-16 md:py-20">
           <div className="container">
             <motion.div
@@ -158,7 +161,7 @@ export default function Principles() {
                 <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 md:p-8 border border-primary/20">
                   <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed">
                     You're not behind. You're not stupid for feeling unsure.
-                    <span className="block mt-2 text-primary">You're doing this right.</span>
+                    <span className="block mt-2 text-primary">You're doing this the right way.</span>
                   </p>
                 </div>
               </motion.div>
@@ -179,7 +182,7 @@ export default function Principles() {
                 What BuyWise Actually Is
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                We're not a listings site. We're not a brokerage. We're not a lead-generation machine disguised as education.
+                BuyWise isn't a brokerage. It isn't a listings-only site. And it isn't a lead-generation machine disguised as education.
               </p>
             </motion.div>
 
@@ -315,7 +318,7 @@ export default function Principles() {
           </div>
         </section>
 
-        {/* Our Relationship With Agents */}
+        {/* Pro-Agent Section */}
         <section className="py-16 md:py-20">
           <div className="container">
             <motion.div
@@ -328,21 +331,24 @@ export default function Principles() {
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                We're Pro-Agent, Anti-Pressure
+                We're Pro-Agent. Pro-Professional. Anti-Pressure.
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                Agents are valuable. They're necessary. They're helpful — at the right moment.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                But our job is to delay that conversation until it reduces your anxiety, not increases it. 
-                When you do talk to an agent through BuyWise, you'll be informed, calm, and ready — 
-                which makes their job easier and your experience better.
-              </p>
+              <div className="space-y-4">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Agents and professionals are valuable. They're necessary. And at the right moment, they're incredibly helpful.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Our role isn't to replace them — it's to <span className="text-foreground font-medium">prepare you</span>.
+                </p>
+                <p className="text-muted-foreground leading-relaxed">
+                  BuyWise helps you reach out when you feel ready, with better questions, clearer expectations, and less anxiety — which leads to better conversations and better outcomes for everyone involved.
+                </p>
+              </div>
             </motion.div>
           </div>
         </section>
 
-        {/* The Constraint */}
+        {/* The Promise */}
         <section className="py-16 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
           <div className="container">
             <motion.div
@@ -352,14 +358,14 @@ export default function Principles() {
               className="max-w-3xl mx-auto text-center"
             >
               <p className="text-xl md:text-2xl text-foreground font-medium leading-relaxed mb-6 italic">
-                "We'd rather you take 6 months to feel ready than rush into a decision 
+                "We'd rather you take six months to feel ready than rush into a decision 
                 you'll regret. There's no urgency here except yours."
               </p>
-              <p className="text-muted-foreground leading-relaxed">
-                This isn't just a promise — it's built into how the platform works. 
-                You won't see countdown timers, fake scarcity, or pressure tactics. 
-                We earn your trust first. Everything else comes later.
-              </p>
+              <div className="space-y-2 text-muted-foreground leading-relaxed">
+                <p>This isn't just a promise — it's built into how BuyWise works.</p>
+                <p>You won't see fake scarcity, countdown timers, or pressure tactics.</p>
+                <p className="text-foreground font-medium">We earn trust first. Everything else comes later.</p>
+              </div>
             </motion.div>
           </div>
         </section>
@@ -374,11 +380,12 @@ export default function Principles() {
               className="text-center"
             >
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                Ready to explore at your own pace?
+                Explore at your own pace.
               </h2>
               <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-                Start with our tools or browse areas. 
-                No account required, no pressure applied.
+                Start with our tools, browse areas, or explore listings.
+                <br />
+                No account required. No pressure applied.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Button asChild size="lg">
