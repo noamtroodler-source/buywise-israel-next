@@ -45,6 +45,7 @@ import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
 import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
 import NewConstructionGuide from "./pages/guides/NewConstructionGuide";
+import Principles from "./pages/Principles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<Principles />} />
             
             <Route path="/profile" element={
               <ProtectedRoute>

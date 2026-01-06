@@ -13,6 +13,7 @@ import { InfoBanner } from './shared/InfoBanner';
 import { CashBreakdownTable, BreakdownItem } from './shared/CashBreakdownTable';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
+import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 type QualityLevel = 'basic' | 'standard' | 'premium';
@@ -738,6 +739,7 @@ export function RenovationCostEstimator() {
       title="Renovation Cost Estimator"
       subtitle="Estimate renovation costs for Israeli properties with transparent pricing"
       icon={<Hammer className="h-6 w-6" />}
+      intro={<ToolIntro {...TOOL_INTROS.renovation} />}
       infoBanner={
         <InfoBanner variant="info">
           Prices based on CBS construction cost index and contractor market research (Q4 2024). Actual costs vary by location, contractor, and specific requirements.
