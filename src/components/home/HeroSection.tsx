@@ -58,11 +58,10 @@ export function HeroSection() {
           className="max-w-4xl mx-auto text-center space-y-6"
         >
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
-            Find Your Perfect Home in Israel
+            Where Buying in Israel Actually Begins
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            Discover thousands of properties across Israel. Whether you're buying, renting, or looking for new developments, 
-            we'll help you find the right place to call home.
+            Get clarity on costs, neighborhoods, and timing — on your terms, at your pace.
           </p>
 
           {/* Search Box */}
