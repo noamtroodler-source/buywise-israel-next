@@ -874,6 +874,22 @@ export function RentVsBuyCalculator() {
             </p>
           </div>
           
+          {/* Israel-Specific Factors Badge */}
+          <div className="px-4 py-2 bg-primary/5 border-b flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-primary" />
+              Mas Rechisha ({buyerType === 'first_time' ? 'First-Time' : buyerType === 'oleh' ? 'Oleh' : buyerType === 'additional' ? 'Upgrader' : 'Non-Resident'})
+            </span>
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-primary" />
+              {selectedCity ? 'City Arnona' : 'Arnona'}
+            </span>
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-primary" />
+              Mas Shevach
+            </span>
+          </div>
+
           {/* Down Payment Warning */}
           {parseFloat(downPaymentPercent) < MIN_DOWN_PAYMENT[buyerType] && (
             <div className="flex items-center gap-2 px-6 py-3 bg-warning/10 border-y border-warning/20">
@@ -930,13 +946,14 @@ export function RentVsBuyCalculator() {
               </p>
             </div>
             
-            {/* Exit costs note */}
-            {(calculations.sellingCosts > 0 || calculations.capitalGainsTax > 0) && (
-              <p className="text-[10px] text-muted-foreground text-center flex items-center justify-center gap-1">
-                <Info className="h-3 w-3" />
-                Includes exit costs (selling fees{calculations.capitalGainsTax > 0 && ' + capital gains tax'})
+            {/* Exit costs note - Israel-specific */}
+            <div className="pt-3 border-t border-dashed">
+              <p className="text-[10px] text-muted-foreground text-center">
+                Exit factored: 3% selling fees {calculations.capitalGainsTax > 0 
+                  ? `+ ₪${Math.round(calculations.capitalGainsTax / 1000)}K Mas Shevach` 
+                  : '• No Mas Shevach (primary residence exempt)'}
               </p>
-            )}
+            </div>
           </div>
         </Card>
       ) : (
