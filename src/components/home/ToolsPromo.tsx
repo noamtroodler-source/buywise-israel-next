@@ -25,7 +25,7 @@ export const ToolsPromo = () => {
               Plan Your Move with Our Free Tools
             </h2>
             <p className="text-muted-foreground">
-              Calculators & guides to help you make smarter decisions
+              Calculators to help you make smarter decisions
             </p>
           </div>
 

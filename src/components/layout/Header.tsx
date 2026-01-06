@@ -69,12 +69,6 @@ export function Header() {
             Tools
           </Link>
           <Link 
-            to="/guides" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Guides
-          </Link>
-          <Link 
             to="/blog" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -202,13 +196,6 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Tools
-            </Link>
-            <Link 
-              to="/guides" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Guides
             </Link>
             <Link 
               to="/blog" 

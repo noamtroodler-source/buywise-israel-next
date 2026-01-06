@@ -318,12 +318,6 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
               </span>
             </li>
           </ul>
-          <Link 
-            to="/guides/new-construction" 
-            className="text-xs text-primary hover:underline font-medium inline-block"
-          >
-            Learn more about buyer protections →
-          </Link>
         </div>
 
         <p className="text-xs text-muted-foreground">

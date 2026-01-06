@@ -15,7 +15,7 @@ const valueProps = [
   {
     icon: Wrench,
     title: 'Free Planning Tools',
-    description: 'Calculators and guides to make smarter decisions',
+    description: 'Calculators to help you make smarter decisions',
   },
   {
     icon: MapPin,
