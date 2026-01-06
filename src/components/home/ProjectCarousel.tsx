@@ -120,33 +120,35 @@ function ShareButton({ projectSlug, projectName }: { projectSlug: string; projec
     window.open(telegramUrl, "_blank");
   };
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
-          <LinkIcon className="h-4 w-4 mr-2" />
-          Copy Link
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
-          <MessageCircle className="h-4 w-4 mr-2" />
-          WhatsApp
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleTelegram} className="cursor-pointer">
-          <Send className="h-4 w-4 mr-2" />
-          Telegram
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+   return (
+     <DropdownMenu>
+       <DropdownMenuTrigger asChild>
+         <Button
+           variant="ghost"
+           size="icon"
+           onPointerDown={(e) => e.stopPropagation()}
+           onClick={(e) => e.stopPropagation()}
+           className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+         >
+           <Share2 className="h-3.5 w-3.5" />
+         </Button>
+       </DropdownMenuTrigger>
+       <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
+         <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+           <LinkIcon className="h-4 w-4 mr-2" />
+           Copy Link
+         </DropdownMenuItem>
+         <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
+           <MessageCircle className="h-4 w-4 mr-2" />
+           WhatsApp
+         </DropdownMenuItem>
+         <DropdownMenuItem onClick={handleTelegram} className="cursor-pointer">
+           <Send className="h-4 w-4 mr-2" />
+           Telegram
+         </DropdownMenuItem>
+       </DropdownMenuContent>
+     </DropdownMenu>
+   );
 }
 
 function ProjectCard({ project, hideStatusBadge = false }: { project: Project; hideStatusBadge?: boolean }) {
@@ -196,34 +198,44 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
             )}
-            <img
-              src={currentImage}
-              alt={project.name}
-              className={cn(
-                "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
-                imageLoaded ? "opacity-100" : "opacity-0"
-              )}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => { setImageError(true); setImageLoaded(true); }}
-            />
+             <img
+               src={currentImage}
+               alt={project.name}
+               draggable={false}
+               onDragStart={(e) => e.preventDefault()}
+               className={cn(
+                 "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                 imageLoaded ? "opacity-100" : "opacity-0"
+               )}
+               onLoad={() => setImageLoaded(true)}
+               onError={() => { setImageError(true); setImageLoaded(true); }}
+             />
 
             {/* Image Navigation Arrows */}
             {hasMultipleImages && (
               <>
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="h-4 w-4 text-foreground" />
-                </button>
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="h-4 w-4 text-foreground" />
-                </button>
+                 <button
+                   onPointerDown={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                   }}
+                   onClick={handlePrevImage}
+                   className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                   aria-label="Previous image"
+                 >
+                   <ChevronLeft className="h-4 w-4 text-foreground" />
+                 </button>
+                 <button
+                   onPointerDown={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                   }}
+                   onClick={handleNextImage}
+                   className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                   aria-label="Next image"
+                 >
+                   <ChevronRight className="h-4 w-4 text-foreground" />
+                 </button>
               </>
             )}
 

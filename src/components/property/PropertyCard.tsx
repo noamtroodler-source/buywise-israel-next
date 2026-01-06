@@ -118,8 +118,10 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               <img
                 src={currentImage}
                 alt={property.title}
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
                 className={cn(
-                  "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
+                  "absolute inset-0 w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
                   imageLoaded ? "opacity-100" : "opacity-0"
                 )}
                 onLoad={handleImageLoad}
@@ -130,6 +132,10 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               {hasMultipleImages && (
                 <>
                   <button
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                     onClick={handlePrevImage}
                     className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
                     aria-label="Previous image"
@@ -137,6 +143,10 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     <ChevronLeft className="h-4 w-4 text-foreground" />
                   </button>
                   <button
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                     onClick={handleNextImage}
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
                     aria-label="Next image"
@@ -222,34 +232,44 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
-                <img
-                  src={currentImage}
-                  alt={property.title}
-                  className={cn(
-                    "w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
-                    imageLoaded ? "opacity-100" : "opacity-0"
-                  )}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
+                 <img
+                   src={currentImage}
+                   alt={property.title}
+                   draggable={false}
+                   onDragStart={(e) => e.preventDefault()}
+                   className={cn(
+                     "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-300",
+                     imageLoaded ? "opacity-100" : "opacity-0"
+                   )}
+                   onLoad={handleImageLoad}
+                   onError={handleImageError}
+                 />
                 
                 {/* Image Navigation Arrows */}
                 {hasMultipleImages && (
                   <>
-                    <button
-                      onClick={handlePrevImage}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
-                      aria-label="Previous image"
-                    >
-                      <ChevronLeft className="h-5 w-5 text-foreground" />
-                    </button>
-                    <button
-                      onClick={handleNextImage}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
-                      aria-label="Next image"
-                    >
-                      <ChevronRight className="h-5 w-5 text-foreground" />
-                    </button>
+                     <button
+                       onPointerDown={(e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                       }}
+                       onClick={handlePrevImage}
+                       className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                       aria-label="Previous image"
+                     >
+                       <ChevronLeft className="h-5 w-5 text-foreground" />
+                     </button>
+                     <button
+                       onPointerDown={(e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                       }}
+                       onClick={handleNextImage}
+                       className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md"
+                       aria-label="Next image"
+                     >
+                       <ChevronRight className="h-5 w-5 text-foreground" />
+                     </button>
                     
                     {/* Image Dots Indicator */}
                     <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">

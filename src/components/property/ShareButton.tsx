@@ -48,10 +48,12 @@ export function ShareButton({ propertyId, propertyTitle, className = "", size = 
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           className={`${buttonSize} rounded-full bg-background/80 backdrop-blur-sm hover:bg-background ${className}`}
         >
           <Share2 className={iconSize} />
