@@ -121,7 +121,7 @@ export function HeroSection() {
               <div key={index} className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
                 <span 
-                  className="text-base md:text-lg text-primary-foreground font-semibold tracking-wide"
+                  className="text-sm md:text-base text-primary-foreground font-semibold tracking-wide"
                   style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement}
