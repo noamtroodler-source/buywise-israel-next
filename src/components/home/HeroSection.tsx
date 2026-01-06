@@ -105,38 +105,6 @@ export function HeroSection() {
               </div>
             </form>
           </motion.div>
-
-          {/* Trust Statements */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col md:flex-row flex-nowrap justify-center gap-8 md:gap-16 mt-12 pt-8"
-          >
-            {[
-              { main: "Purpose-Built", sub: "Not translated from Hebrew" },
-              { main: "Israel-Focused Tools", sub: "Cost calculators, market insights & context" },
-              { main: "Independent Platform", sub: "We don't sell. We inform." },
-            ].map((statement, index) => (
-              <div key={index} className="flex flex-col items-center">
-                {/* Line 1 - Main claim with yellow underline */}
-                <span 
-                  className="text-xl font-bold text-primary-foreground pb-1 border-b-2 border-accent"
-                  style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
-                >
-                  {statement.main}
-                </span>
-                
-                {/* Line 2 - Reinforcement */}
-                <span 
-                  className="text-sm font-medium text-primary-foreground/90 mt-2"
-                  style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
-                >
-                  {statement.sub}
-                </span>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
       </div>
     </section>
