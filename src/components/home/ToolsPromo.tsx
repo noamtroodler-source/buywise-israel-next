@@ -12,7 +12,7 @@ const tools = [
 
 export const ToolsPromo = () => {
   return (
-    <section className="py-12 md:py-16 bg-background">
+    <section className="py-12 md:py-16 bg-muted/30">
       <div className="container">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
