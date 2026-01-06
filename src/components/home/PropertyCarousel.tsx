@@ -68,7 +68,7 @@ export function PropertyCarousel({
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-10">
+    <section className="py-14">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -104,8 +104,8 @@ export function PropertyCarousel({
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
-            <Button variant="outline" asChild className="ml-2">
-              <Link to={viewAllLink} className="gap-2">
+            <Button asChild className="ml-4 px-5">
+              <Link to={viewAllLink} className="gap-2 font-medium">
                 {viewAllText}
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -114,7 +114,7 @@ export function PropertyCarousel({
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="aspect-[4/3] w-full rounded-xl" />
@@ -126,11 +126,11 @@ export function PropertyCarousel({
           </div>
         ) : properties && properties.length > 0 ? (
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-4">
+            <div className="flex -ml-6">
               {properties.map((property) => (
                 <div
                   key={property.id}
-                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4"
+                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-6"
                 >
                   <PropertyCard property={property} showCompareButton={false} hideStatusBadge={hideStatusBadge} />
                 </div>
