@@ -13,26 +13,24 @@ import {
 } from '@/components/ui/select';
 import heroImage from '@/assets/hero-real-estate.jpg';
 
-type SearchType = 'for_sale' | 'for_rent' | 'projects';
+type SearchCategory = 'for_sale' | 'for_rent' | 'projects';
 
 export function HeroSection() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchType, setSearchType] = useState<SearchType>('for_sale');
-  const [propertyType, setPropertyType] = useState<string>('');
+  const [category, setCategory] = useState<SearchCategory>('for_sale');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (searchType === 'projects') {
+    if (category === 'projects') {
       const params = new URLSearchParams();
       if (searchQuery) params.set('city', searchQuery);
       navigate(`/projects?${params.toString()}`);
     } else {
       const params = new URLSearchParams();
       if (searchQuery) params.set('city', searchQuery);
-      if (searchType) params.set('status', searchType);
-      if (propertyType) params.set('type', propertyType);
+      if (category) params.set('status', category);
       navigate(`/listings?${params.toString()}`);
     }
   };
@@ -78,34 +76,6 @@ export function HeroSection() {
             className="mt-8"
           >
             <form onSubmit={handleSearch} className="bg-background rounded-xl p-4 shadow-xl">
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
-                <Button
-                  type="button"
-                  variant={searchType === 'for_sale' ? 'default' : 'outline'}
-                  onClick={() => setSearchType('for_sale')}
-                  className="flex-1 md:flex-none"
-                >
-                  Buy
-                </Button>
-                <Button
-                  type="button"
-                  variant={searchType === 'for_rent' ? 'default' : 'outline'}
-                  onClick={() => setSearchType('for_rent')}
-                  className="flex-1 md:flex-none"
-                >
-                  Rent
-                </Button>
-                <Button
-                  type="button"
-                  variant={searchType === 'projects' ? 'default' : 'outline'}
-                  onClick={() => setSearchType('projects')}
-                  className="flex-1 md:flex-none"
-                >
-                  Projects
-                </Button>
-              </div>
-
               {/* Search Fields */}
               <div className="flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
@@ -118,18 +88,16 @@ export function HeroSection() {
                     className="pl-10 h-12"
                   />
                 </div>
-                {searchType !== 'projects' && (
-                  <Select value={propertyType} onValueChange={setPropertyType}>
-                    <SelectTrigger className="w-full md:w-[180px] h-12">
-                      <SelectValue placeholder="Property Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apartment">Apartment</SelectItem>
-                      <SelectItem value="house">House</SelectItem>
-                      <SelectItem value="penthouse">Penthouse</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                <Select value={category} onValueChange={(val) => setCategory(val as SearchCategory)}>
+                  <SelectTrigger className="w-full md:w-[160px] h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    <SelectItem value="for_sale">Buy</SelectItem>
+                    <SelectItem value="for_rent">Rent</SelectItem>
+                    <SelectItem value="projects">New Projects</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button type="submit" size="lg" className="h-12 px-8 gap-2">
                   <Search className="h-5 w-5" />
                   Start Exploring
