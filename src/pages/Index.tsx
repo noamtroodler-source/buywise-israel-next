@@ -7,14 +7,12 @@ import { ToolsPromo } from '@/components/home/ToolsPromo';
 import { SignUpCTA } from '@/components/home/SignUpCTA';
 import { WhyBuyWiseSection } from '@/components/home/WhyBuyWiseSection';
 import {
-  useRecommendedProperties, 
   useFeaturedSaleProperties, 
   useFeaturedRentalProperties 
 } from '@/hooks/useProperties';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 
 const Index = () => {
-  const { data: recommendedProperties, isLoading: loadingRecommended } = useRecommendedProperties();
   const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties();
   const { data: rentalProperties, isLoading: loadingRental } = useFeaturedRentalProperties();
   const { data: featuredProjects, isLoading: loadingProjects } = useFeaturedProjects();
@@ -24,23 +22,10 @@ const Index = () => {
       {/* 1. Hero Section */}
       <HeroSection />
       
-      {/* 2. Tools Promo - moved to position #2 */}
+      {/* 2. Tools Promo */}
       <ToolsPromo />
 
-      {/* 3. Why BuyWise Israel */}
-      <WhyBuyWiseSection />
-
-      {/* 4. Featured Properties (was "Best Picks For You") */}
-      <PropertyCarousel
-        title="Featured Properties"
-        description="Highlighted listings across budgets, neighborhoods, and property types"
-        properties={recommendedProperties}
-        isLoading={loadingRecommended}
-        viewAllLink="/listings"
-        viewAllText="View All"
-      />
-
-      {/* 5. Resale Properties */}
+      {/* 3. Resale Properties */}
       <PropertyCarousel
         title="Resale Properties"
         description="Established homes across Israel's major markets"
@@ -51,7 +36,7 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* 6. New Construction Projects */}
+      {/* 4. New Construction Projects */}
       <ProjectCarousel
         title="New Construction Projects"
         description="Pre-construction developments with transparent pricing and vetted developers"
@@ -62,10 +47,10 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* 7. Popular Areas */}
+      {/* 5. Popular Areas */}
       <PopularCities />
 
-      {/* 8. Long-Term Rentals */}
+      {/* 6. Long-Term Rentals */}
       <PropertyCarousel
         title="Long-Term Rentals"
         description="Quality homes available now, with transparent costs and lease terms"
@@ -75,6 +60,9 @@ const Index = () => {
         viewAllText="View All Rentals"
         hideStatusBadge
       />
+
+      {/* 7. Why BuyWise Israel */}
+      <WhyBuyWiseSection />
     </Layout>
   );
 };
