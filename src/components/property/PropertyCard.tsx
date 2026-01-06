@@ -105,15 +105,15 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     >
       <Link to={`/property/${property.id}`}>
         <Card className={cn(
-          "overflow-hidden transition-all duration-300 group cursor-pointer",
-          "border border-border/60 shadow-sm",
-          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/30",
+          "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
+          "border border-border/50 bg-white ring-1 ring-black/5 shadow-md",
+          "hover:shadow-xl hover:-translate-y-1 hover:border-primary/30",
           className
         )}>
         {compact ? (
             /* Compact Mode: Stacked Layout - Image + Content Below (Zillow-style) */
             <>
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
                 {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -210,7 +210,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               </div>
 
               {/* Content Section BELOW Image - Clean White Area */}
-              <div className="p-3 bg-white">
+              <div className="p-3 bg-white border-t border-black/5">
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
