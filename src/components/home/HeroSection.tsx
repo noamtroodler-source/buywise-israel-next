@@ -111,7 +111,7 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-6 md:gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
+            className="flex flex-nowrap justify-center gap-4 md:gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
           >
             {[
               "NOT TRANSLATED. PURPOSE-BUILT.",
