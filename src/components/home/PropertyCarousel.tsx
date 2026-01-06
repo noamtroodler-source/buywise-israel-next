@@ -68,7 +68,7 @@ export function PropertyCarousel({
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-14">
+    <section className="py-14 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -190,12 +190,12 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className={cn(
-          "overflow-hidden transition-all duration-300 group cursor-pointer",
-          "border border-border/60 shadow-sm",
-          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/30"
+          "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
+          "border border-border/50 bg-white ring-1 ring-black/5 shadow-md",
+          "hover:shadow-xl hover:-translate-y-1 hover:border-primary/30"
         )}>
           {/* Image Section */}
-          <div className="relative aspect-[4/3] overflow-hidden">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
             {/* Loading skeleton */}
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -286,7 +286,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
           </div>
 
           {/* Content Section BELOW Image - Clean White Area */}
-          <div className="p-3 bg-white">
+          <div className="p-3 bg-white border-t border-black/5">
             {project.price_from && (
               <p className="text-lg font-bold text-foreground">
                 From {formatPrice(project.price_from, project.currency || 'ILS')}
@@ -351,7 +351,7 @@ export function ProjectCarousel({
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-14">
+    <section className="py-14 bg-muted/30">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
