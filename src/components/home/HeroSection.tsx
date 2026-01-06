@@ -112,7 +112,7 @@ export function HeroSection() {
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Start exploring — Tel Aviv, Jerusalem, Modiin..."
+                    placeholder="Where are you considering? Tel Aviv, Jerusalem..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10 h-12"
