@@ -190,10 +190,12 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className={cn(
-          "overflow-hidden transition-all duration-300 group cursor-pointer border-transparent",
-          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20"
+          "overflow-hidden transition-all duration-300 group cursor-pointer",
+          "border border-border/60 shadow-sm",
+          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/30"
         )}>
-          <div className="relative aspect-square overflow-hidden">
+          {/* Image Section */}
+          <div className="relative aspect-[4/3] overflow-hidden">
             {/* Loading skeleton */}
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -281,23 +283,22 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                 </Badge>
               )}
             </div>
+          </div>
 
-
-            {/* Bottom Overlay with Content - NO progress bar here */}
-            <div className="absolute bottom-0 left-0 right-0 bg-white p-2.5">
-              {project.price_from && (
-                <p className="text-lg font-bold text-foreground">
-                  From {formatPrice(project.price_from, project.currency || 'ILS')}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {project.name}
+          {/* Content Section BELOW Image - Clean White Area */}
+          <div className="p-3 bg-white">
+            {project.price_from && (
+              <p className="text-lg font-bold text-foreground">
+                From {formatPrice(project.price_from, project.currency || 'ILS')}
               </p>
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-                {completionDate && ` · ${completionDate}`}
-              </p>
-            </div>
+            )}
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {project.name}
+            </p>
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+              {completionDate && ` · ${completionDate}`}
+            </p>
           </div>
         </Card>
       </Link>
