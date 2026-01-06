@@ -115,8 +115,8 @@ export function HeroSection() {
           >
             {[
               { main: "PURPOSE-BUILT", sub: "Not translated from Hebrew" },
-              { main: "NO HIDDEN COSTS", sub: "Complete transparency, always" },
-              { main: "FULL CONTEXT", sub: "On every property listing" },
+              { main: "ISRAEL-FOCUSED TOOLS", sub: "Cost calculators, market insights & context" },
+              { main: "INDEPENDENT PLATFORM", sub: "We don't sell. We inform." },
             ].map((statement, index) => (
               <div key={index} className="flex flex-col items-center">
                 {/* Yellow dot - 12px diameter */}
