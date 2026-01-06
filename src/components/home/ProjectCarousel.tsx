@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
@@ -151,10 +151,9 @@ function ShareButton({ projectSlug, projectName }: { projectSlug: string; projec
 
 function ProjectCard({ project, hideStatusBadge = false }: { project: Project; hideStatusBadge?: boolean }) {
   const placeholderImage = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=60';
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
   
   const images = project.images?.length ? project.images : [];
   const hasMultipleImages = images.length > 1;
@@ -172,36 +171,13 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageLoaded(false);
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageLoaded(false);
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || !hasMultipleImages) return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    
-    if (Math.abs(diff) > 50) {
-      setImageLoaded(false);
-      if (diff > 0) {
-        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-      } else {
-        setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-      }
-    }
-    touchStartX.current = null;
   };
 
   return (
@@ -215,11 +191,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
           "overflow-hidden transition-all duration-300 group cursor-pointer border-transparent",
           "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20"
         )}>
-          <div 
-            className="relative aspect-square overflow-hidden"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
+          <div className="relative aspect-square overflow-hidden">
             {/* Loading skeleton */}
             {!imageLoaded && (
               <div className="absolute inset-0 bg-muted animate-pulse" />
