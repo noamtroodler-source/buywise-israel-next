@@ -1,13 +1,21 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Calendar, Building2 } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Calendar, Building2, Share2, MessageCircle, Send, Link as LinkIcon, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import useEmblaCarousel from 'embla-carousel-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { differenceInDays } from 'date-fns';
 
 interface Project {
   id: string;
@@ -25,6 +33,8 @@ interface Project {
     name: string;
     slug: string;
   } | null;
+  is_featured?: boolean | null;
+  created_at?: string | null;
 }
 
 interface ProjectCarouselProps {
@@ -82,12 +92,117 @@ const getStatusColor = (status: string) => {
   }
 };
 
+function ShareButton({ projectSlug, projectName }: { projectSlug: string; projectName: string }) {
+  const projectUrl = `${window.location.origin}/projects/${projectSlug}`;
+  const shareText = `Check out this project: ${projectName}`;
+
+  const handleCopyLink = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigator.clipboard.writeText(projectUrl);
+    toast({
+      title: "Link copied!",
+      description: "Project link copied to clipboard",
+    });
+  };
+
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${projectUrl}`)}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const handleTelegram = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(projectUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(telegramUrl, "_blank");
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+        >
+          <Share2 className="h-3.5 w-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
+          <LinkIcon className="h-4 w-4 mr-2" />
+          Copy Link
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
+          <MessageCircle className="h-4 w-4 mr-2" />
+          WhatsApp
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleTelegram} className="cursor-pointer">
+          <Send className="h-4 w-4 mr-2" />
+          Telegram
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function ProjectCard({ project, hideStatusBadge = false }: { project: Project; hideStatusBadge?: boolean }) {
   const placeholderImage = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=60';
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
   
+  const images = project.images?.length ? project.images : [];
+  const hasMultipleImages = images.length > 1;
+  const currentImage = imageError ? placeholderImage : (images[currentImageIndex] || placeholderImage);
+
   const completionDate = project.completion_date 
     ? new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : null;
+
+  // Check if project is new (listed within last 7 days)
+  const isNewListing = project.created_at 
+    ? differenceInDays(new Date(), new Date(project.created_at)) <= 7 
+    : false;
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImageLoaded(false);
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setImageLoaded(false);
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || !hasMultipleImages) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diff) > 50) {
+      setImageLoaded(false);
+      if (diff > 0) {
+        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      } else {
+        setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      }
+    }
+    touchStartX.current = null;
+  };
 
   return (
     <motion.div
@@ -96,25 +211,102 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
       transition={{ duration: 0.3 }}
     >
       <Link to={`/projects/${project.slug}`}>
-        <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
-          <div className="relative aspect-square overflow-hidden">
+        <Card className={cn(
+          "overflow-hidden transition-all duration-300 group cursor-pointer border-transparent",
+          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20"
+        )}>
+          <div 
+            className="relative aspect-square overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Loading skeleton */}
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-muted animate-pulse" />
+            )}
             <img
-              src={project.images?.[0] || placeholderImage}
+              src={currentImage}
               alt={project.name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
+                imageLoaded ? "opacity-100" : "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => { setImageError(true); setImageLoaded(true); }}
             />
-            
-            {/* Status Badge - Top Left */}
-            {!hideStatusBadge && project.status && (
-              <div className="absolute top-2 left-2 z-10">
-                <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
-                  {getStatusLabel(project.status)}
-                </Badge>
+
+            {/* Image Navigation Arrows */}
+            {hasMultipleImages && (
+              <>
+                <button
+                  onClick={handlePrevImage}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-4 w-4 text-foreground" />
+                </button>
+                <button
+                  onClick={handleNextImage}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-4 w-4 text-foreground" />
+                </button>
+              </>
+            )}
+
+            {/* Image Counter Badge - Bottom Left */}
+            {hasMultipleImages && (
+              <div className="absolute bottom-14 left-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                {currentImageIndex + 1}/{images.length}
               </div>
             )}
 
+            {/* Image Dots Indicator */}
+            {hasMultipleImages && (
+              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                {images.slice(0, 5).map((_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-colors",
+                      index === currentImageIndex ? "bg-white" : "bg-white/50"
+                    )}
+                  />
+                ))}
+                {images.length > 5 && (
+                  <span className="text-[10px] text-white font-medium ml-1">+{images.length - 5}</span>
+                )}
+              </div>
+            )}
+            
+            {/* Status Badge - Top Left */}
+            <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+              {!hideStatusBadge && project.status && (
+                <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
+                  {getStatusLabel(project.status)}
+                </Badge>
+              )}
+              {isNewListing && (
+                <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  New
+                </Badge>
+              )}
+              {project.is_featured && !isNewListing && (
+                <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                  Featured
+                </Badge>
+              )}
+            </div>
+
+            {/* Share Button - Top Right */}
+            <div className="absolute top-2 right-2 z-10">
+              <ShareButton projectSlug={project.slug} projectName={project.name} />
+            </div>
+
             {/* Bottom Overlay with Content */}
-            <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm p-2.5">
+            <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
               {project.price_from && (
                 <p className="text-lg font-bold text-foreground">
                   From {formatPrice(project.price_from, project.currency || 'ILS')}

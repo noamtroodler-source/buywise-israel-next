@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,8 +8,10 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
+import { ShareButton } from './ShareButton';
 import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { differenceInDays } from 'date-fns';
 
 interface PropertyCardProps {
   property: Property;
@@ -24,21 +26,65 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
   const images = property.images?.length ? property.images : [];
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
+  // Check if property is new (listed within last 7 days)
+  const isNewListing = property.created_at 
+    ? differenceInDays(new Date(), new Date(property.created_at)) <= 7 
+    : false;
+
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setImageLoaded(false);
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setImageLoaded(false);
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  };
+
+  // Touch/swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || !hasMultipleImages) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX;
+    
+    if (Math.abs(diff) > 50) {
+      setImageLoaded(false);
+      if (diff > 0) {
+        // Swipe left - next image
+        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+      } else {
+        // Swipe right - previous image
+        setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoaded(true);
   };
 
   const getStatusLabel = (status: string) => {
@@ -70,6 +116,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     }
   };
 
+  const currentImage = imageError ? placeholderImage : (images[currentImageIndex] || placeholderImage);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -78,16 +126,30 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     >
       <Link to={`/property/${property.id}`}>
         <Card className={cn(
-          "overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer",
+          "overflow-hidden transition-all duration-300 group cursor-pointer border-transparent",
+          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20",
           className
         )}>
           {compact ? (
             /* Compact Mode: Fully Square Card with Overlay */
-            <div className="relative aspect-square overflow-hidden">
+            <div 
+              className="relative aspect-square overflow-hidden"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Loading skeleton */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-muted animate-pulse" />
+              )}
               <img
-                src={images[currentImageIndex] || placeholderImage}
+                src={currentImage}
                 alt={property.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className={cn(
+                  "absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                )}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
               
               {/* Image Navigation Arrows */}
@@ -95,43 +157,75 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 <>
                   <button
                     onClick={handlePrevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
                     aria-label="Previous image"
                   >
-                    <ChevronLeft className="h-5 w-5 text-foreground" />
+                    <ChevronLeft className="h-4 w-4 text-foreground" />
                   </button>
                   <button
                     onClick={handleNextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
                     aria-label="Next image"
                   >
-                    <ChevronRight className="h-5 w-5 text-foreground" />
+                    <ChevronRight className="h-4 w-4 text-foreground" />
                   </button>
                 </>
               )}
 
+              {/* Image Counter Badge - Bottom Left */}
+              {hasMultipleImages && (
+                <div className="absolute bottom-14 left-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  {currentImageIndex + 1}/{images.length}
+                </div>
+              )}
+
+              {/* Image Dots Indicator - Compact Mode */}
+              {hasMultipleImages && (
+                <div className="absolute bottom-14 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                  {images.slice(0, 5).map((_, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-colors",
+                        index === currentImageIndex ? "bg-white" : "bg-white/50"
+                      )}
+                    />
+                  ))}
+                  {images.length > 5 && (
+                    <span className="text-[10px] text-white font-medium ml-1">+{images.length - 5}</span>
+                  )}
+                </div>
+              )}
+
               {/* Status Badge - Top Left */}
-              <div className="absolute top-2 left-2 flex gap-2 z-10">
+              <div className="absolute top-2 left-2 flex gap-1.5 z-10">
                 {!hideStatusBadge && (
                   <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
                     {getStatusLabel(property.listing_status)}
                   </Badge>
                 )}
-                {property.is_featured && (
+                {isNewListing && (
+                  <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    New
+                  </Badge>
+                )}
+                {property.is_featured && !isNewListing && (
                   <Badge className="bg-accent text-accent-foreground text-xs font-medium">
                     Featured
                   </Badge>
                 )}
               </div>
 
-              {/* Favorite Button - Top Right */}
-              <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+              {/* Action Buttons - Top Right */}
+              <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
                 {showCompareButton && <CompareButton propertyId={property.id} />}
                 <FavoriteButton propertyId={property.id} />
               </div>
 
               {/* Bottom Overlay with Content */}
-              <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm p-2.5">
+              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
@@ -149,11 +243,24 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           ) : (
             /* Non-Compact Mode: Standard Layout */
             <>
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div 
+                className="relative aspect-[4/3] overflow-hidden"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {/* Loading skeleton */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-muted animate-pulse" />
+                )}
                 <img
-                  src={images[currentImageIndex] || placeholderImage}
+                  src={currentImage}
                   alt={property.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className={cn(
+                    "w-full h-full object-cover group-hover:scale-105 transition-all duration-300",
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
                 />
                 
                 {/* Image Navigation Arrows */}
@@ -191,6 +298,13 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     </div>
                   </>
                 )}
+
+                {/* Image Counter Badge - Bottom Left */}
+                {hasMultipleImages && (
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded z-10">
+                    {currentImageIndex + 1}/{images.length}
+                  </div>
+                )}
                 
                 <div className="absolute top-3 left-3 flex gap-2">
                   {!hideStatusBadge && (
@@ -198,13 +312,20 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       {getStatusLabel(property.listing_status)}
                     </Badge>
                   )}
-                  {property.is_featured && (
+                  {isNewListing && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      New
+                    </Badge>
+                  )}
+                  {property.is_featured && !isNewListing && (
                     <Badge className="bg-accent text-accent-foreground text-xs font-medium">
                       Featured
                     </Badge>
                   )}
                 </div>
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  <ShareButton propertyId={property.id} propertyTitle={property.title} />
                   {showCompareButton && <CompareButton propertyId={property.id} />}
                   <FavoriteButton propertyId={property.id} />
                 </div>
