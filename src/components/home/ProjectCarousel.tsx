@@ -97,7 +97,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
-          <div className="relative aspect-[5/4] overflow-hidden">
+          <div className="relative aspect-square overflow-hidden">
             <img
               src={project.images?.[0] || placeholderImage}
               alt={project.name}
@@ -229,7 +229,7 @@ export function ProjectCarousel({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[5/4] w-full rounded-xl" />
+                <Skeleton className="aspect-square w-full rounded-xl" />
                 <Skeleton className="h-5 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
               </div>
