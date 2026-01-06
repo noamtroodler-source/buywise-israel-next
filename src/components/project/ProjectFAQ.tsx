@@ -57,12 +57,6 @@ export function ProjectFAQ() {
         ))}
       </Accordion>
 
-      <p className="text-sm text-muted-foreground pt-2">
-        For a comprehensive guide,{' '}
-        <Link to="/guides/new-construction" className="text-primary hover:underline">
-          read our New Construction Buyer's Guide →
-        </Link>
-      </p>
     </motion.div>
   );
 }

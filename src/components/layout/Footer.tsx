@@ -42,21 +42,15 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Buyer Guides */}
+          {/* Resources */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-foreground">Buyer Guides</h4>
+            <h4 className="text-sm font-semibold text-foreground">Resources</h4>
             <nav className="flex flex-col gap-2">
-              <Link to="/guides/buying-in-israel" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Complete Buying Guide
-              </Link>
-              <Link to="/guides/oleh-first-time" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Oleh Buyer Guide
-              </Link>
-              <Link to="/guides/investment-property" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Investment Guide
-              </Link>
               <Link to="/glossary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Hebrew Glossary
+              </Link>
+              <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Blog & Articles
               </Link>
             </nav>
           </div>

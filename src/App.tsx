@@ -38,13 +38,14 @@ import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
-import Guides from "./pages/Guides";
+// Guides - commented out for launch
+// import Guides from "./pages/Guides";
+// import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
+// import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
+// import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
+// import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
+// import NewConstructionGuide from "./pages/guides/NewConstructionGuide";
 import Contact from "./pages/Contact";
-import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
-import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
-import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
-import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
-import NewConstructionGuide from "./pages/guides/NewConstructionGuide";
 import Principles from "./pages/Principles";
 import NotFound from "./pages/NotFound";
 
@@ -72,12 +73,14 @@ const App = () => (
             <Route path="/areas/:slug" element={<AreaDetail />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/glossary" element={<Glossary />} />
+            {/* Guides - commented out for launch
             <Route path="/guides" element={<Guides />} />
             <Route path="/guides/buying-in-israel" element={<BuyingInIsraelGuide />} />
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
             <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
             <Route path="/guides/new-construction" element={<NewConstructionGuide />} />
+            */}
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers" element={<Developers />} />
             <Route path="/developers/:slug" element={<DeveloperDetail />} />

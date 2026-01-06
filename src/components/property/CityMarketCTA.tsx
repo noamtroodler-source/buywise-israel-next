@@ -29,7 +29,7 @@ export function CityMarketCTA({ cityName }: CityMarketCTAProps) {
               Curious about {cityName}'s market?
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Explore price trends, market stats, neighborhood guides & what to watch
+              Explore price trends, market stats, neighborhood data & what to watch
             </p>
           </div>
         </div>

@@ -377,7 +377,7 @@ export default function Principles() {
                 Ready to explore at your own pace?
               </h2>
               <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-                Start with our tools, read some guides, or browse areas. 
+                Start with our tools or browse areas. 
                 No account required, no pressure applied.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
@@ -388,7 +388,7 @@ export default function Principles() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/guides">Read Guides</Link>
+                  <Link to="/areas">Browse Areas</Link>
                 </Button>
               </div>
             </motion.div>
