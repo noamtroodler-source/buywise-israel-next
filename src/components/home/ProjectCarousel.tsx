@@ -97,14 +97,14 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
-          <div className="relative aspect-[4/3] overflow-hidden">
+          <div className="relative aspect-[16/10] overflow-hidden">
             <img
               src={project.images?.[0] || placeholderImage}
               alt={project.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             {!hideStatusBadge && project.status && (
-              <div className="absolute top-3 left-3 flex gap-2">
+              <div className="absolute top-2 left-2">
                 <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
                   {getStatusLabel(project.status)}
                 </Badge>
@@ -112,44 +112,22 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
             )}
           </div>
 
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-3 space-y-1.5">
             {/* Price Range */}
             {project.price_from && (
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-bold text-foreground">
-                  From {formatPrice(project.price_from, project.currency || 'ILS')}
-                </span>
-              </div>
+              <span className="text-lg font-bold text-foreground">
+                From {formatPrice(project.price_from, project.currency || 'ILS')}
+              </span>
             )}
 
-            {/* Project Name */}
-            <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+            {/* Project Name & Location inline */}
+            <p className="text-sm text-muted-foreground line-clamp-1">
               {project.name}
-            </h3>
-
-            {/* Location */}
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm line-clamp-1">
-                {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-              </span>
-            </div>
-
-            {/* Details */}
-            <div className="flex items-center gap-4 pt-2 border-t border-border">
-              {project.developer && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Building2 className="h-4 w-4" />
-                  <span className="text-sm line-clamp-1">{project.developer.name}</span>
-                </div>
-              )}
-              {completionDate && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span className="text-sm">{completionDate}</span>
-                </div>
-              )}
-            </div>
+            </p>
+            <p className="text-sm text-muted-foreground line-clamp-1">
+              {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+              {completionDate && ` · ${completionDate}`}
+            </p>
           </CardContent>
         </Card>
       </Link>
@@ -202,7 +180,7 @@ export function ProjectCarousel({
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-10">
+    <section className="py-14">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -238,8 +216,8 @@ export function ProjectCarousel({
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
-            <Button variant="outline" asChild className="ml-2">
-              <Link to={viewAllLink} className="gap-2">
+            <Button asChild className="ml-4 px-5">
+              <Link to={viewAllLink} className="gap-2 font-medium">
                 {viewAllText}
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -248,23 +226,22 @@ export function ProjectCarousel({
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-[16/10] w-full rounded-xl" />
                 <Skeleton className="h-5 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/3" />
               </div>
             ))}
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex -ml-4">
+            <div className="flex -ml-6">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4"
+                  className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/3 pl-6"
                 >
                   <ProjectCard project={project} hideStatusBadge={hideStatusBadge} />
                 </div>

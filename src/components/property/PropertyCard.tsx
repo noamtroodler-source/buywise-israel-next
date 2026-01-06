@@ -17,9 +17,10 @@ interface PropertyCardProps {
   showCompareButton?: boolean;
   showMonthlyEstimate?: boolean;
   hideStatusBadge?: boolean;
+  compact?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true, hideStatusBadge = false }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -81,7 +82,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           className
         )}>
           {/* Image */}
-          <div className="relative aspect-[4/3] overflow-hidden">
+          <div className={cn("relative overflow-hidden", compact ? "aspect-[16/10]" : "aspect-[4/3]")}>
             <img
               src={images[currentImageIndex] || placeholderImage}
               alt={property.title}
@@ -143,52 +144,64 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           </div>
 
           {/* Content */}
-          <CardContent className="p-4 space-y-3">
+          <CardContent className={cn("space-y-2", compact ? "p-3" : "p-4 space-y-3")}>
             {/* Price */}
             <div className="flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-foreground">
+              <span className={cn("font-bold text-foreground", compact ? "text-lg" : "text-2xl")}>
                 {formatPrice(property.price, property.currency || 'ILS')}
-              </span>
-              <div className="flex items-center gap-2">
                 {property.listing_status === 'for_rent' && (
-                  <span className="text-sm text-muted-foreground">/month</span>
+                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 )}
-                {property.listing_status === 'for_sale' && showMonthlyEstimate && (
-                  <MonthlyEstimate price={property.price} />
-                )}
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-              {property.title}
-            </h3>
-
-            {/* Location */}
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="text-sm line-clamp-1">
-                {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
               </span>
-            </div>
-
-            {/* Features */}
-            <div className="flex items-center gap-4 pt-2 border-t border-border">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Bed className="h-4 w-4" />
-                <span className="text-sm">{property.bedrooms}</span>
-              </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Bath className="h-4 w-4" />
-                <span className="text-sm">{property.bathrooms}</span>
-              </div>
-              {property.size_sqm && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Maximize className="h-4 w-4" />
-                  <span className="text-sm">{formatArea(property.size_sqm)}</span>
-                </div>
+              {!compact && property.listing_status === 'for_sale' && showMonthlyEstimate && (
+                <MonthlyEstimate price={property.price} />
               )}
             </div>
+
+            {/* Compact: specs inline, then location */}
+            {compact ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {property.bedrooms} bd | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
+                </p>
+                <p className="text-sm text-muted-foreground line-clamp-1">
+                  {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
+                </p>
+              </>
+            ) : (
+              <>
+                {/* Title */}
+                <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                  {property.title}
+                </h3>
+
+                {/* Location */}
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm line-clamp-1">
+                    {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
+                  </span>
+                </div>
+
+                {/* Features */}
+                <div className="flex items-center gap-4 pt-2 border-t border-border">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Bed className="h-4 w-4" />
+                    <span className="text-sm">{property.bedrooms}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Bath className="h-4 w-4" />
+                    <span className="text-sm">{property.bathrooms}</span>
+                  </div>
+                  {property.size_sqm && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Maximize className="h-4 w-4" />
+                      <span className="text-sm">{formatArea(property.size_sqm)}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </Link>
