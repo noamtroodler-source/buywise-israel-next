@@ -9,26 +9,65 @@ import {
   XCircle,
   CheckCircle2,
   ArrowRight,
-  Home
+  Languages,
+  ShieldCheck,
+  Lightbulb,
+  Compass,
+  Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+const familiarFeelings = [
+  {
+    feeling: "You've found properties you love but have no idea if the price is fair",
+  },
+  {
+    feeling: "You're worried about making an irreversible mistake in a system you don't fully understand",
+  },
+  {
+    feeling: "Every time you consider calling an agent, you wonder if you're ready",
+  },
+];
+
+const whatWeAre = [
+  {
+    icon: Languages,
+    title: 'A Translator',
+    description: 'We translate the Israeli real estate system into decisions you can understand.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'A Buffer',
+    description: 'We stand between you and premature pressure — so you can think clearly.',
+  },
+  {
+    icon: Lightbulb,
+    title: 'A Confidence Builder',
+    description: "We help you feel ready, not rush you to feel ready.",
+  },
+  {
+    icon: Compass,
+    title: 'A Neutral Guide',
+    description: "We're not selling properties. We're helping you understand them.",
+  },
+];
 
 const principles = [
   {
     icon: Shield,
     title: 'Trust Before Conversion',
-    description: 'We believe you should feel confident before you ever talk to anyone. Our job is to educate, not pressure.',
+    description: 'We believe you should feel confident before you ever speak to anyone. Our job is to educate, not pressure.',
   },
   {
     icon: Clock,
     title: 'Your Timeline, Not Ours',
-    description: "We'd rather you take 6 months to feel ready than rush into a bad decision. There's no urgency here except yours.",
+    description: "We'd rather you take 6 months to feel ready than rush into a decision you'll regret. There's no urgency here except yours.",
   },
   {
     icon: Heart,
     title: 'Honest Ranges, Not False Precision',
-    description: 'Real estate is messy. We show you ranges and explain why they vary, because fake certainty causes regret later.',
+    description: 'Real estate is messy. We show you ranges and explain why they vary — because fake certainty causes regret later.',
   },
   {
     icon: Eye,
@@ -40,15 +79,15 @@ const principles = [
 const whatWeDo = [
   'Curate listings for quality and accuracy',
   'Provide Israel-specific calculations, not generic estimates',
-  'Educate before we sell',
-  'Build tools that save you money and time',
   'Show you the full picture, including the uncomfortable parts',
+  'Build tools that save you money and reduce anxiety',
+  'Educate before we sell',
 ];
 
 const whatWeDontDo = [
   'No paid ranking of listings',
   'No hidden agent incentives',
-  'No pressure tactics or aggressive pop-ups',
+  'No pressure tactics or countdown timers',
   'No fake precision — we show ranges when appropriate',
   "No rushing you toward a decision you're not ready for",
 ];
@@ -57,33 +96,78 @@ export default function Principles() {
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-b from-primary/5 to-background py-16 md:py-24">
+        {/* Hero Section - The Anchor Definition */}
+        <section className="bg-gradient-to-b from-primary/5 to-background py-20 md:py-28">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="max-w-3xl mx-auto text-center"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                <Home className="h-4 w-4" />
-                Our Philosophy
-              </div>
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-                How We Think About
-                <span className="text-primary"> Helping You Buy</span>
+              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
+                Clarity Before Commitment.
+                <span className="text-primary block mt-2">Trust Before Action.</span>
               </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                Most real estate platforms are built around converting visitors into leads as fast as possible. 
-                We're building something different — a platform where you feel informed and confident 
-                before you ever speak to anyone.
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                BuyWise Israel is the operating system for buying confidence in Israeli real estate — 
+                designed for international buyers who need clarity before commitment, and trust before action.
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Core Principles */}
-        <section className="py-16">
+        {/* "We See You" Section - Emotional Acknowledgment */}
+        <section className="py-16 md:py-20">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="max-w-4xl mx-auto"
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-10 text-center">
+                If This Sounds Familiar...
+              </h2>
+              
+              <div className="grid md:grid-cols-3 gap-6 mb-10">
+                {familiarFeelings.map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="h-full border-border/50 bg-muted/30">
+                      <CardContent className="p-6">
+                        <p className="text-muted-foreground text-center leading-relaxed italic">
+                          "{item.feeling}"
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 md:p-8 border border-primary/20">
+                  <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed">
+                    You're not behind. You're not stupid for feeling unsure.
+                    <span className="block mt-2 text-primary">You're doing this right.</span>
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* "What We Actually Are" Section */}
+        <section className="py-16 bg-muted/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0 }}
@@ -92,7 +176,52 @@ export default function Principles() {
               className="text-center mb-12"
             >
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Our Four Principles
+                What BuyWise Actually Is
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                We're not a listings site. We're not a brokerage. We're not a lead-generation machine disguised as education.
+              </p>
+            </motion.div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+              {whatWeAre.map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="h-full border-border/50 hover:border-primary/30 transition-colors text-center">
+                    <CardContent className="p-6">
+                      <div className="inline-flex p-3 rounded-xl bg-primary/10 mb-4">
+                        <item.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="font-semibold text-foreground mb-2">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {item.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Core Principles */}
+        <section className="py-16 md:py-20">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                What We Believe
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
                 These aren't marketing slogans. They're constraints we build into every feature.
@@ -186,34 +315,57 @@ export default function Principles() {
           </div>
         </section>
 
-        {/* The Constraint */}
-        <section className="py-16">
+        {/* Our Relationship With Agents */}
+        <section className="py-16 md:py-20">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="max-w-2xl mx-auto text-center"
+              className="max-w-3xl mx-auto text-center"
             >
-              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl p-8 md:p-12 border border-primary/20">
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                  Our Constraint
-                </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  "We'd rather you take 6 months to feel ready than rush into a decision 
-                  you'll regret. There's no urgency here except yours."
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  This isn't just a promise — it's built into how the platform works. 
-                  You won't see countdown timers, fake scarcity, or pressure tactics.
-                </p>
+              <div className="inline-flex p-3 rounded-xl bg-primary/10 mb-6">
+                <Users className="h-6 w-6 text-primary" />
               </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                We're Pro-Agent, Anti-Pressure
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+                Agents are valuable. They're necessary. They're helpful — at the right moment.
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                But our job is to delay that conversation until it reduces your anxiety, not increases it. 
+                When you do talk to an agent through BuyWise, you'll be informed, calm, and ready — 
+                which makes their job easier and your experience better.
+              </p>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* The Constraint */}
+        <section className="py-16 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="max-w-3xl mx-auto text-center"
+            >
+              <p className="text-xl md:text-2xl text-foreground font-medium leading-relaxed mb-6 italic">
+                "We'd rather you take 6 months to feel ready than rush into a decision 
+                you'll regret. There's no urgency here except yours."
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                This isn't just a promise — it's built into how the platform works. 
+                You won't see countdown timers, fake scarcity, or pressure tactics. 
+                We earn your trust first. Everything else comes later.
+              </p>
             </motion.div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="py-16 bg-muted/30">
+        <section className="py-16 md:py-20">
           <div className="container">
             <motion.div
               initial={{ opacity: 0 }}
