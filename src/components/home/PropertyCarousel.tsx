@@ -114,9 +114,9 @@ export function PropertyCarousel({
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="aspect-square w-full rounded-xl" />
             ))}
           </div>
         ) : properties && properties.length > 0 ? (
@@ -125,7 +125,7 @@ export function PropertyCarousel({
               {properties.map((property) => (
                 <div
                   key={property.id}
-                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/3 pl-8"
+                  className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/4 pl-8"
                 >
                   <PropertyCard property={property} showCompareButton={false} hideStatusBadge={hideStatusBadge} compact />
                 </div>
