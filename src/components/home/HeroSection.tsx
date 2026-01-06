@@ -119,9 +119,9 @@ export function HeroSection() {
               { main: "Independent Platform", sub: "We don't sell. We inform." },
             ].map((statement, index) => (
               <div key={index} className="flex flex-col items-center">
-                {/* Line 1 - Main claim */}
+                {/* Line 1 - Main claim with yellow underline */}
                 <span 
-                  className="text-lg font-semibold text-primary-foreground/95"
+                  className="text-xl font-bold text-primary-foreground pb-1 border-b-2 border-accent"
                   style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement.main}
@@ -129,7 +129,7 @@ export function HeroSection() {
                 
                 {/* Line 2 - Reinforcement */}
                 <span 
-                  className="text-sm font-medium text-primary-foreground/90 mt-1"
+                  className="text-sm font-medium text-primary-foreground/90 mt-2"
                   style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement.sub}
