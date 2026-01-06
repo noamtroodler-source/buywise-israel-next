@@ -132,7 +132,7 @@ export function HeroSection() {
                 )}
                 <Button type="submit" size="lg" className="h-12 px-8 gap-2">
                   <Search className="h-5 w-5" />
-                  Search
+                  Start Exploring
                 </Button>
               </div>
             </form>
