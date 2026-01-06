@@ -26,14 +26,14 @@ const valueProps = [
 
 export const WhyBuyWiseSection = () => {
   return (
-    <section className="py-8 md:py-10 bg-muted/30">
+    <section className="py-16 md:py-20 bg-background">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6 md:mb-8"
+          className="text-center mb-8 md:mb-10"
         >
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             Why BuyWise Israel?
@@ -51,7 +51,7 @@ export const WhyBuyWiseSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="group text-center p-6 rounded-xl bg-background border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+              className="group text-center p-6 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
             >
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                 <prop.icon className="h-7 w-7" />
