@@ -114,14 +114,14 @@ export function HeroSection() {
             className="flex flex-wrap justify-center gap-6 md:gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
           >
             {[
-              "Not translated. Purpose-built.",
-              "No hidden costs. Ever.",
-              "Full context on every property.",
+              "NOT TRANSLATED. PURPOSE-BUILT.",
+              "NO HIDDEN COSTS. EVER.",
+              "FULL CONTEXT ON EVERY PROPERTY.",
             ].map((statement, index) => (
               <div key={index} className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+                <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
                 <span 
-                  className="text-sm md:text-base text-primary-foreground font-medium"
+                  className="text-base md:text-lg text-primary-foreground font-semibold tracking-wide"
                   style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement}
