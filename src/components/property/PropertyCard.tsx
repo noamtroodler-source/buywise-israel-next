@@ -82,7 +82,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           className
         )}>
           {/* Image */}
-          <div className={cn("relative overflow-hidden", compact ? "aspect-[2/1]" : "aspect-[4/3]")}>
+          <div className={cn("relative overflow-hidden", compact ? "aspect-[4/3]" : "aspect-[4/3]")}>
             <img
               src={images[currentImageIndex] || placeholderImage}
               alt={property.title}
@@ -144,7 +144,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           </div>
 
           {/* Content */}
-          <CardContent className={cn("space-y-1.5", compact ? "p-2.5" : "p-4 space-y-3")}>
+          <CardContent className={cn("space-y-1", compact ? "p-2" : "p-4 space-y-3")}>
             {/* Price */}
             <div className="flex items-baseline justify-between">
               <span className={cn("font-bold text-foreground", compact ? "text-lg" : "text-2xl")}>

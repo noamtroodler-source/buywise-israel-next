@@ -97,7 +97,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
     >
       <Link to={`/projects/${project.slug}`}>
         <Card className="overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
-          <div className="relative aspect-[16/10] overflow-hidden">
+          <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={project.images?.[0] || placeholderImage}
               alt={project.name}
@@ -112,19 +112,19 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
             )}
           </div>
 
-          <CardContent className="p-3 space-y-1.5">
+          <CardContent className="p-2 space-y-1">
             {/* Price Range */}
             {project.price_from && (
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-base font-bold text-foreground">
                 From {formatPrice(project.price_from, project.currency || 'ILS')}
               </span>
             )}
 
             {/* Project Name & Location inline */}
-            <p className="text-sm text-muted-foreground line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1">
               {project.name}
             </p>
-            <p className="text-sm text-muted-foreground line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-1">
               {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
               {completionDate && ` · ${completionDate}`}
             </p>
@@ -229,7 +229,7 @@ export function ProjectCarousel({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[16/10] w-full rounded-xl" />
+                <Skeleton className="aspect-[4/3] w-full rounded-xl" />
                 <Skeleton className="h-5 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
               </div>
