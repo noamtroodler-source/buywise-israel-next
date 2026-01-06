@@ -21,28 +21,29 @@ const Index = () => {
 
   return (
     <Layout>
+      {/* 1. Hero Section */}
       <HeroSection />
       
-      {/* Best Picks For You */}
+      {/* 2. Tools Promo - moved to position #2 */}
+      <ToolsPromo />
+
+      {/* 3. Why BuyWise Israel */}
+      <WhyBuyWiseSection />
+
+      {/* 4. Featured Properties (was "Best Picks For You") */}
       <PropertyCarousel
-        title="Best Picks For You"
-        description="Handpicked properties based on quality, value, and location"
+        title="Featured Properties"
+        description="Highlighted listings across budgets, neighborhoods, and property types"
         properties={recommendedProperties}
         isLoading={loadingRecommended}
         viewAllLink="/listings"
         viewAllText="View All"
       />
 
-      {/* Why BuyWise Israel */}
-      <WhyBuyWiseSection />
-
-      {/* Sign Up CTA */}
-      <SignUpCTA />
-
-      {/* Featured Resale Homes */}
+      {/* 5. Resale Properties */}
       <PropertyCarousel
-        title="Featured Resale Homes"
-        description="Top resale opportunities selected for value, price, and location"
+        title="Resale Properties"
+        description="Established homes across Israel's major markets"
         properties={saleProperties}
         isLoading={loadingSale}
         viewAllLink="/listings?status=for_sale"
@@ -50,13 +51,10 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* Tools Promo */}
-      <ToolsPromo />
-
-      {/* Featured New Projects */}
+      {/* 6. New Construction Projects */}
       <ProjectCarousel
-        title="Featured New Projects"
-        description="Trusted pre-construction developments across Israel"
+        title="New Construction Projects"
+        description="Pre-construction developments with transparent pricing and vetted developers"
         projects={featuredProjects}
         isLoading={loadingProjects}
         viewAllLink="/projects"
@@ -64,13 +62,13 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* Popular Areas */}
+      {/* 7. Popular Areas */}
       <PopularCities />
 
-      {/* Featured Long-Term Rentals */}
+      {/* 8. Long-Term Rentals */}
       <PropertyCarousel
-        title="Featured Long-Term Rentals"
-        description="Quality rental homes available now across Israel"
+        title="Long-Term Rentals"
+        description="Quality homes available now, with transparent costs and lease terms"
         properties={rentalProperties}
         isLoading={loadingRental}
         viewAllLink="/listings?status=for_rent"

@@ -36,8 +36,14 @@ export function Header() {
           <span className="text-xl font-bold text-primary">Israel</span>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - Updated order: Tools first */}
         <nav className="hidden md:flex items-center gap-6">
+          <Link 
+            to="/tools" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Tools
+          </Link>
           <Link 
             to="/listings?status=for_sale" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -61,12 +67,6 @@ export function Header() {
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Areas
-          </Link>
-          <Link 
-            to="/tools" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Tools
           </Link>
           <Link 
             to="/blog" 
@@ -158,10 +158,17 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Updated order: Tools first */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-2">
+            <Link 
+              to="/tools" 
+              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Tools
+            </Link>
             <Link 
               to="/listings?status=for_sale" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
@@ -189,13 +196,6 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Areas
-            </Link>
-            <Link 
-              to="/tools" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Tools
             </Link>
             <Link 
               to="/blog" 
