@@ -69,12 +69,6 @@ export function HeroSection() {
           >
             Get clarity on costs, neighborhoods, and timing — on your terms, at your pace.
           </p>
-          <p 
-            className="text-sm md:text-base text-primary-foreground/80 max-w-xl mx-auto"
-            style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.3)' }}
-          >
-            Most buyers use BuyWise to get oriented before taking action.
-          </p>
 
           {/* Search Box */}
           <motion.div
@@ -144,31 +138,25 @@ export function HeroSection() {
             </form>
           </motion.div>
 
-          {/* Trust Signals */}
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col md:flex-row flex-wrap justify-center gap-4 md:gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
+            className="flex flex-wrap justify-center gap-8 mt-12 pt-8 border-t border-primary-foreground/20"
           >
-            <p 
-              className="text-sm md:text-base text-primary-foreground/90"
-              style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.3)' }}
-            >
-              No paid placements. No rush. No pressure.
-            </p>
-            <p 
-              className="text-sm md:text-base text-primary-foreground/90"
-              style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.3)' }}
-            >
-              Clarity before conversion is the business model.
-            </p>
-            <p 
-              className="text-sm md:text-base text-primary-foreground/90"
-              style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.3)' }}
-            >
-              Agents come in when they help — not before.
-            </p>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>10K+</div>
+              <div className="text-sm text-primary-foreground/80" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>Properties Listed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>500+</div>
+              <div className="text-sm text-primary-foreground/80" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>Trusted Agents</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>50+</div>
+              <div className="text-sm text-primary-foreground/80" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}>Cities Covered</div>
+            </div>
           </motion.div>
         </motion.div>
       </div>
