@@ -105,8 +105,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     >
       <Link to={`/property/${property.id}`}>
         <Card className={cn(
-          "overflow-hidden transition-all duration-300 group cursor-pointer border-transparent",
-          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/20",
+          "overflow-hidden transition-all duration-300 group cursor-pointer",
+          "border border-border/60 shadow-sm",
+          "hover:shadow-lg hover:-translate-y-1 hover:border-primary/30",
           className
         )}>
         {compact ? (
