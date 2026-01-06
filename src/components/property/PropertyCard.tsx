@@ -42,6 +42,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     e.preventDefault();
     e.stopPropagation();
     setImageLoaded(false);
+    setImageError(false);
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
@@ -49,15 +50,15 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     e.preventDefault();
     e.stopPropagation();
     setImageLoaded(false);
+    setImageError(false);
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  // Removed touch/swipe handlers to prevent conflicts with carousel drag
-  // Image navigation is available via arrow buttons on hover
-
+  // NOTE: Avoid clearing imageError inside onLoad.
+  // If a listing image 404s, the placeholder loads successfully, and onLoad would
+  // flip imageError back to false -> causing an endless flicker loop.
   const handleImageLoad = () => {
     setImageLoaded(true);
-    setImageError(false);
   };
 
   const handleImageError = () => {
