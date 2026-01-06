@@ -196,3 +196,56 @@ export function useRecommendedProperties() {
     },
   });
 }
+
+export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
+  return useQuery({
+    queryKey: ['properties', 'city-featured', cityName, limit],
+    queryFn: async () => {
+      // First try to get featured properties for this city
+      const { data: featuredData, error: featuredError } = await supabase
+        .from('properties')
+        .select(`
+          *,
+          agent:agents(*)
+        `)
+        .eq('is_published', true)
+        .ilike('city', `%${cityName}%`)
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (featuredError) throw featuredError;
+      
+      // If we have enough featured properties, return them
+      if (featuredData && featuredData.length >= limit) {
+        return featuredData as Property[];
+      }
+
+      // Otherwise, get additional non-featured properties to fill the gap
+      const remaining = limit - (featuredData?.length || 0);
+      const featuredIds = featuredData?.map(p => p.id) || [];
+      
+      let additionalQuery = supabase
+        .from('properties')
+        .select(`
+          *,
+          agent:agents(*)
+        `)
+        .eq('is_published', true)
+        .ilike('city', `%${cityName}%`)
+        .order('views_count', { ascending: false })
+        .limit(remaining);
+      
+      if (featuredIds.length > 0) {
+        additionalQuery = additionalQuery.not('id', 'in', `(${featuredIds.join(',')})`);
+      }
+
+      const { data: additionalData, error: additionalError } = await additionalQuery;
+
+      if (additionalError) throw additionalError;
+
+      return [...(featuredData || []), ...(additionalData || [])] as Property[];
+    },
+    enabled: !!cityName,
+  });
+}

@@ -15,6 +15,7 @@ import { PriceTrendChartSimple } from '@/components/city/PriceTrendChartSimple';
 import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityCalculators } from '@/components/city/CityCalculators';
 import { ListingsCTA } from '@/components/city/ListingsCTA';
+import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
 
 // Worth Watching data per city
@@ -478,6 +479,9 @@ export default function CityDetail() {
               <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
             </div>
           </div>
+
+          {/* Section 6: Featured Properties Grid */}
+          <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
         </div>
       </div>
     </Layout>
