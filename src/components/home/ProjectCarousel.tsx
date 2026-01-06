@@ -282,10 +282,6 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
               )}
             </div>
 
-            {/* Share Button - Top Right */}
-            <div className="absolute top-6 right-2 z-10">
-              <ShareButton projectSlug={project.slug} projectName={project.name} />
-            </div>
 
             {/* Bottom Overlay with Content - NO progress bar here */}
             <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">

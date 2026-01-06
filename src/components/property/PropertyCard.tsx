@@ -202,7 +202,6 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
 
               {/* Action Buttons - Top Right */}
               <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
-                <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
                 {showCompareButton && <CompareButton propertyId={property.id} />}
                 <FavoriteButton propertyId={property.id} />
               </div>
