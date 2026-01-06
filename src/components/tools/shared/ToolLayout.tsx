@@ -9,6 +9,8 @@ interface ToolLayoutProps {
   subtitle?: string;
   icon?: ReactNode;
   headerActions?: ReactNode;
+  /** "Why this tool exists" intro - appears below header, above infoBanner */
+  intro?: ReactNode;
   infoBanner?: ReactNode;
   leftColumn: ReactNode;
   rightColumn: ReactNode;
@@ -23,6 +25,7 @@ export function ToolLayout({
   subtitle,
   icon,
   headerActions,
+  intro,
   infoBanner,
   leftColumn,
   rightColumn,
@@ -71,6 +74,13 @@ export function ToolLayout({
           </Button>
         </div>
       </div>
+
+      {/* Tool Intro - "Why This Tool Exists" */}
+      {intro && (
+        <div className="mb-4">
+          {intro}
+        </div>
+      )}
 
       {/* Info Banner */}
       {infoBanner && (

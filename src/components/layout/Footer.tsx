@@ -36,6 +36,9 @@ export function Footer() {
               <Link to="/areas" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Explore Areas
               </Link>
+              <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Our Principles
+              </Link>
             </nav>
           </div>
 

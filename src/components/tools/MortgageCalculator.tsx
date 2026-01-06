@@ -27,6 +27,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory,
 } from './shared';
+import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 // Buyer types with their max LTV limits
@@ -712,6 +713,7 @@ function MortgageCalculatorContent() {
       title="Mortgage Calculator"
       subtitle="Estimate your monthly payment and total cash needed"
       icon={<Calculator className="h-6 w-6" />}
+      intro={<ToolIntro {...TOOL_INTROS.mortgage} />}
       headerActions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">

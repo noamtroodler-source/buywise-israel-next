@@ -35,6 +35,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
+import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
 import { 
   calculateOlehEligibility,
 } from '@/lib/calculations/purchaseTax';
@@ -1013,6 +1014,7 @@ export function TrueCostCalculator() {
       title="True Cost Calculator"
       subtitle="See the complete cost of buying property in Israel — beyond just the price"
       icon={<Calculator className="h-6 w-6 text-primary" />}
+      intro={<ToolIntro {...TOOL_INTROS.trueCost} />}
       headerActions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
