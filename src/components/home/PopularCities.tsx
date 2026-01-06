@@ -27,7 +27,7 @@ export function PopularCities() {
             Popular Areas
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Explore properties in Israel's most sought-after locations
+            Start your search in Israel's major markets
           </p>
         </motion.div>
 

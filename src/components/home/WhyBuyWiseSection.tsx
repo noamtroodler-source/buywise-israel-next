@@ -1,26 +1,26 @@
 import { motion } from 'framer-motion';
-import { CheckCircle, BarChart3, Wrench, MapPin } from 'lucide-react';
+import { Globe, Calculator, TrendingUp, Scale } from 'lucide-react';
 
 const valueProps = [
   {
-    icon: CheckCircle,
-    title: 'Curated Listings',
-    description: 'Every property is vetted for quality, value, and accuracy',
+    icon: Globe,
+    title: 'Purpose-Built for Internationals',
+    description: "Every feature is designed for English speakers navigating Israel's market — from neighborhood guides to cost calculators, mortgage info, and plain-language explanations of Israeli terms.",
   },
   {
-    icon: BarChart3,
-    title: 'Real Market Data',
-    description: 'Transparent pricing trends and neighborhood insights',
+    icon: Calculator,
+    title: 'True Cost Transparency',
+    description: 'Every listing includes comprehensive cost calculators showing purchase tax, legal fees, agent commissions, and ongoing expenses — so you understand the true cost before you commit.',
   },
   {
-    icon: Wrench,
-    title: 'Free Planning Tools',
-    description: 'Calculators to help you make smarter decisions',
+    icon: TrendingUp,
+    title: 'Market Context Built In',
+    description: 'Each property includes neighborhood data, price trends, comparable sales, and location insights — giving you the context to evaluate properties intelligently, not emotionally.',
   },
   {
-    icon: MapPin,
-    title: 'Israel Expertise',
-    description: 'Built specifically for the Israeli real estate market',
+    icon: Scale,
+    title: 'Independent & Unbiased',
+    description: "BuyWise doesn't sell properties or push specific listings. We're a platform designed to help you understand the market and make confident decisions — on your timeline, with zero pressure.",
   },
 ];
 
@@ -39,7 +39,7 @@ export const WhyBuyWiseSection = () => {
             Why BuyWise Israel?
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            We're more than listings — we're your partner in finding the right property
+            Built to reduce confusion, not just show you options
           </p>
         </motion.div>
 
