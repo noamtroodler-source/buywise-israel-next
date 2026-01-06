@@ -211,6 +211,29 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                onError={() => { setImageError(true); setImageLoaded(true); }}
              />
 
+            {/* Progress Bar - At top of image, NOT in overlay */}
+            {hasMultipleImages && (
+              <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={cn(
+                      "flex-1 h-1 rounded-full transition-colors duration-200",
+                      index === currentImageIndex 
+                        ? "bg-white" 
+                        : "bg-white/30"
+                    )}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Image Navigation Arrows */}
             {hasMultipleImages && (
               <>
@@ -239,8 +262,8 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
               </>
             )}
 
-            {/* Status Badge - Top Left */}
-            <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+            {/* Status Badge - Top Left (moved below progress bar) */}
+            <div className="absolute top-6 left-2 flex gap-1.5 z-10">
               {!hideStatusBadge && project.status && (
                 <Badge className={cn("text-xs font-medium", getStatusColor(project.status))}>
                   {getStatusLabel(project.status)}
@@ -260,34 +283,12 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
             </div>
 
             {/* Share Button - Top Right */}
-            <div className="absolute top-2 right-2 z-10">
+            <div className="absolute top-6 right-2 z-10">
               <ShareButton projectSlug={project.slug} projectName={project.name} />
             </div>
 
-            {/* Bottom Overlay with Content */}
-            <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 pt-3.5 transition-colors duration-200 relative">
-              {/* Progress Bar - Inside overlay at top */}
-              {hasMultipleImages && (
-                <div className="absolute top-0 left-0 right-0 h-1 flex gap-0.5">
-                  {images.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setCurrentImageIndex(index);
-                      }}
-                      className={cn(
-                        "flex-1 h-full transition-colors duration-200",
-                        index === currentImageIndex 
-                          ? "bg-primary" 
-                          : "bg-primary/30"
-                      )}
-                      aria-label={`Go to image ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
+            {/* Bottom Overlay with Content - NO progress bar here */}
+            <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
               {project.price_from && (
                 <p className="text-lg font-bold text-foreground">
                   From {formatPrice(project.price_from, project.currency || 'ILS')}
