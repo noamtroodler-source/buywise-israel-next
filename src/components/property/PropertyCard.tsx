@@ -82,7 +82,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           className
         )}>
           {/* Image */}
-          <div className={cn("relative overflow-hidden", compact ? "aspect-[4/3]" : "aspect-[4/3]")}>
+          <div className={cn("relative overflow-hidden", compact ? "aspect-[5/4]" : "aspect-[4/3]")}>
             <img
               src={images[currentImageIndex] || placeholderImage}
               alt={property.title}
