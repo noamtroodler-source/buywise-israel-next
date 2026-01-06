@@ -208,7 +208,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
               </div>
 
               {/* Bottom Overlay with Content - NO progress bar here */}
-              <div className="absolute bottom-0 left-0 right-0 bg-background/90 group-hover:bg-background/95 backdrop-blur-sm p-2.5 transition-colors duration-200">
+              <div className="absolute bottom-0 left-0 right-0 bg-white p-2.5">
                 <p className="font-bold text-foreground text-lg">
                   {formatPrice(property.price, property.currency || 'ILS')}
                   {property.listing_status === 'for_rent' && (
