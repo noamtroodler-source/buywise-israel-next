@@ -111,35 +111,26 @@ export function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-col md:flex-row flex-nowrap justify-center gap-8 md:gap-[100px] mt-12 pt-8 border-t border-primary-foreground/20"
+            className="flex flex-col md:flex-row flex-nowrap justify-center gap-8 md:gap-16 mt-12 pt-8"
           >
             {[
-              { main: "PURPOSE-BUILT", sub: "Not translated from Hebrew" },
-              { main: "ISRAEL-FOCUSED TOOLS", sub: "Cost calculators, market insights & context" },
-              { main: "INDEPENDENT PLATFORM", sub: "We don't sell. We inform." },
+              { main: "Purpose-Built", sub: "Not translated from Hebrew" },
+              { main: "Israel-Focused Tools", sub: "Cost calculators, market insights & context" },
+              { main: "Independent Platform", sub: "We don't sell. We inform." },
             ].map((statement, index) => (
               <div key={index} className="flex flex-col items-center">
-                {/* Yellow dot - 12px diameter */}
-                <span className="w-3 h-3 rounded-full bg-accent mb-2" />
-                
                 {/* Line 1 - Main claim */}
                 <span 
-                  className="text-lg font-bold text-primary-foreground uppercase"
-                  style={{ 
-                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-                    letterSpacing: '1px'
-                  }}
+                  className="text-lg font-semibold text-primary-foreground/95"
+                  style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement.main}
                 </span>
                 
                 {/* Line 2 - Reinforcement */}
                 <span 
-                  className="text-sm font-medium text-primary-foreground/90 mt-2"
-                  style={{ 
-                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-                    letterSpacing: '0.3px'
-                  }}
+                  className="text-sm font-medium text-primary-foreground/90 mt-1"
+                  style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
                 >
                   {statement.sub}
                 </span>
