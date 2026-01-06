@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -26,9 +26,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const touchStartX = useRef<number | null>(null);
 
   const images = property.images?.length ? property.images : [];
   const hasMultipleImages = images.length > 1;
@@ -53,29 +52,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
 
-  // Touch/swipe handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || !hasMultipleImages) return;
-    
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    
-    if (Math.abs(diff) > 50) {
-      setImageLoaded(false);
-      if (diff > 0) {
-        // Swipe left - next image
-        setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-      } else {
-        // Swipe right - previous image
-        setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-      }
-    }
-    touchStartX.current = null;
-  };
+  // Removed touch/swipe handlers to prevent conflicts with carousel drag
+  // Image navigation is available via arrow buttons on hover
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -132,11 +110,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
         )}>
           {compact ? (
             /* Compact Mode: Fully Square Card with Overlay */
-            <div 
-              className="relative aspect-square overflow-hidden"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div className="relative aspect-square overflow-hidden">
               {/* Loading skeleton */}
               {!imageLoaded && (
                 <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -243,11 +217,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           ) : (
             /* Non-Compact Mode: Standard Layout */
             <>
-              <div 
-                className="relative aspect-[4/3] overflow-hidden"
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-              >
+              <div className="relative aspect-[4/3] overflow-hidden">
                 {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
