@@ -57,7 +57,10 @@ export function HeroSection() {
           transition={{ duration: 0.6 }}
           className="max-w-4xl mx-auto text-center space-y-6"
         >
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight">
+          <h1 
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground leading-tight"
+            style={{ textShadow: '0 2px 12px rgba(0, 0, 0, 0.4)' }}
+          >
             Where Buying in Israel Actually Begins
           </h1>
           <p 
