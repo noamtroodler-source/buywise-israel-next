@@ -14,7 +14,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { InsightCard } from './shared/InsightCard';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
-import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
+
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
@@ -1089,7 +1089,7 @@ export function InvestmentReturnCalculator() {
       title="Investment Return Calculator" 
       subtitle="Evaluate returns and cash flow using assumptions grounded in the Israeli market." 
       icon={<TrendingUp className="h-6 w-6" />}
-      intro={<ToolIntro {...TOOL_INTROS.investment} />}
+      
       infoBanner={
         <BuyerTypeInfoBanner
           selectedType={

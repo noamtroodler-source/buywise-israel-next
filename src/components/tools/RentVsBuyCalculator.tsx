@@ -43,7 +43,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
-import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
+
 import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useCities } from '@/hooks/useCities';
@@ -1166,7 +1166,7 @@ export function RentVsBuyCalculator() {
       title="Rent vs Buy Calculator"
       subtitle="Compare renting versus buying in Israel — financially and practically."
       icon={<Scale className="h-6 w-6" />}
-      intro={<ToolIntro {...TOOL_INTROS.rentVsBuy} />}
+      
       headerActions={headerActions}
       infoBanner={infoBanner}
       leftColumn={leftColumn}
