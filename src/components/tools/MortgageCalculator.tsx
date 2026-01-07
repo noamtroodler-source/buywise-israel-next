@@ -711,7 +711,7 @@ function MortgageCalculatorContent() {
   return (
     <ToolLayout
       title="Mortgage Calculator"
-      subtitle="Estimate your monthly payment and total cash needed"
+      subtitle="See what a mortgage in Israel actually costs each month — and upfront."
       icon={<Calculator className="h-6 w-6" />}
       intro={<ToolIntro {...TOOL_INTROS.mortgage} />}
       headerActions={
