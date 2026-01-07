@@ -1,26 +1,26 @@
 import { motion } from 'framer-motion';
-import { Globe, Calculator, TrendingUp, Scale } from 'lucide-react';
+import { Compass, Layers, Lightbulb, Scale } from 'lucide-react';
 
 const valueProps = [
   {
-    icon: Globe,
-    title: 'Purpose-Built for Internationals',
-    description: "Every feature is designed for English speakers navigating Israel's market — from neighborhood guides to cost calculators, mortgage info, and plain-language explanations of Israeli terms.",
+    icon: Compass,
+    title: 'A Better Way to Discover Properties',
+    description: 'BuyWise is an english-first platform built specifically for internationals buying or renting in Israel. Browse projects, resale homes, and long-term rentals through a clean, intuitive experience that makes discovery feel calm and manageable.',
   },
   {
-    icon: Calculator,
-    title: 'True Cost Transparency',
-    description: 'Every listing includes comprehensive cost calculators showing purchase tax, legal fees, agent commissions, and ongoing expenses — so you understand the true cost before you commit.',
+    icon: Layers,
+    title: 'Context Built Into Every Listing',
+    description: 'Properties on BuyWise are never shown in isolation. Each listing includes real cost context, market insight, and plain-English explanations — so you understand what a property actually means, not just its price.',
   },
   {
-    icon: TrendingUp,
-    title: 'Market Context Built In',
-    description: 'Each property includes neighborhood data, price trends, comparable sales, and location insights — giving you the context to evaluate properties intelligently, not emotionally.',
+    icon: Lightbulb,
+    title: 'Clarity Before You Speak to Anyone',
+    description: 'BuyWise helps you prepare before contacting agents, brokers, or lawyers. You understand what matters, what to ask, and where tradeoffs exist — so you engage confidently instead of guessing.',
   },
   {
     icon: Scale,
     title: 'Independent & Unbiased',
-    description: "BuyWise doesn't sell properties or push specific listings. We're a platform designed to help you understand the market and make confident decisions — on your timeline, with zero pressure.",
+    description: "BuyWise is not a brokerage or a sales-driven portal. We don't push listings or rush decisions — we help you get clarity and move forward on your own terms.",
   },
 ];
 
