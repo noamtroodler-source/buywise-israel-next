@@ -1,0 +1,38 @@
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+
+export function PlatformPromise() {
+  return (
+    <section className="relative py-16 md:py-20 overflow-hidden">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
+      
+      <div className="container relative">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl mx-auto text-center space-y-6"
+        >
+          {/* Quote mark decoration */}
+          <div className="text-6xl text-primary/20 font-serif leading-none">"</div>
+          
+          <p className="text-2xl md:text-3xl font-medium text-foreground leading-relaxed -mt-8">
+            BuyWise isn't a brokerage. It's a starting point — designed to help you 
+            <span className="text-primary"> explore with clarity</span>, not pressure.
+          </p>
+          
+          <Link 
+            to="/principles" 
+            className="inline-flex items-center gap-2 text-primary hover:text-primary-hover transition-colors font-medium group"
+          >
+            Learn about our principles
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
