@@ -114,7 +114,7 @@ export default function Blog() {
               Blog & Guides
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Expert insights, buying guides, and market updates to help you make informed real estate decisions in Israel.
+              Guides, explanations, and market context to help you understand how buying and renting works in Israel.
             </p>
           </motion.div>
         </div>
