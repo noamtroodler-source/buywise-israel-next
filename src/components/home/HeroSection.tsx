@@ -62,7 +62,7 @@ export function HeroSection() {
             Israel Real Estate, Rebuilt for International Buyers
           </h1>
           <p 
-            className="text-lg md:text-xl text-primary-foreground max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-primary-foreground max-w-2xl lg:max-w-none mx-auto lg:whitespace-nowrap"
             style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
           >
             English-first discovery. True cost transparency. Market context in every listing.
