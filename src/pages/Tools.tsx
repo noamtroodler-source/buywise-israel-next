@@ -9,7 +9,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { ToolPlaceholder } from '@/components/tools/ToolPlaceholder';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
-import { AffordabilityCalculator } from '@/components/tools/AffordabilityCalculator';
+import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
 import { TrueCostCalculator } from '@/components/tools/TrueCostCalculator';
 import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
