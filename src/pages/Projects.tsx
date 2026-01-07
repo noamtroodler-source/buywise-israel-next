@@ -31,9 +31,9 @@ export default function Projects() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'planning': return 'bg-project/70 text-project-foreground';
-      case 'pre_sale': return 'bg-project text-project-foreground';
-      case 'under_construction': return 'bg-project text-project-foreground';
+      case 'planning': return 'bg-primary/70 text-primary-foreground';
+      case 'pre_sale': return 'bg-primary text-primary-foreground';
+      case 'under_construction': return 'bg-primary text-primary-foreground';
       case 'completed': return 'bg-muted text-muted-foreground';
       default: return 'bg-secondary text-secondary-foreground';
     }

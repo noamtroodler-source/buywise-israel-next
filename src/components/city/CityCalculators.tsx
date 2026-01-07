@@ -29,7 +29,7 @@ export function CityCalculators({ cityName, averagePrice }: CityCalculatorsProps
       description: `See what you can afford in ${cityName}`,
       icon: Wallet,
       link: '/tools',
-      color: 'bg-success/10 text-success',
+      color: 'bg-primary/10 text-primary',
     },
     {
       title: 'Rent vs Buy Calculator',

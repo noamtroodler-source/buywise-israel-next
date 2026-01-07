@@ -36,7 +36,7 @@ export function FavoriteButton({ propertyId, className, size = 'icon' }: Favorit
       size={size}
       className={cn(
         "bg-background/80 hover:bg-background transition-colors",
-        favorited ? "text-destructive" : "text-muted-foreground hover:text-destructive",
+        favorited ? "text-primary" : "text-muted-foreground hover:text-primary",
         className
       )}
       onClick={handleClick}

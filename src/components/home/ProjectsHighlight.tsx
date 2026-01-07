@@ -52,7 +52,7 @@ export function ProjectsHighlight() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <div className="flex items-center gap-2 text-project mb-2">
+              <div className="flex items-center gap-2 text-primary mb-2">
               <Building2 className="h-5 w-5" />
               <span className="text-sm font-medium">New Construction</span>
             </div>
@@ -95,7 +95,7 @@ export function ProjectsHighlight() {
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                 <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-project text-project-foreground">
+                  <Badge className="bg-primary text-primary-foreground">
                     New Project
                   </Badge>
                   {mainProject.developer && (
@@ -135,7 +135,7 @@ export function ProjectsHighlight() {
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <Badge className="bg-project/90 text-project-foreground mb-2 text-xs">
+                  <Badge className="bg-primary/90 text-primary-foreground mb-2 text-xs">
                     New Project
                   </Badge>
                   <h3 className="text-lg font-bold text-white mb-1">

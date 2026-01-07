@@ -78,7 +78,7 @@ export function CompareBar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 text-muted-foreground hover:text-destructive shrink-0"
+                    className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
                     onClick={() => removeFromCompare(property.id)}
                   >
                     <X className="h-3 w-3" />
