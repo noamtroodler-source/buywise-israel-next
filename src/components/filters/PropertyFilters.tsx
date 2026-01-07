@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogPortal, DialogOverlay, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
 import { cn } from '@/lib/utils';
@@ -477,10 +478,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
       {/* More Filters Dialog */}
       <Dialog open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl">More Filters</DialogTitle>
-          </DialogHeader>
+        <DialogPortal>
+          <DialogOverlay className="bg-black/20" />
+          <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg max-h-[85vh] overflow-y-auto">
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+            <DialogHeader>
+              <DialogTitle className="text-xl">More Filters</DialogTitle>
+            </DialogHeader>
           
           <div className="space-y-6 py-2">
             {/* Size & Floor */}
@@ -647,7 +654,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               Apply Filters
             </Button>
           </div>
-        </DialogContent>
+          </DialogPrimitive.Content>
+        </DialogPortal>
       </Dialog>
     </TooltipProvider>
   );
