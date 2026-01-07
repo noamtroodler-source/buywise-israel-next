@@ -1,14 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Loader2, TrendingUp, Clock, Lightbulb, BarChart3 } from 'lucide-react';
+import { BookOpen, Loader2, Clock, BarChart3, Scale, MapPin, ShoppingCart, Lightbulb } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useBlogPosts, useBlogCategories, useBlogCities } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { BlogFilters } from '@/components/blog/BlogFilters';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogSection } from '@/components/blog/BlogSection';
+import { QuickPaths } from '@/components/blog/QuickPaths';
+import { EssentialReading } from '@/components/blog/EssentialReading';
+import { TrendingList } from '@/components/blog/TrendingList';
+import { BlogCTA } from '@/components/blog/BlogCTA';
 import { BlogSortOption, BlogAudience } from '@/types/content';
 import { useSearchParams } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 // Debounce hook for search
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -27,6 +32,16 @@ function useDebounceValue<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Category icon mapping
+const categoryIcons: Record<string, typeof BookOpen> = {
+  'Buying Guides': ShoppingCart,
+  'Buying in Israel': ShoppingCart,
+  'Legal & Finance': Scale,
+  'Market Insights': BarChart3,
+  'Neighborhood Guides': MapPin,
+  'Investment Tips': Lightbulb,
+};
+
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -35,9 +50,17 @@ export default function Blog() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedAudiences, setSelectedAudiences] = useState<BlogAudience[]>([]);
   const [sortBy, setSortBy] = useState<BlogSortOption>('newest');
+  const [quickPathAudience, setQuickPathAudience] = useState<BlogAudience | null>(null);
   
   const categorySlug = searchParams.get('category') || undefined;
   const debouncedSearch = useDebounceValue(searchQuery, 300);
+
+  // Sync quick path selection with audiences filter
+  useEffect(() => {
+    if (quickPathAudience) {
+      setSelectedAudiences([quickPathAudience]);
+    }
+  }, [quickPathAudience]);
 
   // Check if any filters are active
   const hasActiveFilters = categorySlug || selectedCity || selectedAudiences.length > 0 || debouncedSearch;
@@ -53,23 +76,23 @@ export default function Blog() {
     sortBy,
   });
   
-  // Also fetch all posts for sections when no filters
+  // Fetch all posts for sections when no filters
   const { data: allPosts = [] } = useBlogPosts({ sortBy: 'newest' });
   const { data: popularPosts = [] } = useBlogPosts({ sortBy: 'most_viewed' });
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
 
-  // Get latest articles
-  const latestPosts = useMemo(() => {
+  // Get essential reading posts (prioritize guides/getting started content)
+  const essentialPosts = useMemo(() => {
     if (hasActiveFilters) return [];
-    return allPosts.slice(0, 8);
+    // Get posts that are good for newcomers - prioritize first-time-buyers audience
+    const starterPosts = allPosts.filter(p => 
+      p.audiences?.includes('first-time-buyers') || 
+      p.category?.slug === 'buying-guides'
+    );
+    if (starterPosts.length >= 3) return starterPosts.slice(0, 3);
+    return allPosts.slice(0, 3);
   }, [allPosts, hasActiveFilters]);
-
-  // Get popular articles
-  const trendingPosts = useMemo(() => {
-    if (hasActiveFilters) return [];
-    return popularPosts.slice(0, 8);
-  }, [popularPosts, hasActiveFilters]);
 
   // Group posts by category for topic sections
   const postsByCategory = useMemo(() => {
@@ -80,7 +103,7 @@ export default function Blog() {
         if (!grouped[post.category.name]) {
           grouped[post.category.name] = [];
         }
-        if (grouped[post.category.name].length < 6) {
+        if (grouped[post.category.name].length < 8) {
           grouped[post.category.name].push(post);
         }
       }
@@ -96,39 +119,64 @@ export default function Blog() {
     }
   };
 
+  const handleQuickPathSelect = (audience: BlogAudience | null) => {
+    setQuickPathAudience(audience);
+    if (audience) {
+      setSelectedAudiences([audience]);
+    } else {
+      setSelectedAudiences([]);
+    }
+  };
+
   return (
     <Layout>
-      {/* Hero Section */}
+      {/* Compact Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b border-border/50">
-        <div className="container py-12 md:py-16">
+        <div className="container py-10 md:py-14">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto text-center space-y-4"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-              <BookOpen className="h-4 w-4" />
-              Expert Insights & Guides
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">
-              Blog & Guides
+            <Badge variant="secondary" className="px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border-0">
+              Your English-First Resource
+            </Badge>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+              Learn Before You Leap
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Guides, explanations, and market context to help you understand how buying and renting works in Israel.
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+              Guides, market context, and honest answers for buying property in Israel — written for international buyers.
             </p>
           </motion.div>
         </div>
       </section>
 
+      {/* Quick Paths - Audience Self-Identification */}
+      {!hasActiveFilters && (
+        <QuickPaths 
+          selectedAudience={quickPathAudience} 
+          onSelectAudience={handleQuickPathSelect}
+        />
+      )}
+
+      {/* Essential Reading - For Newcomers */}
+      {!hasActiveFilters && essentialPosts.length > 0 && (
+        <EssentialReading
+          posts={essentialPosts}
+          isArticleSaved={isArticleSaved}
+          onToggleSave={toggleSave}
+        />
+      )}
+
       {/* Content Section */}
-      <div className="container py-8 md:py-12">
+      <div className="container py-8 md:py-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="space-y-12"
+          className="space-y-10"
         >
-          {/* Filters */}
+          {/* Filters - Now more compact */}
           <BlogFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -139,7 +187,10 @@ export default function Blog() {
             selectedCity={selectedCity}
             onCityChange={setSelectedCity}
             selectedAudiences={selectedAudiences}
-            onAudienceChange={setSelectedAudiences}
+            onAudienceChange={(audiences) => {
+              setSelectedAudiences(audiences);
+              setQuickPathAudience(null);
+            }}
             sortBy={sortBy}
             onSortChange={setSortBy}
           />
@@ -166,7 +217,7 @@ export default function Blog() {
                     {posts.length} article{posts.length !== 1 ? 's' : ''} found
                   </p>
                 </div>
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {posts.map((post, index) => (
                     <BlogCard
                       key={post.id}
@@ -181,40 +232,9 @@ export default function Blog() {
             )
           ) : (
             /* Topic Hub Sections */
-            <div className="space-y-16">
-              {/* Latest Articles */}
-              {latestPosts.length > 0 && (
-                <BlogSection
-                  title="Latest Articles"
-                  subtitle="Fresh insights and guides"
-                  icon={Clock}
-                  posts={latestPosts}
-                  isArticleSaved={isArticleSaved}
-                  onToggleSave={toggleSave}
-                  showViewAll={false}
-                />
-              )}
-
-              {/* Trending This Month */}
-              {trendingPosts.length > 0 && (
-                <BlogSection
-                  title="Trending This Month"
-                  subtitle="Most popular with our readers"
-                  icon={TrendingUp}
-                  posts={trendingPosts}
-                  isArticleSaved={isArticleSaved}
-                  onToggleSave={toggleSave}
-                  showViewAll={false}
-                />
-              )}
-
-              {/* Category Sections */}
-              {Object.entries(postsByCategory).slice(0, 3).map(([categoryName, categoryPosts]) => {
-                const categoryIcons: Record<string, typeof BookOpen> = {
-                  'Buying Guides': Lightbulb,
-                  'Market Insights': BarChart3,
-                  'Investment Tips': TrendingUp,
-                };
+            <div className="space-y-12">
+              {/* Browse by Topic - Category Carousels */}
+              {Object.entries(postsByCategory).slice(0, 4).map(([categoryName, categoryPosts]) => {
                 const IconComponent = categoryIcons[categoryName] || BookOpen;
                 
                 return (
@@ -236,6 +256,14 @@ export default function Blog() {
           )}
         </motion.div>
       </div>
+
+      {/* Trending Section - After topic browsing */}
+      {!hasActiveFilters && popularPosts.length > 0 && (
+        <TrendingList posts={popularPosts} />
+      )}
+
+      {/* Bottom CTA */}
+      <BlogCTA />
     </Layout>
   );
 }
