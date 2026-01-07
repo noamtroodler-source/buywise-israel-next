@@ -10,7 +10,7 @@ const valueProps = [
   {
     icon: Layers,
     title: 'Context Built Into Every Listing',
-    description: 'Properties on BuyWise are never shown in isolation. Each listing includes real cost context, market insight, and plain-English explanations — so you understand what a property actually means, not just its price.',
+    description: 'Properties on BuyWise are never shown in isolation. Each listing includes real cost context, market insight, and plain-English explanations — so you understand what a property actually means, not just its listing price.',
   },
   {
     icon: Lightbulb,
