@@ -32,8 +32,8 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* 3. Tools Promo */}
-      <ToolsPromo />
+      {/* 3. Why BuyWise Israel */}
+      <WhyBuyWiseSection />
 
       {/* 4. New Construction Projects */}
       <ProjectCarousel
@@ -60,8 +60,8 @@ const Index = () => {
         hideStatusBadge
       />
 
-      {/* 7. Why BuyWise Israel */}
-      <WhyBuyWiseSection />
+      {/* 7. Tools Promo */}
+      <ToolsPromo />
     </Layout>
   );
 };
