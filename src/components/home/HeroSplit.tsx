@@ -67,7 +67,7 @@ export function HeroSplit() {
             {/* Headline */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
               Find Your Place
-              <span className="block text-accent">in Israel</span>
+              <span className="block text-primary">in Israel</span>
             </h1>
 
             {/* Subheadline */}
