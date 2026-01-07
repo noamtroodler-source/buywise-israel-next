@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Loader2, BarChart3, Target, Eye, Calculator } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,18 +9,16 @@ import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
-
-// City Page Components
-import { CityHeroStats } from '@/components/city/CityHeroStats';
-import { CityMarketSnapshot } from '@/components/city/CityMarketSnapshot';
-import { CityLivingCosts } from '@/components/city/CityLivingCosts';
-import { CityWorthWatching, MarketFactor } from '@/components/city/CityWorthWatching';
-import { CityCalculatorsCompact } from '@/components/city/CityCalculatorsCompact';
-import { CityListingsCTA } from '@/components/city/CityListingsCTA';
+// Market Dashboard Components
+import { MarketStatsCards } from '@/components/city/MarketStatsCards';
 import { PriceTrendChartSimple } from '@/components/city/PriceTrendChartSimple';
+import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
+import { CityCalculators } from '@/components/city/CityCalculators';
+import { ListingsCTA } from '@/components/city/ListingsCTA';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
+import { WorthWatchingGrid, MarketFactor } from '@/components/city/WorthWatchingGrid';
 
-// Worth Watching data per city (curated content for major cities)
+// Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
   'tel-aviv': [
     {
@@ -181,7 +179,7 @@ import gushEtzionHeroImg from '@/assets/cities/hero/gush-etzion.jpg';
 import maaleAdumimHeroImg from '@/assets/cities/hero/maale-adumim.jpg';
 import givatZeevHeroImg from '@/assets/cities/hero/givat-zeev.jpg';
 
-// Slug to card image mapping
+// Slug to card image mapping (for smaller uses)
 const cityImages: Record<string, string> = {
   'tel-aviv': telAvivImg,
   'herzliya': herzliyaImg,
@@ -219,7 +217,7 @@ const cityImages: Record<string, string> = {
   'givat-zeev': givatZeevImg,
 };
 
-// Slug to hero image mapping
+// Slug to hero image mapping (high resolution for hero banners)
 const cityHeroImages: Record<string, string> = {
   'tel-aviv': telAvivHeroImg,
   'herzliya': herzliyaHeroImg,
@@ -260,10 +258,45 @@ const cityHeroImages: Record<string, string> = {
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
-  const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
+  const { data: properties = [], isLoading: propertiesLoading } = useProperties(
+    city ? { city: city.name } : undefined
+  );
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
   const { data: historicalPrices = [] } = useHistoricalPrices(slug || '', 10);
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return 'N/A';
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'ILS',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const formatPopulation = (pop: number | null) => {
+    if (!pop) return 'N/A';
+    if (pop >= 1000000) return `${(pop / 1000000).toFixed(1)} million`;
+    if (pop >= 1000) return `${(pop / 1000).toFixed(0)}K`;
+    return pop.toString();
+  };
+
+  const getWorthWatching = (): MarketFactor[] => {
+    return cityMarketFactors[slug || ''] || [];
+  };
+
+  const getMarketTagline = () => {
+    if (marketData.length === 0) return null;
+    const latestPrice = marketData[0]?.average_price_sqm || 0;
+    const nationalAvg = 32000;
+    const percentAbove = ((latestPrice - nationalAvg) / nationalAvg) * 100;
+    
+    if (percentAbove > 50) return `${percentAbove.toFixed(0)}% above national average — Israel's premium market`;
+    if (percentAbove > 20) return `${percentAbove.toFixed(0)}% above national average — Strong market`;
+    if (percentAbove > 0) return `${percentAbove.toFixed(0)}% above national average`;
+    if (percentAbove > -20) return 'Competitive pricing — Great value market';
+    return 'Affordable market — Below national average';
+  };
 
   if (cityLoading) {
     return (
@@ -291,13 +324,14 @@ export default function CityDetail() {
     );
   }
 
-  const worthWatching = cityMarketFactors[slug || ''] || [];
+  const worthWatching = getWorthWatching();
+  const marketTagline = getMarketTagline();
 
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Hero Section - Compact with Stats Bar */}
-        <div className="relative h-[40vh] min-h-[320px]">
+        {/* Hero Section */}
+        <div className="relative h-[45vh] min-h-[350px]">
           <img
             src={cityHeroImages[slug || ''] || cityImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920'}
             alt={city.name}
@@ -305,138 +339,148 @@ export default function CityDetail() {
             loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-          
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+          <div className="absolute bottom-0 left-0 right-0 p-8">
             <div className="container">
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 mb-3 -ml-2" asChild>
+              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" asChild>
                 <Link to="/areas">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   All Cities
                 </Link>
               </Button>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">{city.name}</h1>
               
-              <motion.h1 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2"
-              >
-                {city.name}
-              </motion.h1>
-              
-              {/* Highlights badges */}
-              {city.highlights && city.highlights.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="flex flex-wrap gap-2 mb-3"
+              {/* Market Tagline */}
+              {marketTagline && (
+                <motion.p 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg text-white/90 font-medium mb-4"
                 >
-                  {city.highlights.slice(0, 4).map((highlight, index) => (
-                    <Badge key={index} variant="secondary" className="bg-white/15 text-white border-0 backdrop-blur-sm text-xs">
-                      {highlight}
-                    </Badge>
-                  ))}
-                </motion.div>
+                  {marketTagline}
+                </motion.p>
               )}
               
-              {/* Stats Pills */}
-              <CityHeroStats
-                population={city.population}
-                averagePriceSqm={canonicalMetrics?.average_price_sqm || city.average_price_sqm}
-                yoyChange={canonicalMetrics?.yoy_price_change || city.yoy_price_change}
-                investmentScore={city.investment_score}
-              />
+              <div className="flex flex-wrap items-center gap-4 text-white/80">
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                  <Users className="h-4 w-4" />
+                  <span className="text-sm font-medium">{formatPopulation(city.population)}</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-sm font-medium">Avg. {formatPrice(city.average_price)}</span>
+                </div>
+                {city.highlights && city.highlights.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-2">
+                    {city.highlights.slice(0, 3).map((highlight, index) => (
+                      <Badge key={index} variant="secondary" className="bg-white/10 text-white border-0 backdrop-blur-sm">
+                        {highlight}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Interactive Dashboard */}
         <div className="space-y-0">
-          {/* Section 1: Market Snapshot - White */}
-          <section className="bg-background py-10">
+          {/* Section 1: Market Stats - White background */}
+          <div className="bg-background py-10">
             <div className="container">
               {marketLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <CityMarketSnapshot
-                  marketData={marketData}
+                <MarketStatsCards 
+                  marketData={marketData} 
                   cityName={city.name}
+                  citySlug={slug}
                   canonicalMetrics={canonicalMetrics}
+                  historicalPrices={historicalPrices}
                   cityData={{
                     average_price_sqm: city.average_price_sqm,
                     median_apartment_price: city.median_apartment_price,
                     yoy_price_change: city.yoy_price_change,
                     rental_3_room_min: city.rental_3_room_min,
                     rental_3_room_max: city.rental_3_room_max,
+                    rental_4_room_min: city.rental_4_room_min,
+                    rental_4_room_max: city.rental_4_room_max,
                   }}
-                  historicalPrices={historicalPrices}
                 />
               )}
             </div>
-          </section>
+          </div>
 
-          {/* Section 2: Price Trend Chart - Muted */}
+          {/* Section 2: Price History & Market Reality - Two column on desktop, muted background */}
           {marketData.length > 0 && (
-            <section className="bg-muted/40 py-10">
+            <div className="bg-muted/40 py-10">
               <div className="container">
-                <div className="flex items-center gap-3 mb-4">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold text-foreground">Price History</h2>
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-stretch">
+                  {/* Price History - Takes 3/5 on large screens */}
+                  <div className="lg:col-span-3 space-y-4 flex flex-col">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-semibold text-foreground">Price History & Trends</h2>
+                    </div>
+                    <div className="flex-1">
+                      <PriceTrendChartSimple marketData={marketData} cityName={city.name} />
+                    </div>
+                  </div>
+
+                  {/* Market Reality - Takes 2/5 on large screens */}
+                  <div className="lg:col-span-2 space-y-4 flex flex-col">
+                    <div className="flex items-center gap-3">
+                      <Target className="h-5 w-5 text-primary" />
+                      <h2 className="text-xl font-semibold text-foreground">Market Reality</h2>
+                    </div>
+                    <div className="flex-1">
+                      <MarketRealityTabs 
+                        marketData={marketData} 
+                        cityName={city.name}
+                        citySlug={slug}
+                        arnonaRateSqm={city.arnona_rate_sqm}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <PriceTrendChartSimple marketData={marketData} cityName={city.name} />
               </div>
-            </section>
+            </div>
           )}
 
-          {/* Section 3: Living Costs - White */}
-          {(city.arnona_rate_sqm || city.commute_time_tel_aviv !== null || city.anglo_presence) && (
-            <section className="bg-background py-10">
-              <div className="container">
-                <CityLivingCosts
-                  arnonaRateSqm={city.arnona_rate_sqm}
-                  commuteTelAviv={city.commute_time_tel_aviv}
-                  hasTrainStation={city.has_train_station}
-                  angloPresence={city.anglo_presence}
-                  cityName={city.name}
-                />
+          {/* Section 3: Worth Watching - White background */}
+          {worthWatching.length > 0 && (
+            <div className="bg-background py-10">
+              <div className="container space-y-4">
+                <div className="flex items-center gap-3">
+                  <Eye className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold text-foreground">What to Watch in {city.name}</h2>
+                </div>
+                <WorthWatchingGrid factors={worthWatching} cityName={city.name} />
               </div>
-            </section>
+            </div>
           )}
 
-          {/* Section 4: What to Watch - Muted */}
-          <section className="bg-muted/40 py-10">
-            <div className="container">
-              <CityWorthWatching
-                factors={worthWatching}
-                cityName={city.name}
-                cityData={{
-                  yoy_price_change: city.yoy_price_change,
-                  investment_score: city.investment_score,
-                  has_train_station: city.has_train_station,
-                  anglo_presence: city.anglo_presence,
-                  gross_yield_percent: city.gross_yield_percent,
-                }}
-              />
+          {/* Section 4: Run the Numbers - Muted background */}
+          <div className="bg-muted/40 py-10">
+            <div className="container space-y-4">
+              <div className="flex items-center gap-3">
+                <Calculator className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Run the Numbers</h2>
+              </div>
+              <CityCalculators cityName={city.name} averagePrice={city.average_price || undefined} />
             </div>
-          </section>
+          </div>
 
-          {/* Section 5: Run the Numbers - White */}
-          <section className="bg-background py-10">
+          {/* Section 5: Browse Listings CTA - White background */}
+          <div className="bg-background py-10">
             <div className="container">
-              <CityCalculatorsCompact cityName={city.name} averagePrice={city.average_price || undefined} />
+              <ListingsCTA cityName={city.name} propertiesCount={properties.length} />
             </div>
-          </section>
+          </div>
 
-          {/* Section 6: Browse Listings CTA - Muted */}
-          <section className="bg-muted/40 py-10">
-            <div className="container">
-              <CityListingsCTA cityName={city.name} propertiesCount={properties.length} />
-            </div>
-          </section>
-
-          {/* Section 7: Featured Properties Grid */}
+          {/* Section 6: Featured Properties Grid */}
           <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
         </div>
       </div>
