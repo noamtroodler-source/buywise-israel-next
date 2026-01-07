@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, MapPin, Calendar, Loader2, Home, HelpCircle } from 'lucide-react';
+import { Building, MapPin, Calendar, Loader2, Home } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { useProjects } from '@/hooks/useProjects';
 import { ProjectFilters, ProjectFiltersType } from '@/components/filters/ProjectFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
@@ -149,28 +149,6 @@ export default function Projects() {
           className="space-y-6"
         >
 
-          {/* New Construction Info Banner */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <HelpCircle className="h-5 w-5 text-primary mt-0.5" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>New construction purchases in Israel include bank guarantees, staged payment schedules, and developer warranties.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <div className="flex-1">
-              <p className="text-sm text-foreground font-medium">New to buying new construction in Israel?</p>
-              <p className="text-sm text-muted-foreground">
-                Learn about bank guarantees, payment schedules, and buyer protections.{' '}
-                <Link to="/guides/new-construction" className="text-primary font-medium hover:underline">
-                  Read the Guide →
-                </Link>
-              </p>
-            </div>
-          </div>
 
           {/* Filters */}
           <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
