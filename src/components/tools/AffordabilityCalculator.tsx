@@ -44,8 +44,8 @@ import {
 } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
 import { ToolLayout } from './shared/ToolLayout';
-import { ToolIntro } from './shared/ToolIntro';
-import { BuyerTypeInfoBanner, ExtendedBuyerType } from './shared/BuyerTypeInfoBanner';
+import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
+import { BuyerTypeInfoBanner, BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { InsightCard } from './shared/InsightCard';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { useAuth } from '@/hooks/useAuth';
@@ -111,8 +111,8 @@ function InfoTooltip({ content }: { content: string }) {
 function AffordabilityCalculatorContent() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile: buyerProfile } = useBuyerProfile();
-  const { saveResult, isPending: isSaving } = useSaveCalculatorResult();
+  const { data: buyerProfile } = useBuyerProfile();
+  const saveToProfile = useSaveCalculatorResult();
   const { currency } = usePreferences();
 
   const currencySymbol = currency === 'USD' ? '$' : '₪';
@@ -134,7 +134,7 @@ function AffordabilityCalculatorContent() {
   
   const [educationOpen, setEducationOpen] = useState(false);
   const [stressTestOpen, setStressTestOpen] = useState(false);
-  const [selectedBuyerType, setSelectedBuyerType] = useState<ExtendedBuyerType>('first_time');
+  const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -166,8 +166,8 @@ function AffordabilityCalculatorContent() {
 
   useEffect(() => {
     if (buyerProfile) {
-      if (buyerProfile.residency_status === 'oleh') setSelectedBuyerType('oleh');
-      else if (buyerProfile.residency_status === 'foreign') setSelectedBuyerType('foreign');
+      if (buyerProfile.residency_status === 'oleh_hadash') setSelectedBuyerType('oleh');
+      else if (buyerProfile.residency_status === 'non_resident') setSelectedBuyerType('foreign');
       else if (buyerProfile.is_first_property) setSelectedBuyerType('first_time');
       else if (buyerProfile.purchase_purpose === 'investment') setSelectedBuyerType('investor');
       else setSelectedBuyerType('additional');
@@ -239,7 +239,7 @@ function AffordabilityCalculatorContent() {
 
   const handleSave = async () => {
     if (!user) { toast.error('Please sign in to save your results'); return; }
-    await saveResult({
+    await saveToProfile.mutateAsync({
       calculatorType: 'affordability',
       name: `Affordability - ${formatPrice(calculations.maxPropertyPrice)}`,
       inputs: { monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, buyerType: selectedBuyerType },
@@ -261,9 +261,9 @@ function AffordabilityCalculatorContent() {
       <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
         <RotateCcw className="h-4 w-4" /><span className="hidden sm:inline">Reset</span>
       </Button>
-      <Button variant="ghost" size="sm" onClick={handleSave} disabled={isSaving}>
-        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        <span className="hidden sm:inline ml-1.5">{isSaving ? 'Saving...' : 'Save'}</span>
+      <Button variant="ghost" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
+        {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        <span className="hidden sm:inline ml-1.5">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
       </Button>
     </>
   );
@@ -274,8 +274,8 @@ function AffordabilityCalculatorContent() {
       subtitle="See how much you can actually borrow — using real Israeli bank limits"
       icon={<Calculator className="h-6 w-6" />}
       headerActions={headerActions}
-      intro={<ToolIntro title="Why use this tool?" description="Israeli banks have strict PTI and LTV limits set by the Bank of Israel. This calculator shows your real borrowing power based on these regulations." />}
-      infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} variant="extended" />}
+      intro={<ToolIntro {...TOOL_INTROS.affordability} />}
+      infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
       leftColumn={
         <div className="space-y-4">
           <Card>
@@ -362,7 +362,7 @@ function AffordabilityCalculatorContent() {
           <Collapsible open={stressTestOpen} onOpenChange={setStressTestOpen}>
             <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">What If Rates Rise?</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", stressTestOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0"><div className="grid sm:grid-cols-2 gap-4"><div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20"><p className="text-sm font-medium text-amber-600 dark:text-amber-400">+1% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(Math.round(calculations.maxPropertyPrice - (calculations.stressedReduction / 2)))}</p></div><div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20"><p className="text-sm font-medium text-red-600 dark:text-red-400">+2% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(calculations.stressedMaxProperty)}</p></div></div></CardContent></CollapsibleContent></Card>
           </Collapsible>
-          {insight && <InsightCard title="What This Means For You" icon={<Lightbulb className="h-5 w-5 text-primary" />}>{insight}</InsightCard>}
+          {insight && <InsightCard insights={[insight]} />}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
           <div className="grid sm:grid-cols-3 gap-4">
             <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools/mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
