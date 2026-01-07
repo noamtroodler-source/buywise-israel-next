@@ -737,7 +737,7 @@ export function RenovationCostEstimator() {
   return (
     <ToolLayout
       title="Renovation Cost Estimator"
-      subtitle="Estimate renovation costs for Israeli properties with transparent pricing"
+      subtitle="Estimate renovation costs for Israeli properties — clearly and realistically."
       icon={<Hammer className="h-6 w-6" />}
       intro={<ToolIntro {...TOOL_INTROS.renovation} />}
       infoBanner={
