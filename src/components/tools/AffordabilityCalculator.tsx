@@ -274,7 +274,7 @@ function AffordabilityCalculatorContent() {
       subtitle="See how much you can actually borrow — using real Israeli bank limits"
       icon={<Calculator className="h-6 w-6" />}
       headerActions={headerActions}
-      intro={<ToolIntro {...TOOL_INTROS.affordability} />}
+      
       infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
       leftColumn={
         <div className="space-y-4">
