@@ -1134,7 +1134,7 @@ function AffordabilityCalculatorContent() {
   return (
     <ToolLayout
       title="Affordability Calculator"
-      subtitle="Calculate your maximum affordable property based on Bank of Israel PTI limits"
+      subtitle="Find your realistic home price range in Israel — based on income and savings."
       icon={<Wallet className="h-6 w-6" />}
       intro={<ToolIntro {...TOOL_INTROS.affordability} />}
       headerActions={
