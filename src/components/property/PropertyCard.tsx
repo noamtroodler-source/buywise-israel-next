@@ -8,7 +8,7 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
-import { ShareButton } from './ShareButton';
+
 import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { differenceInDays } from 'date-fns';
@@ -204,7 +204,11 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
 
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
-                  {showCompareButton && <CompareButton propertyId={property.id} />}
+                  {showCompareButton && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <CompareButton propertyId={property.id} />
+                    </div>
+                  )}
                   <FavoriteButton propertyId={property.id} />
                 </div>
               </div>
@@ -314,8 +318,11 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   )}
                 </div>
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                  <ShareButton propertyId={property.id} propertyTitle={property.title} />
-                  {showCompareButton && <CompareButton propertyId={property.id} />}
+                  {showCompareButton && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <CompareButton propertyId={property.id} />
+                    </div>
+                  )}
                   <FavoriteButton propertyId={property.id} />
                 </div>
               </div>
