@@ -18,7 +18,7 @@ const tools = [
     title: 'Total Cost Calculator',
     description: 'See the true cost of buying — taxes, fees, and closing costs included.',
     link: '/tools/total-cost-calculator',
-    color: 'bg-accent/10 text-accent-foreground',
+    color: 'bg-primary/10 text-primary',
   },
   {
     id: 'rent-vs-buy',
@@ -26,7 +26,7 @@ const tools = [
     title: 'Rent vs Buy',
     description: 'Compare the long-term costs of renting versus buying in Israel.',
     link: '/tools/rent-vs-buy',
-    color: 'bg-success/10 text-success',
+    color: 'bg-primary/10 text-primary',
   },
 ];
 

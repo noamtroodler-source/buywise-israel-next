@@ -111,7 +111,7 @@ export default function InvestmentPropertyGuide() {
       icon: Calculator,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold text-destructive">Higher Purchase Tax:</h4>
+          <h4 className="font-semibold text-foreground">Higher Purchase Tax:</h4>
           <p>
             Investment properties (second+ property) face significantly higher 
             <GlossaryTooltip term="מס רכישה"> purchase tax</GlossaryTooltip>:
@@ -120,7 +120,7 @@ export default function InvestmentPropertyGuide() {
             <li><strong>8%</strong> on amount up to ~6,000,000 ₪</li>
             <li><strong>10%</strong> on amount above ~6,000,000 ₪</li>
           </ul>
-          <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 my-4">
+          <div className="bg-muted p-4 rounded-lg border border-border my-4">
             <p className="text-sm">
               <strong>Example:</strong> A 3M ₪ investment property incurs ~₪240,000 in purchase tax alone.
             </p>
@@ -157,9 +157,9 @@ export default function InvestmentPropertyGuide() {
             <li>Stricter income verification requirements</li>
           </ul>
           
-          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 my-4">
+          <div className="bg-muted p-4 rounded-lg border border-border my-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <span>You'll need at least 50% down payment for investment properties. 
               Plan your capital allocation carefully.</span>
             </p>
@@ -257,7 +257,7 @@ export default function InvestmentPropertyGuide() {
       icon: AlertTriangle,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold text-destructive">Key Risks:</h4>
+          <h4 className="font-semibold text-foreground">Key Risks:</h4>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Interest Rate Risk:</strong> Rising rates impact both mortgage payments 
@@ -343,16 +343,16 @@ export default function InvestmentPropertyGuide() {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-destructive/10 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-destructive">8%</div>
+              <div className="bg-muted rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-foreground">8%</div>
                 <div className="text-xs text-muted-foreground">Min purchase tax</div>
               </div>
               <div className="bg-primary/10 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-primary">50%</div>
                 <div className="text-xs text-muted-foreground">Max LTV</div>
               </div>
-              <div className="bg-success/10 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-success">3-5%</div>
+              <div className="bg-primary/10 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-primary">3-5%</div>
                 <div className="text-xs text-muted-foreground">Typical yield range</div>
               </div>
             </div>

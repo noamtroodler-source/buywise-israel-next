@@ -43,10 +43,10 @@ export function PasswordStrengthInput({
     if (/[A-Z]/.test(value)) score++;
     if (/[!@#$%^&*(),.?":{}|<>]/.test(value)) score++;
 
-    if (score <= 1) return { level: 1, label: 'Weak', color: 'bg-destructive' };
-    if (score === 2) return { level: 2, label: 'Fair', color: 'bg-warning' };
-    if (score === 3) return { level: 3, label: 'Good', color: 'bg-accent' };
-    return { level: 4, label: 'Strong', color: 'bg-success' };
+    if (score <= 1) return { level: 1, label: 'Weak', color: 'bg-muted' };
+    if (score === 2) return { level: 2, label: 'Fair', color: 'bg-primary/30' };
+    if (score === 3) return { level: 3, label: 'Good', color: 'bg-primary/60' };
+    return { level: 4, label: 'Strong', color: 'bg-primary' };
   }, [value]);
 
   return (
@@ -91,10 +91,10 @@ export function PasswordStrengthInput({
           </div>
           <p className={cn(
             "text-xs font-medium transition-colors",
-            strength.level <= 1 && "text-destructive",
-            strength.level === 2 && "text-warning-foreground",
-            strength.level === 3 && "text-accent-foreground",
-            strength.level === 4 && "text-success"
+            strength.level <= 1 && "text-muted-foreground",
+            strength.level === 2 && "text-foreground",
+            strength.level === 3 && "text-primary",
+            strength.level === 4 && "text-primary"
           )}>
             {strength.label}
           </p>
@@ -109,7 +109,7 @@ export function PasswordStrengthInput({
               key={index}
               className={cn(
                 "flex items-center gap-2 text-xs transition-colors",
-                req.met ? "text-success" : "text-muted-foreground"
+                req.met ? "text-primary" : "text-muted-foreground"
               )}
             >
               {req.met ? (

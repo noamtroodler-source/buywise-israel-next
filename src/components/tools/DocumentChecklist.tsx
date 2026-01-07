@@ -165,7 +165,7 @@ export function DocumentChecklist() {
           </div>
           <Progress value={progress} className="h-3" />
           {progress === 100 && (
-            <p className="text-sm text-green-600 flex items-center gap-1">
+            <p className="text-sm text-primary flex items-center gap-1">
               <Check className="h-4 w-4" />
               All documents collected! You're ready to proceed.
             </p>
@@ -190,7 +190,7 @@ export function DocumentChecklist() {
                       ({category.items.filter(i => i.checked).length}/{category.items.length})
                     </span>
                     {categoryProgress === 100 && (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-primary" />
                     )}
                   </div>
                 </AccordionTrigger>
@@ -199,7 +199,7 @@ export function DocumentChecklist() {
                     <div 
                       key={item.id} 
                       className={`p-3 rounded-lg border transition-all ${
-                        item.checked ? 'bg-green-50 dark:bg-green-950/20 border-green-200' : 'hover:bg-muted/50'
+                        item.checked ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/50'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -215,7 +215,7 @@ export function DocumentChecklist() {
                             className={`cursor-pointer ${item.checked ? 'line-through text-muted-foreground' : ''}`}
                           >
                             {item.label}
-                            {item.required && <span className="text-red-500 ml-1">*</span>}
+                            {item.required && <span className="text-primary ml-1">*</span>}
                           </Label>
                           <Input
                             placeholder="Add notes..."
@@ -228,7 +228,7 @@ export function DocumentChecklist() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             onClick={() => deleteItem(category.id, item.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -263,7 +263,7 @@ export function DocumentChecklist() {
 
         <div className="flex justify-between items-center pt-4">
           <p className="text-sm text-muted-foreground">
-            <span className="text-red-500">*</span> Required documents
+            <span className="text-primary">*</span> Required documents
           </p>
           <Button variant="outline" onClick={resetAll}>
             Reset All
