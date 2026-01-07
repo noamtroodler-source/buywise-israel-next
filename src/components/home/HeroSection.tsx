@@ -65,7 +65,7 @@ export function HeroSection() {
             className="text-lg md:text-xl text-primary-foreground max-w-2xl lg:max-w-none mx-auto lg:whitespace-nowrap"
             style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
           >
-            English-first discovery. True cost transparency. Market context in every listing.
+            English-first discovery. Market context in every listing. True cost transparency.
           </p>
 
           {/* Search Box */}
