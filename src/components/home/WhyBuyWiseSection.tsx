@@ -5,7 +5,7 @@ const valueProps = [
   {
     icon: Compass,
     title: 'Discovery, Made Clear',
-    description: 'BuyWise is an english-first platform built specifically for internationals buying or renting in Israel. Browse projects, resale homes, and long-term rentals through a clean, intuitive experience that makes discovery feel calm and manageable.',
+    description: 'BuyWise is an english-first platform built specifically for internationals buying or renting in Israel. Browse projects, resale homes, and long-term rentals through a clean, intuitive experience designed to reduce friction and confusion.',
   },
   {
     icon: Layers,
