@@ -1,4 +1,6 @@
+// True Cost Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Calculator, 
   Home, 
@@ -11,13 +13,14 @@ import {
   Building2,
   Loader2,
   ChevronDown,
+  HelpCircle,
+  BadgeCheck,
 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -30,7 +33,6 @@ import {
   ToolLayout, 
   ToolDisclaimer, 
   ToolFeedback, 
-  CashBreakdownTable,
   InsightCard,
   BuyerTypeInfoBanner,
   type BuyerCategory as SharedBuyerCategory,
@@ -87,15 +89,18 @@ function parseFormattedNumber(str: string): number {
   return Number(str.replace(/,/g, '')) || 0;
 }
 
+// Helper component for info tooltips - matching Mortgage Calculator style
 function InfoTooltip({ content }: { content: string }) {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help ml-1 inline-block" />
+          <button type="button" className="inline-flex items-center justify-center ml-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs text-sm">
-          {content}
+          <p>{content}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -107,7 +112,6 @@ export function TrueCostCalculator() {
   const { data: cities } = useCities();
   const { areaUnit } = usePreferences();
   const formatPrice = useFormatPrice();
-  const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
   const { user } = useAuth();
@@ -127,7 +131,6 @@ export function TrueCostCalculator() {
     const size = parseFormattedNumber(propertySize);
     if (size <= 0) return null;
     
-    // Use average price per sqm if available
     if (cityMetrics.average_price_sqm) {
       return Math.round(size * cityMetrics.average_price_sqm);
     }
@@ -174,6 +177,9 @@ export function TrueCostCalculator() {
   const [furnitureLevel, setFurnitureLevel] = useState<'basic' | 'standard' | 'premium'>('standard');
   const [includeRenovation, setIncludeRenovation] = useState(false);
   const [renovationAmount, setRenovationAmount] = useState('100000');
+  
+  // UI State
+  const [isCostsInfoOpen, setIsCostsInfoOpen] = useState(false);
 
   // Load saved inputs on mount
   useEffect(() => {
@@ -240,7 +246,7 @@ export function TrueCostCalculator() {
     setIncludeRenovation(false);
     setRenovationAmount('100000');
     localStorage.removeItem(STORAGE_KEY);
-    toast.success('Reset to defaults');
+    toast.success('Reset complete', { description: 'All values restored to defaults' });
   }, []);
 
   // Calculate costs
@@ -316,7 +322,7 @@ export function TrueCostCalculator() {
       cityName: cities?.find(c => c.slug === selectedCity)?.name,
       isNewConstruction,
     };
-  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, cities]);
+  }, [propertyPrice, propertySize, selectedCity, buyerCategory, isNewConstruction, constructionMonths, includeAgentFee, includeMortgageCosts, loanAmount, includeMoving, includeFurniture, furnitureLevel, includeRenovation, renovationAmount, cities]);
 
   // Generate personalized insights
   const trueCostInsights = useMemo(() => {
@@ -345,7 +351,7 @@ export function TrueCostCalculator() {
     return messages;
   }, [calculations, buyerCategory, isNewConstruction, formatPrice]);
 
-  // Save inputs (defined after calculations to use its values)
+  // Save inputs
   const handleSave = () => {
     const data = {
       propertyPrice,
@@ -364,7 +370,6 @@ export function TrueCostCalculator() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
     
-    // If logged in, also save to profile
     if (user) {
       saveToProfile.mutate({
         calculatorType: 'truecost',
@@ -379,271 +384,138 @@ export function TrueCostCalculator() {
         },
       });
     } else {
-      toast.success('Inputs saved! Sign in to save to your profile.');
+      toast.success('Inputs saved!', { description: 'Sign in to save to your profile.' });
     }
   };
 
-  // Build cost breakdown items for CashBreakdownTable
-  const breakdownItems = useMemo(() => {
-    const items: Array<{
-      label: string;
-      value: string;
-      percentage?: string;
-      tooltip?: string;
-      isSeparator?: boolean;
-      isTotal?: boolean;
-      highlight?: 'positive' | 'negative' | 'neutral';
-    }> = [
-      {
-        label: 'Property Price',
-        value: formatPrice(calculations.price),
-      },
-      { isSeparator: true, label: '', value: '' },
-      {
-        label: 'Purchase Tax (מס רכישה)',
-        value: formatPrice(Math.round(calculations.purchaseTax)),
-        percentage: calculations.effectiveTaxRate.toFixed(2) + '%',
-        tooltip: `Based on ${getBuyerCategoryLabel(buyerCategory)} tax brackets`,
-      },
-      {
-        label: 'Lawyer Fees (שכ"ט עו"ד)',
-        value: formatPrice(Math.round(calculations.lawyerFee)),
-        tooltip: '0.5% of property price + VAT',
-      },
-    ];
+  // Calculate visual breakdown percentages
+  const propertyPercent = useMemo(() => {
+    if (calculations.totalOneTime <= 0) return 80;
+    return Math.round((calculations.price / calculations.totalOneTime) * 100);
+  }, [calculations.price, calculations.totalOneTime]);
+  
+  const costsPercent = 100 - propertyPercent;
 
-    // Agent commission (resale only)
-    if (calculations.agentFee > 0) {
-      items.push({
-        label: 'Agent Commission (עמלת תיווך)',
-        value: formatPrice(Math.round(calculations.agentFee)),
-        tooltip: '2% of property price + VAT',
-      });
-    }
+  // Header Actions - matching Mortgage Calculator style
+  const headerActions = (
+    <>
+      <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+        <RotateCcw className="h-4 w-4" />
+        <span className="hidden sm:inline">Reset</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
+        {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        <span className="hidden sm:inline ml-1.5">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
+      </Button>
+    </>
+  );
 
-    // New construction specific
-    if (isNewConstruction) {
-      if (calculations.developerLawyerFee > 0) {
-        items.push({
-          label: 'Developer Lawyer (עו"ד קבלן)',
-          value: formatPrice(Math.round(calculations.developerLawyerFee)),
-          tooltip: "Legal fees paid to developer's attorney",
-        });
-      }
-
-      if (calculations.bankGuaranteeFee > 0) {
-        items.push({
-          label: 'Bank Guarantee (ערבות בנקאית)',
-          value: formatPrice(Math.round(calculations.bankGuaranteeFee)),
-          tooltip: 'Required guarantee for off-plan purchases',
-        });
-      }
-
-      if (calculations.madadCost > 0) {
-        items.push({
-          label: 'Index Linkage (הצמדה למדד)',
-          value: formatPrice(Math.round(calculations.madadCost)),
-          tooltip: 'Estimated price increase linked to construction cost index',
-          highlight: 'negative',
-        });
-      }
-    }
-
-    // Mortgage costs
-    if (calculations.mortgageCosts > 0) {
-      items.push({
-        label: 'Mortgage Fees (Appraisal, Registration)',
-        value: formatPrice(Math.round(calculations.mortgageCosts)),
-        tooltip: 'Includes appraisal, registration, and bank fees',
-      });
-    }
-
-    // Registration
-    items.push({
-      label: 'Tabu Registration (רישום בטאבו)',
-      value: formatPrice(calculations.tabuRegistration),
-    });
-
-    // Optional extras
-    if (calculations.movingCost > 0) {
-      items.push({
-        label: 'Moving Costs',
-        value: formatPrice(calculations.movingCost),
-      });
-    }
-
-    if (calculations.furnitureCost > 0) {
-      items.push({
-        label: `Furniture (${furnitureLevel})`,
-        value: formatPrice(calculations.furnitureCost),
-      });
-    }
-
-    if (calculations.renovationCost > 0) {
-      items.push({
-        label: 'Renovation Budget',
-        value: formatPrice(calculations.renovationCost),
-        tooltip: 'Estimated renovation costs',
-      });
-    }
-
-    // Separator before total
-    items.push({ isSeparator: true, label: '', value: '' });
-
-    // Total
-    items.push({
-      label: 'Total One-Time Costs',
-      value: formatPrice(Math.round(calculations.totalOneTime)),
-      isTotal: true,
-    });
-
-    return items;
-  }, [calculations, buyerCategory, isNewConstruction, furnitureLevel, formatPrice]);
-
-  // Monthly costs breakdown
-  const monthlyItems = useMemo(() => {
-    const insuranceEstimate = 150;
-    return [
-      {
-        label: 'Arnona (ארנונה)',
-        value: formatPrice(Math.round(calculations.monthlyCosts.arnona)),
-        tooltip: selectedCity ? 'Based on selected city rates' : 'Average estimate - select city for accuracy',
-      },
-      {
-        label: "Va'ad Bayit (ועד בית)",
-        value: formatPrice(Math.round(calculations.monthlyCosts.vaadBayit)),
-        tooltip: 'Building maintenance committee fees',
-      },
-      {
-        label: 'Home Insurance',
-        value: formatPrice(insuranceEstimate),
-      },
-      { isSeparator: true, label: '', value: '' },
-      {
-        label: 'Est. Monthly Total',
-        value: formatPrice(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + insuranceEstimate)),
-        isTotal: true,
-      },
-    ];
-  }, [calculations.monthlyCosts, selectedCity, formatPrice]);
-
-  // Left column - inputs
+  // Left column - inputs (Multiple Cards matching Mortgage Calculator)
   const leftColumn = (
-    <Card className="p-6 shadow-sm">
-      <div className="space-y-6">
-        {/* Property Details Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Home className="h-4 w-4 text-primary" />
-            Property Details
-          </h3>
+    <div className="space-y-4">
+      {/* Property Details Card */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Property Details</h3>
           
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="price" className="flex items-center text-sm font-medium">
-                Property Price
-                <InfoTooltip content="Enter the full purchase price in Israeli Shekels" />
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
-                <Input
-                  id="price"
-                  type="text"
-                  value={formatNumber(parseFormattedNumber(propertyPrice))}
-                  onChange={(e) => setPropertyPrice(e.target.value.replace(/[^\d]/g, ''))}
-                  className="h-11 pl-8"
-                />
-              </div>
-              
-              {/* City-based price intelligence */}
-              {selectedCity && cityMetrics && (
-                <div className="space-y-1.5">
-                  {/* Suggested price based on city avg/sqm */}
-                  {suggestedPrice && (
-                    <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5">
-                      <span>
-                        {cities?.find(c => c.slug === selectedCity)?.name} avg: {formatPrice(cityMetrics.average_price_sqm || 0)}/{areaUnit === 'sqft' ? 'sqft' : 'sqm'} → {formatPrice(suggestedPrice)}
-                      </span>
-                      <Button 
-                        variant="link" 
-                        size="sm" 
-                        className="h-auto p-0 text-xs text-primary hover:no-underline"
-                        onClick={handleUseEstimate}
-                      >
-                        Use estimate
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {/* Price comparison to median */}
-                  {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
-                    <p className={cn(
-                      "text-xs px-2.5",
-                      priceComparison.isAbove ? "text-amber-600" : "text-emerald-600"
-                    )}>
-                      {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
-                    </p>
-                  )}
-                </div>
-              )}
+          {/* Property Price */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Property Price</Label>
+              <InfoTooltip content="Enter the full purchase price in Israeli Shekels. This is the listing price you're negotiating from." />
+            </div>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={formatNumber(parseFormattedNumber(propertyPrice))}
+                onChange={(e) => setPropertyPrice(e.target.value.replace(/[^\d]/g, ''))}
+                className="pl-10 h-11 text-lg"
+                placeholder="2,500,000"
+              />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-              <Label htmlFor="size" className="flex items-center text-sm font-medium">
-                Size ({areaUnitLabel})
-                <span className="text-muted-foreground font-normal ml-1">(optional)</span>
-                <InfoTooltip content="Size helps estimate Arnona (property tax) based on city rates. Leave blank for a rough estimate — the property price drives most costs." />
-                </Label>
-                <Input
-                  id="size"
-                  type="number"
-                  value={propertySize}
-                  onChange={(e) => setPropertySize(e.target.value)}
-                  placeholder="e.g., 85"
-                  min={20}
-                  max={500}
-                  className="h-11"
-                />
+            {/* City-based price intelligence */}
+            {selectedCity && cityMetrics && (
+              <div className="space-y-1.5">
+                {suggestedPrice && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5">
+                    <span>
+                      {cities?.find(c => c.slug === selectedCity)?.name} avg: {formatPrice(cityMetrics.average_price_sqm || 0)}/{areaUnit === 'sqft' ? 'sqft' : 'sqm'} → {formatPrice(suggestedPrice)}
+                    </span>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="h-auto p-0 text-xs text-primary hover:no-underline"
+                      onClick={handleUseEstimate}
+                    >
+                      Use estimate
+                    </Button>
+                  </div>
+                )}
+                
+                {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
+                  <p className={cn(
+                    "text-xs px-2.5",
+                    priceComparison.isAbove ? "text-amber-600" : "text-emerald-600"
+                  )}>
+                    {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
+                  </p>
+                )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="city" className="text-sm font-medium">
-                  City
-                </Label>
-                <Select value={selectedCity} onValueChange={setSelectedCity}>
-                  <SelectTrigger id="city" className="h-11">
-                    <SelectValue placeholder="Select city" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities?.map((city) => (
-                      <SelectItem key={city.slug} value={city.slug}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            )}
+          </div>
+          
+          {/* Size and City */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Size ({areaUnitLabel})</Label>
+                <InfoTooltip content="Size helps estimate Arnona (property tax). Leave blank for a rough estimate." />
               </div>
+              <Input
+                type="number"
+                value={propertySize}
+                onChange={(e) => setPropertySize(e.target.value)}
+                placeholder="e.g., 85"
+                min={20}
+                max={500}
+                className="h-11"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">City</Label>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Select city" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cities?.map((city) => (
+                    <SelectItem key={city.slug} value={city.slug}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator />
-
-        {/* Buyer Profile Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Buyer Profile
-          </h3>
+      {/* Buyer Profile Card */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Buyer Profile</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="buyerType" className="flex items-center text-sm font-medium">
-              Buyer Type
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Buyer Type</Label>
               <InfoTooltip content="Your buyer status determines your purchase tax rate. First-time buyers and Olim pay significantly less." />
-            </Label>
+            </div>
             <Select value={buyerCategory} onValueChange={(v) => setBuyerCategory(v as BuyerCategory)}>
-              <SelectTrigger id="buyerType" className="h-11">
+              <SelectTrigger className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -657,11 +529,8 @@ export function TrueCostCalculator() {
 
           {buyerCategory === 'oleh' && (
             <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-              <Label htmlFor="aliyahYear" className="text-sm font-medium">
-                Year of Aliyah
-              </Label>
+              <Label className="text-sm font-medium">Year of Aliyah</Label>
               <Input
-                id="aliyahYear"
                 type="number"
                 value={aliyahYear}
                 onChange={(e) => setAliyahYear(e.target.value)}
@@ -677,28 +546,22 @@ export function TrueCostCalculator() {
               )}
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator />
-
-        {/* Purchase Type Section */}
-        <div className="space-y-4">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" />
-            Purchase Type
-          </h3>
+      {/* Purchase Type Card */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Purchase Type</h3>
           
           <div className="flex items-center justify-between">
             <div>
-              <Label htmlFor="newConstruction" className="text-sm font-medium">
-                New Construction
-              </Label>
+              <Label className="text-sm font-medium">New Construction</Label>
               <p className="text-xs text-muted-foreground">
                 Includes developer fees & index linkage
               </p>
             </div>
             <Switch
-              id="newConstruction"
               checked={isNewConstruction}
               onCheckedChange={setIsNewConstruction}
             />
@@ -707,12 +570,11 @@ export function TrueCostCalculator() {
           {isNewConstruction && (
             <div className="space-y-3 pl-4 border-l-2 border-primary/20">
               <div className="space-y-2">
-                <Label htmlFor="constructionMonths" className="flex items-center text-sm font-medium">
-                  Construction Period (months)
+                <div className="flex items-center">
+                  <Label className="text-sm font-medium">Construction Period (months)</Label>
                   <InfoTooltip content="Estimated time until delivery. Affects index linkage calculation." />
-                </Label>
+                </div>
                 <Input
-                  id="constructionMonths"
                   type="number"
                   value={constructionMonths}
                   onChange={(e) => setConstructionMonths(e.target.value)}
@@ -721,32 +583,30 @@ export function TrueCostCalculator() {
                   className="h-11"
                 />
               </div>
-              {/* VAT Clarity Banner */}
+              
               <Alert className="bg-blue-500/10 border-blue-500/30">
                 <Info className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-sm text-blue-700 dark:text-blue-400">
-                  <strong>VAT is included:</strong> Unlike some countries, Israeli developer prices already include 17% VAT. The price you see is the price you pay.
+                  <strong>VAT is included:</strong> Israeli developer prices already include 17% VAT.
                 </AlertDescription>
               </Alert>
               <Alert className="bg-amber-500/10 border-amber-500/30">
                 <Building2 className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
-                  New construction prices are linked to the building cost index (מדד). The final price may be 3-8% higher.
+                  Prices are linked to the building cost index (מדד). Final price may be 3-8% higher.
                 </AlertDescription>
               </Alert>
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        <Separator />
-
-        {/* Advanced Options - Grouped Collapsibles */}
-        <div className="space-y-3">
-          <h3 className="font-semibold text-foreground text-sm">
-            Advanced Options
-          </h3>
+      {/* Advanced Options Card */}
+      <Card>
+        <CardContent className="p-5 space-y-4">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Advanced Options</h3>
           
-          {/* Transaction Costs Group */}
+          {/* Transaction Costs */}
           <Collapsible defaultOpen={includeMortgageCosts || (includeAgentFee && !isNewConstruction)}>
             <div className="rounded-lg border border-border/50 bg-muted/20">
               <CollapsibleTrigger className="w-full px-4 py-3">
@@ -784,17 +644,14 @@ export function TrueCostCalculator() {
                     
                     {includeMortgageCosts && (
                       <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                        <Label htmlFor="loanAmount" className="text-sm font-medium">
-                          Loan Amount
-                        </Label>
+                        <Label className="text-sm font-medium">Loan Amount</Label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
                           <Input
-                            id="loanAmount"
                             type="text"
                             value={formatNumber(parseFormattedNumber(loanAmount))}
                             onChange={(e) => setLoanAmount(e.target.value.replace(/[^\d]/g, ''))}
-                            className="h-11 pl-8"
+                            className="pl-10 h-11"
                           />
                         </div>
                       </div>
@@ -805,7 +662,7 @@ export function TrueCostCalculator() {
             </div>
           </Collapsible>
           
-          {/* Moving & Setup Group */}
+          {/* Moving & Setup */}
           <Collapsible defaultOpen={includeMoving || includeFurniture || includeRenovation}>
             <div className="rounded-lg border border-border/50 bg-muted/20">
               <CollapsibleTrigger className="w-full px-4 py-3">
@@ -855,7 +712,6 @@ export function TrueCostCalculator() {
                     )}
                   </div>
 
-                  {/* Renovation Budget */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
@@ -870,18 +726,17 @@ export function TrueCostCalculator() {
                     
                     {includeRenovation && (
                       <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                        <Label htmlFor="renovationAmount" className="flex items-center text-sm font-medium">
-                          Renovation Budget
-                          <InfoTooltip content="Israeli properties often need upgrades. Budget ₪1,500-3,000/sqm for basic renovations, more for premium finishes." />
-                        </Label>
+                        <div className="flex items-center">
+                          <Label className="text-sm font-medium">Renovation Budget</Label>
+                          <InfoTooltip content="Israeli properties often need upgrades. Budget ₪1,500-3,000/sqm for basic renovations." />
+                        </div>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
                           <Input
-                            id="renovationAmount"
                             type="text"
                             value={formatNumber(parseFormattedNumber(renovationAmount))}
                             onChange={(e) => setRenovationAmount(e.target.value.replace(/[^\d]/g, ''))}
-                            className="h-11 pl-8"
+                            className="pl-10 h-11"
                           />
                         </div>
                         <Link 
@@ -897,68 +752,205 @@ export function TrueCostCalculator() {
               </CollapsibleContent>
             </div>
           </Collapsible>
-        </div>
-
-      </div>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 
-  // Right column - results
+  // Right column - results (matching Mortgage Calculator pattern)
   const rightColumn = (
-    <Card className="p-6 shadow-sm border-t-4 border-t-primary flex flex-col h-full">
-      <div className="space-y-6 flex flex-col flex-1">
-        {/* Hero Result */}
-        <div className="text-center pb-5 border-b border-border">
-          <p className="text-sm text-muted-foreground mb-1">Total One-Time Costs</p>
-          <p className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight">
-            {formatPrice(Math.round(calculations.totalOneTime))}
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            +{formatPrice(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above property price
-          </p>
-        </div>
+    <Card className="overflow-hidden">
+      {/* Hero Section - Gradient Background */}
+      <div className="p-6 bg-gradient-to-br from-primary/5 via-background to-background border-b border-border">
+        <p className="text-sm text-muted-foreground text-center mb-1">Total Cash Needed</p>
+        <motion.p 
+          className="text-4xl md:text-5xl font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent tracking-tight"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          key={calculations.totalOneTime}
+          transition={{ duration: 0.3 }}
+        >
+          {formatPrice(Math.round(calculations.totalOneTime))}
+        </motion.p>
+        <p className="text-sm text-muted-foreground text-center mt-2">
+          +{formatPrice(Math.round(calculations.allCostsAbovePrice))} ({calculations.percentAbovePrice.toFixed(1)}%) above list price
+        </p>
+      </div>
 
-        {/* Tax Savings Alert */}
-        {calculations.taxSavings > 0 && buyerCategory !== 'additional' && buyerCategory !== 'non_resident' && (
+      {/* Tax Savings Alert */}
+      {calculations.taxSavings > 0 && buyerCategory !== 'additional' && buyerCategory !== 'non_resident' && (
+        <div className="px-4 pt-4">
           <Alert className="bg-green-500/10 border-green-500/30">
             <Lightbulb className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-700 dark:text-green-400">
               As a {getBuyerCategoryLabel(buyerCategory).toLowerCase()}, you save{' '}
               <span className="font-semibold">{formatPrice(Math.round(calculations.taxSavings))}</span>{' '}
-              on purchase tax compared to investor rates.
+              on purchase tax vs investor rates.
             </AlertDescription>
           </Alert>
-        )}
-
-        {/* Cost Breakdown */}
-        <div>
-          <h4 className="font-semibold text-foreground mb-3">Cost Breakdown</h4>
-          <CashBreakdownTable items={breakdownItems} />
         </div>
+      )}
 
-        <Separator />
-
-        {/* Monthly Costs - flex-1 to push to bottom and fill remaining space */}
-        <div className="flex-1 flex flex-col justify-end">
-          <h4 className="font-semibold text-foreground mb-1">Estimated Monthly Costs</h4>
-          <p className="text-xs text-muted-foreground mb-3">
-            {calculations.cityName ? `Based on ${calculations.cityName} averages` : 'Select a city for accurate estimates'}
+      {/* Quick Stats Grid - 2x2 with dividers */}
+      <div className="grid grid-cols-2 divide-x divide-y divide-border">
+        <div className="p-4">
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-muted-foreground">Purchase Tax</p>
+            <InfoTooltip content={`Effective rate: ${calculations.effectiveTaxRate.toFixed(2)}% for ${getBuyerCategoryLabel(buyerCategory)}`} />
+          </div>
+          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.purchaseTax))}</p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-muted-foreground">Lawyer Fees</p>
+          <p className="text-lg font-semibold mt-0.5">{formatPrice(Math.round(calculations.lawyerFee))}</p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-muted-foreground">Agent Fees</p>
+          <p className="text-lg font-semibold mt-0.5">
+            {calculations.agentFee > 0 ? formatPrice(Math.round(calculations.agentFee)) : 'N/A'}
           </p>
-          <CashBreakdownTable items={monthlyItems} />
         </div>
+        <div className="p-4">
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-muted-foreground">Registration</p>
+            <InfoTooltip content="Tabu (land registry) registration fees" />
+          </div>
+          <p className="text-lg font-semibold mt-0.5">{formatPrice(calculations.tabuRegistration)}</p>
+        </div>
+      </div>
+
+      {/* New Construction Extras */}
+      {isNewConstruction && (calculations.madadCost > 0 || calculations.developerLawyerFee > 0) && (
+        <div className="px-4 py-3 bg-amber-500/5 border-t border-amber-500/20">
+          <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Index Linkage (Madad)</span>
+            <span className="font-medium text-amber-700 dark:text-amber-400">{formatPrice(Math.round(calculations.madadCost))}</span>
+          </div>
+          {calculations.developerLawyerFee > 0 && (
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-muted-foreground">Developer Lawyer</span>
+              <span className="font-medium">{formatPrice(Math.round(calculations.developerLawyerFee))}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Visual Breakdown Bar */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <span>Property ({propertyPercent}%)</span>
+          <span>Costs ({costsPercent}%)</span>
+        </div>
+        <div className="h-2.5 bg-muted rounded-full overflow-hidden flex">
+          <motion.div 
+            className="bg-primary h-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${propertyPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+          <div className="bg-muted-foreground/30 h-full flex-1" />
+        </div>
+        <div className="flex items-center justify-between text-xs mt-1.5">
+          <span className="font-medium">{formatPrice(calculations.price)}</span>
+          <span className="font-medium">{formatPrice(Math.round(calculations.allCostsAbovePrice))}</span>
+        </div>
+      </div>
+
+      {/* Monthly Costs Preview */}
+      <div className="p-4 border-t border-border bg-muted/30">
+        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium mb-2">Est. Monthly Costs</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="text-lg font-semibold">
+              {formatPrice(Math.round(calculations.monthlyCosts.arnona + calculations.monthlyCosts.vaadBayit + 150))}
+            </span>
+            <span className="text-sm text-muted-foreground">/mo</span>
+          </div>
+          <div className="text-xs text-muted-foreground text-right">
+            <p>Arnona: {formatPrice(Math.round(calculations.monthlyCosts.arnona))}</p>
+            <p>Va'ad: {formatPrice(Math.round(calculations.monthlyCosts.vaadBayit))}</p>
+          </div>
+        </div>
+        {!selectedCity && (
+          <p className="text-xs text-muted-foreground mt-1">Select a city for accurate estimates</p>
+        )}
       </div>
     </Card>
   );
 
-  // Bottom section - navigation cards
+  // Bottom section
   const bottomSection = (
     <div className="space-y-6">
-      {/* Insight Card - Full Width */}
+      {/* Educational Section */}
+      <Collapsible open={isCostsInfoOpen} onOpenChange={setIsCostsInfoOpen}>
+        <Card className="overflow-hidden">
+          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Info className="h-4 w-4" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm">Understanding Israeli Purchase Costs</p>
+                <p className="text-xs text-muted-foreground">Why Israel is different from other markets</p>
+              </div>
+            </div>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isCostsInfoOpen && "rotate-180")} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Israeli property purchases typically add 8-12% on top of the listing price. Here's what to expect:
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="font-medium text-sm mb-1">Purchase Tax (מס רכישה)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Progressive tax on all property purchases. First-time buyers and Olim get significant exemptions on properties under ~₪1.8M.
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="font-medium text-sm mb-1">Agent Fees (תיווך)</p>
+                  <p className="text-xs text-muted-foreground">
+                    2% + VAT is standard for resale. New construction is typically sold direct by developers (no agent fee).
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="font-medium text-sm mb-1">Legal Fees (שכ"ט עו"ד)</p>
+                  <p className="text-xs text-muted-foreground">
+                    0.5% + VAT to your lawyer. New construction adds ~1.5% for the developer's lawyer.
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border">
+                  <p className="font-medium text-sm mb-1">Index Linkage (הצמדה)</p>
+                  <p className="text-xs text-muted-foreground">
+                    New construction prices rise with the building cost index during construction—typically 3-8% over 2-3 years.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Insight Card */}
       {trueCostInsights.length > 0 && (
         <InsightCard insights={trueCostInsights} />
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      {/* Calculated for Israel Badge */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-medium">Calculated for Israel</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            This calculator reflects current Israeli tax brackets, VAT rates, and market fee structures. Tax brackets are updated annually by the Israel Tax Authority. Consult a lawyer and accountant for precise figures.
+          </p>
+        </div>
+      </div>
+
+      {/* Next Steps Grid */}
+      <div className="grid sm:grid-cols-3 gap-4">
         <Link 
           to="/tools?tool=mortgage"
           className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
@@ -1005,28 +997,23 @@ export function TrueCostCalculator() {
         </Link>
       </div>
 
+      {/* Feedback */}
       <ToolFeedback toolName="True Cost Calculator" variant="inline" />
     </div>
+  );
+
+  const disclaimer = (
+    <ToolDisclaimer 
+      text="Estimates based on current Israeli tax brackets and market rates (2024). Consult a lawyer and accountant for precise figures."
+    />
   );
 
   return (
     <ToolLayout
       title="True Cost Calculator"
       subtitle="See the true cost of buying property in Israel — beyond the list price."
-      icon={<Calculator className="h-6 w-6 text-primary" />}
-      
-      headerActions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            <span className="hidden sm:inline">Reset</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-1.5">
-            {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
-          </Button>
-        </div>
-      }
+      icon={<Calculator className="h-6 w-6" />}
+      headerActions={headerActions}
       infoBanner={
         <BuyerTypeInfoBanner
           selectedType={buyerCategory as SharedBuyerCategory}
@@ -1039,11 +1026,7 @@ export function TrueCostCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
-      disclaimer={
-        <ToolDisclaimer 
-          text="These estimates are based on current market rates and may vary. Consult with a lawyer and accountant for precise figures. Tax brackets are updated annually by the Israel Tax Authority."
-        />
-      }
+      disclaimer={disclaimer}
     />
   );
 }
