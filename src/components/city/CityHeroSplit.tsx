@@ -34,32 +34,24 @@ export function CityHeroSplit({
   };
 
   return (
-    <section className="relative min-h-[60vh] lg:min-h-[70vh] flex">
-      {/* Image Side */}
-      <div className="hidden lg:block lg:w-[55%] relative">
-        <img
-          src={heroImage}
-          alt={cityName}
-          className="absolute inset-0 w-full h-full object-cover"
-          loading="eager"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background/80" />
-      </div>
+    <section className="relative min-h-[70vh] flex items-center">
+      {/* Full-width background image */}
+      <img
+        src={heroImage}
+        alt={cityName}
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="eager"
+      />
+      
+      {/* Gradient overlay - dark on left, transparent on right */}
+      <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/60 to-transparent" />
+      
+      {/* Mobile gradient - from bottom */}
+      <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent lg:hidden" />
 
-      {/* Mobile Image Background */}
-      <div className="lg:hidden absolute inset-0">
-        <img
-          src={heroImage}
-          alt={cityName}
-          className="w-full h-full object-cover"
-          loading="eager"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
-      </div>
-
-      {/* Content Side */}
-      <div className="relative z-10 w-full lg:w-[45%] flex items-center">
-        <div className="container lg:pl-12 lg:pr-16 py-16 lg:py-0">
+      {/* Content */}
+      <div className="relative z-10 container py-16 lg:py-0">
+        <div className="max-w-xl">
           {/* Back Link */}
           <motion.div
             initial={{ opacity: 0, x: -10 }}
@@ -68,7 +60,7 @@ export function CityHeroSplit({
           >
             <Button 
               variant="ghost" 
-              className="text-muted-foreground hover:text-foreground mb-6 -ml-2" 
+              className="text-white/80 hover:text-white hover:bg-white/10 mb-6 -ml-2" 
               asChild
             >
               <Link to="/areas">
@@ -83,7 +75,7 @@ export function CityHeroSplit({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4"
           >
             {cityName}
           </motion.h1>
@@ -94,7 +86,7 @@ export function CityHeroSplit({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-lg text-muted-foreground mb-8 max-w-md"
+              className="text-lg text-white/80 mb-8 max-w-md"
             >
               {marketTagline}
             </motion.p>
@@ -108,17 +100,17 @@ export function CityHeroSplit({
             className="flex flex-wrap gap-3 mb-8"
           >
             {formatPopulation(population) && (
-              <div className="flex items-center gap-2 bg-muted/80 backdrop-blur-sm px-4 py-2 rounded-full">
-                <Users className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">
+              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                <Users className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">
                   {formatPopulation(population)} residents
                 </span>
               </div>
             )}
             {formatPrice(averagePrice) && (
-              <div className="flex items-center gap-2 bg-muted/80 backdrop-blur-sm px-4 py-2 rounded-full">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">
+              <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
+                <TrendingUp className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">
                   Avg. {formatPrice(averagePrice)}
                 </span>
               </div>
@@ -131,14 +123,14 @@ export function CityHeroSplit({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-wrap gap-2"
+              className="flex flex-wrap gap-x-4 gap-y-2 mb-10"
             >
               {highlights.slice(0, 3).map((highlight, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground"
+                  className="flex items-center gap-1.5 text-sm text-white/70"
                 >
-                  <MapPin className="h-3 w-3 text-primary" />
+                  <MapPin className="h-3 w-3" />
                   <span>{highlight}</span>
                 </div>
               ))}
@@ -150,9 +142,8 @@ export function CityHeroSplit({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mt-10"
           >
-            <Button size="lg" asChild>
+            <Button size="lg" className="bg-white text-foreground hover:bg-white/90" asChild>
               <Link to={`/listings?city=${encodeURIComponent(cityName)}`}>
                 Explore Listings
               </Link>
