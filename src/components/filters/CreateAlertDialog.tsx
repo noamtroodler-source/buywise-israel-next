@@ -131,7 +131,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
             <h2 className="text-xl font-semibold">Create Alert</h2>
           </div>
           <p className="text-muted-foreground">
-            Get notified when relevant listings appear — without constantly checking.
+            Let the right listings come to you.
           </p>
         </div>
 
