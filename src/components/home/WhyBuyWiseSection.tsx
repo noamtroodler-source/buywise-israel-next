@@ -5,7 +5,7 @@ const valueProps = [
   {
     icon: Compass,
     title: 'Discovery, Made Clear',
-    description: 'An english-first platform for internationals buying or renting in Israel. Clean, intuitive browsing across projects, resale homes, and long-term rentals.',
+    description: 'An english-first platform for internationals buying or renting in Israel. Clean, intuitive browsing across listings in Israel.',
   },
   {
     icon: Layers,
