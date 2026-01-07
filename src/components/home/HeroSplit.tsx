@@ -52,7 +52,7 @@ export function HeroSplit() {
           alt="Israeli cityscape" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2d3748]/95 via-[#2d3748]/80 to-[#2d3748]/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-foreground/40" />
       </div>
 
       {/* Content */}
