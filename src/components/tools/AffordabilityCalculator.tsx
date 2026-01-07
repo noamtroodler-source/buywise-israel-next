@@ -32,7 +32,7 @@ import {
   BuyerTypeInfoBanner,
   type BuyerCategory,
 } from './shared';
-import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
+
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 // Buyer types with their max LTV limits
@@ -1136,7 +1136,7 @@ function AffordabilityCalculatorContent() {
       title="Affordability Calculator"
       subtitle="Find your realistic home price range in Israel — based on income and savings."
       icon={<Wallet className="h-6 w-6" />}
-      intro={<ToolIntro {...TOOL_INTROS.affordability} />}
+      
       headerActions={
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
