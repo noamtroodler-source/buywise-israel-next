@@ -28,11 +28,11 @@ const tools: Tool[] = [
   { id: 'mortgage', label: 'Mortgage Calculator', description: 'Understand real monthly payments under Israeli mortgage rules — before speaking to a bank or broker.', icon: Calculator, category: 'calculator' },
   { id: 'totalcost', label: 'Total Cost Calculator', description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', icon: Receipt, category: 'calculator' },
   { id: 'affordability', label: 'Affordability Calculator', description: 'Know what you can realistically buy in Israel — based on income, savings, and local lending limits.', icon: Wallet, category: 'calculator' },
-  { id: 'investment', label: 'Investment Return Calculator', description: 'Evaluate returns, cash flow, and long-term value — using assumptions that reflect the Israeli market.', icon: TrendingUp, category: 'calculator' },
-  { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare renting versus buying in Israel — and understand when ownership actually makes sense.', icon: Scale, category: 'calculator' },
-  { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs in Israel — so you know what a property really requires, not just how it looks.', icon: Hammer, category: 'calculator' },
+  { id: 'investment', label: 'Investment Return Calculator', description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', icon: TrendingUp, category: 'calculator' },
+  { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare renting versus buying in Israel — and when ownership makes sense.', icon: Scale, category: 'calculator' },
+  { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs in Israel — beyond how a property looks.', icon: Hammer, category: 'calculator' },
   { id: 'neighborhood', label: 'Neighborhood Match', description: 'Find areas in Israel that fit how you live — not just what fits your budget.', icon: MapPinned, category: 'discovery' },
-  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Clarify what truly matters to you — so you search with confidence, not overwhelm.', icon: Compass, category: 'discovery' },
+  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Clarify what truly matters — so you search with confidence, not overwhelm.', icon: Compass, category: 'discovery' },
   { id: 'documents', label: 'Document Checklist', description: "Stay organized through the Israeli buying process — and know what's needed at every step.", icon: ClipboardList, category: 'discovery' },
 ];
 
