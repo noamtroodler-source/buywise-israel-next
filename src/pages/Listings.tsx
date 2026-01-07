@@ -97,7 +97,7 @@ export default function Listings() {
     }
     return {
       title: 'Properties for Sale',
-      subtitle: 'Discover resell properties across Israel - from modern apartments to family homes.',
+      subtitle: 'Explore resale homes across Israel — from modern apartments to family-friendly houses.',
     };
   };
 
