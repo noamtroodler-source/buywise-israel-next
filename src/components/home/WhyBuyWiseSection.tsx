@@ -4,7 +4,7 @@ import { Compass, Layers, Lightbulb, Scale } from 'lucide-react';
 const valueProps = [
   {
     icon: Compass,
-    title: 'A Better Way to Discover Properties',
+    title: 'Discovery, Made Clear',
     description: 'BuyWise is an english-first platform built specifically for internationals buying or renting in Israel. Browse projects, resale homes, and long-term rentals through a clean, intuitive experience that makes discovery feel calm and manageable.',
   },
   {
