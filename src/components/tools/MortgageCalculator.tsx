@@ -483,21 +483,6 @@ function MortgageCalculatorContent() {
 
         {/* Advanced Options */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm">Include Purchase Tax</Label>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs text-sm">
-                  Mas Rechisha (Purchase Tax) is paid to the Tax Authority within 50 days of signing. Rates vary by buyer type and property value.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <Switch checked={includeTaxesInCash} onCheckedChange={setIncludeTaxesInCash} />
-          </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-1">
