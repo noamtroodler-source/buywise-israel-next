@@ -18,16 +18,14 @@ export function FeaturedShowcase() {
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
   const viewAllLink = activeTab === 'sale' ? '/listings?status=for_sale' : '/listings?status=for_rent';
 
-  // Take 6 properties: 2 spotlight + 4 standard
+  // Take 6 properties for the grid
   const displayProperties = properties?.slice(0, 6) || [];
-  const spotlightProperties = displayProperties.slice(0, 2);
-  const standardProperties = displayProperties.slice(2, 6);
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-12 md:py-16 bg-muted/30">
       <div className="container">
         {/* Header with Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -76,51 +74,27 @@ export function FeaturedShowcase() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
-              <Skeleton className="aspect-[4/3] rounded-2xl" />
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="aspect-[4/3] rounded-xl" />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="aspect-[4/3] rounded-xl" />
+            ))}
           </div>
         )}
 
-        {/* Property Display */}
+        {/* Property Grid - Simple 3-column layout */}
         {!isLoading && displayProperties.length > 0 && (
-          <div className="space-y-6">
-            {/* Spotlight Row - 2 Larger Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {spotlightProperties.map((property, index) => (
-                <motion.div
-                  key={property.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <PropertyCard property={property} />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Standard Row - 4 Compact Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {standardProperties.map((property, index) => (
-                <motion.div
-                  key={property.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
-                >
-                  <PropertyCard property={property} compact />
-                </motion.div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {displayProperties.map((property, index) => (
+              <motion.div
+                key={property.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <PropertyCard property={property} />
+              </motion.div>
+            ))}
           </div>
         )}
 
