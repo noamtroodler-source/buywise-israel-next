@@ -173,7 +173,7 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
                 </div>
                 {priceChange !== null && (
                   <div className={`flex items-center text-xs font-medium ${
-                    priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
+                    priceChange > 0 ? 'text-success' : priceChange < 0 ? 'text-destructive' : 'text-muted-foreground'
                   }`}>
                     {priceChange > 0 ? (
                       <TrendingUp className="h-3 w-3 mr-0.5" />
@@ -351,7 +351,7 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
                   </div>
                   {priceChange !== null && (
                     <div className={`flex items-center text-xs font-medium ${
-                      priceChange > 0 ? 'text-emerald-600' : priceChange < 0 ? 'text-red-500' : 'text-muted-foreground'
+                      priceChange > 0 ? 'text-success' : priceChange < 0 ? 'text-destructive' : 'text-muted-foreground'
                     }`}>
                       {priceChange > 0 ? (
                         <TrendingUp className="h-3 w-3 mr-0.5" />
@@ -377,7 +377,7 @@ export function MarketStatsCards({ marketData, cityName, citySlug, canonicalMetr
         {priceVsNational !== null && (
           <div className="text-sm text-muted-foreground text-center pt-2 border-t border-border/30">
             {cityName} prices are{' '}
-            <span className={priceVsNational > 0 ? 'font-medium text-foreground' : 'font-medium text-emerald-600'}>
+            <span className={priceVsNational > 0 ? 'font-medium text-foreground' : 'font-medium text-success'}>
               {priceVsNational > 0 ? `${priceVsNational}% above` : `${Math.abs(priceVsNational)}% below`}
             </span>
             {' '}the national average of ₪{(NATIONAL_AVG_PRICE_SQM / 1000).toFixed(1)}K/m²

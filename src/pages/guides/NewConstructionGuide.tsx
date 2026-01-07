@@ -113,9 +113,9 @@ export default function NewConstructionGuide() {
             <li><strong>Your Protection:</strong> If the developer defaults, the bank returns your money</li>
             <li><strong>Held Until Registration:</strong> Guarantees remain valid until property is registered in your name</li>
           </ul>
-          <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20 mt-4">
+          <div className="bg-success/10 p-4 rounded-lg border border-success/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
               <span><strong>Key Insight:</strong> The bank guarantee system means buying new construction in Israel is 
               generally safer than buying resale, where you transfer full payment before receiving keys.</span>
             </p>
@@ -158,9 +158,9 @@ export default function NewConstructionGuide() {
               <span className="text-primary font-bold">50%</span>
             </div>
           </div>
-          <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20 mt-4">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
               <span><strong>Important:</strong> Payment schedules can vary by developer. Some require larger early 
               payments. Always negotiate and review the schedule carefully with your lawyer before signing.</span>
             </p>
@@ -237,9 +237,9 @@ export default function NewConstructionGuide() {
               <strong>Completed:</strong> Building finished, occupancy permit (Tofes 4) issued.
             </li>
           </ol>
-          <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20 mt-4">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
               <span><strong>Delays Are Common:</strong> Israeli construction projects often experience delays. 
               Plan for your move-in date to be 6-12 months later than promised. Your contract should include 
               delay compensation clauses.</span>
