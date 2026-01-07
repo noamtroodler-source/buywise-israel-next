@@ -29,14 +29,14 @@ export function CityCalculators({ cityName, averagePrice }: CityCalculatorsProps
       description: `See what you can afford in ${cityName}`,
       icon: Wallet,
       link: '/tools',
-      color: 'bg-emerald-500/10 text-emerald-600',
+      color: 'bg-success/10 text-success',
     },
     {
       title: 'Rent vs Buy Calculator',
       description: `Should you rent or buy in ${cityName}?`,
       icon: Home,
       link: '/tools',
-      color: 'bg-blue-500/10 text-blue-600',
+      color: 'bg-primary/10 text-primary',
     },
   ];
 

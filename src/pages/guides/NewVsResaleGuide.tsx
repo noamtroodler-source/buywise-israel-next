@@ -74,7 +74,7 @@ function ComparisonTable() {
           <tr className="border-b border-border">
             <th className="text-left py-3 px-4 font-semibold">Aspect</th>
             <th className="text-left py-3 px-4 font-semibold text-primary">New Construction</th>
-            <th className="text-left py-3 px-4 font-semibold text-amber-600">Resale</th>
+            <th className="text-left py-3 px-4 font-semibold text-accent-foreground">Resale</th>
           </tr>
         </thead>
         <tbody>
@@ -144,7 +144,7 @@ export default function NewVsResaleGuide() {
                   'Staged payments reduce initial outlay'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -163,7 +163,7 @@ export default function NewVsResaleGuide() {
                   'Changes to plans/finishes during construction'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -204,7 +204,7 @@ export default function NewVsResaleGuide() {
                   'No VAT (savings vs. new in some cases)'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -223,7 +223,7 @@ export default function NewVsResaleGuide() {
                   'Full payment required at closing'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -231,9 +231,9 @@ export default function NewVsResaleGuide() {
             </TabsContent>
           </Tabs>
 
-          <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20 mt-4">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
               <span>Always hire an engineer to inspect older properties. Hidden issues like 
               water damage, structural problems, or illegal construction can be costly.</span>
             </p>
@@ -364,7 +364,7 @@ export default function NewVsResaleGuide() {
               </div>
               <div className="flex justify-between font-semibold border-t pt-2">
                 <span>Total</span>
-                <span className="text-amber-600">3-12 months</span>
+                <span className="text-accent-foreground">3-12 months</span>
               </div>
             </div>
           </div>

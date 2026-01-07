@@ -25,8 +25,8 @@ export function TrendingList({ posts }: TrendingListProps) {
           viewport={{ once: true }}
           className="flex items-center gap-3 mb-6"
         >
-          <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-amber-600" />
+          <div className="h-10 w-10 rounded-xl bg-accent/20 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-accent-foreground" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground">Trending This Month</h2>
@@ -53,7 +53,7 @@ export function TrendingList({ posts }: TrendingListProps) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                     
-                    <Badge className="absolute top-3 left-3 bg-amber-500 text-white shadow-lg rounded-full px-3 py-1 text-xs font-bold">
+                    <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground shadow-lg rounded-full px-3 py-1 text-xs font-bold">
                       #1 Trending
                     </Badge>
 

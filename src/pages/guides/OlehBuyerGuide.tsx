@@ -79,7 +79,7 @@ export default function OlehBuyerGuide() {
             As a new immigrant (Oleh Chadash), you're entitled to significant benefits when purchasing 
             your first home in Israel. These benefits can save you tens of thousands of shekels.
           </p>
-          <h4 className="font-semibold text-green-600">Tax Benefits:</h4>
+          <h4 className="font-semibold text-success">Tax Benefits:</h4>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Reduced <GlossaryTooltip term="מס רכישה">Purchase Tax</GlossaryTooltip>:</strong> 
@@ -94,9 +94,9 @@ export default function OlehBuyerGuide() {
               Israel, certain exemptions may apply
             </li>
           </ul>
-          <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
+          <div className="bg-success/10 p-4 rounded-lg border border-success/20">
             <p className="text-sm flex items-start gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
               <span><strong>Potential Savings:</strong> An Oleh buying a 2.5M ₪ property pays approximately 
               ₪17,000 in purchase tax, vs. ₪200,000+ for an investment buyer.</span>
             </p>
@@ -127,9 +127,9 @@ export default function OlehBuyerGuide() {
             <li>Employment contracts or business documentation required</li>
             <li>Tax returns from previous country helpful</li>
           </ul>
-          <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20 mt-4">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
               <span>Start the mortgage pre-approval process early – it often takes longer for Olim due 
               to additional documentation requirements.</span>
             </p>
@@ -284,16 +284,16 @@ export default function OlehBuyerGuide() {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-green-500/10 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">7 yrs</div>
+              <div className="bg-success/10 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-success">7 yrs</div>
                 <div className="text-xs text-muted-foreground">Tax benefit window</div>
               </div>
               <div className="bg-primary/10 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-primary">75%</div>
                 <div className="text-xs text-muted-foreground">Max LTV for first home</div>
               </div>
-              <div className="bg-amber-500/10 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-amber-600">0%</div>
+              <div className="bg-warning/10 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-warning-foreground">0%</div>
                 <div className="text-xs text-muted-foreground">Tax on first ~1.9M ₪</div>
               </div>
             </div>

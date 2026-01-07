@@ -96,7 +96,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   };
 
   const filterButtonBase = "h-11 gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all";
-  const filterButtonActive = "bg-amber-100 border-amber-300 text-foreground";
+  const filterButtonActive = "bg-accent/20 border-accent/40 text-foreground";
 
   return (
     <div className="flex flex-wrap gap-2 items-center">
@@ -146,7 +146,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   className={cn(
                     "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors",
                     filters.city === city.name 
-                      ? "bg-amber-400 text-foreground font-medium" 
+                      ? "bg-accent text-accent-foreground font-medium" 
                       : "hover:bg-muted"
                   )}
                   onClick={() => {
@@ -203,7 +203,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   className={cn(
                     "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center justify-between",
                     filters.status === status.value 
-                      ? "bg-amber-400 text-foreground font-medium" 
+                      ? "bg-accent text-accent-foreground font-medium" 
                       : "hover:bg-muted"
                   )}
                   onClick={() => {
@@ -434,7 +434,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   className={cn(
                     "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center justify-between",
                     filters.developer_id === dev.id 
-                      ? "bg-amber-400 text-foreground font-medium" 
+                      ? "bg-accent text-accent-foreground font-medium" 
                       : "hover:bg-muted"
                   )}
                   onClick={() => {

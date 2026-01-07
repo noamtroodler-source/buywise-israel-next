@@ -44,9 +44,9 @@ export function PasswordStrengthInput({
     if (/[!@#$%^&*(),.?":{}|<>]/.test(value)) score++;
 
     if (score <= 1) return { level: 1, label: 'Weak', color: 'bg-destructive' };
-    if (score === 2) return { level: 2, label: 'Fair', color: 'bg-orange-500' };
-    if (score === 3) return { level: 3, label: 'Good', color: 'bg-yellow-500' };
-    return { level: 4, label: 'Strong', color: 'bg-green-500' };
+    if (score === 2) return { level: 2, label: 'Fair', color: 'bg-warning' };
+    if (score === 3) return { level: 3, label: 'Good', color: 'bg-accent' };
+    return { level: 4, label: 'Strong', color: 'bg-success' };
   }, [value]);
 
   return (
@@ -92,9 +92,9 @@ export function PasswordStrengthInput({
           <p className={cn(
             "text-xs font-medium transition-colors",
             strength.level <= 1 && "text-destructive",
-            strength.level === 2 && "text-orange-500",
-            strength.level === 3 && "text-yellow-600",
-            strength.level === 4 && "text-green-600"
+            strength.level === 2 && "text-warning-foreground",
+            strength.level === 3 && "text-accent-foreground",
+            strength.level === 4 && "text-success"
           )}>
             {strength.label}
           </p>
@@ -109,7 +109,7 @@ export function PasswordStrengthInput({
               key={index}
               className={cn(
                 "flex items-center gap-2 text-xs transition-colors",
-                req.met ? "text-green-600" : "text-muted-foreground"
+                req.met ? "text-success" : "text-muted-foreground"
               )}
             >
               {req.met ? (

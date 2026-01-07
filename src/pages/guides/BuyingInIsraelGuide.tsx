@@ -117,9 +117,9 @@ export default function BuyingInIsraelGuide() {
               <strong>Cooperative Housing:</strong> Ownership of shares in a housing company
             </li>
           </ul>
-          <div className="bg-amber-500/10 p-4 rounded-lg border border-amber-500/20">
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
               <span>Always verify the property's registration status before making any commitments. 
               Request a <GlossaryTooltip term="נסח טאבו">Nesach Tabu</GlossaryTooltip> (land registry extract).</span>
             </p>

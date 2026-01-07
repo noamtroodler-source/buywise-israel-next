@@ -200,11 +200,11 @@ export function BuyerCostSummary() {
 
         {/* Non-resident warning */}
         {buyerCategory === 'non_resident' && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <AlertCircle className="h-4 w-4 text-warning-foreground mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-amber-700">Non-Resident Buyer</p>
+                <p className="font-medium text-warning-foreground">Non-Resident Buyer</p>
                 <p className="text-muted-foreground">
                   LTV is limited to 50% and you'll pay higher purchase tax rates.
                 </p>
