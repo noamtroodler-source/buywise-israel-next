@@ -9,10 +9,10 @@ import {
   XCircle,
   CheckCircle2,
   ArrowRight,
-  Search,
   Layers,
   Scale,
   Compass,
+  Lightbulb,
   Users
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,27 +31,27 @@ const familiarFeelings = [
   },
 ];
 
-// Updated with new, more accurate framing
+// Updated to match homepage value props
 const whatWeAre = [
   {
-    icon: Search,
-    title: 'A Property Discovery Platform',
-    description: 'We give internationals a clean, English-first way to browse projects, resale homes, and rentals — without the friction, confusion, or poor UX of existing portals.',
+    icon: Compass,
+    title: 'Discovery, Made Clear',
+    description: 'An english-first platform for internationals buying or renting in Israel. Clean, intuitive browsing across listings in Israel.',
   },
   {
     icon: Layers,
-    title: 'A Context Layer',
-    description: "We don't just show listings. We show what they mean — with market context, real cost visibility, buyer-specific considerations, and Israel-specific explanations built directly into the experience.",
+    title: 'Context Built Into Every Listing',
+    description: 'Real cost context, market insight, and plain-English explanations — so you understand what a property actually means, not just its listing price.',
+  },
+  {
+    icon: Lightbulb,
+    title: 'Confidence Before Contact',
+    description: 'Speak to agents, brokers, or lawyers with confidence and clarity. Know what matters, what to ask, and where tradeoffs exist.',
   },
   {
     icon: Scale,
-    title: 'A Decision Support System',
-    description: 'Through tools, calculators, explanations, and comparisons, we help you understand your options and tradeoffs so you can evaluate properties intelligently — not emotionally.',
-  },
-  {
-    icon: Compass,
-    title: 'A Neutral Starting Point',
-    description: "We're not selling properties. We're helping you make sense of them — so when you do reach out to an agent or professional, you're informed, calm, and prepared.",
+    title: 'Independent & Unbiased',
+    description: "BuyWise is not a brokerage or a sales-driven portal. We don't push listings or rush decisions — we help you get clarity and move forward on your own terms.",
   },
 ];
 
