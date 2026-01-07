@@ -127,7 +127,7 @@ export default function Tools() {
                     Property Tools & Calculators
                   </h1>
                   <p className="text-muted-foreground">
-                    Powerful tools to help you make informed decisions about your property purchase in Israel
+                    Clarity-first tools for buying and renting in Israel — so you can move forward confident and prepared.
                   </p>
                 </motion.div>
               </div>
