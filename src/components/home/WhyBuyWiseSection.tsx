@@ -14,7 +14,7 @@ const valueProps = [
   },
   {
     icon: Lightbulb,
-    title: 'Clarity Before You Speak to Anyone',
+    title: 'Confidence Before Contact',
     description: 'BuyWise helps you prepare before contacting agents, brokers, or lawyers. You understand what matters, what to ask, and where tradeoffs exist — so you engage confidently instead of guessing.',
   },
   {
