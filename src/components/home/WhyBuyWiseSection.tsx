@@ -15,7 +15,7 @@ const valueProps = [
   {
     icon: Lightbulb,
     title: 'Confidence Before Contact',
-    description: 'Speak to agents, brokers, or lawyers with confidence. Know what matters, what to ask, and where tradeoffs exist.',
+    description: 'Speak to agents, brokers, or lawyers with confidence and clarity. Know what matters, what to ask, and where tradeoffs exist.',
   },
   {
     icon: Scale,
