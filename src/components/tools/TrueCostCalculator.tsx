@@ -777,19 +777,6 @@ export function TrueCostCalculator() {
         </p>
       </div>
 
-      {/* Tax Savings Alert */}
-      {calculations.taxSavings > 0 && buyerCategory !== 'additional' && buyerCategory !== 'non_resident' && (
-        <div className="px-4 pt-4">
-          <Alert className="bg-green-500/10 border-green-500/30">
-            <Lightbulb className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700 dark:text-green-400">
-              As a {getBuyerCategoryLabel(buyerCategory).toLowerCase()}, you save{' '}
-              <span className="font-semibold">{formatPrice(Math.round(calculations.taxSavings))}</span>{' '}
-              on purchase tax vs investor rates.
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
 
       {/* Quick Stats Grid - 2x2 with dividers */}
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
