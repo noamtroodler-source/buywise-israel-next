@@ -65,7 +65,7 @@ export function HeroSection() {
             className="text-lg md:text-xl text-primary-foreground max-w-2xl lg:max-w-none mx-auto lg:whitespace-nowrap"
             style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.4)' }}
           >
-            <span className="text-accent text-2xl inline-block -translate-y-0.5">•</span> English-first discovery <span className="text-accent text-2xl inline-block -translate-y-0.5">•</span> Market context in every listing <span className="text-accent text-2xl inline-block -translate-y-0.5">•</span> True cost transparency
+            <span className="text-accent text-2xl">•</span> English-first discovery <span className="text-accent text-2xl">•</span> Market context in every listing <span className="text-accent text-2xl">•</span> True cost transparency
           </p>
 
           {/* Search Box */}
