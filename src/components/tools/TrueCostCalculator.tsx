@@ -1012,7 +1012,7 @@ export function TrueCostCalculator() {
   return (
     <ToolLayout
       title="True Cost Calculator"
-      subtitle="See the complete cost of buying property in Israel — beyond just the price"
+      subtitle="See the true cost of buying property in Israel — beyond the list price."
       icon={<Calculator className="h-6 w-6 text-primary" />}
       intro={<ToolIntro {...TOOL_INTROS.trueCost} />}
       headerActions={
