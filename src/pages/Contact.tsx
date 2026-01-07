@@ -95,8 +95,8 @@ const Contact = () => {
               We'd Love to Hear From You
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Whether you have a question about buying property, feedback on our tools, 
-              or just want to say hi — we're here and genuinely happy to help.
+              Whether you have a question about buying or renting, feedback on our tools, 
+              or just want to think something through — we're here and happy to help.
             </p>
           </motion.div>
         </div>
