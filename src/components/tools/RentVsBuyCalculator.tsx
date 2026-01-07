@@ -1164,7 +1164,7 @@ export function RentVsBuyCalculator() {
   return (
     <ToolLayout
       title="Rent vs Buy Calculator"
-      subtitle="Compare the true cost of renting versus buying in Israel—finances AND lifestyle"
+      subtitle="Compare renting versus buying in Israel — financially and practically."
       icon={<Scale className="h-6 w-6" />}
       intro={<ToolIntro {...TOOL_INTROS.rentVsBuy} />}
       headerActions={headerActions}
