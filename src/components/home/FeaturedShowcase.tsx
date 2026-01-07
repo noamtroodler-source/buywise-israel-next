@@ -1,20 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, MapPin, Bed, Bath, Square } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFeaturedSaleProperties, useFeaturedRentalProperties } from '@/hooks/useProperties';
-import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
-import { FavoriteButton } from '@/components/property/FavoriteButton';
 
 type Tab = 'sale' | 'rent';
 
 export function FeaturedShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('sale');
-  const formatPrice = useFormatPrice();
-  const formatArea = useFormatArea();
   const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties();
   const { data: rentalProperties, isLoading: loadingRent } = useFeaturedRentalProperties();
 
@@ -22,16 +18,16 @@ export function FeaturedShowcase() {
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
   const viewAllLink = activeTab === 'sale' ? '/listings?status=for_sale' : '/listings?status=for_rent';
 
-  // Take first 5 properties for the showcase
-  const displayProperties = properties?.slice(0, 5) || [];
-  const heroProperty = displayProperties[0];
-  const gridProperties = displayProperties.slice(1, 5);
+  // Take 6 properties: 2 spotlight + 4 standard
+  const displayProperties = properties?.slice(0, 6) || [];
+  const spotlightProperties = displayProperties.slice(0, 2);
+  const standardProperties = displayProperties.slice(2, 6);
 
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container">
         {/* Header with Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -81,7 +77,10 @@ export function FeaturedShowcase() {
         {/* Loading State */}
         {isLoading && (
           <div className="space-y-6">
-            <Skeleton className="w-full aspect-[21/9] rounded-2xl" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
+              <Skeleton className="aspect-[4/3] rounded-2xl" />
+            </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="aspect-[4/3] rounded-xl" />
@@ -92,93 +91,37 @@ export function FeaturedShowcase() {
 
         {/* Property Display */}
         {!isLoading && displayProperties.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="space-y-6"
-          >
-            {/* Hero Property - Full Width Dramatic Card */}
-            {heroProperty && (
-              <Link 
-                to={`/property/${heroProperty.id}`}
-                className="block group"
-              >
-                <div className="relative w-full aspect-[21/9] md:aspect-[3/1] rounded-2xl overflow-hidden">
-                  {/* Background Image */}
-                  <img
-                    src={heroProperty.images?.[0] || '/placeholder.svg'}
-                    alt={heroProperty.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-                  
-                  {/* Content */}
-                  <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-end md:justify-center">
-                    <div className="max-w-xl space-y-3">
-                      {/* Featured Badge */}
-                      <span className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full uppercase tracking-wide">
-                        Featured
-                      </span>
-                      
-                      {/* Price */}
-                      <p className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
-                        {formatPrice(heroProperty.price, heroProperty.currency || 'ILS')}
-                        {activeTab === 'rent' && <span className="text-lg font-normal">/mo</span>}
-                      </p>
-                      
-                      {/* Title */}
-                      <h3 className="text-xl md:text-2xl font-semibold text-white">
-                        {heroProperty.title}
-                      </h3>
-                      
-                      {/* Location */}
-                      <div className="flex items-center gap-2 text-white/80">
-                        <MapPin className="h-4 w-4" />
-                        <span>{heroProperty.neighborhood ? `${heroProperty.neighborhood}, ` : ''}{heroProperty.city}</span>
-                      </div>
-                      
-                      {/* Features */}
-                      <div className="flex items-center gap-6 text-white/80 text-sm">
-                        {heroProperty.bedrooms && (
-                          <div className="flex items-center gap-1.5">
-                            <Bed className="h-4 w-4" />
-                            <span>{heroProperty.bedrooms} Beds</span>
-                          </div>
-                        )}
-                        {heroProperty.bathrooms && (
-                          <div className="flex items-center gap-1.5">
-                            <Bath className="h-4 w-4" />
-                            <span>{heroProperty.bathrooms} Baths</span>
-                          </div>
-                        )}
-                        {heroProperty.size_sqm && (
-                          <div className="flex items-center gap-1.5">
-                            <Square className="h-4 w-4" />
-                            <span>{formatArea(heroProperty.size_sqm)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Favorite Button */}
-                  <div className="absolute top-4 right-4">
-                    <FavoriteButton propertyId={heroProperty.id} />
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {/* Grid of 4 Property Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {gridProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} compact />
+          <div className="space-y-6">
+            {/* Spotlight Row - 2 Larger Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {spotlightProperties.map((property, index) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <PropertyCard property={property} />
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+
+            {/* Standard Row - 4 Compact Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {standardProperties.map((property, index) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 + index * 0.05 }}
+                >
+                  <PropertyCard property={property} compact />
+                </motion.div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Empty State */}
