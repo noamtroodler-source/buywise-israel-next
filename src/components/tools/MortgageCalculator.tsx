@@ -1,17 +1,21 @@
-// Mortgage Calculator - Reinvented for BuyWise Israel
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home } from 'lucide-react';
+// Mortgage Calculator - Enhanced for BuyWise Israel with Educational Content
+import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, BadgeCheck, HelpCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
-import { calculatePurchaseTax, BuyerType } from '@/lib/calculations/purchaseTax';
+import { calculateMortgagePayment, stressTestMortgage } from '@/lib/calculations/mortgage';
+import { BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
+import { useMortgageTracks } from '@/hooks/useMortgageTracks';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
@@ -19,17 +23,18 @@ import { Link } from 'react-router-dom';
 import { ToolDisclaimer, ToolFeedback, InsightCard } from './shared';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 
-// Buyer types with their max LTV limits
+// Buyer types with their max LTV limits and explanations
 const BUYER_TYPE_OPTIONS: { 
   value: BuyerType; 
   label: string; 
   maxLtv: number;
+  description: string;
 }[] = [
-  { value: 'first_time', label: 'First-Time Buyer', maxLtv: 75 },
-  { value: 'upgrader', label: 'Upgrading (Selling Current)', maxLtv: 70 },
-  { value: 'investor', label: 'Additional Property', maxLtv: 50 },
-  { value: 'oleh', label: 'Oleh Hadash', maxLtv: 75 },
-  { value: 'foreign', label: 'Non-Resident', maxLtv: 50 },
+  { value: 'first_time', label: 'First-Time Buyer', maxLtv: 75, description: 'Buying your first residential property in Israel' },
+  { value: 'upgrader', label: 'Upgrading (Selling Current)', maxLtv: 70, description: 'Selling your current home to buy a new one' },
+  { value: 'investor', label: 'Additional Property', maxLtv: 50, description: 'Buying a second property (investment or vacation)' },
+  { value: 'oleh', label: 'Oleh Hadash', maxLtv: 75, description: 'New immigrant within 7 years of Aliyah' },
+  { value: 'foreign', label: 'Non-Resident', maxLtv: 50, description: 'Not a resident of Israel' },
 ];
 
 const LOAN_TERMS = [10, 15, 20, 25, 30];
@@ -50,10 +55,29 @@ const parseFormattedNumber = (str: string): number => {
   return Number(cleaned) || 0;
 };
 
+// Helper component for info tooltips
+function InfoTooltip({ content }: { content: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="inline-flex items-center justify-center ml-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-sm">
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 function MortgageCalculatorContent() {
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile, isLoading: isProfileLoading } = useBuyerProfile();
+  const { data: mortgageTracks, isLoading: isTracksLoading } = useMortgageTracks();
   const { toast } = useToast();
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
@@ -70,7 +94,8 @@ function MortgageCalculatorContent() {
   const [interestRateInput, setInterestRateInput] = useState(DEFAULTS.interestRate.toFixed(1));
   
   // UI state
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [isTracksOpen, setIsTracksOpen] = useState(false);
+  const [isStressTestOpen, setIsStressTestOpen] = useState(false);
 
   // Set buyer type from profile
   useEffect(() => {
@@ -128,6 +153,16 @@ function MortgageCalculatorContent() {
     return calculateMortgagePayment(loanAmount, interestRate, loanTermYears);
   }, [loanAmount, interestRate, loanTermYears]);
 
+  // Stress test calculations
+  const stressTest = useMemo(() => {
+    const test1 = stressTestMortgage(loanAmount, interestRate, loanTermYears, 1);
+    const test2 = stressTestMortgage(loanAmount, interestRate, loanTermYears, 2);
+    return { 
+      plus1: test1,
+      plus2: test2 
+    };
+  }, [loanAmount, interestRate, loanTermYears]);
+
   // Calculate principal vs interest breakdown
   const principalPercent = useMemo(() => {
     if (mortgageResult.totalPayment <= 0) return 50;
@@ -136,25 +171,34 @@ function MortgageCalculatorContent() {
   
   const interestPercent = 100 - principalPercent;
 
-  // Generate personalized insights
+  // Generate personalized insights with Israel-specific context
   const insights = useMemo(() => {
     const messages: string[] = [];
     const totalInterestPercent = Math.round((mortgageResult.totalInterest / propertyPrice) * 100);
     
-    if (ltv >= 70) {
-      messages.push(`With ${ltv.toFixed(0)}% financing, you're borrowing close to the maximum. Less equity means less flexibility if you need to sell early—but it lets you keep more cash on hand.`);
+    // LTV-based insights
+    if (ltv >= maxLtv - 2) {
+      messages.push(`At ${ltv.toFixed(0)}% LTV, you're at the Bank of Israel maximum for ${currentBuyerType?.label || 'your buyer type'}. This is common in Israel, but leaves less equity cushion if prices dip.`);
     } else if (ltv <= 50) {
-      messages.push(`At ${ltv.toFixed(0)}% LTV, you have significant equity from day one. This gives you flexibility and may help negotiate better rates.`);
+      messages.push(`At ${ltv.toFixed(0)}% LTV, you have significant equity from day one. Israeli banks may offer better rates with this strong position.`);
     }
     
-    if (loanTermYears >= 28 && totalInterestPercent > 80) {
-      messages.push(`Over ${loanTermYears} years, you'll pay ${formatCurrency(mortgageResult.totalInterest)} in interest. If your income grows, consider prepaying to save significantly.`);
+    // Term-based insights
+    if (loanTermYears >= 28) {
+      messages.push(`Over ${loanTermYears} years, interest adds ${formatCurrency(mortgageResult.totalInterest)} to your cost. In Israel, Prime-track loans allow penalty-free prepayment—consider paying extra when possible.`);
     } else if (loanTermYears <= 15) {
-      messages.push(`A ${loanTermYears}-year term means higher payments but much less interest overall. You'll own your home outright relatively quickly.`);
+      messages.push(`A ${loanTermYears}-year mortgage is aggressive but builds equity fast. Israeli banks structure mortgages in "tracks"—a shorter term lets you take more risk on Prime rates.`);
+    }
+    
+    // Buyer type specific insights
+    if (buyerType === 'foreign') {
+      messages.push(`As a non-resident, Israeli banks typically require 50% down. Foreign income may be discounted 20-30% when calculating your borrowing capacity.`);
+    } else if (buyerType === 'oleh') {
+      messages.push(`As an Oleh, you qualify for the same LTV limits as first-time buyers. Some banks offer special Oleh mortgage packages—worth comparing.`);
     }
     
     return messages;
-  }, [ltv, loanTermYears, mortgageResult.totalInterest, propertyPrice, formatCurrency]);
+  }, [ltv, loanTermYears, mortgageResult.totalInterest, propertyPrice, formatCurrency, currentBuyerType, maxLtv, buyerType]);
 
   // Handlers
   const handleBuyerTypeChange = (value: BuyerType) => {
@@ -242,7 +286,8 @@ function MortgageCalculatorContent() {
     setLoanTermYears(DEFAULTS.loanTermYears);
     setInterestRate(DEFAULTS.interestRate);
     setInterestRateInput(DEFAULTS.interestRate.toFixed(1));
-    setIsAdvancedOpen(false);
+    setIsTracksOpen(false);
+    setIsStressTestOpen(false);
     toast({ title: "Reset complete", description: "All values restored to defaults" });
   };
 
@@ -266,6 +311,16 @@ function MortgageCalculatorContent() {
       });
     } else {
       toast({ title: "Calculation saved", description: "Your inputs have been saved locally. Sign in to save to your profile." });
+    }
+  };
+
+  // Get risk level badge color
+  const getRiskBadgeVariant = (risk: string | null) => {
+    switch (risk) {
+      case 'low': return 'secondary';
+      case 'medium': return 'outline';
+      case 'high': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -303,15 +358,23 @@ function MortgageCalculatorContent() {
             {formatCurrency(mortgageResult.monthlyPayment)}
           </motion.p>
           <p className="text-sm text-muted-foreground mt-3">
-            Over {loanTermYears} years at {interestRate.toFixed(1)}% interest
+            Over {loanTermYears} years at {interestRate.toFixed(1)}% blended rate
           </p>
+          {/* Stress test preview */}
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
+            <TrendingUp className="h-3 w-3" />
+            <span>If rates rise 2%: {formatCurrency(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
+          </div>
         </div>
 
-        {/* Essential Inputs */}
+        {/* Inputs Section */}
         <div className="p-6 space-y-6">
           {/* Property Price */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Property Price</Label>
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Property Price</Label>
+              <InfoTooltip content="Israeli property prices are typically listed in Shekels (₪). For luxury or investment properties, you may also see USD pricing." />
+            </div>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
               <Input
@@ -329,7 +392,10 @@ function MortgageCalculatorContent() {
           {/* Down Payment */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Down Payment</Label>
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Down Payment</Label>
+                <InfoTooltip content="Bank of Israel regulates maximum LTV (loan-to-value) by buyer type. First-time buyers and Olim can borrow up to 75%, while investors are limited to 50%." />
+              </div>
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={toggleDownPaymentMode}>
                 Switch to {downPaymentMode === 'percent' ? 'amount' : 'percent'}
               </Button>
@@ -361,7 +427,10 @@ function MortgageCalculatorContent() {
 
           {/* Loan Term */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Loan Term</Label>
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Loan Term</Label>
+              <InfoTooltip content="Israeli mortgages typically range from 15-30 years. Longer terms mean lower payments but significantly more interest. Most buyers choose 20-25 years." />
+            </div>
             <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
               <SelectTrigger className="h-12 text-lg">
                 <SelectValue />
@@ -374,56 +443,50 @@ function MortgageCalculatorContent() {
             </Select>
           </div>
 
-          {/* Advanced Options Collapsible */}
-          <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between h-auto py-3 px-0 hover:bg-transparent">
-                <span className="text-sm text-muted-foreground">Customize your scenario</span>
-                <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isAdvancedOpen && "rotate-180")} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-2">
-              {/* Interest Rate */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Interest Rate</Label>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    value={interestRateInput}
-                    onChange={handleInterestRateChange}
-                    onBlur={handleInterestRateBlur}
-                    className="pr-10 h-12 text-lg"
-                    placeholder="5.0"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Israeli mortgages use mixed tracks. This is a blended average rate.
-                </p>
-              </div>
+          {/* Interest Rate - Now visible */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Interest Rate</Label>
+              <InfoTooltip content="Israeli mortgages use 'mixed tracks' with different rate types (Prime, Fixed, CPI-linked). This is your estimated blended average rate across all tracks." />
+            </div>
+            <div className="relative">
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={interestRateInput}
+                onChange={handleInterestRateChange}
+                onBlur={handleInterestRateBlur}
+                className="pr-10 h-12 text-lg"
+                placeholder="5.0"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+            </div>
+          </div>
 
-              {/* Buyer Type */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Buyer Type</Label>
-                <Select value={buyerType} onValueChange={(v) => handleBuyerTypeChange(v as BuyerType)}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BUYER_TYPE_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label} (max {option.maxLtv}% LTV)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Buyer type affects maximum financing allowed.
-                </p>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          {/* Buyer Type - Now visible */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Buyer Type</Label>
+              <InfoTooltip content="Your buyer category determines maximum LTV (financing) allowed by Bank of Israel regulations and affects your purchase tax rates." />
+            </div>
+            <Select value={buyerType} onValueChange={(v) => handleBuyerTypeChange(v as BuyerType)}>
+              <SelectTrigger className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUYER_TYPE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex flex-col items-start">
+                      <span>{option.label} <span className="text-muted-foreground">• max {option.maxLtv}% LTV</span></span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {currentBuyerType?.description}
+            </p>
+          </div>
         </div>
 
         {/* Visual Breakdown Bar */}
@@ -456,11 +519,17 @@ function MortgageCalculatorContent() {
             <p className="text-lg font-semibold mt-0.5">{formatCurrency(loanAmount)}</p>
           </div>
           <div className="p-4 border-b lg:border-b-0 lg:border-r border-border">
-            <p className="text-xs text-muted-foreground">Financing Ratio</p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground">Financing Ratio</p>
+              <InfoTooltip content={`Maximum ${maxLtv}% LTV allowed for ${currentBuyerType?.label || 'your buyer type'} per Bank of Israel regulations.`} />
+            </div>
             <p className="text-lg font-semibold mt-0.5">{ltv.toFixed(0)}% LTV</p>
           </div>
           <div className="p-4 border-r border-border">
-            <p className="text-xs text-muted-foreground">Interest Over Time</p>
+            <div className="flex items-center gap-1">
+              <p className="text-xs text-muted-foreground">Interest Over Time</p>
+              <InfoTooltip content="Total interest paid over the life of the loan. Prepaying principal (especially on Prime tracks) can significantly reduce this." />
+            </div>
             <p className="text-lg font-semibold mt-0.5">{formatCurrency(mortgageResult.totalInterest)}</p>
           </div>
           <div className="p-4">
@@ -470,12 +539,145 @@ function MortgageCalculatorContent() {
         </div>
       </Card>
 
+      {/* Educational Sections */}
+      <div className="mt-6 space-y-4">
+        {/* Israeli Mortgage Tracks Section */}
+        <Collapsible open={isTracksOpen} onOpenChange={setIsTracksOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Info className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">How Israeli Mortgages Work</p>
+                  <p className="text-xs text-muted-foreground">Understanding the multi-track system (משלבים)</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isTracksOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Unlike single-rate mortgages elsewhere, Israeli banks require you to split your loan into 2-3 "tracks" (מסלולים) with different rate structures. Bank of Israel limits each track to ~33% of your loan.
+                </p>
+                
+                {isTracksLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : mortgageTracks && mortgageTracks.length > 0 ? (
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="text-xs">Track</TableHead>
+                          <TableHead className="text-xs">Rate Range</TableHead>
+                          <TableHead className="text-xs">Risk</TableHead>
+                          <TableHead className="text-xs hidden md:table-cell">Best For</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mortgageTracks.map((track) => (
+                          <TableRow key={track.id}>
+                            <TableCell className="py-3">
+                              <div>
+                                <p className="font-medium text-sm">{track.hebrew_name}</p>
+                                <p className="text-xs text-muted-foreground">{track.english_name}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <span className="text-sm font-medium">
+                                {track.current_rate_min}% - {track.current_rate_max}%
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Badge variant={getRiskBadgeVariant(track.risk_level)} className="text-xs capitalize">
+                                {track.risk_level}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 hidden md:table-cell">
+                              <p className="text-xs text-muted-foreground">{track.best_use_case}</p>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : null}
+
+                {buyerType === 'foreign' && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                      <strong>For foreign income earners:</strong> CPI-linked tracks add inflation risk on top of currency risk. Many advisors recommend non-indexed (Fixed Shekel) tracks for USD/EUR earners.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Stress Test Section */}
+        <Collapsible open={isStressTestOpen} onOpenChange={setIsStressTestOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">What If Rates Rise?</p>
+                  <p className="text-xs text-muted-foreground">Bank of Israel recommends stress-testing at +2%</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isStressTestOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-4">
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 1).toFixed(1)}% (+1%)</p>
+                    <p className="text-xl font-semibold">{formatCurrency(stressTest.plus1.stressedPayment)}/mo</p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      +{formatCurrency(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 2).toFixed(1)}% (+2%)</p>
+                    <p className="text-xl font-semibold">{formatCurrency(stressTest.plus2.stressedPayment)}/mo</p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      +{formatCurrency(stressTest.plus2.increase)} ({stressTest.plus2.increasePercent.toFixed(1)}% higher)
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  If these payments feel risky, consider a larger down payment, shorter term, or allocating more to Fixed tracks which won't change with rates.
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </div>
+
       {/* Bottom Section */}
       <div className="mt-8 space-y-6">
         {/* Insight Card */}
         {insights.length > 0 && (
           <InsightCard insights={insights} />
         )}
+
+        {/* Calculated for Israel Badge */}
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+          <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Calculated for Israel</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              This calculator reflects Bank of Israel lending regulations including LTV limits by buyer type, PTI constraints, and the multi-track mortgage structure. For personalized advice, consult a licensed mortgage advisor (יועץ משכנתאות).
+            </p>
+          </div>
+        </div>
 
         {/* Next Steps Grid */}
         <div className="grid sm:grid-cols-3 gap-4">
