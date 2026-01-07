@@ -182,7 +182,7 @@ export default function Principles() {
                 What BuyWise Actually Is
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                BuyWise isn't a brokerage. It isn't a listings-only site. And it doesn't push you toward outreach before you're ready.
+                BuyWise isn't a brokerage. It isn't just a listings site. And it doesn't push you toward outreach before you're ready.
               </p>
             </motion.div>
 
