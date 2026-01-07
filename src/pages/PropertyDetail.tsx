@@ -87,12 +87,6 @@ export default function PropertyDetail() {
               parking={property.parking}
             />
 
-            {/* Agent Contact Section */}
-            <AgentContactSection 
-              agent={property.agent}
-              propertyTitle={property.title}
-            />
-
             {/* Zone 3: Collapsible Detail Sections */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -140,6 +134,12 @@ export default function PropertyDetail() {
                 longitude={property.longitude}
               />
             </motion.div>
+
+            {/* Agent Contact Section */}
+            <AgentContactSection 
+              agent={property.agent}
+              propertyTitle={property.title}
+            />
 
             {/* City Market CTA */}
             <CityMarketCTA cityName={property.city} />
