@@ -154,7 +154,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
             )}
             <div className="flex items-center gap-2 text-sm text-primary">
               <Sparkles className="h-4 w-4" />
-              <span>36 current listings match</span>
+              <span>36 listings currently match your criteria</span>
             </div>
           </div>
 
