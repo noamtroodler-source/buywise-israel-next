@@ -89,11 +89,10 @@ const whatWeDo = [
 ];
 
 const whatWeDontDo = [
-  'No paid ranking of listings',
-  'No hidden agent incentives',
-  'No pressure tactics or countdown timers',
+  'No pressure tactics or artificial urgency',
   'No fake precision when ranges are more honest',
-  "No pushing you toward decisions you're not ready for",
+  "No pushing you toward decisions before you're ready",
+  'No confusing ads disguised as advice',
 ];
 
 export default function Principles() {
