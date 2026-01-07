@@ -86,7 +86,7 @@ export default function Listings() {
     if (isRentals) {
       return {
         title: 'Long-term Rentals',
-        subtitle: 'Find your perfect rental home in Israel with our comprehensive listings.',
+        subtitle: 'Long-term rental listings across Israel, clearly organized.',
       };
     }
     if (isSoldView) {
