@@ -1087,7 +1087,7 @@ export function InvestmentReturnCalculator() {
   return (
     <ToolLayout 
       title="Investment Return Calculator" 
-      subtitle="Analyze potential returns on Israeli investment properties" 
+      subtitle="Evaluate returns and cash flow using assumptions grounded in the Israeli market." 
       icon={<TrendingUp className="h-6 w-6" />}
       intro={<ToolIntro {...TOOL_INTROS.investment} />}
       infoBanner={
