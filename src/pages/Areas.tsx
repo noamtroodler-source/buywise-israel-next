@@ -416,7 +416,7 @@ export default function Areas() {
               Explore Areas
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover Israel's most desirable neighborhoods and find your perfect location
+              Understand how different housing markets across Israel behave.
             </p>
             
             {/* Search Input */}
