@@ -138,9 +138,6 @@ export default function Blog() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto text-center space-y-4"
           >
-            <Badge variant="secondary" className="px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border-0">
-              Your English-First Resource
-            </Badge>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
               Learn Before You Leap
             </h1>
