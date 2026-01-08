@@ -32,58 +32,54 @@ const tools = [
 
 export function ToolsSpotlight() {
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-10 md:py-14">
       <div className="container">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10"
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               Plan Your Move
             </h2>
-            <p className="text-muted-foreground mt-2">
-              Free calculators built for the Israeli market
+            <p className="text-sm text-muted-foreground mt-1">
+              Free calculators built for Israel
             </p>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild>
             <Link to="/tools" className="gap-2">
-              Explore All Tools
-              <ArrowRight className="h-4 w-4" />
+              All Tools
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </motion.div>
 
         {/* Tools Grid */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {tools.map((tool, index) => (
             <motion.div
               key={tool.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
             >
               <Link
                 to={tool.link}
-                className="group block h-full p-6 rounded-2xl bg-card border border-border shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300"
+                className="group block h-full p-4 rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className={`w-12 h-12 rounded-xl ${tool.color} flex items-center justify-center mb-5`}>
-                  <tool.icon className="w-6 h-6" />
+                <div className={`w-9 h-9 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
+                  <tool.icon className="w-4 h-4" />
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                <h3 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                   {tool.title}
                 </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                <p className="text-muted-foreground text-xs leading-relaxed">
                   {tool.description}
                 </p>
-                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                  Try it free
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </span>
               </Link>
             </motion.div>
           ))}

@@ -232,7 +232,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
           ) : (
             /* Non-Compact Mode: Standard Layout */
             <>
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-[16/10] overflow-hidden">
                 {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -327,13 +327,13 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 </div>
               </div>
 
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="p-3 space-y-1.5">
                 {/* Price */}
                 <div className="flex items-baseline justify-between">
-                  <span className="font-bold text-foreground text-2xl">
+                  <span className="font-bold text-foreground text-lg">
                     {formatPrice(property.price, property.currency || 'ILS')}
                     {property.listing_status === 'for_rent' && (
-                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      <span className="text-xs font-normal text-muted-foreground">/mo</span>
                     )}
                   </span>
                   {property.listing_status === 'for_sale' && showMonthlyEstimate && (
@@ -341,33 +341,28 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   )}
                 </div>
 
-                {/* Title */}
-                <h3 className="font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                  {property.title}
-                </h3>
-
                 {/* Location */}
                 <div className="flex items-center gap-1 text-muted-foreground">
-                  <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm line-clamp-1">
+                  <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="text-xs line-clamp-1">
                     {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                   </span>
                 </div>
 
                 {/* Features */}
-                <div className="flex items-center gap-4 pt-2 border-t border-border">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Bed className="h-4 w-4" />
-                    <span className="text-sm">{property.bedrooms}</span>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Bed className="h-3.5 w-3.5" />
+                    <span className="text-xs">{property.bedrooms}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Bath className="h-4 w-4" />
-                    <span className="text-sm">{property.bathrooms}</span>
+                  <div className="flex items-center gap-1">
+                    <Bath className="h-3.5 w-3.5" />
+                    <span className="text-xs">{property.bathrooms}</span>
                   </div>
                   {property.size_sqm && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Maximize className="h-4 w-4" />
-                      <span className="text-sm">{formatArea(property.size_sqm)}</span>
+                    <div className="flex items-center gap-1">
+                      <Maximize className="h-3.5 w-3.5" />
+                      <span className="text-xs">{formatArea(property.size_sqm)}</span>
                     </div>
                   )}
                 </div>

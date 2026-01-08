@@ -66,33 +66,33 @@ export function RegionExplorer() {
   const [activeRegion, setActiveRegion] = useState<Region>('coastal');
 
   return (
-    <section className="py-16 md:py-24 bg-muted/30">
+    <section className="py-10 md:py-14 bg-muted/30">
       <div className="container">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10"
+          className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               Explore by Region
             </h2>
-            <p className="text-muted-foreground mt-2">
-              Discover neighborhoods across Israel's diverse regions
+            <p className="text-sm text-muted-foreground mt-1">
+              Discover neighborhoods across Israel
             </p>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild>
             <Link to="/areas" className="gap-2">
-              View All Areas
-              <ArrowRight className="h-4 w-4" />
+              View All
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </motion.div>
 
         {/* Region Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-1.5 mb-5">
           {(Object.keys(regions) as Region[]).map((region) => {
             const { label, icon: Icon } = regions[region];
             const isActive = activeRegion === region;
@@ -100,13 +100,13 @@ export function RegionExplorer() {
               <button
                 key={region}
                 onClick={() => setActiveRegion(region)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-md'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 border border-border'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {label}
               </button>
             );
@@ -120,19 +120,19 @@ export function RegionExplorer() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
           >
             {regions[activeRegion].cities.map((city, index) => (
               <motion.div
                 key={city.slug}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
               >
                 <Link
                   to={`/areas/${city.slug}`}
-                  className="group block relative overflow-hidden rounded-xl aspect-[16/10] bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
+                  className="group block relative overflow-hidden rounded-lg aspect-[3/2] bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
                 >
                   <img
                     src={city.image}
@@ -140,11 +140,11 @@ export function RegionExplorer() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <h3 className="text-xl font-bold text-white mb-1">
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <h3 className="text-base font-bold text-white">
                       {city.name}
                     </h3>
-                    <p className="text-sm text-white/80">
+                    <p className="text-xs text-white/80">
                       {city.propertyCount} properties
                     </p>
                   </div>

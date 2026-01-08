@@ -26,13 +26,13 @@ const stats = [
 
 export function TrustStrip() {
   return (
-    <section className="py-12 md:py-16 border-y border-border bg-muted/20">
+    <section className="py-6 md:py-8 border-y border-border bg-muted/20">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4"
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4"
         >
           {stats.map((stat, index) => (
             <motion.div
@@ -43,13 +43,13 @@ export function TrustStrip() {
               transition={{ duration: 0.3, delay: index * 0.1 }}
               className="text-center"
             >
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary mb-3">
-                <stat.icon className="w-5 h-5" />
+              <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary mb-2">
+                <stat.icon className="w-4 h-4" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-foreground">
+              <div className="text-xl md:text-2xl font-bold text-foreground">
                 {stat.value}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 {stat.label}
               </div>
             </motion.div>

@@ -24,13 +24,13 @@ export function ProjectsHighlight() {
 
   if (isLoading) {
     return (
-      <section className="py-16 md:py-24">
+      <section className="py-10 md:py-14">
         <div className="container">
-          <div className="grid lg:grid-cols-5 gap-6">
-            <Skeleton className="lg:col-span-3 aspect-[16/10] rounded-xl" />
-            <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="aspect-[16/9] rounded-xl" />
-              <Skeleton className="aspect-[16/9] rounded-xl" />
+          <div className="grid lg:grid-cols-5 gap-4">
+            <Skeleton className="lg:col-span-3 aspect-[16/9] rounded-lg" />
+            <div className="lg:col-span-2 space-y-3">
+              <Skeleton className="aspect-[16/7] rounded-lg" />
+              <Skeleton className="aspect-[16/7] rounded-lg" />
             </div>
           </div>
         </div>
@@ -43,31 +43,31 @@ export function ProjectsHighlight() {
   }
 
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-10 md:py-14">
       <div className="container">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-              <div className="flex items-center gap-2 text-primary mb-2">
-              <Building2 className="h-5 w-5" />
-              <span className="text-sm font-medium">New Construction</span>
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Building2 className="h-4 w-4" />
+              <span className="text-xs font-medium">New Construction</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               New Developments
             </h2>
-            <p className="text-muted-foreground mt-2 max-w-lg">
-              Pre-construction projects with transparent pricing from vetted developers
+            <p className="text-sm text-muted-foreground mt-1 max-w-lg">
+              Pre-construction projects with transparent pricing
             </p>
           </motion.div>
 
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild>
             <Link to="/projects" className="gap-2">
-              View All Projects
-              <ArrowRight className="h-4 w-4" />
+              View All
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
@@ -77,15 +77,15 @@ export function ProjectsHighlight() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid lg:grid-cols-5 gap-6"
+          className="grid lg:grid-cols-5 gap-4"
         >
           {/* Main Project Card */}
           {mainProject && (
             <Link
               to={`/projects/${mainProject.slug}`}
-              className="lg:col-span-3 group relative overflow-hidden rounded-2xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+              className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
             >
-              <div className="aspect-[16/10] overflow-hidden">
+              <div className="aspect-[16/9] overflow-hidden">
                 <img
                   src={mainProject.images?.[0] || '/placeholder.svg'}
                   alt={mainProject.name}
@@ -93,25 +93,25 @@ export function ProjectsHighlight() {
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge className="bg-primary text-primary-foreground">
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge className="bg-primary text-primary-foreground text-xs">
                     New Project
                   </Badge>
                   {mainProject.developer && (
-                    <span className="text-sm text-white/80 flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified Developer'}
+                    <span className="text-xs text-white/80 flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
                     </span>
                   )}
                 </div>
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-1">
                   {mainProject.name}
                 </h3>
-                <p className="text-white/80 mb-3">
+                <p className="text-sm text-white/80 mb-2">
                   {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
                 </p>
-                <p className="text-xl font-semibold text-white">
+                <p className="text-base font-semibold text-white">
                   From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
                 </p>
               </div>
@@ -119,14 +119,14 @@ export function ProjectsHighlight() {
           )}
 
           {/* Side Projects */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3">
             {sideProjects.map((project) => (
               <Link
                 key={project.id}
                 to={`/projects/${project.slug}`}
-                className="group block relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+                className="group block relative overflow-hidden rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
               >
-                <div className="aspect-[16/9] overflow-hidden">
+                <div className="aspect-[16/7] overflow-hidden">
                   <img
                     src={project.images?.[0] || '/placeholder.svg'}
                     alt={project.name}
@@ -134,14 +134,14 @@ export function ProjectsHighlight() {
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <Badge className="bg-primary/90 text-primary-foreground mb-2 text-xs">
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">
                     New Project
                   </Badge>
-                  <h3 className="text-lg font-bold text-white mb-1">
+                  <h3 className="text-base font-bold text-white">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-white/80">
+                  <p className="text-xs text-white/80">
                     {project.city} • From {formatPrice(project.price_from, project.currency || 'ILS')}
                   </p>
                 </div>
