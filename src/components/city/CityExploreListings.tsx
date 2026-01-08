@@ -10,8 +10,8 @@ interface CityExploreListingsProps {
 
 export function CityExploreListings({ cityName, propertiesCount }: CityExploreListingsProps) {
   return (
-    <section className="py-16 bg-background border-y border-border/50">
-      <div className="container max-w-4xl">
+    <section className="py-16 bg-background border-t border-border/50">
+      <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
