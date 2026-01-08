@@ -159,39 +159,30 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                   <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
                     <RadioGroupItem value="israeli_resident" id="israeli" />
                     <Label htmlFor="israeli" className="flex items-center gap-3 cursor-pointer flex-1">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                        <User className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                      <User className="h-5 w-5 text-primary" />
                       <div>
                         <p className="font-medium">Israeli Resident</p>
-                        <p className="text-sm text-muted-foreground">Israeli citizen or permanent resident</p>
+                        <p className="text-sm text-muted-foreground">I'm an Israeli citizen or permanent resident</p>
                       </div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 rounded-lg border-2 border-primary/30 bg-primary/5 hover:border-primary/50 hover:bg-primary/10 transition-colors cursor-pointer relative">
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
                     <RadioGroupItem value="oleh_hadash" id="oleh" />
                     <Label htmlFor="oleh" className="flex items-center gap-3 cursor-pointer flex-1">
-                      <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Plane className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">Oleh Hadash</p>
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/20 text-primary">TAX BENEFITS</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground">Made Aliyah in the last 7 years</p>
+                      <Plane className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Oleh Hadash</p>
+                        <p className="text-sm text-muted-foreground">I made Aliyah in the last 7 years</p>
                       </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
                     <RadioGroupItem value="non_resident" id="foreign" />
                     <Label htmlFor="foreign" className="flex items-center gap-3 cursor-pointer flex-1">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                      <Building2 className="h-5 w-5 text-primary" />
                       <div>
-                        <p className="font-medium">Non-Resident / Foreign</p>
-                        <p className="text-sm text-muted-foreground">Don't have Israeli residency</p>
+                        <p className="font-medium">Non-Resident / Foreign Buyer</p>
+                        <p className="text-sm text-muted-foreground">I don't have Israeli residency</p>
                       </div>
                     </Label>
                   </div>
