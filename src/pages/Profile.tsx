@@ -240,13 +240,6 @@ export default function Profile() {
                     View Saved Calculator Results
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/tools')}
-                  >
-                    Buyer Tools & Calculators
-                  </Button>
                 </CardContent>
               </Card>
             </div>
