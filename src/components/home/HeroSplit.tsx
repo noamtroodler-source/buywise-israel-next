@@ -72,7 +72,7 @@ export function HeroSplit() {
 
             {/* Subheadline */}
             <p className="text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
-              The first platform built for internationals—finally revealing true costs, market context, and local insights in every listing. No more guessing.
+              Transparent costs, market insights, and local context—in English. Finally.
             </p>
 
             {/* Search Box */}
