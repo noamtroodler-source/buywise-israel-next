@@ -47,20 +47,20 @@ const STAGE_CONFIG: Record<string, {
   estimatedDays: string;
   transactionType: 'buy' | 'rent' | 'both';
 }> = {
-  'pre-search': { label: 'Pre-Search Preparation', description: 'Documents to gather before you start looking', icon: ClipboardList, estimatedDays: '1-2 weeks', transactionType: 'buy' },
-  'pre-approval': { label: 'Mortgage Pre-Approval', description: 'Bank requirements for financing', icon: Landmark, estimatedDays: '1-2 weeks', transactionType: 'buy' },
-  'offer': { label: 'Making an Offer', description: 'Documents for the offer stage', icon: FileText, estimatedDays: '1-3 days', transactionType: 'buy' },
-  'contract': { label: 'Contract Signing', description: 'Legal documents for the purchase agreement', icon: Scale, estimatedDays: '1-2 weeks', transactionType: 'buy' },
-  'mortgage-final': { label: 'Final Mortgage Approval', description: 'Complete your financing', icon: Landmark, estimatedDays: '2-4 weeks', transactionType: 'buy' },
+  // Purchase stages - matching actual database stage values
+  'pre_approval': { label: 'Mortgage Pre-Approval', description: 'Bank requirements for financing', icon: Landmark, estimatedDays: '1-2 weeks', transactionType: 'buy' },
+  'contract_signing': { label: 'Contract Signing', description: 'Legal documents for the purchase agreement', icon: Scale, estimatedDays: '1-2 weeks', transactionType: 'buy' },
   'closing': { label: 'Closing & Handover', description: 'Final documents for property transfer', icon: Home, estimatedDays: '1-2 weeks', transactionType: 'buy' },
-  'rental-search': { label: 'Rental Search', description: 'Documents to prepare before viewing apartments', icon: MapPin, estimatedDays: '1 week', transactionType: 'rent' },
-  'rental-application': { label: 'Application & Guarantor', description: 'Documents required by landlords', icon: User, estimatedDays: '3-5 days', transactionType: 'rent' },
-  'rental-contract': { label: 'Rental Contract', description: 'Lease agreement documents', icon: Scale, estimatedDays: '1-3 days', transactionType: 'rent' },
-  'rental-move-in': { label: 'Move-In', description: 'Final documents for moving in', icon: Home, estimatedDays: '1-2 days', transactionType: 'rent' }
+  'post_purchase': { label: 'Post-Purchase', description: 'Documents needed after purchase completion', icon: ClipboardList, estimatedDays: '1-3 months', transactionType: 'buy' },
+  // Rental stages - matching actual database stage values
+  'rental_search': { label: 'Rental Search', description: 'Documents to prepare before viewing apartments', icon: MapPin, estimatedDays: '1 week', transactionType: 'rent' },
+  'rental_guarantor': { label: 'Application & Guarantor', description: 'Documents required by landlords', icon: User, estimatedDays: '3-5 days', transactionType: 'rent' },
+  'rental_contract': { label: 'Rental Contract', description: 'Lease agreement documents', icon: Scale, estimatedDays: '1-3 days', transactionType: 'rent' },
+  'rental_movein': { label: 'Move-In', description: 'Final documents for moving in', icon: Home, estimatedDays: '1-2 days', transactionType: 'rent' }
 };
 
-const BUY_STAGE_ORDER = ['pre-search', 'pre-approval', 'offer', 'contract', 'mortgage-final', 'closing'];
-const RENT_STAGE_ORDER = ['rental-search', 'rental-application', 'rental-contract', 'rental-move-in'];
+const BUY_STAGE_ORDER = ['pre_approval', 'contract_signing', 'closing', 'post_purchase'];
+const RENT_STAGE_ORDER = ['rental_search', 'rental_guarantor', 'rental_contract', 'rental_movein'];
 const BUYER_TYPE_OPTIONS = [{ value: 'all', label: 'All Buyers' }, { value: 'israeli_resident', label: 'Israeli Resident' }, { value: 'oleh', label: 'Oleh Chadash' }, { value: 'foreign', label: 'Foreign Buyer' }];
 const STORAGE_KEY = 'document-checklist-state';
 
