@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { BuyerProfileDimensions, deriveEffectiveBuyerType, DerivedBuyerType } from '@/lib/calculations/buyerProfile';
+import { BuyerType } from '@/lib/calculations/purchaseTax';
 
 export interface BuyerProfile {
   id: string;
@@ -12,6 +14,10 @@ export interface BuyerProfile {
   purchase_purpose: 'primary_residence' | 'vacation_home' | 'investment' | 'undecided';
   buyer_entity: 'individual' | 'company';
   onboarding_completed: boolean;
+  // New multi-dimensional fields
+  has_existing_property: boolean;
+  is_upgrading: boolean;
+  upgrade_sale_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +63,9 @@ export function useCreateBuyerProfile() {
           purchase_purpose: profileData.purchase_purpose || 'primary_residence',
           buyer_entity: profileData.buyer_entity || 'individual',
           onboarding_completed: profileData.onboarding_completed ?? true,
+          has_existing_property: profileData.has_existing_property ?? false,
+          is_upgrading: profileData.is_upgrading ?? false,
+          upgrade_sale_date: profileData.upgrade_sale_date || null,
         })
         .select()
         .single();
@@ -101,30 +110,67 @@ export function useUpdateBuyerProfile() {
   });
 }
 
-// Helper function to determine buyer type for tax calculations
+/**
+ * Convert BuyerProfile to BuyerProfileDimensions for calculations
+ */
+export function profileToDimensions(profile: BuyerProfile | null): BuyerProfileDimensions {
+  if (!profile) {
+    return {
+      residency_status: 'israeli_resident',
+      is_first_property: true,
+      buyer_entity: 'individual',
+      aliyah_year: null,
+      is_upgrading: false,
+    };
+  }
+  
+  return {
+    residency_status: profile.residency_status,
+    is_first_property: profile.is_first_property,
+    buyer_entity: profile.buyer_entity,
+    aliyah_year: profile.aliyah_year,
+    is_upgrading: profile.is_upgrading ?? false,
+    has_existing_property: profile.has_existing_property ?? false,
+  };
+}
+
+/**
+ * Get the effective buyer type from profile for tax calculations
+ */
+export function getEffectiveBuyerType(profile: BuyerProfile | null): DerivedBuyerType {
+  const dimensions = profileToDimensions(profile);
+  return deriveEffectiveBuyerType(dimensions);
+}
+
+/**
+ * Get the tax type (BuyerType) from profile
+ */
+export function getBuyerTaxType(profile: BuyerProfile | null): BuyerType {
+  const derived = getEffectiveBuyerType(profile);
+  return derived.taxType;
+}
+
+// Legacy function - kept for backwards compatibility
 export function getBuyerTaxCategory(profile: BuyerProfile | null): 'first_time' | 'oleh' | 'additional' | 'non_resident' {
-  if (!profile) return 'first_time'; // Default assumption
+  if (!profile) return 'first_time';
   
-  // Check if Oleh Hadash benefits still apply (within 7 years)
-  if (profile.residency_status === 'oleh_hadash' && profile.aliyah_year) {
-    const currentYear = new Date().getFullYear();
-    const yearsInIsrael = currentYear - profile.aliyah_year;
-    if (yearsInIsrael <= 7) {
+  const derived = getEffectiveBuyerType(profile);
+  
+  // Map new BuyerType to old category format
+  switch (derived.taxType) {
+    case 'oleh':
       return 'oleh';
-    }
+    case 'foreign':
+      return 'non_resident';
+    case 'first_time':
+    case 'upgrader':
+      return 'first_time';
+    case 'investor':
+    case 'company':
+      return 'additional';
+    default:
+      return 'first_time';
   }
-  
-  // Non-resident always pays higher rate
-  if (profile.residency_status === 'non_resident') {
-    return 'non_resident';
-  }
-  
-  // Israeli resident - check if first property
-  if (profile.is_first_property) {
-    return 'first_time';
-  }
-  
-  return 'additional';
 }
 
 // 2025 Tax brackets based on research

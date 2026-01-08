@@ -162,36 +162,45 @@ export type Database = {
           aliyah_year: number | null
           buyer_entity: string
           created_at: string
+          has_existing_property: boolean | null
           id: string
           is_first_property: boolean
+          is_upgrading: boolean | null
           onboarding_completed: boolean
           purchase_purpose: string
           residency_status: string
           updated_at: string
+          upgrade_sale_date: string | null
           user_id: string
         }
         Insert: {
           aliyah_year?: number | null
           buyer_entity?: string
           created_at?: string
+          has_existing_property?: boolean | null
           id?: string
           is_first_property?: boolean
+          is_upgrading?: boolean | null
           onboarding_completed?: boolean
           purchase_purpose?: string
           residency_status?: string
           updated_at?: string
+          upgrade_sale_date?: string | null
           user_id: string
         }
         Update: {
           aliyah_year?: number | null
           buyer_entity?: string
           created_at?: string
+          has_existing_property?: boolean | null
           id?: string
           is_first_property?: boolean
+          is_upgrading?: boolean | null
           onboarding_completed?: boolean
           purchase_purpose?: string
           residency_status?: string
           updated_at?: string
+          upgrade_sale_date?: string | null
           user_id?: string
         }
         Relationships: []
