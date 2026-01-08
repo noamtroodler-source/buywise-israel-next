@@ -63,10 +63,9 @@ export function PropertyHero({ property }: PropertyHeroProps) {
       transition={{ duration: 0.4 }}
       className="w-full"
     >
-      {/* Main Image - Full Width with Container Breakout */}
-      <div className="relative w-full bg-muted">
-        <div className="container">
-          <div className="relative aspect-[16/10] md:aspect-[16/8] lg:aspect-[16/7] rounded-b-xl overflow-hidden">
+      {/* Main Image */}
+      <div className="relative w-full">
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
             <img 
               src={images[selectedImageIndex]} 
               alt={property.title}
@@ -132,13 +131,12 @@ export function PropertyHero({ property }: PropertyHeroProps) {
                 ))}
               </div>
             )}
-          </div>
         </div>
       </div>
 
       {/* Horizontal Thumbnail Carousel */}
       {images.length > 1 && (
-        <div className="container mt-3">
+        <div className="mt-3">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex gap-2">
               {images.map((img, i) => (
