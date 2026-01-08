@@ -2,28 +2,61 @@ import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
+import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
 import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
-import { AgentContactSection } from '@/components/property/AgentContactSection';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
 import { PropertyTimeMachine } from '@/components/property/PropertyTimeMachine';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
-import { CalculatorCTA } from '@/components/property/CalculatorCTA';
-import { CityMarketCTA } from '@/components/property/CityMarketCTA';
+import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
+import { toast } from 'sonner';
 
 import { motion } from 'framer-motion';
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: property, isLoading } = useProperty(id || '');
+  const { user } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
   
   // Get city slug for fetching city data
-  const citySlug = property?.city?.toLowerCase().replace(/\s+/g, '-') || '';
+  const citySlug = property?.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
   const { data: cityData } = useCityDetails(citySlug);
+
+  const isSaved = property ? isFavorite(property.id) : false;
+
+  const handleSave = async () => {
+    if (!property) return;
+    if (!user) {
+      toast.error('Please sign in to save properties');
+      return;
+    }
+    await toggleFavorite(property.id);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: property?.title,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied to clipboard');
+    }
+  };
+
+  // Calculate derived values
+  const pricePerSqm = property?.size_sqm ? property.price / property.size_sqm : undefined;
+  const createdDate = property ? new Date(property.created_at) : new Date();
+  const now = new Date();
+  const daysOnMarket = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
 
   if (isLoading) {
     return (
@@ -56,27 +89,27 @@ export default function PropertyDetail() {
 
   return (
     <Layout>
+      {/* Hero - Full Width */}
+      <PropertyHero 
+        property={property}
+        onSave={handleSave}
+        onShare={handleShare}
+        isSaved={isSaved}
+      />
+
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Zone 1: Hero - Above the Fold */}
-            <PropertyHero 
+          <div className="lg:col-span-2">
+            {/* Quick Summary - Price, Title, Stats */}
+            <PropertyQuickSummary 
               property={property}
-              onSave={() => console.log('Save property')}
-              onShare={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: property.title,
-                    url: window.location.href,
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                }
-              }}
+              onShare={handleShare}
+              onSave={handleSave}
+              isSaved={isSaved}
             />
 
-            {/* Zone 2: Description & Features */}
+            {/* Description & Features */}
             <PropertyDescription 
               description={property.description}
               features={property.features}
@@ -87,14 +120,13 @@ export default function PropertyDetail() {
               parking={property.parking}
             />
 
-            {/* Zone 3: Collapsible Detail Sections */}
+            {/* Value Snapshot */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="space-y-4"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="py-6 border-b border-border"
             >
-              {/* AI Value Snapshot - Adapts for rentals vs purchases */}
               <PropertyValueSnapshot 
                 price={property.price}
                 sizeSqm={property.size_sqm}
@@ -106,26 +138,49 @@ export default function PropertyDetail() {
                 cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
                 cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
               />
+            </motion.div>
 
-              {/* Time Machine - Only for sold properties */}
-              {property.listing_status === 'sold' && (
+            {/* Time Machine - Only for sold properties */}
+            {property.listing_status === 'sold' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="py-6 border-b border-border"
+              >
                 <PropertyTimeMachine
                   salePrice={property.price}
                   city={property.city}
                   sizeSqm={property.size_sqm}
                 />
-              )}
+              </motion.div>
+            )}
 
-              {/* Cost Breakdown */}
-              <PropertyCostBreakdown 
-                price={property.price}
-                currency={property.currency || 'ILS'}
-                listingStatus={property.listing_status}
-                city={property.city}
-                sizeSqm={property.size_sqm}
-              />
+            {/* Cost Breakdown - Only for sale/rent properties */}
+            {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="py-6 border-b border-border"
+              >
+                <PropertyCostBreakdown 
+                  price={property.price}
+                  currency={property.currency || 'ILS'}
+                  listingStatus={property.listing_status}
+                  city={property.city}
+                  sizeSqm={property.size_sqm}
+                />
+              </motion.div>
+            )}
 
-              {/* Location */}
+            {/* Location */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
+              className="py-6 border-b border-border"
+            >
               <PropertyLocation 
                 address={property.address}
                 city={property.city}
@@ -135,17 +190,12 @@ export default function PropertyDetail() {
               />
             </motion.div>
 
-            {/* Agent Contact Section */}
-            <AgentContactSection 
-              agent={property.agent}
-              propertyTitle={property.title}
+            {/* Next Steps CTAs */}
+            <PropertyNextSteps 
+              cityName={property.city}
+              citySlug={citySlug}
+              propertyPrice={property.price}
             />
-
-            {/* City Market CTA */}
-            <CityMarketCTA cityName={property.city} />
-
-            {/* Calculator Quick Links */}
-            <CalculatorCTA propertyPrice={property.price} />
           </div>
 
           {/* Sticky Sidebar - Desktop Only */}
@@ -154,6 +204,10 @@ export default function PropertyDetail() {
               <StickyContactCard 
                 agent={property.agent}
                 propertyTitle={property.title}
+                pricePerSqm={pricePerSqm}
+                daysOnMarket={daysOnMarket}
+                cityAvgPricePerSqm={cityData?.average_price_sqm}
+                currency={property.currency || 'ILS'}
               />
             </div>
           </div>
