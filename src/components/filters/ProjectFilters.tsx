@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, Home, HelpCircle, Bell, Briefcase } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -16,6 +16,7 @@ export interface ProjectFiltersType {
   max_price?: number;
   completion_year?: number;
   min_rooms?: number;
+  min_bathrooms?: number;
   developer_id?: string;
   sort_by?: 'newest' | 'price_asc' | 'price_desc' | 'completion';
 }
@@ -52,18 +53,13 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-const ROOM_OPTIONS = [
-  { value: 3, label: '3+ Rooms' },
-  { value: 4, label: '4+ Rooms' },
-  { value: 5, label: '5+ Rooms' },
-];
 
 export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: ProjectFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [yearOpen, setYearOpen] = useState(false);
-  const [roomsOpen, setRoomsOpen] = useState(false);
+  const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
   const [developerOpen, setDeveloperOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
@@ -220,64 +216,126 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
         </PopoverContent>
       </Popover>
 
-      {/* Rooms Filter */}
-      <Popover open={roomsOpen} onOpenChange={setRoomsOpen}>
+      {/* Beds/Baths Combined Filter */}
+      <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className={cn(filterButtonBase, (roomsOpen || filters.min_rooms) && filterButtonActive)}
+            className={cn(filterButtonBase, (bedsAndBathsOpen || filters.min_rooms || filters.min_bathrooms) && filterButtonActive)}
           >
-            <Home className="h-4 w-4" />
-            <span>{filters.min_rooms ? `${filters.min_rooms}+ Rooms` : 'Rooms'}</span>
-            {roomsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <LayoutGrid className="h-4 w-4" />
+            <span>
+              {filters.min_rooms || filters.min_bathrooms
+                ? `${filters.min_rooms ? `${filters.min_rooms}+ rm` : ''}${filters.min_rooms && filters.min_bathrooms ? ', ' : ''}${filters.min_bathrooms ? `${filters.min_bathrooms}+ ba` : ''}`
+                : 'Beds/Baths'}
+            </span>
+            {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[260px] p-0 bg-background border shadow-xl z-50" align="start">
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">Rooms</h3>
-                <TooltipProvider>
+        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <TooltipProvider>
+            <div className="p-4 space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Beds / Baths</h3>
+                {(filters.min_rooms || filters.min_bathrooms) && (
+                  <button 
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      updateFilter('min_rooms', undefined);
+                      updateFilter('min_bathrooms', undefined);
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Rooms Section */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Rooms</span>
                   <Tooltip>
                     <TooltipTrigger>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>In Israel, rooms are counted differently. A "3-room" apartment typically means 2 bedrooms + living room.</p>
+                    <TooltipContent className="max-w-[250px]">
+                      <p className="text-sm">In Israel, rooms = bedrooms + living areas. A "4-room" apt typically has 3 bedrooms.</p>
                     </TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    className={cn(
+                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                      !filters.min_rooms
+                        ? "bg-primary text-primary-foreground border-primary" 
+                        : "border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('min_rooms', undefined)}
+                  >
+                    Any
+                  </button>
+                  {[2, 3, 4, 5, 6, 7].map(num => (
+                    <button
+                      key={num}
+                      className={cn(
+                        "h-9 w-10 rounded-lg border text-sm font-medium transition-all",
+                        filters.min_rooms === num 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "border-border hover:bg-muted"
+                      )}
+                      onClick={() => updateFilter('min_rooms', num)}
+                    >
+                      {num}+
+                    </button>
+                  ))}
+                </div>
               </div>
-              {filters.min_rooms && (
-                <button 
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => updateFilter('min_rooms', undefined)}
+
+              {/* Bathrooms Section */}
+              <div className="space-y-2.5">
+                <span className="font-medium text-sm">Bathrooms</span>
+                <div className="flex gap-1.5">
+                  <button
+                    className={cn(
+                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                      !filters.min_bathrooms
+                        ? "bg-primary text-primary-foreground border-primary" 
+                        : "border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('min_bathrooms', undefined)}
+                  >
+                    Any
+                  </button>
+                  {[1, 1.5, 2, 3, 4].map(num => (
+                    <button
+                      key={num}
+                      className={cn(
+                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                        filters.min_bathrooms === num 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "border-border hover:bg-muted"
+                      )}
+                      onClick={() => updateFilter('min_bathrooms', num)}
+                    >
+                      {num}+
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <div className="pt-2 border-t">
+                <Button 
+                  className="w-full"
+                  onClick={() => setBedsAndBathsOpen(false)}
                 >
-                  Clear
-                </button>
-              )}
+                  Apply
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex gap-2">
-              {ROOM_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  className={cn(
-                    "flex-1 h-10 rounded-lg border text-sm font-medium transition-all",
-                    filters.min_rooms === option.value 
-                      ? "bg-primary text-primary-foreground border-primary" 
-                      : "border-border hover:bg-muted"
-                  )}
-                  onClick={() => {
-                    updateFilter('min_rooms', filters.min_rooms === option.value ? undefined : option.value);
-                    setRoomsOpen(false);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          </TooltipProvider>
         </PopoverContent>
       </Popover>
 
