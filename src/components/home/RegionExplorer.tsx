@@ -8,13 +8,16 @@ import { Button } from '@/components/ui/button';
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
 import herzliyaImg from '@/assets/cities/herzliya.jpg';
 import netanyaImg from '@/assets/cities/netanya.jpg';
+import ramatGanImg from '@/assets/cities/ramat-gan.jpg';
 import jerusalemImg from '@/assets/cities/jerusalem.jpg';
 import modiinImg from '@/assets/cities/modiin.jpg';
 import raananaImg from '@/assets/cities/raanana.jpg';
+import kfarSabaImg from '@/assets/cities/kfar-saba.jpg';
 import haifaImg from '@/assets/cities/haifa.jpg';
-import nahariyaImg from '@/assets/cities/nahariya.jpg';
+import zichronYaakovImg from '@/assets/cities/zichron-yaakov.jpg';
 import beerShevaImg from '@/assets/cities/beer-sheva.jpg';
 import eilatImg from '@/assets/cities/eilat.jpg';
+import ashkelonImg from '@/assets/cities/ashkelon.jpg';
 
 type Region = 'coastal' | 'central' | 'north' | 'south';
 
@@ -33,6 +36,7 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
       { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, propertyCount: 150 },
       { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, propertyCount: 85 },
       { name: 'Netanya', slug: 'netanya', image: netanyaImg, propertyCount: 65 },
+      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, propertyCount: 72 },
     ],
   },
   central: {
@@ -40,8 +44,9 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     icon: Building,
     cities: [
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, propertyCount: 120 },
-      { name: "Modi'in", slug: 'modiin', image: modiinImg, propertyCount: 70 },
       { name: "Ra'anana", slug: 'raanana', image: raananaImg, propertyCount: 55 },
+      { name: "Modi'in", slug: 'modiin', image: modiinImg, propertyCount: 70 },
+      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, propertyCount: 48 },
     ],
   },
   north: {
@@ -49,7 +54,7 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     icon: Mountain,
     cities: [
       { name: 'Haifa', slug: 'haifa', image: haifaImg, propertyCount: 90 },
-      { name: 'Nahariya', slug: 'nahariya', image: nahariyaImg, propertyCount: 35 },
+      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, propertyCount: 28 },
     ],
   },
   south: {
@@ -58,6 +63,7 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     cities: [
       { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, propertyCount: 45 },
       { name: 'Eilat', slug: 'eilat', image: eilatImg, propertyCount: 40 },
+      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, propertyCount: 38 },
     ],
   },
 };
@@ -115,14 +121,22 @@ export function RegionExplorer() {
 
         {/* Cities Grid */}
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeRegion}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
-          >
+          {(() => {
+            const cityCount = regions[activeRegion].cities.length;
+            const gridClasses = 
+              cityCount === 2 ? "grid-cols-2 sm:grid-cols-2 max-w-2xl mx-auto" :
+              cityCount === 3 ? "grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto" :
+              "grid-cols-2 sm:grid-cols-4";
+            
+            return (
+              <motion.div
+                key={activeRegion}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className={`grid gap-3 ${gridClasses}`}
+              >
             {regions[activeRegion].cities.map((city, index) => (
               <motion.div
                 key={city.slug}
@@ -150,8 +164,10 @@ export function RegionExplorer() {
                   </div>
                 </Link>
               </motion.div>
-            ))}
-          </motion.div>
+              ))}
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </div>
     </section>
