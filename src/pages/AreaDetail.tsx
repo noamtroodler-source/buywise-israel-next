@@ -9,13 +9,14 @@ import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 
 // New redesigned components
-import { CityHeroSplit } from '@/components/city/CityHeroSplit';
-import { CityMarketSnapshot } from '@/components/city/CityMarketSnapshot';
-import { CityNumbersNarrative } from '@/components/city/CityNumbersNarrative';
-import { CityCharacter } from '@/components/city/CityCharacter';
-import { CityWorthWatching, MarketFactor } from '@/components/city/CityWorthWatching';
-import { CityCalculatorsCompact } from '@/components/city/CityCalculatorsCompact';
-import { CityListingsCTA2 } from '@/components/city/CityListingsCTA2';
+import { CityHero } from '@/components/city/CityHero';
+import { CityQuickStats } from '@/components/city/CityQuickStats';
+import { CityStory } from '@/components/city/CityStory';
+import { CityMarketReality } from '@/components/city/CityMarketReality';
+import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
+import { CityInsightBreak } from '@/components/city/CityInsightBreak';
+import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
+import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 
 // Worth Watching data per city
@@ -25,6 +26,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Red Line Light Rail Opening',
       description: 'First metro line will transform transit and boost areas near stations',
       icon: 'transit',
+      timing: '2025',
     },
     {
       title: 'Tama 38 Policy Changes',
@@ -35,6 +37,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Port Area Redevelopment',
       description: 'New towers and public spaces coming to northern waterfront',
       icon: 'development',
+      timing: 'In Progress',
     },
   ],
   'jerusalem': [
@@ -42,6 +45,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Blue Line Extension',
       description: 'Light rail expansion connecting more neighborhoods to city center',
       icon: 'transit',
+      timing: '2026',
     },
     {
       title: 'Talpiot Industrial Zone',
@@ -64,6 +68,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Haifa Bay Development',
       description: 'Major waterfront transformation with new residential towers',
       icon: 'infrastructure',
+      timing: 'In Progress',
     },
     {
       title: 'Carmelit Renovation',
@@ -81,6 +86,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Marina Development',
       description: 'New luxury residential and commercial projects on waterfront',
       icon: 'infrastructure',
+      timing: 'In Progress',
     },
     {
       title: 'Highway 2 Improvements',
@@ -98,6 +104,7 @@ const cityMarketFactors: Record<string, MarketFactor[]> = {
       title: 'Rail Connection Plans',
       description: 'Proposed light rail to Tel Aviv could boost property values',
       icon: 'transit',
+      timing: 'Proposed',
     },
     {
       title: 'School District Excellence',
@@ -233,23 +240,23 @@ export default function CityDetail() {
 
   const worthWatching = cityMarketFactors[slug || ''] || [];
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
+  const pricePerSqm = canonicalMetrics?.average_price_sqm ?? city.average_price_sqm ?? null;
+  const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
+  const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
 
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* 1. Cinematic Split Hero */}
-        <CityHeroSplit
+        {/* 1. Cinematic Hero */}
+        <CityHero
           cityName={city.name}
           heroImage={heroImage}
-          population={city.population}
-          averagePrice={city.average_price}
-          highlights={city.highlights}
           marketTagline={getMarketTagline()}
         />
 
-        {/* 2. Market Snapshot - 3 Key Stats */}
+        {/* 2. Quick Stats Strip */}
         {!marketLoading && (
-          <CityMarketSnapshot
+          <CityQuickStats
             marketData={marketData}
             canonicalMetrics={canonicalMetrics}
             cityData={{
@@ -263,9 +270,19 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. What The Numbers Say - Chart + Insights */}
+        {/* 3. The City Story - Why People Choose This City */}
+        <CityStory
+          cityName={city.name}
+          description={city.description}
+          highlights={city.highlights}
+          angloPresence={city.anglo_presence}
+          hasTrainStation={city.has_train_station}
+          commuteTimeTelAviv={city.commute_time_tel_aviv}
+        />
+
+        {/* 4. Market Reality - Chart + Insights */}
         {marketData.length > 0 && (
-          <CityNumbersNarrative
+          <CityMarketReality
             marketData={marketData}
             cityName={city.name}
             canonicalMetrics={canonicalMetrics}
@@ -274,33 +291,28 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 4. Why People Choose This City */}
-        <CityCharacter
-          cityName={city.name}
-          highlights={city.highlights}
-          angloPresence={city.anglo_presence}
-          hasTrainStation={city.has_train_station}
-          commuteTimeTelAviv={city.commute_time_tel_aviv}
-        />
-
         {/* 5. Worth Watching */}
         {worthWatching.length > 0 && (
-          <CityWorthWatching factors={worthWatching} cityName={city.name} />
+          <CityWorthWatchingNew factors={worthWatching} cityName={city.name} />
         )}
 
-        {/* 6. Run the Numbers - Compact Calculators */}
-        <CityCalculatorsCompact 
+        {/* 6. Insight Break Quote */}
+        <CityInsightBreak cityName={city.name} pricePerSqm={pricePerSqm} />
+
+        {/* 7. Run the Numbers - Calculator Teaser */}
+        <CityCalculatorTeaser 
           cityName={city.name} 
-          averagePrice={city.average_price || undefined} 
+          medianPrice={medianPrice}
+          grossYield={grossYield}
         />
 
-        {/* 7. Explore Listings CTA */}
-        <CityListingsCTA2 
+        {/* 8. Explore Listings CTA */}
+        <CityExploreListings 
           cityName={city.name} 
           propertiesCount={properties.length} 
         />
 
-        {/* 8. Featured Properties */}
+        {/* 9. Featured Properties - At the bottom as requested */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
       </div>
     </Layout>
