@@ -1,18 +1,23 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Bed, Bath, Maximize, MapPin, X, Calendar, Building, TrendingUp, Heart, Share2, Home } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, TrendingUp, Home, MapPin } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/database';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
+import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
+import {
+  CompareHero,
+  ComparePropertyCard,
+  CompareQuickInsights,
+  CompareSection,
+  CompareEmptyState,
+  CompareWinnerSummary,
+  type ComparisonRow,
+} from '@/components/compare';
 
 interface RentalData {
   city: string;
@@ -30,7 +35,7 @@ interface MarketDataEntry {
 }
 
 export default function Compare() {
-  const { compareIds, removeFromCompare, clearCompare } = useCompare();
+  const { compareIds, removeFromCompare, clearCompare, maxItems } = useCompare();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [investorView, setInvestorView] = useState(false);
@@ -38,6 +43,8 @@ export default function Compare() {
   const [marketData, setMarketData] = useState<MarketDataEntry[]>([]);
   const { user } = useAuth();
   const { favoriteIds, toggleFavorite } = useFavorites();
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
 
   useEffect(() => {
     async function fetchProperties() {
@@ -58,7 +65,6 @@ export default function Compare() {
           .filter(Boolean) as Property[];
         setProperties(ordered);
 
-        // Fetch rental and market data for investor view
         const cities = [...new Set(ordered.map(p => p.city))];
         
         const [rentalResult, marketResult] = await Promise.all([
@@ -75,25 +81,33 @@ export default function Compare() {
     fetchProperties();
   }, [compareIds]);
 
-  const formatPrice = (price: number, currency: string = 'ILS') => {
-    if (currency === 'ILS') {
-      return `₪${price.toLocaleString()}`;
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Property Comparison',
+          text: `Compare ${properties.length} properties`,
+          url: url,
+        });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success('Comparison link copied to clipboard');
     }
-    return `$${price.toLocaleString()}`;
   };
 
-  const getPropertyTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      apartment: 'Apartment',
-      house: 'House',
-      penthouse: 'Penthouse',
-      cottage: 'Cottage',
-      land: 'Land',
-      commercial: 'Commercial',
-    };
-    return labels[type] || type;
+  const handleToggleFavorite = (propertyId: string) => {
+    if (!user) {
+      toast.error('Please sign in to save favorites');
+      return;
+    }
+    toggleFavorite(propertyId);
   };
 
+  // Helper functions for investment metrics
   const getEstimatedRent = (property: Property) => {
     const cityData = rentalData.filter(r => r.city.toLowerCase() === property.city.toLowerCase());
     const roomMatch = cityData.find(r => r.rooms === property.bedrooms);
@@ -136,44 +150,219 @@ export default function Compare() {
     return '—';
   };
 
-  const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Property Comparison',
-          text: `Compare ${properties.length} properties`,
-          url: url,
+  const getPropertyTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      apartment: 'Apartment',
+      house: 'House',
+      penthouse: 'Penthouse',
+      cottage: 'Cottage',
+      land: 'Land',
+      commercial: 'Commercial',
+    };
+    return labels[type] || type;
+  };
+
+  // Comparison row definitions
+  const coreDetailsRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Price',
+      getValue: (p: Property) => formatPrice(p.price, p.currency || 'ILS'),
+      highlight: true,
+      getBestPropertyId: (props: Property[]) => {
+        if (props.length < 2) return null;
+        const min = props.reduce((best, p) => p.price < best.price ? p : best);
+        return min.id;
+      },
+    },
+    {
+      label: 'Price/m²',
+      getValue: (p: Property) => p.size_sqm ? formatPrice(Math.round(p.price / p.size_sqm), p.currency || 'ILS') : '—',
+      getBestPropertyId: (props: Property[]) => {
+        const withSize = props.filter(p => p.size_sqm && p.size_sqm > 0);
+        if (withSize.length < 2) return null;
+        const min = withSize.reduce((best, p) => {
+          const current = p.price / (p.size_sqm || 1);
+          const bestVal = best.price / (best.size_sqm || 1);
+          return current < bestVal ? p : best;
         });
-      } catch (err) {
-        // User cancelled or error
+        return min.id;
+      },
+    },
+    {
+      label: 'Size',
+      getValue: (p: Property) => p.size_sqm ? formatArea(p.size_sqm) : '—',
+      icon: Maximize,
+      getBestPropertyId: (props: Property[]) => {
+        const withSize = props.filter(p => p.size_sqm);
+        if (withSize.length < 2) return null;
+        const max = withSize.reduce((best, p) => (p.size_sqm || 0) > (best.size_sqm || 0) ? p : best);
+        return max.id;
+      },
+    },
+    {
+      label: 'Bedrooms',
+      getValue: (p: Property) => p.bedrooms?.toString() || '—',
+      icon: Bed,
+      getBestPropertyId: (props: Property[]) => {
+        const withBeds = props.filter(p => p.bedrooms);
+        if (withBeds.length < 2) return null;
+        const max = withBeds.reduce((best, p) => (p.bedrooms || 0) > (best.bedrooms || 0) ? p : best);
+        return max.id;
+      },
+    },
+    {
+      label: 'Bathrooms',
+      getValue: (p: Property) => p.bathrooms?.toString() || '—',
+      icon: Bath,
+    },
+    {
+      label: 'Floor',
+      getValue: (p: Property) => p.floor ? `${p.floor}${p.total_floors ? ` / ${p.total_floors}` : ''}` : '—',
+      icon: Building,
+    },
+    {
+      label: 'Property Type',
+      getValue: (p: Property) => getPropertyTypeLabel(p.property_type),
+    },
+  ], [formatPrice, formatArea]);
+
+  const locationRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'City',
+      getValue: (p: Property) => p.city,
+      icon: MapPin,
+    },
+    {
+      label: 'Neighborhood',
+      getValue: (p: Property) => p.neighborhood || '—',
+    },
+    {
+      label: 'Address',
+      getValue: (p: Property) => p.address,
+    },
+  ], []);
+
+  const characterRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Condition',
+      getValue: (p: Property) => p.condition ? p.condition.charAt(0).toUpperCase() + p.condition.slice(1) : '—',
+    },
+    {
+      label: 'Year Built',
+      getValue: (p: Property) => p.year_built?.toString() || '—',
+      icon: Calendar,
+    },
+    {
+      label: 'Parking',
+      getValue: (p: Property) => p.parking ? `${p.parking} spots` : 'None',
+      icon: Car,
+    },
+    {
+      label: 'Furnished',
+      getValue: (p: Property) => p.is_furnished ? 'Yes' : 'No',
+      icon: Sofa,
+    },
+    {
+      label: 'Accessible',
+      getValue: (p: Property) => p.is_accessible ? 'Yes' : 'No',
+      icon: Accessibility,
+    },
+  ], []);
+
+  const investorRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Est. Monthly Rent',
+      getValue: (p: Property) => getEstimatedRent(p),
+      tooltip: 'Estimated monthly rent based on similar properties in the area.',
+    },
+    {
+      label: 'Rental Yield',
+      getValue: (p: Property) => getRentalYield(p),
+      highlight: true,
+      tooltip: 'Annual rent divided by purchase price. Higher = better investment return.',
+      getBestPropertyId: (props: Property[]) => {
+        const yields = props.map(p => {
+          const cityData = rentalData.filter(r => r.city.toLowerCase() === p.city.toLowerCase());
+          const roomMatch = cityData.find(r => r.rooms === p.bedrooms);
+          if (roomMatch && p.price > 0) {
+            const avgRent = (roomMatch.price_min + roomMatch.price_max) / 2;
+            return { id: p.id, yield: (avgRent * 12 / p.price) * 100 };
+          }
+          return { id: p.id, yield: 0 };
+        }).filter(y => y.yield > 0);
+        if (yields.length < 2) return null;
+        const max = yields.reduce((best, y) => y.yield > best.yield ? y : best);
+        return max.id;
+      },
+    },
+    {
+      label: 'Price vs City Avg',
+      getValue: (p: Property) => getPriceVsCityAvg(p),
+      tooltip: 'How this property\'s price per m² compares to the city average.',
+    },
+    {
+      label: '12-Month Change',
+      getValue: (p: Property) => getPriceChange(p),
+      tooltip: 'How prices in this area changed over the past year.',
+    },
+  ], [rentalData, marketData]);
+
+  // Calculate winner counts
+  const winnerCounts = useMemo(() => {
+    if (properties.length < 2) return [];
+    
+    const allRows = [...coreDetailsRows, ...(investorView ? investorRows : [])];
+    const counts: Record<string, { title: string; wins: number }> = {};
+    
+    properties.forEach(p => {
+      counts[p.id] = { title: p.title, wins: 0 };
+    });
+
+    allRows.forEach(row => {
+      if (row.getBestPropertyId) {
+        const bestId = row.getBestPropertyId(properties);
+        if (bestId && counts[bestId]) {
+          counts[bestId].wins++;
+        }
       }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success('Comparison link copied to clipboard');
-    }
-  };
+    });
 
-  const handleToggleFavorite = (propertyId: string) => {
-    if (!user) {
-      toast.error('Please sign in to save favorites');
-      return;
-    }
-    toggleFavorite(propertyId);
-  };
+    return Object.entries(counts).map(([propertyId, data]) => ({
+      propertyId,
+      title: data.title,
+      wins: data.wins,
+    }));
+  }, [properties, coreDetailsRows, investorRows, investorView]);
 
-  const isFavorite = (propertyId: string) => favoriteIds.includes(propertyId);
+  // Generate winner badges for cards
+  const getWinnerBadge = (propertyId: string): string | null => {
+    if (properties.length < 2) return null;
+    
+    const lowestPrice = properties.reduce((min, p) => p.price < min.price ? p : min);
+    if (lowestPrice.id === propertyId) return 'Lowest Price';
+    
+    const withSize = properties.filter(p => p.size_sqm);
+    if (withSize.length > 0) {
+      const largest = withSize.reduce((max, p) => (p.size_sqm || 0) > (max.size_sqm || 0) ? p : max);
+      if (largest.id === propertyId) return 'Largest';
+    }
+
+    return null;
+  };
 
   if (loading) {
     return (
       <Layout>
-        <div className="container py-12">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-48" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-64 bg-muted rounded" />
-              ))}
+        <div className="bg-gradient-to-b from-primary/5 to-background">
+          <div className="container py-8">
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-muted rounded w-48" />
+              <div className="h-6 bg-muted rounded w-72" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-80 bg-muted rounded-xl" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -184,270 +373,88 @@ export default function Compare() {
   if (properties.length === 0) {
     return (
       <Layout>
-        <div className="container py-16">
-          <div className="max-w-md mx-auto text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center">
-              <Home className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold">No Properties to Compare</h1>
-              <p className="text-muted-foreground">
-                Select up to 3 properties to compare them side by side. Look for the compare button on property cards while browsing.
-              </p>
-            </div>
-            <Button asChild size="lg">
-              <Link to="/listings?status=for_sale">Browse Properties</Link>
-            </Button>
-          </div>
-        </div>
+        <CompareEmptyState />
       </Layout>
     );
   }
 
-  const comparisonRows = [
-    {
-      label: 'Price',
-      getValue: (p: Property) => formatPrice(p.price, p.currency || 'ILS'),
-      highlight: true,
-    },
-    {
-      label: 'Price/m²',
-      getValue: (p: Property) => p.size_sqm ? formatPrice(Math.round(p.price / p.size_sqm), p.currency || 'ILS') : '—',
-    },
-    {
-      label: 'Location',
-      getValue: (p: Property) => `${p.city}${p.neighborhood ? `, ${p.neighborhood}` : ''}`,
-    },
-    {
-      label: 'Property Type',
-      getValue: (p: Property) => getPropertyTypeLabel(p.property_type),
-    },
-    {
-      label: 'Bedrooms',
-      getValue: (p: Property) => p.bedrooms?.toString() || '—',
-      icon: Bed,
-    },
-    {
-      label: 'Bathrooms',
-      getValue: (p: Property) => p.bathrooms?.toString() || '—',
-      icon: Bath,
-    },
-    {
-      label: 'Size',
-      getValue: (p: Property) => p.size_sqm ? `${p.size_sqm} m²` : '—',
-      icon: Maximize,
-    },
-    {
-      label: 'Floor',
-      getValue: (p: Property) => p.floor ? `${p.floor}${p.total_floors ? ` / ${p.total_floors}` : ''}` : '—',
-      icon: Building,
-    },
-    {
-      label: 'Year Built',
-      getValue: (p: Property) => p.year_built?.toString() || '—',
-      icon: Calendar,
-    },
-    {
-      label: 'Parking',
-      getValue: (p: Property) => p.parking ? `${p.parking} spots` : '—',
-    },
-    {
-      label: 'Condition',
-      getValue: (p: Property) => p.condition || '—',
-    },
-    {
-      label: 'Furnished',
-      getValue: (p: Property) => p.is_furnished ? 'Yes' : 'No',
-    },
-  ];
-
-  const investorRows = [
-    {
-      label: 'Est. Monthly Rent',
-      getValue: (p: Property) => getEstimatedRent(p),
-      icon: TrendingUp,
-    },
-    {
-      label: 'Rental Yield',
-      getValue: (p: Property) => getRentalYield(p),
-      highlight: true,
-    },
-    {
-      label: 'Price vs City Avg',
-      getValue: (p: Property) => getPriceVsCityAvg(p),
-    },
-    {
-      label: '12-Month Change',
-      getValue: (p: Property) => getPriceChange(p),
-    },
-  ];
-
-  const allRows = investorView ? [...comparisonRows, ...investorRows] : comparisonRows;
-
   return (
     <Layout>
-      <div className="container py-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/listings?status=for_sale">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Compare Properties</h1>
-              <p className="text-muted-foreground text-sm">
-                {properties.length} of 3 properties selected
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="investor-view"
-                checked={investorView}
-                onCheckedChange={setInvestorView}
+      {/* Hero Header */}
+      <CompareHero
+        propertyCount={properties.length}
+        maxProperties={maxItems}
+        investorView={investorView}
+        onInvestorViewChange={setInvestorView}
+        onShare={handleShare}
+        onClearAll={clearCompare}
+      />
+
+      <div className="container py-8 space-y-8">
+        {/* Property Cards */}
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {properties.map(property => (
+              <ComparePropertyCard
+                key={property.id}
+                property={property}
+                formatPrice={formatPrice}
+                formatArea={formatArea}
+                isFavorite={favoriteIds.includes(property.id)}
+                onRemove={() => removeFromCompare(property.id)}
+                onToggleFavorite={() => handleToggleFavorite(property.id)}
+                winnerBadge={getWinnerBadge(property.id)}
               />
-              <Label htmlFor="investor-view" className="text-sm font-medium cursor-pointer">
-                Investor View
-              </Label>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearCompare}>
-              Clear All
-            </Button>
-          </div>
-        </div>
-
-        {/* Property Cards Header */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map(property => (
-            <Card key={property.id} className="overflow-hidden">
-              <div className="relative aspect-[4/3]">
-                <img
-                  src={property.images?.[0] || '/placeholder.svg'}
-                  alt={property.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-                    onClick={() => handleToggleFavorite(property.id)}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite(property.id) ? 'fill-destructive text-destructive' : ''}`} />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-                    onClick={() => removeFromCompare(property.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Badge className="absolute bottom-2 left-2 bg-primary text-primary-foreground">
-                  {property.listing_status === 'for_rent' ? 'For Rent' : 'For Sale'}
-                </Badge>
-              </div>
-              <div className="p-4 space-y-2">
-                <h3 className="font-semibold line-clamp-1">{property.title}</h3>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <MapPin className="h-3 w-3" />
-                  <span className="line-clamp-1">{property.address}</span>
-                </div>
-                <div className="text-lg font-bold text-primary">
-                  {formatPrice(property.price, property.currency || 'ILS')}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Comparison Table */}
-        <Card className="overflow-hidden">
-          <div className="divide-y divide-border">
-            {/* Section: Property Details */}
-            <div className="bg-muted/50 px-4 py-2 font-semibold text-sm">
-              Property Details
-            </div>
-            {comparisonRows.map((row, index) => (
-              <div 
-                key={row.label}
-                className={`grid gap-4 ${index % 2 === 0 ? 'bg-muted/30' : ''}`}
-                style={{ gridTemplateColumns: `140px repeat(${properties.length}, minmax(0, 1fr))` }}
-              >
-                <div className="p-3 sm:p-4 font-medium text-sm flex items-center gap-2">
-                  {row.icon && <row.icon className="h-4 w-4 text-muted-foreground shrink-0" />}
-                  <span className="truncate">{row.label}</span>
-                </div>
-                {properties.map(property => (
-                  <div 
-                    key={property.id} 
-                    className={`p-3 sm:p-4 text-sm ${row.highlight ? 'font-semibold text-primary' : ''}`}
-                  >
-                    {row.getValue(property)}
-                  </div>
-                ))}
-              </div>
             ))}
-
-            {/* Section: Investment Metrics (only when toggled) */}
-            {investorView && (
-              <>
-                <div className="bg-primary/10 px-4 py-2 font-semibold text-sm flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Investment Metrics
-                </div>
-                {investorRows.map((row, index) => (
-                  <div 
-                    key={row.label}
-                    className={`grid gap-4 ${index % 2 === 0 ? 'bg-primary/5' : ''}`}
-                    style={{ gridTemplateColumns: `140px repeat(${properties.length}, minmax(0, 1fr))` }}
-                  >
-                    <div className="p-3 sm:p-4 font-medium text-sm flex items-center gap-2">
-                      {row.icon && <row.icon className="h-4 w-4 text-primary shrink-0" />}
-                      <span className="truncate">{row.label}</span>
-                    </div>
-                    {properties.map(property => (
-                      <div 
-                        key={property.id} 
-                        className={`p-3 sm:p-4 text-sm ${row.highlight ? 'font-semibold text-primary' : ''}`}
-                      >
-                        {row.getValue(property)}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map(property => (
-            <div key={property.id} className="flex gap-2">
-              <Button asChild variant="default" className="flex-1">
-                <Link to={`/property/${property.id}`}>
-                  View Details
-                </Link>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => handleToggleFavorite(property.id)}
-              >
-                <Heart className={`h-4 w-4 ${isFavorite(property.id) ? 'fill-destructive text-destructive' : ''}`} />
-              </Button>
-            </div>
-          ))}
+          </AnimatePresence>
         </div>
+
+        {/* Quick Insights */}
+        <CompareQuickInsights
+          properties={properties}
+          formatPrice={formatPrice}
+          formatArea={formatArea}
+        />
+
+        {/* Comparison Sections */}
+        <div className="space-y-6">
+          <CompareSection
+            title="Core Details"
+            icon={Home}
+            rows={coreDetailsRows}
+            properties={properties}
+          />
+
+          <CompareSection
+            title="Location"
+            icon={MapPin}
+            rows={locationRows}
+            properties={properties}
+          />
+
+          <CompareSection
+            title="Property Character"
+            icon={Building}
+            rows={characterRows}
+            properties={properties}
+          />
+
+          {investorView && (
+            <CompareSection
+              title="Investment Metrics"
+              icon={TrendingUp}
+              rows={investorRows}
+              properties={properties}
+              variant="investor"
+            />
+          )}
+        </div>
+
+        {/* Winner Summary */}
+        <CompareWinnerSummary
+          properties={properties}
+          winnerCounts={winnerCounts}
+        />
       </div>
     </Layout>
   );
