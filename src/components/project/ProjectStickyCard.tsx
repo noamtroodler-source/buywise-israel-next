@@ -1,10 +1,10 @@
-import { MessageCircle, Mail, Calendar, Building, Shield, Clock, HelpCircle } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
 
@@ -19,7 +19,6 @@ export function ProjectStickyCard({ project, developer, selectedUnit, onContactC
   const formatPrice = useFormatPrice();
 
   const displayPrice = selectedUnit?.price || project.price_from;
-  const priceLabel = selectedUnit ? 'Selected Unit' : 'Starting From';
 
   const handleContactClick = () => {
     if (onContactClick) {
@@ -35,141 +34,177 @@ export function ProjectStickyCard({ project, developer, selectedUnit, onContactC
     ? Math.max(0, Math.ceil((new Date(project.completion_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)))
     : null;
 
-  return (
-    <TooltipProvider>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="space-y-4"
-      >
-        {/* Main Card */}
-        <Card className="shadow-lg border-primary/10">
-          <CardContent className="p-5 space-y-4">
-            {/* Price Summary */}
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{priceLabel}</p>
-              <p className="text-3xl font-bold text-primary">
-                {formatPrice(displayPrice || 0, project.currency || 'ILS')}
-              </p>
-              {selectedUnit && (
-                <Badge variant="outline" className="mt-1">
-                  {selectedUnit.unit_type} • Floor {selectedUnit.floor}
-                </Badge>
-              )}
-            </div>
+  const whatsappUrl = developer?.phone 
+    ? `https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`
+    : null;
 
-            {/* Key Info Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* Completion Date */}
-              {project.completion_date && (
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-xs text-muted-foreground">Completion</span>
-                  </div>
-                  <p className="text-sm font-medium">
-                    {new Date(project.completion_date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </p>
-                  {monthsToCompletion !== null && monthsToCompletion > 0 && (
-                    <p className="text-xs text-muted-foreground">~{monthsToCompletion} months</p>
+  const quickFacts = [
+    { 
+      label: 'Starting from', 
+      value: formatPrice(displayPrice || 0, project.currency || 'ILS') 
+    },
+    { 
+      label: 'Completion', 
+      value: project.completion_date 
+        ? new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : 'TBD'
+    },
+    { 
+      label: 'Units remaining', 
+      value: project.available_units 
+        ? `${project.available_units} of ${project.total_units || '—'}` 
+        : `${project.total_units || '—'} total`
+    },
+  ];
+
+  const buyerProtections = [
+    'Bank guarantee (Law of Sale)',
+    'Fixed payment schedule',
+    '1-year warranty on delivery',
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+    >
+      <Card className="shadow-lg border-primary/10">
+        <CardContent className="p-5 space-y-4">
+          {/* Developer Header */}
+          {developer && (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 rounded-lg">
+                <AvatarImage src={developer.logo_url || undefined} alt={developer.name} className="object-contain" />
+                <AvatarFallback className="rounded-lg bg-primary/10">
+                  <Building className="h-6 w-6 text-primary" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <Link 
+                    to={`/developers/${developer.slug}`}
+                    className="font-semibold truncate hover:text-primary transition-colors"
+                  >
+                    {developer.name}
+                  </Link>
+                  {developer.is_verified && (
+                    <Shield className="h-4 w-4 text-primary flex-shrink-0" />
                   )}
                 </div>
-              )}
-
-              {/* Total Units */}
-              {project.total_units && (
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Building className="h-4 w-4 text-primary" />
-                    <span className="text-xs text-muted-foreground">Total Units</span>
-                  </div>
-                  <p className="text-sm font-medium">{project.total_units} Units</p>
-                </div>
-              )}
+                <p className="text-sm text-muted-foreground">
+                  {developer.total_projects || 0} Projects
+                </p>
+              </div>
             </div>
+          )}
 
-            {/* CTA Buttons */}
-            <div className="space-y-2 pt-2">
-              <Button className="w-full" size="lg" onClick={handleContactClick}>
-                <Mail className="h-4 w-4 mr-2" />
-                Request Information
+          <Separator />
+
+          {/* Contact Buttons */}
+          <div className="space-y-2">
+            {whatsappUrl && (
+              <Button className="w-full" size="lg" asChild>
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  WhatsApp Developer
+                </a>
               </Button>
+            )}
+            <div className="grid grid-cols-2 gap-2">
               {developer?.phone && (
-                <Button variant="outline" className="w-full" size="lg" asChild>
-                  <a 
-                    href={`https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    WhatsApp Developer
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`tel:${developer.phone}`}>
+                    <Phone className="h-4 w-4 mr-1.5" />
+                    Call
                   </a>
                 </Button>
               )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleContactClick}
+                className={developer?.phone ? '' : 'col-span-2'}
+              >
+                <Mail className="h-4 w-4 mr-1.5" />
+                Email
+              </Button>
             </div>
-
-            {/* Developer Quick Info */}
             {developer && (
-              <div className="pt-3 border-t border-border">
-                <div className="flex items-center gap-3">
-                  {developer.logo_url ? (
-                    <img
-                      src={developer.logo_url}
-                      alt={developer.name}
-                      className="w-10 h-10 object-contain rounded-lg bg-muted p-1"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Building className="h-5 w-5 text-primary" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{developer.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {developer.total_projects || 0} Projects
-                    </p>
-                  </div>
-                  {developer.is_verified && (
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Shield className="h-5 w-5 text-primary" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-sm">Verified Developer</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                <Clock className="h-3 w-3" />
+                Usually responds within 24 hours
+              </p>
             )}
-          </CardContent>
-        </Card>
-      </motion.div>
-    </TooltipProvider>
+          </div>
+
+          <Separator />
+
+          {/* Quick Facts */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground">Quick Facts</h4>
+            <div className="space-y-2">
+              {quickFacts.map((fact, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{fact.label}</span>
+                  <span className="font-medium">{fact.value}</span>
+                </div>
+              ))}
+              {monthsToCompletion !== null && monthsToCompletion > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Time to delivery</span>
+                  <span className="font-medium">~{monthsToCompletion} months</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Buyer Protections */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground">Buyer Protections</h4>
+            <div className="space-y-1.5">
+              {buyerProtections.map((protection, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span>{protection}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
 // Mobile Contact Bar
 export function ProjectMobileContactBar({ project, developer }: { project: Project; developer?: Developer | null }) {
+  const whatsappUrl = developer?.phone 
+    ? `https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`
+    : null;
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
       <div className="flex gap-3 max-w-lg mx-auto">
-        <Button className="flex-1" size="lg">
-          <Mail className="h-4 w-4 mr-2" />
-          Request Info
-        </Button>
+        {whatsappUrl ? (
+          <Button className="flex-1" size="lg" asChild>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-4 w-4 mr-2" />
+              WhatsApp
+            </a>
+          </Button>
+        ) : (
+          <Button className="flex-1" size="lg">
+            <Mail className="h-4 w-4 mr-2" />
+            Request Info
+          </Button>
+        )}
         {developer?.phone && (
           <Button variant="outline" size="lg" asChild>
-            <a 
-              href={`https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageCircle className="h-4 w-4" />
+            <a href={`tel:${developer.phone}`}>
+              <Phone className="h-4 w-4" />
             </a>
           </Button>
         )}

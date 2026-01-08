@@ -2,17 +2,13 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
-import { 
-  ChevronLeft, ChevronRight, Share2, Heart, Building, 
-  MapPin, Home, Calendar, Eye, ArrowLeft, CheckCircle
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Heart, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project } from '@/types/projects';
 
 interface ProjectHeroProps {
-  project: Project & { construction_progress_percent?: number };
+  project: Project;
   onShare?: () => void;
   onSave?: () => void;
   isSaved?: boolean;
@@ -21,7 +17,6 @@ interface ProjectHeroProps {
 export function ProjectHero({ project, onShare, onSave, isSaved = false }: ProjectHeroProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: 'start', containScroll: 'trimSnaps' });
-  const formatPrice = useFormatPrice();
 
   const images = project.images?.length 
     ? project.images 
@@ -178,92 +173,31 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
         </div>
       )}
 
-      {/* Project Info */}
-      <div className="space-y-4">
-        {/* Price */}
-        <div className="space-y-1">
-          <span className="text-sm text-muted-foreground">Starting from</span>
-          <p className="text-3xl font-bold text-primary">
-            {formatPrice(project.price_from || 0, project.currency || 'ILS')}
-            {project.price_to && (
-              <span className="text-lg font-normal text-muted-foreground ml-2">
-                – {formatPrice(project.price_to, project.currency || 'ILS')}
-              </span>
-            )}
-          </p>
-        </div>
-
-        {/* Title & Developer */}
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{project.name}</h1>
-          {project.developer && (
-            <Link 
-              to={`/developers/${project.developer.slug}`}
-              className="inline-flex items-center gap-1.5 text-primary hover:underline"
-            >
-              <span>by {project.developer.name}</span>
-              {project.developer.is_verified && (
-                <CheckCircle className="h-4 w-4" />
-              )}
-            </Link>
-          )}
-        </div>
-
-        {/* Location */}
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <MapPin className="h-4 w-4" />
-          <span>
-            {project.address && `${project.address}, `}
-            {project.neighborhood && `${project.neighborhood}, `}
-            {project.city}
-          </span>
-        </div>
-
-        {/* Activity Indicators */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
-            <span>{project.views_count || 0} views</span>
-          </div>
-        </div>
-
-        {/* Key Stats Bar */}
-        <div className="flex flex-wrap gap-4 p-4 bg-muted/30 rounded-xl border border-border/50">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Building className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Total Units</p>
-              <p className="font-semibold">{project.total_units || 0}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Calendar className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Completion</p>
-              <p className="font-semibold">
-                {project.completion_date 
-                  ? new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-                  : 'TBD'}
-              </p>
-            </div>
-          </div>
-          {project.construction_progress_percent !== undefined && (
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Building className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Progress</p>
-                <p className="font-semibold">{project.construction_progress_percent}%</p>
-              </div>
+      {/* Progress Dots */}
+      {images.length > 1 && (
+        <div className="flex justify-center gap-1.5 pt-2">
+          {images.length <= 8 ? (
+            images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImageIndex(index)}
+                className={`h-1.5 rounded-full transition-all ${
+                  index === selectedImageIndex
+                    ? 'w-6 bg-primary'
+                    : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))
+          ) : (
+            <div className="h-1.5 w-24 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${((selectedImageIndex + 1) / images.length) * 100}%` }}
+              />
             </div>
           )}
         </div>
-      </div>
+      )}
     </motion.div>
   );
 }

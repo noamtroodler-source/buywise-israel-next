@@ -6,21 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
-import { CityMarketCTA } from '@/components/property/CityMarketCTA';
-import { CalculatorCTA } from '@/components/property/CalculatorCTA';
 import {
   ProjectHero,
   ProjectFloorPlans,
   ProjectCostBreakdown,
   ProjectTimeline,
   ProjectDeveloperCard,
-  ProjectAmenities,
   ProjectStickyCard,
   ProjectMobileContactBar,
   SimilarProjects,
   ProjectFAQ,
   ProjectBreadcrumb,
+  ProjectQuickSummary,
+  ProjectDescription,
+  ProjectNextSteps,
 } from '@/components/project';
+
+// Helper to convert city name to slug
+const cityToSlug = (city: string) => city.toLowerCase().replace(/\s+/g, '-');
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -50,10 +53,7 @@ export default function ProjectDetail() {
     );
   }
 
-  const projectWithProgress = {
-    ...project,
-    construction_progress_percent: (project as any).construction_progress_percent || 0,
-  };
+  const citySlug = cityToSlug(project.city);
 
   return (
     <Layout>
@@ -62,24 +62,27 @@ export default function ProjectDetail() {
           {/* Breadcrumb Navigation */}
           <ProjectBreadcrumb projectName={project.name} city={project.city} />
           
+          {/* Hero - Pure Visual */}
+          <ProjectHero project={project} />
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid gap-8 lg:grid-cols-3"
+            className="grid gap-8 lg:grid-cols-3 mt-6"
           >
             {/* Left Column - Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              <ProjectHero project={projectWithProgress} />
+            <div className="lg:col-span-2 space-y-8">
+              {/* Quick Summary - Price, Title, Stats */}
+              <ProjectQuickSummary 
+                project={project} 
+                developer={project.developer}
+              />
               
-              {/* About */}
-              {project.description && (
-                <div className="space-y-2">
-                  <h2 className="text-xl font-semibold">About This Project</h2>
-                  <p className="text-muted-foreground whitespace-pre-line">
-                    {project.description}
-                  </p>
-                </div>
-              )}
+              {/* Description & Amenities */}
+              <ProjectDescription 
+                description={project.description} 
+                amenities={project.amenities}
+              />
               
               {/* Floor Plans - What's available */}
               <ProjectFloorPlans units={units} developer={project.developer} />
@@ -91,11 +94,8 @@ export default function ProjectDetail() {
                 currency={project.currency || 'ILS'}
               />
               
-              {/* Calculator Quick Links */}
-              <CalculatorCTA propertyPrice={project.price_from || undefined} />
-              
               {/* Construction Timeline */}
-              <ProjectTimeline project={projectWithProgress} />
+              <ProjectTimeline project={project} />
               
               <PropertyLocation
                 address={project.address || ''}
@@ -105,12 +105,12 @@ export default function ProjectDetail() {
                 longitude={project.longitude || undefined}
               />
               
-              {/* City Market Context */}
-              <CityMarketCTA cityName={project.city} />
-              
-              {project.amenities && project.amenities.length > 0 && (
-                <ProjectAmenities amenities={project.amenities} />
-              )}
+              {/* Next Steps - Merged CTAs */}
+              <ProjectNextSteps 
+                cityName={project.city}
+                citySlug={citySlug}
+                projectPrice={project.price_from || undefined}
+              />
               
               {/* FAQ Section */}
               <ProjectFAQ />
@@ -122,7 +122,7 @@ export default function ProjectDetail() {
               )}
             </div>
 
-            {/* Right Column - Sticky Sidebar (Simplified) */}
+            {/* Right Column - Sticky Sidebar */}
             <div className="hidden lg:block">
               <div className="sticky top-6">
                 <ProjectStickyCard 
