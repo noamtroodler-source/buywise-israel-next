@@ -122,16 +122,17 @@ export function MarketRealityTabs({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      className="h-full"
+      transition={{ delay: 0.2 }}
     >
-      <Card className="border-border/50 h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="text-foreground">Market Reality</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <Tabs defaultValue="prices" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-muted">
+      {/* Section Header */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-foreground">Market Reality</h2>
+        <p className="text-muted-foreground mt-1">What the numbers say about {cityName}</p>
+      </div>
+
+      {/* Full-width Tabs */}
+      <Tabs defaultValue="prices" className="w-full">
+        <TabsList className="w-full max-w-md grid grid-cols-3 bg-muted mb-8">
               <TabsTrigger value="prices" className="flex items-center gap-1.5">
                 <DollarSign className="h-4 w-4" />
                 <span className="hidden sm:inline">Prices</span>
@@ -409,8 +410,6 @@ export function MarketRealityTabs({
               </div>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
     </motion.div>
   );
 }

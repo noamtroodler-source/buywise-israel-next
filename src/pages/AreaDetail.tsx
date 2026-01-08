@@ -270,32 +270,29 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. Two-Column: City Story + Market Reality Tabs */}
+        {/* 3. City Story - Full Width Standalone */}
+        <section className="py-16 bg-muted/40">
+          <div className="container">
+            <CityStory
+              cityName={city.name}
+              description={city.description}
+              highlights={city.highlights}
+              angloPresence={city.anglo_presence}
+              hasTrainStation={city.has_train_station}
+              commuteTimeTelAviv={city.commute_time_tel_aviv}
+            />
+          </div>
+        </section>
+
+        {/* 4. Market Reality - Full Width Standalone */}
         <section className="py-16 bg-background">
           <div className="container">
-            <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
-              {/* Left: City Story (2/5) */}
-              <div className="lg:col-span-2">
-                <CityStory
-                  cityName={city.name}
-                  description={city.description}
-                  highlights={city.highlights}
-                  angloPresence={city.anglo_presence}
-                  hasTrainStation={city.has_train_station}
-                  commuteTimeTelAviv={city.commute_time_tel_aviv}
-                />
-              </div>
-              
-              {/* Right: Market Reality Tabs (3/5) */}
-              <div className="lg:col-span-3">
-                <MarketRealityTabs
-                  marketData={marketData}
-                  cityName={city.name}
-                  citySlug={slug}
-                  arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
-                />
-              </div>
-            </div>
+            <MarketRealityTabs
+              marketData={marketData}
+              cityName={city.name}
+              citySlug={slug}
+              arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+            />
           </div>
         </section>
 

@@ -86,16 +86,21 @@ export function CityStory({
   }
 
   // Add Anglo presence if significant
-  if (angloPresence && angloPresence !== 'minimal') {
-    const labels: Record<string, string> = {
-      'strong': 'Strong Anglo community',
-      'moderate': 'Growing Anglo community',
-      'emerging': 'Emerging Anglo presence',
-    };
-    badges.push({
-      icon: Users,
-      label: labels[angloPresence] || 'English speakers welcome',
-    });
+  if (angloPresence) {
+    const lowerAnglo = angloPresence.toLowerCase();
+    if (lowerAnglo !== 'minimal' && lowerAnglo !== 'low') {
+      const labels: Record<string, string> = {
+        'strong': 'Strong Anglo community',
+        'high': 'Strong Anglo community',
+        'moderate': 'Growing Anglo community',
+        'medium': 'Growing Anglo community',
+        'emerging': 'Emerging Anglo presence',
+      };
+      badges.push({
+        icon: Users,
+        label: labels[lowerAnglo] || 'English speakers welcome',
+      });
+    }
   }
 
   // Add train connectivity
@@ -112,7 +117,7 @@ export function CityStory({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
+      className="space-y-6 max-w-3xl"
     >
       {/* Section Title */}
       <h2 className="text-2xl font-semibold text-foreground">
@@ -120,7 +125,7 @@ export function CityStory({
       </h2>
 
       {/* Narrative Paragraph */}
-      <p className="text-muted-foreground leading-relaxed">
+      <p className="text-lg text-muted-foreground leading-relaxed">
         {narrative}
       </p>
 
@@ -136,7 +141,7 @@ export function CityStory({
             <Badge 
               key={badge.label} 
               variant="secondary" 
-              className="px-3 py-1.5 text-sm font-normal bg-muted/60 hover:bg-muted border-0"
+              className="px-3 py-1.5 text-sm font-normal bg-background border border-border/50"
             >
               <badge.icon className="h-3.5 w-3.5 mr-1.5 text-primary" />
               {badge.label}
