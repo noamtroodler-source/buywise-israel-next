@@ -1,494 +1,278 @@
-import { useState, useMemo, useEffect } from 'react';
-import { FileText, Download, ChevronDown, ChevronRight, MapPin, Clock, Info, Check, RotateCcw, Printer } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FileText, 
+  Check, 
+  ChevronDown, 
+  ChevronRight,
+  Printer,
+  RotateCcw,
+  HelpCircle,
+  Building2,
+  Scale,
+  Landmark,
+  User,
+  Clock,
+  CheckCircle2,
+  Sparkles,
+  Shield,
+  Calculator,
+  ClipboardList,
+  Home,
+  MapPin
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToolLayout } from './shared/ToolLayout';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
-import { ResultCard } from './shared/ResultCard';
+import { InsightCard } from './shared/InsightCard';
+import { CTACard } from './shared/CTACard';
+import { ToolFeedback } from './shared/ToolFeedback';
 import { useDocumentsByStage, DocumentChecklistItem } from '@/hooks/useDocumentChecklist';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
-type TransactionType = 'buy' | 'rent';
-type BuyerTypeFilter = 'all' | 'israeli' | 'oleh' | 'foreign';
-
-const STAGE_CONFIG: Record<string, { label: string; description: string; icon: string }> = {
-  // Purchase stages
-  pre_approval: { label: 'Pre-Approval & ID', description: 'Documents for mortgage pre-approval', icon: '🔍' },
-  pre_purchase: { label: 'Pre-Purchase Research', description: 'Documents to gather before signing', icon: '🔍' },
-  contract_signing: { label: 'Contract & Due Diligence', description: 'When signing the purchase agreement', icon: '📝' },
-  closing: { label: 'Closing & Financing', description: 'Completing the transaction', icon: '🏦' },
-  post_purchase: { label: 'Post-Purchase', description: 'After receiving your keys', icon: '🔑' },
-  // Rental stages
-  rental_search: { label: 'Prepare Your Application', description: 'Documents landlords will request', icon: '📋' },
-  rental_guarantor: { label: 'Guarantor Documents', description: 'Required in most Israeli rentals', icon: '🤝' },
-  rental_contract: { label: 'Signing & Payment', description: 'Contract and move-in costs', icon: '✍️' },
-  rental_movein: { label: 'Move-In Setup', description: 'Utilities and registration', icon: '🏠' },
+const STAGE_CONFIG: Record<string, {
+  label: string;
+  description: string;
+  icon: typeof FileText;
+  estimatedDays: string;
+  transactionType: 'buy' | 'rent' | 'both';
+}> = {
+  'pre-search': { label: 'Pre-Search Preparation', description: 'Documents to gather before you start looking', icon: ClipboardList, estimatedDays: '1-2 weeks', transactionType: 'buy' },
+  'pre-approval': { label: 'Mortgage Pre-Approval', description: 'Bank requirements for financing', icon: Landmark, estimatedDays: '1-2 weeks', transactionType: 'buy' },
+  'offer': { label: 'Making an Offer', description: 'Documents for the offer stage', icon: FileText, estimatedDays: '1-3 days', transactionType: 'buy' },
+  'contract': { label: 'Contract Signing', description: 'Legal documents for the purchase agreement', icon: Scale, estimatedDays: '1-2 weeks', transactionType: 'buy' },
+  'mortgage-final': { label: 'Final Mortgage Approval', description: 'Complete your financing', icon: Landmark, estimatedDays: '2-4 weeks', transactionType: 'buy' },
+  'closing': { label: 'Closing & Handover', description: 'Final documents for property transfer', icon: Home, estimatedDays: '1-2 weeks', transactionType: 'buy' },
+  'rental-search': { label: 'Rental Search', description: 'Documents to prepare before viewing apartments', icon: MapPin, estimatedDays: '1 week', transactionType: 'rent' },
+  'rental-application': { label: 'Application & Guarantor', description: 'Documents required by landlords', icon: User, estimatedDays: '3-5 days', transactionType: 'rent' },
+  'rental-contract': { label: 'Rental Contract', description: 'Lease agreement documents', icon: Scale, estimatedDays: '1-3 days', transactionType: 'rent' },
+  'rental-move-in': { label: 'Move-In', description: 'Final documents for moving in', icon: Home, estimatedDays: '1-2 days', transactionType: 'rent' }
 };
 
-const BUY_STAGE_ORDER = ['pre_approval', 'contract_signing', 'closing', 'post_purchase'];
-const RENT_STAGE_ORDER = ['rental_search', 'rental_guarantor', 'rental_contract', 'rental_movein'];
+const BUY_STAGE_ORDER = ['pre-search', 'pre-approval', 'offer', 'contract', 'mortgage-final', 'closing'];
+const RENT_STAGE_ORDER = ['rental-search', 'rental-application', 'rental-contract', 'rental-move-in'];
+const BUYER_TYPE_OPTIONS = [{ value: 'all', label: 'All Buyers' }, { value: 'israeli_resident', label: 'Israeli Resident' }, { value: 'oleh', label: 'Oleh Chadash' }, { value: 'foreign', label: 'Foreign Buyer' }];
+const STORAGE_KEY = 'document-checklist-state';
 
-const BUYER_TYPE_OPTIONS = [
-  { value: 'all', label: 'All Documents', description: 'Show everything' },
-  { value: 'israeli', label: 'Israeli Resident', description: 'Toshav Israel' },
-  { value: 'oleh', label: 'Oleh Hadash', description: 'New immigrant' },
-  { value: 'foreign', label: 'Foreign Buyer', description: 'Non-resident' },
-];
+type TransactionType = 'buy' | 'rent';
+type BuyerTypeFilter = 'all' | 'israeli_resident' | 'oleh' | 'foreign';
+interface StoredState { checkedItems: Record<string, boolean>; transactionType: TransactionType; buyerTypeFilter: BuyerTypeFilter; }
 
-const STORAGE_KEY = 'buywise-document-checklist';
+function getSourceIcon(whereToGet: string | null) {
+  if (!whereToGet) return null;
+  const lower = whereToGet.toLowerCase();
+  if (lower.includes('bank') || lower.includes('mortgage')) return Landmark;
+  if (lower.includes('lawyer') || lower.includes('attorney')) return Scale;
+  if (lower.includes('government') || lower.includes('ministry') || lower.includes('tabu')) return Building2;
+  return User;
+}
 
-interface StoredState {
-  checkedItems: string[];
-  buyerType: BuyerTypeFilter;
-  transactionType: TransactionType;
+function getEncouragementMessage(percent: number): string {
+  if (percent === 0) return "Let's get started!";
+  if (percent < 25) return "Great first steps!";
+  if (percent < 50) return "Building momentum!";
+  if (percent < 75) return "Over halfway there!";
+  if (percent < 100) return "Almost complete!";
+  return "All done! 🎉";
 }
 
 export function DocumentChecklistTool() {
-  const { data: documentsByStage, isLoading } = useDocumentsByStage();
-  const { data: buyerProfile } = useBuyerProfile();
+  const { data: groupedDocuments, isLoading, error } = useDocumentsByStage();
+  const { buyerProfile } = useBuyerProfile();
+  const [transactionType, setTransactionType] = useState<TransactionType>('buy');
+  const [buyerTypeFilter, setBuyerTypeFilter] = useState<BuyerTypeFilter>('all');
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({});
+  const [showCelebration, setShowCelebration] = useState(false);
 
-  // Load from localStorage
-  const loadStoredState = (): StoredState => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    return { checkedItems: [], buyerType: 'all', transactionType: 'buy' };
-  };
-
-  const [transactionType, setTransactionType] = useState<TransactionType>(() => loadStoredState().transactionType);
-  const [buyerType, setBuyerType] = useState<BuyerTypeFilter>(() => loadStoredState().buyerType);
-  const [checkedItems, setCheckedItems] = useState<Set<string>>(() => new Set(loadStoredState().checkedItems));
-  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set(['pre_approval', 'rental_search']));
-
-  // Save to localStorage
   useEffect(() => {
-    const state: StoredState = {
-      checkedItems: Array.from(checkedItems),
-      buyerType,
-      transactionType,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [checkedItems, buyerType, transactionType]);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { try { const parsed: StoredState = JSON.parse(saved); setCheckedItems(parsed.checkedItems || {}); setTransactionType(parsed.transactionType || 'buy'); setBuyerTypeFilter(parsed.buyerTypeFilter || 'all'); } catch (e) { console.error('Failed to parse saved checklist state', e); } }
+  }, []);
 
-  // Auto-set buyer type from profile
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ checkedItems, transactionType, buyerTypeFilter })); }, [checkedItems, transactionType, buyerTypeFilter]);
+
   useEffect(() => {
-    if (buyerProfile && buyerType === 'all') {
-      if (buyerProfile.residency_status === 'oleh_hadash') setBuyerType('oleh');
-      else if (buyerProfile.residency_status === 'non_resident') setBuyerType('foreign');
-      else if (buyerProfile.residency_status === 'israeli_resident') setBuyerType('israeli');
+    if (buyerProfile && buyerTypeFilter === 'all') {
+      const mapping: Record<string, BuyerTypeFilter> = { israeli_resident: 'israeli_resident', oleh: 'oleh', foreign_resident: 'foreign', non_resident: 'foreign' };
+      const mapped = mapping[buyerProfile.residency_status];
+      if (mapped) setBuyerTypeFilter(mapped);
     }
-  }, [buyerProfile]);
+  }, [buyerProfile, buyerTypeFilter]);
 
-  // Filter documents based on buyer type
-  const filterDocuments = (docs: DocumentChecklistItem[]) => {
-    if (buyerType === 'all') return docs;
-    return docs.filter(doc => {
-      if (!doc.required_for || doc.required_for.length === 0) return true;
-      if (doc.required_for.includes('all')) return true;
-      return doc.required_for.includes(buyerType);
-    });
-  };
+  const filterDocuments = (docs: DocumentChecklistItem[]) => buyerTypeFilter === 'all' ? docs : docs.filter(doc => !doc.required_for || doc.required_for.length === 0 || doc.required_for.includes(buyerTypeFilter));
+  const stageOrder = transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER;
 
-  // Calculate stats - filtered by transaction type
   const stats = useMemo(() => {
-    if (!documentsByStage) return { total: 0, completed: 0, critical: 0, criticalCompleted: 0 };
-    
-    const relevantStages = transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER;
-    const allDocs = relevantStages
-      .filter(stage => documentsByStage[stage])
-      .flatMap(stage => documentsByStage[stage]);
-    
-    const filteredDocs = allDocs.filter(doc => {
-      if (buyerType === 'all') return true;
-      if (!doc.required_for || doc.required_for.length === 0) return true;
-      if (doc.required_for.includes('all')) return true;
-      return doc.required_for.includes(buyerType);
+    if (!groupedDocuments) return { total: 0, completed: 0, critical: 0, criticalCompleted: 0, currentStage: '', stageProgress: {} as Record<string, { total: number; completed: number }> };
+    let total = 0, completed = 0, critical = 0, criticalCompleted = 0, currentStage = '';
+    const stageProgress: Record<string, { total: number; completed: number }> = {};
+    stageOrder.forEach(stage => {
+      const filtered = filterDocuments(groupedDocuments[stage] || []);
+      const stageCompleted = filtered.filter(doc => checkedItems[doc.id]).length;
+      stageProgress[stage] = { total: filtered.length, completed: stageCompleted };
+      total += filtered.length; completed += stageCompleted;
+      filtered.forEach(doc => { if (doc.is_critical) { critical++; if (checkedItems[doc.id]) criticalCompleted++; } });
+      if (!currentStage && stageCompleted < filtered.length && filtered.length > 0) currentStage = stage;
     });
-    
-    const critical = filteredDocs.filter(d => d.is_critical);
-    return {
-      total: filteredDocs.length,
-      completed: filteredDocs.filter(d => checkedItems.has(d.id)).length,
-      critical: critical.length,
-      criticalCompleted: critical.filter(d => checkedItems.has(d.id)).length,
-    };
-  }, [documentsByStage, checkedItems, buyerType, transactionType]);
+    if (!currentStage && stageOrder.length > 0) currentStage = stageOrder[stageOrder.length - 1];
+    return { total, completed, critical, criticalCompleted, currentStage, stageProgress };
+  }, [groupedDocuments, checkedItems, buyerTypeFilter, stageOrder]);
 
-  const progressPercent = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
-  const criticalPercent = stats.critical > 0 ? (stats.criticalCompleted / stats.critical) * 100 : 0;
+  const progressPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const toggleItem = (id: string) => {
-    setCheckedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
-    });
-  };
-
-  const toggleStage = (stage: string) => {
-    setExpandedStages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(stage)) newSet.delete(stage);
-      else newSet.add(stage);
-      return newSet;
-    });
-  };
-
-  const resetProgress = () => {
-    setCheckedItems(new Set());
-  };
-
-  const handlePrint = () => {
-    const printContent = generatePrintContent();
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-      printWindow.print();
+  const toggleDocument = (docId: string) => {
+    const newChecked = !checkedItems[docId];
+    setCheckedItems(prev => ({ ...prev, [docId]: newChecked }));
+    if (newChecked && groupedDocuments) {
+      Object.entries(groupedDocuments).forEach(([stage, docs]) => {
+        const filtered = filterDocuments(docs);
+        if (filtered.every(doc => doc.id === docId ? true : checkedItems[doc.id]) && filtered.length > 0 && STAGE_CONFIG[stage]) {
+          toast.success(`${STAGE_CONFIG[stage].label} complete!`, { description: 'Great progress!', duration: 3000 });
+        }
+      });
     }
+    if (newChecked && stats.completed + 1 === stats.total && stats.total > 0) { setShowCelebration(true); setTimeout(() => setShowCelebration(false), 3000); }
   };
 
-  const generatePrintContent = () => {
-    const stageOrder = transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER;
-    const sortedStages = stageOrder.filter(stage => documentsByStage?.[stage]);
-    const buyerLabel = BUYER_TYPE_OPTIONS.find(o => o.value === buyerType)?.label || 'All';
+  const toggleStage = (stage: string) => setExpandedStages(prev => ({ ...prev, [stage]: !prev[stage] }));
+  const markStageComplete = (stage: string) => { if (!groupedDocuments) return; const updates: Record<string, boolean> = {}; filterDocuments(groupedDocuments[stage] || []).forEach(doc => { updates[doc.id] = true; }); setCheckedItems(prev => ({ ...prev, ...updates })); toast.success(`All documents in ${STAGE_CONFIG[stage]?.label || stage} marked complete!`); };
+  const resetChecklist = () => { setCheckedItems({}); toast.success('Checklist reset'); };
+  const printChecklist = () => window.print();
 
-    let html = `<!DOCTYPE html><html><head><title>Document Checklist - BuyWise Israel</title>
-      <style>
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 24px; color: #1a1a1a; }
-        h1 { font-size: 24px; margin-bottom: 8px; }
-        .meta { color: #666; font-size: 14px; margin-bottom: 24px; }
-        .stage { margin-bottom: 32px; }
-        .stage-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .stage-desc { color: #666; font-size: 14px; margin-bottom: 12px; }
-        .doc { display: flex; gap: 12px; padding: 12px; margin: 8px 0; background: #f9f9f9; border-radius: 8px; border-left: 3px solid #ddd; }
-        .doc.critical { border-left-color: #ef4444; }
-        .doc.checked { background: #f0fdf4; border-left-color: #22c55e; }
-        .checkbox { width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 4px; flex-shrink: 0; }
-        .checkbox.checked { background: #22c55e; border-color: #22c55e; }
-        .doc-content { flex: 1; }
-        .doc-name { font-weight: 500; }
-        .doc-hebrew { color: #666; font-size: 14px; direction: rtl; }
-        .doc-meta { font-size: 12px; color: #888; margin-top: 4px; }
-        .badge { font-size: 11px; background: #fee2e2; color: #dc2626; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
-        @media print { body { padding: 0; } }
-      </style></head><body>
-      <h1>📋 Israel Property Document Checklist</h1>
-      <div class="meta">Buyer Type: ${buyerLabel} · Generated: ${new Date().toLocaleDateString()}</div>`;
-
-    for (const stage of sortedStages) {
-      const docs = filterDocuments(documentsByStage![stage]);
-      if (docs.length === 0) continue;
-      const config = STAGE_CONFIG[stage];
-
-      html += `<div class="stage">
-        <div class="stage-title">${config.icon} ${config.label}</div>
-        <div class="stage-desc">${config.description}</div>`;
-
-      for (const doc of docs) {
-        const isChecked = checkedItems.has(doc.id);
-        html += `<div class="doc ${doc.is_critical ? 'critical' : ''} ${isChecked ? 'checked' : ''}">
-          <div class="checkbox ${isChecked ? 'checked' : ''}"></div>
-          <div class="doc-content">
-            <div class="doc-name">${doc.document_name_english}${doc.is_critical ? '<span class="badge">Required</span>' : ''}</div>
-            ${doc.document_name_hebrew ? `<div class="doc-hebrew">${doc.document_name_hebrew} (${doc.transliteration || ''})</div>` : ''}
-            <div class="doc-meta">
-              ${doc.where_to_get ? `📍 ${doc.where_to_get}` : ''}
-              ${doc.typical_timeline ? ` · ⏱ ${doc.typical_timeline}` : ''}
-            </div>
-          </div>
-        </div>`;
-      }
-      html += '</div>';
-    }
-
-    return html + '</body></html>';
+  const getInsightText = () => {
+    const buyerLabel = BUYER_TYPE_OPTIONS.find(o => o.value === buyerTypeFilter)?.label || 'buyer';
+    if (progressPercent === 0) return transactionType === 'rent' ? `Starting your rental search? As ${buyerLabel === 'All Buyers' ? 'a renter' : `an ${buyerLabel}`}, prepare documents landlords typically request.` : `Ready to start? As ${buyerLabel === 'All Buyers' ? 'a buyer' : `an ${buyerLabel}`}, begin by gathering personal documents and getting mortgage pre-approval.`;
+    if (progressPercent < 50) return `You're making progress! Focus on completing the ${STAGE_CONFIG[stats.currentStage]?.label || 'current stage'} documents next.`;
+    if (progressPercent < 100) return `Excellent! You're ${progressPercent}% complete with just ${stats.total - stats.completed} document${stats.total - stats.completed === 1 ? '' : 's'} remaining.`;
+    return `Congratulations! You have all your documents ready for your ${transactionType === 'buy' ? 'property purchase' : 'rental'}.`;
   };
 
-  // Left column content
+  const getNextStep = () => { const sp = stats.stageProgress[stats.currentStage]; if (!sp) return 'Start your checklist'; const r = sp.total - sp.completed; return r === 0 ? 'Stage complete!' : `${r} doc${r === 1 ? '' : 's'} remaining`; };
+
+  if (isLoading) return <div className="flex items-center justify-center min-h-[400px]"><div className="animate-pulse text-muted-foreground">Loading checklist...</div></div>;
+  if (error) return <div className="flex items-center justify-center min-h-[400px]"><div className="text-destructive">Failed to load checklist.</div></div>;
+
   const leftColumn = (
     <div className="space-y-6">
-      {/* Transaction Type Toggle */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">What are you planning?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            {(['buy', 'rent'] as const).map((type) => (
-              <button
-                key={type}
-                onClick={() => setTransactionType(type)}
-                className={cn(
-                  "p-4 rounded-lg border-2 text-left transition-all",
-                  transactionType === type
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/30"
-                )}
-              >
-                <span className="text-2xl mb-2 block">{type === 'buy' ? '🏠' : '🔑'}</span>
-                <span className="font-medium">{type === 'buy' ? 'Buying' : 'Renting'}</span>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {type === 'buy' ? 'Purchase documents' : 'Rental documents'}
-                </p>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <Card><CardContent className="pt-6 space-y-4">
+        <div><label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block">Transaction Type</label>
+          <Tabs value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="buy" className="gap-2"><Home className="h-4 w-4" />Buying</TabsTrigger><TabsTrigger value="rent" className="gap-2"><MapPin className="h-4 w-4" />Renting</TabsTrigger></TabsList></Tabs>
+        </div>
+        <div><label className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 block flex items-center gap-1">Your Situation<TooltipProvider><Tooltip><TooltipTrigger><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /></TooltipTrigger><TooltipContent><p className="max-w-xs">Filter documents based on your residency status.</p></TooltipContent></Tooltip></TooltipProvider></label>
+          <Select value={buyerTypeFilter} onValueChange={(v) => setBuyerTypeFilter(v as BuyerTypeFilter)}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent>{BUYER_TYPE_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+        </div>
+      </CardContent></Card>
 
-      {/* Buyer Type Filter */}
-      {transactionType === 'buy' && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Your buyer profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              {BUYER_TYPE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setBuyerType(option.value as BuyerTypeFilter)}
-                  className={cn(
-                    "p-3 rounded-lg border text-left transition-all",
-                    buyerType === option.value
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/30"
-                  )}
-                >
-                  <span className="font-medium text-sm">{option.label}</span>
-                  <p className="text-xs text-muted-foreground">{option.description}</p>
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Document Stages */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Document Checklist</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {isLoading ? (
-            <div className="py-8 text-center">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Loading documents...</p>
-            </div>
-          ) : (
-            (transactionType === 'buy' ? BUY_STAGE_ORDER : RENT_STAGE_ORDER).filter(stage => documentsByStage?.[stage]).map((stage) => {
-              const docs = filterDocuments(documentsByStage![stage]);
-              if (docs.length === 0) return null;
-
-              const config = STAGE_CONFIG[stage];
-              const stageCompleted = docs.filter(d => checkedItems.has(d.id)).length;
-              const isExpanded = expandedStages.has(stage);
-              const isComplete = stageCompleted === docs.length;
-
-              return (
-                <Collapsible key={stage} open={isExpanded} onOpenChange={() => toggleStage(stage)}>
-                  <CollapsibleTrigger asChild>
-                    <div className={cn(
-                      "flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors",
-                      isComplete ? "bg-green-50 dark:bg-green-950/20" : "bg-muted/30 hover:bg-muted/50"
-                    )}>
+      <div className="space-y-4">
+        {stageOrder.map((stage, stageIndex) => {
+          const config = STAGE_CONFIG[stage]; if (!config) return null;
+          const filteredDocs = filterDocuments(groupedDocuments?.[stage] || []); if (filteredDocs.length === 0) return null;
+          const sp = stats.stageProgress[stage] || { total: 0, completed: 0 };
+          const isComplete = sp.completed === sp.total && sp.total > 0;
+          const isExpanded = expandedStages[stage] ?? (stage === stats.currentStage || stageIndex === 0);
+          const StageIcon = config.icon;
+          return (
+            <Card key={stage} className={cn("transition-all duration-200", isComplete && "bg-primary/5 border-primary/20")}>
+              <Collapsible open={isExpanded} onOpenChange={() => toggleStage(stage)}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors pb-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        <span className="text-lg">{config.icon}</span>
-                        <div>
-                          <h3 className="font-medium text-sm">{config.label}</h3>
-                          <p className="text-xs text-muted-foreground">{config.description}</p>
-                        </div>
+                        <div className={cn("p-2 rounded-lg", isComplete ? "bg-primary/10" : "bg-muted")}><StageIcon className={cn("h-5 w-5", isComplete ? "text-primary" : "text-muted-foreground")} /></div>
+                        <div><CardTitle className="text-base font-semibold flex items-center gap-2">{config.label}{isComplete && <CheckCircle2 className="h-4 w-4 text-primary" />}</CardTitle><p className="text-sm text-muted-foreground">{config.description}</p></div>
                       </div>
-                      <Badge variant={isComplete ? 'default' : 'secondary'} className="shrink-0">
-                        {stageCompleted}/{docs.length}
-                      </Badge>
+                      <div className="flex items-center gap-3"><Badge variant="outline" className="font-normal">{sp.completed}/{sp.total}</Badge>{isExpanded ? <ChevronDown className="h-5 w-5 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 text-muted-foreground" />}</div>
                     </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2 space-y-2">
-                    {docs.map((doc) => (
-                      <DocumentItemRow
-                        key={doc.id}
-                        document={doc}
-                        isChecked={checkedItems.has(doc.id)}
-                        onToggle={() => toggleItem(doc.id)}
-                      />
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  // Right column content
-  const rightColumn = (
-    <div className="space-y-4">
-      {/* Progress Card */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="pt-6">
-          <div className="text-center mb-4">
-            <div className="text-4xl font-bold text-primary">{Math.round(progressPercent)}%</div>
-            <p className="text-sm text-muted-foreground">Complete</p>
-          </div>
-          <Progress value={progressPercent} className="h-3 mb-4" />
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{stats.completed} of {stats.total}</span>
-            {progressPercent === 100 && (
-              <span className="text-green-600 flex items-center gap-1">
-                <Check className="h-4 w-4" /> All done!
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Critical Documents */}
-      <ResultCard
-        label="Required Documents"
-        value={`${stats.criticalCompleted}/${stats.critical}`}
-        sublabel={criticalPercent === 100 ? "All critical docs ready" : "Must-have documents"}
-        variant={criticalPercent === 100 ? "primary" : "default"}
-        badge={criticalPercent === 100 ? { text: "Complete", variant: "success" } : undefined}
-      />
-
-      {/* Actions */}
-      <Card>
-        <CardContent className="pt-4 space-y-3">
-          <Button variant="outline" className="w-full gap-2" onClick={handlePrint}>
-            <Printer className="h-4 w-4" />
-            Print Checklist
-          </Button>
-          <Button variant="ghost" className="w-full gap-2 text-muted-foreground" onClick={resetProgress}>
-            <RotateCcw className="h-4 w-4" />
-            Reset Progress
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Tips Card */}
-      <Card className="bg-muted/30">
-        <CardContent className="pt-4">
-          <h4 className="font-medium text-sm mb-2">💡 Pro Tips</h4>
-          <ul className="text-xs text-muted-foreground space-y-2">
-            <li>• Your progress saves automatically</li>
-            <li>• Documents marked "Required" are essential</li>
-            {transactionType === 'buy' ? (
-              <>
-                <li>• Ask your lawyer about timeline for each stage</li>
-                <li>• Print this list for your meetings</li>
-              </>
-            ) : (
-              <>
-                <li>• Finding a guarantor is often the hardest part</li>
-                <li>• Post-dated checks are standard in Israel</li>
-              </>
-            )}
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const subtitle = transactionType === 'buy' 
-    ? 'Track all documents needed for your Israel property purchase'
-    : 'Track all documents needed for renting in Israel';
-
-  return (
-    <ToolLayout
-      title="Document Checklist"
-      subtitle={subtitle}
-      icon={<FileText className="h-6 w-6" />}
-      leftColumn={leftColumn}
-      rightColumn={rightColumn}
-      disclaimer={<ToolDisclaimer text="This checklist is for informational purposes. Requirements may vary by municipality and transaction type. Always consult with your lawyer." />}
-    />
-  );
-}
-
-// Document Item Component
-interface DocumentItemRowProps {
-  document: DocumentChecklistItem;
-  isChecked: boolean;
-  onToggle: () => void;
-}
-
-function DocumentItemRow({ document, isChecked, onToggle }: DocumentItemRowProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-start gap-3 p-3 rounded-lg border transition-all ml-4",
-        isChecked
-          ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
-          : "bg-background border-border hover:border-primary/30",
-        document.is_critical && !isChecked && "border-l-4 border-l-destructive"
-      )}
-    >
-      <Checkbox
-        checked={isChecked}
-        onCheckedChange={onToggle}
-        className="mt-0.5"
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={cn("font-medium text-sm", isChecked && "line-through text-muted-foreground")}>
-            {document.document_name_english}
-          </span>
-          {document.is_critical && (
-            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Required</Badge>
-          )}
-        </div>
-
-        {document.document_name_hebrew && (
-          <p className="text-xs text-muted-foreground mt-0.5" dir="rtl">
-            {document.document_name_hebrew}
-            {document.transliteration && (
-              <span className="text-[10px] ml-1" dir="ltr">({document.transliteration})</span>
-            )}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-3 mt-1.5 text-[11px] text-muted-foreground">
-          {document.where_to_get && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="flex items-center gap-1 cursor-help">
-                  <MapPin className="h-3 w-3" />
-                  {document.where_to_get.length > 25
-                    ? document.where_to_get.slice(0, 25) + '...'
-                    : document.where_to_get}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">{document.where_to_get}</TooltipContent>
-            </Tooltip>
-          )}
-          {document.typical_timeline && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {document.typical_timeline}
-            </span>
-          )}
-        </div>
-
-        {document.notes && (
-          <p className="text-[11px] text-muted-foreground mt-1.5 flex items-start gap-1">
-            <Info className="h-3 w-3 mt-0.5 shrink-0" />
-            {document.notes}
-          </p>
-        )}
+                    <div className="mt-3"><Progress value={sp.total > 0 ? (sp.completed / sp.total) * 100 : 0} className="h-1.5" /></div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent><CardContent className="pt-0 space-y-2">
+                  {!isComplete && <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); markStageComplete(stage); }}><CheckCircle2 className="h-4 w-4 mr-2" />Mark all complete</Button>}
+                  {filteredDocs.map(doc => <DocumentItemRow key={doc.id} doc={doc} isChecked={!!checkedItems[doc.id]} onToggle={() => toggleDocument(doc.id)} />)}
+                  <div className="pt-2 flex items-center gap-2 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />Typically takes {config.estimatedDays}</div>
+                </CardContent></CollapsibleContent>
+              </Collapsible>
+            </Card>
+          );
+        })}
       </div>
     </div>
+  );
+
+  const rightColumn = (
+    <div className="space-y-4">
+      <Card className="overflow-hidden">
+        <div className="bg-gradient-to-br from-primary/5 via-background to-background p-6 relative">
+          <AnimatePresence>{showCelebration && <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10"><div className="text-center"><Sparkles className="h-12 w-12 text-primary mx-auto mb-2" /><p className="text-xl font-bold text-primary">All Complete!</p><p className="text-muted-foreground">You're ready to go!</p></div></motion.div>}</AnimatePresence>
+          <div className="text-center"><p className="text-sm font-medium text-muted-foreground mb-2">Overall Progress</p><motion.div key={progressPercent} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15 }} className="text-5xl font-bold text-primary mb-1">{progressPercent}%</motion.div><p className="text-sm text-muted-foreground">{getEncouragementMessage(progressPercent)}</p><div className="mt-4"><Progress value={progressPercent} className="h-2" /></div></div>
+        </div>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 rounded-lg bg-muted/50"><p className="text-2xl font-bold text-foreground">{stats.completed}/{stats.total}</p><p className="text-xs text-muted-foreground">Documents Done</p></div>
+            <div className="text-center p-3 rounded-lg bg-muted/50"><p className="text-2xl font-bold text-foreground">{stats.criticalCompleted}/{stats.critical}</p><p className="text-xs text-muted-foreground">Required Done</p></div>
+            <div className="text-center p-3 rounded-lg bg-muted/50"><p className="text-sm font-semibold text-foreground truncate">{STAGE_CONFIG[stats.currentStage]?.label || 'Not started'}</p><p className="text-xs text-muted-foreground">Current Stage</p></div>
+            <div className="text-center p-3 rounded-lg bg-muted/50"><p className="text-sm font-semibold text-foreground truncate">{getNextStep()}</p><p className="text-xs text-muted-foreground">Next Step</p></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" />Stage Progress</CardTitle></CardHeader>
+        <CardContent className="pt-0"><div className="space-y-3">
+          {stageOrder.map((stage, index) => { const config = STAGE_CONFIG[stage]; if (!config) return null; const filtered = filterDocuments(groupedDocuments?.[stage] || []); if (filtered.length === 0) return null; const sp = stats.stageProgress[stage] || { total: 0, completed: 0 }; const isComplete = sp.completed === sp.total; const isCurrent = stage === stats.currentStage;
+            return (<div key={stage} className="flex items-center gap-3"><div className={cn("w-6 h-6 rounded-full flex items-center justify-center shrink-0", isComplete ? "bg-primary text-primary-foreground" : isCurrent ? "bg-primary/20 text-primary border-2 border-primary" : "bg-muted text-muted-foreground")}>{isComplete ? <Check className="h-3.5 w-3.5" /> : <span className="text-xs font-medium">{index + 1}</span>}</div><div className="flex-1 min-w-0"><p className={cn("text-sm font-medium truncate", isComplete ? "text-primary" : isCurrent ? "text-foreground" : "text-muted-foreground")}>{config.label}</p></div><Badge variant="outline" className="shrink-0 text-xs">{sp.completed}/{sp.total}</Badge></div>);
+          })}
+        </div></CardContent>
+      </Card>
+
+      <Card className="border-primary/20 bg-primary/5"><CardContent className="pt-4 pb-4"><div className="flex items-start gap-3"><Shield className="h-5 w-5 text-primary shrink-0 mt-0.5" /><div><p className="text-sm font-medium text-foreground mb-1">Curated for Israel</p><ul className="text-xs text-muted-foreground space-y-1"><li>• Hebrew document names included</li><li>• Where to get each document</li><li>• Typical processing times</li></ul></div></div></CardContent></Card>
+
+      <div className="flex gap-2"><Button variant="outline" className="flex-1" onClick={printChecklist}><Printer className="h-4 w-4 mr-2" />Print</Button><Button variant="outline" className="flex-1" onClick={resetChecklist}><RotateCcw className="h-4 w-4 mr-2" />Reset</Button></div>
+    </div>
+  );
+
+  const bottomSection = (
+    <div className="space-y-6">
+      <div className="grid md:grid-cols-2 gap-4">
+        <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" />Understanding the Process</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm text-muted-foreground space-y-2"><p>The {transactionType === 'buy' ? 'property purchase' : 'rental'} process in Israel typically takes {transactionType === 'buy' ? '2-4 months' : '1-3 weeks'} from start to finish.</p><p>Having documents ready beforehand speeds up the process significantly.</p><p>Critical documents (marked with a border) should be prioritized.</p></CardContent></CollapsibleContent></Card></Collapsible>
+        <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />Key Hebrew Terms</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm space-y-2"><div className="flex justify-between"><span className="text-muted-foreground">Nesach Tabu</span><span>Land Registry Extract</span></div><div className="flex justify-between"><span className="text-muted-foreground">Ishur Ikroni</span><span>Pre-Approval Letter</span></div><div className="flex justify-between"><span className="text-muted-foreground">Mas Rechisha</span><span>Purchase Tax</span></div><div className="flex justify-between"><span className="text-muted-foreground">Teudat Zehut</span><span>ID Card</span></div></CardContent></CollapsibleContent></Card></Collapsible>
+      </div>
+      <InsightCard title="What This Means For You" insight={getInsightText()} />
+      <div className="grid sm:grid-cols-3 gap-4">
+        <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=true-cost" />
+        <CTACard title="Mortgage Calculator" description="Plan your financing strategy" icon={<Landmark className="h-5 w-5" />} buttonText="Plan Financing" buttonLink="/tools?tool=mortgage" />
+        <CTACard title="Explore Areas" description="Find the right neighborhood" icon={<MapPin className="h-5 w-5" />} buttonText="View Areas" buttonLink="/areas" />
+      </div>
+      <ToolFeedback toolName="Document Checklist" variant="inline" />
+    </div>
+  );
+
+  return <ToolLayout title="Document Checklist" subtitle={`Track the documents you need for ${transactionType === 'buy' ? 'buying' : 'renting'} property in Israel`} icon={<FileText className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} disclaimer={<ToolDisclaimer />} />;
+}
+
+interface DocumentItemRowProps { doc: DocumentChecklistItem; isChecked: boolean; onToggle: () => void; }
+
+function DocumentItemRow({ doc, isChecked, onToggle }: DocumentItemRowProps) {
+  const SourceIcon = getSourceIcon(doc.where_to_get);
+  return (
+    <motion.div layout initial={false} animate={{ opacity: 1 }} className={cn("flex items-start gap-3 p-3 rounded-lg border transition-all duration-200", isChecked ? "bg-primary/5 border-primary/20" : doc.is_critical ? "border-l-4 border-l-primary border-t border-r border-b" : "border-border hover:border-primary/30")}>
+      <Checkbox id={doc.id} checked={isChecked} onCheckedChange={onToggle} className="mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <label htmlFor={doc.id} className={cn("text-sm font-medium cursor-pointer block", isChecked && "line-through text-muted-foreground")}>{doc.document_name_english}{doc.is_critical && !isChecked && <Badge variant="outline" className="ml-2 text-xs bg-primary/10 text-primary border-primary/20">Required</Badge>}</label>
+        {doc.document_name_hebrew && <p className="text-xs text-muted-foreground mt-0.5">{doc.document_name_hebrew}{doc.transliteration && ` (${doc.transliteration})`}</p>}
+        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">{doc.where_to_get && <span className="flex items-center gap-1">{SourceIcon && <SourceIcon className="h-3 w-3" />}{doc.where_to_get}</span>}{doc.typical_timeline && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{doc.typical_timeline}</span>}</div>
+        {doc.notes && <p className="text-xs text-muted-foreground mt-2 italic">{doc.notes}</p>}
+      </div>
+    </motion.div>
   );
 }
