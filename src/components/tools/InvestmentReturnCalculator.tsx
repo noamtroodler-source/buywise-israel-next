@@ -1,24 +1,25 @@
+// Investment Return Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useEffect } from 'react';
-import { TrendingUp, Info, Building2, DollarSign, PiggyBank, Scale, Calendar, Lightbulb, RotateCcw, Percent, Home, Users, Wallet, Clock, LineChart, ArrowRight, Save, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, Building2, DollarSign, PiggyBank, Scale, Wallet, Clock, LineChart, ArrowRight, RotateCcw, Save, Loader2, Home, HelpCircle, BadgeCheck, ChevronDown, Calculator, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ToolLayout } from './shared/ToolLayout';
-import { ToolDisclaimer } from './shared/ToolDisclaimer';
-import { ToolFeedback } from './shared/ToolFeedback';
-import { InsightCard } from './shared/InsightCard';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard } from './shared';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
+import { Link } from 'react-router-dom';
 
 import { useAllCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { useCities } from '@/hooks/useCities';
-import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
-import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
+import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { toast } from 'sonner';
@@ -33,33 +34,41 @@ import { calculateMortgagePayment } from '@/lib/calculations/mortgage';
 import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
 
-// Tooltip component with consistent styling
+// Helper component for info tooltips
 function InfoTooltip({ content }: { content: string }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground cursor-help inline ml-1 shrink-0" />
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-sm" side="top">
-        <p>{content}</p>
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="inline-flex items-center justify-center ml-1.5 text-muted-foreground hover:text-foreground transition-colors">
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-sm">
+          <p>{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
-// Investment grade calculator
-function calculateInvestmentGrade(netYield: number, cashOnCash: number, appreciation: number): { grade: string; label: string; color: string } {
+// Investment grade calculator - returns brand-compliant colors
+function calculateInvestmentGrade(netYield: number, cashOnCash: number, appreciation: number): { 
+  grade: string; 
+  label: string; 
+  colorClass: string;
+} {
   const score = (netYield * 0.4) + (cashOnCash * 0.15) + (appreciation * 0.45);
-  if (score >= 8) return { grade: 'A+', label: 'Excellent Investment', color: 'text-green-600 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' };
-  if (score >= 6.5) return { grade: 'A', label: 'Strong Investment', color: 'text-green-600 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' };
-  if (score >= 5) return { grade: 'B+', label: 'Good Investment', color: 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' };
-  if (score >= 4) return { grade: 'B', label: 'Solid Investment', color: 'text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' };
-  if (score >= 3) return { grade: 'C+', label: 'Moderate Investment', color: 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800' };
-  if (score >= 2) return { grade: 'C', label: 'Fair Investment', color: 'text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30 dark:border-yellow-800' };
-  return { grade: 'D', label: 'Weak Investment', color: 'text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800' };
+  if (score >= 8) return { grade: 'A+', label: 'Excellent Investment', colorClass: 'text-primary bg-primary/10 border-primary/20' };
+  if (score >= 6.5) return { grade: 'A', label: 'Strong Investment', colorClass: 'text-primary bg-primary/10 border-primary/20' };
+  if (score >= 5) return { grade: 'B+', label: 'Good Investment', colorClass: 'text-foreground bg-muted border-border' };
+  if (score >= 4) return { grade: 'B', label: 'Solid Investment', colorClass: 'text-foreground bg-muted border-border' };
+  if (score >= 3) return { grade: 'C+', label: 'Moderate Investment', colorClass: 'text-muted-foreground bg-muted border-border' };
+  if (score >= 2) return { grade: 'C', label: 'Fair Investment', colorClass: 'text-muted-foreground bg-muted border-border' };
+  return { grade: 'D', label: 'Weak Investment', colorClass: 'text-muted-foreground bg-muted/50 border-border' };
 }
 
-// Default values for reset
+// Default values
 const DEFAULTS = {
   purchasePrice: 2500000,
   selectedCity: 'tel-aviv',
@@ -83,10 +92,16 @@ const DEFAULTS = {
   appreciationRate: 4,
 };
 
-export function InvestmentReturnCalculator() {
-  const { areaUnit } = usePreferences();
+const STORAGE_KEY = 'investment-calculator-saved';
+
+const formatNumber = (num: number): string => num.toLocaleString('en-US');
+const parseFormattedNumber = (str: string): number => {
+  const cleaned = str.replace(/[^\d.-]/g, '');
+  return Number(cleaned) || 0;
+};
+
+function InvestmentCalculatorContent() {
   const formatCurrency = useFormatPrice();
-  const formatArea = useFormatArea();
   const currencySymbol = useCurrencySymbol();
   const areaUnitLabel = useAreaUnitLabel();
   const { data: canonicalMetrics } = useAllCanonicalMetrics();
@@ -96,27 +111,42 @@ export function InvestmentReturnCalculator() {
   const { user } = useAuth();
   const saveToProfile = useSaveCalculatorResult();
   
-  // State
+  // Core inputs
   const [purchasePrice, setPurchasePrice] = useState(DEFAULTS.purchasePrice);
+  const [purchasePriceInput, setPurchasePriceInput] = useState(formatNumber(DEFAULTS.purchasePrice));
   const [selectedCity, setSelectedCity] = useState(DEFAULTS.selectedCity);
   const [propertySizeSqm, setPropertySizeSqm] = useState(DEFAULTS.propertySizeSqm);
   const [rooms, setRooms] = useState(DEFAULTS.rooms);
   const [monthlyRent, setMonthlyRent] = useState(DEFAULTS.monthlyRent);
+  const [monthlyRentInput, setMonthlyRentInput] = useState(formatNumber(DEFAULTS.monthlyRent));
   const [vacancyRate, setVacancyRate] = useState(DEFAULTS.vacancyRate);
+  
+  // Operating expenses
   const [monthlyArnona, setMonthlyArnona] = useState(DEFAULTS.monthlyArnona);
   const [monthlyVaadBayit, setMonthlyVaadBayit] = useState(DEFAULTS.monthlyVaadBayit);
   const [monthlyInsurance, setMonthlyInsurance] = useState(DEFAULTS.monthlyInsurance);
   const [maintenancePercent, setMaintenancePercent] = useState(DEFAULTS.maintenancePercent);
   const [usePropertyManagement, setUsePropertyManagement] = useState(DEFAULTS.usePropertyManagement);
   const [managementFeePercent, setManagementFeePercent] = useState(DEFAULTS.managementFeePercent);
+  
+  // Financing
   const [useLeverage, setUseLeverage] = useState(DEFAULTS.useLeverage);
   const [buyerType, setBuyerType] = useState<'investor' | 'foreign' | 'oleh'>(DEFAULTS.buyerType);
   const [downPaymentPercent, setDownPaymentPercent] = useState(DEFAULTS.downPaymentPercent);
   const [interestRate, setInterestRate] = useState(DEFAULTS.interestRate);
   const [loanTermYears, setLoanTermYears] = useState(DEFAULTS.loanTermYears);
+  
+  // Strategy
   const [taxMethod, setTaxMethod] = useState<'exemption' | 'flat_10' | 'progressive'>(DEFAULTS.taxMethod);
   const [holdingPeriod, setHoldingPeriod] = useState(DEFAULTS.holdingPeriod);
   const [appreciationRate, setAppreciationRate] = useState(DEFAULTS.appreciationRate);
+  
+  // UI state
+  const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+  const [isFinancingOpen, setIsFinancingOpen] = useState(false);
+  const [isProjectionOpen, setIsProjectionOpen] = useState(false);
+  const [isExitOpen, setIsExitOpen] = useState(false);
+  const [isTaxInfoOpen, setIsTaxInfoOpen] = useState(false);
   
   // Derived data
   const cityMetrics = useMemo(() => canonicalMetrics?.find(m => m.city_slug === selectedCity), [canonicalMetrics, selectedCity]);
@@ -143,29 +173,34 @@ export function InvestmentReturnCalculator() {
   const maxLTV = useMemo(() => buyerType === 'oleh' ? 75 : 50, [buyerType]);
   useEffect(() => { if (downPaymentPercent < (100 - maxLTV)) setDownPaymentPercent(100 - maxLTV); }, [maxLTV, downPaymentPercent]);
   
-  // Reset to defaults
-  const resetToDefaults = () => {
-    setPurchasePrice(DEFAULTS.purchasePrice);
-    setSelectedCity(DEFAULTS.selectedCity);
-    setPropertySizeSqm(DEFAULTS.propertySizeSqm);
-    setRooms(DEFAULTS.rooms);
-    setMonthlyRent(DEFAULTS.monthlyRent);
-    setVacancyRate(DEFAULTS.vacancyRate);
-    setMonthlyArnona(DEFAULTS.monthlyArnona);
-    setMonthlyVaadBayit(DEFAULTS.monthlyVaadBayit);
-    setMonthlyInsurance(DEFAULTS.monthlyInsurance);
-    setMaintenancePercent(DEFAULTS.maintenancePercent);
-    setUsePropertyManagement(DEFAULTS.usePropertyManagement);
-    setManagementFeePercent(DEFAULTS.managementFeePercent);
-    setUseLeverage(DEFAULTS.useLeverage);
-    setBuyerType(DEFAULTS.buyerType);
-    setDownPaymentPercent(DEFAULTS.downPaymentPercent);
-    setInterestRate(DEFAULTS.interestRate);
-    setLoanTermYears(DEFAULTS.loanTermYears);
-    setTaxMethod(DEFAULTS.taxMethod);
-    setHoldingPeriod(DEFAULTS.holdingPeriod);
-    setAppreciationRate(DEFAULTS.appreciationRate);
-  };
+  // Available cities
+  const availableCities = useMemo(() => 
+    canonicalMetrics?.filter(m => m.median_apartment_price).map(m => ({ 
+      slug: m.city_slug, 
+      name: m.city_slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), 
+      grossYield: m.gross_yield_percent 
+    })).sort((a, b) => a.name.localeCompare(b.name)) || [], 
+  [canonicalMetrics]);
+
+  // Load saved data
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        const savedAt = new Date(data.savedAt);
+        const daysSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceSave < 7) {
+          if (data.purchasePrice) { setPurchasePrice(data.purchasePrice); setPurchasePriceInput(formatNumber(data.purchasePrice)); }
+          if (data.selectedCity) setSelectedCity(data.selectedCity);
+          if (data.monthlyRent) { setMonthlyRent(data.monthlyRent); setMonthlyRentInput(formatNumber(data.monthlyRent)); }
+          if (data.vacancyRate !== undefined) setVacancyRate(data.vacancyRate);
+          if (data.holdingPeriod) setHoldingPeriod(data.holdingPeriod);
+          if (data.appreciationRate !== undefined) setAppreciationRate(data.appreciationRate);
+        }
+      } catch (e) {}
+    }
+  }, []);
   
   // Main calculations
   const calculations = useMemo(() => {
@@ -193,13 +228,12 @@ export function InvestmentReturnCalculator() {
     const netYield = (noi / purchasePrice) * 100;
     const capRate = (noi / purchasePrice) * 100;
     
-    // ITEMIZED CLOSING COSTS (instead of generic 8%)
-    // Purchase tax for investors is 8% up to ~6M
+    // Itemized closing costs
     const purchaseTax = purchasePrice <= 5872725 
       ? purchasePrice * 0.08 
       : 5872725 * 0.08 + (purchasePrice - 5872725) * 0.10;
-    const lawyerFees = Math.max(5000, purchasePrice * 0.005) * 1.17; // 0.5% + VAT
-    const agentFees = purchasePrice * 0.02 * 1.17; // 2% + VAT
+    const lawyerFees = Math.max(5000, purchasePrice * 0.005) * 1.17;
+    const agentFees = purchasePrice * 0.02 * 1.17;
     const appraisalFees = 3000;
     const registrationFees = 1500;
     const closingCosts = purchaseTax + lawyerFees + agentFees + appraisalFees + registrationFees;
@@ -213,21 +247,14 @@ export function InvestmentReturnCalculator() {
       mortgagePayment: annualMortgage, downPayment: totalCashInvested,
     });
     const finalYear = projection[projection.length - 1];
-    const totalReturn = finalYear.totalReturn;
     const annualizedROI = Math.pow((finalYear.propertyValue + finalYear.cumulativeCashFlow) / totalCashInvested, 1 / holdingPeriod) - 1;
     const grade = calculateInvestmentGrade(netYield, cashOnCash, appreciationRate);
     
-    // EXIT ANALYSIS: Capital gains tax at end of holding period
+    // Exit analysis
     const futurePropertyValue = purchasePrice * Math.pow(1 + appreciationRate / 100, holdingPeriod);
     const purchaseYear = new Date().getFullYear();
-    const capitalGainsResult = calculateMasShevach(
-      purchasePrice,
-      futurePropertyValue,
-      purchaseYear,
-      'investor',
-      { ownedMonths: holdingPeriod * 12 }
-    );
-    const sellingCostsAtExit = futurePropertyValue * 0.03; // ~3% selling costs
+    const capitalGainsResult = calculateMasShevach(purchasePrice, futurePropertyValue, purchaseYear, 'investor', { ownedMonths: holdingPeriod * 12 });
+    const sellingCostsAtExit = futurePropertyValue * 0.03;
     const remainingMortgageAtExit = useLeverage 
       ? loanAmount * (Math.pow(1 + interestRate / 100 / 12, loanTermYears * 12) - Math.pow(1 + interestRate / 100 / 12, holdingPeriod * 12)) /
         (Math.pow(1 + interestRate / 100 / 12, loanTermYears * 12) - 1)
@@ -237,63 +264,109 @@ export function InvestmentReturnCalculator() {
     return { 
       vacancyLoss, totalOperatingExpenses, noi, annualTax, annualMaintenance, annualManagement, 
       monthlyMortgage, monthlyCashFlow, downPayment, loanAmount, 
-      // Itemized closing costs
       closingCosts, purchaseTax, lawyerFees, agentFees, appraisalFees, registrationFees,
       totalCashInvested, grossYield, netYield, capRate, cashOnCash, taxComparison, projection, 
-      finalYear, totalReturn, annualizedROI: annualizedROI * 100, grade,
-      // Exit analysis
-      futurePropertyValue,
-      capitalGainsTax: capitalGainsResult.taxAmount,
-      sellingCostsAtExit,
-      remainingMortgageAtExit,
-      netProceedsAtExit,
-      inflationAdjustment: capitalGainsResult.inflationAdjustment,
+      finalYear, totalReturn: finalYear.totalReturn, annualizedROI: annualizedROI * 100, grade,
+      futurePropertyValue, capitalGainsTax: capitalGainsResult.taxAmount, sellingCostsAtExit, remainingMortgageAtExit, netProceedsAtExit, inflationAdjustment: capitalGainsResult.inflationAdjustment,
     };
   }, [purchasePrice, monthlyRent, vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance, maintenancePercent, usePropertyManagement, managementFeePercent, useLeverage, downPaymentPercent, interestRate, loanTermYears, taxMethod, holdingPeriod, appreciationRate]);
   
-  // Generate personalized insights
-  const investmentInsights = useMemo(() => {
+  // Generate insights
+  const insights = useMemo(() => {
     const messages: string[] = [];
     const grade = calculations.grade.grade;
     const cashOnCash = calculations.cashOnCash;
     const monthlyCashFlow = calculations.monthlyCashFlow;
     
-    // Grade-based insights
     if (grade === 'A+' || grade === 'A') {
       messages.push(`This looks like a strong investment on paper. The numbers work well—now do your due diligence on the specific property and tenant market.`);
     } else if (grade === 'B+' || grade === 'B') {
       messages.push(`Solid, not spectacular. This could work well as a long-term hold, especially if you expect the area to appreciate.`);
     } else if (grade.startsWith('C')) {
-      messages.push(`The returns here are modest. You might be paying for lifestyle location rather than pure investment return. Make sure that's what you want.`);
+      messages.push(`The returns here are modest. You might be paying for lifestyle location rather than pure investment return.`);
     } else {
       messages.push(`The numbers are weak on paper. Consider whether emotional factors or future potential justify this over alternatives.`);
     }
     
-    // Cash flow insights
     if (monthlyCashFlow < 0 && useLeverage) {
-      const formatted = formatCurrency(Math.abs(Math.round(monthlyCashFlow)));
-      messages.push(`This property will cost you ${formatted}/month beyond the mortgage. You're betting on appreciation, not income. Make sure you can carry it.`);
+      messages.push(`This property will cost you ${formatCurrency(Math.abs(Math.round(monthlyCashFlow)))}/month beyond the mortgage. You're betting on appreciation, not income.`);
     } else if (cashOnCash > 6) {
       messages.push(`Your annual return on cash invested is healthy at ${cashOnCash.toFixed(1)}%. You're making your money work.`);
     }
     
+    if (calculations.taxComparison.recommended !== taxMethod) {
+      const savings = calculations.taxComparison.savings;
+      messages.push(`Consider the ${calculations.taxComparison.recommended.replace('_', ' ')} tax method—you could save ${formatCurrency(savings)}/year.`);
+    }
+    
     return messages;
-  }, [calculations, useLeverage, formatCurrency]);
+  }, [calculations, useLeverage, formatCurrency, taxMethod]);
   
-  // Save inputs (defined after calculations to use its values)
+  // Handlers
+  const handlePurchasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPurchasePriceInput(e.target.value);
+    const parsed = parseFormattedNumber(e.target.value);
+    if (!isNaN(parsed)) setPurchasePrice(Math.max(500000, Math.min(50000000, parsed)));
+  };
+
+  const handlePurchasePriceBlur = () => {
+    let value = parseFormattedNumber(purchasePriceInput);
+    value = Math.max(500000, Math.min(50000000, value));
+    setPurchasePrice(value);
+    setPurchasePriceInput(formatNumber(value));
+  };
+
+  const handleMonthlyRentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMonthlyRentInput(e.target.value);
+    const parsed = parseFormattedNumber(e.target.value);
+    if (!isNaN(parsed)) setMonthlyRent(Math.max(1000, Math.min(100000, parsed)));
+  };
+
+  const handleMonthlyRentBlur = () => {
+    let value = parseFormattedNumber(monthlyRentInput);
+    value = Math.max(1000, Math.min(100000, value));
+    setMonthlyRent(value);
+    setMonthlyRentInput(formatNumber(value));
+  };
+  
+  const handleReset = () => {
+    setPurchasePrice(DEFAULTS.purchasePrice);
+    setPurchasePriceInput(formatNumber(DEFAULTS.purchasePrice));
+    setSelectedCity(DEFAULTS.selectedCity);
+    setPropertySizeSqm(DEFAULTS.propertySizeSqm);
+    setRooms(DEFAULTS.rooms);
+    setMonthlyRent(DEFAULTS.monthlyRent);
+    setMonthlyRentInput(formatNumber(DEFAULTS.monthlyRent));
+    setVacancyRate(DEFAULTS.vacancyRate);
+    setMonthlyArnona(DEFAULTS.monthlyArnona);
+    setMonthlyVaadBayit(DEFAULTS.monthlyVaadBayit);
+    setMonthlyInsurance(DEFAULTS.monthlyInsurance);
+    setMaintenancePercent(DEFAULTS.maintenancePercent);
+    setUsePropertyManagement(DEFAULTS.usePropertyManagement);
+    setManagementFeePercent(DEFAULTS.managementFeePercent);
+    setUseLeverage(DEFAULTS.useLeverage);
+    setBuyerType(DEFAULTS.buyerType);
+    setDownPaymentPercent(DEFAULTS.downPaymentPercent);
+    setInterestRate(DEFAULTS.interestRate);
+    setLoanTermYears(DEFAULTS.loanTermYears);
+    setTaxMethod(DEFAULTS.taxMethod);
+    setHoldingPeriod(DEFAULTS.holdingPeriod);
+    setAppreciationRate(DEFAULTS.appreciationRate);
+    toast.success("Reset complete", { description: "All values restored to defaults" });
+  };
+  
   const handleSave = () => {
-    const inputs = {
-      purchasePrice, selectedCity, propertySizeSqm, rooms, monthlyRent,
-      vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance,
-      maintenancePercent, usePropertyManagement, managementFeePercent,
-      useLeverage, buyerType, downPaymentPercent, interestRate, loanTermYears,
-      taxMethod, holdingPeriod, appreciationRate,
+    const savedData = {
+      purchasePrice, selectedCity, propertySizeSqm, rooms, monthlyRent, vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance,
+      maintenancePercent, usePropertyManagement, managementFeePercent, useLeverage, buyerType, downPaymentPercent, interestRate, loanTermYears,
+      taxMethod, holdingPeriod, appreciationRate, savedAt: new Date().toISOString(),
     };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
     
     if (user) {
       saveToProfile.mutate({
         calculatorType: 'investment',
-        inputs,
+        inputs: savedData,
         results: {
           netYield: calculations.netYield,
           grossYield: calculations.grossYield,
@@ -305,791 +378,732 @@ export function InvestmentReturnCalculator() {
         },
       });
     } else {
-      toast.info('Sign in to save results to your profile');
+      toast.success("Calculation saved", { description: "Your inputs have been saved locally. Sign in to save to your profile." });
     }
   };
-  
-  // Helpers
-  const parseNumericInput = (value: string): number => parseFloat(value.replace(/[^0-9.-]/g, '')) || 0;
-  const availableCities = useMemo(() => canonicalMetrics?.filter(m => m.median_apartment_price).map(m => ({ slug: m.city_slug, name: m.city_slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), grossYield: m.gross_yield_percent })).sort((a, b) => a.name.localeCompare(b.name)) || [], [canonicalMetrics]);
 
-  // Section header component
-  const SectionHeader = ({ icon: Icon, title }: { icon: React.ComponentType<{ className?: string }>; title: string }) => (
-    <div className="flex items-center gap-2 pb-3 mb-4 border-b border-border">
-      <Icon className="h-4 w-4 text-primary" />
-      <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</span>
-    </div>
+  // Header Actions
+  const headerActions = (
+    <>
+      <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+        <RotateCcw className="h-4 w-4" />
+        <span className="hidden sm:inline">Reset</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleSave} disabled={saveToProfile.isPending}>
+        {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        <span className="hidden sm:inline ml-1.5">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
+      </Button>
+    </>
   );
 
+  // Left Column - Inputs
   const leftColumn = (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6 space-y-8">
-        {/* Property Details Section */}
-        <div>
-          <SectionHeader icon={Building2} title="Property Details" />
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center">
-                Purchase Price
-                <InfoTooltip content="The full purchase price of the investment property." />
-              </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
-                <Input 
-                  type="text" 
-                  value={purchasePrice.toLocaleString()} 
-                  onChange={(e) => setPurchasePrice(parseNumericInput(e.target.value))} 
-                  className="pl-8 h-11 tabular-nums" 
-                />
-              </div>
+    <div className="space-y-4">
+      {/* Property Details Card */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Property Details</h3>
+          
+          {/* Purchase Price */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Purchase Price</Label>
+              <InfoTooltip content="The full purchase price of the investment property." />
             </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center">
-                City
-                <InfoTooltip content="Select a city to auto-populate local arnona rates, typical rents, and vacancy rates based on market data." />
-              </Label>
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Select city" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCities.map(city => (
-                    <SelectItem key={city.slug} value={city.slug}>
-                      <span className="flex items-center justify-between w-full">
-                        {city.name}
-                        {city.grossYield && <span className="text-xs text-muted-foreground ml-2">{city.grossYield.toFixed(1)}% yield</span>}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Yields and arnona auto-populated from market data</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Size
-                  <InfoTooltip content="Property size in square meters. Used to calculate arnona (municipal tax) based on the city's rate per sqm." />
-                </Label>
-                <div className="relative">
-                  <Input 
-                    type="number" 
-                    value={propertySizeSqm} 
-                    onChange={(e) => setPropertySizeSqm(parseInt(e.target.value) || 0)} 
-                    className="h-11 tabular-nums pr-12" 
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnitLabel}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Rooms
-                  <InfoTooltip content="Number of rooms (excluding bathroom/kitchen). Israeli listings count bedrooms + living room as 'rooms'." />
-                </Label>
-                <Select value={rooms.toString()} onValueChange={(v) => setRooms(parseInt(v))}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[2, 3, 4, 5].map(r => (
-                      <SelectItem key={r} value={r.toString()}>{r} rooms</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={purchasePriceInput}
+                onChange={handlePurchasePriceChange}
+                onBlur={handlePurchasePriceBlur}
+                className="pl-10 h-11 text-lg"
+                placeholder="2,500,000"
+              />
             </div>
           </div>
-        </div>
-        
-        {/* Rental Income Section */}
-        <div>
-          <SectionHeader icon={DollarSign} title="Rental Income" />
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium flex items-center">
-                  Monthly Rent
-                  <InfoTooltip content="Expected monthly rental income. Click the 'Market' badge to use the suggested rate based on city and room count." />
-                </Label>
-                {suggestedRent && (
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs cursor-pointer hover:bg-primary/20 transition-colors" 
-                    onClick={() => setMonthlyRent(suggestedRent)}
-                  >
-                    Market: {formatCurrency(suggestedRent)}
-                  </Badge>
-                )}
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currencySymbol}</span>
-                <Input 
-                  type="text" 
-                  value={monthlyRent.toLocaleString()} 
-                  onChange={(e) => setMonthlyRent(parseNumericInput(e.target.value))} 
-                  className="pl-8 h-11 tabular-nums" 
-                />
-              </div>
+
+          {/* City */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">City</Label>
+              <InfoTooltip content="Select a city to auto-populate local arnona rates, typical rents, and vacancy rates based on market data." />
             </div>
-            
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select city" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCities.map(city => (
+                  <SelectItem key={city.slug} value={city.slug}>
+                    <span className="flex items-center justify-between w-full">
+                      {city.name}
+                      {city.grossYield && <span className="text-xs text-muted-foreground ml-2">{city.grossYield.toFixed(1)}% yield</span>}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Size & Rooms */}
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center">
-                Vacancy Rate
-                <InfoTooltip content="Percentage of time the property sits empty between tenants. Tel Aviv averages ~3%, peripheral cities ~8%. Lower is better." />
-              </Label>
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Size</Label>
+                <InfoTooltip content="Property size. Used to calculate arnona based on the city's rate per sqm." />
+              </div>
               <div className="relative">
                 <Input 
                   type="number" 
-                  value={vacancyRate} 
-                  onChange={(e) => setVacancyRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} 
-                  className="h-11 tabular-nums pr-8" 
-                  min={0} 
-                  max={15} 
-                  step={1} 
+                  value={propertySizeSqm} 
+                  onChange={(e) => setPropertySizeSqm(parseInt(e.target.value) || 0)} 
+                  className="h-11 pr-14" 
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.vacancyLoss))}/year lost income</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Operating Expenses Section */}
-        <div>
-          <SectionHeader icon={PiggyBank} title="Operating Expenses" />
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Arnona
-                  <InfoTooltip content="Municipal property tax (Arnona) paid monthly. Rates vary significantly by city - Tel Aviv is among the highest. Auto-calculated from city data." />
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
-                  <Input 
-                    type="text" 
-                    value={monthlyArnona.toLocaleString()} 
-                    onChange={(e) => setMonthlyArnona(parseNumericInput(e.target.value))} 
-                    className="pl-8 h-11 tabular-nums" 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Va'ad Bayit
-                  <InfoTooltip content="Building maintenance committee fee covering shared spaces, cleaning, elevator, and upkeep. Typically ₪200-800/month depending on building amenities." />
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
-                  <Input 
-                    type="text" 
-                    value={monthlyVaadBayit.toLocaleString()} 
-                    onChange={(e) => setMonthlyVaadBayit(parseNumericInput(e.target.value))} 
-                    className="pl-8 h-11 tabular-nums" 
-                  />
-                </div>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnitLabel}</span>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Insurance
-                  <InfoTooltip content="Home contents and structure insurance. Required by most mortgage lenders. Budget ₪100-250/month for comprehensive coverage." />
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
-                  <Input 
-                    type="text" 
-                    value={monthlyInsurance.toLocaleString()} 
-                    onChange={(e) => setMonthlyInsurance(parseNumericInput(e.target.value))} 
-                    className="pl-8 h-11 tabular-nums" 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Maintenance
-                  <InfoTooltip content="Annual budget for repairs and maintenance, typically 1% of property value. Covers appliance repairs, painting, and unexpected fixes." />
-                </Label>
-                <div className="relative">
-                  <Input 
-                    type="number" 
-                    value={maintenancePercent} 
-                    onChange={(e) => setMaintenancePercent(Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))} 
-                    className="h-11 tabular-nums pr-8" 
-                    min={0} 
-                    max={5} 
-                    step={0.5} 
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="rounded-lg bg-muted/30 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium flex items-center">
-                  Property Management
-                  <InfoTooltip content="Professional management handles tenant relations, rent collection, and maintenance. Costs 8-10% of rent but valuable for overseas investors or those with multiple properties." />
-                </Label>
-                <Switch checked={usePropertyManagement} onCheckedChange={setUsePropertyManagement} />
-              </div>
-              {usePropertyManagement && (
-                <div className="space-y-2 pt-2 border-t border-border/50">
-                  <Label className="text-xs text-muted-foreground">Management Fee</Label>
-                  <div className="relative">
-                    <Input 
-                      type="number" 
-                      value={managementFeePercent} 
-                      onChange={(e) => setManagementFeePercent(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} 
-                      className="h-10 tabular-nums pr-8" 
-                      min={0} 
-                      max={15} 
-                      step={1} 
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.annualManagement))}/year</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-between items-center text-sm pt-2 border-t border-border">
-              <span className="text-muted-foreground">Total Operating Expenses</span>
-              <span className="font-semibold tabular-nums">{formatCurrency(calculations.totalOperatingExpenses)}/year</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Financing Section */}
-        <div>
-          <SectionHeader icon={Scale} title="Financing" />
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium flex items-center">
-                Use Mortgage
-                <InfoTooltip content="Leverage amplifies both gains and risks. Using a mortgage means less cash upfront but higher monthly costs and interest payments." />
-              </Label>
-              <Switch checked={useLeverage} onCheckedChange={setUseLeverage} />
-            </div>
-            
-            {useLeverage && (
-              <div className="space-y-4 pt-2 border-t border-border/50">
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">
-                    Buyer Type
-                    <InfoTooltip content="Bank of Israel limits investor mortgages to 50% LTV (loan-to-value). Olim within 7 years of Aliyah may qualify for up to 75% LTV." />
-                  </Label>
-                  <Select value={buyerType} onValueChange={(v) => setBuyerType(v as typeof buyerType)}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="investor">Israeli Investor (max 50% LTV)</SelectItem>
-                      <SelectItem value="foreign">Foreign Buyer (max 50% LTV)</SelectItem>
-                      <SelectItem value="oleh">Oleh Hadash (max 75% LTV)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center">
-                      Down Payment
-                      <InfoTooltip content="Minimum down payment depends on buyer type. Investors must put down at least 50%. Higher down payments reduce monthly costs but require more upfront cash." />
-                    </Label>
-                    <div className="relative">
-                      <Input 
-                        type="number" 
-                        value={downPaymentPercent} 
-                        onChange={(e) => setDownPaymentPercent(Math.min(100, Math.max(100 - maxLTV, parseFloat(e.target.value) || 0)))} 
-                        className="h-11 tabular-nums pr-8" 
-                        min={100 - maxLTV} 
-                        max={100} 
-                        step={5} 
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">= {formatCurrency(calculations.downPayment)}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium flex items-center">
-                      Interest Rate
-                      <InfoTooltip content="Current Israeli mortgage rates for investment properties range from 4-6%. Rates are typically higher for investment vs. primary residence loans." />
-                    </Label>
-                    <div className="relative">
-                      <Input 
-                        type="number" 
-                        value={interestRate} 
-                        onChange={(e) => setInterestRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} 
-                        className="h-11 tabular-nums pr-8" 
-                        min={0} 
-                        max={15} 
-                        step={0.25} 
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium flex items-center">
-                    Loan Term
-                    <InfoTooltip content="Longer terms mean lower monthly payments but more total interest paid. Most Israeli mortgages are 15-25 years." />
-                  </Label>
-                  <div className="relative">
-                    <Input 
-                      type="number" 
-                      value={loanTermYears} 
-                      onChange={(e) => setLoanTermYears(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} 
-                      className="h-11 tabular-nums pr-14" 
-                      min={1} 
-                      max={30} 
-                      step={1} 
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Monthly payment: {formatCurrency(calculations.monthlyMortgage)}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Tax Strategy Section */}
-        <div>
-          <SectionHeader icon={Wallet} title="Tax Strategy" />
-          <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center">
-                Tax Method
-                <InfoTooltip content="Israel offers 3 ways to pay tax on rental income. The 'Best' badge shows which method saves you the most based on your rent level." />
-              </Label>
-              <Select value={taxMethod} onValueChange={(v) => setTaxMethod(v as typeof taxMethod)}>
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Rooms</Label>
+                <InfoTooltip content="Number of rooms. Israeli listings count bedrooms + living room as 'rooms'." />
+              </div>
+              <Select value={rooms.toString()} onValueChange={(v) => setRooms(parseInt(v))}>
                 <SelectTrigger className="h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="exemption">
-                    <div className="flex flex-col items-start">
-                      <span>Tax-Free Exemption</span>
-                      <span className="text-xs text-muted-foreground">Up to ₪5,471/month tax-free</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="flat_10">
-                    <div className="flex flex-col items-start">
-                      <span>10% Flat Tax</span>
-                      <span className="text-xs text-muted-foreground">Simple, no deductions allowed</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="progressive">
-                    <div className="flex flex-col items-start">
-                      <span>Progressive Tax</span>
-                      <span className="text-xs text-muted-foreground">Marginal rate, deductions allowed</span>
-                    </div>
-                  </SelectItem>
+                  {[2, 3, 4, 5].map(r => <SelectItem key={r} value={r.toString()}>{r} rooms</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="rounded-lg bg-muted/30 p-4 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Annual Tax by Method</p>
-              <div className="space-y-2">
-                {(['exemption', 'flat_10', 'progressive'] as const).map(method => {
-                  const result = calculations.taxComparison.comparison[method];
-                  const isRecommended = method === calculations.taxComparison.recommended;
-                  const isSelected = method === taxMethod;
-                  return (
-                    <div 
-                      key={method} 
-                      className={cn(
-                        "flex items-center justify-between text-sm py-2 px-3 rounded-md transition-colors",
-                        isSelected && "bg-primary/10 ring-1 ring-primary/20",
-                        isRecommended && !isSelected && "bg-green-50 dark:bg-green-950/20"
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        {method === 'exemption' && 'Exemption'}
-                        {method === 'flat_10' && '10% Flat'}
-                        {method === 'progressive' && 'Progressive'}
-                        {isRecommended && (
-                          <Badge className="text-[10px] bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-                            Best
-                          </Badge>
-                        )}
-                      </span>
-                      <span className="tabular-nums font-medium">{formatCurrency(result.annualTax)}/yr</span>
-                    </div>
-                  );
-                })}
-              </div>
-              {calculations.taxComparison.savings > 0 && (
-                <p className="text-xs text-green-600 dark:text-green-400 font-medium pt-2 border-t border-border/50">
-                  💡 Switch to {calculations.taxComparison.recommended === 'exemption' ? 'Exemption' : calculations.taxComparison.recommended === 'flat_10' ? '10% Flat' : 'Progressive'} to save {formatCurrency(calculations.taxComparison.savings)}/year
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Projection Settings Section */}
-        <div>
-          <SectionHeader icon={LineChart} title="Projections" />
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Holding Period
-                  <InfoTooltip content="How long you plan to own the property. Longer holding periods smooth out market volatility and accumulate more appreciation gains." />
-                </Label>
-                <div className="relative">
-                  <Input 
-                    type="number" 
-                    value={holdingPeriod} 
-                    onChange={(e) => setHoldingPeriod(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} 
-                    className="h-11 tabular-nums pr-14" 
-                    min={1} 
-                    max={30} 
-                    step={1} 
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">
-                  Appreciation
-                  <InfoTooltip content="Expected annual increase in property value. Israeli real estate has historically appreciated 3-6% annually, with higher rates in central areas." />
-                </Label>
-                <div className="relative">
-                  <Input 
-                    type="number" 
-                    value={appreciationRate} 
-                    onChange={(e) => setAppreciationRate(Math.min(20, Math.max(0, parseFloat(e.target.value) || 0)))} 
-                    className="h-11 tabular-nums pr-8" 
-                    min={0} 
-                    max={20} 
-                    step={0.5} 
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
-                </div>
-              </div>
-            </div>
-            {cityData?.yoy_price_change && (
-              <p className="text-xs text-muted-foreground">
-                Recent YoY change in {cityData.name || selectedCity.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}: {cityData.yoy_price_change > 0 ? '+' : ''}{cityData.yoy_price_change}%
-              </p>
-            )}
-          </div>
-        </div>
-        
-      </CardContent>
-    </Card>
-  );
-  
-  const rightColumn = (
-    <Card>
-      <CardContent className="p-6 space-y-6">
-        {/* Investment Grade Hero */}
-        <div className="text-center pb-5 border-b border-border">
-          <div className={cn(
-            "inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 text-2xl font-bold mb-2",
-            calculations.grade.color
-          )}>
-            {calculations.grade.grade}
-          </div>
-          <p className="text-sm text-muted-foreground">{calculations.grade.label}</p>
-        </div>
-        
-        {/* Key Metrics Grid */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Key Metrics</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">Gross Yield</span>
-                <InfoTooltip content="Annual rent divided by purchase price. A quick comparison metric - higher is better. Israeli averages: Tel Aviv 2.5-3%, periphery 4-5%." />
-              </div>
-              <p className="text-xl font-bold tabular-nums">{calculations.grossYield.toFixed(2)}%</p>
-              {cityMetrics?.gross_yield_percent && (
-                <p className="text-xs text-muted-foreground">City avg: {cityMetrics.gross_yield_percent.toFixed(1)}%</p>
-              )}
-            </div>
-            
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">Net Yield</span>
-                <InfoTooltip content="Gross yield minus operating expenses. The true income return before financing costs." />
-              </div>
-              <p className="text-xl font-bold tabular-nums">{calculations.netYield.toFixed(2)}%</p>
-            </div>
-            
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">Cap Rate</span>
-                <InfoTooltip content="Net Operating Income (NOI) divided by purchase price. The standard commercial real estate valuation metric." />
-              </div>
-              <p className="text-xl font-bold tabular-nums">{calculations.capRate.toFixed(2)}%</p>
-            </div>
-            
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">{useLeverage ? 'Cash-on-Cash' : 'ROI'}</span>
-                <InfoTooltip content="Annual cash flow divided by total cash invested. Shows your actual return on the money you put in, accounting for leverage." />
-              </div>
-              <p className={cn(
-                "text-xl font-bold tabular-nums",
-                calculations.cashOnCash >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {calculations.cashOnCash.toFixed(2)}%
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <Separator />
-        
-        {/* Monthly Cash Flow Breakdown */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Monthly Cash Flow</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Rental Income</span>
-              <span className="tabular-nums text-green-600 dark:text-green-400 font-medium">+{formatCurrency(monthlyRent)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Vacancy ({vacancyRate}%)</span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(calculations.vacancyLoss / 12)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Expenses</span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(calculations.totalOperatingExpenses / 12)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Tax ({taxMethod === 'flat_10' ? '10%' : taxMethod})</span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(calculations.annualTax / 12)}</span>
-            </div>
-            {useLeverage && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mortgage</span>
-                <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(calculations.monthlyMortgage)}</span>
-              </div>
-            )}
-            <Separator className="my-2" />
-            <div className="flex justify-between font-semibold text-base">
-              <span>Net Cash Flow</span>
-              <span className={cn(
-                "tabular-nums",
-                calculations.monthlyCashFlow >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {calculations.monthlyCashFlow >= 0 ? '+' : ''}{formatCurrency(calculations.monthlyCashFlow)}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <Separator />
-        
-        {/* Long-Term Projection Summary */}
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">After {holdingPeriod} Years</h4>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Property Value</span>
-              <div className="text-right">
-                <span className="font-semibold tabular-nums">{formatCurrency(calculations.finalYear.propertyValue)}</span>
-                <span className="text-xs text-green-600 dark:text-green-400 ml-1">(+{((calculations.finalYear.propertyValue / purchasePrice - 1) * 100).toFixed(0)}%)</span>
-              </div>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Total Cash Flow</span>
-              <span className={cn(
-                "font-semibold tabular-nums",
-                calculations.finalYear.cumulativeCashFlow >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {calculations.finalYear.cumulativeCashFlow >= 0 ? '+' : ''}{formatCurrency(calculations.finalYear.cumulativeCashFlow)}
-              </span>
-            </div>
-            <div className="bg-primary/10 rounded-lg p-4 text-center">
-              <p className="text-xs text-muted-foreground mb-1">Annualized ROI</p>
-              <p className="text-3xl font-bold tabular-nums text-primary">{calculations.annualizedROI.toFixed(1)}%</p>
-            </div>
-          </div>
-        </div>
-        
-        <Separator />
-        
-        {/* Cash to Close - ITEMIZED */}
-        <div className="rounded-lg bg-muted/30 p-4 space-y-3">
-          <h4 className="text-sm font-semibold">Cash to Close (Itemized)</h4>
-          <div className="space-y-2 text-sm">
-            {useLeverage ? (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Down Payment ({downPaymentPercent}%)</span>
-                  <span className="tabular-nums">{formatCurrency(calculations.downPayment)}</span>
-                </div>
-                <Separator className="my-1" />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground flex items-center">
-                    Purchase Tax (8%)
-                    <Tooltip>
-                      <TooltipTrigger><Info className="h-3 w-3 ml-1" /></TooltipTrigger>
-                      <TooltipContent className="max-w-xs text-sm">Mas Rechisha - Investors pay 8% on the first ~₪6M, then 10%.</TooltipContent>
-                    </Tooltip>
-                  </span>
-                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.purchaseTax))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lawyer Fees + VAT</span>
-                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.lawyerFees))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Agent Commission + VAT</span>
-                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.agentFees))}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Appraisal & Registration</span>
-                  <span className="tabular-nums">{formatCurrency(calculations.appraisalFees + calculations.registrationFees)}</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Purchase Price</span>
-                  <span className="tabular-nums">{formatCurrency(purchasePrice)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Closing Costs</span>
-                  <span className="tabular-nums">{formatCurrency(Math.round(calculations.closingCosts))}</span>
-                </div>
-              </>
-            )}
-            <Separator className="my-1" />
-            <div className="flex justify-between font-semibold">
-              <span>Total Cash Needed</span>
-              <span className="tabular-nums">{formatCurrency(Math.round(calculations.totalCashInvested))}</span>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* EXIT ANALYSIS */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <ArrowRight className="h-4 w-4 text-primary" />
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Exit After {holdingPeriod} Years</h4>
-            <Tooltip>
-              <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
-              <TooltipContent className="max-w-xs text-sm">
-                What you'd net if you sold at the end of your holding period, after selling costs and Mas Shevach (capital gains tax).
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Property Value</span>
-              <span className="tabular-nums">{formatCurrency(Math.round(calculations.futurePropertyValue))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Less: Remaining Mortgage</span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.remainingMortgageAtExit))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Less: Selling Costs (~3%)</span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.sellingCostsAtExit))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground flex items-center">
-                Less: Capital Gains Tax
-                <Tooltip>
-                  <TooltipTrigger><Info className="h-3 w-3 ml-1" /></TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-sm">
-                    Mas Shevach: 25% on real (inflation-adjusted) gain. After {holdingPeriod} years, ~₪{(calculations.inflationAdjustment / 1000).toFixed(0)}K is deductible as inflation adjustment.
-                  </TooltipContent>
-                </Tooltip>
-              </span>
-              <span className="tabular-nums text-red-600 dark:text-red-400">-{formatCurrency(Math.round(calculations.capitalGainsTax))}</span>
-            </div>
-            <Separator className="my-1" />
-            <div className="flex justify-between font-semibold">
-              <span>Net Proceeds at Exit</span>
-              <span className="tabular-nums text-green-600 dark:text-green-400">{formatCurrency(Math.round(calculations.netProceedsAtExit))}</span>
-            </div>
-          </div>
-        </div>
-        
-      </CardContent>
-    </Card>
-  );
-  
-  const bottomSection = (
-    <div className="space-y-6">
-      {/* Insight Card - Full Width */}
-      {investmentInsights.length > 0 && (
-        <InsightCard insights={investmentInsights} />
-      )}
-      
-      {/* Year-by-Year Projection Table */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Year-by-Year Projection
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="pb-3 font-medium">Year</th>
-                  <th className="pb-3 font-medium text-right">Property Value</th>
-                  <th className="pb-3 font-medium text-right">Net Cash Flow</th>
-                  <th className="pb-3 font-medium text-right">Cumulative</th>
-                  <th className="pb-3 font-medium text-right">ROI</th>
-                </tr>
-              </thead>
-              <tbody>
-                {calculations.projection.map((year) => (
-                  <tr key={year.year} className="border-b last:border-0">
-                    <td className="py-3 tabular-nums">{year.year}</td>
-                    <td className="py-3 text-right tabular-nums">{formatCurrency(year.propertyValue)}</td>
-                    <td className={cn("py-3 text-right tabular-nums", year.netCashFlow >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
-                      {year.netCashFlow >= 0 ? '+' : ''}{formatCurrency(year.netCashFlow)}
-                    </td>
-                    <td className={cn("py-3 text-right tabular-nums", year.cumulativeCashFlow >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
-                      {year.cumulativeCashFlow >= 0 ? '+' : ''}{formatCurrency(year.cumulativeCashFlow)}
-                    </td>
-                    <td className="py-3 text-right tabular-nums font-medium text-primary">{year.roi.toFixed(1)}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </CardContent>
       </Card>
-      
-      {/* Related Tools */}
-      <div className="flex flex-wrap gap-3 justify-center pt-4">
-        <a href="/tools?tool=mortgage" className="text-sm text-primary hover:underline">Mortgage Calculator →</a>
-        <span className="text-muted-foreground">•</span>
-        <a href="/tools?tool=totalcost" className="text-sm text-primary hover:underline">True Cost Calculator →</a>
-        <span className="text-muted-foreground">•</span>
-        <a href="/tools?tool=rentvsbuy" className="text-sm text-primary hover:underline">Rent vs Buy →</a>
+
+      {/* Rental Income Card */}
+      <Card>
+        <CardContent className="p-5 space-y-5">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Rental Income</h3>
+          
+          {/* Monthly Rent */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Monthly Rent</Label>
+                <InfoTooltip content="Expected monthly rental income. Click the 'Market' badge to use the suggested rate." />
+              </div>
+              {suggestedRent && (
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs cursor-pointer hover:bg-primary/20 transition-colors" 
+                  onClick={() => { setMonthlyRent(suggestedRent); setMonthlyRentInput(formatNumber(suggestedRent)); }}
+                >
+                  Market: {formatCurrency(suggestedRent)}
+                </Badge>
+              )}
+            </div>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">{currencySymbol}</span>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={monthlyRentInput}
+                onChange={handleMonthlyRentChange}
+                onBlur={handleMonthlyRentBlur}
+                className="pl-10 h-11 text-lg"
+                placeholder="8,000"
+              />
+            </div>
+          </div>
+
+          {/* Vacancy Rate */}
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <Label className="text-sm font-medium">Vacancy Rate</Label>
+              <InfoTooltip content="Percentage of time the property sits empty. Tel Aviv ~3%, peripheral cities ~8%." />
+            </div>
+            <div className="relative">
+              <Input 
+                type="number" 
+                value={vacancyRate} 
+                onChange={(e) => setVacancyRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} 
+                className="h-11 pr-10" 
+                min={0} max={15} step={1} 
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+            </div>
+            <p className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.vacancyLoss))}/year lost income</p>
+          </div>
+
+          {/* Tax Method */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Label className="text-sm font-medium">Tax Method</Label>
+                <InfoTooltip content="Israel offers 3 ways to pay tax on rental income. The 'Best' badge shows which saves you the most." />
+              </div>
+              {calculations.taxComparison.recommended !== taxMethod && (
+                <Badge variant="outline" className="text-xs text-primary border-primary/30">
+                  Try: {calculations.taxComparison.recommended.replace('_', ' ')}
+                </Badge>
+              )}
+            </div>
+            <Select value={taxMethod} onValueChange={(v) => setTaxMethod(v as typeof taxMethod)}>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="exemption">Tax-Free Exemption (up to ₪5,471/mo)</SelectItem>
+                <SelectItem value="flat_10">10% Flat Tax (no deductions)</SelectItem>
+                <SelectItem value="progressive">Progressive Tax (with deductions)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Operating Expenses (Collapsible) */}
+      <Collapsible open={isExpensesOpen} onOpenChange={setIsExpensesOpen}>
+        <Card className="overflow-hidden">
+          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <PiggyBank className="h-4 w-4" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm">Operating Expenses</p>
+                <p className="text-xs text-muted-foreground">{formatCurrency(calculations.totalOperatingExpenses)}/year total</p>
+              </div>
+            </div>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isExpensesOpen && "rotate-180")} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Arnona (monthly)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
+                    <Input type="text" value={monthlyArnona.toLocaleString()} onChange={(e) => setMonthlyArnona(parseFormattedNumber(e.target.value))} className="pl-8 h-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Va'ad Bayit (monthly)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
+                    <Input type="text" value={monthlyVaadBayit.toLocaleString()} onChange={(e) => setMonthlyVaadBayit(parseFormattedNumber(e.target.value))} className="pl-8 h-10" />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm">Insurance (monthly)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
+                    <Input type="text" value={monthlyInsurance.toLocaleString()} onChange={(e) => setMonthlyInsurance(parseFormattedNumber(e.target.value))} className="pl-8 h-10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Maintenance (%/year)</Label>
+                  <div className="relative">
+                    <Input type="number" value={maintenancePercent} onChange={(e) => setMaintenancePercent(Math.min(5, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-10 pr-8" min={0} max={5} step={0.5} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-lg bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Property Management</Label>
+                  <Switch checked={usePropertyManagement} onCheckedChange={setUsePropertyManagement} />
+                </div>
+                {usePropertyManagement && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <Label className="text-xs text-muted-foreground">Fee:</Label>
+                    <div className="relative flex-1">
+                      <Input type="number" value={managementFeePercent} onChange={(e) => setManagementFeePercent(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-8 text-sm pr-8" min={0} max={15} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">%</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">= {formatCurrency(Math.round(calculations.annualManagement))}/yr</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Financing & Strategy (Collapsible) */}
+      <Collapsible open={isFinancingOpen} onOpenChange={setIsFinancingOpen}>
+        <Card className="overflow-hidden">
+          <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Scale className="h-4 w-4" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm">Financing & Strategy</p>
+                <p className="text-xs text-muted-foreground">
+                  {useLeverage ? `${downPaymentPercent}% down, ${holdingPeriod}yr hold` : `Cash purchase, ${holdingPeriod}yr hold`}
+                </p>
+              </div>
+            </div>
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isFinancingOpen && "rotate-180")} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Use Mortgage</Label>
+                  <InfoTooltip content="Leverage amplifies both gains and risks. Using a mortgage means less cash upfront but higher monthly costs." />
+                </div>
+                <Switch checked={useLeverage} onCheckedChange={setUseLeverage} />
+              </div>
+              
+              {useLeverage && (
+                <div className="space-y-4 pt-2 border-t border-border/50">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Buyer Type</Label>
+                    <Select value={buyerType} onValueChange={(v) => setBuyerType(v as typeof buyerType)}>
+                      <SelectTrigger className="h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="investor">Israeli Investor (max 50% LTV)</SelectItem>
+                        <SelectItem value="foreign">Foreign Buyer (max 50% LTV)</SelectItem>
+                        <SelectItem value="oleh">Oleh Hadash (max 75% LTV)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Down Payment</Label>
+                      <div className="relative">
+                        <Input type="number" value={downPaymentPercent} onChange={(e) => setDownPaymentPercent(Math.min(100, Math.max(100 - maxLTV, parseFloat(e.target.value) || 0)))} className="h-10 pr-8" min={100 - maxLTV} max={100} step={5} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">= {formatCurrency(calculations.downPayment)}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Interest Rate</Label>
+                      <div className="relative">
+                        <Input type="number" value={interestRate} onChange={(e) => setInterestRate(Math.min(15, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-10 pr-8" min={0} max={15} step={0.25} />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Loan Term</Label>
+                    <div className="relative">
+                      <Input type="number" value={loanTermYears} onChange={(e) => setLoanTermYears(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} className="h-10 pr-14" min={1} max={30} />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Monthly payment: {formatCurrency(calculations.monthlyMortgage)}</p>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Label className="text-sm">Holding Period</Label>
+                    <InfoTooltip content="How long you plan to hold before selling. Affects ROI projections and capital gains." />
+                  </div>
+                  <div className="relative">
+                    <Input type="number" value={holdingPeriod} onChange={(e) => setHoldingPeriod(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))} className="h-10 pr-14" min={1} max={30} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">years</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <Label className="text-sm">Appreciation</Label>
+                    <InfoTooltip content="Expected annual property value increase. Israeli real estate has historically appreciated 3-6% annually." />
+                  </div>
+                  <div className="relative">
+                    <Input type="number" value={appreciationRate} onChange={(e) => setAppreciationRate(Math.min(20, Math.max(0, parseFloat(e.target.value) || 0)))} className="h-10 pr-8" min={0} max={20} step={0.5} />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                  </div>
+                </div>
+              </div>
+              {cityData?.yoy_price_change && (
+                <p className="text-xs text-muted-foreground">
+                  Recent YoY change in {cityData.name || selectedCity.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}: {cityData.yoy_price_change > 0 ? '+' : ''}{cityData.yoy_price_change}%
+                </p>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    </div>
+  );
+
+  // Right Column - Results
+  const rightColumn = (
+    <Card className="overflow-hidden">
+      {/* Hero Result */}
+      <div className="bg-gradient-to-br from-primary/5 via-background to-background p-6 text-center border-b border-border">
+        <p className="text-sm text-muted-foreground mb-1">Net Rental Yield</p>
+        <motion.p 
+          key={calculations.netYield}
+          initial={{ opacity: 0.5, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-4xl md:text-5xl font-bold text-primary tracking-tight"
+        >
+          {calculations.netYield.toFixed(2)}%
+        </motion.p>
+        <div className={cn("inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full border text-sm font-medium", calculations.grade.colorClass)}>
+          <span>{calculations.grade.grade}</span>
+          <span className="text-xs opacity-70">•</span>
+          <span className="text-xs">{calculations.grade.label}</span>
+        </div>
       </div>
-      
+
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 divide-x divide-y divide-border">
+        <div className="p-4">
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-muted-foreground">Gross Yield</p>
+            <InfoTooltip content="Annual rent divided by price. Israeli averages: Tel Aviv 2.5-3%, periphery 4-5%." />
+          </div>
+          <p className="text-lg font-semibold mt-0.5">{calculations.grossYield.toFixed(2)}%</p>
+          {cityMetrics?.gross_yield_percent && (
+            <p className="text-xs text-muted-foreground">City avg: {cityMetrics.gross_yield_percent.toFixed(1)}%</p>
+          )}
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-muted-foreground">Cap Rate</p>
+            <InfoTooltip content="Net Operating Income divided by price. Standard commercial valuation metric." />
+          </div>
+          <p className="text-lg font-semibold mt-0.5">{calculations.capRate.toFixed(2)}%</p>
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-1">
+            <p className="text-xs text-muted-foreground">{useLeverage ? 'Cash-on-Cash' : 'ROI'}</p>
+            <InfoTooltip content="Annual return on the actual cash you invested, accounting for leverage." />
+          </div>
+          <p className={cn("text-lg font-semibold mt-0.5", calculations.cashOnCash >= 0 ? "text-primary" : "text-muted-foreground")}>
+            {calculations.cashOnCash.toFixed(2)}%
+          </p>
+        </div>
+        <div className="p-4">
+          <p className="text-xs text-muted-foreground">Monthly Cash Flow</p>
+          <p className={cn("text-lg font-semibold mt-0.5", calculations.monthlyCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+            {calculations.monthlyCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(calculations.monthlyCashFlow))}
+          </p>
+        </div>
+      </div>
+
+      {/* Visual Income Breakdown */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <span>Income Allocation</span>
+          <span>{formatCurrency(monthlyRent)}/mo rent</span>
+        </div>
+        <div className="h-2.5 bg-muted rounded-full overflow-hidden flex">
+          <motion.div 
+            className="bg-primary h-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.max(0, ((calculations.monthlyCashFlow / monthlyRent) * 100))}%` }}
+            transition={{ duration: 0.5 }}
+            title="Net Cash Flow"
+          />
+          <motion.div 
+            className="bg-primary/50 h-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.max(0, ((calculations.totalOperatingExpenses / 12) / monthlyRent) * 100)}%` }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            title="Operating Expenses"
+          />
+          <motion.div 
+            className="bg-primary/30 h-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.max(0, ((calculations.annualTax / 12) / monthlyRent) * 100)}%` }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            title="Tax"
+          />
+          {useLeverage && (
+            <motion.div 
+              className="bg-muted-foreground/30 h-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.max(0, (calculations.monthlyMortgage / monthlyRent) * 100)}%` }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              title="Mortgage"
+            />
+          )}
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" /> Cash Flow</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/50" /> Expenses</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/30" /> Tax</span>
+          {useLeverage && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/30" /> Mortgage</span>}
+        </div>
+      </div>
+
+      {/* Long-Term Summary */}
+      <div className="p-4 border-t border-border space-y-3">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">After {holdingPeriod} Years</h4>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Property Value</span>
+          <div className="text-right">
+            <span className="font-semibold">{formatCurrency(Math.round(calculations.finalYear.propertyValue))}</span>
+            <span className="text-xs text-primary ml-1">(+{((calculations.finalYear.propertyValue / purchasePrice - 1) * 100).toFixed(0)}%)</span>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">Total Cash Flow</span>
+          <span className={cn("font-semibold", calculations.finalYear.cumulativeCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+            {calculations.finalYear.cumulativeCashFlow >= 0 ? '+' : ''}{formatCurrency(Math.round(calculations.finalYear.cumulativeCashFlow))}
+          </span>
+        </div>
+        <div className="bg-primary/10 rounded-lg p-4 text-center">
+          <p className="text-xs text-muted-foreground mb-1">Annualized ROI</p>
+          <p className="text-3xl font-bold text-primary">{calculations.annualizedROI.toFixed(1)}%</p>
+        </div>
+      </div>
+
+      {/* Cash to Close Summary */}
+      <div className="p-4 border-t border-border bg-muted/30">
+        <div className="flex justify-between items-center mb-2">
+          <h4 className="text-sm font-semibold">Total Cash Needed</h4>
+          <span className="text-lg font-bold">{formatCurrency(Math.round(calculations.totalCashInvested))}</span>
+        </div>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div className="flex justify-between">
+            <span>{useLeverage ? 'Down Payment' : 'Purchase Price'}</span>
+            <span>{formatCurrency(useLeverage ? calculations.downPayment : purchasePrice)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Purchase Tax (8%)</span>
+            <span>{formatCurrency(Math.round(calculations.purchaseTax))}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Legal + Agent + Fees</span>
+            <span>{formatCurrency(Math.round(calculations.lawyerFees + calculations.agentFees + calculations.appraisalFees + calculations.registrationFees))}</span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
+  // Bottom Section
+  const bottomSection = (
+    <div className="space-y-6">
+      {/* Educational Sections */}
+      <div className="space-y-4">
+        {/* Tax Methods Info */}
+        <Collapsible open={isTaxInfoOpen} onOpenChange={setIsTaxInfoOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Wallet className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Israeli Rental Tax Options</p>
+                  <p className="text-xs text-muted-foreground">Compare the 3 tax methods for your rent level</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isTaxInfoOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-3 border-t border-border pt-4">
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {(['exemption', 'flat_10', 'progressive'] as const).map((method) => {
+                    const result = calculations.taxComparison.comparison[method];
+                    const isRecommended = calculations.taxComparison.recommended === method;
+                    return (
+                      <div key={method} className={cn("p-3 rounded-lg border", isRecommended ? "border-primary/30 bg-primary/5" : "border-border bg-muted/30")}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="font-medium text-sm capitalize">{method.replace('_', ' ')}</p>
+                          {isRecommended && <Badge variant="secondary" className="text-xs">Best</Badge>}
+                        </div>
+                        <p className="text-xl font-bold">{formatCurrency(result.annualTax)}/yr</p>
+                        <p className="text-xs text-muted-foreground mt-1">{result.effectiveRate.toFixed(1)}% effective</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Exemption:</strong> First ₪5,471/month tax-free, but you lose all expense deductions. <strong>10% Flat:</strong> Simple, no deductions allowed. <strong>Progressive:</strong> Taxed at your marginal rate, but you can deduct all expenses.
+                </p>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Exit Analysis */}
+        <Collapsible open={isExitOpen} onOpenChange={setIsExitOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Exit After {holdingPeriod} Years</p>
+                  <p className="text-xs text-muted-foreground">Net proceeds: {formatCurrency(Math.round(calculations.netProceedsAtExit))}</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isExitOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-2 text-sm border-t border-border pt-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Property Value</span>
+                  <span>{formatCurrency(Math.round(calculations.futurePropertyValue))}</span>
+                </div>
+                {useLeverage && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Less: Remaining Mortgage</span>
+                    <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.remainingMortgageAtExit))}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Less: Selling Costs (~3%)</span>
+                  <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.sellingCostsAtExit))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground flex items-center">
+                    Less: Capital Gains Tax (Mas Shevach)
+                    <InfoTooltip content={`25% on real gain. After ${holdingPeriod} years, ~₪${(calculations.inflationAdjustment / 1000).toFixed(0)}K deductible as inflation adjustment.`} />
+                  </span>
+                  <span className="text-muted-foreground">-{formatCurrency(Math.round(calculations.capitalGainsTax))}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between font-semibold">
+                  <span>Net Proceeds at Exit</span>
+                  <span className="text-primary">{formatCurrency(Math.round(calculations.netProceedsAtExit))}</span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Year-by-Year Projection */}
+        <Collapsible open={isProjectionOpen} onOpenChange={setIsProjectionOpen}>
+          <Card className="overflow-hidden">
+            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <LineChart className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-sm">Year-by-Year Projection</p>
+                  <p className="text-xs text-muted-foreground">{holdingPeriod} year breakdown</p>
+                </div>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isProjectionOpen && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 pb-4 border-t border-border pt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left">
+                      <th className="pb-3 font-medium">Year</th>
+                      <th className="pb-3 font-medium text-right">Property Value</th>
+                      <th className="pb-3 font-medium text-right">Net Cash Flow</th>
+                      <th className="pb-3 font-medium text-right">Cumulative</th>
+                      <th className="pb-3 font-medium text-right">ROI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calculations.projection.map((year) => (
+                      <tr key={year.year} className="border-b last:border-0">
+                        <td className="py-3">{year.year}</td>
+                        <td className="py-3 text-right">{formatCurrency(year.propertyValue)}</td>
+                        <td className={cn("py-3 text-right", year.netCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+                          {year.netCashFlow >= 0 ? '+' : ''}{formatCurrency(year.netCashFlow)}
+                        </td>
+                        <td className={cn("py-3 text-right", year.cumulativeCashFlow >= 0 ? "text-primary" : "text-muted-foreground")}>
+                          {year.cumulativeCashFlow >= 0 ? '+' : ''}{formatCurrency(year.cumulativeCashFlow)}
+                        </td>
+                        <td className="py-3 text-right font-medium text-primary">{year.roi.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </div>
+
+      {/* Insight Card */}
+      {insights.length > 0 && <InsightCard insights={insights} />}
+
+      {/* Calculated for Israel Badge */}
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
+        <BadgeCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-medium">Calculated for Israel</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Includes Israeli investor tax rates (8% purchase tax), rental income tax options, and Mas Shevach (capital gains) calculations with inflation adjustment. Consult a tax advisor for personalized guidance.
+          </p>
+        </div>
+      </div>
+
+      {/* Next Steps Grid */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Link 
+          to="/tools?tool=rentvsbuy"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Rent vs Buy</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Compare renting vs buying</p>
+        </Link>
+
+        <Link 
+          to="/tools?tool=totalcost"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">True Cost</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Total cash needed to close</p>
+        </Link>
+
+        <Link 
+          to="/listings?listing_status=for_sale"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Home className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Browse Properties</p>
+          </div>
+          <p className="text-sm text-muted-foreground">Find investment properties</p>
+        </Link>
+      </div>
+
+      {/* Feedback */}
       <ToolFeedback toolName="investment-return-calculator" variant="inline" />
     </div>
+  );
+
+  const disclaimer = (
+    <ToolDisclaimer 
+      text="Estimates for informational purposes only. Actual returns may vary. Consult a financial advisor and tax professional before making investment decisions."
+    />
   );
 
   return (
     <ToolLayout 
       title="Investment Return Calculator" 
-      subtitle="Evaluate returns and cash flow using assumptions grounded in the Israeli market." 
+      subtitle="Evaluate rental yields and long-term returns — using real Israeli tax and market assumptions."
       icon={<TrendingUp className="h-6 w-6" />}
-      
       infoBanner={
         <BuyerTypeInfoBanner
           selectedType={
@@ -1099,7 +1113,7 @@ export function InvestmentReturnCalculator() {
           }
           onTypeChange={(type) => {
             const mapping: Partial<Record<BuyerCategory, 'investor' | 'foreign' | 'oleh'>> = {
-              'first_time': 'investor', // Investment calc defaults non-applicable types to investor
+              'first_time': 'investor',
               'oleh': 'oleh',
               'additional': 'investor',
               'non_resident': 'foreign',
@@ -1113,22 +1127,15 @@ export function InvestmentReturnCalculator() {
           profileType={buyerProfile ? buyerCategory : undefined}
         />
       }
-      headerActions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={resetToDefaults} className="gap-2">
-            <RotateCcw className="h-4 w-4" />
-            <span className="hidden sm:inline">Reset</span>
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleSave} disabled={saveToProfile.isPending} className="gap-2">
-            {saveToProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden sm:inline">{saveToProfile.isPending ? 'Saving...' : 'Save'}</span>
-          </Button>
-        </div>
-      }
+      headerActions={headerActions}
       leftColumn={leftColumn} 
       rightColumn={rightColumn} 
       bottomSection={bottomSection} 
-      disclaimer={<ToolDisclaimer text="This calculator provides estimates for informational purposes only. Actual returns may vary. Consult with a financial advisor before making investment decisions." />}
+      disclaimer={disclaimer}
     />
   );
+}
+
+export function InvestmentReturnCalculator() {
+  return <InvestmentCalculatorContent />;
 }
