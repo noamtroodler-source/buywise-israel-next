@@ -62,9 +62,6 @@ export default function ProjectDetail() {
           {/* Breadcrumb Navigation */}
           <ProjectBreadcrumb projectName={project.name} city={project.city} />
           
-          {/* Hero - Pure Visual */}
-          <ProjectHero project={project} />
-          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -72,6 +69,8 @@ export default function ProjectDetail() {
           >
             {/* Left Column - Main Content */}
             <div className="lg:col-span-2 space-y-8">
+              {/* Hero - Inside Grid */}
+              <ProjectHero project={project} />
               {/* Quick Summary - Price, Title, Stats */}
               <ProjectQuickSummary 
                 project={project} 

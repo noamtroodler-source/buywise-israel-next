@@ -89,20 +89,20 @@ export default function PropertyDetail() {
 
   return (
     <Layout>
-      {/* Hero - Full Width */}
-      <PropertyHero 
-        property={property}
-        onSave={handleSave}
-        onShare={handleShare}
-        isSaved={isSaved}
-      />
-
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Hero - Inside Grid */}
+            <PropertyHero 
+              property={property}
+              onSave={handleSave}
+              onShare={handleShare}
+              isSaved={isSaved}
+            />
+
             {/* Quick Summary - Price, Title, Stats */}
-            <PropertyQuickSummary 
+            <PropertyQuickSummary
               property={property}
               onShare={handleShare}
               onSave={handleSave}
@@ -200,7 +200,7 @@ export default function PropertyDetail() {
 
           {/* Sticky Sidebar - Desktop Only */}
           <div className="hidden lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-6">
               <StickyContactCard 
                 agent={property.agent}
                 propertyTitle={property.title}
