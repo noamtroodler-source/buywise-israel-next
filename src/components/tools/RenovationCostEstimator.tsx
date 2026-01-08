@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, Info, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -7,12 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { ToolLayout } from './shared/ToolLayout';
 import { InfoBanner } from './shared/InfoBanner';
 import { CashBreakdownTable, BreakdownItem } from './shared/CashBreakdownTable';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
+import { CTACard } from './shared/CTACard';
+import { ToolFeedback } from './shared/ToolFeedback';
 
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
@@ -215,6 +219,10 @@ export function RenovationCostEstimator() {
   const [contingencyPercent, setContingencyPercent] = useState(15);
   const [includeTempHousing, setIncludeTempHousing] = useState(false);
   const [includeArchitect, setIncludeArchitect] = useState(false);
+  
+  // Collapsible states
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(true);
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -314,6 +322,14 @@ export function RenovationCostEstimator() {
     // Timeline with Israeli holiday buffer
     const timelineMin = Math.max(4, totalWeeksMin);
     const timelineMax = totalWeeksMax + 2; // Add buffer for holidays/delays
+    
+    // Cost per sqm
+    const costPerSqmMin = propertySize > 0 ? totalMin / propertySize : 0;
+    const costPerSqmMax = propertySize > 0 ? totalMax / propertySize : 0;
+    
+    // Other costs total (non-renovation)
+    const otherCostsMin = contingencyMin + actualPermitCost + tempHousingCost + architectFeeMin;
+    const otherCostsMax = contingencyMax + actualPermitCost + tempHousingCost + architectFeeMax;
 
     return {
       breakdown,
@@ -329,6 +345,10 @@ export function RenovationCostEstimator() {
       totalMax,
       timelineMin,
       timelineMax,
+      costPerSqmMin,
+      costPerSqmMax,
+      otherCostsMin,
+      otherCostsMax,
     };
   }, [selectedCategories, qualityLevel, propertySize, bathroomCount, includePermits, includeContingency, contingencyPercent, includeTempHousing, includeArchitect]);
 
@@ -405,6 +425,21 @@ export function RenovationCostEstimator() {
     
     return messages;
   }, [calculations, selectedCategories.length, qualityLevel, ageAlerts]);
+  
+  // Visual breakdown bar percentages
+  const breakdownBarData = useMemo(() => {
+    if (calculations.totalMax === 0) return { renovation: 0, contingency: 0, other: 0 };
+    const avgTotal = (calculations.totalMin + calculations.totalMax) / 2;
+    const avgSubtotal = (calculations.subtotalMin + calculations.subtotalMax) / 2;
+    const avgContingency = (calculations.contingencyMin + calculations.contingencyMax) / 2;
+    const avgOther = (calculations.otherCostsMin + calculations.otherCostsMax) / 2 - avgContingency;
+    
+    return {
+      renovation: (avgSubtotal / avgTotal) * 100,
+      contingency: (avgContingency / avgTotal) * 100,
+      other: (avgOther / avgTotal) * 100,
+    };
+  }, [calculations]);
 
   const leftColumn = (
     <div className="space-y-6">
@@ -420,7 +455,7 @@ export function RenovationCostEstimator() {
                 Property Size
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>Total interior area in square meters</TooltipContent>
                 </Tooltip>
@@ -430,7 +465,7 @@ export function RenovationCostEstimator() {
                   type="number"
                   value={propertySize}
                   onChange={(e) => setPropertySize(Number(e.target.value))}
-                  className="h-11 pr-12"
+                  className="h-11 pr-12 text-lg"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{areaUnitLabel}</span>
               </div>
@@ -440,7 +475,7 @@ export function RenovationCostEstimator() {
                 Building Year
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>Helps identify required upgrades (electrical, plumbing, Mamad)</TooltipContent>
                 </Tooltip>
@@ -449,7 +484,7 @@ export function RenovationCostEstimator() {
                 type="number"
                 value={buildingYear}
                 onChange={(e) => setBuildingYear(Number(e.target.value))}
-                className="h-11"
+                className="h-11 text-lg"
                 min={1900}
                 max={new Date().getFullYear()}
               />
@@ -471,12 +506,20 @@ export function RenovationCostEstimator() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Number of Bathrooms</Label>
+              <Label className="flex items-center gap-1.5">
+                Bathrooms
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>Number of bathrooms to renovate</TooltipContent>
+                </Tooltip>
+              </Label>
               <Input
                 type="number"
                 value={bathroomCount}
                 onChange={(e) => setBathroomCount(Number(e.target.value))}
-                className="h-11"
+                className="h-11 text-lg"
                 min={1}
                 max={6}
               />
@@ -504,7 +547,7 @@ export function RenovationCostEstimator() {
             Quality Level
             <Tooltip>
               <TooltipTrigger>
-                <Info className="h-4 w-4 text-muted-foreground" />
+                <HelpCircle className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 Quality level affects material costs. All levels include professional labor.
@@ -643,32 +686,120 @@ export function RenovationCostEstimator() {
 
   const rightColumn = (
     <div className="space-y-4">
-      {/* Hero Result */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-        <CardContent className="pt-6">
+      {/* Hero Result Card */}
+      <Card className="border-primary/20 overflow-hidden">
+        <div className="bg-gradient-to-b from-primary/5 via-background to-background p-6">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-1">Estimated Total Cost</p>
-            <p className="text-3xl font-bold text-foreground">
+            <p className="text-sm text-muted-foreground mb-2">Estimated Total Cost</p>
+            <motion.div
+              key={`${calculations.totalMin}-${calculations.totalMax}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-3xl md:text-4xl font-bold text-primary"
+            >
               {formatCurrency(calculations.totalMin)} - {formatCurrency(calculations.totalMax)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              <Calendar className="h-4 w-4 inline mr-1" />
-              Timeline: {calculations.timelineMin}-{calculations.timelineMax} weeks
-            </p>
+            </motion.div>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {calculations.timelineMin}-{calculations.timelineMax} weeks
+              </span>
+            </div>
           </div>
-        </CardContent>
+          
+          {/* Quick Stats Grid */}
+          {selectedCategories.length > 0 && (
+            <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-border/50">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Cost / {areaUnitLabel}</p>
+                <p className="text-lg font-semibold text-foreground mt-1">
+                  {formatCurrency(calculations.costPerSqmMin)} - {formatCurrency(calculations.costPerSqmMax)}
+                </p>
+              </div>
+              <div className="text-center border-l border-border/50">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Quality</p>
+                <p className="text-lg font-semibold text-foreground mt-1 capitalize">{qualityLevel}</p>
+              </div>
+              <div className="text-center border-t border-border/50 pt-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Areas Selected</p>
+                <p className="text-lg font-semibold text-foreground mt-1">{selectedCategories.length} of 9</p>
+              </div>
+              <div className="text-center border-l border-t border-border/50 pt-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Property</p>
+                <p className="text-lg font-semibold text-foreground mt-1">{propertySize} {areaUnitLabel}</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Visual Breakdown Bar */}
+        {selectedCategories.length > 0 && calculations.totalMax > 0 && (
+          <div className="px-6 pb-6">
+            <p className="text-xs text-muted-foreground mb-2">Cost Allocation</p>
+            <div className="h-3 rounded-full overflow-hidden bg-muted flex">
+              <div 
+                className="bg-primary transition-all duration-300" 
+                style={{ width: `${breakdownBarData.renovation}%` }} 
+              />
+              <div 
+                className="bg-primary/50 transition-all duration-300" 
+                style={{ width: `${breakdownBarData.contingency}%` }} 
+              />
+              <div 
+                className="bg-primary/30 transition-all duration-300" 
+                style={{ width: `${breakdownBarData.other}%` }} 
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                <span>Renovation</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary/50" />
+                <span>Contingency</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-primary/30" />
+                <span>Other</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Calculated for Israel Badge */}
+        {selectedCategories.length > 0 && (
+          <div className="px-6 pb-6 pt-0">
+            <div className="flex items-center justify-center gap-2 py-2 px-3 bg-muted/50 rounded-lg">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs text-muted-foreground">
+                Calculated for Israel • CBS Index • 30/40/30 Payment Norm
+              </span>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* Cost Breakdown */}
+      {/* Cost Breakdown - Collapsible */}
       {selectedCategories.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Cost Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CashBreakdownTable items={breakdownItems} />
-          </CardContent>
-        </Card>
+        <Collapsible open={isBreakdownOpen} onOpenChange={setIsBreakdownOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                <CardTitle className="text-base flex items-center justify-between">
+                  Cost Breakdown
+                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isBreakdownOpen && "rotate-180")} />
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <CashBreakdownTable items={breakdownItems} />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       )}
 
       {/* Payment Schedule */}
@@ -679,7 +810,7 @@ export function RenovationCostEstimator() {
               Typical Payment Schedule
               <Tooltip>
                 <TooltipTrigger>
-                  <Info className="h-4 w-4 text-muted-foreground" />
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs">
                   Standard Israeli contractor payment structure. Never pay 100% upfront.
@@ -706,7 +837,7 @@ export function RenovationCostEstimator() {
         </Card>
       )}
 
-      {/* What's Included */}
+      {/* What's Included - Quality Level */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">What's Included at {qualityExamples[qualityLevel].label} Level</CardTitle>
@@ -729,10 +860,99 @@ export function RenovationCostEstimator() {
     </div>
   );
   
-  // Bottom section with insight card
-  const bottomSection = renovationInsights.length > 0 && selectedCategories.length > 0 ? (
-    <InsightCard insights={renovationInsights} />
-  ) : null;
+  // Bottom section with insight card, educational content, CTAs, and feedback
+  const bottomSection = (
+    <div className="space-y-8">
+      {/* Insight Card */}
+      {renovationInsights.length > 0 && selectedCategories.length > 0 && (
+        <InsightCard insights={renovationInsights} />
+      )}
+      
+      {/* Educational Collapsible */}
+      <Collapsible open={isTipsOpen} onOpenChange={setIsTipsOpen}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors">
+              <CardTitle className="text-base flex items-center justify-between">
+                Renovation Tips for Israel
+                <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isTipsOpen && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Vetting Contractors</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Check for valid Tik 14 (business license)</li>
+                    <li>• Ask for references from recent projects</li>
+                    <li>• Get everything in writing (Hebrew contract standard)</li>
+                    <li>• Verify insurance coverage</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Payment Best Practices</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Never pay more than 30% upfront</li>
+                    <li>• Tie payments to completed milestones</li>
+                    <li>• Hold 10-15% until final walkthrough</li>
+                    <li>• Get receipts for all payments</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Timeline Considerations</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Factor in High Holidays (Sep-Oct delays)</li>
+                    <li>• Passover/Sukkot can add 2-3 weeks</li>
+                    <li>• August vacations slow everything down</li>
+                    <li>• Material imports take 4-8 weeks</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Legal Requirements</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Balcony enclosures need municipal approval</li>
+                    <li>• Structural changes require engineer sign-off</li>
+                    <li>• 1-year warranty required by law</li>
+                    <li>• VAT (17%) typically included in quotes</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+      
+      {/* CTA Grid */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <CTACard
+          icon={<Calculator className="h-5 w-5" />}
+          title="True Cost Calculator"
+          description="Include renovation in your total purchase cost"
+          buttonLink="/tools/true-cost"
+          buttonText="Calculate Total Cost"
+        />
+        <CTACard
+          icon={<TrendingUp className="h-5 w-5" />}
+          title="Affordability Calculator"
+          description="See how much you can borrow for purchase + renovation"
+          buttonLink="/tools/affordability"
+          buttonText="Check Affordability"
+        />
+        <CTACard
+          icon={<FileText className="h-5 w-5" />}
+          title="Document Checklist"
+          description="Track permits and contractor documents"
+          buttonLink="/tools/document-checklist"
+          buttonText="View Checklist"
+        />
+      </div>
+      
+      {/* Feedback */}
+      <ToolFeedback toolName="renovation-estimator" variant="inline" />
+    </div>
+  );
 
   return (
     <ToolLayout
