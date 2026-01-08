@@ -14,6 +14,9 @@ import {
 import type { MarketData } from '@/types/projects';
 import { CanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
+import { CityComparisonSelector } from './CityComparisonSelector';
+import { useCities } from '@/hooks/useCities';
+import { useCityComparison } from '@/hooks/useMarketData';
 
 interface PriceTrendsSectionProps {
   marketData: MarketData[];
@@ -26,6 +29,12 @@ interface PriceTrendsSectionProps {
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const NATIONAL_AVG_YIELD = 2.8;
 
+const LINE_COLORS = [
+  'hsl(var(--primary))',
+  'hsl(38, 92%, 50%)', // amber
+  'hsl(160, 84%, 39%)', // emerald
+];
+
 export function PriceTrendsSection({ 
   marketData, 
   cityName, 
@@ -34,23 +43,54 @@ export function PriceTrendsSection({
   yoyChange 
 }: PriceTrendsSectionProps) {
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
+  const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
 
-  const monthly = useMemo(() => {
-    return marketData
-      .filter((d) => d.data_type === 'monthly' && d.month != null)
-      .sort((a, b) => {
-        const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
-        const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
-        return ak.localeCompare(bk);
-      });
-  }, [marketData]);
+  const { data: allCities = [] } = useCities();
+  const { data: comparisonData = [] } = useCityComparison(selectedCities);
 
+  const availableCities = useMemo(() => {
+    return allCities.map((c) => ({ name: c.name, slug: c.slug }));
+  }, [allCities]);
+
+  // Process chart data for multiple cities
   const chartData = useMemo(() => {
-    return monthly.map((d) => ({
-      name: `${months[(d.month || 1) - 1]} ${d.year}`,
-      value: d.average_price_sqm || 0,
-    }));
-  }, [monthly]);
+    // If only one city and it's the current city, use the prop data
+    if (selectedCities.length === 1 && selectedCities[0] === cityName) {
+      const monthly = marketData
+        .filter((d) => d.data_type === 'monthly' && d.month != null)
+        .sort((a, b) => {
+          const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
+          const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
+          return ak.localeCompare(bk);
+        });
+
+      return monthly.map((d) => ({
+        name: `${months[(d.month || 1) - 1]} ${d.year}`,
+        [cityName]: d.average_price_sqm || 0,
+      }));
+    }
+
+    // Multiple cities - use comparison data
+    const dateMap = new Map<string, Record<string, number>>();
+
+    comparisonData.forEach((d) => {
+      if (d.month == null) return;
+      const key = `${d.year}-${String(d.month).padStart(2, '0')}`;
+      const existing = dateMap.get(key) || {};
+      existing[d.city] = d.average_price_sqm || 0;
+      dateMap.set(key, existing);
+    });
+
+    return Array.from(dateMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, values]) => {
+        const [year, month] = key.split('-');
+        return {
+          name: `${months[parseInt(month) - 1]} ${year}`,
+          ...values,
+        };
+      });
+  }, [marketData, comparisonData, selectedCities, cityName]);
 
   const filteredData = useMemo(() => {
     if (period === '6m') return chartData.slice(-6);
@@ -58,7 +98,7 @@ export function PriceTrendsSection({
     return chartData;
   }, [chartData, period]);
 
-  // Calculate 10-year growth
+  // Calculate 10-year growth (for current city only)
   const growthMetrics = useMemo(() => {
     if (historicalPrices.length < 2) return null;
     
@@ -85,13 +125,27 @@ export function PriceTrendsSection({
   const grossYield = canonicalMetrics?.gross_yield_percent ?? null;
   const priceChange = yoyChange ?? canonicalMetrics?.yoy_price_change ?? null;
 
+  // Custom tooltip for multi-city comparison
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const v = payload?.[0]?.value;
+    
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-        <p className="font-medium text-foreground text-sm mb-1">{label}</p>
-        <p className="text-primary font-semibold">₪{typeof v === 'number' ? v.toLocaleString() : v}/m²</p>
+        <p className="font-medium text-foreground text-sm mb-2">{label}</p>
+        <div className="space-y-1">
+          {payload.map((entry: any, index: number) => (
+            <div key={entry.dataKey} className="flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: entry.stroke }}
+              />
+              <span className="text-sm text-muted-foreground">{entry.dataKey}:</span>
+              <span className="text-sm font-semibold" style={{ color: entry.stroke }}>
+                ₪{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}/m²
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -141,7 +195,11 @@ export function PriceTrendsSection({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-semibold text-foreground">Price Trends</h2>
-              <p className="text-muted-foreground mt-1">How {cityName}'s market has moved over time</p>
+              <p className="text-muted-foreground mt-1">
+                {selectedCities.length > 1 
+                  ? 'Compare how markets have moved over time'
+                  : `How ${cityName}'s market has moved over time`}
+              </p>
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-background">
@@ -151,6 +209,14 @@ export function PriceTrendsSection({
               </TabsList>
             </Tabs>
           </div>
+
+          {/* City Comparison Selector */}
+          <CityComparisonSelector
+            currentCity={cityName}
+            selectedCities={selectedCities}
+            onCitiesChange={setSelectedCities}
+            availableCities={availableCities}
+          />
 
           {/* Key Metrics */}
           <div className="flex flex-wrap gap-6 text-sm">
@@ -194,14 +260,18 @@ export function PriceTrendsSection({
                   tickLine={{ className: 'stroke-border' }}
                 />
                 <RechartsTooltip content={<CustomTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
-                />
+                {selectedCities.map((city, index) => (
+                  <Line
+                    key={city}
+                    type="monotone"
+                    dataKey={city}
+                    stroke={LINE_COLORS[index] || LINE_COLORS[0]}
+                    strokeWidth={2.5}
+                    dot={{ fill: LINE_COLORS[index] || LINE_COLORS[0], strokeWidth: 0, r: 3 }}
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                    connectNulls
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
