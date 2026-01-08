@@ -94,10 +94,10 @@ export function BuyerProfileSelector({
                 </p>
               </div>
               
-              {/* Residency Status */}
+              {/* Tax Status */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Residency Status
+                  Tax Status
                 </Label>
                 <RadioGroup
                   value={profile.residency_status}
@@ -108,23 +108,39 @@ export function BuyerProfileSelector({
                   })}
                   className="grid grid-cols-1 gap-1"
                 >
-                  {[
-                    { value: 'israeli_resident', label: 'Israeli Resident' },
-                    { value: 'oleh_hadash', label: 'Oleh Hadash' },
-                    { value: 'non_resident', label: 'Non-Resident' },
-                  ].map((option) => (
-                    <Label
-                      key={option.value}
-                      className={cn(
-                        "flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer transition-colors text-sm",
-                        "hover:bg-muted/50",
-                        profile.residency_status === option.value && "bg-muted"
-                      )}
-                    >
-                      <RadioGroupItem value={option.value} className="h-3.5 w-3.5" />
-                      {option.label}
-                    </Label>
-                  ))}
+                  <Label
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer transition-colors text-sm",
+                      "hover:bg-muted/50",
+                      profile.residency_status === 'israeli_resident' && "bg-muted"
+                    )}
+                  >
+                    <RadioGroupItem value="israeli_resident" className="h-3.5 w-3.5" />
+                    Israeli Resident (7+ Years)
+                  </Label>
+                  <Label
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-3 py-2 cursor-pointer transition-colors text-sm",
+                      "hover:bg-muted/50",
+                      profile.residency_status === 'oleh_hadash' && "bg-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="oleh_hadash" className="h-3.5 w-3.5" />
+                      New Oleh (Within 7 Years)
+                    </div>
+                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
+                  </Label>
+                  <Label
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 cursor-pointer transition-colors text-sm",
+                      "hover:bg-muted/50",
+                      profile.residency_status === 'non_resident' && "bg-muted"
+                    )}
+                  >
+                    <RadioGroupItem value="non_resident" className="h-3.5 w-3.5" />
+                    Non-Resident
+                  </Label>
                 </RadioGroup>
               </div>
               

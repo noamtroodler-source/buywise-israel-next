@@ -150,7 +150,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <h3 className="font-medium text-foreground">What's your residency status?</h3>
+                <h3 className="font-medium text-foreground">What's your tax status in Israel?</h3>
                 <RadioGroup
                   value={answers.residency_status}
                   onValueChange={(v) => setAnswers({ ...answers, residency_status: v as BuyerProfileInsert['residency_status'] })}
@@ -161,8 +161,8 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                     <Label htmlFor="israeli" className="flex items-center gap-3 cursor-pointer flex-1">
                       <User className="h-5 w-5 text-primary" />
                       <div>
-                        <p className="font-medium">Israeli Resident</p>
-                        <p className="text-sm text-muted-foreground">I'm an Israeli citizen or permanent resident</p>
+                        <p className="font-medium">Israeli Resident (7+ Years)</p>
+                        <p className="text-sm text-muted-foreground">I've been a resident for over 7 years — standard tax rates apply</p>
                       </div>
                     </Label>
                   </div>
@@ -170,9 +170,12 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                     <RadioGroupItem value="oleh_hadash" id="oleh" />
                     <Label htmlFor="oleh" className="flex items-center gap-3 cursor-pointer flex-1">
                       <Plane className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Oleh Hadash</p>
-                        <p className="text-sm text-muted-foreground">I made Aliyah in the last 7 years</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">New Oleh (Within 7 Years)</p>
+                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">I made Aliyah recently — eligible for reduced purchase tax rates</p>
                       </div>
                     </Label>
                   </div>
