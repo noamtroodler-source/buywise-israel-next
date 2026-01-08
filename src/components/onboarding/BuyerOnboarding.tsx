@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateBuyerProfile, BuyerProfileInsert } from '@/hooks/useBuyerProfile';
+import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 
 interface BuyerOnboardingProps {
   open: boolean;
   onComplete: () => void;
   onClose?: () => void;
+  existingProfile?: BuyerProfile | null;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -19,18 +20,41 @@ type Step = 1 | 2 | 3 | 4 | 5;
 const currentYear = new Date().getFullYear();
 const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingProps) {
+export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: BuyerOnboardingProps) {
   const [step, setStep] = useState<Step>(1);
-  const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>({
+  const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>(() => getInitialAnswers(existingProfile));
+  
+  const createProfile = useCreateBuyerProfile();
+  const updateProfile = useUpdateBuyerProfile();
+
+  // Reset answers when dialog opens with different profile
+  useEffect(() => {
+    if (open) {
+      setAnswers(getInitialAnswers(existingProfile));
+      setStep(1);
+    }
+  }, [open, existingProfile]);
+
+function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileInsert> {
+  if (profile) {
+    return {
+      residency_status: profile.residency_status,
+      aliyah_year: profile.aliyah_year,
+      is_first_property: profile.is_first_property,
+      is_upgrading: profile.is_upgrading ?? false,
+      purchase_purpose: profile.purchase_purpose,
+      buyer_entity: profile.buyer_entity,
+    };
+  }
+  return {
     residency_status: undefined,
     aliyah_year: undefined,
     is_first_property: undefined,
     is_upgrading: false,
     purchase_purpose: undefined,
     buyer_entity: 'individual',
-  });
-  
-  const createProfile = useCreateBuyerProfile();
+  };
+}
 
   // Calculate which steps to show based on answers
   const getNextStep = (currentStep: Step): Step => {
@@ -64,12 +88,23 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
   };
 
   const handleComplete = async () => {
-    await createProfile.mutateAsync({
-      ...answers,
-      onboarding_completed: true,
-    });
+    if (existingProfile) {
+      // Update existing profile
+      await updateProfile.mutateAsync({
+        ...answers,
+        onboarding_completed: true,
+      });
+    } else {
+      // Create new profile
+      await createProfile.mutateAsync({
+        ...answers,
+        onboarding_completed: true,
+      });
+    }
     onComplete();
   };
+
+  const isPending = createProfile.isPending || updateProfile.isPending;
 
   const canProceed = () => {
     switch (step) {
@@ -379,12 +414,12 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
           </Button>
           <Button
             onClick={handleNext}
-            disabled={!canProceed() || createProfile.isPending}
+            disabled={!canProceed() || isPending}
             className="gap-2"
           >
             {step === 5 || (step === 4 && answers.residency_status !== 'oleh_hadash') ? (
               <>
-                {createProfile.isPending ? 'Saving...' : 'Complete'}
+                {isPending ? 'Saving...' : 'Complete'}
                 <Check className="h-4 w-4" />
               </>
             ) : (
