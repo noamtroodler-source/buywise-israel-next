@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, Settings, MessageCircle, Heart, Bell, Calculator } from 'lucide-react';
+import { User, Mail, Calendar, Settings, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { useUserRole } from '@/hooks/useUserRole';
+
 import { Loader2 } from 'lucide-react';
 import { ProfileStatsGrid } from '@/components/profile/ProfileStatsGrid';
 import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
@@ -22,7 +22,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { isAgent, isAdmin } = useUserRole();
+  
   const updateProfile = useUpdateProfile();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -180,75 +180,6 @@ export default function Profile() {
               {/* Buyer Profile Card */}
               <BuyerProfileCard />
 
-
-              {/* Quick Actions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isAgent && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => navigate('/agent')}
-                    >
-                      Go to Agent Dashboard
-                    </Button>
-                  )}
-
-                  {isAdmin && (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => navigate('/admin')}
-                    >
-                      Admin Dashboard
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/favorites')}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    View Saved Properties
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      const element = document.getElementById('search-alerts-section');
-                      element?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  >
-                    <Bell className="h-4 w-4 mr-2" />
-                    View Saved Searches
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      const element = document.getElementById('saved-calculator-results');
-                      element?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                  >
-                    <Calculator className="h-4 w-4 mr-2" />
-                    View Saved Calculator Results
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/tools')}
-                  >
-                    Buyer Tools & Calculators
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </motion.div>
