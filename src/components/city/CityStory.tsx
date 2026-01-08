@@ -109,45 +109,41 @@ export function CityStory({
   const narrative = generateNarrative(cityName, description, highlights, angloPresence, hasTrainStation);
 
   return (
-    <section className="py-14 bg-background">
-      <div className="container max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      {/* Section Title */}
+      <h2 className="text-2xl font-semibold text-foreground">
+        The {cityName} Story
+      </h2>
+
+      {/* Narrative Paragraph */}
+      <p className="text-muted-foreground leading-relaxed">
+        {narrative}
+      </p>
+
+      {/* Highlight Badges */}
+      {badges.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap gap-2"
         >
-          {/* Section Title */}
-          <h2 className="text-2xl sm:text-3xl font-semibold text-foreground">
-            The {cityName} Story
-          </h2>
-
-          {/* Narrative Paragraph */}
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            {narrative}
-          </p>
-
-          {/* Highlight Badges */}
-          {badges.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex flex-wrap gap-3"
+          {badges.slice(0, 5).map((badge) => (
+            <Badge 
+              key={badge.label} 
+              variant="secondary" 
+              className="px-3 py-1.5 text-sm font-normal bg-muted/60 hover:bg-muted border-0"
             >
-              {badges.slice(0, 5).map((badge, index) => (
-                <Badge 
-                  key={badge.label} 
-                  variant="secondary" 
-                  className="px-4 py-2 text-sm font-normal bg-muted/60 hover:bg-muted border-0"
-                >
-                  <badge.icon className="h-4 w-4 mr-2 text-primary" />
-                  {badge.label}
-                </Badge>
-              ))}
-            </motion.div>
-          )}
+              <badge.icon className="h-3.5 w-3.5 mr-1.5 text-primary" />
+              {badge.label}
+            </Badge>
+          ))}
         </motion.div>
-      </div>
-    </section>
+      )}
+    </motion.div>
   );
 }

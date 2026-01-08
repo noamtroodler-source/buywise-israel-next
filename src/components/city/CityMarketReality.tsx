@@ -130,8 +130,8 @@ export function CityMarketReality({
   if (filteredData.length === 0) return null;
 
   return (
-    <section className="py-14 bg-muted/40">
-      <div className="container max-w-4xl">
+    <section className="py-16 bg-muted/40">
+      <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

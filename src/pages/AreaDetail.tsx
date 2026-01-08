@@ -8,13 +8,13 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 
-// New redesigned components
+// Redesigned components
 import { CityHero } from '@/components/city/CityHero';
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { CityStory } from '@/components/city/CityStory';
+import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
 import { CityMarketReality } from '@/components/city/CityMarketReality';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
-import { CityInsightBreak } from '@/components/city/CityInsightBreak';
 import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
@@ -270,17 +270,36 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. The City Story - Why People Choose This City */}
-        <CityStory
-          cityName={city.name}
-          description={city.description}
-          highlights={city.highlights}
-          angloPresence={city.anglo_presence}
-          hasTrainStation={city.has_train_station}
-          commuteTimeTelAviv={city.commute_time_tel_aviv}
-        />
+        {/* 3. Two-Column: City Story + Market Reality Tabs */}
+        <section className="py-16 bg-background">
+          <div className="container">
+            <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
+              {/* Left: City Story (2/5) */}
+              <div className="lg:col-span-2">
+                <CityStory
+                  cityName={city.name}
+                  description={city.description}
+                  highlights={city.highlights}
+                  angloPresence={city.anglo_presence}
+                  hasTrainStation={city.has_train_station}
+                  commuteTimeTelAviv={city.commute_time_tel_aviv}
+                />
+              </div>
+              
+              {/* Right: Market Reality Tabs (3/5) */}
+              <div className="lg:col-span-3">
+                <MarketRealityTabs
+                  marketData={marketData}
+                  cityName={city.name}
+                  citySlug={slug}
+                  arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* 4. Market Reality - Chart + Insights */}
+        {/* 4. Price Trend Chart - Full Width */}
         {marketData.length > 0 && (
           <CityMarketReality
             marketData={marketData}
@@ -296,23 +315,20 @@ export default function CityDetail() {
           <CityWorthWatchingNew factors={worthWatching} cityName={city.name} />
         )}
 
-        {/* 6. Insight Break Quote */}
-        <CityInsightBreak cityName={city.name} pricePerSqm={pricePerSqm} />
-
-        {/* 7. Run the Numbers - Calculator Teaser */}
+        {/* 6. Run the Numbers - Calculator Teaser */}
         <CityCalculatorTeaser 
           cityName={city.name} 
           medianPrice={medianPrice}
           grossYield={grossYield}
         />
 
-        {/* 8. Explore Listings CTA */}
+        {/* 7. Explore Listings CTA */}
         <CityExploreListings 
           cityName={city.name} 
           propertiesCount={properties.length} 
         />
 
-        {/* 9. Featured Properties - At the bottom as requested */}
+        {/* 8. Featured Properties - At the bottom */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
       </div>
     </Layout>
