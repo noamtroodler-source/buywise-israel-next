@@ -44,11 +44,11 @@ export function ProfileStatsGrid() {
 
   const stats = [
     {
-      icon: <Heart className="h-5 w-5 text-destructive" />,
+      icon: <Heart className="h-5 w-5 text-primary" />,
       value: favoriteProperties.length,
       label: 'Saved Properties',
       onClick: () => navigate('/favorites'),
-      colorClass: 'bg-destructive/10',
+      colorClass: 'bg-primary/10',
     },
     {
       icon: <Bell className="h-5 w-5 text-primary" />,
@@ -61,21 +61,21 @@ export function ProfileStatsGrid() {
       colorClass: 'bg-primary/10',
     },
     {
-      icon: <Calculator className="h-5 w-5 text-emerald-500" />,
+      icon: <Calculator className="h-5 w-5 text-primary" />,
       value: savedCalcResults.length,
       label: 'Saved Calculations',
       onClick: () => {
         const element = document.getElementById('saved-calculator-results');
         element?.scrollIntoView({ behavior: 'smooth' });
       },
-      colorClass: 'bg-emerald-500/10',
+      colorClass: 'bg-primary/10',
     },
     {
-      icon: <BookMarked className="h-5 w-5 text-amber-500" />,
+      icon: <BookMarked className="h-5 w-5 text-primary" />,
       value: savedArticles.length,
       label: 'Saved Articles',
       onClick: () => navigate('/blog'),
-      colorClass: 'bg-amber-500/10',
+      colorClass: 'bg-primary/10',
     },
   ];
 
