@@ -131,9 +131,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   onError={handleImageError}
                 />
 
-                {/* Progress Bar - At top of image, hover-only */}
+                {/* Progress Bar - Bottom of image, above white content, hover-only */}
                 {hasMultipleImages && (
-                  <div className="absolute top-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     {images.map((_, index) => (
                       <button
                         key={index}
@@ -182,8 +182,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   </>
                 )}
 
-                {/* Status Badge - Top Left (moved below progress bar) */}
-                <div className="absolute top-6 left-2 flex gap-1.5 z-10">
+                {/* Status Badge - Top Left */}
+                <div className="absolute top-2 left-2 flex gap-1.5 z-10">
                   {!hideStatusBadge && (
                     <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
                       {getStatusLabel(property.listing_status)}
@@ -203,7 +203,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 </div>
 
                 {/* Action Buttons - Top Right */}
-                <div className="absolute top-6 right-2 flex items-center gap-1 z-10">
+                <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
                   {showCompareButton && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <CompareButton propertyId={property.id} />
@@ -276,8 +276,8 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                        <ChevronRight className="h-5 w-5 text-foreground" />
                      </button>
                     
-                    {/* Progress Bar Indicator - hover-only */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1 flex z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Progress Bar Indicator - Bottom of image, above white content, hover-only */}
+                    <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       {images.map((_, index) => (
                         <button
                           key={index}
@@ -287,7 +287,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                             setCurrentImageIndex(index);
                           }}
                           className={cn(
-                            "flex-1 h-full transition-colors duration-200",
+                            "flex-1 h-1 rounded-full transition-colors duration-200",
                             index === currentImageIndex 
                               ? "bg-white" 
                               : "bg-white/30"
