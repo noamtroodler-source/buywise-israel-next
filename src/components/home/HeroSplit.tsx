@@ -44,7 +44,7 @@ export function HeroSplit() {
   };
 
   return (
-    <section className="relative min-h-[85vh] flex items-center">
+    <section className="relative min-h-[50vh] md:min-h-[55vh] flex items-center">
       {/* Background Image - Full Width */}
       <div className="absolute inset-0">
         <img 
@@ -56,34 +56,33 @@ export function HeroSplit() {
       </div>
 
       {/* Content */}
-      <div className="container relative z-10">
-        <div className="max-w-2xl">
+      <div className="container relative z-10 py-10 md:py-14">
+        <div className="max-w-xl">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="space-y-6"
+            transition={{ duration: 0.5 }}
+            className="space-y-4"
           >
             {/* Headline */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
               Find Your Place
               <span className="block text-primary">in Israel</span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg md:text-xl text-white/80 max-w-xl leading-relaxed">
-              An English-first platform built for internationals buying or renting in Israel. 
-              Explore with clarity, not pressure.
+            <p className="text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
+              An English-first platform for internationals buying or renting in Israel.
             </p>
 
             {/* Search Box */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="pt-4"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="pt-2"
             >
-              <form onSubmit={handleSearch} className="bg-background rounded-2xl p-3 shadow-2xl">
+              <form onSubmit={handleSearch} className="bg-background rounded-xl p-2.5 shadow-xl">
                 <div className="flex flex-col sm:flex-row gap-3">
                   {/* City Combobox */}
                   <div className="flex-1">
@@ -114,8 +113,8 @@ export function HeroSplit() {
                   </Select>
 
                   {/* Search Button */}
-                  <Button type="submit" size="lg" className="h-12 px-8 gap-2 rounded-xl">
-                    <Search className="h-5 w-5" />
+                  <Button type="submit" className="h-11 px-6 gap-2 rounded-lg">
+                    <Search className="h-4 w-4" />
                     <span className="hidden sm:inline">Search</span>
                   </Button>
                 </div>

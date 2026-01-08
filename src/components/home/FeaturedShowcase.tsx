@@ -18,23 +18,23 @@ export function FeaturedShowcase() {
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
   const viewAllLink = activeTab === 'sale' ? '/listings?status=for_sale' : '/listings?status=for_rent';
 
-  // Take 6 properties for the grid
-  const displayProperties = properties?.slice(0, 6) || [];
+  // Take 8 properties for the grid
+  const displayProperties = properties?.slice(0, 8) || [];
 
   return (
-    <section className="py-12 md:py-16 bg-muted/30">
+    <section className="py-8 md:py-10 bg-muted/30">
       <div className="container">
         {/* Header with Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
               Featured Properties
             </h2>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-1">
               Hand-picked listings updated daily
             </p>
           </motion.div>
@@ -74,16 +74,16 @@ export function FeaturedShowcase() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/3] rounded-xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} className="aspect-[16/10] rounded-lg" />
             ))}
           </div>
         )}
 
-        {/* Property Grid - Simple 3-column layout */}
+        {/* Property Grid - 4-column layout */}
         {!isLoading && displayProperties.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {displayProperties.map((property, index) => (
               <motion.div
                 key={property.id}
@@ -100,9 +100,9 @@ export function FeaturedShowcase() {
 
         {/* Empty State */}
         {!isLoading && displayProperties.length === 0 && (
-          <div className="text-center py-16 bg-background rounded-2xl border border-border">
-            <p className="text-muted-foreground mb-4">No properties available at the moment.</p>
-            <Button asChild>
+          <div className="text-center py-10 bg-background rounded-lg border border-border">
+            <p className="text-muted-foreground mb-3">No properties available at the moment.</p>
+            <Button size="sm" asChild>
               <Link to="/listings">Browse All Listings</Link>
             </Button>
           </div>
