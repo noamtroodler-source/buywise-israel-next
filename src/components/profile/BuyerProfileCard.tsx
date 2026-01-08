@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User2, Home, Building2, Plane, Edit3, CheckCircle2 } from 'lucide-react';
+import { User2, Home, Building2, Plane, Edit3, CheckCircle2, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,12 @@ export function BuyerProfileCard() {
 
   const taxCategory = getBuyerTaxCategory(buyerProfile);
   const taxCategoryLabel = getBuyerCategoryLabel(taxCategory);
+
+  // Check if user has active tax benefits (Oleh within 7 years)
+  const currentYear = new Date().getFullYear();
+  const isOlehWithBenefit = buyerProfile?.residency_status === 'oleh_hadash' && 
+    buyerProfile?.aliyah_year && 
+    (currentYear - buyerProfile.aliyah_year) <= 7;
 
   const getResidencyLabel = (status: string) => {
     switch (status) {
@@ -58,18 +64,21 @@ export function BuyerProfileCard() {
   if (!buyerProfile) {
     return (
       <>
-        <Card className="border-dashed">
+        <Card className="border-dashed border-2 border-primary/20 bg-primary/5">
           <CardContent className="p-6 text-center">
             <div className="mb-4">
-              <User2 className="h-12 w-12 mx-auto text-muted-foreground/50" />
+              <div className="w-14 h-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-7 w-7 text-primary" />
+              </div>
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Complete Your Buyer Profile</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Get personalized tax estimates and recommendations based on your situation.
+            <h3 className="font-semibold text-foreground mb-2">Let's Personalize Your Experience</h3>
+            <p className="text-sm text-muted-foreground mb-5">
+              Get accurate tax estimates and recommendations tailored to your situation.
             </p>
-            <Button onClick={() => setShowOnboarding(true)}>
-              Set Up Profile
+            <Button onClick={() => setShowOnboarding(true)} className="w-full">
+              Set Up Buyer Profile
             </Button>
+            <p className="text-xs text-muted-foreground mt-3">Takes less than 2 minutes</p>
           </CardContent>
         </Card>
         
@@ -90,7 +99,7 @@ export function BuyerProfileCard() {
         animate={{ opacity: 1, y: 0 }}
       >
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
             <CardTitle className="text-base font-medium">Buyer Profile</CardTitle>
             <Button 
               variant="ghost" 
@@ -104,7 +113,7 @@ export function BuyerProfileCard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Tax Category Badge */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge 
                 variant="secondary" 
                 className="bg-primary/10 text-primary border-0 font-medium"
@@ -112,39 +121,47 @@ export function BuyerProfileCard() {
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 {taxCategoryLabel}
               </Badge>
+              {isOlehWithBenefit && (
+                <Badge className="bg-primary text-primary-foreground border-0 font-medium">
+                  Tax Benefit Active
+                </Badge>
+              )}
             </div>
 
-            {/* Profile Details */}
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                <span className="text-muted-foreground flex items-center gap-2">
+            {/* Profile Details - 2 Column Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-muted/40">
+                <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
                   {getResidencyIcon(buyerProfile.residency_status)}
-                  Residency
-                </span>
-                <span className="font-medium text-foreground">
+                  <span className="text-xs">Residency</span>
+                </div>
+                <p className="font-medium text-sm text-foreground">
                   {getResidencyLabel(buyerProfile.residency_status)}
-                </span>
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/40">
+                <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+                  <Home className="h-4 w-4" />
+                  <span className="text-xs">First Property</span>
+                </div>
+                <p className="font-medium text-sm text-foreground">
+                  {buyerProfile.is_first_property ? 'Yes' : 'No'}
+                </p>
               </div>
 
               {buyerProfile.residency_status === 'oleh_hadash' && buyerProfile.aliyah_year && (
-                <div className="flex items-center justify-between py-2 border-b border-border/50">
-                  <span className="text-muted-foreground">Aliyah Year</span>
-                  <span className="font-medium text-foreground">{buyerProfile.aliyah_year}</span>
+                <div className="p-3 rounded-lg bg-muted/40">
+                  <p className="text-xs text-muted-foreground mb-1">Aliyah Year</p>
+                  <p className="font-medium text-sm text-foreground">{buyerProfile.aliyah_year}</p>
                 </div>
               )}
 
-              <div className="flex items-center justify-between py-2 border-b border-border/50">
-                <span className="text-muted-foreground">First Property</span>
-                <span className="font-medium text-foreground">
-                  {buyerProfile.is_first_property ? 'Yes' : 'No'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-2">
-                <span className="text-muted-foreground">Purpose</span>
-                <span className="font-medium text-foreground">
+              <div className="p-3 rounded-lg bg-muted/40">
+                <p className="text-xs text-muted-foreground mb-1">Purpose</p>
+                <p className="font-medium text-sm text-foreground">
                   {getPurposeLabel(buyerProfile.purchase_purpose)}
-                </span>
+                </p>
               </div>
             </div>
 
