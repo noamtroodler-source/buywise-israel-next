@@ -66,8 +66,7 @@ const parseCommaNumber = (value: string): number | undefined => {
 export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
-  const [roomsOpen, setRoomsOpen] = useState(false);
-  const [bathsOpen, setBathsOpen] = useState(false);
+  const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -260,83 +259,122 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </PopoverContent>
         </Popover>
 
-        {/* Rooms Filter */}
-        <Popover open={roomsOpen} onOpenChange={setRoomsOpen}>
+        {/* Beds/Baths Combined Filter */}
+        <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
-              className={cn(filterButtonBase, roomsOpen && filterButtonActive)}
+              className={cn(filterButtonBase, bedsAndBathsOpen && filterButtonActive)}
             >
               <LayoutGrid className="h-4 w-4" />
-              <span>{filters.min_rooms ? `${filters.min_rooms}+` : 'Rooms'}</span>
-              {roomsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <span>
+                {filters.min_rooms || filters.min_bathrooms
+                  ? `${filters.min_rooms ? `${filters.min_rooms}+ rm` : ''}${filters.min_rooms && filters.min_bathrooms ? ', ' : ''}${filters.min_bathrooms ? `${filters.min_bathrooms}+ ba` : ''}`
+                  : 'Beds/Baths'}
+              </span>
+              {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[220px] p-0 bg-background border shadow-xl z-50" align="start">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">Rooms</h3>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[250px]">
-                    <p className="text-sm">In Israel, rooms = bedrooms + living areas. A "4-room" apt typically has 3 bedrooms.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-2">
-                {[3, 4, 5, 6, 7].map(num => (
-                  <button
-                    key={num}
-                    className={cn(
-                      "h-10 rounded-lg border text-sm font-medium transition-all",
-                      filters.min_rooms === num 
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('min_rooms', filters.min_rooms === num ? undefined : num)}
+          <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+            <div className="p-4 space-y-5">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Beds / Baths</h3>
+                {(filters.min_rooms || filters.min_bathrooms) && (
+                  <button 
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      updateFilter('min_rooms', undefined);
+                      updateFilter('min_bathrooms', undefined);
+                    }}
                   >
-                    {num}+
+                    Clear
                   </button>
-                ))}
+                )}
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
 
-        {/* Baths Filter */}
-        <Popover open={bathsOpen} onOpenChange={setBathsOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className={cn(filterButtonBase, bathsOpen && filterButtonActive)}
-            >
-              <Bath className="h-4 w-4" />
-              <span>{filters.min_bathrooms ? `${filters.min_bathrooms}+` : 'Baths'}</span>
-              {bathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[220px] p-0 bg-background border shadow-xl z-50" align="start">
-            <div className="p-4 space-y-4">
-              <h3 className="font-semibold text-lg">Bathrooms</h3>
-              
-              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3, 4].map(num => (
+              {/* Rooms Section */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm">Rooms</span>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[250px]">
+                      <p className="text-sm">In Israel, rooms = bedrooms + living areas. A "4-room" apt typically has 3 bedrooms.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <div className="flex gap-1.5">
                   <button
-                    key={num}
                     className={cn(
-                      "h-10 rounded-lg border text-sm font-medium transition-all",
-                      filters.min_bathrooms === num 
+                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                      !filters.min_rooms
                         ? "bg-primary text-primary-foreground border-primary" 
                         : "border-border hover:bg-muted"
                     )}
-                    onClick={() => updateFilter('min_bathrooms', filters.min_bathrooms === num ? undefined : num)}
+                    onClick={() => updateFilter('min_rooms', undefined)}
                   >
-                    {num}+
+                    Any
                   </button>
-                ))}
+                  {[2, 3, 4, 5, 6, 7].map(num => (
+                    <button
+                      key={num}
+                      className={cn(
+                        "h-9 w-10 rounded-lg border text-sm font-medium transition-all",
+                        filters.min_rooms === num 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "border-border hover:bg-muted"
+                      )}
+                      onClick={() => updateFilter('min_rooms', num)}
+                    >
+                      {num}{num === 7 ? '+' : '+'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bathrooms Section */}
+              <div className="space-y-2.5">
+                <span className="font-medium text-sm">Bathrooms</span>
+                <div className="flex gap-1.5">
+                  <button
+                    className={cn(
+                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                      !filters.min_bathrooms
+                        ? "bg-primary text-primary-foreground border-primary" 
+                        : "border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('min_bathrooms', undefined)}
+                  >
+                    Any
+                  </button>
+                  {[1, 1.5, 2, 3, 4].map(num => (
+                    <button
+                      key={num}
+                      className={cn(
+                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                        filters.min_bathrooms === num 
+                          ? "bg-primary text-primary-foreground border-primary" 
+                          : "border-border hover:bg-muted"
+                      )}
+                      onClick={() => updateFilter('min_bathrooms', num)}
+                    >
+                      {num}+
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apply Button */}
+              <div className="pt-2 border-t">
+                <Button 
+                  className="w-full"
+                  onClick={() => setBedsAndBathsOpen(false)}
+                >
+                  Apply
+                </Button>
               </div>
             </div>
           </PopoverContent>
