@@ -88,7 +88,7 @@ function getEncouragementMessage(percent: number): string {
 
 export function DocumentChecklistTool() {
   const { data: groupedDocuments, isLoading, error } = useDocumentsByStage();
-  const { buyerProfile } = useBuyerProfile();
+  const { data: buyerProfile } = useBuyerProfile();
   const [transactionType, setTransactionType] = useState<TransactionType>('buy');
   const [buyerTypeFilter, setBuyerTypeFilter] = useState<BuyerTypeFilter>('all');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -247,7 +247,7 @@ export function DocumentChecklistTool() {
         <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary" />Understanding the Process</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm text-muted-foreground space-y-2"><p>The {transactionType === 'buy' ? 'property purchase' : 'rental'} process in Israel typically takes {transactionType === 'buy' ? '2-4 months' : '1-3 weeks'} from start to finish.</p><p>Having documents ready beforehand speeds up the process significantly.</p><p>Critical documents (marked with a border) should be prioritized.</p></CardContent></CollapsibleContent></Card></Collapsible>
         <Collapsible><Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><CardTitle className="text-sm font-medium flex items-center justify-between"><span className="flex items-center gap-2"><FileText className="h-4 w-4 text-primary" />Key Hebrew Terms</span><ChevronDown className="h-4 w-4 text-muted-foreground" /></CardTitle></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 text-sm space-y-2"><div className="flex justify-between"><span className="text-muted-foreground">Nesach Tabu</span><span>Land Registry Extract</span></div><div className="flex justify-between"><span className="text-muted-foreground">Ishur Ikroni</span><span>Pre-Approval Letter</span></div><div className="flex justify-between"><span className="text-muted-foreground">Mas Rechisha</span><span>Purchase Tax</span></div><div className="flex justify-between"><span className="text-muted-foreground">Teudat Zehut</span><span>ID Card</span></div></CardContent></CollapsibleContent></Card></Collapsible>
       </div>
-      <InsightCard title="What This Means For You" insight={getInsightText()} />
+      <InsightCard insights={[getInsightText()]} />
       <div className="grid sm:grid-cols-3 gap-4">
         <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=true-cost" />
         <CTACard title="Mortgage Calculator" description="Plan your financing strategy" icon={<Landmark className="h-5 w-5" />} buttonText="Plan Financing" buttonLink="/tools?tool=mortgage" />
