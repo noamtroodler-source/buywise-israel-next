@@ -76,23 +76,23 @@ export function RegionExplorer() {
           className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               Explore by Region
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-base text-muted-foreground mt-1">
               Discover neighborhoods across Israel
             </p>
           </div>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" asChild>
             <Link to="/areas" className="gap-2">
               View All
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </motion.div>
 
         {/* Region Tabs */}
-        <div className="flex flex-wrap gap-1.5 mb-5">
+        <div className="flex flex-wrap gap-2 mb-5">
           {(Object.keys(regions) as Region[]).map((region) => {
             const { label, icon: Icon } = regions[region];
             const isActive = activeRegion === region;
@@ -100,13 +100,13 @@ export function RegionExplorer() {
               <button
                 key={region}
                 onClick={() => setActiveRegion(region)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 border border-border'
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
                 {label}
               </button>
             );
@@ -141,10 +141,10 @@ export function RegionExplorer() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-lg font-bold text-white">
                       {city.name}
                     </h3>
-                    <p className="text-xs text-white/80">
+                    <p className="text-sm text-white/80">
                       {city.propertyCount} properties
                     </p>
                   </div>

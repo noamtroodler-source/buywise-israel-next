@@ -17,16 +17,16 @@ export function PlatformPromise() {
           className="max-w-2xl mx-auto text-center space-y-4"
         >
           {/* Quote mark decoration */}
-          <div className="text-4xl text-primary/20 font-serif leading-none">"</div>
+          <div className="text-5xl text-primary/20 font-serif leading-none">"</div>
           
-          <p className="text-xl md:text-2xl font-medium text-foreground leading-relaxed -mt-6">
+          <p className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed -mt-6">
             BuyWise isn't a brokerage. It's a starting point — designed to help you 
             <span className="text-primary"> explore with clarity</span>, not pressure.
           </p>
           
           <Link 
             to="/principles" 
-            className="inline-flex items-center gap-2 text-primary hover:text-primary-hover transition-colors font-medium group"
+            className="inline-flex items-center gap-2 text-base text-primary hover:text-primary-hover transition-colors font-medium group"
           >
             Learn about our principles
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />

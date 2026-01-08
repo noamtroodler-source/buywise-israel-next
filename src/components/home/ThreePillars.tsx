@@ -42,7 +42,7 @@ export function ThreePillars() {
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground">
             A Smarter Way to Search
           </h2>
         </motion.div>
@@ -55,21 +55,21 @@ export function ThreePillars() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative group rounded-xl p-5 md:p-6 bg-gradient-to-br ${pillar.gradient} border border-border/50 hover:shadow-lg transition-all duration-300`}
+              className={`relative group rounded-xl p-6 md:p-8 bg-gradient-to-br ${pillar.gradient} border border-border/50 hover:shadow-lg transition-all duration-300`}
             >
               {/* Icon */}
-              <div className={`w-10 h-10 rounded-lg ${pillar.iconBg} flex items-center justify-center mb-4`}>
-                <pillar.icon className={`w-5 h-5 ${pillar.iconColor}`} />
+              <div className={`w-12 h-12 rounded-lg ${pillar.iconBg} flex items-center justify-center mb-4`}>
+                <pillar.icon className={`w-6 h-6 ${pillar.iconColor}`} />
               </div>
 
               {/* Content */}
-              <h3 className="text-xl font-bold text-foreground mb-1">
+              <h3 className="text-xl md:text-2xl font-bold text-foreground mb-1">
                 {pillar.title}
               </h3>
-              <p className="text-sm font-medium text-primary mb-2">
+              <p className="text-base font-medium text-primary mb-2">
                 {pillar.subtitle}
               </p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
                 {pillar.description}
               </p>
             </motion.div>

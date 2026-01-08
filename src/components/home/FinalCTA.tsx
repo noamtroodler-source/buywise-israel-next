@@ -18,12 +18,12 @@ export function FinalCTA() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-xl mx-auto text-center space-y-4"
+          className="max-w-2xl mx-auto text-center space-y-4"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
             Ready to start exploring?
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-base md:text-lg text-muted-foreground">
             Find properties, understand costs, and move forward with confidence.
           </p>
           
