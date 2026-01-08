@@ -1,149 +1,227 @@
 import { useParams, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
+import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
+
+// New redesigned components
 import { CityHeroSplit } from '@/components/city/CityHeroSplit';
-import { CityQuickStats } from '@/components/city/CityQuickStats';
-import { CityMarketStory } from '@/components/city/CityMarketStory';
-import { CityNextSteps } from '@/components/city/CityNextSteps';
+import { CityMarketSnapshot } from '@/components/city/CityMarketSnapshot';
+import { CityNumbersNarrative } from '@/components/city/CityNumbersNarrative';
+import { CityCharacter } from '@/components/city/CityCharacter';
+import { CityWorthWatching, MarketFactor } from '@/components/city/CityWorthWatching';
+import { CityCalculatorsCompact } from '@/components/city/CityCalculatorsCompact';
+import { CityListingsCTA2 } from '@/components/city/CityListingsCTA2';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
-import type { MarketFactor } from '@/components/city/WorthWatchingGrid';
 
-// Hero images for each city
-import telAvivHero from '@/assets/cities/hero/tel-aviv.jpg';
-import jerusalemHero from '@/assets/cities/hero/jerusalem.jpg';
-import haifaHero from '@/assets/cities/hero/haifa.jpg';
-import herzliyaHero from '@/assets/cities/hero/herzliya.jpg';
-import netanyaHero from '@/assets/cities/hero/netanya.jpg';
-import raananaHero from '@/assets/cities/hero/raanana.jpg';
-import modiinHero from '@/assets/cities/hero/modiin.jpg';
-import kfarSabaHero from '@/assets/cities/hero/kfar-saba.jpg';
-import petahTikvaHero from '@/assets/cities/hero/petah-tikva.jpg';
-import ashdodHero from '@/assets/cities/hero/ashdod.jpg';
-import beerShevaHero from '@/assets/cities/hero/beer-sheva.jpg';
-import eilatHero from '@/assets/cities/hero/eilat.jpg';
-import givatayimHero from '@/assets/cities/hero/givatayim.jpg';
-import ramatGanHero from '@/assets/cities/hero/ramat-gan.jpg';
-import holonHero from '@/assets/cities/hero/holon.jpg';
-import batYamHero from '@/assets/cities/hero/bat-yam.jpg';
-import ashkelonHero from '@/assets/cities/hero/ashkelon.jpg';
-import hodHasharonHero from '@/assets/cities/hero/hod-hasharon.jpg';
-import roshHaayinHero from '@/assets/cities/hero/rosh-haayin.jpg';
-import shohamHero from '@/assets/cities/hero/shoham.jpg';
-import givatShmuelHero from '@/assets/cities/hero/givat-shmuel.jpg';
-import haderaHero from '@/assets/cities/hero/hadera.jpg';
-import nahariyaHero from '@/assets/cities/hero/nahariya.jpg';
-import zichonYaakovHero from '@/assets/cities/hero/zichron-yaakov.jpg';
-import caesareaHero from '@/assets/cities/hero/caesarea.jpg';
-import kiryatTivonHero from '@/assets/cities/hero/kiryat-tivon.jpg';
-import mevaseretZionHero from '@/assets/cities/hero/mevaseret-zion.jpg';
-import beitShemeshHero from '@/assets/cities/hero/beit-shemesh.jpg';
-import maaleAdumimHero from '@/assets/cities/hero/maale-adumim.jpg';
-import efratHero from '@/assets/cities/hero/efrat.jpg';
-import givatZeevHero from '@/assets/cities/hero/givat-zeev.jpg';
-import gushEtzionHero from '@/assets/cities/hero/gush-etzion.jpg';
-import yokneamHero from '@/assets/cities/hero/yokneam.jpg';
-import pardesHannaHero from '@/assets/cities/hero/pardes-hanna.jpg';
-
-const cityHeroImages: Record<string, string> = {
-  'tel-aviv': telAvivHero,
-  'jerusalem': jerusalemHero,
-  'haifa': haifaHero,
-  'herzliya': herzliyaHero,
-  'netanya': netanyaHero,
-  'raanana': raananaHero,
-  'modiin': modiinHero,
-  'kfar-saba': kfarSabaHero,
-  'petah-tikva': petahTikvaHero,
-  'ashdod': ashdodHero,
-  'beer-sheva': beerShevaHero,
-  'eilat': eilatHero,
-  'givatayim': givatayimHero,
-  'ramat-gan': ramatGanHero,
-  'holon': holonHero,
-  'bat-yam': batYamHero,
-  'ashkelon': ashkelonHero,
-  'hod-hasharon': hodHasharonHero,
-  'rosh-haayin': roshHaayinHero,
-  'shoham': shohamHero,
-  'givat-shmuel': givatShmuelHero,
-  'hadera': haderaHero,
-  'nahariya': nahariyaHero,
-  'zichron-yaakov': zichonYaakovHero,
-  'caesarea': caesareaHero,
-  'kiryat-tivon': kiryatTivonHero,
-  'mevaseret-zion': mevaseretZionHero,
-  'beit-shemesh': beitShemeshHero,
-  'maale-adumim': maaleAdumimHero,
-  'efrat': efratHero,
-  'givat-zeev': givatZeevHero,
-  'gush-etzion': gushEtzionHero,
-  'yokneam': yokneamHero,
-  'pardes-hanna': pardesHannaHero,
-};
-
-// Market factors worth watching for each city
+// Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
   'tel-aviv': [
-    { title: 'Red Line Opening', description: 'Light rail completion in 2026 will transform property values near stations', icon: 'transit' },
-    { title: 'Tech Sector Growth', description: 'Continued high-tech expansion driving demand for premium housing', icon: 'development' },
+    {
+      title: 'Red Line Light Rail Opening',
+      description: 'First metro line will transform transit and boost areas near stations',
+      icon: 'transit',
+    },
+    {
+      title: 'Tama 38 Policy Changes',
+      description: 'Proposed limits on urban renewal could reduce new supply',
+      icon: 'policy',
+    },
+    {
+      title: 'Port Area Redevelopment',
+      description: 'New towers and public spaces coming to northern waterfront',
+      icon: 'development',
+    },
   ],
   'jerusalem': [
-    { title: 'Light Rail Expansion', description: 'New lines opening up previously underserved neighborhoods', icon: 'transit' },
-    { title: 'Urban Renewal', description: 'Major redevelopment projects transforming older areas', icon: 'development' },
-  ],
-  'herzliya': [
-    { title: 'Herzliya Marina', description: 'Luxury waterfront development attracting international buyers', icon: 'development' },
-    { title: 'Tech Park Growth', description: 'High-tech hub expansion driving premium residential demand', icon: 'infrastructure' },
+    {
+      title: 'Blue Line Extension',
+      description: 'Light rail expansion connecting more neighborhoods to city center',
+      icon: 'transit',
+    },
+    {
+      title: 'Talpiot Industrial Zone',
+      description: 'Major rezoning for mixed-use development underway',
+      icon: 'zoning',
+    },
+    {
+      title: 'American Embassy Impact',
+      description: 'Continued investment in Arnona and surrounding areas',
+      icon: 'infrastructure',
+    },
   ],
   'haifa': [
-    { title: 'Haifa Bay Development', description: 'Major waterfront regeneration project underway', icon: 'development' },
-    { title: 'Tech Sector Expansion', description: 'Growing tech presence creating new employment centers', icon: 'infrastructure' },
+    {
+      title: 'Tech Hub Expansion',
+      description: 'Growing high-tech presence driving demand for housing',
+      icon: 'development',
+    },
+    {
+      title: 'Haifa Bay Development',
+      description: 'Major waterfront transformation with new residential towers',
+      icon: 'infrastructure',
+    },
+    {
+      title: 'Carmelit Renovation',
+      description: 'Underground railway modernization improving connectivity',
+      icon: 'transit',
+    },
   ],
-  'netanya': [
-    { title: 'Beachfront Development', description: 'New luxury projects along the coastline', icon: 'development' },
-    { title: 'Train Frequency Increase', description: 'Improved rail connections to Tel Aviv', icon: 'transit' },
+  'herzliya': [
+    {
+      title: 'Herzliya Pituach Growth',
+      description: 'Continued high-tech expansion driving premium housing demand',
+      icon: 'development',
+    },
+    {
+      title: 'Marina Development',
+      description: 'New luxury residential and commercial projects on waterfront',
+      icon: 'infrastructure',
+    },
+    {
+      title: 'Highway 2 Improvements',
+      description: 'Better access to Tel Aviv increasing commuter appeal',
+      icon: 'transit',
+    },
   ],
   'raanana': [
-    { title: 'Commercial Hub Growth', description: 'New business centers attracting companies from Tel Aviv', icon: 'development' },
+    {
+      title: 'Tech Park Expansion',
+      description: 'New office towers bringing more high-income residents',
+      icon: 'development',
+    },
+    {
+      title: 'Rail Connection Plans',
+      description: 'Proposed light rail to Tel Aviv could boost property values',
+      icon: 'transit',
+    },
+    {
+      title: 'School District Excellence',
+      description: 'Top-rated schools continuing to attract families',
+      icon: 'policy',
+    },
   ],
-  'modiin': [
-    { title: 'Fast Train Line', description: 'Direct high-speed connection to Jerusalem and Tel Aviv', icon: 'transit' },
-    { title: 'City Expansion', description: 'New neighborhoods with modern infrastructure', icon: 'development' },
-  ],
+};
+
+// Hero Images (high resolution 1920x800)
+import telAvivHeroImg from '@/assets/cities/hero/tel-aviv.jpg';
+import herzliyaHeroImg from '@/assets/cities/hero/herzliya.jpg';
+import netanyaHeroImg from '@/assets/cities/hero/netanya.jpg';
+import haifaHeroImg from '@/assets/cities/hero/haifa.jpg';
+import jerusalemHeroImg from '@/assets/cities/hero/jerusalem.jpg';
+import raananaHeroImg from '@/assets/cities/hero/raanana.jpg';
+import kfarSabaHeroImg from '@/assets/cities/hero/kfar-saba.jpg';
+import modiinHeroImg from '@/assets/cities/hero/modiin.jpg';
+import ashdodHeroImg from '@/assets/cities/hero/ashdod.jpg';
+import ashkelonHeroImg from '@/assets/cities/hero/ashkelon.jpg';
+import beerShevaHeroImg from '@/assets/cities/hero/beer-sheva.jpg';
+import eilatHeroImg from '@/assets/cities/hero/eilat.jpg';
+import ramatGanHeroImg from '@/assets/cities/hero/ramat-gan.jpg';
+import givatayimHeroImg from '@/assets/cities/hero/givatayim.jpg';
+import petahTikvaHeroImg from '@/assets/cities/hero/petah-tikva.jpg';
+import holonHeroImg from '@/assets/cities/hero/holon.jpg';
+import batYamHeroImg from '@/assets/cities/hero/bat-yam.jpg';
+import roshHaayinHeroImg from '@/assets/cities/hero/rosh-haayin.jpg';
+import hodHasharonHeroImg from '@/assets/cities/hero/hod-hasharon.jpg';
+import shohamHeroImg from '@/assets/cities/hero/shoham.jpg';
+import givatShmuelHeroImg from '@/assets/cities/hero/givat-shmuel.jpg';
+import caesareaHeroImg from '@/assets/cities/hero/caesarea.jpg';
+import zichronYaakovHeroImg from '@/assets/cities/hero/zichron-yaakov.jpg';
+import pardesHannaHeroImg from '@/assets/cities/hero/pardes-hanna.jpg';
+import kiryatTivonHeroImg from '@/assets/cities/hero/kiryat-tivon.jpg';
+import yokneamHeroImg from '@/assets/cities/hero/yokneam.jpg';
+import haderaHeroImg from '@/assets/cities/hero/hadera.jpg';
+import nahariyaHeroImg from '@/assets/cities/hero/nahariya.jpg';
+import beitShemeshHeroImg from '@/assets/cities/hero/beit-shemesh.jpg';
+import mevasseretZionHeroImg from '@/assets/cities/hero/mevaseret-zion.jpg';
+import efratHeroImg from '@/assets/cities/hero/efrat.jpg';
+import gushEtzionHeroImg from '@/assets/cities/hero/gush-etzion.jpg';
+import maaleAdumimHeroImg from '@/assets/cities/hero/maale-adumim.jpg';
+import givatZeevHeroImg from '@/assets/cities/hero/givat-zeev.jpg';
+
+// Slug to hero image mapping
+const cityHeroImages: Record<string, string> = {
+  'tel-aviv': telAvivHeroImg,
+  'herzliya': herzliyaHeroImg,
+  'netanya': netanyaHeroImg,
+  'haifa': haifaHeroImg,
+  'jerusalem': jerusalemHeroImg,
+  'raanana': raananaHeroImg,
+  'kfar-saba': kfarSabaHeroImg,
+  'modiin': modiinHeroImg,
+  'ashdod': ashdodHeroImg,
+  'ashkelon': ashkelonHeroImg,
+  'beer-sheva': beerShevaHeroImg,
+  'eilat': eilatHeroImg,
+  'ramat-gan': ramatGanHeroImg,
+  'givatayim': givatayimHeroImg,
+  'petah-tikva': petahTikvaHeroImg,
+  'holon': holonHeroImg,
+  'bat-yam': batYamHeroImg,
+  'rosh-haayin': roshHaayinHeroImg,
+  'hod-hasharon': hodHasharonHeroImg,
+  'shoham': shohamHeroImg,
+  'givat-shmuel': givatShmuelHeroImg,
+  'caesarea': caesareaHeroImg,
+  'zichron-yaakov': zichronYaakovHeroImg,
+  'pardes-hanna': pardesHannaHeroImg,
+  'kiryat-tivon': kiryatTivonHeroImg,
+  'yokneam': yokneamHeroImg,
+  'hadera': haderaHeroImg,
+  'nahariya': nahariyaHeroImg,
+  'beit-shemesh': beitShemeshHeroImg,
+  'mevaseret-zion': mevasseretZionHeroImg,
+  'efrat': efratHeroImg,
+  'gush-etzion': gushEtzionHeroImg,
+  'maale-adumim': maaleAdumimHeroImg,
+  'givat-zeev': givatZeevHeroImg,
 };
 
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
-  
-  const { data: city, isLoading: cityLoading, error: cityError } = useCity(slug || '');
-  const { data: properties } = useProperties({ city: city?.name });
+  const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
+  const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
+  const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
-  const { data: historicalPrices } = useHistoricalPrices(slug || '', 15);
+  const { data: historicalPrices = [] } = useHistoricalPrices(slug || '', 10);
 
-  // Loading state
+  const getMarketTagline = () => {
+    if (!city) return null;
+    
+    const pricePerSqm = canonicalMetrics?.average_price_sqm ?? city.average_price_sqm ?? (marketData[0]?.average_price_sqm || 0);
+    if (!pricePerSqm) return city.description || null;
+    
+    const nationalAvg = 22800;
+    const percentAbove = ((pricePerSqm - nationalAvg) / nationalAvg) * 100;
+    
+    if (percentAbove > 50) return `Premium market — ${Math.round(percentAbove)}% above national average`;
+    if (percentAbove > 20) return `Strong market — ${Math.round(percentAbove)}% above national average`;
+    if (percentAbove > 0) return `Established market — ${Math.round(percentAbove)}% above average`;
+    if (percentAbove > -20) return `Great value — ${Math.abs(Math.round(percentAbove))}% below average`;
+    return `Affordable market — Below national average`;
+  };
+
   if (cityLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Layout>
     );
   }
 
-  // Error state
-  if (cityError || !city) {
+  if (error || !city) {
     return (
       <Layout>
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">City not found</h1>
           <p className="text-muted-foreground mb-6">
-            We couldn't find information for this city.
+            The city you're looking for doesn't exist.
           </p>
           <Button asChild>
             <Link to="/areas">Browse All Cities</Link>
@@ -153,62 +231,78 @@ export default function CityDetail() {
     );
   }
 
-  const heroImage = cityHeroImages[slug || ''] || telAvivHero;
-  const marketFactors = cityMarketFactors[slug || ''] || [];
-  
-  // Get price data from canonical metrics or city data
-  const pricePerSqm = canonicalMetrics?.average_price_sqm || city.average_price_sqm;
-  const medianPrice = canonicalMetrics?.median_apartment_price || city.median_apartment_price;
-  const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change;
-  const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent;
-  
-  // Rental range
-  const rentalRange = canonicalMetrics?.rental_3_room_min && canonicalMetrics?.rental_3_room_max
-    ? { min: canonicalMetrics.rental_3_room_min, max: canonicalMetrics.rental_3_room_max }
-    : city.rental_3_room_min && city.rental_3_room_max
-    ? { min: city.rental_3_room_min, max: city.rental_3_room_max }
-    : undefined;
+  const worthWatching = cityMarketFactors[slug || ''] || [];
+  const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
 
   return (
     <Layout>
-      {/* 1. Immersive Hero */}
-      <CityHeroSplit
-        cityName={city.name}
-        citySlug={slug}
-        heroImage={heroImage}
-      />
+      <div className="min-h-screen">
+        {/* 1. Cinematic Split Hero */}
+        <CityHeroSplit
+          cityName={city.name}
+          heroImage={heroImage}
+          population={city.population}
+          averagePrice={city.average_price}
+          highlights={city.highlights}
+          marketTagline={getMarketTagline()}
+        />
 
-      {/* 2. Quick Stats Bar */}
-      <CityQuickStats
-        pricePerSqm={pricePerSqm || undefined}
-        medianPrice={medianPrice || undefined}
-        rentalRange={rentalRange}
-        yoyChange={yoyChange || undefined}
-        highlights={city.highlights || undefined}
-        hasTrainStation={city.has_train_station || undefined}
-        angloPresence={city.anglo_presence || undefined}
-      />
+        {/* 2. Market Snapshot - 3 Key Stats */}
+        {!marketLoading && (
+          <CityMarketSnapshot
+            marketData={marketData}
+            canonicalMetrics={canonicalMetrics}
+            cityData={{
+              average_price_sqm: city.average_price_sqm,
+              median_apartment_price: city.median_apartment_price,
+              rental_3_room_min: city.rental_3_room_min,
+              rental_3_room_max: city.rental_3_room_max,
+              rental_4_room_min: city.rental_4_room_min,
+              rental_4_room_max: city.rental_4_room_max,
+            }}
+          />
+        )}
 
-      {/* 3. Featured Properties */}
-      <CityFeaturedProperties
-        cityName={city.name}
-        citySlug={slug || ''}
-      />
+        {/* 3. What The Numbers Say - Chart + Insights */}
+        {marketData.length > 0 && (
+          <CityNumbersNarrative
+            marketData={marketData}
+            cityName={city.name}
+            canonicalMetrics={canonicalMetrics}
+            historicalPrices={historicalPrices}
+            yoyChange={city.yoy_price_change}
+          />
+        )}
 
-      {/* 4. Market Story */}
-      <CityMarketStory
-        cityName={city.name}
-        historicalPrices={historicalPrices || []}
-        yoyChange={yoyChange}
-        grossYield={grossYield}
-        marketFactors={marketFactors}
-      />
+        {/* 4. Why People Choose This City */}
+        <CityCharacter
+          cityName={city.name}
+          highlights={city.highlights}
+          angloPresence={city.anglo_presence}
+          hasTrainStation={city.has_train_station}
+          commuteTimeTelAviv={city.commute_time_tel_aviv}
+        />
 
-      {/* 5. Next Steps */}
-      <CityNextSteps
-        cityName={city.name}
-        propertiesCount={properties?.length}
-      />
+        {/* 5. Worth Watching */}
+        {worthWatching.length > 0 && (
+          <CityWorthWatching factors={worthWatching} cityName={city.name} />
+        )}
+
+        {/* 6. Run the Numbers - Compact Calculators */}
+        <CityCalculatorsCompact 
+          cityName={city.name} 
+          averagePrice={city.average_price || undefined} 
+        />
+
+        {/* 7. Explore Listings CTA */}
+        <CityListingsCTA2 
+          cityName={city.name} 
+          propertiesCount={properties.length} 
+        />
+
+        {/* 8. Featured Properties */}
+        <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
+      </div>
     </Layout>
   );
 }
