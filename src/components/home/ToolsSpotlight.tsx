@@ -42,17 +42,17 @@ export function ToolsSpotlight() {
           className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               Plan Your Move
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-base text-muted-foreground mt-1">
               Free calculators built for Israel
             </p>
           </div>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" asChild>
             <Link to="/tools" className="gap-2">
               All Tools
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </motion.div>
@@ -69,15 +69,15 @@ export function ToolsSpotlight() {
             >
               <Link
                 to={tool.link}
-                className="group block h-full p-4 rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
+                className="group block h-full p-5 rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className={`w-9 h-9 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
-                  <tool.icon className="w-4 h-4" />
+                <div className={`w-11 h-11 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
+                  <tool.icon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                   {tool.title}
                 </h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {tool.description}
                 </p>
               </Link>

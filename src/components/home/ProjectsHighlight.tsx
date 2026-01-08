@@ -53,18 +53,18 @@ export function ProjectsHighlight() {
             viewport={{ once: true }}
           >
             <div className="flex items-center gap-2 text-primary mb-1">
-              <Building2 className="h-4 w-4" />
-              <span className="text-xs font-medium">New Construction</span>
+              <Building2 className="h-5 w-5" />
+              <span className="text-sm font-medium">New Construction</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               New Developments
             </h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-lg">
+            <p className="text-base text-muted-foreground mt-1 max-w-lg">
               Pre-construction projects with transparent pricing
             </p>
           </motion.div>
 
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" asChild>
             <Link to="/projects" className="gap-2">
               View All
               <ArrowRight className="h-3.5 w-3.5" />
