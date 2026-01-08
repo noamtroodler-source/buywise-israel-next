@@ -8,12 +8,12 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 
-// Redesigned components
+// New redesigned components
 import { CityHero } from '@/components/city/CityHero';
 import { CityQuickStats } from '@/components/city/CityQuickStats';
-import { CityStory } from '@/components/city/CityStory';
-import { MarketRealityTabs } from '@/components/city/MarketRealityTabs';
-import { CityMarketReality } from '@/components/city/CityMarketReality';
+import { CityIntroduction } from '@/components/city/CityIntroduction';
+import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
+import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
 import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
@@ -240,7 +240,6 @@ export default function CityDetail() {
 
   const worthWatching = cityMarketFactors[slug || ''] || [];
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
-  const pricePerSqm = canonicalMetrics?.average_price_sqm ?? city.average_price_sqm ?? null;
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
   const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
 
@@ -270,35 +269,26 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. City Story - Full Width Standalone */}
-        <section className="py-16 bg-muted/40">
-          <div className="container">
-            <CityStory
-              cityName={city.name}
-              description={city.description}
-              highlights={city.highlights}
-              angloPresence={city.anglo_presence}
-              hasTrainStation={city.has_train_station}
-              commuteTimeTelAviv={city.commute_time_tel_aviv}
-            />
-          </div>
-        </section>
+        {/* 3. City Introduction - Full Width */}
+        <CityIntroduction
+          cityName={city.name}
+          description={city.description}
+          highlights={city.highlights}
+          angloPresence={city.anglo_presence}
+          hasTrainStation={city.has_train_station}
+          commuteTimeTelAviv={city.commute_time_tel_aviv}
+        />
 
-        {/* 4. Market Reality - Full Width Standalone */}
-        <section className="py-16 bg-background">
-          <div className="container">
-            <MarketRealityTabs
-              marketData={marketData}
-              cityName={city.name}
-              citySlug={slug}
-              arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
-            />
-          </div>
-        </section>
+        {/* 4. Market Overview - 3 Card Grid */}
+        <MarketOverviewCards
+          marketData={marketData}
+          cityName={city.name}
+          arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+        />
 
-        {/* 4. Price Trend Chart - Full Width */}
+        {/* 5. Price Trends Chart */}
         {marketData.length > 0 && (
-          <CityMarketReality
+          <PriceTrendsSection
             marketData={marketData}
             cityName={city.name}
             canonicalMetrics={canonicalMetrics}
@@ -307,25 +297,25 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 5. Worth Watching */}
+        {/* 6. Worth Watching */}
         {worthWatching.length > 0 && (
           <CityWorthWatchingNew factors={worthWatching} cityName={city.name} />
         )}
 
-        {/* 6. Run the Numbers - Calculator Teaser */}
+        {/* 7. Run the Numbers - Calculator Teaser */}
         <CityCalculatorTeaser 
           cityName={city.name} 
           medianPrice={medianPrice}
           grossYield={grossYield}
         />
 
-        {/* 7. Explore Listings CTA */}
+        {/* 8. Explore Listings CTA */}
         <CityExploreListings 
           cityName={city.name} 
           propertiesCount={properties.length} 
         />
 
-        {/* 8. Featured Properties - At the bottom */}
+        {/* 9. Featured Properties - At the bottom */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
       </div>
     </Layout>
