@@ -66,13 +66,13 @@ export function HeroSplit() {
           >
             {/* Headline */}
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-              Find Your Place
-              <span className="block text-primary">in Israel</span>
+              Israel Real Estate,
+              <span className="block text-primary">Reinvented for You</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
-              An English-first platform for internationals buying or renting in Israel.
+              The first platform built for internationals—finally revealing true costs, market context, and local insights in every listing. No more guessing.
             </p>
 
             {/* Search Box */}
