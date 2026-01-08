@@ -85,7 +85,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
       </Button>
 
       {/* Main Image */}
-      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
+      <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-muted">
         <img
           src={images[selectedImageIndex]}
           alt={`${project.name} - Image ${selectedImageIndex + 1}`}
