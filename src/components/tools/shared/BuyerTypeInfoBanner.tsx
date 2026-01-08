@@ -1,10 +1,18 @@
-import { useState } from 'react';
+/**
+ * BuyerTypeInfoBanner - Legacy compatibility wrapper
+ * 
+ * This component now wraps the new BuyerProfileSelector for backwards compatibility.
+ * New implementations should use BuyerProfileSelector directly for full multi-dimensional support.
+ */
+
+import { useState, useMemo } from 'react';
 import { ChevronDown, RotateCcw, Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { BuyerProfileDimensions, deriveEffectiveBuyerType, mapLegacyBuyerCategory } from '@/lib/calculations/buyerProfile';
 
 export type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident' | 'upgrader' | 'investor' | 'foreign' | 'company';
 
@@ -37,6 +45,21 @@ interface BuyerTypeInfoBannerProps {
   className?: string;
   /** Use extended options including upgrader, investor, foreign, company */
   extended?: boolean;
+}
+
+/**
+ * Map a BuyerCategory to BuyerProfileDimensions
+ */
+export function categoryToDimensions(category: BuyerCategory): BuyerProfileDimensions {
+  return mapLegacyBuyerCategory(category) as BuyerProfileDimensions;
+}
+
+/**
+ * Map BuyerProfileDimensions to a BuyerCategory
+ */
+export function dimensionsToCategory(dimensions: BuyerProfileDimensions): BuyerCategory {
+  const derived = deriveEffectiveBuyerType(dimensions);
+  return derived.taxType as BuyerCategory;
 }
 
 export function BuyerTypeInfoBanner({
@@ -139,3 +162,6 @@ export function BuyerTypeInfoBanner({
     </div>
   );
 }
+
+// Re-export the new component for gradual migration
+export { BuyerProfileSelector, useBuyerProfileState } from './BuyerProfileSelector';

@@ -28,7 +28,7 @@ interface OnboardingTaxEstimateProps {
 export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
   const buyerCategory = useMemo(() => {
     // Build a partial profile for calculation
-    const tempProfile = {
+    const tempProfile: BuyerProfile = {
       residency_status: profile.residency_status as BuyerProfile['residency_status'],
       aliyah_year: profile.aliyah_year || null,
       is_first_property: profile.is_first_property ?? true,
@@ -37,6 +37,9 @@ export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
       id: '',
       user_id: '',
       onboarding_completed: false,
+      has_existing_property: false,
+      is_upgrading: profile.is_upgrading ?? false,
+      upgrade_sale_date: null,
       created_at: '',
       updated_at: '',
     };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -14,7 +14,7 @@ interface BuyerOnboardingProps {
   onClose?: () => void;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 const currentYear = new Date().getFullYear();
 const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
@@ -25,20 +25,33 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
     residency_status: undefined,
     aliyah_year: undefined,
     is_first_property: undefined,
+    is_upgrading: false,
     purchase_purpose: undefined,
     buyer_entity: 'individual',
   });
   
   const createProfile = useCreateBuyerProfile();
 
+  // Calculate which steps to show based on answers
+  const getNextStep = (currentStep: Step): Step => {
+    if (currentStep === 1) {
+      // Skip Aliyah year if not Oleh
+      return answers.residency_status === 'oleh_hadash' ? 2 : 3;
+    }
+    return (currentStep + 1) as Step;
+  };
+
+  const getPrevStep = (currentStep: Step): Step => {
+    if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
+      return 1;
+    }
+    return (currentStep - 1) as Step;
+  };
+
   const handleNext = () => {
-    if (step < 4) {
-      // Skip Aliyah year question if not Oleh
-      if (step === 1 && answers.residency_status !== 'oleh_hadash') {
-        setStep(3);
-      } else {
-        setStep((s) => (s + 1) as Step);
-      }
+    const nextStep = getNextStep(step);
+    if (nextStep <= 5) {
+      setStep(nextStep);
     } else {
       handleComplete();
     }
@@ -46,12 +59,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
 
   const handleBack = () => {
     if (step > 1) {
-      // Skip back over Aliyah year if not Oleh
-      if (step === 3 && answers.residency_status !== 'oleh_hadash') {
-        setStep(1);
-      } else {
-        setStep((s) => (s - 1) as Step);
-      }
+      setStep(getPrevStep(step));
     }
   };
 
@@ -70,33 +78,55 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
       case 2:
         return !!answers.aliyah_year;
       case 3:
-        return answers.is_first_property !== undefined;
+        return answers.is_first_property !== undefined || answers.is_upgrading;
       case 4:
         return !!answers.purchase_purpose;
+      case 5:
+        return !!answers.buyer_entity;
       default:
         return false;
     }
   };
 
+  // Calculate visible step number (skipping hidden steps)
   const getStepNumber = () => {
     if (answers.residency_status === 'oleh_hadash') {
       return step;
     }
-    // Non-Oleh flow: 1, 3, 4 (3 steps total)
+    // Non-Oleh flow skips step 2
     if (step === 1) return 1;
     if (step === 3) return 2;
     if (step === 4) return 3;
+    if (step === 5) return 4;
     return step;
   };
 
   const getTotalSteps = () => {
-    return answers.residency_status === 'oleh_hadash' ? 4 : 3;
+    return answers.residency_status === 'oleh_hadash' ? 5 : 4;
   };
 
   const handleClose = () => {
     if (onClose) {
       onClose();
     }
+  };
+
+  // Handle property ownership selection with upgrader support
+  const handlePropertyOwnership = (value: string) => {
+    if (value === 'first') {
+      setAnswers({ ...answers, is_first_property: true, is_upgrading: false });
+    } else if (value === 'upgrading') {
+      setAnswers({ ...answers, is_first_property: false, is_upgrading: true });
+    } else {
+      setAnswers({ ...answers, is_first_property: false, is_upgrading: false });
+    }
+  };
+
+  const getPropertyOwnershipValue = () => {
+    if (answers.is_upgrading) return 'upgrading';
+    if (answers.is_first_property) return 'first';
+    if (answers.is_first_property === false) return 'additional';
+    return undefined;
   };
 
   return (
@@ -111,6 +141,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
 
         <div className="mt-4">
           <AnimatePresence mode="wait">
+            {/* Step 1: Residency Status */}
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -159,6 +190,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
               </motion.div>
             )}
 
+            {/* Step 2: Aliyah Year (Oleh only) */}
             {step === 2 && (
               <motion.div
                 key="step2"
@@ -190,6 +222,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
               </motion.div>
             )}
 
+            {/* Step 3: Property Ownership (with Upgrader option) */}
             {step === 3 && (
               <motion.div
                 key="step3"
@@ -198,33 +231,50 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <h3 className="font-medium text-foreground">Is this your first property in Israel?</h3>
+                <h3 className="font-medium text-foreground">What's your property situation?</h3>
                 <p className="text-sm text-muted-foreground">
-                  First-time buyers receive significant tax benefits
+                  This affects your tax rates and mortgage eligibility
                 </p>
                 <RadioGroup
-                  value={answers.is_first_property === undefined ? undefined : answers.is_first_property ? 'yes' : 'no'}
-                  onValueChange={(v) => setAnswers({ ...answers, is_first_property: v === 'yes' })}
+                  value={getPropertyOwnershipValue()}
+                  onValueChange={handlePropertyOwnership}
                   className="space-y-3"
                 >
                   <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                    <RadioGroupItem value="yes" id="first-yes" />
-                    <Label htmlFor="first-yes" className="cursor-pointer flex-1">
-                      <p className="font-medium">Yes, this is my first property</p>
-                      <p className="text-sm text-muted-foreground">Or I'm selling my only property to upgrade</p>
+                    <RadioGroupItem value="first" id="first-yes" />
+                    <Label htmlFor="first-yes" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Home className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">First Property</p>
+                        <p className="text-sm text-muted-foreground">I don't own any property in Israel</p>
+                      </div>
                     </Label>
                   </div>
                   <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
-                    <RadioGroupItem value="no" id="first-no" />
-                    <Label htmlFor="first-no" className="cursor-pointer flex-1">
-                      <p className="font-medium">No, I already own property</p>
-                      <p className="text-sm text-muted-foreground">I'm buying an additional property</p>
+                    <RadioGroupItem value="upgrading" id="upgrading" />
+                    <Label htmlFor="upgrading" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <ArrowUpDown className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Upgrading</p>
+                        <p className="text-sm text-muted-foreground">I'm selling my current home within 18 months</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <RadioGroupItem value="additional" id="additional" />
+                    <Label htmlFor="additional" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Additional Property</p>
+                        <p className="text-sm text-muted-foreground">I already own property and will keep it</p>
+                      </div>
                     </Label>
                   </div>
                 </RadioGroup>
               </motion.div>
             )}
 
+            {/* Step 4: Purchase Purpose */}
             {step === 4 && (
               <motion.div
                 key="step4"
@@ -269,6 +319,48 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
                 </RadioGroup>
               </motion.div>
             )}
+
+            {/* Step 5: Buyer Entity */}
+            {step === 5 && (
+              <motion.div
+                key="step5"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <h3 className="font-medium text-foreground">How will you be purchasing?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Corporate purchases have different tax implications
+                </p>
+                <RadioGroup
+                  value={answers.buyer_entity}
+                  onValueChange={(v) => setAnswers({ ...answers, buyer_entity: v as 'individual' | 'company' })}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <RadioGroupItem value="individual" id="entity-individual" />
+                    <Label htmlFor="entity-individual" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <User className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">As an Individual</p>
+                        <p className="text-sm text-muted-foreground">Personal purchase in my own name</p>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <RadioGroupItem value="company" id="entity-company" />
+                    <Label htmlFor="entity-company" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Building2 className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Through a Company</p>
+                        <p className="text-sm text-muted-foreground">Purchase via a corporate entity</p>
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
@@ -287,7 +379,7 @@ export function BuyerOnboarding({ open, onComplete, onClose }: BuyerOnboardingPr
             disabled={!canProceed() || createProfile.isPending}
             className="gap-2"
           >
-            {step === 4 ? (
+            {step === 5 || (step === 4 && answers.residency_status !== 'oleh_hadash') ? (
               <>
                 {createProfile.isPending ? 'Saving...' : 'Complete'}
                 <Check className="h-4 w-4" />
