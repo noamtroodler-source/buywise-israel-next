@@ -152,3 +152,26 @@ export function useBlogPost(slug: string) {
     enabled: !!slug,
   });
 }
+
+export function useRelatedPosts(categoryId: string | undefined, currentPostId: string | undefined, limit = 3) {
+  return useQuery({
+    queryKey: ['relatedPosts', categoryId, currentPostId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          category:category_id (*)
+        `)
+        .eq('is_published', true)
+        .eq('category_id', categoryId!)
+        .neq('id', currentPostId!)
+        .order('published_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data as BlogPost[];
+    },
+    enabled: !!categoryId && !!currentPostId,
+  });
+}
