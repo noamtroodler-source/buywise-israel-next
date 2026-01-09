@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Home, Mail, MapPin } from 'lucide-react';
+import { Home, Mail, MapPin, MessageSquare } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -78,7 +78,11 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-foreground">Contact Us</h4>
             <div className="flex flex-col gap-3">
-              <Link to="/contact" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link 
+                to="/contact" 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors w-fit"
+              >
+                <MessageSquare className="h-4 w-4" />
                 Get in Touch
               </Link>
               <a href="mailto:hello@buywiseisrael.com" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
