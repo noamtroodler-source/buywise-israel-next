@@ -74,7 +74,7 @@ export function HeroSplit() {
 
             {/* Subheadline */}
             <p className="text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
-              Transparent costs, market insights, and local context—in English. Finally.
+              Built for internationals—transparent costs, market insights, and local context in English. Finally.
             </p>
 
             {/* Search Box */}
