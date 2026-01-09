@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,13 +12,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useProfile } from '@/hooks/useProfile';
+import { useFavorites } from '@/hooks/useFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin } = useUserRole();
+  const { data: profile } = useProfile();
+  const { favoriteIds } = useFavorites();
   const navigate = useNavigate();
+  
+  const favoriteCount = favoriteIds?.length || 0;
 
   const handleSignOut = async () => {
     await signOut();
@@ -162,6 +169,69 @@ export function Header() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-2">
+            {/* User Section (when logged in) */}
+            {user && (
+              <>
+                <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg mb-2">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">
+                      {profile?.full_name || 'Welcome back'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                </div>
+                
+                {/* Quick access links */}
+                <Link 
+                  to="/profile" 
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="h-4 w-4" />
+                  My Profile
+                </Link>
+                <Link 
+                  to="/favorites" 
+                  className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Saved Properties
+                  </span>
+                  {favoriteCount > 0 && (
+                    <Badge variant="secondary" className="rounded-full text-xs">
+                      {favoriteCount}
+                    </Badge>
+                  )}
+                </Link>
+                {isAgent && (
+                  <Link 
+                    to="/agent" 
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Agent Dashboard
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                )}
+                <hr className="my-2 border-border" />
+              </>
+            )}
+            
             <Link 
               to="/listings?status=for_sale" 
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
@@ -227,7 +297,15 @@ export function Header() {
                 </button>
               }
             />
-            {!user && (
+            {user ? (
+              <button 
+                onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md w-full text-left"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </button>
+            ) : (
               <>
                 <hr className="my-2 border-border" />
                 <Link 

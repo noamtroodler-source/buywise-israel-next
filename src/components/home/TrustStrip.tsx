@@ -1,30 +1,33 @@
 import { motion } from 'framer-motion';
 import { MapPin, Wrench, Shield, Users } from 'lucide-react';
-
-const stats = [
-  {
-    icon: MapPin,
-    value: '34',
-    label: 'Cities Covered',
-  },
-  {
-    icon: Wrench,
-    value: '9',
-    label: 'Free Tools',
-  },
-  {
-    icon: Shield,
-    value: '100%',
-    label: 'Independent',
-  },
-  {
-    icon: Users,
-    value: 'Built by',
-    label: 'Internationals',
-  },
-];
+import { usePlatformStats } from '@/hooks/usePlatformStats';
 
 export function TrustStrip() {
+  const { data: stats } = usePlatformStats();
+
+  const displayStats = [
+    {
+      icon: MapPin,
+      value: stats?.cityCount?.toString() ?? '34',
+      label: 'Cities Covered',
+    },
+    {
+      icon: Wrench,
+      value: stats?.toolCount?.toString() ?? '9',
+      label: 'Free Tools',
+    },
+    {
+      icon: Shield,
+      value: '100%',
+      label: 'Independent',
+    },
+    {
+      icon: Users,
+      value: 'Built by',
+      label: 'Internationals',
+    },
+  ];
+
   return (
     <section className="py-8 md:py-10 border-y border-border bg-muted/20">
       <div className="container">
@@ -34,7 +37,7 @@ export function TrustStrip() {
           viewport={{ once: true }}
           className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-4"
         >
-          {stats.map((stat, index) => (
+          {displayStats.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}

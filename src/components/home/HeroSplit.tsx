@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Building2, Home, Key } from 'lucide-react';
+import { Search, Building2, Home, Key } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CityCombobox } from '@/components/home/CityCombobox';
+import { usePlatformStats } from '@/hooks/usePlatformStats';
 import heroImage from '@/assets/cities/hero/tel-aviv.jpg';
 
 type SearchCategory = 'for_sale' | 'for_rent' | 'projects';
@@ -19,6 +20,7 @@ export function HeroSplit() {
   const navigate = useNavigate();
   const [selectedCity, setSelectedCity] = useState('');
   const [category, setCategory] = useState<SearchCategory>('for_sale');
+  const { data: stats } = usePlatformStats();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,15 +132,15 @@ export function HeroSplit() {
             >
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                34 Cities
+                {stats?.cityCount ?? 34} Cities
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                500+ Listings
+                {stats?.propertyCount ? `${stats.propertyCount}+` : '100+'} Listings
               </span>
               <span className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                9 Free Tools
+                {stats?.toolCount ?? 9} Free Tools
               </span>
             </motion.div>
           </motion.div>
