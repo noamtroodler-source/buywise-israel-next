@@ -1,8 +1,10 @@
+import { Link } from 'react-router-dom';
 import { Phone, MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface Agent {
+  id?: string;
   name: string;
   agency_name: string | null;
   phone?: string | null;
@@ -64,7 +66,16 @@ export function AgentContactSection({ agent, propertyTitle }: AgentContactSectio
               </div>
             )}
             <div>
-              <p className="font-semibold text-foreground">{agent.name}</p>
+              {agent.id ? (
+                <Link 
+                  to={`/agents/${agent.id}`} 
+                  className="font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                >
+                  {agent.name}
+                </Link>
+              ) : (
+                <p className="font-semibold text-foreground">{agent.name}</p>
+              )}
               {agent.agency_name && (
                 <p className="text-sm text-muted-foreground">{agent.agency_name}</p>
               )}
