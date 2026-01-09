@@ -5,10 +5,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   getBuyerTaxCategory, 
-  calculatePurchaseTax, 
   getBuyerCategoryLabel,
   BuyerProfile 
 } from '@/hooks/useBuyerProfile';
+import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+
+// Map legacy 4-category to BuyerType
+function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): BuyerType {
+  switch (category) {
+    case 'oleh': return 'oleh';
+    case 'non_resident': return 'foreign';
+    case 'additional': return 'investor';
+    default: return 'first_time';
+  }
+}
 
 // LTV limits by buyer type
 const LTV_LIMITS: Record<string, { max: number; description: string }> = {
@@ -47,11 +57,12 @@ export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
   }, [profile]);
 
   const ltvLimit = LTV_LIMITS[buyerCategory] || LTV_LIMITS['first_time'];
-  const purchaseTax = calculatePurchaseTax(SAMPLE_PRICE, buyerCategory);
+  const buyerType = mapCategoryToBuyerType(buyerCategory);
+  const purchaseTax = calculateTaxAmount(SAMPLE_PRICE, buyerType);
   const effectiveRate = (purchaseTax / SAMPLE_PRICE) * 100;
 
   // Calculate comparison with investor rate
-  const investorTax = calculatePurchaseTax(SAMPLE_PRICE, 'additional');
+  const investorTax = calculateTaxAmount(SAMPLE_PRICE, 'investor');
   const savings = investorTax - purchaseTax;
 
   const formatCurrency = (amount: number) => {

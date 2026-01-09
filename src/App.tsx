@@ -8,6 +8,7 @@ import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -60,11 +61,12 @@ const App = () => (
       <PreferencesProvider>
         <CompareProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
+            <ErrorBoundary>
+              <Toaster />
+              <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
@@ -146,8 +148,9 @@ const App = () => (
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+              </Routes>
+            </BrowserRouter>
+          </ErrorBoundary>
         </TooltipProvider>
       </CompareProvider>
     </PreferencesProvider>

@@ -149,8 +149,10 @@ export function getBuyerTaxType(profile: BuyerProfile | null): BuyerType {
   const derived = getEffectiveBuyerType(profile);
   return derived.taxType;
 }
-
-// Legacy function - kept for backwards compatibility
+/**
+ * @deprecated Use getBuyerTaxType() instead for proper 6-category support.
+ * This function maps to the legacy 4-category system for backwards compatibility.
+ */
 export function getBuyerTaxCategory(profile: BuyerProfile | null): 'first_time' | 'oleh' | 'additional' | 'non_resident' {
   if (!profile) return 'first_time';
   
@@ -173,36 +175,10 @@ export function getBuyerTaxCategory(profile: BuyerProfile | null): 'first_time' 
   }
 }
 
-// 2025 Tax brackets based on research
-export function calculatePurchaseTax(price: number, buyerCategory: 'first_time' | 'oleh' | 'additional' | 'non_resident'): number {
-  switch (buyerCategory) {
-    case 'first_time':
-      // First-time buyer brackets (2025)
-      if (price <= 1978745) return 0;
-      if (price <= 2347040) return (price - 1978745) * 0.035;
-      if (price <= 6055070) return (2347040 - 1978745) * 0.035 + (price - 2347040) * 0.05;
-      if (price <= 20183565) return (2347040 - 1978745) * 0.035 + (6055070 - 2347040) * 0.05 + (price - 6055070) * 0.08;
-      return (2347040 - 1978745) * 0.035 + (6055070 - 2347040) * 0.05 + (20183565 - 6055070) * 0.08 + (price - 20183565) * 0.10;
-    
-    case 'oleh':
-      // Oleh Hadash brackets (2025)
-      if (price <= 1978745) return 0;
-      if (price <= 6055070) return (price - 1978745) * 0.005;
-      if (price <= 20183565) return (6055070 - 1978745) * 0.005 + (price - 6055070) * 0.08;
-      return (6055070 - 1978745) * 0.005 + (20183565 - 6055070) * 0.08 + (price - 20183565) * 0.10;
-    
-    case 'additional':
-    case 'non_resident':
-      // Investment/Additional property brackets (2025)
-      if (price <= 6055070) return price * 0.08;
-      return 6055070 * 0.08 + (price - 6055070) * 0.10;
-    
-    default:
-      return 0;
-  }
-}
-
-// Get human-readable label for buyer category
+/**
+ * @deprecated Use getBuyerTypeLabel from purchaseTax.ts instead.
+ * Get human-readable label for legacy buyer category.
+ */
 export function getBuyerCategoryLabel(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): string {
   switch (category) {
     case 'first_time':
