@@ -119,16 +119,8 @@ export default function PropertyDetail() {
               isSaved={isSaved}
             />
 
-            {/* Description & Features */}
-            <PropertyDescription 
-              description={property.description}
-              features={property.features}
-              condition={property.condition}
-              yearBuilt={property.year_built}
-              isFurnished={property.is_furnished}
-              isAccessible={property.is_accessible}
-              parking={property.parking}
-            />
+            {/* Description */}
+            <PropertyDescription description={property.description} />
 
             {/* Value Snapshot */}
             <motion.div 
