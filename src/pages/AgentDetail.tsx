@@ -157,7 +157,7 @@ export default function AgentDetail() {
 
                 {/* Response Time */}
                 {agent.response_time_hours && (
-                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-center gap-2 text-sm text-primary">
                     <Clock className="h-4 w-4" />
                     <span>{getResponseTimeText(agent.response_time_hours)}</span>
                   </div>
