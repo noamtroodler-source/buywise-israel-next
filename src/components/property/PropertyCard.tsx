@@ -8,6 +8,7 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
+import { ShareButton } from './ShareButton';
 
 import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
@@ -17,12 +18,13 @@ interface PropertyCardProps {
   property: Property;
   className?: string;
   showCompareButton?: boolean;
+  showShareButton?: boolean;
   showMonthlyEstimate?: boolean;
   hideStatusBadge?: boolean;
   compact?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -204,7 +206,12 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
 
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
-                  {showCompareButton && (
+                  {showShareButton && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
+                    </div>
+                  )}
+                  {showCompareButton && !showShareButton && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <CompareButton propertyId={property.id} />
                     </div>
@@ -318,7 +325,12 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                   )}
                 </div>
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                  {showCompareButton && (
+                  {showShareButton && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <ShareButton propertyId={property.id} propertyTitle={property.title} />
+                    </div>
+                  )}
+                  {showCompareButton && !showShareButton && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <CompareButton propertyId={property.id} />
                     </div>
