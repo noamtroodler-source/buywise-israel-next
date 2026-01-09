@@ -140,12 +140,20 @@ export default function AgentDetail() {
                   )}
                 </div>
 
-                {agent.agency_name && (
+                {agent.agency ? (
+                  <Link 
+                    to={`/agencies/${agent.agency.slug}`}
+                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span>{agent.agency.name}</span>
+                  </Link>
+                ) : agent.agency_name ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Building2 className="h-4 w-4" />
                     <span>{agent.agency_name}</span>
                   </div>
-                )}
+                ) : null}
 
                 {/* License Number */}
                 {agent.license_number && (
