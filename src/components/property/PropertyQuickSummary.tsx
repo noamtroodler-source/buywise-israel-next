@@ -1,12 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa } from 'lucide-react';
+import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { estimateMonthlyPayment } from '@/lib/calculations/mortgage';
+import { estimateMonthlyPayment, BuyerCategory } from '@/lib/calculations/mortgage';
 import { useSavesCount } from '@/hooks/useSavesCount';
+import { useBuyerProfile, getBuyerTaxType } from '@/hooks/useBuyerProfile';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PropertyQuickSummaryProps {
   property: {
@@ -108,9 +110,16 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   const formatArea = useFormatArea();
   const formatPricePerArea = useFormatPricePerArea();
   const { data: savesCount = 0 } = useSavesCount(property.id);
+  const { user } = useAuth();
+  const { data: buyerProfile } = useBuyerProfile();
 
   const pricePerSqm = property.size_sqm ? property.price / property.size_sqm : null;
-  const estimatedMonthly = property.listing_status !== 'for_rent' ? estimateMonthlyPayment(property.price) : null;
+  
+  // Get buyer category for personalized estimate
+  const buyerCategory: BuyerCategory | undefined = buyerProfile ? getBuyerTaxType(buyerProfile) : undefined;
+  const mortgageEstimate = property.listing_status !== 'for_rent' 
+    ? estimateMonthlyPayment(property.price, buyerCategory) 
+    : null;
   
   // Calculate days on market
   const createdDate = new Date(property.created_at);
@@ -168,16 +177,21 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
             </div>
             
             {/* Estimated Monthly Payment */}
-            {estimatedMonthly && (
+            {mortgageEstimate && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dotted border-muted-foreground/50">
-                      Est. {formatPrice(estimatedMonthly, property.currency || 'ILS')}/mo
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
+                      {buyerCategory && <User className="h-3 w-3 text-primary" />}
+                      Est. {formatPrice(mortgageEstimate.payment, property.currency || 'ILS')}/mo
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Estimated based on typical Israeli mortgage terms: 70% financing, 4.5% interest, 25-year term. Your rate may vary.</p>
+                    {buyerCategory ? (
+                      <p>Based on your profile: {Math.round(mortgageEstimate.ltv * 100)}% financing, 4.5% interest, 25-year term.</p>
+                    ) : (
+                      <p>Estimated based on typical terms: 70% financing, 4.5% interest, 25-year term. {!user ? 'Sign in to personalize.' : 'Complete your buyer profile to personalize.'}</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
                 <span className="text-muted-foreground/60">•</span>
