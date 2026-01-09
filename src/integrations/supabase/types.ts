@@ -14,8 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          cities_covered: string[] | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          founded_year: number | null
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          slug: string
+          specializations: string[] | null
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          cities_covered?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          slug: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          cities_covered?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          slug?: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       agents: {
         Row: {
+          agency_id: string | null
           agency_name: string | null
           avatar_url: string | null
           bio: string | null
@@ -35,6 +87,7 @@ export type Database = {
           years_experience: number | null
         }
         Insert: {
+          agency_id?: string | null
           agency_name?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -54,6 +107,7 @@ export type Database = {
           years_experience?: number | null
         }
         Update: {
+          agency_id?: string | null
           agency_name?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -72,7 +126,15 @@ export type Database = {
           user_id?: string | null
           years_experience?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agents_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blog_categories: {
         Row: {

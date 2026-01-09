@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface AgentAgency {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Agent {
   id: string;
   user_id: string | null;
@@ -11,6 +17,8 @@ export interface Agent {
   bio: string | null;
   license_number: string | null;
   agency_name: string | null;
+  agency_id: string | null;
+  agency: AgentAgency | null;
   years_experience: number;
   languages: string[];
   specializations: string[] | null;
@@ -27,7 +35,7 @@ export function useAgent(agentId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agents')
-        .select('*')
+        .select('*, agency:agencies(id, name, slug)')
         .eq('id', agentId)
         .single();
       
