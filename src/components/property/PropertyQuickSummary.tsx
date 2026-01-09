@@ -365,24 +365,23 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           </div>
         )}
 
-        {/* Activity & Social Proof Bar */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="gap-1.5">
-            <Clock className="h-3 w-3" />
-            {daysOnMarket === 0 ? 'Listed today' : `${daysOnMarket} days on market`}
-          </Badge>
-          {property.views_count !== undefined && property.views_count > 0 && (
-            <Badge variant="outline" className="gap-1.5">
-              <Eye className="h-3 w-3" />
-              {property.views_count} views
-            </Badge>
-          )}
-          {savesCount > 0 && (
-            <Badge variant="outline" className="gap-1.5">
-              <Heart className="h-3 w-3" />
-              {savesCount} saves
-            </Badge>
-          )}
+        {/* Activity & Social Proof Bar - Always visible */}
+        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" />
+            <span className="font-semibold text-foreground">{daysOnMarket}</span>
+            <span>{daysOnMarket === 1 ? 'day' : 'days'} on market</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Eye className="h-4 w-4" />
+            <span className="font-semibold text-foreground">{property.views_count || 0}</span>
+            <span>views</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Heart className="h-4 w-4" />
+            <span className="font-semibold text-foreground">{savesCount}</span>
+            <span>saves</span>
+          </div>
         </div>
 
         {/* Mobile Action Buttons */}
