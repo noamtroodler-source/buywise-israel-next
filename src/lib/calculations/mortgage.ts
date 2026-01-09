@@ -443,3 +443,27 @@ export function getTrackTypeLabel(trackType: MortgageTrackType): string {
   
   return labels[trackType] || trackType;
 }
+
+/**
+ * Quick estimate of monthly mortgage payment for property listings
+ * Uses typical Israeli mortgage defaults (70% LTV, 4.5% rate, 25-year term)
+ */
+export function estimateMonthlyPayment(
+  propertyPrice: number,
+  downPaymentPercent: number = 30 // Israeli typical
+): number {
+  const loanAmount = propertyPrice * (1 - downPaymentPercent / 100);
+  const monthlyRate = 0.045 / 12; // 4.5% typical Israeli rate
+  const termMonths = 25 * 12;
+
+  if (monthlyRate === 0) {
+    return Math.round(loanAmount / termMonths);
+  }
+
+  const monthlyPayment =
+    loanAmount *
+    (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+    (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+  return Math.round(monthlyPayment);
+}
