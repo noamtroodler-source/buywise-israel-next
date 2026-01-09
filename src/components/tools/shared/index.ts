@@ -9,4 +9,5 @@ export { CTACard } from './CTACard';
 export { InfoBanner } from './InfoBanner';
 export { LTVIndicator } from './LTVIndicator';
 export { InsightCard } from './InsightCard';
+export { SaveResultsPrompt } from './SaveResultsPrompt';
 export { BuyerTypeInfoBanner, BuyerProfileSelector, useBuyerProfileState, categoryToDimensions, dimensionsToCategory, type BuyerCategory } from './BuyerTypeInfoBanner';
