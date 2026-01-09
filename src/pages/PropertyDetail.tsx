@@ -1,9 +1,11 @@
 import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
@@ -24,6 +26,14 @@ export default function PropertyDetail() {
   const { data: property, isLoading } = useProperty(id || '');
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { addToRecentlyViewed } = useRecentlyViewed();
+  
+  // Track this property view
+  useEffect(() => {
+    if (id && property) {
+      addToRecentlyViewed(id);
+    }
+  }, [id, property, addToRecentlyViewed]);
   
   // Get city slug for fetching city data
   const citySlug = property?.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
