@@ -46,8 +46,23 @@ import {
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
-import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
-import { useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { getBuyerCategoryLabel, getBuyerTaxCategory, useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+
+// Map BuyerCategory to BuyerType for tax calculations
+function mapCategoryToBuyerType(category: SharedBuyerCategory): BuyerType {
+  const mapping: Record<SharedBuyerCategory, BuyerType> = {
+    'first_time': 'first_time',
+    'oleh': 'oleh',
+    'upgrader': 'upgrader',
+    'investor': 'investor',
+    'foreign': 'foreign',
+    'company': 'company',
+    'additional': 'investor',
+    'non_resident': 'foreign',
+  };
+  return mapping[category] || 'first_time';
+}
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol } from '@/contexts/PreferencesContext';
@@ -302,7 +317,7 @@ export function RentVsBuyCalculator() {
       : loanAmount / numPayments;
     
     // One-time purchase costs
-    const purchaseTax = calcTax(price, buyerType);
+    const purchaseTax = calculateTaxAmount(price, mapCategoryToBuyerType(buyerType));
     const lawyerFee = Math.max(price * FEES.lawyerRate * (1 + FEES.vatRate), FEES.lawyerMinimum);
     const agentFee = price * FEES.agentRate * (1 + FEES.vatRate);
     const totalPurchaseCosts = purchaseTax + lawyerFee + agentFee;

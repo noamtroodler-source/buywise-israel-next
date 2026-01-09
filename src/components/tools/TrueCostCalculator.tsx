@@ -45,12 +45,26 @@ import {
   calculateMonthlyCosts,
   calculateNewConstructionLinkage 
 } from '@/lib/calculations/purchaseCosts';
-import { calculatePurchaseTax as calcTax, getBuyerCategoryLabel, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
-import { useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { getBuyerCategoryLabel, getBuyerTaxCategory, useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+import { BuyerCategory as BannerBuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { useCities } from '@/hooks/useCities';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+
+// Map BuyerCategory to BuyerType for tax calculations
+function mapCategoryToBuyerType(category: BannerBuyerCategory): BuyerType {
+  const mapping: Partial<Record<BannerBuyerCategory, BuyerType>> = {
+    'first_time': 'first_time',
+    'oleh': 'oleh',
+    'upgrader': 'upgrader',
+    'investor': 'investor',
+    'foreign': 'foreign',
+    'company': 'company',
+  };
+  return mapping[category] || 'first_time';
+}
 
 const STORAGE_KEY = 'buywise_true_cost_inputs';
 const STORAGE_EXPIRY_DAYS = 7;
@@ -256,11 +270,11 @@ export function TrueCostCalculator() {
     const months = parseInt(constructionMonths) || 24;
 
     // Purchase tax calculation
-    const purchaseTax = calcTax(price, buyerCategory);
+    const purchaseTax = calculateTaxAmount(price, mapCategoryToBuyerType(buyerCategory));
     const effectiveTaxRate = price > 0 ? (purchaseTax / price) * 100 : 0;
     
     // Investor tax for savings comparison
-    const investorTax = calcTax(price, 'additional');
+    const investorTax = calculateTaxAmount(price, 'investor');
     const taxSavings = investorTax - purchaseTax;
 
     // Calculate individual fees

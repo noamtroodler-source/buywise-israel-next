@@ -6,7 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useBuyerProfile, getBuyerTaxCategory, calculatePurchaseTax, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+
+// Map legacy 4-category to BuyerType
+function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): BuyerType {
+  switch (category) {
+    case 'oleh': return 'oleh';
+    case 'non_resident': return 'foreign';
+    case 'additional': return 'investor';
+    default: return 'first_time';
+  }
+}
 import { calculateTotalPurchaseCosts, calculateMonthlyCosts } from '@/lib/calculations/purchaseCosts';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,10 +40,11 @@ export function BuyerCostSummary() {
   }, [buyerProfile]);
 
   const ltvLimit = LTV_LIMITS[buyerCategory] || LTV_LIMITS['first_time'];
+  const buyerType = mapCategoryToBuyerType(buyerCategory);
 
   const purchaseTax = useMemo(() => {
-    return calculatePurchaseTax(propertyPrice, buyerCategory);
-  }, [propertyPrice, buyerCategory]);
+    return calculateTaxAmount(propertyPrice, buyerType);
+  }, [propertyPrice, buyerType]);
 
   const purchaseCosts = useMemo(() => {
     return calculateTotalPurchaseCosts(propertyPrice, {
