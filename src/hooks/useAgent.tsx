@@ -14,6 +14,8 @@ export interface Agent {
   years_experience: number;
   languages: string[];
   specializations: string[] | null;
+  neighborhoods_covered: string[] | null;
+  response_time_hours: number | null;
   is_verified: boolean;
   created_at: string;
   updated_at: string;
