@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 
 interface Agent {
+  id?: string;
   name: string;
   agency_name: string | null;
   phone?: string | null;
@@ -99,7 +101,16 @@ export function StickyContactCard({
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="font-semibold text-foreground truncate">{agent.name}</p>
+                {agent.id ? (
+                  <Link 
+                    to={`/agents/${agent.id}`} 
+                    className="font-semibold text-foreground truncate block hover:text-primary hover:underline transition-colors"
+                  >
+                    {agent.name}
+                  </Link>
+                ) : (
+                  <p className="font-semibold text-foreground truncate">{agent.name}</p>
+                )}
                 {agent.agency_name && (
                   <p className="text-sm text-muted-foreground truncate">{agent.agency_name}</p>
                 )}

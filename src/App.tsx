@@ -48,6 +48,7 @@ import Glossary from "./pages/Glossary";
 import Contact from "./pages/Contact";
 import Principles from "./pages/Principles";
 import NotFound from "./pages/NotFound";
+import AgentDetail from "./pages/AgentDetail";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/developers/:slug" element={<DeveloperDetail />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:slug" element={<ProjectDetail />} />
+            <Route path="/agents/:id" element={<AgentDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<Principles />} />
             
