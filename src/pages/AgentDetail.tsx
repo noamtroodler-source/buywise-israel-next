@@ -269,22 +269,24 @@ export default function AgentDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="active" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="active" className="gap-2">
-              <MapPin className="h-4 w-4" />
+          <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
+            <TabsTrigger value="active" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Active Listings
               {stats?.activeListingsCount ? (
-                <Badge variant="secondary" className="ml-1">{stats.activeListingsCount}</Badge>
+                <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                  {stats.activeListingsCount}
+                </span>
               ) : null}
             </TabsTrigger>
-            <TabsTrigger value="past" className="gap-2">
+            <TabsTrigger value="past" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Past Listings
               {stats?.pastListingsCount ? (
-                <Badge variant="secondary" className="ml-1">{stats.pastListingsCount}</Badge>
+                <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                  {stats.pastListingsCount}
+                </span>
               ) : null}
             </TabsTrigger>
-            <TabsTrigger value="articles" className="gap-2">
-              <FileText className="h-4 w-4" />
+            <TabsTrigger value="articles" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Articles
             </TabsTrigger>
           </TabsList>
