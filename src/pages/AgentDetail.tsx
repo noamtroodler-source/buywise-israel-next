@@ -16,7 +16,9 @@ import {
   Building2, 
   BadgeCheck,
   MapPin,
-  FileText
+  FileText,
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -31,6 +33,14 @@ export default function AgentDetail() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getResponseTimeText = (hours: number | null) => {
+    if (!hours) return null;
+    if (hours <= 1) return "Typically responds within 1 hour";
+    if (hours <= 24) return `Typically responds within ${hours} hours`;
+    const days = Math.round(hours / 24);
+    return `Typically responds within ${days} day${days > 1 ? 's' : ''}`;
   };
 
   const handleWhatsApp = () => {
@@ -137,6 +147,22 @@ export default function AgentDetail() {
                   </div>
                 )}
 
+                {/* License Number */}
+                {agent.license_number && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>License: #{agent.license_number}</span>
+                  </div>
+                )}
+
+                {/* Response Time */}
+                {agent.response_time_hours && (
+                  <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                    <Clock className="h-4 w-4" />
+                    <span>{getResponseTimeText(agent.response_time_hours)}</span>
+                  </div>
+                )}
+
                 {/* Languages */}
                 {agent.languages && agent.languages.length > 0 && (
                   <div className="flex flex-wrap gap-2">
@@ -188,6 +214,23 @@ export default function AgentDetail() {
             {/* Bio */}
             {agent.bio && (
               <p className="mt-6 text-muted-foreground leading-relaxed">{agent.bio}</p>
+            )}
+
+            {/* Neighborhoods Covered */}
+            {agent.neighborhoods_covered && agent.neighborhoods_covered.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
+                  <MapPin className="h-4 w-4" />
+                  Areas Covered
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {agent.neighborhoods_covered.map((area) => (
+                    <Badge key={area} variant="outline" className="bg-muted/50">
+                      {area}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

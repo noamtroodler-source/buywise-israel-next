@@ -26,7 +26,9 @@ export type Database = {
           languages: string[] | null
           license_number: string | null
           name: string
+          neighborhoods_covered: string[] | null
           phone: string | null
+          response_time_hours: number | null
           specializations: string[] | null
           updated_at: string
           user_id: string | null
@@ -43,7 +45,9 @@ export type Database = {
           languages?: string[] | null
           license_number?: string | null
           name: string
+          neighborhoods_covered?: string[] | null
           phone?: string | null
+          response_time_hours?: number | null
           specializations?: string[] | null
           updated_at?: string
           user_id?: string | null
@@ -60,7 +64,9 @@ export type Database = {
           languages?: string[] | null
           license_number?: string | null
           name?: string
+          neighborhoods_covered?: string[] | null
           phone?: string | null
+          response_time_hours?: number | null
           specializations?: string[] | null
           updated_at?: string
           user_id?: string | null
