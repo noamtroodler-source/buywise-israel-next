@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, X, Mail, MessageSquare, Phone, Zap, Clock, Calendar, Sparkles, Check } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Phone, Zap, Clock, Calendar, Sparkles, Check, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 interface CreateAlertDialogProps {
   open: boolean;
@@ -53,6 +54,50 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
   const [notifySms, setNotifySms] = useState(false);
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Dynamic match count query
+  const { data: matchCount, isLoading: isCountLoading } = useQuery({
+    queryKey: ['alertMatchCount', filters, listingType],
+    queryFn: async () => {
+      // Only query for for_sale or for_rent, not projects
+      if (listingType === 'projects') {
+        const { count, error } = await supabase
+          .from('projects')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_published', true);
+        if (error) throw error;
+        return count ?? 0;
+      }
+
+      let query = supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .eq('listing_status', listingType as 'for_sale' | 'for_rent');
+
+      if (filters.city) {
+        query = query.eq('city', filters.city);
+      }
+      if (filters.property_type) {
+        query = query.eq('property_type', filters.property_type as any);
+      }
+      if (filters.min_price) {
+        query = query.gte('price', filters.min_price);
+      }
+      if (filters.max_price) {
+        query = query.lte('price', filters.max_price);
+      }
+      if (filters.min_rooms) {
+        query = query.gte('bedrooms', filters.min_rooms);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: open,
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
   const activeFilters = Object.entries(filters).filter(([key, value]) => {
     if (key === 'listing_status' || key === 'sort_by') return false;
@@ -154,7 +199,14 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
             )}
             <div className="flex items-center gap-2 text-sm text-primary">
               <Sparkles className="h-4 w-4" />
-              <span>36 listings currently match your criteria</span>
+              {isCountLoading ? (
+                <span className="flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Counting matches...
+                </span>
+              ) : (
+                <span>{matchCount} listing{matchCount !== 1 ? 's' : ''} currently match{matchCount === 1 ? 'es' : ''} your criteria</span>
+              )}
             </div>
           </div>
 

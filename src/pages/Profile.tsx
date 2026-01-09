@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, MessageCircle, Heart, Bell, Calculator, ArrowRight, Edit3, LogOut, Shield, Briefcase } from 'lucide-react';
+import { User, Mail, Calendar, MessageCircle, Heart, Bell, Calculator, ArrowRight, Edit3, LogOut, Shield, Briefcase, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { ProfileStatsGrid } from '@/components/profile/ProfileStatsGrid';
 import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
 import { ProfileSearchAlerts } from '@/components/profile/ProfileSearchAlerts';
 import { SavedCalculatorResults } from '@/components/profile/SavedCalculatorResults';
+import { RecentlyViewedSection } from '@/components/profile/RecentlyViewedSection';
 
 interface QuickActionItemProps {
   icon: React.ReactNode;
@@ -248,6 +249,9 @@ export default function Profile() {
               <div id="saved-calculator-results">
                 <SavedCalculatorResults />
               </div>
+
+              {/* Recently Viewed */}
+              <RecentlyViewedSection />
             </div>
 
             {/* Right Column - Buyer Profile & Quick Actions */}
@@ -284,6 +288,12 @@ export default function Profile() {
                       const element = document.getElementById('saved-calculator-results');
                       element?.scrollIntoView({ behavior: 'smooth' });
                     }}
+                  />
+                  <QuickActionItem
+                    icon={<Clock className="h-4 w-4" />}
+                    title="Recently Viewed"
+                    description="Continue where you left off"
+                    onClick={() => navigate('/listings?status=for_sale')}
                   />
                 </CardContent>
               </Card>
