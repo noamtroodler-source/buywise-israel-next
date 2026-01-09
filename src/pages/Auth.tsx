@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
+import { PostSignupSuggestions } from '@/components/onboarding/PostSignupSuggestions';
 import { PasswordStrengthInput } from '@/components/auth/PasswordStrengthInput';
 import { toast } from 'sonner';
 import { Shield, Loader2, Mail } from 'lucide-react';
@@ -32,6 +33,7 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
 
   const form = useForm<AuthFormData>({
@@ -43,15 +45,21 @@ export default function Auth() {
     if (user && !loading && !profileLoading) {
       if (justSignedUp && !buyerProfile) {
         setShowOnboarding(true);
-      } else if (!showOnboarding) {
+      } else if (!showOnboarding && !showPostSignupSuggestions) {
         navigate('/');
       }
     }
-  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, navigate]);
+  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     toast.success('Welcome to BuyWise Israel!');
+    // Show post-signup suggestions after onboarding
+    setShowPostSignupSuggestions(true);
+  };
+
+  const handlePostSignupClose = () => {
+    setShowPostSignupSuggestions(false);
     navigate('/');
   };
 
@@ -210,6 +218,11 @@ export default function Auth() {
       <BuyerOnboarding 
         open={showOnboarding} 
         onComplete={handleOnboardingComplete} 
+      />
+      
+      <PostSignupSuggestions
+        open={showPostSignupSuggestions}
+        onClose={handlePostSignupClose}
       />
     </Layout>
   );

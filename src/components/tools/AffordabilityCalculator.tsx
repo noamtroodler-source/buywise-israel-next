@@ -48,6 +48,7 @@ import { ToolIntro, TOOL_INTROS } from './shared/ToolIntro';
 import { BuyerTypeInfoBanner, BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { InsightCard } from './shared/InsightCard';
 import { ToolFeedback } from './shared/ToolFeedback';
+import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
@@ -135,6 +136,15 @@ function AffordabilityCalculatorContent() {
   const [educationOpen, setEducationOpen] = useState(false);
   const [stressTestOpen, setStressTestOpen] = useState(false);
   const [selectedBuyerType, setSelectedBuyerType] = useState<BuyerCategory>('first_time');
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Track user interaction
+  useEffect(() => {
+    if (monthlyIncome !== DEFAULTS.monthlyIncome || downPayment !== DEFAULTS.downPayment) {
+      setHasInteracted(true);
+    }
+  }, [monthlyIncome, downPayment]);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -227,6 +237,14 @@ function AffordabilityCalculatorContent() {
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType]);
 
+  // Show save prompt after user has interacted and changed values
+  useEffect(() => {
+    if (hasInteracted && !user && calculations.maxPropertyPrice > 0) {
+      const timer = setTimeout(() => setShowSavePrompt(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasInteracted, user, calculations.maxPropertyPrice]);
+
   const handleReset = () => {
     setMonthlyIncome(DEFAULTS.monthlyIncome); setSpouseIncome(DEFAULTS.spouseIncome);
     setMonthlyDebts(DEFAULTS.monthlyDebts); setDownPayment(DEFAULTS.downPayment);
@@ -269,110 +287,126 @@ function AffordabilityCalculatorContent() {
   );
 
   return (
-    <ToolLayout
-      title="Affordability Calculator"
-      subtitle="See how much you can actually borrow — using real Israeli bank limits"
-      icon={<Calculator className="h-6 w-6" />}
-      headerActions={headerActions}
-      
-      infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
-      leftColumn={
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" />Income Details</CardTitle></CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">Employment Type<InfoTooltip content="Self-employed income is discounted 30% by Israeli banks." /></Label>
-                <Select value={employmentType} onValueChange={setEmploymentType}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent>{EMPLOYMENT_OPTIONS.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}</SelectContent></Select>
-                {employmentType !== 'employed' && <p className="text-xs text-muted-foreground">Banks count {Math.round(calculations.employmentMultiplier * 100)}% of your income</p>}
+    <>
+      <ToolLayout
+        title="Affordability Calculator"
+        subtitle="See how much you can actually borrow — using real Israeli bank limits"
+        icon={<Calculator className="h-6 w-6" />}
+        headerActions={headerActions}
+        
+        infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
+        leftColumn={
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" />Income Details</CardTitle></CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Employment Type<InfoTooltip content="Self-employed income is discounted 30% by Israeli banks." /></Label>
+                  <Select value={employmentType} onValueChange={setEmploymentType}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent>{EMPLOYMENT_OPTIONS.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}</SelectContent></Select>
+                  {employmentType !== 'employed' && <p className="text-xs text-muted-foreground">Banks count {Math.round(calculations.employmentMultiplier * 100)}% of your income</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Your Monthly Net Income<InfoTooltip content="Your take-home pay after taxes." /></Label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Spouse/Partner Income<InfoTooltip content="Combined household income increases buying power." /></Label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between"><Label className="text-sm font-medium flex items-center">Foreign Income<InfoTooltip content="Income earned outside Israel is discounted 30-40% by banks." /></Label><Switch checked={hasForeignIncome} onCheckedChange={setHasForeignIncome} /></div>
+                  {hasForeignIncome && <div className="space-y-2"><Label className="text-xs text-muted-foreground">Percent of income from abroad</Label><Slider value={[foreignIncomePercent]} onValueChange={([v]) => setForeignIncomePercent(v)} min={0} max={100} step={5} /><p className="text-xs text-muted-foreground text-right">{foreignIncomePercent}%</p></div>}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Debts & Savings</CardTitle></CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Monthly Debt Payments<InfoTooltip content="Include car loans, credit cards, other loans. Banks count these against your borrowing capacity." /></Label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyDebts)} onChange={(e) => setMonthlyDebts(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Down Payment Available<InfoTooltip content="Cash you have for down payment. First-time buyers need 25% minimum." /></Label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(downPayment)} onChange={(e) => setDownPayment(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Percent className="h-4 w-4 text-primary" />Loan Assumptions</CardTitle></CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Interest Rate<InfoTooltip content="Average blended rate across mortgage tracks. Current market is 4.5-6%." /></Label>
+                  <Slider value={[interestRate]} onValueChange={([v]) => setInterestRate(v)} min={3} max={8} step={0.1} />
+                  <p className="text-sm text-muted-foreground text-right">{interestRate.toFixed(1)}%</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center">Loan Term<InfoTooltip content="Maximum 30 years in Israel. Longer terms mean lower payments but more interest." /></Label>
+                  <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(parseInt(v))}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent>{LOAN_TERMS.map((term) => (<SelectItem key={term} value={term.toString()}>{term} years</SelectItem>))}</SelectContent></Select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        }
+        rightColumn={
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader className="pb-2"><CardTitle className="text-lg">Your Maximum Budget</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center py-4">
+                <motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary">{formatPrice(calculations.maxPropertyPrice)}</motion.p>
+                <p className="text-sm text-muted-foreground mt-2">Maximum property price you can afford</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Maximum Loan</p><p className="text-lg font-semibold">{formatPrice(calculations.maxLoanAmount)}</p></div>
+                <div className="p-3 rounded-lg bg-muted/60"><p className="text-xs text-muted-foreground">Monthly Payment</p><p className="text-lg font-semibold">{formatPrice(calculations.actualMonthlyPayment)}</p></div>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">Your Monthly Net Income<InfoTooltip content="Your take-home pay after taxes." /></Label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyIncome)} onChange={(e) => setMonthlyIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+                <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Affordability Score</span><span className={cn("font-medium", calculations.affordabilityScore >= 80 ? "text-green-600" : calculations.affordabilityScore >= 60 ? "text-yellow-600" : "text-red-600")}>{calculations.affordabilityScore >= 80 ? 'Comfortable' : calculations.affordabilityScore >= 60 ? 'Stretched' : 'At Limit'}</span></div>
+                <Progress value={calculations.affordabilityScore} className={cn("h-2", calculations.affordabilityScore >= 80 ? "[&>div]:bg-green-500" : calculations.affordabilityScore >= 60 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-red-500")} />
               </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center"><Users className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />Spouse/Partner Income<InfoTooltip content="Include partner's income if applying jointly." /></Label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(spouseIncome)} onChange={(e) => setSpouseIncome(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Income Breakdown</p>
+                <div className="h-3 rounded-full overflow-hidden flex">
+                  <div style={{ width: `${calculations.mortgagePercent}%` }} className="bg-primary" />
+                  <div style={{ width: `${calculations.debtsPercent}%` }} className="bg-destructive/60" />
+                  <div style={{ width: `${calculations.remainingPercent}%` }} className="bg-muted" />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Mortgage {calculations.mortgagePercent.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-destructive/60" />Debts {calculations.debtsPercent.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted border border-border" />Free {calculations.remainingPercent.toFixed(0)}%</span>
+                </div>
               </div>
-              <div className="pt-2 border-t">
-                <div className="flex items-center justify-between"><Label className="text-sm font-medium flex items-center">Include Foreign Income<InfoTooltip content="Foreign income is discounted 30-40% by banks." /></Label><Switch checked={hasForeignIncome} onCheckedChange={setHasForeignIncome} /></div>
-                {hasForeignIncome && (<div className="mt-4 space-y-2"><Label className="text-sm text-muted-foreground">What % is from abroad?</Label><div className="flex items-center gap-4"><Slider value={[foreignIncomePercent]} onValueChange={([val]) => setForeignIncomePercent(val)} min={0} max={100} step={5} className="flex-1" /><span className="text-sm font-medium w-12 text-right">{foreignIncomePercent}%</span></div></div>)}
-              </div>
+              {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20"><AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" /><p className="text-xs text-yellow-700">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"><BadgeCheck className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" /><p className="text-xs text-blue-700">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Wallet className="h-4 w-4 text-primary" />Financial Position</CardTitle></CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">Existing Monthly Debts<InfoTooltip content="Car loans, credit cards, etc." /></Label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(monthlyDebts)} onChange={(e) => setMonthlyDebts(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center"><PiggyBank className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />Down Payment Saved<InfoTooltip content="First-time buyers need 25% down. Investors need 50%." /></Label>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span><Input type="text" value={formatNumber(downPayment)} onChange={(e) => setDownPayment(parseFormattedNumber(e.target.value))} className="h-11 pl-8" /></div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Percent className="h-4 w-4 text-primary" />Loan Assumptions</CardTitle></CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center">Interest Rate<InfoTooltip content="Current rates range 4.5-6.5%." /></Label>
-                <div className="relative"><Input type="number" value={interestRate} onChange={(e) => setInterestRate(parseFloat(e.target.value) || 0)} step={0.1} min={1} max={15} className="h-11 pr-8" /><span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span></div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center"><Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />Loan Term<InfoTooltip content="Typically 20-30 years in Israel." /></Label>
-                <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(parseInt(v))}><SelectTrigger className="h-11"><SelectValue /></SelectTrigger><SelectContent>{LOAN_TERMS.map((term) => (<SelectItem key={term} value={term.toString()}>{term} years</SelectItem>))}</SelectContent></Select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      }
-      rightColumn={
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-1">Max Property Price</p>
-            <motion.p key={calculations.maxPropertyPrice} initial={{ opacity: 0.5, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.2 }} className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{formatPrice(calculations.maxPropertyPrice)}</motion.p>
-            <p className="text-sm text-muted-foreground mt-2">based on Bank of Israel {calculations.limitingFactor} limits</p>
-            {calculations.stressedReduction > 0 && (<div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"><AlertTriangle className="h-3 w-3" />If rates rise 2%: {formatPrice(calculations.stressedMaxProperty)}</div>)}
+        }
+        bottomSection={
+          <div className="space-y-6">
+            <Collapsible open={educationOpen} onOpenChange={setEducationOpen}>
+              <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">How Israeli Banks Calculate Your Budget</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", educationOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 grid md:grid-cols-2 gap-4"><div className="space-y-2"><h4 className="font-medium text-sm">PTI Ratio</h4><p className="text-sm text-muted-foreground">Bank of Israel limits debt payments to 40% of income for first homes, 35% for additional properties.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">LTV Limits</h4><p className="text-sm text-muted-foreground">First-time buyers can borrow up to 75% (25% down). Investors need 50% down.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Self-Employed Discount</h4><p className="text-sm text-muted-foreground">Banks count only 70% of self-employed income. You'll need 2+ years of tax returns.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Foreign Income Rules</h4><p className="text-sm text-muted-foreground">Income earned abroad is discounted 30-40% and requires extensive documentation.</p></div></CardContent></CollapsibleContent></Card>
+            </Collapsible>
+            <Collapsible open={stressTestOpen} onOpenChange={setStressTestOpen}>
+              <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">What If Rates Rise?</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", stressTestOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0"><div className="grid sm:grid-cols-2 gap-4"><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+1% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(Math.round(calculations.maxPropertyPrice - (calculations.stressedReduction / 2)))}</p></div><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+2% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(calculations.stressedMaxProperty)}</p></div></div></CardContent></CollapsibleContent></Card>
+            </Collapsible>
+            {insight && <InsightCard insights={[insight]} />}
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools/mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
+              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools/true-cost')}><Wallet className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">Calculate total cash needed to close</p></Card>
+              <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
+            </div>
+            <ToolFeedback toolName="affordability-calculator" variant="inline" />
           </div>
-          <div className="grid grid-cols-2 divide-x divide-y divide-border">
-            <div className="p-4 text-center"><p className="text-xs text-muted-foreground mb-0.5">Safe Monthly Payment</p><p className="text-lg font-semibold">{formatPrice(calculations.availableForMortgage)}</p></div>
-            <div className="p-4 text-center"><p className="text-xs text-muted-foreground mb-0.5">Effective Income</p><p className="text-lg font-semibold">{formatPrice(calculations.effectiveIncome)}</p></div>
-            <div className="p-4 text-center"><p className="text-xs text-muted-foreground mb-0.5">Max Loan Amount</p><p className="text-lg font-semibold">{formatPrice(calculations.maxLoanAmount)}</p></div>
-            <div className="p-4 text-center"><p className="text-xs text-muted-foreground mb-0.5">Your LTV Limit</p><p className="text-lg font-semibold">{calculations.maxLTV}%</p></div>
-          </div>
-          <div className="p-4 border-t">
-            <div className="flex justify-between items-center mb-2"><span className="text-sm font-medium">Affordability Score</span><span className={cn("text-sm font-semibold", calculations.affordabilityScore >= 80 ? "text-primary" : "text-muted-foreground")}>{calculations.affordabilityScore >= 80 ? "Comfortable" : calculations.affordabilityScore >= 60 ? "Moderate" : calculations.affordabilityScore >= 40 ? "Stretched" : "At Limit"}</span></div>
-            <Progress value={calculations.affordabilityScore} className="h-2" />
-          </div>
-          <div className="p-4 border-t">
-            <p className="text-sm font-medium mb-3">Income Allocation</p>
-            <div className="flex h-3 rounded-full overflow-hidden bg-muted"><div className="bg-primary transition-all" style={{ width: `${calculations.mortgagePercent}%` }} /><div className="bg-primary/50 transition-all" style={{ width: `${calculations.debtsPercent}%` }} /><div className="bg-muted-foreground/30 transition-all" style={{ width: `${calculations.remainingPercent}%` }} /></div>
-            <div className="flex justify-between mt-2 text-xs text-muted-foreground"><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Mortgage {Math.round(calculations.mortgagePercent)}%</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/50" />Debts {Math.round(calculations.debtsPercent)}%</span><span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/30" />Buffer {Math.round(calculations.remainingPercent)}%</span></div>
-          </div>
-          <div className="p-4 border-t bg-muted/30"><div className="flex gap-2"><AlertTriangle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" /><p className="text-sm text-muted-foreground">{calculations.limitingFactor === 'LTV' ? `Your down payment sets the limit.` : `Your income-to-debt ratio sets the limit.`}</p></div></div>
-        </Card>
-      }
-      bottomSection={
-        <div className="space-y-6">
-          <Collapsible open={educationOpen} onOpenChange={setEducationOpen}>
-            <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">How Israeli Banks Calculate Your Budget</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", educationOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0 grid md:grid-cols-2 gap-4"><div className="space-y-2"><h4 className="font-medium text-sm">PTI Ratio</h4><p className="text-sm text-muted-foreground">Bank of Israel limits debt payments to 40% of income for first homes, 35% for additional properties.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">LTV Limits</h4><p className="text-sm text-muted-foreground">First-time buyers can borrow up to 75% (25% down). Investors need 50% down.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Self-Employed Discount</h4><p className="text-sm text-muted-foreground">Banks count only 70% of self-employed income. You'll need 2+ years of tax returns.</p></div><div className="space-y-2"><h4 className="font-medium text-sm">Foreign Income Rules</h4><p className="text-sm text-muted-foreground">Income earned abroad is discounted 30-40% and requires extensive documentation.</p></div></CardContent></CollapsibleContent></Card>
-          </Collapsible>
-          <Collapsible open={stressTestOpen} onOpenChange={setStressTestOpen}>
-            <Card><CollapsibleTrigger asChild><CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors"><div className="flex items-center justify-between"><CardTitle className="text-base">What If Rates Rise?</CardTitle><ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", stressTestOpen && "rotate-180")} /></div></CardHeader></CollapsibleTrigger><CollapsibleContent><CardContent className="pt-0"><div className="grid sm:grid-cols-2 gap-4"><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+1% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(Math.round(calculations.maxPropertyPrice - (calculations.stressedReduction / 2)))}</p></div><div className="p-4 rounded-lg bg-muted border border-border"><p className="text-sm font-medium text-muted-foreground">+2% Rate Increase</p><p className="text-2xl font-bold mt-1">{formatPrice(calculations.stressedMaxProperty)}</p></div></div></CardContent></CollapsibleContent></Card>
-          </Collapsible>
-          {insight && <InsightCard insights={[insight]} />}
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2"><BadgeCheck className="h-4 w-4 text-primary" /><span>Calculated for Israel — using Bank of Israel regulations</span></div>
-          <div className="grid sm:grid-cols-3 gap-4">
-            <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools/mortgage')}><Calculator className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Mortgage Calculator</h4><p className="text-xs text-muted-foreground mt-1">See monthly payments for your max budget</p></Card>
-            <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/tools/true-cost')}><Wallet className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">True Cost Calculator</h4><p className="text-xs text-muted-foreground mt-1">Calculate total cash needed to close</p></Card>
-            <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
-          </div>
-          <ToolFeedback toolName="affordability-calculator" variant="inline" />
-        </div>
-      }
-    />
+        }
+      />
+      <SaveResultsPrompt
+        show={showSavePrompt}
+        calculatorName="affordability"
+        onDismiss={() => setShowSavePrompt(false)}
+        resultSummary={`Max budget: ${formatPrice(calculations.maxPropertyPrice)}`}
+      />
+    </>
   );
 }
 
