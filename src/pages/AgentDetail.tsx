@@ -272,22 +272,21 @@ export default function AgentDetail() {
           <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="active" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Active Listings
-              {stats?.activeListingsCount ? (
-                <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                  {stats.activeListingsCount}
-                </span>
-              ) : null}
+              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                {stats?.activeListingsCount ?? 0}
+              </span>
             </TabsTrigger>
             <TabsTrigger value="past" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Past Listings
-              {stats?.pastListingsCount ? (
-                <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                  {stats.pastListingsCount}
-                </span>
-              ) : null}
+              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                {stats?.pastListingsCount ?? 0}
+              </span>
             </TabsTrigger>
             <TabsTrigger value="articles" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Articles
+              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                0
+              </span>
             </TabsTrigger>
           </TabsList>
 
