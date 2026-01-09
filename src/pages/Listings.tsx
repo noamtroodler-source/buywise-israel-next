@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { useProperties } from '@/hooks/useProperties';
@@ -9,7 +9,8 @@ import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { CompareBar } from '@/components/property/CompareBar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { History, Search, Bell, MapPin, RotateCcw } from 'lucide-react';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,11 +156,79 @@ export default function Listings() {
             {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg mb-4">No properties found matching your criteria.</p>
-            <p className="text-sm text-muted-foreground">
-              Try adjusting your filters or create an alert to be notified when new properties match.
+          <div className="text-center py-16 max-w-lg mx-auto">
+            {/* Icon */}
+            <div className="relative mx-auto w-20 h-20 mb-6">
+              <div className="absolute inset-0 bg-muted rounded-full" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Search className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </div>
+
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              No properties found
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              We couldn't find any properties matching your current filters. Here are some suggestions:
             </p>
+
+            {/* Suggestions */}
+            <div className="bg-muted/50 rounded-xl p-5 text-left space-y-3 mb-6">
+              <ul className="text-sm text-muted-foreground space-y-2">
+                {filters.city && (
+                  <li className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                    Try expanding your search to nearby cities or remove the location filter
+                  </li>
+                )}
+                {(filters.min_price || filters.max_price) && (
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary flex-shrink-0">₪</span>
+                    Consider widening your price range — Israeli property prices vary significantly by neighborhood
+                  </li>
+                )}
+                {filters.min_rooms && (
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary flex-shrink-0">🏠</span>
+                    Flexible on room count? Israeli "rooms" include living areas, so 3 rooms = 2 bedrooms
+                  </li>
+                )}
+                {!filters.city && !filters.min_price && !filters.max_price && !filters.min_rooms && (
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary flex-shrink-0">💡</span>
+                    New listings are added regularly — create an alert to get notified
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                variant="outline" 
+                onClick={() => handleFiltersChange({ listing_status: listingStatus })}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Filters
+              </Button>
+              <Button onClick={() => setShowAlertDialog(true)}>
+                <Bell className="h-4 w-4 mr-2" />
+                Create Alert
+              </Button>
+            </div>
+
+            {/* Explore Areas Link */}
+            <div className="mt-8 pt-6 border-t border-border">
+              <p className="text-sm text-muted-foreground mb-3">
+                Not sure where to look?
+              </p>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/areas" className="text-primary">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Explore Areas & Neighborhoods
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>
