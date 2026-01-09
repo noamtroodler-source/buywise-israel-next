@@ -213,7 +213,7 @@ export default function AgentDetail() {
 
             {/* Bio */}
             {agent.bio && (
-              <p className="mt-6 text-muted-foreground leading-relaxed">{agent.bio}</p>
+              <p className="mt-6 text-muted-foreground leading-relaxed line-clamp-2">{agent.bio}</p>
             )}
 
             {/* Neighborhoods Covered */}
