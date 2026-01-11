@@ -216,7 +216,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       <CompareButton propertyId={property.id} />
                     </div>
                   )}
-                  <FavoriteButton propertyId={property.id} />
+                  <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
               </div>
 
@@ -335,7 +335,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       <CompareButton propertyId={property.id} />
                     </div>
                   )}
-                  <FavoriteButton propertyId={property.id} />
+                  <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
                 </div>
               </div>
 

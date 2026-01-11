@@ -610,18 +610,27 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_known_price: number | null
+          price_alert_enabled: boolean | null
+          price_alert_threshold: number | null
           property_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          last_known_price?: number | null
+          price_alert_enabled?: boolean | null
+          price_alert_threshold?: number | null
           property_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          last_known_price?: number | null
+          price_alert_enabled?: boolean | null
+          price_alert_threshold?: number | null
           property_id?: string
           user_id?: string
         }
@@ -945,6 +954,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      price_drop_notifications: {
+        Row: {
+          created_at: string | null
+          drop_percent: number
+          id: string
+          is_read: boolean | null
+          new_price: number
+          previous_price: number
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          drop_percent: number
+          id?: string
+          is_read?: boolean | null
+          new_price: number
+          previous_price: number
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          drop_percent?: number
+          id?: string
+          is_read?: boolean | null
+          new_price?: number
+          previous_price?: number
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       professional_fees: {
         Row: {

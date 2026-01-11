@@ -16,6 +16,7 @@ import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
 import { ProfileSearchAlerts } from '@/components/profile/ProfileSearchAlerts';
 import { SavedCalculatorResults } from '@/components/profile/SavedCalculatorResults';
 import { RecentlyViewedSection } from '@/components/profile/RecentlyViewedSection';
+import { ProfilePriceAlerts } from '@/components/profile/ProfilePriceAlerts';
 
 interface QuickActionItemProps {
   icon: React.ReactNode;
@@ -239,6 +240,11 @@ export default function Profile() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Price Drop Alerts */}
+              <div id="price-alerts-section">
+                <ProfilePriceAlerts />
+              </div>
 
               {/* Search Alerts */}
               <div id="search-alerts-section">

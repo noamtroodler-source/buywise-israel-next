@@ -19,6 +19,8 @@ export function useFavorites() {
           id,
           property_id,
           created_at,
+          price_alert_enabled,
+          last_known_price,
           properties:property_id (
             *,
             agent:agent_id (*)
@@ -49,12 +51,17 @@ export function useFavorites() {
   });
 
   const addFavorite = useMutation({
-    mutationFn: async (propertyId: string) => {
+    mutationFn: async ({ propertyId, currentPrice }: { propertyId: string; currentPrice?: number }) => {
       if (!user) throw new Error('Must be logged in');
       
       const { error } = await supabase
         .from('favorites')
-        .insert({ user_id: user.id, property_id: propertyId });
+        .insert({ 
+          user_id: user.id, 
+          property_id: propertyId,
+          last_known_price: currentPrice || null,
+          price_alert_enabled: true
+        });
 
       if (error) throw error;
     },
@@ -90,11 +97,11 @@ export function useFavorites() {
     },
   });
 
-  const toggleFavorite = (propertyId: string) => {
+  const toggleFavorite = (propertyId: string, currentPrice?: number) => {
     if (favoriteIds.includes(propertyId)) {
       removeFavorite.mutate(propertyId);
     } else {
-      addFavorite.mutate(propertyId);
+      addFavorite.mutate({ propertyId, currentPrice });
     }
   };
 
