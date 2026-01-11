@@ -608,30 +608,39 @@ export type Database = {
       }
       favorites: {
         Row: {
+          category: string | null
           created_at: string
           id: string
           last_known_price: number | null
           price_alert_enabled: boolean | null
           price_alert_threshold: number | null
           property_id: string
+          ruled_out_reason: string | null
+          sort_order: number | null
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
           last_known_price?: number | null
           price_alert_enabled?: boolean | null
           price_alert_threshold?: number | null
           property_id: string
+          ruled_out_reason?: string | null
+          sort_order?: number | null
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
           last_known_price?: number | null
           price_alert_enabled?: boolean | null
           price_alert_threshold?: number | null
           property_id?: string
+          ruled_out_reason?: string | null
+          sort_order?: number | null
           user_id?: string
         }
         Relationships: [
