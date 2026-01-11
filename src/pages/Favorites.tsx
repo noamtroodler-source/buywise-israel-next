@@ -1,103 +1,23 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Calculator, ArrowRight, Loader2, Scale } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
+import { PropertyCard } from '@/components/property/PropertyCard';
 import { Button } from '@/components/ui/button';
-import { useFavorites, FavoriteCategory } from '@/hooks/useFavorites';
+import { useFavorites } from '@/hooks/useFavorites';
 import { usePriceDropAlerts } from '@/hooks/usePriceDropAlerts';
-import { useCompare } from '@/contexts/CompareContext';
-import { 
-  FavoritesSectionHeader, 
-  FavoritePropertyCard, 
-  RuledOutReasonDialog 
-} from '@/components/favorites';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
+interface FavoriteWithAlert {
+  property: any;
+  price_alert_enabled?: boolean;
+}
+
 export default function Favorites() {
-  const navigate = useNavigate();
-  const { 
-    favorites, 
-    favoritesByCategory, 
-    isLoading,
-    updateFavoriteCategory,
-    removeFavorite,
-  } = useFavorites();
+  const { favorites, favoriteProperties, isLoading } = useFavorites();
   const { togglePriceAlert, isTogglingAlert } = usePriceDropAlerts();
-  const { addToCompare, clearCompare } = useCompare();
-  
-  // Section collapse state
-  const [expandedSections, setExpandedSections] = useState<Record<FavoriteCategory, boolean>>({
-    final_list: true,
-    considering: true,
-    ruled_out: false,
-  });
-  
-  // Ruled out dialog state
-  const [ruledOutDialog, setRuledOutDialog] = useState<{
-    open: boolean;
-    propertyId: string;
-    propertyTitle: string;
-  }>({ open: false, propertyId: '', propertyTitle: '' });
-
-  // Pending category changes (for optimistic UI)
-  const [pendingCategories, setPendingCategories] = useState<Record<string, FavoriteCategory>>({});
-
-  const toggleSection = (category: FavoriteCategory) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
-  };
-
-  const handleCategoryChange = (propertyId: string, propertyTitle: string, newCategory: FavoriteCategory) => {
-    if (newCategory === 'ruled_out') {
-      setRuledOutDialog({ open: true, propertyId, propertyTitle });
-    } else {
-      setPendingCategories(prev => ({ ...prev, [propertyId]: newCategory }));
-      updateFavoriteCategory(
-        { propertyId, category: newCategory },
-        {
-          onSettled: () => {
-            setPendingCategories(prev => {
-              const { [propertyId]: _, ...rest } = prev;
-              return rest;
-            });
-          },
-        }
-      );
-    }
-  };
-
-  const handleRuledOutConfirm = (reason?: string) => {
-    const { propertyId } = ruledOutDialog;
-    setPendingCategories(prev => ({ ...prev, [propertyId]: 'ruled_out' }));
-    updateFavoriteCategory(
-      { propertyId, category: 'ruled_out', ruledOutReason: reason },
-      {
-        onSettled: () => {
-          setPendingCategories(prev => {
-            const { [propertyId]: _, ...rest } = prev;
-            return rest;
-          });
-        },
-      }
-    );
-  };
-
-  const handleCompareFinalList = () => {
-    clearCompare();
-    favoritesByCategory.final_list.slice(0, 3).forEach(fav => {
-      if (fav.properties?.id) {
-        addToCompare(fav.properties.id);
-      }
-    });
-    navigate('/compare');
-  };
-
-  const totalCount = favorites.length;
-  const finalListCount = favoritesByCategory.final_list.length;
 
   if (isLoading) {
     return (
@@ -117,32 +37,14 @@ export default function Favorites() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Heart className="h-8 w-8 text-destructive" />
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Saved Properties</h1>
-                {totalCount > 0 && (
-                  <p className="text-muted-foreground">
-                    {totalCount} {totalCount === 1 ? 'property' : 'properties'} saved
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {/* Compare Final List button */}
-            {finalListCount >= 2 && (
-              <Button onClick={handleCompareFinalList} className="gap-2">
-                <Scale className="h-4 w-4" />
-                Compare Final List ({Math.min(finalListCount, 3)})
-              </Button>
-            )}
+          <div className="flex items-center gap-3">
+            <Heart className="h-8 w-8 text-destructive" />
+            <h1 className="text-3xl font-bold text-foreground">Saved Properties</h1>
           </div>
 
-          {totalCount === 0 ? (
-            /* Empty state */
+          {favoriteProperties.length === 0 ? (
             <div className="text-center py-16 max-w-lg mx-auto">
+              {/* Icon */}
               <div className="relative mx-auto w-24 h-24 mb-6">
                 <div className="absolute inset-0 bg-destructive/10 rounded-full animate-pulse" />
                 <div className="absolute inset-2 bg-destructive/5 rounded-full" />
@@ -158,6 +60,7 @@ export default function Favorites() {
                 Start exploring and save properties you love! Click the heart icon on any listing to save it here for easy comparison.
               </p>
 
+              {/* Suggestions */}
               <div className="bg-muted/50 rounded-xl p-5 text-left space-y-4 mb-8">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <MapPin className="h-4 w-4 text-primary" />
@@ -176,6 +79,7 @@ export default function Favorites() {
                 </div>
               </div>
 
+              {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button asChild size="lg">
                   <Link to="/listings?status=for_sale">
@@ -191,6 +95,7 @@ export default function Favorites() {
                 </Button>
               </div>
 
+              {/* Tools Suggestion */}
               <div className="mt-8 pt-6 border-t border-border">
                 <p className="text-sm text-muted-foreground mb-3">
                   Not sure what you can afford?
@@ -204,151 +109,52 @@ export default function Favorites() {
               </div>
             </div>
           ) : (
-            /* Category sections */
-            <div className="space-y-4">
-              {/* Final List Section */}
-              <div className="space-y-3">
-                <FavoritesSectionHeader
-                  category="final_list"
-                  count={favoritesByCategory.final_list.length}
-                  isExpanded={expandedSections.final_list}
-                  onToggle={() => toggleSection('final_list')}
-                />
-                <AnimatePresence>
-                  {expandedSections.final_list && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      {favoritesByCategory.final_list.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4 px-2">
-                          Move your top choices here when you're ready to make a decision.
-                        </p>
-                      ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-2">
-                          {favoritesByCategory.final_list.map((fav) => (
-                            <FavoritePropertyCard
-                              key={fav.id}
-                              favorite={fav}
-                              pendingCategory={pendingCategories[fav.property_id]}
-                              onCategoryChange={(cat) => handleCategoryChange(fav.property_id, fav.properties?.title || '', cat)}
-                              onTogglePriceAlert={() => togglePriceAlert({ 
-                                propertyId: fav.property_id, 
-                                enabled: fav.price_alert_enabled === false 
-                              })}
-                              onRemove={() => removeFavorite(fav.property_id)}
-                              isTogglingAlert={isTogglingAlert}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            <>
+              <p className="text-muted-foreground">
+                {favoriteProperties.length} saved {favoriteProperties.length === 1 ? 'property' : 'properties'} • 
+                <span className="text-sm ml-1">Price drop alerts are on by default</span>
+              </p>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {favorites.map((fav: any) => {
+                  const property = fav.properties;
+                  if (!property) return null;
+                  const alertEnabled = fav.price_alert_enabled !== false;
+                  
+                  return (
+                    <div key={property.id} className="relative">
+                      <PropertyCard property={property} />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`absolute top-2 right-14 h-8 w-8 bg-background/80 hover:bg-background ${
+                                alertEnabled ? 'text-primary' : 'text-muted-foreground'
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                togglePriceAlert({ propertyId: property.id, enabled: !alertEnabled });
+                              }}
+                              disabled={isTogglingAlert}
+                            >
+                              {alertEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{alertEnabled ? 'Price drop alerts on' : 'Price drop alerts off'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  );
+                })}
               </div>
-
-              {/* Considering Section */}
-              <div className="space-y-3">
-                <FavoritesSectionHeader
-                  category="considering"
-                  count={favoritesByCategory.considering.length}
-                  isExpanded={expandedSections.considering}
-                  onToggle={() => toggleSection('considering')}
-                />
-                <AnimatePresence>
-                  {expandedSections.considering && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      {favoritesByCategory.considering.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4 px-2">
-                          New favorites will appear here. Move them to Final List or Ruled Out as you decide.
-                        </p>
-                      ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-2">
-                          {favoritesByCategory.considering.map((fav) => (
-                            <FavoritePropertyCard
-                              key={fav.id}
-                              favorite={fav}
-                              pendingCategory={pendingCategories[fav.property_id]}
-                              onCategoryChange={(cat) => handleCategoryChange(fav.property_id, fav.properties?.title || '', cat)}
-                              onTogglePriceAlert={() => togglePriceAlert({ 
-                                propertyId: fav.property_id, 
-                                enabled: fav.price_alert_enabled === false 
-                              })}
-                              onRemove={() => removeFavorite(fav.property_id)}
-                              isTogglingAlert={isTogglingAlert}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Ruled Out Section */}
-              <div className="space-y-3">
-                <FavoritesSectionHeader
-                  category="ruled_out"
-                  count={favoritesByCategory.ruled_out.length}
-                  isExpanded={expandedSections.ruled_out}
-                  onToggle={() => toggleSection('ruled_out')}
-                />
-                <AnimatePresence>
-                  {expandedSections.ruled_out && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      {favoritesByCategory.ruled_out.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-4 px-2">
-                          Properties you've decided against will appear here with your notes.
-                        </p>
-                      ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pt-2">
-                          {favoritesByCategory.ruled_out.map((fav) => (
-                            <FavoritePropertyCard
-                              key={fav.id}
-                              favorite={fav}
-                              pendingCategory={pendingCategories[fav.property_id]}
-                              onCategoryChange={(cat) => handleCategoryChange(fav.property_id, fav.properties?.title || '', cat)}
-                              onTogglePriceAlert={() => togglePriceAlert({ 
-                                propertyId: fav.property_id, 
-                                enabled: fav.price_alert_enabled === false 
-                              })}
-                              onRemove={() => removeFavorite(fav.property_id)}
-                              isTogglingAlert={isTogglingAlert}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
+            </>
           )}
         </motion.div>
       </div>
-
-      {/* Ruled Out Reason Dialog */}
-      <RuledOutReasonDialog
-        open={ruledOutDialog.open}
-        onOpenChange={(open) => setRuledOutDialog(prev => ({ ...prev, open }))}
-        onConfirm={handleRuledOutConfirm}
-        propertyTitle={ruledOutDialog.propertyTitle}
-      />
     </Layout>
   );
 }
