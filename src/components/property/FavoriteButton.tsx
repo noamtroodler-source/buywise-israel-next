@@ -7,11 +7,12 @@ import { cn } from '@/lib/utils';
 
 interface FavoriteButtonProps {
   propertyId: string;
+  propertyPrice?: number;
   className?: string;
   size?: 'sm' | 'default' | 'lg' | 'icon';
 }
 
-export function FavoriteButton({ propertyId, className, size = 'icon' }: FavoriteButtonProps) {
+export function FavoriteButton({ propertyId, propertyPrice, className, size = 'icon' }: FavoriteButtonProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite, isToggling } = useFavorites();
@@ -25,7 +26,7 @@ export function FavoriteButton({ propertyId, className, size = 'icon' }: Favorit
       return;
     }
 
-    toggleFavorite(propertyId);
+    toggleFavorite(propertyId, propertyPrice);
   };
 
   const favorited = isFavorite(propertyId);

@@ -1,15 +1,23 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Calculator, ArrowRight, Loader2 } from 'lucide-react';
+import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Button } from '@/components/ui/button';
 import { useFavorites } from '@/hooks/useFavorites';
+import { usePriceDropAlerts } from '@/hooks/usePriceDropAlerts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
+interface FavoriteWithAlert {
+  property: any;
+  price_alert_enabled?: boolean;
+}
+
 export default function Favorites() {
-  const { favoriteProperties, isLoading } = useFavorites();
+  const { favorites, favoriteProperties, isLoading } = useFavorites();
+  const { togglePriceAlert, isTogglingAlert } = usePriceDropAlerts();
 
   if (isLoading) {
     return (
@@ -103,12 +111,45 @@ export default function Favorites() {
           ) : (
             <>
               <p className="text-muted-foreground">
-                {favoriteProperties.length} saved {favoriteProperties.length === 1 ? 'property' : 'properties'}
+                {favoriteProperties.length} saved {favoriteProperties.length === 1 ? 'property' : 'properties'} • 
+                <span className="text-sm ml-1">Price drop alerts are on by default</span>
               </p>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteProperties.map((property) => (
-                  <PropertyCard key={property.id} property={property} />
-                ))}
+                {favorites.map((fav: any) => {
+                  const property = fav.properties;
+                  if (!property) return null;
+                  const alertEnabled = fav.price_alert_enabled !== false;
+                  
+                  return (
+                    <div key={property.id} className="relative">
+                      <PropertyCard property={property} />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={`absolute top-2 right-14 h-8 w-8 bg-background/80 hover:bg-background ${
+                                alertEnabled ? 'text-primary' : 'text-muted-foreground'
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                togglePriceAlert({ propertyId: property.id, enabled: !alertEnabled });
+                              }}
+                              disabled={isTogglingAlert}
+                            >
+                              {alertEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{alertEnabled ? 'Price drop alerts on' : 'Price drop alerts off'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  );
+                })}
               </div>
             </>
           )}
