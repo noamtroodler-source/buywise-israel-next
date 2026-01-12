@@ -170,29 +170,28 @@ export default function ListingsGuide() {
         </motion.nav>
 
         {/* Hero Section */}
-        <section id="overview" className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-          <div className="container relative py-16 md:py-24">
-            <motion.div {...fadeInUp} className="max-w-3xl">
-              <Badge variant="outline" className="mb-4">
+        <section id="overview" className="relative py-20 bg-gradient-to-br from-primary/5 via-background to-primary/10">
+          <div className="container mx-auto px-4">
+            <motion.div
+              {...fadeInUp}
+              className="max-w-4xl mx-auto text-center"
+            >
+              <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
                 Guide for International Buyers
               </Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
                 Why Israeli Listings Feel Misleading
-                <span className="block text-primary mt-2">And How to Read Them</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                International buyers often browse Israeli property listings and feel perplexed. 
-                They expect standardized room counts, reliable measurements and complete cost disclosures – 
-                norms they know from US or UK real estate. Israeli listings aren't "wrong" or deceptive; 
-                they are built for a local audience. This guide teaches you how to read them calmly.
+              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+                Israeli property listings aren't deceptive — they're built for locals who know how to read them. 
+                This guide teaches you to interpret listings calmly, without panic or suspicion.
               </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <span className="flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   18 min read
                 </span>
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4" />
                   10 sections
                 </span>
@@ -202,23 +201,25 @@ export default function ListingsGuide() {
         </section>
 
         {/* Core Problem */}
-        <section className="container py-12">
-          <motion.div 
-            {...fadeInUp}
-            className="max-w-3xl mx-auto p-6 rounded-xl bg-amber-500/10 border border-amber-500/20"
-          >
-            <div className="flex gap-4">
-              <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h2 className="font-semibold text-foreground mb-2">The Core Problem in One Sentence</h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  Israeli property listings use local counting methods, marketing conventions and fragmented 
-                  platforms that make sense to Israelis but clash with international expectations of uniform 
-                  measurements, clear pricing and standardized disclosures.
-                </p>
+        <section className="py-12 bg-muted/30">
+          <div className="container">
+            <motion.div 
+              {...fadeInUp}
+              className="max-w-3xl mx-auto p-6 rounded-xl bg-primary/5 border border-primary/20"
+            >
+              <div className="flex gap-4">
+                <AlertTriangle className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-semibold text-foreground mb-2">The Core Problem in One Sentence</h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Israeli property listings use local counting methods, marketing conventions and fragmented 
+                    platforms that make sense to Israelis but clash with international expectations of uniform 
+                    measurements, clear pricing and standardized disclosures.
+                  </p>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </section>
 
         {/* Why Misleading */}
@@ -268,11 +269,11 @@ export default function ListingsGuide() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/20"
+                  className="p-5 rounded-xl bg-background border hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-500/10">
-                      <point.icon className="h-5 w-5 text-emerald-600" />
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <point.icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground mb-1">{point.title}</h3>
@@ -303,11 +304,11 @@ export default function ListingsGuide() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="p-5 rounded-xl bg-rose-500/5 border border-rose-500/20"
+                  className="p-5 rounded-xl bg-muted/50 border"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-rose-500/10">
-                      <point.icon className="h-5 w-5 text-rose-600" />
+                    <div className="p-2 rounded-lg bg-muted">
+                      <point.icon className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground mb-1">{point.title}</h3>
@@ -362,7 +363,7 @@ export default function ListingsGuide() {
           <div className="container">
             <motion.div {...fadeInUp} className="max-w-3xl mx-auto">
               <div className="flex items-start gap-4 p-6 rounded-xl bg-background border">
-                <Camera className="h-8 w-8 text-amber-600 flex-shrink-0" />
+                <Camera className="h-8 w-8 text-primary flex-shrink-0" />
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-3">
                     Why Photos Can Be Especially Misleading
@@ -376,7 +377,7 @@ export default function ListingsGuide() {
                     In off-plan projects, the "photos" are digital renderings that reflect design intent rather than actual finishes. 
                     Renovations depicted in photos may be years old.
                   </p>
-                  <p className="text-sm font-medium text-amber-600">
+                  <p className="text-sm font-medium text-primary">
                     Use photos for atmosphere and layout clues, not for exact measurements.
                   </p>
                 </div>
@@ -473,9 +474,9 @@ export default function ListingsGuide() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="flex items-start gap-3 p-4 rounded-lg bg-rose-500/5 border border-rose-500/10"
+                  className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border"
                 >
-                  <XCircle className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
+                  <XCircle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-muted-foreground">{item}</p>
                 </motion.div>
               ))}
