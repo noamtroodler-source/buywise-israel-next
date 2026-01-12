@@ -277,19 +277,45 @@ export default function ListingsGuide() {
         </section>
 
         {/* Opener Section */}
-        <section className="container py-12">
-          <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
-            <Card className="p-8 bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
-              <p className="text-lg text-foreground leading-relaxed">
-                For international buyers and renters, Israeli property listings can feel like puzzles. 
-                These adverts are tailored to locals who already understand how rooms are counted, how 
-                sizes are measured and which details matter. What seems missing or misleading is often 
-                just a reflection of different norms. This guide shows how to decode those norms so you 
-                can read listings with calm and confidence.
+        <motion.section 
+          className="container py-12"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeInUp}
+        >
+          <div className="max-w-4xl mx-auto">
+            {/* 3 Pain Point Cards */}
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
+                  Rooms are counted differently than you expect
+                </p>
+              </Card>
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
+                  Sizes may include or exclude shared areas
+                </p>
+              </Card>
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
+                  Listings are marketing snapshots, not legal documents
+                </p>
+              </Card>
+            </div>
+            
+            {/* Gradient CTA Box */}
+            <div className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+              <p className="text-foreground text-center mb-4">
+                For international buyers and renters, Israeli property listings can feel like a puzzle. There is no single source of truth.
               </p>
-            </Card>
-          </motion.div>
-        </section>
+              <p className="text-muted-foreground text-sm text-center">
+                This guide does not give personal advice or tell you what to do. Instead, it explains why listings feel confusing, what local conventions drive the format, and how to interpret what you see.
+                <span className="font-medium text-foreground"> Use it to read listings with calm and confidence before contacting agents.</span>
+              </p>
+            </div>
+          </div>
+        </motion.section>
 
         {/* Core Mismatch Section */}
         <section id="core-mismatch" className="py-16 bg-muted/30">
