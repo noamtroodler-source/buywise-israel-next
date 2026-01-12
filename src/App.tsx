@@ -39,8 +39,9 @@ import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
-// Guides - commented out for launch
-// import Guides from "./pages/Guides";
+// Guides
+import Guides from "./pages/Guides";
+// Individual guide pages - commented out for launch
 // import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
 // import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 // import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
@@ -78,8 +79,8 @@ const App = () => (
             <Route path="/areas/:slug" element={<AreaDetail />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/glossary" element={<Glossary />} />
-            {/* Guides - commented out for launch
-            <Route path="/guides" element={<Guides />} />
+<Route path="/guides" element={<Guides />} />
+            {/* Individual guide pages - commented out for launch
             <Route path="/guides/buying-in-israel" element={<BuyingInIsraelGuide />} />
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />

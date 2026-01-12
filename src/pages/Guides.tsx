@@ -1,20 +1,24 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   BookOpen, MapPin, TrendingUp, Building2, 
-  ArrowRight, Clock, Users, Star 
+  FileCheck, Calculator, Sparkles
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { Badge } from '@/components/ui/badge';
+import { AudienceFilter, GuideCard, JourneyStage, type Audience } from '@/components/guides';
 
-interface Guide {
+export interface Guide {
   slug: string;
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   readingTime: number;
-  audience: string[];
+  audience: ('olim' | 'investors' | 'first-time' | 'families')[];
+  stage: 1 | 2 | 3;
+  chaptersCount: number;
   featured?: boolean;
+  valueStatement?: string;
 }
 
 const guides: Guide[] = [
@@ -24,24 +28,11 @@ const guides: Guide[] = [
     description: 'Everything you need to know about purchasing property in Israel, from finding the right property to closing the deal.',
     icon: BookOpen,
     readingTime: 25,
-    audience: ['All Buyers'],
+    audience: ['olim', 'investors', 'first-time', 'families'],
+    stage: 1,
+    chaptersCount: 8,
     featured: true,
-  },
-  {
-    slug: 'oleh-first-time',
-    title: 'Oleh First-Time Buyer Guide',
-    description: 'Special considerations, benefits, and step-by-step process for new immigrants buying their first home in Israel.',
-    icon: MapPin,
-    readingTime: 20,
-    audience: ['Olim', 'First-Time Buyers'],
-  },
-  {
-    slug: 'investment-property',
-    title: 'Investment Property Guide',
-    description: 'Maximize returns on Israeli real estate investments. Learn about yields, tax implications, and market analysis.',
-    icon: TrendingUp,
-    readingTime: 22,
-    audience: ['Investors', 'Foreign Buyers'],
+    valueStatement: 'Avoid ₪30-50k in common first-timer mistakes',
   },
   {
     slug: 'new-vs-resale',
@@ -49,110 +40,194 @@ const guides: Guide[] = [
     description: 'Compare buying from developers versus existing properties. Understand the pros, cons, and hidden costs of each.',
     icon: Building2,
     readingTime: 15,
-    audience: ['All Buyers'],
+    audience: ['olim', 'investors', 'first-time', 'families'],
+    stage: 1,
+    chaptersCount: 5,
+  },
+  {
+    slug: 'oleh-first-time',
+    title: 'Oleh First-Time Buyer Guide',
+    description: 'Special considerations, benefits, and step-by-step process for new immigrants buying their first home in Israel.',
+    icon: MapPin,
+    readingTime: 20,
+    audience: ['olim', 'first-time'],
+    stage: 2,
+    chaptersCount: 6,
+    valueStatement: 'Claim your tax benefits worth ₪20-80k',
+  },
+  {
+    slug: 'investment-property',
+    title: 'Investment Property Guide',
+    description: 'Maximize returns on Israeli real estate investments. Learn about yields, tax implications, and market analysis.',
+    icon: TrendingUp,
+    readingTime: 22,
+    audience: ['investors'],
+    stage: 2,
+    chaptersCount: 7,
+    valueStatement: 'Realistic yield expectations: 2.5-4.5% net',
+  },
+  {
+    slug: 'new-construction',
+    title: 'New Construction Guide',
+    description: 'Navigate buying from a developer: payment schedules, bank guarantees, timelines, and what to expect at each stage.',
+    icon: Building2,
+    readingTime: 18,
+    audience: ['olim', 'investors', 'first-time', 'families'],
+    stage: 3,
+    chaptersCount: 6,
   },
 ];
 
-function GuideCard({ guide }: { guide: Guide }) {
-  const Icon = guide.icon;
-  
-  return (
-    <Link to={`/guides/${guide.slug}`}>
-      <div className={`group bg-card border rounded-xl p-6 hover:shadow-lg hover:border-primary/40 transition-all h-full flex flex-col ${guide.featured ? 'border-primary/30 ring-1 ring-primary/20' : 'border-border'}`}>
-        {guide.featured && (
-          <Badge className="w-fit mb-3 bg-primary/10 text-primary border-0">
-            <Star className="h-3 w-3 mr-1" />
-            Essential Reading
-          </Badge>
-        )}
-        
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        
-        <h3 className="text-lg font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
-          {guide.title}
-        </h3>
-        
-        <p className="text-muted-foreground text-sm leading-relaxed flex-1 mb-4">
-          {guide.description}
-        </p>
-        
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {guide.readingTime} min read
-            </span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              {guide.audience[0]}
-            </span>
-          </div>
-          
-          <span className="text-primary text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
-            Read
-            <ArrowRight className="h-4 w-4" />
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
+// Calculate total reading time
+const totalReadingTime = guides.reduce((sum, g) => sum + g.readingTime, 0);
 
 export default function Guides() {
+  const [selectedAudience, setSelectedAudience] = useState<Audience>('all');
+
+  // Filter guides based on selected audience
+  const isGuideHighlighted = (guide: Guide) => {
+    if (selectedAudience === 'all') return true;
+    return guide.audience.includes(selectedAudience as any);
+  };
+
+  // Group guides by stage
+  const stage1Guides = guides.filter((g) => g.stage === 1);
+  const stage2Guides = guides.filter((g) => g.stage === 2);
+  const stage3Guides = guides.filter((g) => g.stage === 3);
+
+  // Count highlighted guides
+  const highlightedCount = guides.filter(isGuideHighlighted).length;
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
-        <div className="container py-10 md:py-16">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-2xl mx-auto mb-12"
-          >
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              Buyer Guides
-            </h1>
-            <p className="text-muted-foreground">
-              Comprehensive guides to help you navigate the Israeli real estate market with confidence
-            </p>
-          </motion.div>
+        {/* Hero Section */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
+          <div className="container relative py-12 md:py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center max-w-2xl mx-auto"
+            >
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Master Israeli Real Estate
+                <span className="block text-primary">Step by Step</span>
+              </h1>
+              <p className="text-muted-foreground text-lg mb-4">
+                Comprehensive guides for international buyers.
+                <br className="hidden md:block" />
+                Read at your own pace. No pressure, no fluff.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {guides.length} guides • ~{totalReadingTime} min total reading • Updated for 2025
+              </p>
+            </motion.div>
+          </div>
+        </section>
 
-          {/* Guides Grid */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+        {/* Filter Section */}
+        <section className="container pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto"
           >
-            {guides.map((guide, index) => (
-              <motion.div
-                key={guide.slug}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * index }}
-              >
-                <GuideCard guide={guide} />
-              </motion.div>
-            ))}
+            <p className="text-center text-sm text-muted-foreground mb-3">Find guides for:</p>
+            <AudienceFilter 
+              selected={selectedAudience} 
+              onChange={setSelectedAudience} 
+            />
+            {selectedAudience !== 'all' && (
+              <p className="text-center text-xs text-muted-foreground mt-3">
+                {highlightedCount} of {guides.length} guides match your profile
+              </p>
+            )}
           </motion.div>
+        </section>
 
-          {/* CTA */}
-          <motion.div 
+        {/* Guides by Journey Stage */}
+        <section className="container pb-16 space-y-12">
+          {stage1Guides.length > 0 && (
+            <JourneyStage number={1} title="Understand the Market">
+              {stage1Guides.map((guide) => (
+                <GuideCard 
+                  key={guide.slug} 
+                  guide={guide} 
+                  isHighlighted={isGuideHighlighted(guide)}
+                />
+              ))}
+            </JourneyStage>
+          )}
+
+          {stage2Guides.length > 0 && (
+            <JourneyStage number={2} title="Know Your Situation">
+              {stage2Guides.map((guide) => (
+                <GuideCard 
+                  key={guide.slug} 
+                  guide={guide} 
+                  isHighlighted={isGuideHighlighted(guide)}
+                />
+              ))}
+            </JourneyStage>
+          )}
+
+          {stage3Guides.length > 0 && (
+            <JourneyStage number={3} title="Prepare & Execute">
+              {stage3Guides.map((guide) => (
+                <GuideCard 
+                  key={guide.slug} 
+                  guide={guide} 
+                  isHighlighted={isGuideHighlighted(guide)}
+                />
+              ))}
+            </JourneyStage>
+          )}
+        </section>
+
+        {/* Quiz CTA */}
+        <section className="container pb-10">
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="mt-12 max-w-2xl mx-auto text-center"
+            className="max-w-xl mx-auto"
+          >
+            <div className="p-6 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 text-center">
+              <Sparkles className="h-8 w-8 text-primary mx-auto mb-3" />
+              <h3 className="font-semibold text-foreground mb-2">
+                Not sure where to start?
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Take our quick quiz to find which guides matter most for your situation.
+              </p>
+              <Link 
+                to="/tools" 
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Find My Path →
+              </Link>
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Tools CTA */}
+        <section className="container pb-16">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="max-w-2xl mx-auto text-center"
           >
             <div className="p-6 rounded-xl bg-muted/50">
-              <h3 className="font-semibold text-foreground mb-2">Ready to start your search?</h3>
+              <Calculator className="h-6 w-6 text-primary mx-auto mb-3" />
+              <h3 className="font-semibold text-foreground mb-2">Ready to run the numbers?</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Use our tools and calculators to find your perfect property in Israel
+                Our calculators are built for Israel — honest ranges, not fake precision.
               </p>
-              <div className="flex gap-3 justify-center">
+              <div className="flex gap-4 justify-center">
                 <Link to="/tools" className="text-sm font-medium text-primary hover:underline">
-                  Explore Tools →
+                  Explore Calculators →
                 </Link>
                 <Link to="/listings" className="text-sm font-medium text-primary hover:underline">
                   Browse Listings →
@@ -160,7 +235,7 @@ export default function Guides() {
               </div>
             </div>
           </motion.div>
-        </div>
+        </section>
       </div>
     </Layout>
   );
