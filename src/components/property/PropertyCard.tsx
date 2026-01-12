@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +35,24 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
+  // Calculate days on market
+  const daysOnMarket = property.created_at 
+    ? differenceInDays(new Date(), new Date(property.created_at)) 
+    : null;
+
   // Check if property is new (listed within last 7 days)
-  const isNewListing = property.created_at 
-    ? differenceInDays(new Date(), new Date(property.created_at)) <= 7 
-    : false;
+  const isNewListing = daysOnMarket !== null && daysOnMarket <= 7;
+
+  // Format days on market label
+  const getDaysOnMarketLabel = () => {
+    if (daysOnMarket === null) return null;
+    if (daysOnMarket === 0) return 'Listed today';
+    if (daysOnMarket === 1) return '1 day ago';
+    if (daysOnMarket > 90) return '90+ days';
+    return `${daysOnMarket} days ago`;
+  };
+
+  const daysLabel = getDaysOnMarketLabel();
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -234,6 +248,12 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
+                {daysLabel && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 pt-0.5">
+                    <Clock className="h-3 w-3" />
+                    {daysLabel}
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -375,6 +395,12 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     <div className="flex items-center gap-1">
                       <Maximize className="h-3.5 w-3.5" />
                       <span className="text-xs">{formatArea(property.size_sqm)}</span>
+                    </div>
+                  )}
+                  {daysLabel && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span className="text-xs">{daysLabel}</span>
                     </div>
                   )}
                 </div>
