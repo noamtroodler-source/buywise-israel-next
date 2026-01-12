@@ -134,7 +134,7 @@ export default function Projects() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">New Projects</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2"><span className="text-primary">New</span> Development Projects</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               New development projects in Israel — with timelines, pricing, and what to expect.
             </p>

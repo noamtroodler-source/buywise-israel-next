@@ -146,7 +146,7 @@ export default function NewVsResaleGuide() {
           <div className="container py-12 md:py-16">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto text-center">
               <Badge variant="secondary" className="mb-4"><Scale className="h-3 w-3 mr-1" />Essential Guide</Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">New Construction vs Resale in Israel<span className="block text-primary mt-2">What's Really Different</span></h1>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">New Construction vs Resale in <span className="text-primary">Israel</span><span className="block text-primary mt-2">What's Really Different</span></h1>
               <p className="text-lg text-muted-foreground mb-6">Distinct paths with their own timelines, obligations, and uncertainties</p>
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1"><BookOpen className="h-4 w-4" />11 sections</span>

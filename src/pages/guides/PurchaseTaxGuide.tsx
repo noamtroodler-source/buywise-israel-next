@@ -281,7 +281,7 @@ export default function PurchaseTaxGuide() {
                 Essential Guide
               </Badge>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Purchase Tax in Israel
+                Purchase Tax in <span className="text-primary">Israel</span>
                 <span className="block text-primary mt-2">What Foreign Buyers Don't Realize</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-6">

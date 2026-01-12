@@ -308,7 +308,7 @@ export default function BuyingInIsraelGuide() {
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                Complete Guide to Buying Property in Israel
+                Complete Guide to Buying Property in <span className="text-primary">Israel</span>
               </h1>
               
               <p className="text-lg text-muted-foreground">
