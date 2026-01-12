@@ -62,8 +62,9 @@ export interface MonthlyCostsResult {
   mortgage?: number;
 }
 
-// VAT rate
-const VAT_RATE = 0.17;
+// VAT rate (updated January 2025)
+// Note: This is a fallback - prefer using getVatRate() from constants.ts
+const VAT_RATE = 0.18;
 
 // Standard cost ranges (₪)
 const COSTS = {

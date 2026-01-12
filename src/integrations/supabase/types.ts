@@ -273,6 +273,57 @@ export type Database = {
         }
         Relationships: []
       }
+      calculator_constants: {
+        Row: {
+          category: string
+          constant_key: string
+          created_at: string | null
+          description: string | null
+          effective_from: string | null
+          effective_until: string | null
+          id: string
+          is_current: boolean | null
+          label: string | null
+          source: string | null
+          source_url: string | null
+          updated_at: string | null
+          value_json: Json | null
+          value_numeric: number | null
+        }
+        Insert: {
+          category: string
+          constant_key: string
+          created_at?: string | null
+          description?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          id?: string
+          is_current?: boolean | null
+          label?: string | null
+          source?: string | null
+          source_url?: string | null
+          updated_at?: string | null
+          value_json?: Json | null
+          value_numeric?: number | null
+        }
+        Update: {
+          category?: string
+          constant_key?: string
+          created_at?: string | null
+          description?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          id?: string
+          is_current?: boolean | null
+          label?: string | null
+          source?: string | null
+          source_url?: string | null
+          updated_at?: string | null
+          value_json?: Json | null
+          value_numeric?: number | null
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           anglo_presence: string | null

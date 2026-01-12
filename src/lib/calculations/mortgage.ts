@@ -68,8 +68,9 @@ const LTV_LIMITS: Record<BuyerCategory, number> = {
   company: 0.50,     // Same as investor
 };
 
-// Maximum Payment-to-Income ratio
-const MAX_PTI = 0.40; // 40% max
+// Maximum Payment-to-Income ratio (Bank of Israel Directive 329 v11)
+// Updated to 50% per April 2024 regulations
+const MAX_PTI = 0.50; // 50% max
 
 // Current approximate rates (2024)
 const CURRENT_RATES: Record<MortgageTrackType, { min: number; max: number }> = {
