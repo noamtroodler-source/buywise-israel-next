@@ -4,6 +4,11 @@ import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuideCard } from '@/components/guides';
 
+import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
+import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
+import purchaseTaxHero from '@/assets/guides/purchase-tax-hero.jpg';
+import trueCostHero from '@/assets/guides/true-cost-hero.jpg';
+
 export interface Guide {
   slug: string;
   title: string;
@@ -19,7 +24,7 @@ const guides: Guide[] = [
     slug: 'buying-in-israel',
     title: 'Complete Guide to Buying in Israel',
     description: 'Everything you need to know about purchasing property in Israel, from search to closing.',
-    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80',
+    image: buyingInIsraelHero,
     readingTime: 30,
     chaptersCount: 14,
     featured: true,
@@ -28,7 +33,7 @@ const guides: Guide[] = [
     slug: 'understanding-listings',
     title: 'Understanding Israeli Listings',
     description: 'Why listings feel misleading to internationals and how to read them with confidence.',
-    image: 'https://images.unsplash.com/photo-1560520653-9e0e4c89eb11?w=800&q=80',
+    image: understandingListingsHero,
     readingTime: 20,
     chaptersCount: 13,
   },
@@ -36,7 +41,7 @@ const guides: Guide[] = [
     slug: 'purchase-tax',
     title: 'Purchase Tax Guide',
     description: "What foreign buyers don't realize about Mas Rechisha and how to understand the system.",
-    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80',
+    image: purchaseTaxHero,
     readingTime: 15,
     chaptersCount: 12,
   },
@@ -44,7 +49,7 @@ const guides: Guide[] = [
     slug: 'true-cost',
     title: 'The True Cost of Buying',
     description: 'Beyond the listing price: taxes, fees, and expenses that add up before, during, and after.',
-    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80',
+    image: trueCostHero,
     readingTime: 18,
     chaptersCount: 11,
   },
