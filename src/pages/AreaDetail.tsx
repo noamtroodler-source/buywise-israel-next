@@ -1,5 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, TrendingUp, BarChart3, Eye, Calculator, Building2, Home } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCity } from '@/hooks/useCities';
@@ -8,16 +10,66 @@ import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 
-// New redesigned components
-import { CityHero } from '@/components/city/CityHero';
+// New guide-style components
+import { CityHeroGuide } from '@/components/city/CityHeroGuide';
+import { CityOpener } from '@/components/city/CityOpener';
+
+// Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
-import { CityIntroduction } from '@/components/city/CityIntroduction';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
 import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
 import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
+
+// Navigation sections for sticky nav
+const navSections = [
+  { id: 'overview', label: 'Overview', icon: Eye },
+  { id: 'market', label: 'Market Data', icon: BarChart3 },
+  { id: 'trends', label: 'Price Trends', icon: TrendingUp },
+  { id: 'watching', label: 'Worth Watching', icon: Eye },
+  { id: 'tools', label: 'Run the Numbers', icon: Calculator },
+  { id: 'listings', label: 'Explore Listings', icon: Building2 },
+];
+
+// City Identity Sentences - universally true, one-liner descriptions
+const cityIdentities: Record<string, string> = {
+  'tel-aviv': "Tel Aviv is Israel's cultural and economic capital — a Mediterranean metropolis known for its beaches, nightlife, and startup ecosystem.",
+  'herzliya': "Herzliya is a coastal tech hub north of Tel Aviv, home to Israel's \"Silicon Wadi\" and luxury beachfront living.",
+  'jerusalem': "Jerusalem is Israel's capital and spiritual center — a city of historical significance, diverse neighborhoods, and strong community ties.",
+  'haifa': "Haifa is a port city on Mount Carmel, known for its multicultural atmosphere, tech sector, and Mediterranean views.",
+  'raanana': "Ra'anana is a family-friendly suburb with excellent schools, a strong Anglo community, and proximity to Tel Aviv.",
+  'netanya': "Netanya is a coastal city known for its cliff-side beaches, affordable housing, and growing French-speaking community.",
+  'modiin': "Modi'in is a planned city between Tel Aviv and Jerusalem, designed for families with modern infrastructure and green spaces.",
+  'beer-sheva': "Beer Sheva is the capital of the Negev, home to Ben-Gurion University and emerging as a tech and innovation hub.",
+  'ashdod': "Ashdod is a port city with affordable coastal living, a growing population, and strong industrial base.",
+  'ashkelon': "Ashkelon is a southern coastal city known for archaeological sites, beaches, and affordable housing.",
+  'eilat': "Eilat is Israel's Red Sea resort city — tax-free, tourism-focused, with year-round warm weather.",
+  'ramat-gan': "Ramat Gan is an urban center adjacent to Tel Aviv, known for the Diamond Exchange and growing residential demand.",
+  'petah-tikva': "Petah Tikva is one of Israel's oldest cities, now a commercial hub with strong transport links.",
+  'givatayim': "Givatayim is a small, walkable city bordering Tel Aviv — urban living with a neighborhood feel.",
+  'holon': "Holon is a family-oriented city south of Tel Aviv, known for the Design Museum and affordable housing.",
+  'bat-yam': "Bat Yam is a beachfront city south of Tel Aviv, undergoing urban renewal with improving infrastructure.",
+  'kfar-saba': "Kfar Saba is a Sharon region suburb with good schools, parks, and proximity to Highway 6.",
+  'hod-hasharon': "Hod HaSharon is a growing residential town in the Sharon region, popular with young families.",
+  'rosh-haayin': "Rosh HaAyin is a hilltop city east of Tel Aviv, known for its diverse population and train connectivity.",
+  'shoham': "Shoham is a small planned community between Tel Aviv and Jerusalem, known for quiet suburban living.",
+  'givat-shmuel': "Givat Shmuel is one of Israel's smallest cities, bordering Ramat Gan, with strong residential demand.",
+  'caesarea': "Caesarea is an exclusive coastal community with archaeological sites, a golf course, and luxury villas.",
+  'zichron-yaakov': "Zichron Yaakov is a wine country town on Mount Carmel, known for historic architecture and boutique living.",
+  'pardes-hanna': "Pardes Hanna-Karkur is a rural community in the Sharon region, offering quiet living near nature.",
+  'kiryat-tivon': "Kiryat Tivon is a green suburban town near Haifa, popular with families seeking a quieter lifestyle.",
+  'yokneam': "Yokneam is a Jezreel Valley town with a growing tech park, near Haifa and the Galilee.",
+  'hadera': "Hadera is a central coastal city with improving infrastructure and affordable housing options.",
+  'nahariya': "Nahariya is Israel's northernmost coastal city, known for its beaches, German heritage, and relaxed atmosphere.",
+  'beit-shemesh': "Beit Shemesh is a growing city west of Jerusalem, with distinct secular and religious neighborhoods.",
+  'mevaseret-zion': "Mevaseret Zion is a suburban town overlooking Jerusalem, known for its mountain views and family atmosphere.",
+  'efrat': "Efrat is a community in the Judean Hills, south of Jerusalem, with a strong English-speaking presence.",
+  'gush-etzion': "Gush Etzion is a bloc of communities in the Judean Hills, known for its historical significance and scenic landscapes.",
+  'maale-adumim': "Ma'ale Adumim is a city east of Jerusalem, offering suburban living with mountain views.",
+  'givat-zeev': "Givat Ze'ev is a residential town north of Jerusalem, popular with families seeking affordable housing.",
+};
 
 // Worth Watching data per city
 const cityMarketFactors: Record<string, MarketFactor[]> = {
@@ -196,20 +248,40 @@ export default function CityDetail() {
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
   const { data: historicalPrices = [] } = useHistoricalPrices(slug || '', 10);
 
-  const getMarketTagline = () => {
-    if (!city) return null;
-    
-    const pricePerSqm = canonicalMetrics?.average_price_sqm ?? city.average_price_sqm ?? (marketData[0]?.average_price_sqm || 0);
-    if (!pricePerSqm) return city.description || null;
-    
-    const nationalAvg = 22800;
-    const percentAbove = ((pricePerSqm - nationalAvg) / nationalAvg) * 100;
-    
-    if (percentAbove > 50) return `Premium market — ${Math.round(percentAbove)}% above national average`;
-    if (percentAbove > 20) return `Strong market — ${Math.round(percentAbove)}% above national average`;
-    if (percentAbove > 0) return `Established market — ${Math.round(percentAbove)}% above average`;
-    if (percentAbove > -20) return `Great value — ${Math.abs(Math.round(percentAbove))}% below average`;
-    return `Affordable market — Below national average`;
+  // Sticky navigation state
+  const [showNav, setShowNav] = useState(false);
+  const [activeSection, setActiveSection] = useState('overview');
+
+  // Handle scroll for sticky nav
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowNav(window.scrollY > 300);
+
+      // Determine active section
+      const sections = navSections.map(s => s.id);
+      for (const sectionId of sections.reverse()) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 150) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 100;
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
+    }
   };
 
   if (cityLoading) {
@@ -242,15 +314,50 @@ export default function CityDetail() {
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
   const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
+  const identitySentence = cityIdentities[slug || ''] || city.description || `${city.name} is a city in Israel with a unique character and real estate market.`;
+  const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change ?? undefined;
 
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* 1. Cinematic Hero */}
-        <CityHero
+        {/* Sticky Navigation */}
+        <motion.div
+          initial={{ y: -100 }}
+          animate={{ y: showNav ? 0 : -100 }}
+          transition={{ duration: 0.3 }}
+          className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b shadow-sm"
+        >
+          <div className="container">
+            <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
+              <span className="text-sm font-medium text-foreground mr-2 shrink-0">
+                {city.name}
+              </span>
+              <div className="h-4 w-px bg-border shrink-0" />
+              {navSections.map((section) => (
+                <Button
+                  key={section.id}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollToSection(section.id)}
+                  className={`shrink-0 text-xs ${
+                    activeSection === section.id
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
+                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                  }`}
+                >
+                  {section.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 1. Guide-Style Hero */}
+        <CityHeroGuide
           cityName={city.name}
           heroImage={heroImage}
-          marketTagline={getMarketTagline()}
+          identitySentence={identitySentence}
+          sectionCount={navSections.length}
         />
 
         {/* 2. Quick Stats Strip */}
@@ -269,51 +376,73 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. City Introduction - Full Width */}
-        <CityIntroduction
+        {/* 3. Opener Section - Overview */}
+        <CityOpener
           cityName={city.name}
-          description={city.description}
-          highlights={city.highlights}
-          angloPresence={city.anglo_presence}
+          identitySentence={identitySentence}
           hasTrainStation={city.has_train_station}
-          commuteTimeTelAviv={city.commute_time_tel_aviv}
+          angloPresence={city.anglo_presence}
+          yoyPriceChange={yoyChange}
         />
 
         {/* 4. Market Overview - 3 Card Grid */}
-        <MarketOverviewCards
-          marketData={marketData}
-          cityName={city.name}
-          arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
-        />
+        <section id="market">
+          <MarketOverviewCards
+            marketData={marketData}
+            cityName={city.name}
+            arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+          />
+        </section>
 
         {/* 5. Price Trends Chart */}
         {marketData.length > 0 && (
-          <PriceTrendsSection
-            marketData={marketData}
-            cityName={city.name}
-            canonicalMetrics={canonicalMetrics}
-            historicalPrices={historicalPrices}
-            yoyChange={city.yoy_price_change}
-          />
+          <section id="trends">
+            <PriceTrendsSection
+              marketData={marketData}
+              cityName={city.name}
+              canonicalMetrics={canonicalMetrics}
+              historicalPrices={historicalPrices}
+              yoyChange={city.yoy_price_change}
+            />
+          </section>
         )}
 
         {/* 6. Worth Watching */}
-        {worthWatching.length > 0 && (
-          <CityWorthWatchingNew factors={worthWatching} cityName={city.name} />
-        )}
+        <section id="watching">
+          {worthWatching.length > 0 ? (
+            <CityWorthWatchingNew factors={worthWatching} cityName={city.name} />
+          ) : (
+            <div className="py-12 bg-muted/30">
+              <div className="container">
+                <div className="text-center py-8">
+                  <Eye className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="text-lg font-semibold mb-2">Worth Watching in {city.name}</h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                    Market factors and developments for {city.name} are being researched. 
+                    Check back soon for insights on what's shaping this market.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* 7. Run the Numbers - Calculator Teaser */}
-        <CityCalculatorTeaser 
-          cityName={city.name} 
-          medianPrice={medianPrice}
-          grossYield={grossYield}
-        />
+        <section id="tools">
+          <CityCalculatorTeaser 
+            cityName={city.name} 
+            medianPrice={medianPrice}
+            grossYield={grossYield}
+          />
+        </section>
 
         {/* 8. Explore Listings CTA */}
-        <CityExploreListings 
-          cityName={city.name} 
-          propertiesCount={properties.length} 
-        />
+        <section id="listings">
+          <CityExploreListings 
+            cityName={city.name} 
+            propertiesCount={properties.length} 
+          />
+        </section>
 
         {/* 9. Featured Properties - At the bottom */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
