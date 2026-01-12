@@ -43,6 +43,7 @@ import Glossary from "./pages/Glossary";
 import Guides from "./pages/Guides";
 import BuyingPropertyGuide from "./pages/guides/BuyingPropertyGuide";
 import ListingsGuide from "./pages/guides/ListingsGuide";
+import PurchaseTaxGuide from "./pages/guides/PurchaseTaxGuide";
 // Individual guide pages - commented out for launch
 // import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 // import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
@@ -83,6 +84,7 @@ const App = () => (
 <Route path="/guides" element={<Guides />} />
             <Route path="/guides/buying-in-israel" element={<BuyingPropertyGuide />} />
             <Route path="/guides/understanding-listings" element={<ListingsGuide />} />
+            <Route path="/guides/purchase-tax" element={<PurchaseTaxGuide />} />
             {/* Individual guide pages - commented out for launch
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
