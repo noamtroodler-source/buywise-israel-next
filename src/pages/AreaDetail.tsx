@@ -1,7 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { Loader2, TrendingUp, BarChart3, Eye, Calculator, Building2, Home } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, Eye } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useCity } from '@/hooks/useCities';
@@ -22,16 +20,6 @@ import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthW
 import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
-
-// Navigation sections for sticky nav
-const navSections = [
-  { id: 'overview', label: 'Overview', icon: Eye },
-  { id: 'market', label: 'Market Data', icon: BarChart3 },
-  { id: 'trends', label: 'Price Trends', icon: TrendingUp },
-  { id: 'watching', label: 'Worth Watching', icon: Eye },
-  { id: 'tools', label: 'Run the Numbers', icon: Calculator },
-  { id: 'listings', label: 'Explore Listings', icon: Building2 },
-];
 
 // City Identity Sentences - universally true, one-liner descriptions
 const cityIdentities: Record<string, string> = {
@@ -247,43 +235,6 @@ export default function CityDetail() {
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
   const { data: historicalPrices = [] } = useHistoricalPrices(slug || '', 10);
-
-  // Sticky navigation state
-  const [showNav, setShowNav] = useState(false);
-  const [activeSection, setActiveSection] = useState('overview');
-
-  // Handle scroll for sticky nav
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowNav(window.scrollY > 300);
-
-      // Determine active section
-      const sections = navSections.map(s => s.id);
-      for (const sectionId of sections.reverse()) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= 150) {
-            setActiveSection(sectionId);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const offset = 100;
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: elementPosition - offset, behavior: 'smooth' });
-    }
-  };
-
   if (cityLoading) {
     return (
       <Layout>
@@ -320,44 +271,11 @@ export default function CityDetail() {
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Sticky Navigation */}
-        <motion.div
-          initial={{ y: -100 }}
-          animate={{ y: showNav ? 0 : -100 }}
-          transition={{ duration: 0.3 }}
-          className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b shadow-sm"
-        >
-          <div className="container">
-            <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
-              <span className="text-sm font-medium text-foreground mr-2 shrink-0">
-                {city.name}
-              </span>
-              <div className="h-4 w-px bg-border shrink-0" />
-              {navSections.map((section) => (
-                <Button
-                  key={section.id}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => scrollToSection(section.id)}
-                  className={`shrink-0 text-xs ${
-                    activeSection === section.id
-                      ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                  }`}
-                >
-                  {section.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
         {/* 1. Guide-Style Hero */}
         <CityHeroGuide
           cityName={city.name}
           heroImage={heroImage}
           identitySentence={identitySentence}
-          sectionCount={navSections.length}
         />
 
         {/* 2. Quick Stats Strip */}
