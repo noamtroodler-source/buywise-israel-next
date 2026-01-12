@@ -33,6 +33,14 @@ const guides: Guide[] = [
     chaptersCount: 13,
   },
   {
+    slug: 'purchase-tax',
+    title: 'Purchase Tax Guide',
+    description: "What foreign buyers don't realize about Mas Rechisha and how to understand the system.",
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80',
+    readingTime: 15,
+    chaptersCount: 12,
+  },
+  {
     slug: 'new-vs-resale',
     title: 'New Construction vs Resale',
     description: 'Compare buying from developers versus existing properties. Understand the pros and cons.',
