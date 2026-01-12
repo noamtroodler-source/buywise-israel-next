@@ -30,6 +30,15 @@ export function Footer() {
               <Link to="/listings?status=for_rent" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Rent Property
               </Link>
+              <Link to="/listings?type=apartment" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Apartments
+              </Link>
+              <Link to="/listings?type=house" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Houses
+              </Link>
+              <Link to="/listings?type=penthouse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Penthouses
+              </Link>
               <Link to="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Tools & Calculators
               </Link>
@@ -46,30 +55,14 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-foreground">Resources</h4>
             <nav className="flex flex-col gap-2">
+              <Link to="/guides" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Buyer's Guides
+              </Link>
               <Link to="/glossary" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Hebrew Glossary
               </Link>
               <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Blog & Articles
-              </Link>
-            </nav>
-          </div>
-
-          {/* Property Types */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-foreground">Property Types</h4>
-            <nav className="flex flex-col gap-2">
-              <Link to="/listings?type=apartment" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Apartments
-              </Link>
-              <Link to="/listings?type=house" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Houses
-              </Link>
-              <Link to="/listings?type=penthouse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Penthouses
-              </Link>
-              <Link to="/listings?type=commercial" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Commercial
               </Link>
             </nav>
           </div>
