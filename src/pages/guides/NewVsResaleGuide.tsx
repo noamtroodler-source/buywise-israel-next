@@ -435,9 +435,9 @@ export default function NewVsResaleGuide() {
                   <li>• You prefer peripheral areas</li>
                 </ul>
               </div>
-              <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
-                <h4 className="font-semibold text-amber-600 mb-2 flex items-center gap-2">
-                  <Home className="h-4 w-4" />
+              <div className="bg-muted/30 border border-border/50 rounded-xl p-4">
+                <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <Home className="h-4 w-4 text-primary" />
                   Choose Resale If...
                 </h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
