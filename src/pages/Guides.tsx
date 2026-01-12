@@ -8,6 +8,7 @@ import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
 import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
 import purchaseTaxHero from '@/assets/guides/purchase-tax-hero.jpg';
 import trueCostHero from '@/assets/guides/true-cost-hero.jpg';
+import talkingToProfessionalsHero from '@/assets/guides/talking-to-professionals-hero.jpg';
 
 export interface Guide {
   slug: string;
@@ -52,6 +53,14 @@ const guides: Guide[] = [
     image: trueCostHero,
     readingTime: 18,
     chaptersCount: 11,
+  },
+  {
+    slug: 'talking-to-professionals',
+    title: 'What to Know Before Talking to an Agent, Lawyer, or Broker',
+    description: 'Understand roles, incentives, and timing before engaging Israeli real estate professionals.',
+    image: talkingToProfessionalsHero,
+    readingTime: 15,
+    chaptersCount: 9,
   },
 ];
 
