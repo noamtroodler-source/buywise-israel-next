@@ -1660,6 +1660,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_agent_view_profile: {
+        Args: { _agent_user_id: string; _profile_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
