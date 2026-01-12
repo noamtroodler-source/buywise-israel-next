@@ -12,6 +12,7 @@ import { Receipt, Home, Truck, Sofa, AlertTriangle, Info, Building2, Calendar } 
 import { calculatePurchaseTax, type BuyerType, getBuyerTypeLabel, calculateOlehEligibility } from '@/lib/calculations/purchaseTax';
 import { calculateTotalPurchaseCosts, calculateNewConstructionLinkage } from '@/lib/calculations/purchaseCosts';
 import { useCities } from '@/hooks/useCities';
+import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 
 export function TotalCostCalculator() {
   const [propertyPrice, setPropertyPrice] = useState(2500000);
@@ -357,13 +358,31 @@ export function TotalCostCalculator() {
                   Effective rate: {taxResult.effectiveRate}%
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lawyer Fees (שכ"ט עו"ד):</span>
-                  <span className="font-medium">{formatCurrency(calculations.lawyerFees)}</span>
+                  <Tooltip>
+                    <TooltipTrigger className="text-muted-foreground text-left cursor-help underline decoration-dotted">
+                      Lawyer Fees (שכ"ט עו"ד):
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Typical range: {FEE_RANGES.lawyer.label} of property price. Negotiable based on complexity.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="font-medium">
+                    {formatPriceRange(propertyPrice * FEE_RANGES.lawyer.min, propertyPrice * FEE_RANGES.lawyer.max)}
+                  </span>
                 </div>
                 {!isNewConstruction && calculations.agentFees > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Agent Commission (תיווך):</span>
-                    <span className="font-medium">{formatCurrency(calculations.agentFees)}</span>
+                    <Tooltip>
+                      <TooltipTrigger className="text-muted-foreground text-left cursor-help underline decoration-dotted">
+                        Agent Commission (תיווך):
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Typical range: {FEE_RANGES.agent.label} of price. Often negotiable, especially for higher-priced properties.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="font-medium">
+                      {formatPriceRange(propertyPrice * FEE_RANGES.agent.min, propertyPrice * FEE_RANGES.agent.max)}
+                    </span>
                   </div>
                 )}
                 {isNewConstruction && (
