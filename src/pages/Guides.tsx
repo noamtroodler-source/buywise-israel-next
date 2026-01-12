@@ -9,6 +9,7 @@ import understandingListingsHero from '@/assets/guides/understanding-listings-he
 import purchaseTaxHero from '@/assets/guides/purchase-tax-hero.jpg';
 import trueCostHero from '@/assets/guides/true-cost-hero.jpg';
 import talkingToProfessionalsHero from '@/assets/guides/talking-to-professionals-hero.jpg';
+import mortgagesHero from '@/assets/guides/mortgages-hero.jpg';
 
 export interface Guide {
   slug: string;
@@ -61,6 +62,14 @@ const guides: Guide[] = [
     image: talkingToProfessionalsHero,
     readingTime: 15,
     chaptersCount: 9,
+  },
+  {
+    slug: 'mortgages',
+    title: 'Mortgages in Israel for Foreign Buyers',
+    description: 'How Israeli mortgages actually work: pre-approval, timing, eligibility, and why the process feels opaque.',
+    image: mortgagesHero,
+    readingTime: 20,
+    chaptersCount: 11,
   },
 ];
 
