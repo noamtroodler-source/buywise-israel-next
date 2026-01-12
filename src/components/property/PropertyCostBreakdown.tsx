@@ -3,12 +3,14 @@ import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, Tren
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -94,24 +96,50 @@ export function PropertyCostBreakdown({
   // Effective tax rate
   const effectiveTaxRate = price > 0 ? (purchaseTax / price) * 100 : 0;
   
-  // Other one-time costs
-  const lawyerFees = price * 0.005; // ~0.5%
-  const lawyerVat = lawyerFees * 0.17;
-  const agentFees = price * 0.02; // ~2%
-  const agentVat = agentFees * 0.17;
+  // Other one-time costs - now using honest ranges instead of fake precision
+  // Lawyer fees: 0.5-1.0% of price (varies by complexity and negotiation)
+  const lawyerFeesRange = {
+    low: Math.round(price * FEE_RANGES.lawyer.min),
+    high: Math.round(price * FEE_RANGES.lawyer.max),
+  };
+  const lawyerVatRange = {
+    low: Math.round(lawyerFeesRange.low * 0.17),
+    high: Math.round(lawyerFeesRange.high * 0.17),
+  };
   
-  // Fixed mortgage & registration fees per PDF research:
-  // Appraisal: ₪1,500, Origination: ₪360, Tabu registration: ₪500
-  const appraisalFee = 1500;
-  const originationFee = 360;
-  const registrationFees = 500;
-  const mortgageFees = appraisalFee + originationFee; // Total: ₪1,860
+  // Agent fees: 1.5-2.5% (negotiable)
+  const agentFeesRange = {
+    low: Math.round(price * FEE_RANGES.agent.min),
+    high: Math.round(price * FEE_RANGES.agent.max),
+  };
+  const agentVatRange = {
+    low: Math.round(agentFeesRange.low * 0.17),
+    high: Math.round(agentFeesRange.high * 0.17),
+  };
   
-  // Developer lawyer fees for new construction
-  const developerLawyerFees = isNewConstruction ? price * 0.015 : 0;
+  // Fixed fees with ranges
+  const mortgageFeesRange = {
+    low: FEE_RANGES.appraisal.min + FEE_RANGES.mortgageOrigination.min,
+    high: FEE_RANGES.appraisal.max + FEE_RANGES.mortgageOrigination.max,
+  };
+  const registrationFeesRange = {
+    low: FEE_RANGES.registration.min,
+    high: FEE_RANGES.registration.max,
+  };
   
-  const totalOneTime = purchaseTax + lawyerFees + lawyerVat + agentFees + agentVat + 
-                       mortgageFees + registrationFees + developerLawyerFees;
+  // Developer lawyer fees for new construction: 1-2%
+  const developerLawyerFeesRange = isNewConstruction ? {
+    low: Math.round(price * FEE_RANGES.developerLawyer.min),
+    high: Math.round(price * FEE_RANGES.developerLawyer.max),
+  } : { low: 0, high: 0 };
+  
+  // Calculate total range
+  const totalOneTimeRange = {
+    low: purchaseTax + lawyerFeesRange.low + lawyerVatRange.low + agentFeesRange.low + agentVatRange.low + 
+         mortgageFeesRange.low + registrationFeesRange.low + developerLawyerFeesRange.low,
+    high: purchaseTax + lawyerFeesRange.high + lawyerVatRange.high + agentFeesRange.high + agentVatRange.high + 
+          mortgageFeesRange.high + registrationFeesRange.high + developerLawyerFeesRange.high,
+  };
 
   // Monthly costs - use city-specific data where available
   // arnona_rate_sqm is ANNUAL rate per sqm, so divide by 12 for monthly
@@ -245,11 +273,13 @@ export function PropertyCostBreakdown({
         )}
 
 
-        {/* One-Time Costs */}
+        {/* One-Time Costs - Now with honest ranges */}
+        <TooltipProvider>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Receipt className="h-4 w-4 text-primary" />
             <h4 className="font-medium text-foreground">One-Time Costs</h4>
+            <Badge variant="outline" className="text-xs ml-auto">Ranges reflect negotiation</Badge>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
@@ -265,34 +295,67 @@ export function PropertyCostBreakdown({
               <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
-              <div>
-                <span className="text-muted-foreground">Lawyer Fees (~0.5% + VAT)</span>
-              </div>
-              <span className="font-medium">{formatPrice(lawyerFees + lawyerVat, 'ILS')}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Lawyer Fees ({FEE_RANGES.lawyer.label} + VAT)</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Varies by transaction complexity and negotiation. Simple deals at lower end, complex deals higher.</p>
+                </TooltipContent>
+              </Tooltip>
+              <span className="font-medium">{formatPriceRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high, 'ILS')}</span>
             </div>
             {isNewConstruction && (
               <div className="flex justify-between py-2 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Developer Lawyer Fee</span>
-                  <Badge variant="outline" className="text-xs">New Build</Badge>
-                </div>
-                <span className="font-medium">{formatPrice(developerLawyerFees, 'ILS')}</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Developer Lawyer Fee ({FEE_RANGES.developerLawyer.label})</span>
+                      <Badge variant="outline" className="text-xs">New Build</Badge>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Required for new construction. Covers contract review and registration with developer.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">{formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}</span>
               </div>
             )}
             <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Agent Fees (~2% + VAT)</span>
-              <span className="font-medium">{formatPrice(agentFees + agentVat, 'ILS')}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Agent Fees ({FEE_RANGES.agent.label} + VAT)</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Negotiable. In competitive markets, may be lower or shared with seller.</p>
+                </TooltipContent>
+              </Tooltip>
+              <span className="font-medium">{formatPriceRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Mortgage & Registration Fees</span>
-              <span className="font-medium">{formatPrice(mortgageFees + registrationFees, 'ILS')}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Mortgage & Registration Fees</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Includes appraisal ({FEE_RANGES.appraisal.label}), origination ({FEE_RANGES.mortgageOrigination.label}), and Tabu registration ({FEE_RANGES.registration.label}).</p>
+                </TooltipContent>
+              </Tooltip>
+              <span className="font-medium">{formatPriceRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-2">
-              <span className="font-semibold">Total One-Time</span>
-              <span className="font-bold text-primary">{formatPrice(totalOneTime, 'ILS')}</span>
+              <span className="font-semibold">Total One-Time Range</span>
+              <span className="font-bold text-primary">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</span>
             </div>
           </div>
         </div>
+        </TooltipProvider>
 
         {/* Monthly Costs */}
         <div className="space-y-3">

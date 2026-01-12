@@ -5,11 +5,11 @@ import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Cale
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { estimateMonthlyPayment, BuyerCategory } from '@/lib/calculations/mortgage';
+import { estimateMonthlyPaymentRange, BuyerCategory } from '@/lib/calculations/mortgage';
+import { formatMonthlyRange } from '@/lib/utils/formatRange';
 import { useSavesCount } from '@/hooks/useSavesCount';
 import { useBuyerProfile, getBuyerTaxType } from '@/hooks/useBuyerProfile';
 import { useAuth } from '@/hooks/useAuth';
-
 interface PropertyQuickSummaryProps {
   property: {
     id: string;
@@ -115,10 +115,10 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
   const pricePerSqm = property.size_sqm ? property.price / property.size_sqm : null;
   
-  // Get buyer category for personalized estimate
+  // Get buyer category for personalized estimate - now returns honest range
   const buyerCategory: BuyerCategory | undefined = buyerProfile ? getBuyerTaxType(buyerProfile) : undefined;
-  const mortgageEstimate = property.listing_status !== 'for_rent' 
-    ? estimateMonthlyPayment(property.price, buyerCategory) 
+  const mortgageRange = property.listing_status !== 'for_rent' 
+    ? estimateMonthlyPaymentRange(property.price, buyerCategory) 
     : null;
   
   // Calculate days on market
@@ -176,22 +176,30 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               )}
             </div>
             
-            {/* Estimated Monthly Payment */}
-            {mortgageEstimate && (
+            {/* Estimated Monthly Payment Range - Honest range, not fake precision */}
+            {mortgageRange && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
                       {buyerCategory && <User className="h-3 w-3 text-primary" />}
-                      Est. {formatPrice(mortgageEstimate.payment, property.currency || 'ILS')}/mo
+                      {formatMonthlyRange(mortgageRange.low, mortgageRange.high, 'ILS')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    {buyerCategory ? (
-                      <p>Based on your profile: {Math.round(mortgageEstimate.ltv * 100)}% financing, 4.5% interest, 25-year term.</p>
-                    ) : (
-                      <p>Estimated based on typical terms: 70% financing, 4.5% interest, 25-year term. {!user ? 'Sign in to personalize.' : 'Complete your buyer profile to personalize.'}</p>
-                    )}
+                    <div className="space-y-1">
+                      {buyerCategory ? (
+                        <p className="font-medium">Based on your buyer profile</p>
+                      ) : (
+                        <p className="font-medium">Estimated monthly range</p>
+                      )}
+                      <p className="text-xs">
+                        {mortgageRange.assumptions.ltvPercent}% financing, {mortgageRange.assumptions.rateRange} rates, {mortgageRange.assumptions.term}-year term
+                      </p>
+                      <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                        {!user ? 'Sign in to personalize.' : !buyerCategory ? 'Complete your buyer profile to personalize.' : 'Actual rates depend on your bank and credit history.'}
+                      </p>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
                 <span className="text-muted-foreground/60">•</span>
@@ -200,7 +208,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                   className="text-primary hover:underline inline-flex items-center gap-1"
                 >
                   <Calculator className="h-3.5 w-3.5" />
-                  Calculate Your Mortgage
+                  Calculate Exact
                 </Link>
               </div>
             )}

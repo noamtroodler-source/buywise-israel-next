@@ -176,6 +176,16 @@ export function useQuickAffordability() {
     return calculateMonthlyPayment(mortgage, DEFAULT_INTEREST_RATE, DEFAULT_TERM_YEARS);
   };
 
+  // New: Returns honest range based on rate variance (4.5% - 6%)
+  const getMonthlyEstimateRange = (price: number): { low: number; mid: number; high: number } => {
+    const mortgage = price * (ltvLimit / 100);
+    return {
+      low: Math.round(calculateMonthlyPayment(mortgage, 4.5, DEFAULT_TERM_YEARS)),
+      mid: Math.round(calculateMonthlyPayment(mortgage, 5.25, DEFAULT_TERM_YEARS)),
+      high: Math.round(calculateMonthlyPayment(mortgage, 6.0, DEFAULT_TERM_YEARS)),
+    };
+  };
+
   const getDownPaymentRequired = (price: number): number => {
     return price * (1 - ltvLimit / 100);
   };
@@ -185,6 +195,7 @@ export function useQuickAffordability() {
     hasSavedSettings: !!savedSettings,
     maxPrice: savedSettings?.maxPrice || null,
     getMonthlyEstimate,
+    getMonthlyEstimateRange,
     getDownPaymentRequired,
   };
 }

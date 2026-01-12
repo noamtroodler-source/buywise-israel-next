@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useQuickAffordability } from '@/hooks/useAffordability';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { formatMonthlyRange } from '@/lib/utils/formatRange';
 
 interface AffordabilityBadgeProps {
   price: number;
@@ -12,10 +13,10 @@ interface AffordabilityBadgeProps {
 }
 
 export function AffordabilityBadge({ price, variant = 'badge', showMonthly = true }: AffordabilityBadgeProps) {
-  const { ltvLimit, hasSavedSettings, maxPrice, getMonthlyEstimate, getDownPaymentRequired } = useQuickAffordability();
+  const { ltvLimit, hasSavedSettings, maxPrice, getMonthlyEstimateRange, getDownPaymentRequired } = useQuickAffordability();
   const formatPrice = useFormatPrice();
 
-  const monthlyPayment = useMemo(() => getMonthlyEstimate(price), [price, getMonthlyEstimate]);
+  const monthlyRange = useMemo(() => getMonthlyEstimateRange(price), [price, getMonthlyEstimateRange]);
   const downPayment = useMemo(() => getDownPaymentRequired(price), [price, getDownPaymentRequired]);
 
   // Determine affordability level if user has saved settings
@@ -60,11 +61,11 @@ export function AffordabilityBadge({ price, variant = 'badge', showMonthly = tru
 
   const affordabilityInfo = getAffordabilityInfo();
 
-  // Minimal variant - just show monthly payment
+  // Minimal variant - just show monthly payment range
   if (variant === 'minimal') {
     return (
       <span className="text-sm text-muted-foreground">
-        ~{formatPrice(monthlyPayment, 'ILS')}/mo
+        {formatMonthlyRange(monthlyRange.low, monthlyRange.high, 'ILS')}
       </span>
     );
   }
@@ -86,22 +87,25 @@ export function AffordabilityBadge({ price, variant = 'badge', showMonthly = tru
             ) : showMonthly ? (
               <Badge variant="secondary" className="text-xs font-medium">
                 <Wallet className="h-3 w-3 mr-1" />
-                {formatPrice(monthlyPayment, 'ILS')}/mo
+                {formatMonthlyRange(monthlyRange.low, monthlyRange.high, 'ILS')}
               </Badge>
             ) : null}
           </div>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           <div className="space-y-2 text-sm">
-            <p className="font-medium">Estimated Monthly Costs</p>
+            <p className="font-medium">Estimated Monthly Range</p>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Mortgage ({ltvLimit}% LTV)</span>
-              <span>{formatPrice(monthlyPayment, 'ILS')}</span>
+              <span>{formatMonthlyRange(monthlyRange.low, monthlyRange.high, 'ILS')}</span>
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Down Payment</span>
               <span>{formatPrice(downPayment, 'ILS')}</span>
             </div>
+            <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+              Based on 4.5–6% rates, 25-year term
+            </p>
             {affordabilityInfo && (
               <p className={`${affordabilityInfo.color} pt-1 border-t border-border`}>
                 {affordabilityInfo.description}
@@ -146,33 +150,33 @@ export function AffordabilityBadge({ price, variant = 'badge', showMonthly = tru
       
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <p className="text-muted-foreground text-xs">Monthly Payment</p>
-          <p className="font-semibold">{formatPrice(monthlyPayment, 'ILS')}</p>
+          <p className="text-muted-foreground text-xs">Monthly Range</p>
+          <p className="font-semibold">{formatMonthlyRange(monthlyRange.low, monthlyRange.high, 'ILS')}</p>
         </div>
         <div>
           <p className="text-muted-foreground text-xs">Down Payment ({100 - ltvLimit}%)</p>
           <p className="font-semibold">{formatPrice(downPayment, 'ILS')}</p>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground mt-2">Based on 4.5–6% rates, {ltvLimit}% LTV</p>
     </div>
   );
 }
 
-// Export a simpler monthly estimate component for property cards
+// Export a simpler monthly estimate component for property cards - now shows range
 export function MonthlyEstimate({ price }: { price: number }) {
-  const { getMonthlyEstimate } = useQuickAffordability();
-  const formatPrice = useFormatPrice();
-  const monthly = getMonthlyEstimate(price);
+  const { getMonthlyEstimateRange } = useQuickAffordability();
+  const range = getMonthlyEstimateRange(price);
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <span className="text-xs text-muted-foreground hover:text-foreground cursor-help">
-          ~{formatPrice(monthly, 'ILS')}/mo
+          {formatMonthlyRange(range.low, range.high, 'ILS')}
         </span>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Estimated mortgage payment at current rates</p>
+        <p>Estimated range at 4.5–6% rates</p>
       </TooltipContent>
     </Tooltip>
   );
