@@ -189,20 +189,26 @@ const decisionPoints = [
   { title: "Registration type tolerance", description: "Tabu is strongest; understand alternatives before accepting them" },
 ];
 
-// Data: Readiness checklist
-const readinessChecklist = [
-  "I understand who represents whom",
-  "I know what proves ownership",
-  "I know when mortgage approval happens",
-  "I understand payment staging",
-  "I know which costs block registration",
-  "I know what Zichron Devarim is",
-  "I know which version of the contract controls",
-  "I understand land type differences",
-  "I know what happens after keys",
-  "I know where timing mismatches occur",
-  "I can explain the sequence start to finish",
-];
+// Data: Readiness checklist (grouped)
+const readinessChecklist = {
+  "Legal & Representation": [
+    "I understand who represents whom",
+    "I know what proves ownership",
+    "I know which version of the contract controls",
+    "I understand land type differences",
+  ],
+  "Financial & Timing": [
+    "I know when mortgage approval happens",
+    "I understand payment staging",
+    "I know which costs block registration",
+    "I know what Zichron Devarim is",
+  ],
+  "Process & Registration": [
+    "I know what happens after keys",
+    "I know where timing mismatches occur",
+    "I can explain the sequence start to finish",
+  ],
+};
 
 // Participant badge component
 const ParticipantBadge = ({ participant }: { participant: string }) => (
@@ -565,37 +571,48 @@ export default function BuyingPropertyGuide() {
 
         {/* Readiness Checklist Section */}
         <section className="container py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto"
-          >
-            <div className="text-center mb-10">
+          <div className="max-w-5xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-10"
+            >
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                 BuyWise Readiness Checklist
               </h2>
               <p className="text-muted-foreground">Before reaching out to professionals, ask yourself...</p>
-            </div>
+            </motion.div>
             
-            <Card className="p-6 border-border/50">
-              <div className="space-y-3">
-                {readinessChecklist.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.05 }}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground">{item}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </Card>
-          </motion.div>
+            <div className="grid md:grid-cols-3 gap-6">
+              {Object.entries(readinessChecklist).map(([category, items], categoryIndex) => (
+                <motion.div
+                  key={category}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: categoryIndex * 0.1 }}
+                >
+                  <Card className="p-5 h-full border-border/50">
+                    <h3 className="font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">
+                      {category}
+                    </h3>
+                    <div className="space-y-3">
+                      {items.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-2"
+                        >
+                          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-muted-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Bottom CTAs */}
