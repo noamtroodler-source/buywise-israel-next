@@ -11,6 +11,7 @@ import trueCostHero from '@/assets/guides/true-cost-hero.jpg';
 import talkingToProfessionalsHero from '@/assets/guides/talking-to-professionals-hero.jpg';
 import mortgagesHero from '@/assets/guides/mortgages-hero.jpg';
 import newVsResaleHero from '@/assets/guides/new-vs-resale-hero.jpg';
+import rentVsBuyHero from '@/assets/guides/rent-vs-buy-hero.jpg';
 
 export interface Guide {
   slug: string;
@@ -79,6 +80,14 @@ const guides: Guide[] = [
     image: newVsResaleHero,
     readingTime: 18,
     chaptersCount: 11,
+  },
+  {
+    slug: 'rent-vs-buy',
+    title: 'Rent vs Buy in Israel',
+    description: 'How this decision works differently for foreigners—psychologically, legally, and culturally.',
+    image: rentVsBuyHero,
+    readingTime: 15,
+    chaptersCount: 10,
   },
 ];
 

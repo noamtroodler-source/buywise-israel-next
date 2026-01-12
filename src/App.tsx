@@ -48,6 +48,7 @@ import TrueCostGuide from "./pages/guides/TrueCostGuide";
 import TalkingToProfessionalsGuide from "./pages/guides/TalkingToProfessionalsGuide";
 import MortgagesGuide from "./pages/guides/MortgagesGuide";
 import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
+import RentVsBuyGuide from "./pages/guides/RentVsBuyGuide";
 // Individual guide pages - commented out for launch
 // import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 // import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="/guides/talking-to-professionals" element={<TalkingToProfessionalsGuide />} />
             <Route path="/guides/mortgages" element={<MortgagesGuide />} />
             <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
+            <Route path="/guides/rent-vs-buy" element={<RentVsBuyGuide />} />
             {/* Individual guide pages - commented out for launch
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
