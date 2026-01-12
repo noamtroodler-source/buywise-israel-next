@@ -317,23 +317,6 @@ export default function ListingsGuide() {
           </div>
         </motion.section>
 
-        {/* Core Mismatch Section */}
-        <section id="core-mismatch" className="py-16 bg-muted/30">
-          <div className="container">
-            <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
-                The Core Mismatch
-              </h2>
-              <Card className="p-8 bg-background border-2 border-primary/20">
-                <p className="text-xl md:text-2xl text-foreground font-medium leading-relaxed">
-                  Israeli listings follow local conventions such as counting all rooms and quoting gross 
-                  area while omitting costs and legal details, whereas international buyers expect 
-                  standardized measurements and complete information.
-                </p>
-              </Card>
-            </motion.div>
-          </div>
-        </section>
 
         {/* Why Confusing Section */}
         <section id="why-confusing" className="container py-16">
