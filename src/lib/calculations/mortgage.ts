@@ -470,3 +470,66 @@ export function estimateMonthlyPayment(
 
   return { payment: Math.round(monthlyPayment), ltv };
 }
+
+/**
+ * Monthly payment range estimate - returns low/mid/high based on rate variance
+ * This provides "honest ranges" rather than fake precision
+ * 
+ * Rate assumptions:
+ * - Low: 4.5% (optimistic)
+ * - Mid: 5.25% (typical current market)
+ * - High: 6.0% (conservative)
+ * 
+ * Term: Uses 25 years (standard Israeli mortgage)
+ */
+export interface MonthlyPaymentRange {
+  low: number;
+  mid: number;
+  high: number;
+  ltv: number;
+  assumptions: {
+    rateRange: string;
+    term: number;
+    ltvPercent: number;
+  };
+}
+
+export function estimateMonthlyPaymentRange(
+  propertyPrice: number,
+  buyerCategory?: BuyerCategory
+): MonthlyPaymentRange {
+  const ltv = buyerCategory ? LTV_LIMITS[buyerCategory] : 0.70;
+  const loanAmount = propertyPrice * ltv;
+  const termYears = 25;
+  const termMonths = termYears * 12;
+  
+  // Rate scenarios
+  const rates = {
+    low: 4.5,   // Optimistic
+    mid: 5.25,  // Typical current
+    high: 6.0,  // Conservative
+  };
+  
+  const calculatePayment = (annualRate: number): number => {
+    const monthlyRate = annualRate / 100 / 12;
+    if (monthlyRate === 0) return Math.round(loanAmount / termMonths);
+    
+    return Math.round(
+      loanAmount *
+      (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
+      (Math.pow(1 + monthlyRate, termMonths) - 1)
+    );
+  };
+  
+  return {
+    low: calculatePayment(rates.low),
+    mid: calculatePayment(rates.mid),
+    high: calculatePayment(rates.high),
+    ltv,
+    assumptions: {
+      rateRange: `${rates.low}–${rates.high}%`,
+      term: termYears,
+      ltvPercent: Math.round(ltv * 100),
+    },
+  };
+}
