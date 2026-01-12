@@ -310,18 +310,18 @@ export default function PurchaseTaxGuide() {
           <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-5xl mx-auto">
             {/* Pain Point Cards */}
             <div className="grid md:grid-cols-3 gap-4 mb-8">
-              <Card className="p-5 border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-                <p className="text-sm text-foreground font-medium">
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
                   Tax rates depend on who you are, not just what you pay
                 </p>
               </Card>
-              <Card className="p-5 border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-                <p className="text-sm text-foreground font-medium">
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
                   Payment is due weeks after signing, not at closing
                 </p>
               </Card>
-              <Card className="p-5 border-l-4 border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20">
-                <p className="text-sm text-foreground font-medium">
+              <Card className="p-4 border-border/50 bg-muted/30">
+                <p className="text-sm text-muted-foreground text-center">
                   Bracket thresholds change annually with inflation
                 </p>
               </Card>
@@ -370,60 +370,60 @@ export default function PurchaseTaxGuide() {
             
             <div className="grid md:grid-cols-2 gap-8">
               {/* What It Is */}
-              <Card className="p-6 border-green-200 dark:border-green-900">
+              <Card className="p-6 border-primary/20 bg-primary/5">
                 <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                  <CheckCircle2 className="h-6 w-6 text-primary" />
                   <h3 className="text-lg font-semibold text-foreground">What It Is</h3>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-green-600 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>A state tax levied when you acquire rights to real estate in Israel</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-green-600 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Must be filed and paid within ~60 days after contract signing</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-green-600 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>A graduated tax—higher portions of price face higher brackets</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-green-600 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Brackets indexed annually to inflation or frozen by policy</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-green-600 mt-1">•</span>
+                    <span className="text-primary mt-1">•</span>
                     <span>Your status (resident, oleh, foreign, investor) affects which schedule applies</span>
                   </li>
                 </ul>
               </Card>
 
               {/* What It Is Not */}
-              <Card className="p-6 border-red-200 dark:border-red-900">
+              <Card className="p-6 border-border bg-card">
                 <div className="flex items-center gap-2 mb-4">
-                  <XCircle className="h-6 w-6 text-red-600" />
+                  <XCircle className="h-6 w-6 text-muted-foreground" />
                   <h3 className="text-lg font-semibold text-foreground">What It Is Not</h3>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-red-600 mt-1">•</span>
+                    <span className="text-muted-foreground mt-1">•</span>
                     <span>Not the same as Arnona (annual municipal tax)</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-red-600 mt-1">•</span>
+                    <span className="text-muted-foreground mt-1">•</span>
                     <span>Not capital-gains tax on sellers</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-red-600 mt-1">•</span>
+                    <span className="text-muted-foreground mt-1">•</span>
                     <span>Not a negotiable fee</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-red-600 mt-1">•</span>
+                    <span className="text-muted-foreground mt-1">•</span>
                     <span>Not typically financed by a mortgage</span>
                   </li>
                   <li className="flex items-start gap-2 text-sm">
-                    <span className="text-red-600 mt-1">•</span>
+                    <span className="text-muted-foreground mt-1">•</span>
                     <span>Not paid at closing or possession—it's paid after signing</span>
                   </li>
                 </ul>
