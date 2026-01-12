@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { 
   MapPin, Clock, BookOpen, Users, FileText, AlertTriangle, 
   Lightbulb, CheckCircle2, ArrowRight, Scale, Building2, 
@@ -10,6 +11,18 @@ import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+// Navigation sections
+const navSections = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'big-picture', label: 'Big Picture' },
+  { id: 'glossary', label: 'Glossary' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'surprises', label: 'Surprises' },
+  { id: 'decisions', label: 'Decisions' },
+  { id: 'checklist', label: 'Checklist' },
+];
 
 // Animation variants
 const fadeInUp = {
@@ -313,11 +326,76 @@ const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: n
 );
 
 export default function BuyingPropertyGuide() {
+  const [activeSection, setActiveSection] = useState('overview');
+  const [isNavVisible, setIsNavVisible] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show nav after scrolling past hero
+      setIsNavVisible(window.scrollY > 300);
+
+      // Find active section
+      const sectionElements = navSections.map(section => ({
+        id: section.id,
+        element: document.getElementById(section.id),
+      }));
+
+      for (let i = sectionElements.length - 1; i >= 0; i--) {
+        const { id, element } = sectionElements[i];
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 150) {
+            setActiveSection(id);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 100;
+      const top = element.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  };
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
+        {/* Sticky Section Navigation */}
+        <motion.nav
+          initial={{ y: -100 }}
+          animate={{ y: isNavVisible ? 0 : -100 }}
+          className="fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm"
+        >
+          <div className="container">
+            <div className="flex items-center justify-center gap-1 py-2 overflow-x-auto scrollbar-hide">
+              {navSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm font-medium rounded-full transition-colors whitespace-nowrap",
+                    activeSection === section.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {section.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.nav>
+
         {/* Hero Section */}
-        <section className="relative overflow-hidden">
+        <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
             <motion.div
@@ -387,7 +465,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Big Picture Section */}
-        <section className="py-16 bg-muted/30">
+        <section id="big-picture" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -425,7 +503,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Glossary Section */}
-        <section className="container py-16">
+        <section id="glossary" className="container py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -475,7 +553,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Timeline Section */}
-        <section className="py-16 bg-muted/30">
+        <section id="timeline" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -498,7 +576,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Surprises Section */}
-        <section className="container py-16">
+        <section id="surprises" className="container py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -529,7 +607,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Decision Points Section */}
-        <section className="py-16 bg-muted/30">
+        <section id="decisions" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -570,7 +648,7 @@ export default function BuyingPropertyGuide() {
         </section>
 
         {/* Readiness Checklist Section */}
-        <section className="container py-16">
+        <section id="checklist" className="container py-16">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
