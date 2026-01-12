@@ -41,8 +41,8 @@ import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
 // Guides
 import Guides from "./pages/Guides";
+import BuyingPropertyGuide from "./pages/guides/BuyingPropertyGuide";
 // Individual guide pages - commented out for launch
-// import BuyingInIsraelGuide from "./pages/guides/BuyingInIsraelGuide";
 // import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 // import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
 // import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
@@ -80,8 +80,8 @@ const App = () => (
             <Route path="/tools" element={<Tools />} />
             <Route path="/glossary" element={<Glossary />} />
 <Route path="/guides" element={<Guides />} />
+            <Route path="/guides/buying-in-israel" element={<BuyingPropertyGuide />} />
             {/* Individual guide pages - commented out for launch
-            <Route path="/guides/buying-in-israel" element={<BuyingInIsraelGuide />} />
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
             <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
