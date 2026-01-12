@@ -1,79 +1,59 @@
-import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  BookOpen, MapPin, TrendingUp, Building2, 
-  FileCheck, Calculator, Sparkles
-} from 'lucide-react';
+import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
-import { AudienceFilter, GuideCard, JourneyStage, type Audience } from '@/components/guides';
+import { GuideCard } from '@/components/guides';
 
 export interface Guide {
   slug: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
+  image: string;
   readingTime: number;
-  audience: ('olim' | 'investors' | 'first-time' | 'families')[];
-  stage: 1 | 2 | 3;
   chaptersCount: number;
   featured?: boolean;
-  valueStatement?: string;
 }
 
 const guides: Guide[] = [
   {
     slug: 'buying-in-israel',
     title: 'Complete Guide to Buying in Israel',
-    description: 'Everything you need to know about purchasing property in Israel, from finding the right property to closing the deal.',
-    icon: BookOpen,
+    description: 'Everything you need to know about purchasing property in Israel, from search to closing.',
+    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80',
     readingTime: 25,
-    audience: ['olim', 'investors', 'first-time', 'families'],
-    stage: 1,
     chaptersCount: 8,
     featured: true,
-    valueStatement: 'Avoid ₪30-50k in common first-timer mistakes',
   },
   {
     slug: 'new-vs-resale',
     title: 'New Construction vs Resale',
-    description: 'Compare buying from developers versus existing properties. Understand the pros, cons, and hidden costs of each.',
-    icon: Building2,
+    description: 'Compare buying from developers versus existing properties. Understand the pros and cons.',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
     readingTime: 15,
-    audience: ['olim', 'investors', 'first-time', 'families'],
-    stage: 1,
     chaptersCount: 5,
   },
   {
     slug: 'oleh-first-time',
     title: 'Oleh First-Time Buyer Guide',
-    description: 'Special considerations, benefits, and step-by-step process for new immigrants buying their first home in Israel.',
-    icon: MapPin,
+    description: 'Special benefits and step-by-step process for new immigrants buying their first home.',
+    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80',
     readingTime: 20,
-    audience: ['olim', 'first-time'],
-    stage: 2,
     chaptersCount: 6,
-    valueStatement: 'Claim your tax benefits worth ₪20-80k',
   },
   {
     slug: 'investment-property',
     title: 'Investment Property Guide',
-    description: 'Maximize returns on Israeli real estate investments. Learn about yields, tax implications, and market analysis.',
-    icon: TrendingUp,
+    description: 'Maximize returns on Israeli real estate. Learn about yields, taxes, and market analysis.',
+    image: 'https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=800&q=80',
     readingTime: 22,
-    audience: ['investors'],
-    stage: 2,
     chaptersCount: 7,
-    valueStatement: 'Realistic yield expectations: 2.5-4.5% net',
   },
   {
     slug: 'new-construction',
     title: 'New Construction Guide',
-    description: 'Navigate buying from a developer: payment schedules, bank guarantees, timelines, and what to expect at each stage.',
-    icon: Building2,
+    description: 'Navigate buying from a developer: payment schedules, bank guarantees, and timelines.',
+    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
     readingTime: 18,
-    audience: ['olim', 'investors', 'first-time', 'families'],
-    stage: 3,
     chaptersCount: 6,
   },
 ];
@@ -82,29 +62,13 @@ const guides: Guide[] = [
 const totalReadingTime = guides.reduce((sum, g) => sum + g.readingTime, 0);
 
 export default function Guides() {
-  const [selectedAudience, setSelectedAudience] = useState<Audience>('all');
-
-  // Filter guides based on selected audience
-  const isGuideHighlighted = (guide: Guide) => {
-    if (selectedAudience === 'all') return true;
-    return guide.audience.includes(selectedAudience as any);
-  };
-
-  // Group guides by stage
-  const stage1Guides = guides.filter((g) => g.stage === 1);
-  const stage2Guides = guides.filter((g) => g.stage === 2);
-  const stage3Guides = guides.filter((g) => g.stage === 3);
-
-  // Count highlighted guides
-  const highlightedCount = guides.filter(isGuideHighlighted).length;
-
   return (
     <Layout>
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-          <div className="container relative py-12 md:py-20">
+          <div className="container relative py-12 md:py-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -120,69 +84,19 @@ export default function Guides() {
                 Read at your own pace. No pressure, no fluff.
               </p>
               <p className="text-sm text-muted-foreground">
-                {guides.length} guides • ~{totalReadingTime} min total reading • Updated for 2025
+                {guides.length} guides • ~{totalReadingTime} min total reading
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Filter Section */}
-        <section className="container pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <p className="text-center text-sm text-muted-foreground mb-3">Find guides for:</p>
-            <AudienceFilter 
-              selected={selectedAudience} 
-              onChange={setSelectedAudience} 
-            />
-            {selectedAudience !== 'all' && (
-              <p className="text-center text-xs text-muted-foreground mt-3">
-                {highlightedCount} of {guides.length} guides match your profile
-              </p>
-            )}
-          </motion.div>
-        </section>
-
-        {/* Guides by Journey Stage */}
-        <section className="container pb-16 space-y-12">
-          {stage1Guides.length > 0 && (
-            <JourneyStage number={1} title="Understand the Market">
-              {stage1Guides.map((guide) => (
-                <GuideCard 
-                  key={guide.slug} 
-                  guide={guide} 
-                  isHighlighted={isGuideHighlighted(guide)}
-                />
-              ))}
-            </JourneyStage>
-          )}
-
-          {stage2Guides.length > 0 && (
-            <JourneyStage number={2} title="Know Your Situation">
-              {stage2Guides.map((guide) => (
-                <GuideCard 
-                  key={guide.slug} 
-                  guide={guide} 
-                  isHighlighted={isGuideHighlighted(guide)}
-                />
-              ))}
-            </JourneyStage>
-          )}
-
-          {stage3Guides.length > 0 && (
-            <JourneyStage number={3} title="Prepare & Execute">
-              {stage3Guides.map((guide) => (
-                <GuideCard 
-                  key={guide.slug} 
-                  guide={guide} 
-                  isHighlighted={isGuideHighlighted(guide)}
-                />
-              ))}
-            </JourneyStage>
-          )}
+        {/* Guides Grid */}
+        <section className="container pb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {guides.map((guide, index) => (
+              <GuideCard key={guide.slug} guide={guide} index={index} />
+            ))}
+          </div>
         </section>
 
         {/* Quiz CTA */}
