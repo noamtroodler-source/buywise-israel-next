@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { calculateMortgagePayment, stressTestMortgage } from '@/lib/calculations/mortgage';
+import { calculateMortgagePayment, stressTestMortgage, estimateMonthlyPaymentRange } from '@/lib/calculations/mortgage';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
 import { useMortgageTracks } from '@/hooks/useMortgageTracks';
@@ -20,9 +20,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange } from './shared';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
+import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
 
 // Buyer types with their max LTV limits and explanations
 const BUYER_TYPE_OPTIONS: { 
@@ -153,6 +154,25 @@ function MortgageCalculatorContent() {
   const mortgageResult = useMemo(() => {
     return calculateMortgagePayment(loanAmount, interestRate, loanTermYears);
   }, [loanAmount, interestRate, loanTermYears]);
+
+  // Payment range calculation using rate variance
+  const paymentRange = useMemo(() => {
+    return estimateMonthlyPaymentRange(propertyPrice, buyerType);
+  }, [propertyPrice, buyerType]);
+
+  // Interest and total payment ranges based on rate variance
+  const interestRange = useMemo(() => {
+    const lowRate = MORTGAGE_RATE_RANGES.low;
+    const highRate = MORTGAGE_RATE_RANGES.high;
+    const lowResult = calculateMortgagePayment(loanAmount, lowRate, loanTermYears);
+    const highResult = calculateMortgagePayment(loanAmount, highRate, loanTermYears);
+    return {
+      interestLow: lowResult.totalInterest,
+      interestHigh: highResult.totalInterest,
+      totalLow: lowResult.totalPayment,
+      totalHigh: highResult.totalPayment,
+    };
+  }, [loanAmount, loanTermYears]);
 
   // Stress test calculations
   const stressTest = useMemo(() => {
@@ -479,28 +499,28 @@ function MortgageCalculatorContent() {
   // Right Column - Results (Sticky)
   const rightColumn = (
     <Card className="overflow-hidden">
-      {/* Hero Result */}
+      {/* Hero Result - Now shows range */}
       <div className="bg-gradient-to-br from-primary/5 via-background to-background p-6 text-center border-b border-border">
-        <p className="text-sm text-muted-foreground mb-1">Your Monthly Payment</p>
+        <p className="text-sm text-muted-foreground mb-1">Monthly Payment Range</p>
         <motion.p 
-          key={mortgageResult.monthlyPayment}
+          key={`${paymentRange.low}-${paymentRange.high}`}
           initial={{ opacity: 0.5, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-4xl md:text-5xl font-bold text-primary tracking-tight"
         >
-          {formatCurrency(mortgageResult.monthlyPayment)}
+          {formatCurrencyRange(paymentRange.low, paymentRange.high, currencySymbol)}
         </motion.p>
         <p className="text-xs text-muted-foreground mt-2">
-          Over {loanTermYears} years at {interestRate.toFixed(1)}% interest
+          Based on {MORTGAGE_RATE_RANGES.low}–{MORTGAGE_RATE_RANGES.high}% rates, {loanTermYears}-year term
         </p>
         {/* Stress test preview */}
         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/50 text-xs text-muted-foreground">
           <TrendingUp className="h-3 w-3" />
-          <span>If rates rise 2%: {formatCurrency(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
+          <span>If rates rise 2%: up to {formatCurrency(stressTest.plus2.stressedPayment)}/mo (+{stressTest.plus2.increasePercent.toFixed(0)}%)</span>
         </div>
       </div>
 
-      {/* Quick Stats Grid */}
+      {/* Quick Stats Grid - Now shows ranges for interest & total */}
       <div className="grid grid-cols-2 divide-x divide-y divide-border">
         <div className="p-4">
           <p className="text-xs text-muted-foreground">You'll Borrow</p>
@@ -516,13 +536,17 @@ function MortgageCalculatorContent() {
         <div className="p-4">
           <div className="flex items-center gap-1">
             <p className="text-xs text-muted-foreground">Interest Paid</p>
-            <InfoTooltip content="Total interest paid over the life of the loan. Prepaying principal (especially on Prime tracks) can significantly reduce this." />
+            <InfoTooltip content={`Range based on ${MORTGAGE_RATE_RANGES.low}–${MORTGAGE_RATE_RANGES.high}% rates. Prepaying (especially on Prime tracks) can significantly reduce this.`} />
           </div>
-          <p className="text-lg font-semibold mt-0.5">{formatCurrency(mortgageResult.totalInterest)}</p>
+          <p className="text-lg font-semibold mt-0.5">
+            {formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}
+          </p>
         </div>
         <div className="p-4">
           <p className="text-xs text-muted-foreground">Total You'll Pay</p>
-          <p className="text-lg font-semibold mt-0.5">{formatCurrency(mortgageResult.totalPayment)}</p>
+          <p className="text-lg font-semibold mt-0.5">
+            {formatCurrencyRange(interestRange.totalLow, interestRange.totalHigh, currencySymbol)}
+          </p>
         </div>
       </div>
 
@@ -543,7 +567,7 @@ function MortgageCalculatorContent() {
         </div>
         <div className="flex items-center justify-between text-xs mt-1.5">
           <span className="font-medium">{formatCurrency(loanAmount)}</span>
-          <span className="font-medium">{formatCurrency(mortgageResult.totalInterest)}</span>
+          <span className="font-medium">{formatCurrencyRange(interestRange.interestLow, interestRange.interestHigh, currencySymbol)}</span>
         </div>
       </div>
     </Card>
@@ -744,9 +768,7 @@ function MortgageCalculatorContent() {
   );
 
   const disclaimer = (
-    <ToolDisclaimer 
-      text="Estimates based on Israeli mortgage regulations (2024). Consult a licensed mortgage advisor for personalized advice."
-    />
+    <ToolDisclaimer variant="mortgage" />
   );
 
   return (
