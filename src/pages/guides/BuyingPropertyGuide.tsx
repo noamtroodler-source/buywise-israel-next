@@ -464,7 +464,7 @@ export default function BuyingPropertyGuide() {
                 Complete Guide
               </Badge>
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-                Buying a Property in Israel
+                Buying a Property in <span className="text-primary">Israel</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
                 A Start-to-Finish Map for International Buyers

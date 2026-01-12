@@ -285,7 +285,7 @@ export default function MortgagesGuide() {
                 Essential Guide
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3">
-                Mortgages in Israel for Foreign Buyers
+                Mortgages in <span className="text-primary">Israel</span> for Foreign Buyers
               </h1>
               <p className="text-xl md:text-2xl text-primary font-medium mb-4">
                 How It Actually Works

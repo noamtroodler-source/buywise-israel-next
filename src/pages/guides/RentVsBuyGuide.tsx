@@ -259,7 +259,7 @@ export default function RentVsBuyGuide() {
               </div>
               
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
-                Rent vs Buy in Israel
+                Rent vs Buy in <span className="text-primary">Israel</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-2">
                 How to Think About It as a Foreigner

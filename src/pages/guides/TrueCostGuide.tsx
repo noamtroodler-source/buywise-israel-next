@@ -250,7 +250,7 @@ export default function TrueCostGuide() {
             </Badge>
             
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3">
-              The True Cost of Buying Property in Israel
+              The True Cost of Buying Property in <span className="text-primary">Israel</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-primary font-medium mb-4">

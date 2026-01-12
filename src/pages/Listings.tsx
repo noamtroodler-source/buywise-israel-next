@@ -86,18 +86,18 @@ export default function Listings() {
   const getPageContent = () => {
     if (isRentals) {
       return {
-        title: 'Long-term Rentals',
+        title: <>Long-term Rentals in <span className="text-primary">Israel</span></>,
         subtitle: 'Long-term rentals in Israel — easier to understand, easier to plan.',
       };
     }
     if (isSoldView) {
       return {
-        title: 'Recently Sold Properties',
+        title: <>Recently <span className="text-primary">Sold</span> Properties</>,
         subtitle: 'Research past sales to understand market prices and what\'s realistic in your target areas.',
       };
     }
     return {
-      title: 'Properties for Sale',
+      title: <>Properties for Sale in <span className="text-primary">Israel</span></>,
       subtitle: 'Explore resale homes across Israel — from modern apartments to family-friendly houses.',
     };
   };

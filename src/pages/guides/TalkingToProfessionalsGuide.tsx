@@ -309,7 +309,7 @@ export default function TalkingToProfessionalsGuide() {
             </Badge>
             
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3">
-              What to Know Before Talking to an Agent, Lawyer, or Broker
+              What to Know Before Talking to an Agent, Lawyer, or <span className="text-primary">Broker</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-primary font-medium mb-4">
