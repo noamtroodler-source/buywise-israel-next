@@ -5,7 +5,7 @@ import {
   Home, MapPin, Building2, Users, FileText, Eye, Camera, 
   DollarSign, HelpCircle, CheckCircle, AlertTriangle, Lightbulb,
   ArrowRight, Calculator, BookOpen, Search, Ruler, Tag, Clock,
-  Shield, Globe, MessageSquare, Scale, Layers, Sparkles
+  Shield, Globe, MessageSquare, Scale, Layers, Sparkles, Sun
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
@@ -14,14 +14,14 @@ import { Badge } from '@/components/ui/badge';
 // Navigation sections for sticky nav
 const navSections = [
   { id: 'overview', label: 'Overview' },
-  { id: 'core-problem', label: 'Core Problem' },
-  { id: 'why-misleading', label: 'Why Misleading' },
+  { id: 'core-mismatch', label: 'Core Mismatch' },
+  { id: 'why-confusing', label: 'Why Confusing' },
   { id: 'emphasized', label: 'What They Show' },
   { id: 'omitted', label: 'What They Hide' },
   { id: 'terms', label: 'Terms' },
   { id: 'photos', label: 'Photos' },
   { id: 'reading-tips', label: 'How to Read' },
-  { id: 'mistakes', label: 'Common Mistakes' },
+  { id: 'assumptions', label: 'Assumptions' },
   { id: 'buywise', label: 'BuyWise' },
 ];
 
@@ -31,164 +31,154 @@ const fadeInUp = {
   transition: { duration: 0.5 }
 };
 
-// Why Misleading Reasons
-const whyMisleadingReasons = [
+// Why Confusing Reasons (6 items)
+const whyConfusingReasons = [
   {
     icon: Search,
-    title: 'No Single MLS',
-    description: 'Israel has no nationwide multiple-listing service; properties appear across agency sites, social media and word-of-mouth.',
-  },
-  {
-    icon: Layers,
-    title: 'Different Room Counting',
-    description: 'Israelis count all rooms – the living room and safe room (MAMAD) included – so a "4-room" apartment is usually three bedrooms plus salon.',
+    title: 'Fragmented Market',
+    description: 'Israel lacks a single multiple-listing service; properties appear across agency websites, social media groups and offline networks.',
   },
   {
     icon: Ruler,
-    title: 'Net vs Gross Measurements',
-    description: 'Square meters may be quoted as gross (bruto), which includes common hallways and elevator shafts; you must ask for net (neto) size.',
+    title: 'Different Counting and Measuring',
+    description: 'Room counts include living spaces beyond bedrooms; advertised sizes often refer to gross area including common corridors.',
   },
   {
     icon: FileText,
-    title: 'Marketing vs Legal Descriptions',
-    description: 'Listings highlight attractive features but are not legally binding; legal documents are drafted separately and may differ.',
+    title: 'Marketing vs Legal Roles',
+    description: 'Listings are marketing tools; legal due diligence, inspections and contract drafting occur separately, and homes are typically sold "as is".',
   },
   {
     icon: Users,
-    title: 'Dual Agency and Timing',
-    description: 'Agents can represent both buyer and seller and are paid when the contract is signed, not at closing. This influences how listings are framed.',
+    title: 'Agent Incentives',
+    description: 'Agents may represent both sides and collect commission when the purchase agreement is signed, influencing how information is presented.',
   },
   {
-    icon: MessageSquare,
-    title: 'Cultural Negotiation Norms',
-    description: 'Verbal agreements and preliminary documents can become binding, so listings rarely mention contingencies or "subject to financing."',
+    icon: DollarSign,
+    title: 'Price Structures',
+    description: 'Asking prices may be linked to construction cost indices and exclude taxes, fees and comparisons, making them hard to interpret.',
   },
   {
     icon: Globe,
-    title: 'Language and Translation Gaps',
-    description: 'Terms like "penthouse," "garden," or "project" have local meanings that differ from literal translations.',
-  },
-  {
-    icon: HelpCircle,
-    title: 'Assumed Local Knowledge',
-    description: 'Details on land registration, building age, taxes or maintenance fees are assumed to be known and therefore omitted.',
+    title: 'Language and Cultural Gaps',
+    description: 'Terms like "project," "new" or "first floor" have local meanings that differ from direct translations.',
   },
 ];
 
-// What Listings Emphasize
+// What Listings Emphasize (6 items)
 const whatEmphasized = [
   {
-    icon: Layers,
-    title: 'Total Number of Rooms',
-    description: 'Room counts include the living room and safe room, giving a rough sense of size.',
-  },
-  {
     icon: Home,
-    title: 'Outdoor Space',
-    description: 'Balconies, gardens and terraces are prized in dense cities; listings highlight these because they add value.',
+    title: 'Outdoor Spaces and Views',
+    description: 'Balconies, terraces and sea views signal prized access to the outdoors in dense cities.',
   },
   {
-    icon: Eye,
-    title: 'Orientation and Views',
-    description: 'Directions (north/south/east/west) and sea or skyline views are emphasized; local buyers know the climate and light.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Renovation or "New" Labels',
-    description: '"New" can mean recently renovated, newly built or an off-plan project. Developers use it to signal quality.',
+    icon: Sun,
+    title: 'Orientation and Exposures',
+    description: 'North/south or east/west orientation indicates natural light and ventilation, valued in the local climate.',
   },
   {
     icon: Building2,
     title: 'Building Amenities',
-    description: 'Elevators, parking spaces, storage rooms and safe rooms are spotlighted since not all buildings have them.',
+    description: 'Elevators, parking spots, storage rooms and safe rooms (MAMAD) are highlighted because older buildings often lack them.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Renovation Status',
+    description: 'Phrases like "renovated" or "like new" attract buyers looking for modern finishes without specifying age.',
+  },
+  {
+    icon: MapPin,
+    title: 'Neighborhood Cues',
+    description: 'Proximity to landmarks, beaches or sought-after streets conveys prestige and convenience to locals.',
   },
   {
     icon: Tag,
     title: 'Project Branding',
-    description: 'New developments stress the project name and developer reputation; meaningful in a market with many off-plan sales.',
+    description: 'In off-plan developments, the project name and developer reputation reassure buyers.',
   },
 ];
 
-// What Listings Omit
+// What Listings Omit (7 items)
 const whatOmitted = [
   {
     icon: Ruler,
-    title: 'Net Living Space',
-    description: 'Many listings quote gross square meters; net size (actual interior space) appears only in contracts.',
+    title: 'Net Interior Space',
+    description: 'The actual living area (neto) is often absent because gross figures appear more impressive.',
   },
   {
     icon: Clock,
-    title: 'Building Age and Condition',
-    description: 'Unless recently renovated, the age and structural condition are rarely highlighted; homes are sold "AS IS".',
+    title: 'Building Age and Infrastructure',
+    description: 'Condition of plumbing, electrical systems and structural integrity is rarely detailed; properties are sold "as is".',
   },
   {
     icon: DollarSign,
-    title: 'Maintenance Fees (Va\'ad HaBayit)',
-    description: 'Monthly fees for cleaning, electricity and elevator maintenance vary widely; listings seldom include them.',
+    title: 'Maintenance and Management Fees',
+    description: 'Monthly Va\'ad HaBayit or management fees vary widely and are not usually listed.',
   },
   {
     icon: FileText,
-    title: 'Land Status and Registration',
-    description: 'Whether the property is freehold (Tabu) or leasehold (Minhal) is not usually stated; details surface in legal checks.',
+    title: 'Land Tenure and Registration',
+    description: 'Whether the property is freehold (Tabu), leasehold (Minhal) or under a housing company is left to lawyers.',
   },
   {
     icon: Scale,
     title: 'Taxes and Transaction Costs',
-    description: 'Purchase tax, betterment levy and attorney fees vary by buyer status and are typically absent from listings.',
+    description: 'Purchase tax, betterment levies and legal fees depend on buyer status and are seldom mentioned.',
   },
   {
     icon: Building2,
-    title: 'Mortgage Feasibility',
-    description: 'Listings do not reveal whether the property is mortgageable; banks evaluate this after contract signing.',
+    title: 'Mortgage Suitability',
+    description: 'Listings rarely indicate if a property qualifies for bank financing.',
   },
   {
     icon: AlertTriangle,
-    title: 'Delivery Timeline Realism',
-    description: 'In new projects, advertised completion dates may exclude permitted delays.',
+    title: 'Realistic Delivery Dates',
+    description: 'For new developments, allowable delays and index-linked price adjustments are not highlighted.',
   },
 ];
 
-// Terms That Don't Mean What You Think
+// Terms That Don't Translate Cleanly
 const confusingTerms = [
-  { term: '4-room apartment', expectation: 'Four bedrooms', reality: 'Three bedrooms plus living room' },
-  { term: 'SQM (square meter)', expectation: 'Net interior space', reality: 'May be gross (including common areas)' },
-  { term: 'New', expectation: 'Brand-new construction', reality: 'Can mean renovated, recently built or off-plan' },
-  { term: 'Project', expectation: 'Completed condominium', reality: 'Often refers to an off-plan development' },
-  { term: 'Garden apartment', expectation: 'Private yard', reality: 'May be a shared garden or small patio' },
-  { term: 'First floor', expectation: 'Ground level', reality: 'In Israel, 0 is ground; 1 is one flight up' },
-  { term: 'Penthouse/Mini-penthouse', expectation: 'Entire roof level', reality: 'May simply be a top-floor unit with terrace' },
-  { term: 'MAMAD/Safe room', expectation: 'Extra storage', reality: 'Reinforced room counted as a room' },
-  { term: 'Sea view', expectation: 'Unobstructed ocean panorama', reality: 'Any partial view of the sea from a window' },
-  { term: 'Immediate entry', expectation: 'Ready to move in', reality: 'Could mean after tenants leave or registration' },
+  { term: '4-room apartment', expectation: 'Four bedrooms', reality: 'Three bedrooms plus the living room.' },
+  { term: 'SQM (square meter)', expectation: 'Net interior space', reality: 'Often gross area including shared corridors.' },
+  { term: 'New', expectation: 'Newly built', reality: 'May mean renovated, recently built or under construction.' },
+  { term: 'Project', expectation: 'Finished condominium', reality: 'Usually an off-plan development awaiting completion.' },
+  { term: 'Garden apartment', expectation: 'Private yard', reality: 'Could be a shared or very small garden.' },
+  { term: 'First floor', expectation: 'Ground level', reality: 'In Israel, the ground floor is 0; the first floor is one flight up.' },
+  { term: 'Penthouse/Mini-penthouse', expectation: 'Entire roof level', reality: 'Often just a top-floor unit with a terrace.' },
+  { term: 'MAMAD/Safe room', expectation: 'Storage area', reality: 'A reinforced safe room counted as part of the room total.' },
+  { term: 'Sea view', expectation: 'Panoramic vista', reality: 'Any partial glimpse of the sea.' },
+  { term: 'Immediate entry', expectation: 'Move-in ready', reality: 'May depend on tenant departure or registration.' },
 ];
 
-// Reading Tips
+// Reading Tips (10 items with new format)
 const readingTips = [
-  { trigger: 'When you see "4 rooms"', meaning: 'It often means three bedrooms plus a salon', action: 'Confirm the actual bedroom count' },
-  { trigger: 'When a size is quoted', meaning: 'It might be gross, not net', action: 'Ask if it is net or gross' },
-  { trigger: 'When "new" appears', meaning: 'It can mean renovated, recently built or off-plan', action: 'Clarify the year built and occupancy status' },
-  { trigger: 'When a listing says "project"', meaning: 'It may be an off-plan sale', action: 'Verify delivery date and index-linking' },
-  { trigger: 'When a balcony or garden is advertised', meaning: 'Shared spaces are common', action: 'Ask about size and exclusivity' },
-  { trigger: 'When exposures and views are highlighted', meaning: '"Sea view" can be partial', action: 'Ask to see the view in person or via video' },
-  { trigger: 'When the listing mentions parking or storage', meaning: 'They may not be registered rights', action: 'Confirm whether they are registered or general use' },
-  { trigger: 'When reading floor numbers', meaning: '0 is ground in Israel', action: 'Recall that 1 is the first floor above ground' },
-  { trigger: 'When the price seems low', meaning: 'Costs may be excluded', action: 'Check if purchase tax, management fees and index adjustments are included' },
-  { trigger: 'When you see "penthouse"', meaning: 'It may not be the entire roof', action: 'Verify roof rights and terrace size' },
-  { trigger: 'When no maintenance fee is stated', meaning: 'There is likely a monthly fee', action: 'Ask for the Va\'ad HaBayit amount' },
+  { when: 'When area is stated in sqm', indicates: 'it often indicates gross area.', action: 'Ask for the net interior measurement.' },
+  { when: 'When "new" is used', indicates: 'it often indicates a renovation or an off-plan project.', action: 'Confirm the construction year and occupancy status.' },
+  { when: 'When a listing uses the term "project"', indicates: 'it often signals an off-plan sale.', action: 'Inquire about construction stage, delivery timeline and index-linked pricing.' },
+  { when: 'When orientation or exposures are emphasized', indicates: 'they often indicate natural light and climate considerations.', action: 'Assess whether north/south or east/west suits your preferences.' },
+  { when: 'When a balcony, terrace or garden is highlighted', indicates: 'it often signals prized outdoor space.', action: 'Clarify size and whether it\'s exclusive.' },
+  { when: 'When amenities like parking or storage are listed', indicates: 'they often exist but may not be registered.', action: 'Verify ownership or usage rights.' },
+  { when: 'When floor numbers are mentioned', indicates: 'they often start at 0 for ground.', action: 'Adjust expectations accordingly.' },
+  { when: 'When prices seem low', indicates: 'they often exclude taxes, fees and index adjustments.', action: 'Budget for additional costs based on your status.' },
+  { when: 'When a property is described as "penthouse" or "mini-penthouse"', indicates: 'it often refers to a top-floor unit with a terrace.', action: 'Check roof rights and actual terrace size.' },
 ];
 
-// Common Misinterpretations
-const commonMistakes = [
-  'Thinking a "4-room" listing has four bedrooms',
-  'Taking square meter figures at face value without asking if they are gross or net',
-  'Believing "new" always means brand-new construction',
-  'Reading floor numbers like in the US or UK, assuming first floor equals ground',
-  'Interpreting photos as accurate representations of size or condition',
-  'Assuming asking price is final or includes all taxes and fees',
-  'Expecting a "sea view" to be unobstructed',
-  'Assuming agents exclusively represent one side and are paid at closing',
-  'Thinking "project" refers to a completed building',
-  'Treating listing descriptions as legally binding promises',
+// Common Assumptions (12 items)
+const commonAssumptions = [
+  '"The number of rooms equals the number of bedrooms."',
+  '"Advertised square meters are net living space."',
+  '"Asking price is the final price."',
+  '"Listings are in a central MLS and directly comparable."',
+  '"Photos accurately reflect size and condition."',
+  '"New means newly built."',
+  '"First floor means ground level."',
+  '"Agents represent only buyers and are paid at closing."',
+  '"Maintenance fees are trivial or disclosed."',
+  '"All properties can be financed easily."',
+  '"Sellers provide inspection reports."',
+  '"Project completion dates are fixed."',
 ];
 
 export default function ListingsGuide() {
@@ -199,7 +189,6 @@ export default function ListingsGuide() {
     const handleScroll = () => {
       setShowStickyNav(window.scrollY > 300);
 
-      // Update active section based on scroll position
       const sections = navSections.map(s => document.getElementById(s.id));
       const scrollPosition = window.scrollY + 150;
 
@@ -273,7 +262,7 @@ export default function ListingsGuide() {
                 Feel Misleading to International Buyers
               </h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Calm clarity, not suspicion. Learn how to read Israeli listings with confidence.
+                Decode local norms so you can read listings with calm and confidence.
               </p>
               <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
@@ -292,48 +281,47 @@ export default function ListingsGuide() {
           <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto">
             <Card className="p-8 bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
               <p className="text-lg text-foreground leading-relaxed">
-                International buyers and renters often browse Israeli property listings and feel perplexed. 
-                They expect standardized room counts, reliable measurements and complete cost disclosures – 
-                norms they know from US or UK real estate. Israeli listings aren't "wrong" or deceptive; 
-                they are built for a local audience that knows how to interpret them. This guide explains 
-                why the system feels confusing to outsiders and teaches you how to read listings calmly, 
-                without panic or suspicion.
+                For international buyers and renters, Israeli property listings can feel like puzzles. 
+                These adverts are tailored to locals who already understand how rooms are counted, how 
+                sizes are measured and which details matter. What seems missing or misleading is often 
+                just a reflection of different norms. This guide shows how to decode those norms so you 
+                can read listings with calm and confidence.
               </p>
             </Card>
           </motion.div>
         </section>
 
-        {/* Core Problem Section */}
-        <section id="core-problem" className="py-16 bg-muted/30">
+        {/* Core Mismatch Section */}
+        <section id="core-mismatch" className="py-16 bg-muted/30">
           <div className="container">
             <motion.div {...fadeInUp} viewport={{ once: true }} className="max-w-4xl mx-auto text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
-                The Core Problem in One Sentence
+                The Core Mismatch
               </h2>
               <Card className="p-8 bg-background border-2 border-primary/20">
                 <p className="text-xl md:text-2xl text-foreground font-medium leading-relaxed">
-                  Israeli property listings use local counting methods, marketing conventions and fragmented 
-                  platforms that make sense to Israelis but clash with international expectations of uniform 
-                  measurements, clear pricing and standardized disclosures.
+                  Israeli listings follow local conventions such as counting all rooms and quoting gross 
+                  area while omitting costs and legal details, whereas international buyers expect 
+                  standardized measurements and complete information.
                 </p>
               </Card>
             </motion.div>
           </div>
         </section>
 
-        {/* Why Misleading Section */}
-        <section id="why-misleading" className="container py-16">
+        {/* Why Confusing Section */}
+        <section id="why-confusing" className="container py-16">
           <motion.div {...fadeInUp} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Why Israeli Listings Feel Misleading
+              Why Israeli Listings Feel Confusing to Internationals
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Eight systemic reasons why the same listing reads differently to locals and internationals.
+              Six systemic reasons why the same listing reads differently to locals and internationals.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {whyMisleadingReasons.map((reason, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {whyConfusingReasons.map((reason, index) => (
               <motion.div
                 key={reason.title}
                 initial={{ opacity: 0, y: 20 }}
@@ -361,7 +349,7 @@ export default function ListingsGuide() {
                 What Israeli Listings Typically Emphasize
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                These elements appeal to local priorities like lifestyle quality, natural light and outdoor space.
+                These features reflect local priorities around lifestyle, natural light and building functionality.
               </p>
             </motion.div>
 
@@ -388,14 +376,6 @@ export default function ListingsGuide() {
                 </motion.div>
               ))}
             </div>
-
-            <motion.p 
-              {...fadeInUp} 
-              viewport={{ once: true }}
-              className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto"
-            >
-              <strong>Why emphasized:</strong> Israelis rely on professionals for legal and financial details later.
-            </motion.p>
           </div>
         </section>
 
@@ -403,10 +383,10 @@ export default function ListingsGuide() {
         <section id="omitted" className="container py-16">
           <motion.div {...fadeInUp} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              What Israeli Listings Commonly Omit
+              What Israeli Listings Commonly Omit or Understate
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Local buyers assume they will investigate these issues through lawyers and bankers.
+              These omissions reflect an assumption that local buyers will investigate through professionals.
             </p>
           </motion.div>
 
@@ -433,14 +413,6 @@ export default function ListingsGuide() {
               </motion.div>
             ))}
           </div>
-
-          <motion.p 
-            {...fadeInUp} 
-            viewport={{ once: true }}
-            className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto"
-          >
-            <strong>Why omitted:</strong> Including them would require constant updates and might deter interest.
-          </motion.p>
         </section>
 
         {/* Terms Table Section */}
@@ -448,10 +420,10 @@ export default function ListingsGuide() {
           <div className="container">
             <motion.div {...fadeInUp} viewport={{ once: true }} className="text-center mb-12">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Terms That Don't Mean What You Think
+                Terms That Don't Translate Cleanly
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                No definition is absolute; context and follow-up questions matter.
+                Context and follow-up questions matter for every term.
               </p>
             </motion.div>
 
@@ -462,8 +434,8 @@ export default function ListingsGuide() {
                     <thead>
                       <tr className="border-b bg-muted/50">
                         <th className="text-left p-4 font-semibold text-foreground">Term</th>
-                        <th className="text-left p-4 font-semibold text-foreground">International Assumption</th>
-                        <th className="text-left p-4 font-semibold text-foreground">What It Often Means in Israel</th>
+                        <th className="text-left p-4 font-semibold text-foreground">What internationals assume</th>
+                        <th className="text-left p-4 font-semibold text-foreground">What it commonly means locally</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -490,22 +462,22 @@ export default function ListingsGuide() {
                 <Camera className="h-6 w-6 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                Why Photos Can Be Especially Misleading
+                Why Photos Often Mislead Without Context
               </h2>
             </div>
 
             <Card className="p-8 bg-gradient-to-br from-muted/50 to-transparent">
               <p className="text-lg text-foreground leading-relaxed mb-4">
-                Photos in Israeli listings are intended to capture interest, not to document precise dimensions. 
-                Wide-angle lenses make small spaces seem larger, while bright lighting emphasizes natural light 
-                and views. Staging ranges from empty rooms to cluttered family homes – both can obscure actual size.
+                Photos are marketing assets rather than technical documentation. Wide-angle lenses make 
+                rooms appear larger; bright lighting emphasises views and exposures. Staging ranges from 
+                empty shells to cluttered family homes, obscuring scale.
               </p>
               <p className="text-lg text-foreground leading-relaxed mb-4">
-                In off-plan projects, the "photos" are digital renderings that reflect design intent rather 
-                than actual finishes. Renovations depicted in photos may be years old.
+                In off-plan developments, images are digital renderings that illustrate design intent 
+                rather than finished reality. Renovation photos can be outdated.
               </p>
               <p className="text-muted-foreground italic">
-                Use photos for atmosphere and layout clues, not for exact measurements.
+                Use photos for general atmosphere and layout insight, not as proof of size or condition.
               </p>
             </Card>
           </motion.div>
@@ -527,18 +499,17 @@ export default function ListingsGuide() {
               <Card className="p-8 bg-background">
                 <div className="space-y-4 text-foreground">
                   <p className="leading-relaxed">
-                    Israeli asking prices are starting points and often exclude key costs. With no central MLS, 
-                    comparable sales data is limited; price per square meter may be calculated on gross size, 
-                    leading to inconsistent comparisons.
+                    Israeli asking prices are starting points subject to multiple variables. Without a 
+                    central MLS, comparable sale data is scarce. Price per square meter is often calculated 
+                    on gross area, making comparisons inconsistent.
                   </p>
                   <p className="leading-relaxed">
-                    In new projects, prices are linked to the Construction Inputs Index (Madad), which can 
-                    increase the price during construction. Listings rarely include purchase tax, lawyer fees, 
-                    agent commission or betterment levy, all of which depend on buyer status.
+                    In new projects, prices are indexed to construction costs, so they rise with inflation. 
+                    Advertised prices exclude purchase tax, betterment levy, lawyer fees and agent commission; 
+                    these depend on buyer status. Extra charges for upgrades, parking or storage may also apply.
                   </p>
                   <p className="leading-relaxed text-muted-foreground">
-                    Exchange rates and international transfer fees further complicate pricing for foreigners. 
-                    Local buyers expect to negotiate and factor these in later.
+                    Together, these factors make asking prices difficult to interpret at face value.
                   </p>
                 </div>
               </Card>
@@ -555,12 +526,11 @@ export default function ListingsGuide() {
                 <h2 className="text-xl font-bold text-foreground">Buyer Status Reality Check</h2>
               </div>
               <p className="text-foreground leading-relaxed">
-                Listings read differently depending on whether you are an Israeli resident, new oleh, foreign 
-                buyer or investor. Differences show up in taxes, mortgage eligibility and documentation – not 
-                in the structure of the listing. Your status influences the final cost and bureaucratic friction 
-                but the way listings are written remains the same.
+                Listings look identical for residents, new olim, foreign buyers and investors, but the 
+                financial and bureaucratic consequences differ. Tax brackets, mortgage eligibility and 
+                paperwork requirements vary by status, affecting the final cost and timeline even though 
+                the advertisement remains unchanged.
               </p>
-              <p className="text-sm text-muted-foreground mt-4 italic">[VARIES BY STATUS]</p>
             </Card>
           </motion.div>
         </section>
@@ -573,7 +543,7 @@ export default function ListingsGuide() {
                 How to Read a Listing More Accurately
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                11 practical tips to decode what you're actually looking at.
+                Practical tips to decode what you're looking at.
               </p>
             </motion.div>
 
@@ -592,9 +562,11 @@ export default function ListingsGuide() {
                         <span className="text-sm font-bold text-primary">{index + 1}</span>
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground mb-1">{tip.trigger}</p>
-                        <p className="text-sm text-muted-foreground mb-2">{tip.meaning}</p>
-                        <p className="text-sm text-primary flex items-center gap-1">
+                        <p className="text-foreground">
+                          <span className="font-medium">{tip.when},</span>{' '}
+                          <span className="text-muted-foreground">{tip.indicates}</span>
+                        </p>
+                        <p className="text-sm text-primary flex items-center gap-1 mt-2">
                           <CheckCircle className="h-3.5 w-3.5" />
                           {tip.action}
                         </p>
@@ -607,19 +579,19 @@ export default function ListingsGuide() {
           </div>
         </section>
 
-        {/* Common Mistakes Section */}
-        <section id="mistakes" className="container py-16">
+        {/* Common Assumptions Section */}
+        <section id="assumptions" className="container py-16">
           <motion.div {...fadeInUp} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-              Common Misinterpretations International Buyers Make
+              Common Assumptions International Buyers Bring
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Awareness is the first step to avoiding these traps.
+              These beliefs are understandable but often misaligned with Israeli practices.
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-            {commonMistakes.map((mistake, index) => (
+            {commonAssumptions.map((assumption, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
@@ -628,8 +600,8 @@ export default function ListingsGuide() {
                 transition={{ delay: index * 0.03 }}
               >
                 <Card className="p-4 h-full flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-foreground">{mistake}</p>
+                  <HelpCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-foreground italic">{assumption}</p>
                 </Card>
               </motion.div>
             ))}
@@ -652,23 +624,19 @@ export default function ListingsGuide() {
 
                 <div className="space-y-4 text-foreground">
                   <p className="text-lg leading-relaxed">
-                    BuyWise Israel enhances listings by adding context and standardization. The platform 
-                    indicates whether size figures are net or gross and provides typical ranges for Va'ad 
-                    HaBayit fees.
+                    BuyWise Israel enhances listings by providing additional context without altering 
+                    the original advertisement. It flags whether square meters refer to gross or net 
+                    area and estimates typical Va'ad HaBayit fees based on building type.
                   </p>
                   <p className="leading-relaxed">
-                    It overlays estimated transaction costs (purchase tax, lawyer fees, agent commission) 
-                    based on buyer status. It flags when a listing refers to an off-plan project and 
-                    summarizes delivery timelines.
-                  </p>
-                  <p className="leading-relaxed">
-                    BuyWise adjusts its presentation depending on whether you are a resident, new oleh, 
-                    foreign buyer or investor, showing how taxes and financing requirements differ.
+                    The platform overlays expected transaction costs—purchase tax, legal fees and agent 
+                    commission—based on buyer status. It identifies when a listing refers to an off-plan 
+                    project and summarises delivery timelines and index-linking.
                   </p>
                   <p className="leading-relaxed text-muted-foreground">
-                    It also provides translations and explanations of local terms (e.g., MAMAD, Tabu, Arnona) 
-                    so you can read Hebrew-origin listings in plain English. These enhancements help you 
-                    interpret the listing without replacing professional advice.
+                    It translates local terms into plain English, clarifies floor numbering and explains 
+                    counting conventions. These adjustments help international users interpret listings 
+                    accurately while respecting the underlying marketing.
                   </p>
                 </div>
               </Card>
@@ -683,12 +651,10 @@ export default function ListingsGuide() {
               <Lightbulb className="h-10 w-10 text-primary mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-foreground mb-4">Calm Reframe</h2>
               <p className="text-lg text-foreground leading-relaxed">
-                Feeling uncertain when reading Israeli listings is normal. The system evolved around local 
-                norms, not to mislead you. Once you know that room counts include the living room and safe 
-                room, that square meters might be gross, and that agents are paid at contract signing, the 
-                confusion fades. Listings emphasise lifestyle features and assume you will investigate 
-                technical details later. By understanding how to interpret what is said and what is left 
-                unsaid, you restore control and can browse properties on BuyWise Israel with confidence.
+                Feeling confused by Israeli listings is a normal reaction to a system built for insiders. 
+                Once you know how local norms shape room counts, measurements, pricing and terminology, 
+                the confusion gives way to understanding. Recognising these patterns empowers you to read 
+                listings calmly and confidently, turning what first seemed opaque into a clear map of options.
               </p>
             </Card>
           </motion.div>
