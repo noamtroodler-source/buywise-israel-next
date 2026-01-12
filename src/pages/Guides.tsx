@@ -41,6 +41,14 @@ const guides: Guide[] = [
     chaptersCount: 12,
   },
   {
+    slug: 'true-cost',
+    title: 'The True Cost of Buying',
+    description: 'Beyond the listing price: taxes, fees, and expenses that add up before, during, and after.',
+    image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80',
+    readingTime: 18,
+    chaptersCount: 11,
+  },
+  {
     slug: 'new-vs-resale',
     title: 'New Construction vs Resale',
     description: 'Compare buying from developers versus existing properties. Understand the pros and cons.',
