@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, ChevronDown, Clock, Layers } from 'lucide-react';
+import { ArrowLeft, MapPin, ChevronDown, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -8,14 +8,12 @@ interface CityHeroGuideProps {
   cityName: string;
   heroImage: string;
   identitySentence: string;
-  sectionCount?: number;
 }
 
 export function CityHeroGuide({ 
   cityName, 
   heroImage, 
-  identitySentence,
-  sectionCount = 6
+  identitySentence
 }: CityHeroGuideProps) {
   const scrollToContent = () => {
     window.scrollTo({ top: window.innerHeight * 0.6, behavior: 'smooth' });
@@ -96,12 +94,8 @@ export function CityHeroGuide({
           className="flex items-center gap-4 text-sm text-white/70"
         >
           <span className="flex items-center gap-1.5">
-            <Layers className="h-4 w-4" />
-            {sectionCount} sections
-          </span>
-          <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
-            ~5 min
+            ~5 min read
           </span>
           <span>Updated 2025</span>
         </motion.div>
