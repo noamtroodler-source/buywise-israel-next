@@ -48,38 +48,6 @@ const guides: Guide[] = [
     readingTime: 18,
     chaptersCount: 11,
   },
-  {
-    slug: 'new-vs-resale',
-    title: 'New Construction vs Resale',
-    description: 'Compare buying from developers versus existing properties. Understand the pros and cons.',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80',
-    readingTime: 15,
-    chaptersCount: 5,
-  },
-  {
-    slug: 'oleh-first-time',
-    title: 'Oleh First-Time Buyer Guide',
-    description: 'Special benefits and step-by-step process for new immigrants buying their first home.',
-    image: 'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80',
-    readingTime: 20,
-    chaptersCount: 6,
-  },
-  {
-    slug: 'investment-property',
-    title: 'Investment Property Guide',
-    description: 'Maximize returns on Israeli real estate. Learn about yields, taxes, and market analysis.',
-    image: 'https://images.unsplash.com/photo-1460472178825-e5240623afd5?w=800&q=80',
-    readingTime: 22,
-    chaptersCount: 7,
-  },
-  {
-    slug: 'new-construction',
-    title: 'New Construction Guide',
-    description: 'Navigate buying from a developer: payment schedules, bank guarantees, and timelines.',
-    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&q=80',
-    readingTime: 18,
-    chaptersCount: 6,
-  },
 ];
 
 // Calculate total reading time
