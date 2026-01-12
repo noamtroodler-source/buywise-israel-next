@@ -47,10 +47,10 @@ import PurchaseTaxGuide from "./pages/guides/PurchaseTaxGuide";
 import TrueCostGuide from "./pages/guides/TrueCostGuide";
 import TalkingToProfessionalsGuide from "./pages/guides/TalkingToProfessionalsGuide";
 import MortgagesGuide from "./pages/guides/MortgagesGuide";
+import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
 // Individual guide pages - commented out for launch
 // import OlehBuyerGuide from "./pages/guides/OlehBuyerGuide";
 // import InvestmentPropertyGuide from "./pages/guides/InvestmentPropertyGuide";
-// import NewVsResaleGuide from "./pages/guides/NewVsResaleGuide";
 // import NewConstructionGuide from "./pages/guides/NewConstructionGuide";
 import Contact from "./pages/Contact";
 import Principles from "./pages/Principles";
@@ -91,10 +91,10 @@ const App = () => (
             <Route path="/guides/true-cost" element={<TrueCostGuide />} />
             <Route path="/guides/talking-to-professionals" element={<TalkingToProfessionalsGuide />} />
             <Route path="/guides/mortgages" element={<MortgagesGuide />} />
+            <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
             {/* Individual guide pages - commented out for launch
             <Route path="/guides/oleh-first-time" element={<OlehBuyerGuide />} />
             <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
-            <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
             <Route path="/guides/new-construction" element={<NewConstructionGuide />} />
             */}
             <Route path="/developers" element={<Developers />} />
