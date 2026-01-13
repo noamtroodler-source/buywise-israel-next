@@ -86,7 +86,7 @@ export function RegionExplorer() {
               Explore by Region
             </h2>
             <p className="text-base text-muted-foreground mt-1">
-              Discover neighborhoods across Israel
+              Discover cities across Israel
             </p>
           </div>
           <Button variant="outline" asChild>
@@ -124,8 +124,8 @@ export function RegionExplorer() {
           {(() => {
             const cityCount = regions[activeRegion].cities.length;
             const gridClasses = 
-              cityCount === 2 ? "grid-cols-2 sm:grid-cols-2 max-w-2xl mx-auto" :
-              cityCount === 3 ? "grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto" :
+              cityCount === 2 ? "grid-cols-2 sm:grid-cols-2" :
+              cityCount === 3 ? "grid-cols-2 sm:grid-cols-3" :
               "grid-cols-2 sm:grid-cols-4";
             
             return (
