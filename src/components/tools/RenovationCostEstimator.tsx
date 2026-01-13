@@ -17,6 +17,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
 import { CTACard } from './shared/CTACard';
 import { ToolFeedback } from './shared/ToolFeedback';
+import { SourceAttribution } from './shared/SourceAttribution';
 
 import { usePreferences, useFormatPrice, useFormatArea, useCurrencySymbol, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
@@ -968,6 +969,7 @@ export function RenovationCostEstimator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
+      sourceAttribution={<SourceAttribution toolType="renovation" />}
       disclaimer={
         <ToolDisclaimer
           text="Cost estimates are for planning purposes only and based on average Israeli market rates. Always get multiple quotes from licensed contractors. Prices vary significantly by location (Tel Aviv typically 20-30% higher than peripheral areas), building age, and specific requirements."

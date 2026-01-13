@@ -18,6 +18,7 @@ import { ToolLayout } from './shared/ToolLayout';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
+import { SourceAttribution } from './shared/SourceAttribution';
 
 interface PaymentSchedule {
   stage: string;
@@ -430,6 +431,7 @@ export function NewConstructionCostCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
+      sourceAttribution={<SourceAttribution toolType="newConstruction" />}
       disclaimer={<ToolDisclaimer />}
     />
   );

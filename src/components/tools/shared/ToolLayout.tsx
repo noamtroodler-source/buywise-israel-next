@@ -16,6 +16,8 @@ interface ToolLayoutProps {
   rightColumn: ReactNode;
   bottomSection?: ReactNode;
   disclaimer?: ReactNode;
+  /** Source attribution component for trust signals */
+  sourceAttribution?: ReactNode;
   onBack?: () => void;
   className?: string;
 }
@@ -31,6 +33,7 @@ export function ToolLayout({
   rightColumn,
   bottomSection,
   disclaimer,
+  sourceAttribution,
   onBack,
   className,
 }: ToolLayoutProps) {
@@ -109,9 +112,16 @@ export function ToolLayout({
         </div>
       )}
 
+      {/* Source Attribution */}
+      {sourceAttribution && (
+        <div className="mt-8">
+          {sourceAttribution}
+        </div>
+      )}
+
       {/* Disclaimer */}
       {disclaimer && (
-        <div className="mt-8">
+        <div className="mt-6">
           {disclaimer}
         </div>
       )}

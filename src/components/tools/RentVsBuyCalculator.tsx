@@ -43,6 +43,7 @@ import {
   InfoBanner,
   InsightCard,
   BuyerTypeInfoBanner,
+  SourceAttribution,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -1242,6 +1243,7 @@ export function RentVsBuyCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
+      sourceAttribution={<SourceAttribution toolType="rentVsBuy" />}
       disclaimer={disclaimer}
     />
   );

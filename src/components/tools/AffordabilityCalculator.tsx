@@ -51,6 +51,7 @@ import { ToolFeedback } from './shared/ToolFeedback';
 import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { formatCurrencyRange } from './shared/ResultRange';
+import { SourceAttribution } from './shared/SourceAttribution';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
@@ -435,6 +436,7 @@ function AffordabilityCalculatorContent() {
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
             </div>
             <ToolFeedback toolName="affordability-calculator" variant="inline" />
+            <SourceAttribution toolType="affordability" />
             <ToolDisclaimer variant="affordability" />
           </div>
         }

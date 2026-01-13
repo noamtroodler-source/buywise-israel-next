@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, SourceAttribution } from './shared';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { Link } from 'react-router-dom';
 
@@ -1131,6 +1131,7 @@ function InvestmentCalculatorContent() {
       leftColumn={leftColumn} 
       rightColumn={rightColumn} 
       bottomSection={bottomSection} 
+      sourceAttribution={<SourceAttribution toolType="investment" />}
       disclaimer={disclaimer}
     />
   );
