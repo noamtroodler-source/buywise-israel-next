@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car } from 'lucide-react';
+import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
@@ -44,6 +44,15 @@ const formatTravelTime = (distanceKm: number, mode: TravelMode) => {
   return { time, Icon: icons[mode], label: labels[mode] };
 };
 
+// Get best travel display for an item
+const getTravelDisplay = (distanceKm: number, mode: TravelMode) => {
+  const travel = formatTravelTime(distanceKm, mode);
+  if (travel) return travel;
+  
+  // Fall back to driving for far distances
+  return formatTravelTime(distanceKm, 'drive');
+};
+
 export function PropertyLocation({ 
   address, 
   city, 
@@ -52,6 +61,7 @@ export function PropertyLocation({
   longitude,
 }: PropertyLocationProps) {
   const [travelMode, setTravelMode] = useState<TravelMode>('walk');
+  const [isExpanded, setIsExpanded] = useState(false);
   
   const fullAddress = `${address}${neighborhood ? `, ${neighborhood}` : ''}, ${city}, Israel`;
   
@@ -176,53 +186,91 @@ export function PropertyLocation({
             </ToggleGroup>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Compact Summary - Closest item per category (6 items total) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {nearbyEssentials.map((category) => {
               const CategoryIcon = category.icon;
+              const closestItem = category.items[0]; // First item is closest
+              const travel = getTravelDisplay(closestItem.distanceKm, travelMode);
+              
+              if (!travel) return null;
+              
+              const TravelIcon = travel.Icon;
+              const isFallback = travelMode !== 'drive' && formatTravelTime(closestItem.distanceKm, travelMode) === null;
+              
               return (
-                <div key={category.category} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CategoryIcon className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-sm text-foreground">{category.category}</span>
+                <div 
+                  key={category.category} 
+                  className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50 border border-border/50"
+                >
+                  <CategoryIcon className="h-4 w-4 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{closestItem.name}</p>
+                    <p className={`text-xs flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                      <TravelIcon className="h-3 w-3" />
+                      {travel.time} min {travel.label}
+                    </p>
                   </div>
-                  <ul className="space-y-1.5 pl-6">
-                    {category.items.map((item, i) => {
-                      const travel = formatTravelTime(item.distanceKm, travelMode);
-                      
-                      // If no valid travel time for this mode, show with best alternative
-                      if (!travel) {
-                        // Fall back to driving for far distances
-                        const driveFallback = formatTravelTime(item.distanceKm, 'drive');
-                        if (!driveFallback) return null;
-                        
-                        const FallbackIcon = driveFallback.Icon;
-                        return (
-                          <li key={i} className="flex items-center justify-between text-sm text-muted-foreground gap-2">
-                            <span className="truncate">{item.name}</span>
-                            <span className="flex items-center gap-1 text-xs whitespace-nowrap text-muted-foreground/70">
-                              <FallbackIcon className="h-3 w-3" />
-                              {driveFallback.time} min {driveFallback.label}
-                            </span>
-                          </li>
-                        );
-                      }
-                      
-                      const TravelIcon = travel.Icon;
-                      return (
-                        <li key={i} className="flex items-center justify-between text-sm text-muted-foreground gap-2">
-                          <span className="truncate">{item.name}</span>
-                          <span className="flex items-center gap-1 text-xs whitespace-nowrap">
-                            <TravelIcon className="h-3 w-3" />
-                            {travel.time} min {travel.label}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
                 </div>
               );
             })}
           </div>
+
+          {/* Expanded View - All items per category */}
+          {isExpanded && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-border/50">
+              {nearbyEssentials.map((category) => {
+                const CategoryIcon = category.icon;
+                return (
+                  <div key={category.category} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm text-foreground">{category.category}</span>
+                    </div>
+                    <ul className="space-y-1.5 pl-6">
+                      {category.items.map((item, i) => {
+                        const travel = getTravelDisplay(item.distanceKm, travelMode);
+                        if (!travel) return null;
+                        
+                        const TravelIcon = travel.Icon;
+                        const isFallback = travelMode !== 'drive' && formatTravelTime(item.distanceKm, travelMode) === null;
+                        
+                        return (
+                          <li key={i} className="flex items-center justify-between text-sm gap-2">
+                            <span className="truncate text-muted-foreground">{item.name}</span>
+                            <span className={`flex items-center gap-1 text-xs whitespace-nowrap ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                              <TravelIcon className="h-3 w-3" />
+                              {travel.time} min {travel.label}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Toggle Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full text-muted-foreground hover:text-foreground"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-1.5" />
+                Show less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-1.5" />
+                See all nearby places
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>
