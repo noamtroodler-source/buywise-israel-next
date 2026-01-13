@@ -103,6 +103,14 @@ export function CityCalculatorTeaser({ cityName, medianPrice, grossYield }: City
                   </Link>
                 </Button>
               </div>
+              
+              {/* Subtle guide link */}
+              <p className="text-sm text-muted-foreground">
+                New to buying in Israel?{' '}
+                <Link to="/guides/buying-in-israel" className="text-primary hover:underline">
+                  Start with our Complete Buyer's Guide →
+                </Link>
+              </p>
             </div>
           )}
 

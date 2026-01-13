@@ -15,6 +15,7 @@ import {
   ChevronDown,
   HelpCircle,
   BadgeCheck,
+  BookOpen,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -969,17 +970,17 @@ export function TrueCostCalculator() {
         </Link>
 
         <Link 
-          to="/tools?tool=affordability"
+          to="/guides/true-cost"
           className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <TrendingUp className="h-5 w-5" />
+              <BookOpen className="h-5 w-5" />
             </div>
-            <p className="font-semibold">Check Affordability</p>
+            <p className="font-semibold">Full Cost Guide</p>
           </div>
           <p className="text-sm text-muted-foreground">
-            See your maximum budget
+            Understand every cost in detail
           </p>
         </Link>
 
