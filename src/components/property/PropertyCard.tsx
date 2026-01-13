@@ -22,9 +22,10 @@ interface PropertyCardProps {
   showMonthlyEstimate?: boolean;
   hideStatusBadge?: boolean;
   compact?: boolean;
+  maxBadges?: 2 | 3;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 3 }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -205,15 +206,15 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       {getStatusLabel(property.listing_status)}
                     </Badge>
                   )}
-                  {isNewListing && (
+                  {property.is_featured && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                      Featured
+                    </Badge>
+                  )}
+                  {isNewListing && (maxBadges === 3 || !property.is_featured) && (
                     <Badge className="bg-project text-project-foreground text-xs font-medium">
                       <Sparkles className="h-3 w-3 mr-1" />
                       New
-                    </Badge>
-                  )}
-                  {property.is_featured && !isNewListing && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                      Featured
                     </Badge>
                   )}
                 </div>
@@ -332,15 +333,15 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       {getStatusLabel(property.listing_status)}
                     </Badge>
                   )}
-                  {isNewListing && (
+                  {property.is_featured && (
+                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
+                      Featured
+                    </Badge>
+                  )}
+                  {isNewListing && (maxBadges === 3 || !property.is_featured) && (
                     <Badge className="bg-project text-project-foreground text-xs font-medium">
                       <Sparkles className="h-3 w-3 mr-1" />
                       New
-                    </Badge>
-                  )}
-                  {property.is_featured && !isNewListing && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                      Featured
                     </Badge>
                   )}
                 </div>

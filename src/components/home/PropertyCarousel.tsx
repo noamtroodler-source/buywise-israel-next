@@ -127,7 +127,7 @@ export function PropertyCarousel({
                   key={property.id}
                   className="min-w-0 shrink-0 grow-0 basis-1/2 md:basis-1/3 lg:basis-1/4 pl-8"
                 >
-                  <PropertyCard property={property} showCompareButton={false} showShareButton hideStatusBadge={hideStatusBadge} compact />
+                  <PropertyCard property={property} showCompareButton={false} showShareButton hideStatusBadge={hideStatusBadge} compact maxBadges={2} />
                 </div>
               ))}
             </div>
