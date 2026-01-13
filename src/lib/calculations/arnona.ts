@@ -109,6 +109,10 @@ export interface ArnonaEstimate {
   discountKey: ArnonaDiscountCategory | null;
   areaLimitApplied: boolean;
   areaLimitSqm: number | null;
+  // Oleh status tracking
+  olehStatusChecked: boolean;
+  olehYearsSinceAliyah: number | null;
+  isAutoDetectedDiscount: boolean;
 }
 
 interface BuyerArnonaProfile {
@@ -195,8 +199,17 @@ export function calculateArnonaWithDiscount(
       discountKey: null,
       areaLimitApplied: false,
       areaLimitSqm: null,
+      olehStatusChecked: false,
+      olehYearsSinceAliyah: null,
+      isAutoDetectedDiscount: false,
     };
   }
+  
+  // Calculate Oleh status for tracking
+  const isOleh = profile.residency_status === 'oleh_hadash';
+  const yearsSinceAliyah = isOleh && profile.aliyah_year 
+    ? new Date().getFullYear() - profile.aliyah_year 
+    : null;
   
   // Collect all applicable discount categories
   const allCategories: ArnonaDiscountCategory[] = [];
@@ -228,10 +241,14 @@ export function calculateArnonaWithDiscount(
       discountKey: null,
       areaLimitApplied: false,
       areaLimitSqm: null,
+      olehStatusChecked: isOleh,
+      olehYearsSinceAliyah: yearsSinceAliyah,
+      isAutoDetectedDiscount: false,
     };
   }
   
   const { discount } = best;
+  const isAutoDetected = discount.key === 'new_immigrant_year1' || discount.key === 'new_immigrant_year2';
   
   // Calculate discounted amount with area limit
   const areaLimitApplied = discount.areaLimitSqm !== null && apartmentSizeSqm > discount.areaLimitSqm;
@@ -259,6 +276,9 @@ export function calculateArnonaWithDiscount(
     discountKey: discount.key,
     areaLimitApplied,
     areaLimitSqm: discount.areaLimitSqm,
+    olehStatusChecked: isOleh,
+    olehYearsSinceAliyah: yearsSinceAliyah,
+    isAutoDetectedDiscount: isAutoDetected,
   };
 }
 
