@@ -18,6 +18,12 @@ export function useProperties(filters?: PropertyFilters) {
       if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
+      // Neighborhood filter - supports both single and multi-select
+      if (filters?.neighborhoods && filters.neighborhoods.length > 0) {
+        query = query.in('neighborhood', filters.neighborhoods);
+      } else if (filters?.neighborhood) {
+        query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
+      }
       if (filters?.property_types && filters.property_types.length > 0) {
         query = query.in('property_type', filters.property_types as any);
       } else if (filters?.property_type) {
@@ -46,6 +52,33 @@ export function useProperties(filters?: PropertyFilters) {
       }
       if (filters?.max_size) {
         query = query.lte('size_sqm', filters.max_size);
+      }
+      // Floor filter
+      if (filters?.min_floor !== undefined) {
+        query = query.gte('floor', filters.min_floor);
+      }
+      if (filters?.max_floor !== undefined) {
+        query = query.lte('floor', filters.max_floor);
+      }
+      // Lot size filter (for houses/cottages)
+      if (filters?.min_lot_size) {
+        query = query.gte('lot_size_sqm', filters.min_lot_size);
+      }
+      if (filters?.max_lot_size) {
+        query = query.lte('lot_size_sqm', filters.max_lot_size);
+      }
+      // Year built filter
+      if (filters?.min_year_built) {
+        query = query.gte('year_built', filters.min_year_built);
+      }
+      if (filters?.max_year_built) {
+        query = query.lte('year_built', filters.max_year_built);
+      }
+      // Days on market filter (new listings)
+      if (filters?.max_days_listed) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - filters.max_days_listed);
+        query = query.gte('created_at', cutoffDate.toISOString());
       }
       if (filters?.min_parking) {
         query = query.gte('parking', filters.min_parking);

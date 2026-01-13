@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
+import { useNeighborhoods } from '@/hooks/useNeighborhoods';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
@@ -50,6 +51,19 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'rooms_desc', label: 'Rooms: Most to Fewest' },
 ];
 
+const DAYS_ON_MARKET_OPTIONS = [
+  { value: undefined, label: 'Any Time' },
+  { value: 1, label: 'Last 24 Hours' },
+  { value: 7, label: 'Last 7 Days' },
+  { value: 30, label: 'Last 30 Days' },
+];
+
+const YEAR_BUILT_PRESETS = [
+  { value: 2020, label: '2020+' },
+  { value: 2010, label: '2010+' },
+  { value: 2000, label: '2000+' },
+];
+
 // Helper to format number with commas
 const formatWithCommas = (value: number | undefined): string => {
   if (value === undefined || value === null) return '';
@@ -72,10 +86,29 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [sortOpen, setSortOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
   
   const { data: cities } = useCities();
+  const { data: neighborhoods } = useNeighborhoods(filters.city);
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Check if lot size filter should be shown (for house-type properties)
+  const showLotSizeFilter = useMemo(() => {
+    const houseTypes: PropertyType[] = ['house', 'cottage', 'garden_apartment'];
+    return filters.property_types?.some(t => houseTypes.includes(t)) || false;
+  }, [filters.property_types]);
+  
+  // Filter neighborhoods based on search
+  const filteredNeighborhoods = useMemo(() => {
+    if (!neighborhoods) return [];
+    if (!neighborhoodSearch) return neighborhoods;
+    const search = neighborhoodSearch.toLowerCase();
+    return neighborhoods.filter(n => 
+      n.name.toLowerCase().includes(search) ||
+      n.hebrew_name?.toLowerCase().includes(search)
+    );
+  }, [neighborhoods, neighborhoodSearch]);
 
   const handleCreateAlertClick = () => {
     if (!user) {
@@ -105,12 +138,29 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       ...filters,
       min_size: undefined,
       max_size: undefined,
+      min_floor: undefined,
+      max_floor: undefined,
+      min_lot_size: undefined,
+      max_lot_size: undefined,
+      min_year_built: undefined,
+      max_year_built: undefined,
+      max_days_listed: undefined,
       min_parking: undefined,
       features: undefined,
       is_furnished: undefined,
       is_accessible: undefined,
       condition: undefined,
+      neighborhoods: undefined,
     });
+  };
+  
+  const toggleNeighborhood = (neighborhoodName: string) => {
+    const current = filters.neighborhoods || [];
+    if (current.includes(neighborhoodName)) {
+      updateFilter('neighborhoods', current.filter(n => n !== neighborhoodName));
+    } else {
+      updateFilter('neighborhoods', [...current, neighborhoodName]);
+    }
   };
 
   const getSortLabel = () => {
@@ -161,47 +211,124 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
-              className={cn(filterButtonBase, cityOpen && filterButtonActive)}
+              className={cn(filterButtonBase, (filters.city || filters.neighborhoods?.length) && "border-primary/50", cityOpen && filterButtonActive)}
             >
               <MapPin className="h-4 w-4" />
-              <span>{filters.city || 'City'}</span>
+              <span>
+                {filters.city 
+                  ? filters.neighborhoods?.length 
+                    ? `${filters.city} (${filters.neighborhoods.length})`
+                    : filters.city
+                  : 'City'}
+              </span>
               {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-4">
-              <h3 className="font-semibold text-lg">Select City</h3>
-              
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search city..."
-                  value={citySearch}
-                  onChange={(e) => setCitySearch(e.target.value)}
-                  className="pl-10 rounded-lg"
-                />
-              </div>
-
-              <div className="max-h-[250px] overflow-y-auto space-y-1">
-                {filteredCities?.map(city => (
-                  <button
-                    key={city.id}
-                    className={cn(
-                      "w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors",
-                      filters.city === city.name 
-                        ? "bg-amber-400 text-foreground font-medium" 
-                        : "hover:bg-muted"
-                    )}
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Location</h3>
+                {(filters.city || filters.neighborhoods?.length) && (
+                  <button 
+                    className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      updateFilter('city', city.name);
-                      setCityOpen(false);
-                      setCitySearch('');
+                      updateFilter('city', undefined);
+                      updateFilter('neighborhoods', undefined);
                     }}
                   >
-                    {city.name}
+                    Clear
                   </button>
-                ))}
+                )}
               </div>
+              
+              {/* City Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">City</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search city..."
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    className="pl-10 rounded-lg"
+                  />
+                </div>
+
+                <div className="max-h-[150px] overflow-y-auto space-y-1">
+                  {filteredCities?.map(city => (
+                    <button
+                      key={city.id}
+                      className={cn(
+                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                        filters.city === city.name 
+                          ? "bg-amber-400 text-foreground font-medium" 
+                          : "hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        updateFilter('city', city.name);
+                        updateFilter('neighborhoods', undefined);
+                        setCitySearch('');
+                      }}
+                    >
+                      {city.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Neighborhood Selection - Only shown when city is selected */}
+              {filters.city && neighborhoods && neighborhoods.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Neighborhoods</Label>
+                    {filters.neighborhoods && filters.neighborhoods.length > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {filters.neighborhoods.length} selected
+                      </span>
+                    )}
+                  </div>
+                  
+                  {neighborhoods.length > 6 && (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search neighborhoods..."
+                        value={neighborhoodSearch}
+                        onChange={(e) => setNeighborhoodSearch(e.target.value)}
+                        className="pl-10 rounded-lg h-9 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  <div className="max-h-[140px] overflow-y-auto space-y-0.5">
+                    {filteredNeighborhoods.map(neighborhood => {
+                      const isSelected = filters.neighborhoods?.includes(neighborhood.name) || false;
+                      return (
+                        <button
+                          key={neighborhood.id}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg hover:bg-muted transition-colors text-left"
+                          onClick={() => toggleNeighborhood(neighborhood.name)}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                            isSelected 
+                              ? "border-primary bg-primary" 
+                              : "border-border"
+                          )}>
+                            {isSelected && (
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            )}
+                          </div>
+                          <span className="flex-1">{neighborhood.name}</span>
+                          {neighborhood.price_tier && (
+                            <span className="text-xs text-muted-foreground capitalize">{neighborhood.price_tier}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <Link 
                 to="/tools" 
@@ -209,6 +336,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               >
                 Not sure where to look? <ArrowRight className="h-4 w-4" />
               </Link>
+
+              <Button 
+                className="w-full"
+                onClick={() => {
+                  setCityOpen(false);
+                  setNeighborhoodSearch('');
+                }}
+              >
+                Apply
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -520,6 +657,30 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </SheetHeader>
           
           <div className="space-y-6 py-2">
+            {/* New Listings / Days on Market */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Clock className="h-4 w-4" />
+                <h4 className="font-semibold">New Listings</h4>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {DAYS_ON_MARKET_OPTIONS.map(option => (
+                  <button
+                    key={option.label}
+                    className={cn(
+                      "px-4 h-9 rounded-full text-sm font-medium transition-all",
+                      filters.max_days_listed === option.value 
+                        ? "bg-primary text-primary-foreground" 
+                        : "border border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('max_days_listed', option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Size & Floor */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary">
@@ -551,10 +712,105 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 <div className="space-y-2">
                   <Label className="text-sm text-muted-foreground">Floor</Label>
                   <div className="flex gap-2">
-                    <Input type="number" placeholder="Min" className="rounded-lg" />
-                    <Input type="number" placeholder="Max" className="rounded-lg" />
+                    <Input 
+                      type="number" 
+                      placeholder="Min" 
+                      className="rounded-lg"
+                      value={filters.min_floor ?? ''}
+                      onChange={(e) => updateFilter('min_floor', e.target.value ? parseInt(e.target.value) : undefined)}
+                    />
+                    <Input 
+                      type="number" 
+                      placeholder="Max" 
+                      className="rounded-lg"
+                      value={filters.max_floor ?? ''}
+                      onChange={(e) => updateFilter('max_floor', e.target.value ? parseInt(e.target.value) : undefined)}
+                    />
                   </div>
                 </div>
+              </div>
+              
+              {/* Lot Size - Only shown for house types */}
+              {showLotSizeFilter && (
+                <div className="space-y-2 pt-2">
+                  <Label className="text-sm text-muted-foreground">Lot Size (m²)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Min"
+                      value={formatWithCommas(filters.min_lot_size)}
+                      onChange={(e) => updateFilter('min_lot_size', parseCommaNumber(e.target.value))}
+                      className="rounded-lg"
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Max"
+                      value={formatWithCommas(filters.max_lot_size)}
+                      onChange={(e) => updateFilter('max_lot_size', parseCommaNumber(e.target.value))}
+                      className="rounded-lg"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Year Built */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Calendar className="h-4 w-4" />
+                <h4 className="font-semibold">Year Built</h4>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {YEAR_BUILT_PRESETS.map(preset => (
+                  <button
+                    key={preset.value}
+                    className={cn(
+                      "px-4 h-9 rounded-full text-sm font-medium transition-all",
+                      filters.min_year_built === preset.value && !filters.max_year_built
+                        ? "bg-primary text-primary-foreground" 
+                        : "border border-border hover:bg-muted"
+                    )}
+                    onClick={() => {
+                      updateFilter('min_year_built', preset.value);
+                      updateFilter('max_year_built', undefined);
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+                {filters.min_year_built && (
+                  <button
+                    className="px-3 h-9 text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      updateFilter('min_year_built', undefined);
+                      updateFilter('max_year_built', undefined);
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="From year"
+                  value={filters.min_year_built ?? ''}
+                  onChange={(e) => updateFilter('min_year_built', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="rounded-lg"
+                  min={1900}
+                  max={new Date().getFullYear()}
+                />
+                <Input
+                  type="number"
+                  placeholder="To year"
+                  value={filters.max_year_built ?? ''}
+                  onChange={(e) => updateFilter('max_year_built', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="rounded-lg"
+                  min={1900}
+                  max={new Date().getFullYear()}
+                />
               </div>
             </div>
 
@@ -619,7 +875,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             {listingType !== 'projects' && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-primary">
-                  <Layers className="h-4 w-4" />
+                  <Home className="h-4 w-4" />
                   <h4 className="font-semibold">Condition</h4>
                 </div>
                 <div className="flex flex-wrap gap-2">

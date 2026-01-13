@@ -101,6 +101,8 @@ export interface Inquiry {
 
 export interface PropertyFilters {
   city?: string;
+  neighborhood?: string;
+  neighborhoods?: string[];
   property_type?: PropertyType;
   property_types?: PropertyType[];
   listing_status?: ListingStatus;
@@ -111,6 +113,13 @@ export interface PropertyFilters {
   min_bathrooms?: number;
   min_size?: number;
   max_size?: number;
+  min_floor?: number;
+  max_floor?: number;
+  min_lot_size?: number;
+  max_lot_size?: number;
+  min_year_built?: number;
+  max_year_built?: number;
+  max_days_listed?: number;
   min_parking?: number;
   features?: string[];
   condition?: PropertyCondition[];
