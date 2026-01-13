@@ -74,6 +74,7 @@ export interface Property {
   entry_date: string | null;
   ac_type: 'none' | 'split' | 'central' | 'mini_central' | null;
   vaad_bayit_monthly: number | null;
+  allows_pets: 'none' | 'cats' | 'dogs' | 'all' | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;
@@ -126,6 +127,10 @@ export interface PropertyFilters {
   is_furnished?: boolean;
   is_accessible?: boolean;
   sort_by?: SortOption;
+  // Rental-specific filters
+  available_now?: boolean;
+  available_by?: string;
+  allows_pets?: ('cats' | 'dogs' | 'all')[];
 }
 
 export interface SearchAlert {

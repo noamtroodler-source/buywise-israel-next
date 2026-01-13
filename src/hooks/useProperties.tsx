@@ -96,6 +96,25 @@ export function useProperties(filters?: PropertyFilters) {
         query = query.contains('features', filters.features);
       }
       
+      // Rental-specific filters
+      // Availability filter - use entry_date column
+      if (filters?.available_now) {
+        const today = new Date().toISOString().split('T')[0];
+        query = query.or(`entry_date.is.null,entry_date.lte.${today}`);
+      }
+      if (filters?.available_by) {
+        query = query.or(`entry_date.is.null,entry_date.lte.${filters.available_by}`);
+      }
+      // Pets allowed filter
+      if (filters?.allows_pets && filters.allows_pets.length > 0) {
+        // If specific pets selected, include those + 'all' (which allows all pets)
+        const petFilters = [...filters.allows_pets];
+        if (!petFilters.includes('all')) {
+          petFilters.push('all');
+        }
+        query = query.in('allows_pets', petFilters);
+      }
+      
       // Apply sorting
       if (filters?.sort_by) {
         switch (filters.sort_by) {

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +62,20 @@ const YEAR_BUILT_PRESETS = [
   { value: 2020, label: '2020+' },
   { value: 2010, label: '2010+' },
   { value: 2000, label: '2000+' },
+];
+
+// Rental-specific options
+const AVAILABILITY_OPTIONS = [
+  { value: 'any', label: 'Any Time' },
+  { value: 'now', label: 'Available Now' },
+  { value: '30', label: 'Within 30 Days' },
+  { value: '60', label: 'Within 60 Days' },
+];
+
+const PET_OPTIONS = [
+  { value: 'cats', label: 'Cats OK', icon: '🐱' },
+  { value: 'dogs', label: 'Dogs OK', icon: '🐕' },
+  { value: 'all', label: 'All Pets', icon: '🐾' },
 ];
 
 // Helper to format number with commas
@@ -151,7 +165,48 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       is_accessible: undefined,
       condition: undefined,
       neighborhoods: undefined,
+      // Rental-specific filters
+      available_now: undefined,
+      available_by: undefined,
+      allows_pets: undefined,
     });
+  };
+  
+  const togglePetOption = (petValue: 'cats' | 'dogs' | 'all') => {
+    const current = filters.allows_pets || [];
+    if (current.includes(petValue)) {
+      updateFilter('allows_pets', current.filter(p => p !== petValue));
+    } else {
+      updateFilter('allows_pets', [...current, petValue]);
+    }
+  };
+  
+  const handleAvailabilityChange = (value: string) => {
+    if (value === 'any') {
+      updateFilter('available_now', undefined);
+      updateFilter('available_by', undefined);
+    } else if (value === 'now') {
+      updateFilter('available_now', true);
+      updateFilter('available_by', undefined);
+    } else {
+      const days = parseInt(value);
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      updateFilter('available_now', undefined);
+      updateFilter('available_by', date.toISOString().split('T')[0]);
+    }
+  };
+  
+  const getSelectedAvailability = () => {
+    if (filters.available_now) return 'now';
+    if (filters.available_by) {
+      const targetDate = new Date(filters.available_by);
+      const today = new Date();
+      const diffDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 30) return '30';
+      if (diffDays <= 60) return '60';
+    }
+    return 'any';
   };
   
   const toggleNeighborhood = (neighborhoodName: string) => {
@@ -813,6 +868,62 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 />
               </div>
             </div>
+
+            {/* Rental-specific: Availability */}
+            {listingType === 'for_rent' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary">
+                  <CalendarCheck className="h-4 w-4" />
+                  <h4 className="font-semibold">Availability</h4>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABILITY_OPTIONS.map(option => (
+                    <button
+                      key={option.value}
+                      className={cn(
+                        "px-4 h-9 rounded-full text-sm font-medium transition-all",
+                        getSelectedAvailability() === option.value 
+                          ? "bg-primary text-primary-foreground" 
+                          : "border border-border hover:bg-muted"
+                      )}
+                      onClick={() => handleAvailabilityChange(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Rental-specific: Pet Policy */}
+            {listingType === 'for_rent' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-primary">
+                  <PawPrint className="h-4 w-4" />
+                  <h4 className="font-semibold">Pet Policy</h4>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {PET_OPTIONS.map(option => {
+                    const isSelected = filters.allows_pets?.includes(option.value as 'cats' | 'dogs' | 'all');
+                    return (
+                      <button
+                        key={option.value}
+                        className={cn(
+                          "flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium transition-all",
+                          isSelected
+                            ? "bg-primary text-primary-foreground" 
+                            : "border border-border hover:bg-muted"
+                        )}
+                        onClick={() => togglePetOption(option.value as 'cats' | 'dogs' | 'all')}
+                      >
+                        <span>{option.icon}</span>
+                        <span>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Amenities */}
             <div className="space-y-3">
