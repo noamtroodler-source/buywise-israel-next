@@ -30,7 +30,7 @@ interface City {
 
 const regions: Record<Region, { label: string; icon: React.ElementType; cities: City[] }> = {
   coastal: {
-    label: 'Coastal & Tel Aviv',
+    label: 'Coastal',
     icon: Waves,
     cities: [
       { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, propertyCount: 150 },
@@ -40,7 +40,7 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     ],
   },
   central: {
-    label: 'Central Israel',
+    label: 'Central',
     icon: Building,
     cities: [
       { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, propertyCount: 120 },
