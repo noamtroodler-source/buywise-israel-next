@@ -182,6 +182,7 @@ export default function PropertyDetail() {
                   listingStatus={property.listing_status}
                   city={property.city}
                   sizeSqm={property.size_sqm}
+                  vaadBayitMonthly={property.vaad_bayit_monthly}
                 />
               </motion.div>
             )}
