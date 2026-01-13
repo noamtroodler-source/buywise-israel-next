@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { PropertyMiniMap } from './PropertyMiniMap';
+import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
 
 interface NearbyItem {
   name: string;
@@ -169,7 +169,7 @@ export function PropertyLocation({
       <div className="space-y-5">
         {/* Mini Map */}
         {latitude && longitude ? (
-          <PropertyMiniMap
+          <PropertyMiniMapWrapper
             latitude={latitude}
             longitude={longitude}
             propertyTitle={address}

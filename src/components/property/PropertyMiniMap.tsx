@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -31,6 +32,17 @@ export function PropertyMiniMap({
   propertyTitle = 'Property',
   nearbyPOIs = []
 }: PropertyMiniMapProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Don't render on server or before mount to avoid hydration issues
+  if (!isClient) {
+    return null;
+  }
+
   // Property marker - larger, primary color
   const propertyIcon = new DivIcon({
     className: 'property-marker',
