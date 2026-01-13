@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,10 +73,10 @@ const AVAILABILITY_OPTIONS = [
 ];
 
 const PET_OPTIONS = [
-  { value: 'cats', label: 'Cats OK', icon: '🐱' },
-  { value: 'dogs', label: 'Dogs OK', icon: '🐕' },
-  { value: 'all', label: 'All Pets', icon: '🐾' },
-];
+  { value: 'cats', label: 'Cats OK', Icon: Cat },
+  { value: 'dogs', label: 'Dogs OK', Icon: Dog },
+  { value: 'all', label: 'All Pets', Icon: PawPrint },
+] as const;
 
 // Helper to format number with commas
 const formatWithCommas = (value: number | undefined): string => {
@@ -916,7 +916,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                         )}
                         onClick={() => togglePetOption(option.value as 'cats' | 'dogs' | 'all')}
                       >
-                        <span>{option.icon}</span>
+                        <option.Icon className="h-4 w-4" />
                         <span>{option.label}</span>
                       </button>
                     );
