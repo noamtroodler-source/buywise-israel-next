@@ -12,7 +12,7 @@ const LTV_LIMITS: Record<string, number> = {
 // Default affordability settings
 const DEFAULT_INTEREST_RATE = 5.5; // Current avg mortgage rate
 const DEFAULT_TERM_YEARS = 25;
-const MAX_PTI_RATIO = 0.35; // Max payment-to-income ratio
+const MAX_PTI_RATIO = 0.50; // Bank of Israel Directive 329 v11 - Max 50% PTI
 
 export interface AffordabilityParams {
   monthlyIncome?: number;

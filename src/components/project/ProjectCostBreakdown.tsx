@@ -106,9 +106,9 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   
   // New construction specific costs
   const lawyerFees = price * 0.005;
-  const lawyerVat = lawyerFees * 0.17;
+  const lawyerVat = lawyerFees * 0.18; // VAT 18% as of Jan 2025
   const developerLawyerFees = price * 0.015;
-  const developerLawyerVat = developerLawyerFees * 0.17;
+  const developerLawyerVat = developerLawyerFees * 0.18; // VAT 18% as of Jan 2025
   const registrationFees = 500;
   
   const totalOneTime = purchaseTax + lawyerFees + lawyerVat + developerLawyerFees + developerLawyerVat + registrationFees;

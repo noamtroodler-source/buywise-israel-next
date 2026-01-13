@@ -79,7 +79,7 @@ const FEES = {
   lawyerRate: 0.005, // 0.5% of price
   lawyerMinimum: 5000,
   agentRate: 0.02, // 2% + VAT
-  vatRate: 0.17,
+  vatRate: 0.18, // Updated to 18% as of Jan 2025
   arnonaDefault: 400, // Monthly estimate when city data not available
   vaadBayitDefault: 350, // Monthly building maintenance
   homeInsurance: 150, // Monthly

@@ -82,8 +82,9 @@ const EMPLOYMENT_OPTIONS = [
   { value: 'mixed', label: 'Mixed Income', multiplier: 0.85 },
 ];
 
-const MAX_PTI_FIRST_HOME = 0.40;
-const MAX_PTI_ADDITIONAL = 0.35;
+// Bank of Israel Directive 329 v11 - Max 50% PTI for all buyers
+const MAX_PTI_FIRST_HOME = 0.50;
+const MAX_PTI_ADDITIONAL = 0.50;
 const MAX_LTV_FIRST_HOME = 0.75;
 const MAX_LTV_ADDITIONAL = 0.50;
 
