@@ -339,7 +339,7 @@ function MortgageCalculatorContent() {
     switch (risk) {
       case 'low': return 'secondary';
       case 'medium': return 'outline';
-      case 'high': return 'destructive';
+      case 'high': return 'default';
       default: return 'outline';
     }
   };
@@ -644,9 +644,9 @@ function MortgageCalculatorContent() {
                 ) : null}
 
                 {buyerType === 'foreign' && (
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                    <p className="text-xs text-amber-700 dark:text-amber-400">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <AlertTriangle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-xs text-foreground/80">
                       <strong>For foreign income earners:</strong> CPI-linked tracks add inflation risk on top of currency risk. Many advisors recommend non-indexed (Fixed Shekel) tracks for USD/EUR earners.
                     </p>
                   </div>
@@ -677,14 +677,14 @@ function MortgageCalculatorContent() {
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 1).toFixed(1)}% (+1%)</p>
                     <p className="text-xl font-semibold">{formatCurrency(stressTest.plus1.stressedPayment)}/mo</p>
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-primary mt-1">
                       +{formatCurrency(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 2).toFixed(1)}% (+2%)</p>
                     <p className="text-xl font-semibold">{formatCurrency(stressTest.plus2.stressedPayment)}/mo</p>
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-primary mt-1">
                       +{formatCurrency(stressTest.plus2.increase)} ({stressTest.plus2.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
