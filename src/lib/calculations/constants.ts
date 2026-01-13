@@ -6,7 +6,7 @@
  * 
  * Sources:
  * - Israel Tax Authority (taxes.gov.il)
- * - Bank of Israel Directive 329 v11 (April 2024)
+ * - Bank of Israel Directive 329 v11 (April 2025)
  * - Ministry of Interior (Arnona regulations)
  * - Ministry of Justice (Tabu fees)
  */
