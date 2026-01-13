@@ -79,7 +79,14 @@ export function useProject(slug: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('projects')
-        .select(`*, developer:developer_id (*)`)
+        .select(`
+          *, 
+          developer:developer_id (*),
+          representing_agent:representing_agent_id (
+            id, name, email, phone, avatar_url, agency_name, 
+            is_verified, bio, languages, years_experience
+          )
+        `)
         .eq('slug', slug)
         .single();
 

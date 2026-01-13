@@ -12,6 +12,7 @@ import {
   ProjectCostBreakdown,
   ProjectTimeline,
   ProjectDeveloperCard,
+  ProjectAgentCard,
   ProjectStickyCard,
   ProjectMobileContactBar,
   SimilarProjects,
@@ -114,6 +115,16 @@ export default function ProjectDetail() {
               {/* FAQ Section */}
               <ProjectFAQ />
               
+              {/* Sales Agent Card - if assigned */}
+              {project.representing_agent && (
+                <div id="agent-section">
+                  <ProjectAgentCard 
+                    agent={project.representing_agent} 
+                    projectName={project.name}
+                  />
+                </div>
+              )}
+              
               {project.developer && (
                 <div id="developer-section">
                   <ProjectDeveloperCard developer={project.developer} />
@@ -127,6 +138,7 @@ export default function ProjectDetail() {
                 <ProjectStickyCard 
                   project={project}
                   developer={project.developer}
+                  representingAgent={project.representing_agent}
                 />
               </div>
             </div>
@@ -137,7 +149,11 @@ export default function ProjectDetail() {
         </div>
       </div>
       
-      <ProjectMobileContactBar project={project} developer={project.developer} />
+      <ProjectMobileContactBar 
+        project={project} 
+        developer={project.developer} 
+        representingAgent={project.representing_agent}
+      />
     </Layout>
   );
 }

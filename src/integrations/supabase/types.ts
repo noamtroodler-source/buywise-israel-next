@@ -1209,6 +1209,7 @@ export type Database = {
           neighborhood: string | null
           price_from: number | null
           price_to: number | null
+          representing_agent_id: string | null
           slug: string
           status: Database["public"]["Enums"]["project_status"] | null
           total_units: number | null
@@ -1238,6 +1239,7 @@ export type Database = {
           neighborhood?: string | null
           price_from?: number | null
           price_to?: number | null
+          representing_agent_id?: string | null
           slug: string
           status?: Database["public"]["Enums"]["project_status"] | null
           total_units?: number | null
@@ -1267,6 +1269,7 @@ export type Database = {
           neighborhood?: string | null
           price_from?: number | null
           price_to?: number | null
+          representing_agent_id?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["project_status"] | null
           total_units?: number | null
@@ -1279,6 +1282,13 @@ export type Database = {
             columns: ["developer_id"]
             isOneToOne: false
             referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_representing_agent_id_fkey"
+            columns: ["representing_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
             referencedColumns: ["id"]
           },
         ]

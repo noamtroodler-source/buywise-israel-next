@@ -44,6 +44,19 @@ export interface Project {
   created_at: string;
   updated_at: string;
   developer?: Developer;
+  representing_agent_id: string | null;
+  representing_agent?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    avatar_url: string | null;
+    agency_name: string | null;
+    is_verified: boolean | null;
+    bio: string | null;
+    languages: string[] | null;
+    years_experience: number | null;
+  };
 }
 
 export interface ProjectUnit {
