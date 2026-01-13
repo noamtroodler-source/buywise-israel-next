@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { PropertyMiniMap } from './PropertyMiniMap';
 
 interface NearbyItem {
   name: string;
@@ -137,6 +138,27 @@ export function PropertyLocation({
     },
   ];
 
+  // Generate mock POI coordinates for map markers
+  const generateMapPOIs = () => {
+    if (!latitude || !longitude) return [];
+    
+    const offsets = [
+      { category: 'Synagogues', name: 'Great Synagogue', latOffset: 0.003, lngOffset: 0.002 },
+      { category: 'Schools', name: 'Elementary School', latOffset: -0.004, lngOffset: 0.003 },
+      { category: 'Shopping', name: 'AM:PM / Supermarket', latOffset: 0.001, lngOffset: -0.002 },
+      { category: 'Transport', name: 'Bus Stop', latOffset: -0.001, lngOffset: 0.001 },
+      { category: 'Healthcare', name: 'Kupat Cholim Clinic', latOffset: 0.004, lngOffset: -0.003 },
+      { category: 'Parks & Recreation', name: 'City Park', latOffset: -0.003, lngOffset: -0.002 },
+    ];
+    
+    return offsets.map(({ category, name, latOffset, lngOffset }) => ({
+      category,
+      name,
+      lat: latitude + latOffset,
+      lng: longitude + lngOffset,
+    }));
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -145,6 +167,23 @@ export function PropertyLocation({
       </div>
       
       <div className="space-y-5">
+        {/* Mini Map */}
+        {latitude && longitude ? (
+          <PropertyMiniMap
+            latitude={latitude}
+            longitude={longitude}
+            propertyTitle={address}
+            nearbyPOIs={generateMapPOIs()}
+          />
+        ) : (
+          <div className="h-[200px] bg-muted rounded-xl flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Map preview not available</p>
+            </div>
+          </div>
+        )}
+
         {/* Address & Map Links */}
         <div className="space-y-3">
           <div className="flex items-start gap-2">
