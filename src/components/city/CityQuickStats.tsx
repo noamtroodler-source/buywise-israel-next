@@ -9,11 +9,18 @@ interface CityQuickStatsProps {
   canonicalMetrics?: CanonicalMetrics | null;
   cityData?: {
     average_price_sqm?: number | null;
+    average_price_sqm_min?: number | null;
+    average_price_sqm_max?: number | null;
     median_apartment_price?: number | null;
     rental_3_room_min?: number | null;
     rental_3_room_max?: number | null;
     rental_4_room_min?: number | null;
     rental_4_room_max?: number | null;
+    rental_5_room_min?: number | null;
+    rental_5_room_max?: number | null;
+    gross_yield_percent?: number | null;
+    gross_yield_percent_min?: number | null;
+    gross_yield_percent_max?: number | null;
   };
 }
 
@@ -73,6 +80,35 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData }: CityQ
 
   const rentalRange = getRentalPriceRange();
 
+  // Yield range display
+  const getYieldDisplay = () => {
+    const grossYield = canonicalMetrics?.gross_yield_percent ?? cityData?.gross_yield_percent;
+    const yieldMin = cityData?.gross_yield_percent_min;
+    const yieldMax = cityData?.gross_yield_percent_max;
+    
+    if (yieldMin && yieldMax) {
+      return `${yieldMin.toFixed(1)}%–${yieldMax.toFixed(1)}% yield`;
+    }
+    if (grossYield) {
+      return `${grossYield.toFixed(1)}% yield`;
+    }
+    return null;
+  };
+
+  // Price range display
+  const getPriceRangeDisplay = () => {
+    const priceMin = cityData?.average_price_sqm_min;
+    const priceMax = cityData?.average_price_sqm_max;
+    
+    if (priceMin && priceMax) {
+      return `₪${(priceMin / 1000).toFixed(0)}K–${(priceMax / 1000).toFixed(0)}K/m²`;
+    }
+    return null;
+  };
+
+  const yieldDisplay = getYieldDisplay();
+  const priceRangeDisplay = getPriceRangeDisplay();
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
@@ -81,8 +117,15 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData }: CityQ
     >
       <div className="container">
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 py-5 text-center">
-          {/* Price per sqm */}
-          {formatPrice(pricePerSqm) && (
+          {/* Price per sqm - show range if available */}
+          {priceRangeDisplay ? (
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold text-foreground">
+                {priceRangeDisplay}
+              </span>
+              <span className="text-sm text-muted-foreground">range</span>
+            </div>
+          ) : formatPrice(pricePerSqm) && (
             <div className="flex items-center gap-2">
               <span className="text-lg font-semibold text-foreground">
                 {formatPrice(pricePerSqm)}/m²
@@ -108,7 +151,19 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData }: CityQ
           )}
 
           {/* Divider */}
-          {formatMedianPrice(medianPrice) && rentalRange && (
+          {formatMedianPrice(medianPrice) && (yieldDisplay || rentalRange) && (
+            <div className="hidden sm:block w-px h-5 bg-border" />
+          )}
+
+          {/* Yield display */}
+          {yieldDisplay && (
+            <div className="text-lg font-semibold text-foreground">
+              {yieldDisplay}
+            </div>
+          )}
+
+          {/* Divider */}
+          {yieldDisplay && rentalRange && (
             <div className="hidden sm:block w-px h-5 bg-border" />
           )}
 
