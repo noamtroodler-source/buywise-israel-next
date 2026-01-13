@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User } from 'lucide-react';
+import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -35,6 +35,9 @@ interface PropertyQuickSummaryProps {
     is_furnished?: boolean | null;
     is_accessible?: boolean | null;
     listing_status?: string;
+    entry_date?: string | null;
+    ac_type?: 'none' | 'split' | 'central' | 'mini_central' | null;
+    vaad_bayit_monthly?: number | null;
   };
   onShare?: () => void;
   onSave?: () => void;
@@ -152,6 +155,25 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   const getParkingDisplay = () => {
     if (!property.parking || property.parking === 0) return 'None';
     return `${property.parking} spot${property.parking > 1 ? 's' : ''}`;
+  };
+
+  // Format entry date display
+  const getEntryDateDisplay = () => {
+    if (!property.entry_date) return 'Immediate';
+    const date = new Date(property.entry_date);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  // Format A/C type display
+  const getAcTypeDisplay = () => {
+    if (!property.ac_type) return null;
+    const labels: Record<string, string> = {
+      'none': 'No A/C',
+      'split': 'Split A/C',
+      'central': 'Central A/C',
+      'mini_central': 'Mini Central',
+    };
+    return labels[property.ac_type] || property.ac_type;
   };
 
   return (
@@ -367,6 +389,40 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               <p className="text-xs text-muted-foreground">Condition</p>
             </div>
           </div>
+
+          {/* Entry Date */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+                <CalendarCheck className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{getEntryDateDisplay()}</p>
+                  <p className="text-xs text-muted-foreground">Available</p>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p>When you can move in. "Immediate" means the property is vacant and ready.</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* A/C Type */}
+          {getAcTypeDisplay() && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+                  <Thermometer className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{getAcTypeDisplay()}</p>
+                    <p className="text-xs text-muted-foreground">A/C</p>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Split units (מפוצל) are room-by-room. Central A/C (מרכזי) is whole-home ducted. Mini-central is a hybrid.</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Auto-Generated Highlights */}

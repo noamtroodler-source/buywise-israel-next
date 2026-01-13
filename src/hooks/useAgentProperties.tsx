@@ -24,6 +24,9 @@ export interface CreatePropertyData {
   features?: string[];
   images?: string[];
   is_published?: boolean;
+  entry_date?: string;
+  ac_type?: 'none' | 'split' | 'central' | 'mini_central';
+  vaad_bayit_monthly?: number;
 }
 
 export function useAgentProfile() {

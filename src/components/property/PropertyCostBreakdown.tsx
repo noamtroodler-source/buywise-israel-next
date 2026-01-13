@@ -19,6 +19,7 @@ interface PropertyCostBreakdownProps {
   city?: string;
   sizeSqm?: number;
   isNewConstruction?: boolean;
+  vaadBayitMonthly?: number | null;
 }
 
 // Calculate tax using actual brackets from DB or fallback
@@ -69,7 +70,8 @@ export function PropertyCostBreakdown({
   listingStatus, 
   city,
   sizeSqm,
-  isNewConstruction = false
+  isNewConstruction = false,
+  vaadBayitMonthly
 }: PropertyCostBreakdownProps) {
   const { user } = useAuth();
   const { data: buyerProfile, isLoading } = useBuyerProfile();
@@ -154,7 +156,9 @@ export function PropertyCostBreakdown({
     return sizeSqm ? (sizeSqm * 70) / 12 : 350;
   }, [cityData, sizeSqm]);
   
-  const vaadBayit = cityData?.average_vaad_bayit || 300;
+  // Use actual Va'ad if provided, otherwise estimate from city data
+  const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? 300;
+  const isVaadActual = vaadBayitMonthly !== null && vaadBayitMonthly !== undefined;
   const insurance = 150;
   const totalMonthly = arnona + vaadBayit + insurance;
 
@@ -382,7 +386,12 @@ export function PropertyCostBreakdown({
               <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Va'ad Bayit</span>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Va'ad Bayit</span>
+                {isVaadActual && (
+                  <Badge variant="secondary" className="text-xs">Actual</Badge>
+                )}
+              </div>
               <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-border/50">

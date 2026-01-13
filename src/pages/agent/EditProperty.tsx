@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty } from '@/hooks/useAgentProperties';
@@ -29,6 +30,13 @@ const listingStatuses: { value: ListingStatus; label: string }[] = [
   { value: 'for_rent', label: 'For Rent' },
   { value: 'sold', label: 'Sold' },
   { value: 'rented', label: 'Rented' },
+];
+
+const acTypes = [
+  { value: 'none', label: 'No A/C' },
+  { value: 'split', label: 'Split Units (מפוצל)' },
+  { value: 'central', label: 'Central A/C (מרכזי)' },
+  { value: 'mini_central', label: 'Mini Central (מיני מרכזי)' },
 ];
 
 export default function EditProperty() {
@@ -54,9 +62,13 @@ export default function EditProperty() {
     year_built: undefined as number | undefined,
     images: [] as string[],
     is_published: true,
+    entry_date: undefined as string | undefined,
+    ac_type: undefined as 'none' | 'split' | 'central' | 'mini_central' | undefined,
+    vaad_bayit_monthly: undefined as number | undefined,
   });
 
   const [featuresInput, setFeaturesInput] = useState('');
+  const [isImmediateEntry, setIsImmediateEntry] = useState(true);
 
   useEffect(() => {
     if (property) {
@@ -77,8 +89,12 @@ export default function EditProperty() {
         year_built: property.year_built || undefined,
         images: property.images || [],
         is_published: property.is_published ?? true,
+        entry_date: property.entry_date || undefined,
+        ac_type: property.ac_type || undefined,
+        vaad_bayit_monthly: property.vaad_bayit_monthly || undefined,
       });
       setFeaturesInput(property.features?.join(', ') || '');
+      setIsImmediateEntry(!property.entry_date);
     }
   }, [property]);
 
@@ -329,6 +345,68 @@ export default function EditProperty() {
                   </div>
                 </div>
 
+                {/* Availability & Building Details */}
+                <div className="space-y-4">
+                  <h3 className="font-medium">Availability & Building</h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Entry Date</Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="immediate"
+                            checked={isImmediateEntry}
+                            onCheckedChange={(checked) => {
+                              setIsImmediateEntry(!!checked);
+                              if (checked) updateField('entry_date', undefined);
+                            }}
+                          />
+                          <Label htmlFor="immediate" className="text-sm font-normal">Immediate entry</Label>
+                        </div>
+                        {!isImmediateEntry && (
+                          <Input
+                            type="date"
+                            value={formData.entry_date || ''}
+                            onChange={(e) => updateField('entry_date', e.target.value || undefined)}
+                            min={new Date().toISOString().split('T')[0]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>A/C Type</Label>
+                      <Select
+                        value={formData.ac_type || ''}
+                        onValueChange={(v) => updateField('ac_type', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select A/C type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {acTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="vaad_bayit">Va'ad Bayit (₪/month)</Label>
+                      <Input
+                        id="vaad_bayit"
+                        type="number"
+                        min="0"
+                        value={formData.vaad_bayit_monthly || ''}
+                        onChange={(e) => updateField('vaad_bayit_monthly', e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="e.g. 350"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Features */}
                 <div className="space-y-4">
                   <h3 className="font-medium">Features</h3>
@@ -338,7 +416,7 @@ export default function EditProperty() {
                       id="features"
                       value={featuresInput}
                       onChange={(e) => setFeaturesInput(e.target.value)}
-                      placeholder="Balcony, Parking, Air conditioning, Storage"
+                      placeholder="Balcony, Parking, Elevator, Storage, Safe room"
                     />
                   </div>
                 </div>

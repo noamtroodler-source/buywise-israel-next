@@ -1285,6 +1285,7 @@ export type Database = {
       }
       properties: {
         Row: {
+          ac_type: string | null
           address: string
           agent_id: string | null
           bathrooms: number | null
@@ -1294,6 +1295,7 @@ export type Database = {
           created_at: string
           currency: string | null
           description: string | null
+          entry_date: string | null
           features: string[] | null
           floor: number | null
           id: string
@@ -1314,10 +1316,12 @@ export type Database = {
           title: string
           total_floors: number | null
           updated_at: string
+          vaad_bayit_monthly: number | null
           views_count: number | null
           year_built: number | null
         }
         Insert: {
+          ac_type?: string | null
           address: string
           agent_id?: string | null
           bathrooms?: number | null
@@ -1327,6 +1331,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          entry_date?: string | null
           features?: string[] | null
           floor?: number | null
           id?: string
@@ -1347,10 +1352,12 @@ export type Database = {
           title: string
           total_floors?: number | null
           updated_at?: string
+          vaad_bayit_monthly?: number | null
           views_count?: number | null
           year_built?: number | null
         }
         Update: {
+          ac_type?: string | null
           address?: string
           agent_id?: string | null
           bathrooms?: number | null
@@ -1360,6 +1367,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          entry_date?: string | null
           features?: string[] | null
           floor?: number | null
           id?: string
@@ -1380,6 +1388,7 @@ export type Database = {
           title?: string
           total_floors?: number | null
           updated_at?: string
+          vaad_bayit_monthly?: number | null
           views_count?: number | null
           year_built?: number | null
         }

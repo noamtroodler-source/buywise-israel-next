@@ -71,6 +71,9 @@ export interface Property {
   condition: PropertyCondition | null;
   is_furnished: boolean;
   is_accessible: boolean;
+  entry_date: string | null;
+  ac_type: 'none' | 'split' | 'central' | 'mini_central' | null;
+  vaad_bayit_monthly: number | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;
