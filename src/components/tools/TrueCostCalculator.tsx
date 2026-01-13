@@ -86,7 +86,7 @@ const FEES = {
   lawyerRate: 0.005, // 0.5% of price
   lawyerMinimum: 5000,
   agentRate: 0.02, // 2% + VAT
-  vatRate: 0.17,
+  vatRate: 0.18, // Updated to 18% as of Jan 2025
   developerLawyerRate: 0.015, // 1.5%
   bankGuaranteeRate: 0.005, // 0.5%
   appraisalFee: 2500,

@@ -103,8 +103,8 @@ export function PropertyCostBreakdown({
     high: Math.round(price * FEE_RANGES.lawyer.max),
   };
   const lawyerVatRange = {
-    low: Math.round(lawyerFeesRange.low * 0.17),
-    high: Math.round(lawyerFeesRange.high * 0.17),
+    low: Math.round(lawyerFeesRange.low * 0.18), // VAT 18% as of Jan 2025
+    high: Math.round(lawyerFeesRange.high * 0.18),
   };
   
   // Agent fees: 1.5-2.5% (negotiable)
@@ -113,8 +113,8 @@ export function PropertyCostBreakdown({
     high: Math.round(price * FEE_RANGES.agent.max),
   };
   const agentVatRange = {
-    low: Math.round(agentFeesRange.low * 0.17),
-    high: Math.round(agentFeesRange.high * 0.17),
+    low: Math.round(agentFeesRange.low * 0.18), // VAT 18% as of Jan 2025
+    high: Math.round(agentFeesRange.high * 0.18),
   };
   
   // Fixed fees with ranges
