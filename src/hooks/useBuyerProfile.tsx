@@ -14,10 +14,12 @@ export interface BuyerProfile {
   purchase_purpose: 'primary_residence' | 'vacation_home' | 'investment' | 'undecided';
   buyer_entity: 'individual' | 'company';
   onboarding_completed: boolean;
-  // New multi-dimensional fields
+  // Multi-dimensional fields
   has_existing_property: boolean;
   is_upgrading: boolean;
   upgrade_sale_date: string | null;
+  // Arnona discount eligibility
+  arnona_discount_categories: string[];
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +68,7 @@ export function useCreateBuyerProfile() {
           has_existing_property: profileData.has_existing_property ?? false,
           is_upgrading: profileData.is_upgrading ?? false,
           upgrade_sale_date: profileData.upgrade_sale_date || null,
+          arnona_discount_categories: profileData.arnona_discount_categories || [],
         })
         .select()
         .single();

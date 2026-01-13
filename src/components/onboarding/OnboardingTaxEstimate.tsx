@@ -46,6 +46,7 @@ export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
       has_existing_property: false,
       is_upgrading: profile.is_upgrading ?? false,
       upgrade_sale_date: null,
+      arnona_discount_categories: [],
       created_at: '',
       updated_at: '',
     };

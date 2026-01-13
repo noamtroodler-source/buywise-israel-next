@@ -228,6 +228,7 @@ export type Database = {
       buyer_profiles: {
         Row: {
           aliyah_year: number | null
+          arnona_discount_categories: string[] | null
           buyer_entity: string
           created_at: string
           has_existing_property: boolean | null
@@ -243,6 +244,7 @@ export type Database = {
         }
         Insert: {
           aliyah_year?: number | null
+          arnona_discount_categories?: string[] | null
           buyer_entity?: string
           created_at?: string
           has_existing_property?: boolean | null
@@ -258,6 +260,7 @@ export type Database = {
         }
         Update: {
           aliyah_year?: number | null
+          arnona_discount_categories?: string[] | null
           buyer_entity?: string
           created_at?: string
           has_existing_property?: boolean | null
