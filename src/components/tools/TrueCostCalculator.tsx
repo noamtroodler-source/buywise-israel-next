@@ -35,6 +35,7 @@ import {
   ToolFeedback, 
   InsightCard,
   BuyerTypeInfoBanner,
+  SourceAttribution,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -1027,6 +1028,7 @@ export function TrueCostCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
+      sourceAttribution={<SourceAttribution toolType="trueCost" />}
       disclaimer={disclaimer}
     />
   );

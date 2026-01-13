@@ -19,6 +19,7 @@ import { ToolLayout } from './shared/ToolLayout';
 import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoBanner';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
+import { SourceAttribution } from './shared/SourceAttribution';
 
 export function PurchaseTaxCalculator() {
   const formatCurrency = useFormatPrice();
@@ -350,6 +351,7 @@ export function PurchaseTaxCalculator() {
       leftColumn={leftColumn}
       rightColumn={rightColumn}
       bottomSection={bottomSection}
+      sourceAttribution={<SourceAttribution toolType="purchaseTax" />}
       disclaimer={<ToolDisclaimer />}
     />
   );

@@ -35,6 +35,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
 import { CTACard } from './shared/CTACard';
 import { ToolFeedback } from './shared/ToolFeedback';
+import { SourceAttribution } from './shared/SourceAttribution';
 import { useDocumentsByStage, DocumentChecklistItem } from '@/hooks/useDocumentChecklist';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { cn } from '@/lib/utils';
@@ -257,7 +258,7 @@ export function DocumentChecklistTool() {
     </div>
   );
 
-  return <ToolLayout title="Document Checklist" subtitle={`Track the documents you need for ${transactionType === 'buy' ? 'buying' : 'renting'} property in Israel`} icon={<FileText className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} disclaimer={<ToolDisclaimer />} />;
+  return <ToolLayout title="Document Checklist" subtitle={`Track the documents you need for ${transactionType === 'buy' ? 'buying' : 'renting'} property in Israel`} icon={<FileText className="h-6 w-6" />} leftColumn={leftColumn} rightColumn={rightColumn} bottomSection={bottomSection} sourceAttribution={<SourceAttribution toolType="documents" />} disclaimer={<ToolDisclaimer />} />;
 }
 
 interface DocumentItemRowProps { doc: DocumentChecklistItem; isChecked: boolean; onToggle: () => void; }
