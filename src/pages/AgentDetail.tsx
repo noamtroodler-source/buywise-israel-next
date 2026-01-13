@@ -308,7 +308,7 @@ export default function AgentDetail() {
             ) : activeListings && activeListings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeListings.map((property) => (
-                  <PropertyCard key={property.id} property={property as any} showCategoryBadge maxBadges={3} />
+                  <PropertyCard key={property.id} property={property as any} showCategoryBadge hideFeaturedBadge maxBadges={2} />
                 ))}
               </div>
             ) : (
@@ -331,7 +331,7 @@ export default function AgentDetail() {
             ) : pastListings && pastListings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {pastListings.map((property) => (
-                  <PropertyCard key={property.id} property={property as any} showCategoryBadge maxBadges={3} />
+                  <PropertyCard key={property.id} property={property as any} showCategoryBadge hideFeaturedBadge maxBadges={2} />
                 ))}
               </div>
             ) : (
