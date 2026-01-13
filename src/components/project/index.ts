@@ -3,6 +3,7 @@ export { ProjectFloorPlans } from './ProjectFloorPlans';
 export { ProjectCostBreakdown } from './ProjectCostBreakdown';
 export { ProjectTimeline } from './ProjectTimeline';
 export { ProjectDeveloperCard } from './ProjectDeveloperCard';
+export { ProjectAgentCard } from './ProjectAgentCard';
 export { ProjectAmenities } from './ProjectAmenities';
 export { ProjectStickyCard, ProjectMobileContactBar } from './ProjectStickyCard';
 export { SimilarProjects } from './SimilarProjects';
