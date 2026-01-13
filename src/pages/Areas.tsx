@@ -4,6 +4,7 @@ import { ChevronRight, ChevronLeft, Search, Building, Star, Heart, Trees, Sun, M
 import { Layout } from '@/components/layout/Layout';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
 
 // City images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -361,7 +362,7 @@ export default function Areas() {
   const [activeRegion, setActiveRegion] = useState(regions[0].id);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter cities based on search
+  // Filter cities based on search with fuzzy matching
   const filteredRegions = useMemo(() => {
     if (!searchQuery.trim()) return regions;
     
@@ -369,7 +370,7 @@ export default function Areas() {
     return regions.map(region => ({
       ...region,
       cities: region.cities.filter(city => 
-        city.name.toLowerCase().includes(query) ||
+        cityMatchesQuery(city.name, searchQuery) ||
         city.tags.some(tag => tag.toLowerCase().includes(query))
       )
     })).filter(region => region.cities.length > 0);

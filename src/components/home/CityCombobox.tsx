@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useCities } from '@/hooks/useCities';
+import { cityMatchesQuery, getCityKeywords } from '@/lib/utils/cityMatcher';
 
 interface CityComboboxProps {
   value: string;
@@ -48,7 +49,10 @@ export function CityCombobox({ value, onValueChange, placeholder = 'Select a cit
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
-        <Command>
+        <Command filter={(value, search) => {
+          // Use fuzzy matcher
+          return cityMatchesQuery(value, search) ? 1 : 0;
+        }}>
           <CommandInput placeholder="Search cities..." className="h-11" />
           <CommandList>
             <CommandEmpty>No city found.</CommandEmpty>
@@ -56,6 +60,7 @@ export function CityCombobox({ value, onValueChange, placeholder = 'Select a cit
               {popularCities.map((city) => (
                 <CommandItem
                   key={city}
+                  keywords={getCityKeywords(city)}
                   value={city}
                   onSelect={(currentValue) => {
                     onValueChange(currentValue === value ? '' : currentValue);
@@ -76,6 +81,7 @@ export function CityCombobox({ value, onValueChange, placeholder = 'Select a cit
               {otherCities.map((city) => (
                 <CommandItem
                   key={city}
+                  keywords={getCityKeywords(city)}
                   value={city}
                   onSelect={(currentValue) => {
                     onValueChange(currentValue === value ? '' : currentValue);

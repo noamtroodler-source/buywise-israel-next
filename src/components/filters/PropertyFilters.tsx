@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
 import { cn } from '@/lib/utils';
+import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -97,9 +98,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     }
   };
 
-  const filteredCities = cities?.filter(city => 
-    city.name.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  const filteredCities = matchCities(citySearch, cities || []);
 
   const resetMoreFilters = () => {
     onFiltersChange({
