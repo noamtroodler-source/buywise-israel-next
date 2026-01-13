@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User2, Home, Building2, Plane, Edit3, CheckCircle2, Sparkles } from 'lucide-react';
+import { User2, Home, Building2, Plane, Edit3, CheckCircle2, Sparkles, Receipt, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
-
+import { getArnonaDiscountLabel, ArnonaDiscountCategory } from '@/lib/calculations/arnona';
+import { ArnonaDiscountEditor } from './ArnonaDiscountEditor';
 export function BuyerProfileCard() {
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showArnonaEditor, setShowArnonaEditor] = useState(false);
+  
+  const arnonaDiscounts = (buyerProfile?.arnona_discount_categories || []) as ArnonaDiscountCategory[];
 
   if (isLoading) {
     return (
@@ -165,6 +169,37 @@ export function BuyerProfileCard() {
               </div>
             </div>
 
+            {/* Arnona Discounts Section */}
+            <div className="border-t border-border/50 pt-4 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Receipt className="h-4 w-4" />
+                  <span className="text-xs font-medium">Arnona Discounts</span>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowArnonaEditor(true)}
+                  className="h-6 px-2 text-xs"
+                >
+                  {arnonaDiscounts.length > 0 ? 'Edit' : <><Plus className="h-3 w-3 mr-1" />Add</>}
+                </Button>
+              </div>
+              {arnonaDiscounts.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {arnonaDiscounts.map((category) => (
+                    <Badge key={category} variant="outline" className="text-xs font-normal">
+                      {getArnonaDiscountLabel(category)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Add discounts to see personalized arnona estimates on city pages
+                </p>
+              )}
+            </div>
+
             {/* Tax Info Note */}
             <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
               Your tax category affects purchase tax (מס רכישה) calculations shown on property pages.
@@ -178,6 +213,12 @@ export function BuyerProfileCard() {
         onComplete={() => setShowOnboarding(false)}
         onClose={() => setShowOnboarding(false)}
         existingProfile={buyerProfile}
+      />
+      
+      <ArnonaDiscountEditor
+        open={showArnonaEditor}
+        onClose={() => setShowArnonaEditor(false)}
+        currentDiscounts={arnonaDiscounts}
       />
     </>
   );

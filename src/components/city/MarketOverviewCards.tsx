@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Building2, Receipt, Info, TrendingUp, TrendingDown } from 'lucide-react';
+import { DollarSign, Building2, Receipt, Info, TrendingUp, TrendingDown, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { MarketData } from '@/types/projects';
+import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
+import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
 
 interface MarketOverviewCardsProps {
   marketData: MarketData[];
@@ -24,15 +26,24 @@ export function MarketOverviewCards({
   propertyTypes = []
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
+  const { data: buyerProfile } = useBuyerProfile();
   
   const latestData = marketData[0];
   const pricePerSqm = latestData?.average_price_sqm || 0;
   const percentDiff = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
   
-  // Arnona calculations
+  // Arnona calculations with discount
   const rate = arnonaRateSqm || NATIONAL_AVG_ARNONA;
-  const monthlyEstimate = Math.round((rate * apartmentSize) / 12);
-  const annualEstimate = Math.round(rate * apartmentSize);
+  const arnonaEstimate = calculateArnonaWithDiscount(
+    rate,
+    apartmentSize,
+    buyerProfile ? {
+      residency_status: buyerProfile.residency_status,
+      aliyah_year: buyerProfile.aliyah_year,
+      arnona_discount_categories: buyerProfile.arnona_discount_categories || [],
+    } : null
+  );
+  
   const arnonaVsNational = ((rate - NATIONAL_AVG_ARNONA) / NATIONAL_AVG_ARNONA) * 100;
   
   // Default listing types if none provided
@@ -213,12 +224,29 @@ export function MarketOverviewCards({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold text-foreground">
-                    ₪{monthlyEstimate.toLocaleString()}
-                    <span className="text-base font-normal text-muted-foreground">/mo</span>
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-3xl font-bold text-foreground">
+                      ₪{arnonaEstimate.discountedMonthly.toLocaleString()}
+                      <span className="text-base font-normal text-muted-foreground">/mo</span>
+                    </p>
+                    {arnonaEstimate.discountPercent > 0 && (
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                              <User className="h-3 w-3" />
+                              Personalized
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[220px]">
+                            <p className="text-xs">Based on your buyer profile. {arnonaEstimate.discountType} discount applied.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    ₪{annualEstimate.toLocaleString()} annually
+                    ₪{Math.round(arnonaEstimate.discountedMonthly * 12).toLocaleString()} annually
                   </p>
                 </div>
 
@@ -238,14 +266,22 @@ export function MarketOverviewCards({
                   />
                 </div>
 
-                <p className="text-sm text-muted-foreground">
-                  {arnonaVsNational > 10 
-                    ? `${Math.abs(Math.round(arnonaVsNational))}% above national average`
-                    : arnonaVsNational < -10
-                      ? `${Math.abs(Math.round(arnonaVsNational))}% below national average`
-                      : 'Close to national average'
-                  }
-                </p>
+                {/* Discount or comparison message */}
+                {arnonaEstimate.discountPercent > 0 ? (
+                  <p className="text-sm text-primary font-medium">
+                    {arnonaEstimate.discountPercent}% {arnonaEstimate.discountType} discount
+                    {arnonaEstimate.areaLimitApplied && ` (on first ${arnonaEstimate.areaLimitSqm}m²)`}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {arnonaVsNational > 10 
+                      ? `${Math.abs(Math.round(arnonaVsNational))}% above national average`
+                      : arnonaVsNational < -10
+                        ? `${Math.abs(Math.round(arnonaVsNational))}% below national average`
+                        : 'Close to national average'
+                    }
+                  </p>
+                )}
               </CardContent>
             </Card>
           </motion.div>
