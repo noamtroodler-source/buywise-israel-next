@@ -135,6 +135,7 @@ export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: cityDetails } = useCityDetails(slug || '');
+  const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
@@ -165,8 +166,13 @@ export default function CityDetail() {
     );
   }
 
-  // Build worth watching factors, including TAMA 38 status from database
-  const staticFactors = cityMarketFactors[slug || ''] || [];
+  // Convert database market factors to the expected format
+  const staticFactors: MarketFactor[] = dbMarketFactors.map(f => ({
+    title: f.title,
+    description: f.description,
+    icon: f.icon as 'transit' | 'development' | 'policy' | 'infrastructure' | 'zoning',
+    timing: f.timing || undefined,
+  }));
   
   // Add dynamic TAMA 38 factor based on city data
   const tama38Factor: MarketFactor | null = (() => {
@@ -192,7 +198,7 @@ export default function CityDetail() {
     return null;
   })();
   
-  // Combine static and dynamic factors
+  // Combine database factors and dynamic TAMA 38 factor
   const worthWatching = tama38Factor 
     ? [...staticFactors.filter(f => !f.title.toLowerCase().includes('tama')), tama38Factor]
     : staticFactors;
@@ -200,7 +206,8 @@ export default function CityDetail() {
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
   const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
-  const identitySentence = cityIdentities[slug || ''] || city.description || `${city.name} is a city in Israel with a unique character and real estate market.`;
+  // Priority: database identity_sentence > fallback > description > generic
+  const identitySentence = (city as any).identity_sentence || fallbackIdentities[slug || ''] || city.description || `${city.name} is a city in Israel with a unique character and real estate market.`;
   const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change ?? undefined;
 
   return (
@@ -299,6 +306,12 @@ export default function CityDetail() {
 
         {/* 9. Featured Properties - At the bottom */}
         <CityFeaturedProperties cityName={city.name} citySlug={slug || ''} />
+
+        {/* 10. Source Attribution */}
+        <CitySourceAttribution 
+          sources={(city as any).data_sources} 
+          lastVerified={canonicalMetrics?.updated_at}
+        />
       </div>
     </Layout>
   );
