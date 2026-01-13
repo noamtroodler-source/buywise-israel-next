@@ -22,10 +22,11 @@ interface PropertyCardProps {
   showMonthlyEstimate?: boolean;
   hideStatusBadge?: boolean;
   compact?: boolean;
-  maxBadges?: 2 | 3;
+  maxBadges?: 1 | 2 | 3;
+  showCategoryBadge?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 3 }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -201,22 +202,36 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
 
                 {/* Status Badge - Top Left */}
                 <div className="absolute top-2 left-2 flex gap-1.5 z-10">
-                  {!hideStatusBadge && (
-                    <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
-                      {getStatusLabel(property.listing_status)}
-                    </Badge>
-                  )}
-                  {property.is_featured && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                      Featured
-                    </Badge>
-                  )}
-                  {isNewListing && (maxBadges === 3 || !property.is_featured) && (
-                    <Badge className="bg-project text-project-foreground text-xs font-medium">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      New
-                    </Badge>
-                  )}
+                  {(() => {
+                    const badges: React.ReactNode[] = [];
+                    
+                    if (showCategoryBadge && !hideStatusBadge) {
+                      badges.push(
+                        <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                          {getStatusLabel(property.listing_status)}
+                        </Badge>
+                      );
+                    }
+                    
+                    if (property.is_featured) {
+                      badges.push(
+                        <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
+                          Featured
+                        </Badge>
+                      );
+                    }
+                    
+                    if (isNewListing) {
+                      badges.push(
+                        <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
+                      );
+                    }
+                    
+                    return badges.slice(0, maxBadges);
+                  })()}
                 </div>
 
                 {/* Action Buttons - Top Right */}
@@ -328,22 +343,36 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                 )}
                 
                 <div className="absolute top-3 left-3 flex gap-2">
-                  {!hideStatusBadge && (
-                    <Badge className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
-                      {getStatusLabel(property.listing_status)}
-                    </Badge>
-                  )}
-                  {property.is_featured && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                      Featured
-                    </Badge>
-                  )}
-                  {isNewListing && (maxBadges === 3 || !property.is_featured) && (
-                    <Badge className="bg-project text-project-foreground text-xs font-medium">
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      New
-                    </Badge>
-                  )}
+                  {(() => {
+                    const badges: React.ReactNode[] = [];
+                    
+                    if (showCategoryBadge && !hideStatusBadge) {
+                      badges.push(
+                        <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
+                          {getStatusLabel(property.listing_status)}
+                        </Badge>
+                      );
+                    }
+                    
+                    if (property.is_featured) {
+                      badges.push(
+                        <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
+                          Featured
+                        </Badge>
+                      );
+                    }
+                    
+                    if (isNewListing) {
+                      badges.push(
+                        <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          New
+                        </Badge>
+                      );
+                    }
+                    
+                    return badges.slice(0, maxBadges);
+                  })()}
                 </div>
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
                   {showShareButton && (

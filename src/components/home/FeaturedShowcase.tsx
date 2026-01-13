@@ -92,7 +92,7 @@ export function FeaturedShowcase() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
               >
-                <PropertyCard property={property} showShareButton showCompareButton={false} maxBadges={2} />
+                <PropertyCard property={property} showShareButton showCompareButton={false} maxBadges={1} />
               </motion.div>
             ))}
           </div>
