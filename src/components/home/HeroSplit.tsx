@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CityCombobox } from '@/components/home/CityCombobox';
+import { CitySearchInput } from '@/components/home/CitySearchInput';
 import { usePlatformStats } from '@/hooks/usePlatformStats';
 import heroImage from '@/assets/cities/hero/tel-aviv.jpg';
 
@@ -86,9 +86,9 @@ export function HeroSplit() {
             >
               <form onSubmit={handleSearch} className="bg-background rounded-xl p-2.5 shadow-xl">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  {/* City Combobox */}
+                  {/* City Search Input */}
                   <div className="flex-1">
-                    <CityCombobox
+                    <CitySearchInput
                       value={selectedCity}
                       onValueChange={setSelectedCity}
                       placeholder="Where are you looking?"
