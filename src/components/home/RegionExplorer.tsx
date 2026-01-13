@@ -122,11 +122,7 @@ export function RegionExplorer() {
         {/* Cities Grid */}
         <AnimatePresence mode="wait">
           {(() => {
-            const cityCount = regions[activeRegion].cities.length;
-            const gridClasses = 
-              cityCount === 2 ? "grid-cols-2 sm:grid-cols-2" :
-              cityCount === 3 ? "grid-cols-2 sm:grid-cols-3" :
-              "grid-cols-2 sm:grid-cols-4";
+            const gridClasses = "grid-cols-2 sm:grid-cols-4";
             
             return (
               <motion.div
