@@ -35,6 +35,10 @@ export interface CityDetails {
   key_developments: string | null;
   hero_image: string | null;
   is_featured: boolean | null;
+  // TAMA 38 tracking
+  tama38_status: 'active' | 'expired' | 'extended' | null;
+  tama38_expiry_date: string | null;
+  tama38_notes: string | null;
 }
 
 export function useCityDetails(citySlug: string) {

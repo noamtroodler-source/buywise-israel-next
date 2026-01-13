@@ -487,7 +487,7 @@ export function TrueCostCalculator() {
             <div className="space-y-2">
               <div className="flex items-center">
                 <Label className="text-sm font-medium">Size ({areaUnitLabel})</Label>
-                <InfoTooltip content="Size helps estimate Arnona (property tax). Leave blank for a rough estimate." />
+                <InfoTooltip content="Property sizes in Israel vary by source: Tabu (net area), contractor listings (10-15% larger), and municipality calculations may all differ. The same apartment can show different sizes depending on the measurement standard used." />
               </div>
               <Input
                 type="number"

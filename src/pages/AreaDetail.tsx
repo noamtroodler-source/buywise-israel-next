@@ -20,6 +20,7 @@ import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthW
 import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
+import { useCityDetails } from '@/hooks/useCityDetails';
 
 // City Identity Sentences - universally true, one-liner descriptions
 const cityIdentities: Record<string, string> = {
@@ -231,6 +232,7 @@ const cityHeroImages: Record<string, string> = {
 export default function CityDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
+  const { data: cityDetails } = useCityDetails(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
@@ -261,7 +263,38 @@ export default function CityDetail() {
     );
   }
 
-  const worthWatching = cityMarketFactors[slug || ''] || [];
+  // Build worth watching factors, including TAMA 38 status from database
+  const staticFactors = cityMarketFactors[slug || ''] || [];
+  
+  // Add dynamic TAMA 38 factor based on city data
+  const tama38Factor: MarketFactor | null = (() => {
+    const status = cityDetails?.tama38_status;
+    if (!status) return null;
+    
+    if (status === 'expired') {
+      return {
+        title: 'TAMA 38 Program Expired',
+        description: 'Urban renewal program ended Aug 2024. New seismic retrofitting projects require alternative frameworks.',
+        icon: 'policy' as const,
+      };
+    } else if (status === 'active' || status === 'extended') {
+      const expiryDate = cityDetails?.tama38_expiry_date;
+      const expiryText = expiryDate ? ` until ${new Date(expiryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : '';
+      return {
+        title: 'TAMA 38 Still Active',
+        description: `Urban renewal program available${expiryText}. Tax benefits for qualifying pre-1980 buildings.`,
+        icon: 'policy' as const,
+        timing: expiryDate ? `Until ${new Date(expiryDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : 'Active',
+      };
+    }
+    return null;
+  })();
+  
+  // Combine static and dynamic factors
+  const worthWatching = tama38Factor 
+    ? [...staticFactors.filter(f => !f.title.toLowerCase().includes('tama')), tama38Factor]
+    : staticFactors;
+    
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
   const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
