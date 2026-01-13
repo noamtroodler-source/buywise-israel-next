@@ -1288,6 +1288,7 @@ export type Database = {
           ac_type: string | null
           address: string
           agent_id: string | null
+          allows_pets: string | null
           bathrooms: number | null
           bedrooms: number | null
           city: string
@@ -1324,6 +1325,7 @@ export type Database = {
           ac_type?: string | null
           address: string
           agent_id?: string | null
+          allows_pets?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           city: string
@@ -1360,6 +1362,7 @@ export type Database = {
           ac_type?: string | null
           address?: string
           agent_id?: string | null
+          allows_pets?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           city?: string
