@@ -38,7 +38,7 @@ export function useProfessionalFees(purchaseType?: 'new_construction' | 'resale'
 }
 
 export function calculateFeeAmount(fee: ProfessionalFee, price: number): { min: number; max: number } {
-  const vatMultiplier = fee.includes_vat ? 1 : 1.17;
+  const vatMultiplier = fee.includes_vat ? 1 : 1.18; // VAT 18% as of Jan 2025
   
   if (fee.rate_min_percent !== null) {
     return {

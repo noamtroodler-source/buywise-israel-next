@@ -67,8 +67,8 @@ export function TrueCostWalkthrough() {
 
   const calculateCosts = (): CostBreakdown => {
     const purchaseTax = calculatePurchaseTax(propertyPrice);
-    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * 1.17; // 1% + VAT, min 15k
-    const agentFees = usesAgent ? propertyPrice * 0.02 * 1.17 : 0; // 2% + VAT
+    const lawyerFees = Math.max(propertyPrice * 0.01, 15000) * 1.18; // 1% + VAT (18%), min 15k
+    const agentFees = usesAgent ? propertyPrice * 0.02 * 1.18 : 0; // 2% + VAT (18%)
     const mortgageFees = 5000; // Approximate: appraisal + opening fees
     const registrationFees = 2000; // Tabu registration
 
@@ -202,7 +202,7 @@ export function TrueCostWalkthrough() {
                   <p className="text-xs text-muted-foreground">0.5-1.5% + VAT, minimum ~₪15,000</p>
                 </div>
                 <span className="font-semibold text-primary">
-                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * 1.17)}
+                  {formatCurrency(Math.max(propertyPrice * 0.01, 15000) * 1.18)}
                 </span>
               </div>
             </div>
@@ -230,7 +230,7 @@ export function TrueCostWalkthrough() {
                   </RadioGroup>
                   {usesAgent && (
                     <span className="text-sm font-semibold text-primary">
-                      {formatCurrency(propertyPrice * 0.02 * 1.17)}
+                      {formatCurrency(propertyPrice * 0.02 * 1.18)}
                     </span>
                   )}
                 </div>

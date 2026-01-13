@@ -601,7 +601,7 @@ export function TrueCostCalculator() {
               <Alert className="bg-blue-500/10 border-blue-500/30">
                 <Info className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-sm text-blue-700 dark:text-blue-400">
-                  <strong>VAT is included:</strong> Israeli developer prices already include 17% VAT.
+                  <strong>VAT is included:</strong> Israeli developer prices already include 18% VAT.
                 </AlertDescription>
               </Alert>
               <Alert className="bg-amber-500/10 border-amber-500/30">

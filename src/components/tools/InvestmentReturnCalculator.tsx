@@ -232,8 +232,8 @@ function InvestmentCalculatorContent() {
     const purchaseTax = purchasePrice <= 5872725 
       ? purchasePrice * 0.08 
       : 5872725 * 0.08 + (purchasePrice - 5872725) * 0.10;
-    const lawyerFees = Math.max(5000, purchasePrice * 0.005) * 1.17;
-    const agentFees = purchasePrice * 0.02 * 1.17;
+    const lawyerFees = Math.max(5000, purchasePrice * 0.005) * 1.18; // VAT 18% as of Jan 2025
+    const agentFees = purchasePrice * 0.02 * 1.18; // VAT 18% as of Jan 2025
     const appraisalFees = 3000;
     const registrationFees = 1500;
     const closingCosts = purchaseTax + lawyerFees + agentFees + appraisalFees + registrationFees;

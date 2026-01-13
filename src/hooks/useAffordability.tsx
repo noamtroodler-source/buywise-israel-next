@@ -1,18 +1,11 @@
 import { useMemo } from 'react';
 import { useBuyerProfile, getBuyerTaxCategory } from './useBuyerProfile';
-
-// LTV limits by buyer type
-const LTV_LIMITS: Record<string, number> = {
-  'first_time': 75,
-  'oleh': 75,
-  'additional': 50,
-  'non_resident': 50,
-};
+import { useCalculatorConstants } from './useCalculatorConstants';
+import { getLtvLimit, getMaxPti, FALLBACK_CONSTANTS } from '@/lib/calculations/constants';
 
 // Default affordability settings
 const DEFAULT_INTEREST_RATE = 5.5; // Current avg mortgage rate
 const DEFAULT_TERM_YEARS = 25;
-const MAX_PTI_RATIO = 0.50; // Bank of Israel Directive 329 v11 - Max 50% PTI
 
 export interface AffordabilityParams {
   monthlyIncome?: number;
@@ -53,6 +46,7 @@ function calculateMonthlyPayment(principal: number, annualRate: number, termYear
  */
 export function useAffordability(params: AffordabilityParams = {}): AffordabilityResult | null {
   const { data: buyerProfile } = useBuyerProfile();
+  const { data: constants } = useCalculatorConstants();
   
   return useMemo(() => {
     const {
@@ -68,10 +62,12 @@ export function useAffordability(params: AffordabilityParams = {}): Affordabilit
     }
 
     const buyerCategory = getBuyerTaxCategory(buyerProfile);
-    const ltvLimit = LTV_LIMITS[buyerCategory] || 75;
+    // Use database constants with fallback
+    const ltvLimit = getLtvLimit(constants, buyerCategory) * 100; // Convert to percentage
+    const maxPtiRatio = getMaxPti(constants);
     
     // Calculate max affordable mortgage payment
-    const maxMonthlyPayment = Math.max(0, (monthlyIncome * MAX_PTI_RATIO) - existingDebts);
+    const maxMonthlyPayment = Math.max(0, (monthlyIncome * maxPtiRatio) - existingDebts);
     
     // Calculate max mortgage from payment
     const monthlyRate = interestRate / 100 / 12;
@@ -106,7 +102,7 @@ export function useAffordability(params: AffordabilityParams = {}): Affordabilit
       const totalMonthlyDebt = payment + existingDebts;
       
       if (downPayment > 0 && requiredDown > downPayment) return false;
-      if (monthlyIncome > 0 && totalMonthlyDebt / monthlyIncome > MAX_PTI_RATIO) return false;
+      if (monthlyIncome > 0 && totalMonthlyDebt / monthlyIncome > maxPtiRatio) return false;
       
       return true;
     };
@@ -132,7 +128,7 @@ export function useAffordability(params: AffordabilityParams = {}): Affordabilit
       if (pti < 0.25 && downPaymentComfort < 0.8) return 'comfortable';
       
       // Stretch if PTI between 25-35% or down payment is tight
-      if (pti <= MAX_PTI_RATIO) return 'stretch';
+      if (pti <= maxPtiRatio) return 'stretch';
       
       return 'out_of_reach';
     };
@@ -148,7 +144,7 @@ export function useAffordability(params: AffordabilityParams = {}): Affordabilit
       getMonthlyPayment,
       getAffordabilityLevel,
     };
-  }, [params, buyerProfile]);
+  }, [params, buyerProfile, constants]);
 }
 
 /**
@@ -157,6 +153,7 @@ export function useAffordability(params: AffordabilityParams = {}): Affordabilit
  */
 export function useQuickAffordability() {
   const { data: buyerProfile } = useBuyerProfile();
+  const { data: constants } = useCalculatorConstants();
   
   // Get saved affordability settings from localStorage
   const savedSettings = useMemo(() => {
@@ -169,7 +166,8 @@ export function useQuickAffordability() {
   }, []);
 
   const buyerCategory = getBuyerTaxCategory(buyerProfile);
-  const ltvLimit = LTV_LIMITS[buyerCategory] || 75;
+  // Use database constants with fallback, convert to percentage
+  const ltvLimit = getLtvLimit(constants, buyerCategory) * 100;
 
   const getMonthlyEstimate = (price: number): number => {
     const mortgage = price * (ltvLimit / 100);

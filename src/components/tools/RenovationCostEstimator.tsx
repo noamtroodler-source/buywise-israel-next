@@ -915,7 +915,7 @@ export function RenovationCostEstimator() {
                     <li>• Balcony enclosures need municipal approval</li>
                     <li>• Structural changes require engineer sign-off</li>
                     <li>• 1-year warranty required by law</li>
-                    <li>• VAT (17%) typically included in quotes</li>
+                    <li>• VAT (18%) typically included in quotes</li>
                   </ul>
                 </div>
               </div>

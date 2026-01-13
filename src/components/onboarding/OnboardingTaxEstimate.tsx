@@ -8,7 +8,9 @@ import {
   getBuyerCategoryLabel,
   BuyerProfile 
 } from '@/hooks/useBuyerProfile';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+import { getLtvLimit } from '@/lib/calculations/constants';
 
 // Map legacy 4-category to BuyerType
 function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): BuyerType {
@@ -20,14 +22,6 @@ function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' |
   }
 }
 
-// LTV limits by buyer type
-const LTV_LIMITS: Record<string, { max: number; description: string }> = {
-  'first_time': { max: 75, description: 'First-time buyers can borrow up to 75% of property value' },
-  'oleh': { max: 75, description: 'Olim can borrow up to 75% of property value' },
-  'additional': { max: 50, description: 'Additional property limited to 50% LTV' },
-  'non_resident': { max: 50, description: 'Non-residents limited to 50% LTV' },
-};
-
 // Sample property price for estimates
 const SAMPLE_PRICE = 2500000;
 
@@ -36,6 +30,8 @@ interface OnboardingTaxEstimateProps {
 }
 
 export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
+  const { data: constants } = useCalculatorConstants();
+  
   const buyerCategory = useMemo(() => {
     // Build a partial profile for calculation
     const tempProfile: BuyerProfile = {
@@ -56,7 +52,8 @@ export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
     return getBuyerTaxCategory(tempProfile);
   }, [profile]);
 
-  const ltvLimit = LTV_LIMITS[buyerCategory] || LTV_LIMITS['first_time'];
+  // Use database constants with fallback (returns decimal, convert to %)
+  const ltvMax = getLtvLimit(constants, buyerCategory) * 100;
   const buyerType = mapCategoryToBuyerType(buyerCategory);
   const purchaseTax = calculateTaxAmount(SAMPLE_PRICE, buyerType);
   const effectiveRate = (purchaseTax / SAMPLE_PRICE) * 100;
@@ -110,9 +107,9 @@ export function OnboardingTaxEstimate({ profile }: OnboardingTaxEstimateProps) {
                 <Landmark className="h-3 w-3" />
                 <span className="text-xs">Max Mortgage</span>
               </div>
-              <p className="font-semibold">{ltvLimit.max}% LTV</p>
+              <p className="font-semibold">{ltvMax}% LTV</p>
               <p className="text-xs text-muted-foreground">
-                Up to {formatCurrency(SAMPLE_PRICE * (ltvLimit.max / 100))}
+                Up to {formatCurrency(SAMPLE_PRICE * (ltvMax / 100))}
               </p>
             </div>
           </div>
