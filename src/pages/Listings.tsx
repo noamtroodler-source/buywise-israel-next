@@ -10,7 +10,7 @@ import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { CompareBar } from '@/components/property/CompareBar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { History, Search, Bell, MapPin, RotateCcw } from 'lucide-react';
+import { History, Search, Bell, MapPin, RotateCcw, BookOpen } from 'lucide-react';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -111,6 +111,13 @@ export default function Listings() {
         <div className="container py-8 md:py-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{pageContent.title}</h1>
           <p className="text-muted-foreground">{pageContent.subtitle}</p>
+          <Link 
+            to="/guides/understanding-listings" 
+            className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-3"
+          >
+            <BookOpen className="h-4 w-4" />
+            New to Israeli listings? Learn what to look for
+          </Link>
         </div>
       </div>
 
