@@ -916,7 +916,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                         )}
                         onClick={() => togglePetOption(option.value as 'cats' | 'dogs' | 'all')}
                       >
-                        <option.Icon className="h-4 w-4" />
+                        <option.Icon className={cn("h-4 w-4", isSelected ? "" : "text-primary")} />
                         <span>{option.label}</span>
                       </button>
                     );
