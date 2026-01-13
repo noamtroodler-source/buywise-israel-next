@@ -24,9 +24,10 @@ interface PropertyCardProps {
   compact?: boolean;
   maxBadges?: 1 | 2 | 3;
   showCategoryBadge?: boolean;
+  hideFeaturedBadge?: boolean;
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -213,7 +214,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       );
                     }
                     
-                    if (property.is_featured) {
+                    if (property.is_featured && !hideFeaturedBadge) {
                       badges.push(
                         <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
                           Featured
@@ -354,7 +355,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       );
                     }
                     
-                    if (property.is_featured) {
+                    if (property.is_featured && !hideFeaturedBadge) {
                       badges.push(
                         <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
                           Featured
