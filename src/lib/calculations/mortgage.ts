@@ -69,7 +69,7 @@ const LTV_LIMITS: Record<BuyerCategory, number> = {
 };
 
 // Maximum Payment-to-Income ratio (Bank of Israel Directive 329 v11)
-// Updated to 50% per April 2024 regulations
+// Updated to 50% per April 2025 regulations
 const MAX_PTI = 0.50; // 50% max
 
 // Current approximate rates (2024)
