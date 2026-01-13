@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BarChart3, Calculator } from 'lucide-react';
+import { BarChart3, Calculator, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface ProjectNextStepsProps {
@@ -23,6 +23,12 @@ export function ProjectNextSteps({ cityName, citySlug, projectPrice }: ProjectNe
       description: 'Mortgage calculator & cost breakdown',
       to: projectPrice ? `/tools/mortgage-calculator?price=${projectPrice}` : '/tools/mortgage-calculator',
     },
+    {
+      icon: BookOpen,
+      title: 'Buying New Construction',
+      description: 'Payment schedules, protections & what to ask',
+      to: '/guides/new-construction',
+    },
   ];
 
   return (
@@ -34,7 +40,7 @@ export function ProjectNextSteps({ cityName, citySlug, projectPrice }: ProjectNe
     >
       <h2 className="text-xl font-semibold">Next Steps</h2>
       
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-3 gap-4">
         {nextSteps.map((step, index) => (
           <Link key={index} to={step.to}>
             <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">

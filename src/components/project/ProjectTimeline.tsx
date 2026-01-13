@@ -1,5 +1,6 @@
-import { Calendar, Check, Circle } from 'lucide-react';
+import { Calendar, Check, Circle, ChevronDown, Wallet, Shield, Building } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Project } from '@/types/projects';
 
 interface ProjectTimelineProps {
@@ -110,6 +111,43 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
             <span className="text-sm font-medium">{progress}% Complete</span>
           </div>
         </div>
+
+        {/* Delay Transparency Note */}
+        <p className="text-xs text-muted-foreground text-center pt-3">
+          Most projects in Israel complete 6-12 months beyond initial estimates. 
+          This is typical and accounted for in buyer protections.
+        </p>
+
+        {/* Key Dates for Buyers */}
+        <Collapsible className="mt-4 pt-4 border-t">
+          <CollapsibleTrigger className="flex items-center justify-between w-full text-sm group">
+            <span className="font-medium">Key Dates for Buyers</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3 space-y-2.5">
+            <div className="flex items-start gap-2.5 text-sm">
+              <Wallet className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div>
+                <span className="font-medium">At Signing:</span>
+                <span className="text-muted-foreground"> Initial deposit (typically 20-30%)</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 text-sm">
+              <Shield className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div>
+                <span className="font-medium">Within 14 days:</span>
+                <span className="text-muted-foreground"> Bank guarantee issued protecting your payments</span>
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5 text-sm">
+              <Building className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <div>
+                <span className="font-medium">At Delivery:</span>
+                <span className="text-muted-foreground"> Final payment, mortgage funds released, VAT settled</span>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
