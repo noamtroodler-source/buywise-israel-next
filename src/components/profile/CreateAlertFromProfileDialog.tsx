@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCities } from '@/hooks/useCities';
 import { useCreateSearchAlert } from '@/hooks/useSearchAlerts';
 import { ListingType, AlertFrequency, PropertyFilters } from '@/types/database';
+import { matchCities } from '@/lib/utils/cityMatcher';
 
 interface CreateAlertFromProfileDialogProps {
   open: boolean;
@@ -82,10 +83,7 @@ export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlert
   const [showCityDropdown, setShowCityDropdown] = useState(false);
 
   const filteredCities = useMemo(() => {
-    if (!citySearch) return cities;
-    return cities.filter(city => 
-      city.name.toLowerCase().includes(citySearch.toLowerCase())
-    );
+    return matchCities(citySearch, cities);
   }, [cities, citySearch]);
 
   const handleCitySelect = (cityName: string) => {

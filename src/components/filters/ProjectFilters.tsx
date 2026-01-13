@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useCities } from '@/hooks/useCities';
 import { useDevelopers } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
+import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link } from 'react-router-dom';
 
 export interface ProjectFiltersType {
@@ -76,9 +77,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  const filteredCities = cities?.filter(city => 
-    city.name.toLowerCase().includes(citySearch.toLowerCase())
-  );
+  const filteredCities = matchCities(citySearch, cities || []);
 
   const currentYear = new Date().getFullYear();
   const completionYears = Array.from({ length: 6 }, (_, i) => currentYear + i);
