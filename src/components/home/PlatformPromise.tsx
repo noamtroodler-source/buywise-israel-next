@@ -28,7 +28,7 @@ export function PlatformPromise() {
             to="/principles" 
             className="inline-flex items-center gap-2 text-base text-primary hover:text-primary-hover transition-colors font-medium group"
           >
-            Learn about our principles
+            Read our principles
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
