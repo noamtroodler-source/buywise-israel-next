@@ -78,17 +78,15 @@ const getStatusLabel = (status: string) => {
 };
 
 const getStatusColor = (status: string) => {
+  // All project statuses use the same teal color for unified branding
   switch (status) {
     case 'pre_sale':
-      return 'bg-project text-project-foreground';
     case 'under_construction':
-      return 'bg-project text-project-foreground';
     case 'planning':
-      return 'bg-project/70 text-project-foreground';
     case 'completed':
-      return 'bg-muted text-muted-foreground';
+      return 'bg-project text-project-foreground';
     default:
-      return 'bg-muted text-muted-foreground';
+      return 'bg-project text-project-foreground';
   }
 };
 
@@ -272,7 +270,7 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                 </Badge>
               )}
               {isNewListing && (
-                <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                <Badge className="bg-project text-project-foreground text-xs font-medium">
                   <Sparkles className="h-3 w-3 mr-1" />
                   New
                 </Badge>

@@ -206,7 +206,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     </Badge>
                   )}
                   {isNewListing && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                    <Badge className="bg-project text-project-foreground text-xs font-medium">
                       <Sparkles className="h-3 w-3 mr-1" />
                       New
                     </Badge>
@@ -333,7 +333,7 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                     </Badge>
                   )}
                   {isNewListing && (
-                    <Badge className="bg-accent text-accent-foreground text-xs font-medium animate-pulse">
+                    <Badge className="bg-project text-project-foreground text-xs font-medium">
                       <Sparkles className="h-3 w-3 mr-1" />
                       New
                     </Badge>
