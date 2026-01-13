@@ -224,12 +224,13 @@ export function MarketOverviewCards({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-3xl font-bold text-foreground">
                       ₪{arnonaEstimate.discountedMonthly.toLocaleString()}
                       <span className="text-base font-normal text-muted-foreground">/mo</span>
                     </p>
-                    {arnonaEstimate.discountPercent > 0 && (
+                    {/* Show Personalized badge for any discount OR for Oleh users */}
+                    {(arnonaEstimate.discountPercent > 0 || arnonaEstimate.olehStatusChecked) && (
                       <TooltipProvider delayDuration={0}>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -238,8 +239,20 @@ export function MarketOverviewCards({
                               Personalized
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-[220px]">
-                            <p className="text-xs">Based on your buyer profile. {arnonaEstimate.discountType} discount applied.</p>
+                          <TooltipContent className="max-w-[260px]">
+                            {arnonaEstimate.discountPercent > 0 ? (
+                              <p className="text-xs">
+                                {arnonaEstimate.isAutoDetectedDiscount 
+                                  ? `Auto-detected from your Oleh profile: ${arnonaEstimate.discountType} discount applied.`
+                                  : `Based on your profile: ${arnonaEstimate.discountType} discount applied.`
+                                }
+                              </p>
+                            ) : arnonaEstimate.olehStatusChecked ? (
+                              <p className="text-xs">
+                                Your Oleh status was considered. Arnona discounts apply in Years 1-2 only
+                                {arnonaEstimate.olehYearsSinceAliyah !== null && ` (you're in Year ${arnonaEstimate.olehYearsSinceAliyah + 1}).`}
+                              </p>
+                            ) : null}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -271,6 +284,10 @@ export function MarketOverviewCards({
                   <p className="text-sm text-primary font-medium">
                     {arnonaEstimate.discountPercent}% {arnonaEstimate.discountType} discount
                     {arnonaEstimate.areaLimitApplied && ` (on first ${arnonaEstimate.areaLimitSqm}m²)`}
+                  </p>
+                ) : arnonaEstimate.olehStatusChecked && arnonaEstimate.olehYearsSinceAliyah !== null && arnonaEstimate.olehYearsSinceAliyah >= 2 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Oleh arnona discount: Years 1-2 only
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
