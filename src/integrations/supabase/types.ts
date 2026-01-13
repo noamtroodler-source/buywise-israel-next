@@ -330,20 +330,33 @@ export type Database = {
       cities: {
         Row: {
           anglo_presence: string | null
+          arnona_discounts: string | null
           arnona_monthly_avg: number | null
           arnona_rate_sqm: number | null
+          arnona_rate_sqm_max: number | null
+          arnona_rate_sqm_min: number | null
           average_price: number | null
           average_price_sqm: number | null
+          average_price_sqm_max: number | null
+          average_price_sqm_min: number | null
           average_vaad_bayit: number | null
+          average_vaad_bayit_max: number | null
+          average_vaad_bayit_min: number | null
           buyer_profile_match: string[] | null
+          card_description: string | null
+          commute_time_jerusalem: number | null
           commute_time_tel_aviv: number | null
           created_at: string
+          data_sources: Json | null
           description: string | null
           gross_yield_percent: number | null
+          gross_yield_percent_max: number | null
+          gross_yield_percent_min: number | null
           has_train_station: boolean | null
           hero_image: string | null
           highlights: string[] | null
           id: string
+          identity_sentence: string | null
           investment_score: number | null
           is_featured: boolean | null
           key_developments: string | null
@@ -352,17 +365,27 @@ export type Database = {
           name: string
           neighborhoods: Json | null
           net_yield_percent: number | null
+          net_yield_percent_max: number | null
+          net_yield_percent_min: number | null
           population: number | null
           price_range_max: number | null
           price_range_min: number | null
+          region: string | null
           renovation_cost_basic: number | null
+          renovation_cost_basic_max: number | null
+          renovation_cost_basic_min: number | null
           renovation_cost_premium: number | null
+          renovation_cost_premium_max: number | null
+          renovation_cost_premium_min: number | null
           rental_3_room_max: number | null
           rental_3_room_min: number | null
           rental_4_room_max: number | null
           rental_4_room_min: number | null
+          rental_5_room_max: number | null
+          rental_5_room_min: number | null
           slug: string
           socioeconomic_rank: number | null
+          tags: string[] | null
           tama38_expiry_date: string | null
           tama38_notes: string | null
           tama38_status: string | null
@@ -371,20 +394,33 @@ export type Database = {
         }
         Insert: {
           anglo_presence?: string | null
+          arnona_discounts?: string | null
           arnona_monthly_avg?: number | null
           arnona_rate_sqm?: number | null
+          arnona_rate_sqm_max?: number | null
+          arnona_rate_sqm_min?: number | null
           average_price?: number | null
           average_price_sqm?: number | null
+          average_price_sqm_max?: number | null
+          average_price_sqm_min?: number | null
           average_vaad_bayit?: number | null
+          average_vaad_bayit_max?: number | null
+          average_vaad_bayit_min?: number | null
           buyer_profile_match?: string[] | null
+          card_description?: string | null
+          commute_time_jerusalem?: number | null
           commute_time_tel_aviv?: number | null
           created_at?: string
+          data_sources?: Json | null
           description?: string | null
           gross_yield_percent?: number | null
+          gross_yield_percent_max?: number | null
+          gross_yield_percent_min?: number | null
           has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
           id?: string
+          identity_sentence?: string | null
           investment_score?: number | null
           is_featured?: boolean | null
           key_developments?: string | null
@@ -393,17 +429,27 @@ export type Database = {
           name: string
           neighborhoods?: Json | null
           net_yield_percent?: number | null
+          net_yield_percent_max?: number | null
+          net_yield_percent_min?: number | null
           population?: number | null
           price_range_max?: number | null
           price_range_min?: number | null
+          region?: string | null
           renovation_cost_basic?: number | null
+          renovation_cost_basic_max?: number | null
+          renovation_cost_basic_min?: number | null
           renovation_cost_premium?: number | null
+          renovation_cost_premium_max?: number | null
+          renovation_cost_premium_min?: number | null
           rental_3_room_max?: number | null
           rental_3_room_min?: number | null
           rental_4_room_max?: number | null
           rental_4_room_min?: number | null
+          rental_5_room_max?: number | null
+          rental_5_room_min?: number | null
           slug: string
           socioeconomic_rank?: number | null
+          tags?: string[] | null
           tama38_expiry_date?: string | null
           tama38_notes?: string | null
           tama38_status?: string | null
@@ -412,20 +458,33 @@ export type Database = {
         }
         Update: {
           anglo_presence?: string | null
+          arnona_discounts?: string | null
           arnona_monthly_avg?: number | null
           arnona_rate_sqm?: number | null
+          arnona_rate_sqm_max?: number | null
+          arnona_rate_sqm_min?: number | null
           average_price?: number | null
           average_price_sqm?: number | null
+          average_price_sqm_max?: number | null
+          average_price_sqm_min?: number | null
           average_vaad_bayit?: number | null
+          average_vaad_bayit_max?: number | null
+          average_vaad_bayit_min?: number | null
           buyer_profile_match?: string[] | null
+          card_description?: string | null
+          commute_time_jerusalem?: number | null
           commute_time_tel_aviv?: number | null
           created_at?: string
+          data_sources?: Json | null
           description?: string | null
           gross_yield_percent?: number | null
+          gross_yield_percent_max?: number | null
+          gross_yield_percent_min?: number | null
           has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
           id?: string
+          identity_sentence?: string | null
           investment_score?: number | null
           is_featured?: boolean | null
           key_developments?: string | null
@@ -434,17 +493,27 @@ export type Database = {
           name?: string
           neighborhoods?: Json | null
           net_yield_percent?: number | null
+          net_yield_percent_max?: number | null
+          net_yield_percent_min?: number | null
           population?: number | null
           price_range_max?: number | null
           price_range_min?: number | null
+          region?: string | null
           renovation_cost_basic?: number | null
+          renovation_cost_basic_max?: number | null
+          renovation_cost_basic_min?: number | null
           renovation_cost_premium?: number | null
+          renovation_cost_premium_max?: number | null
+          renovation_cost_premium_min?: number | null
           rental_3_room_max?: number | null
           rental_3_room_min?: number | null
           rental_4_room_max?: number | null
           rental_4_room_min?: number | null
+          rental_5_room_max?: number | null
+          rental_5_room_min?: number | null
           slug?: string
           socioeconomic_rank?: number | null
+          tags?: string[] | null
           tama38_expiry_date?: string | null
           tama38_notes?: string | null
           tama38_status?: string | null
@@ -460,8 +529,10 @@ export type Database = {
           average_price_sqm: number | null
           city_slug: string
           created_at: string
+          data_sources: Json | null
           gross_yield_percent: number | null
           id: string
+          last_verified: string | null
           median_apartment_price: number | null
           net_yield_percent: number | null
           rental_2_room_max: number | null
@@ -484,8 +555,10 @@ export type Database = {
           average_price_sqm?: number | null
           city_slug: string
           created_at?: string
+          data_sources?: Json | null
           gross_yield_percent?: number | null
           id?: string
+          last_verified?: string | null
           median_apartment_price?: number | null
           net_yield_percent?: number | null
           rental_2_room_max?: number | null
@@ -508,8 +581,10 @@ export type Database = {
           average_price_sqm?: number | null
           city_slug?: string
           created_at?: string
+          data_sources?: Json | null
           gross_yield_percent?: number | null
           id?: string
+          last_verified?: string | null
           median_apartment_price?: number | null
           net_yield_percent?: number | null
           rental_2_room_max?: number | null
@@ -540,6 +615,53 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "report_versions"
             referencedColumns: ["version_key"]
+          },
+        ]
+      }
+      city_market_factors: {
+        Row: {
+          city_slug: string
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          timing: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          city_slug: string
+          created_at?: string | null
+          description: string
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          timing?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          city_slug?: string
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          timing?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_market_factors_city_slug_fkey"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
           },
         ]
       }
