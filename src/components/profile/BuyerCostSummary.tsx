@@ -7,7 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useCalculatorConstants } from '@/hooks/useCalculatorConstants';
 import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
+import { calculateTotalPurchaseCosts, calculateMonthlyCosts } from '@/lib/calculations/purchaseCosts';
+import { getLtvLimit } from '@/lib/calculations/constants';
+import { useNavigate } from 'react-router-dom';
 
 // Map legacy 4-category to BuyerType
 function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): BuyerType {
@@ -18,28 +22,20 @@ function mapCategoryToBuyerType(category: 'first_time' | 'oleh' | 'additional' |
     default: return 'first_time';
   }
 }
-import { calculateTotalPurchaseCosts, calculateMonthlyCosts } from '@/lib/calculations/purchaseCosts';
-import { useNavigate } from 'react-router-dom';
-
-// LTV limits by buyer type
-const LTV_LIMITS: Record<string, { max: number; label: string }> = {
-  'first_time': { max: 75, label: 'First-Time Buyer' },
-  'oleh': { max: 75, label: 'Oleh Hadash' },
-  'additional': { max: 50, label: 'Additional Property' },
-  'non_resident': { max: 50, label: 'Non-Resident' },
-};
 
 export function BuyerCostSummary() {
   const navigate = useNavigate();
   const { data: buyerProfile, isLoading } = useBuyerProfile();
+  const { data: constants } = useCalculatorConstants();
   const [propertyPrice, setPropertyPrice] = useState<number>(2500000);
   const [propertySizeSqm, setPropertySizeSqm] = useState<number>(100);
 
-  const buyerCategory = useMemo(() => {
-    return getBuyerTaxCategory(buyerProfile);
-  }, [buyerProfile]);
+  const buyerCategory = getBuyerTaxCategory(buyerProfile);
+  
+  // Get LTV from database constants with fallback (returns decimal, convert to %)
+  const ltvMax = getLtvLimit(constants, buyerCategory) * 100;
+  const ltvLabel = getBuyerCategoryLabel(buyerCategory);
 
-  const ltvLimit = LTV_LIMITS[buyerCategory] || LTV_LIMITS['first_time'];
   const buyerType = mapCategoryToBuyerType(buyerCategory);
 
   const purchaseTax = useMemo(() => {
@@ -53,15 +49,15 @@ export function BuyerCostSummary() {
                  buyerCategory === 'non_resident' ? 'foreign' : 'investor',
       isNewConstruction: false,
       includeAgentFee: true,
-      loanAmount: propertyPrice * (ltvLimit.max / 100),
+      loanAmount: propertyPrice * (ltvMax / 100),
     });
-  }, [propertyPrice, buyerCategory, ltvLimit.max]);
+  }, [propertyPrice, buyerCategory, ltvMax]);
 
   const monthlyCosts = useMemo(() => {
     return calculateMonthlyCosts(propertySizeSqm, undefined, 0);
   }, [propertySizeSqm]);
 
-  const maxLoanAmount = propertyPrice * (ltvLimit.max / 100);
+  const maxLoanAmount = propertyPrice * (ltvMax / 100);
   const requiredDownPayment = propertyPrice - maxLoanAmount;
 
   const formatCurrency = (amount: number) => {
@@ -139,7 +135,7 @@ export function BuyerCostSummary() {
               <Landmark className="h-4 w-4" />
               Max Mortgage (LTV)
             </div>
-            <p className="font-semibold">{ltvLimit.max}%</p>
+            <p className="font-semibold">{ltvMax}%</p>
             <p className="text-xs text-muted-foreground">
               Up to {formatCurrency(maxLoanAmount)}
             </p>
@@ -169,7 +165,7 @@ export function BuyerCostSummary() {
           
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Down Payment ({100 - ltvLimit.max}%)</span>
+              <span className="text-muted-foreground">Down Payment ({100 - ltvMax}%)</span>
               <span className="font-medium">{formatCurrency(requiredDownPayment)}</span>
             </div>
             <div className="flex justify-between">
