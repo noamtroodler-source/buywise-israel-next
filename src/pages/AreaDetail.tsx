@@ -227,11 +227,18 @@ export default function CityDetail() {
             canonicalMetrics={canonicalMetrics}
             cityData={{
               average_price_sqm: city.average_price_sqm,
+              average_price_sqm_min: (city as any).average_price_sqm_min,
+              average_price_sqm_max: (city as any).average_price_sqm_max,
               median_apartment_price: city.median_apartment_price,
               rental_3_room_min: city.rental_3_room_min,
               rental_3_room_max: city.rental_3_room_max,
               rental_4_room_min: city.rental_4_room_min,
               rental_4_room_max: city.rental_4_room_max,
+              rental_5_room_min: (city as any).rental_5_room_min,
+              rental_5_room_max: (city as any).rental_5_room_max,
+              gross_yield_percent: city.gross_yield_percent,
+              gross_yield_percent_min: (city as any).gross_yield_percent_min,
+              gross_yield_percent_max: (city as any).gross_yield_percent_max,
             }}
           />
         )}

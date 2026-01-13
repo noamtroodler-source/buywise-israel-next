@@ -21,6 +21,8 @@ interface CityMarketRealityProps {
   canonicalMetrics?: CanonicalMetrics | null;
   historicalPrices?: HistoricalPrice[];
   yoyChange?: number | null;
+  yieldMin?: number | null;
+  yieldMax?: number | null;
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -31,7 +33,9 @@ export function CityMarketReality({
   cityName, 
   canonicalMetrics, 
   historicalPrices = [],
-  yoyChange 
+  yoyChange,
+  yieldMin,
+  yieldMax
 }: CityMarketRealityProps) {
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
 
@@ -116,7 +120,14 @@ export function CityMarketReality({
       }
     }
     
-    if (grossYield !== null) {
+    if (yieldMin && yieldMax) {
+      const avgYield = (yieldMin + yieldMax) / 2;
+      if (avgYield >= NATIONAL_AVG_YIELD) {
+        parts.push(`Rental yields of ${yieldMin.toFixed(1)}%–${yieldMax.toFixed(1)}% are above the national average, making this attractive for investors.`);
+      } else {
+        parts.push(`Rental yields of ${yieldMin.toFixed(1)}%–${yieldMax.toFixed(1)}% are typical for an appreciation-focused market.`);
+      }
+    } else if (grossYield !== null) {
       if (grossYield >= NATIONAL_AVG_YIELD) {
         parts.push(`Rental yields of ${grossYield.toFixed(1)}% are above the national average, making this attractive for investors.`);
       } else {
@@ -165,7 +176,13 @@ export function CityMarketReality({
                 <span className="text-muted-foreground ml-1">this year</span>
               </div>
             )}
-            {grossYield !== null && (
+            {/* Show yield range if available, otherwise single value */}
+            {yieldMin && yieldMax ? (
+              <div>
+                <span className="font-semibold text-foreground">{yieldMin.toFixed(1)}%–{yieldMax.toFixed(1)}%</span>
+                <span className="text-muted-foreground ml-1">gross yield range</span>
+              </div>
+            ) : grossYield !== null && (
               <div>
                 <span className="font-semibold text-foreground">{grossYield.toFixed(1)}%</span>
                 <span className="text-muted-foreground ml-1">gross yield</span>
