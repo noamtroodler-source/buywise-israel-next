@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
@@ -18,6 +18,7 @@ import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { toast } from 'sonner';
+import { BookOpen } from 'lucide-react';
 
 import { motion } from 'framer-motion';
 
@@ -121,6 +122,15 @@ export default function PropertyDetail() {
 
             {/* Description */}
             <PropertyDescription description={property.description} />
+            
+            {/* Understanding Listings Guide Link */}
+            <Link 
+              to="/guides/understanding-listings" 
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>Understanding Israeli listing terminology</span>
+            </Link>
 
             {/* Value Snapshot */}
             <motion.div 
@@ -197,6 +207,7 @@ export default function PropertyDetail() {
               cityName={property.city}
               citySlug={citySlug}
               propertyPrice={property.price}
+              listingStatus={property.listing_status}
             />
           </div>
 

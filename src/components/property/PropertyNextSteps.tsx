@@ -1,16 +1,33 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, Calculator, FileText, PiggyBank } from 'lucide-react';
+import { TrendingUp, Calculator, PiggyBank, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ListingStatus } from '@/types/database';
 
 interface PropertyNextStepsProps {
   cityName: string;
   citySlug: string;
   propertyPrice?: number;
+  listingStatus?: ListingStatus;
 }
 
-export function PropertyNextSteps({ cityName, citySlug, propertyPrice }: PropertyNextStepsProps) {
+export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingStatus }: PropertyNextStepsProps) {
   const priceParam = propertyPrice ? `?price=${propertyPrice}` : '';
+
+  // Determine which guide to show based on listing type
+  const guideStep = listingStatus === 'for_rent'
+    ? {
+        to: '/guides/understanding-listings',
+        icon: BookOpen,
+        title: 'Understanding Listings',
+        description: 'Decode Israeli listing terminology',
+      }
+    : {
+        to: '/guides/buying-in-israel',
+        icon: BookOpen,
+        title: "Complete Buyer's Guide",
+        description: 'Everything you need to know',
+      };
 
   const steps = [
     {
@@ -31,12 +48,7 @@ export function PropertyNextSteps({ cityName, citySlug, propertyPrice }: Propert
       title: 'Affordability Check',
       description: 'See if this fits your budget',
     },
-    {
-      to: '/tools',
-      icon: FileText,
-      title: 'Document Checklist',
-      description: "What you'll need to buy in Israel",
-    },
+    guideStep,
   ];
 
   return (
