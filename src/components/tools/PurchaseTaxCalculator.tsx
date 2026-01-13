@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { Receipt, Calendar, TrendingDown, Check } from 'lucide-react';
+import { Receipt, Calendar, TrendingDown, Check, Calculator, Wallet, BookOpen } from 'lucide-react';
 import { 
   calculatePurchaseTax, 
   compareTaxByBuyerType,
@@ -20,6 +21,7 @@ import { BuyerTypeInfoBanner, type BuyerCategory } from './shared/BuyerTypeInfoB
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { ToolFeedback } from './shared/ToolFeedback';
 
 export function PurchaseTaxCalculator() {
   const formatCurrency = useFormatPrice();
@@ -331,9 +333,62 @@ export function PurchaseTaxCalculator() {
     </Card>
   );
 
-  const bottomSection = insights.length > 0 ? (
-    <InsightCard insights={insights} />
-  ) : null;
+  const bottomSection = (
+    <div className="space-y-6">
+      {insights.length > 0 && <InsightCard insights={insights} />}
+      
+      {/* Next Steps Grid */}
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Link 
+          to="/tools?tool=totalcost"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Calculator className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">True Cost Calculator</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            See all purchase costs together
+          </p>
+        </Link>
+
+        <Link 
+          to="/tools?tool=mortgage"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Mortgage Calculator</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Calculate monthly payments
+          </p>
+        </Link>
+
+        <Link 
+          to="/guides/purchase-tax"
+          className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+        >
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <BookOpen className="h-5 w-5" />
+            </div>
+            <p className="font-semibold">Purchase Tax Guide</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Buyer types, brackets, exemptions
+          </p>
+        </Link>
+      </div>
+      
+      {/* Feedback */}
+      <ToolFeedback toolName="purchase-tax-calculator" variant="inline" />
+    </div>
+  );
 
   return (
     <ToolLayout

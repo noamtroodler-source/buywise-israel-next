@@ -1,7 +1,7 @@
 // Investment Return Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Building2, DollarSign, PiggyBank, Scale, Wallet, Clock, LineChart, ArrowRight, RotateCcw, Save, Loader2, Home, HelpCircle, BadgeCheck, ChevronDown, Calculator, MapPin } from 'lucide-react';
+import { TrendingUp, Building2, DollarSign, PiggyBank, Scale, Wallet, Clock, LineChart, ArrowRight, RotateCcw, Save, Loader2, Home, HelpCircle, BadgeCheck, ChevronDown, Calculator, MapPin, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -1049,16 +1049,16 @@ function InvestmentCalculatorContent() {
       {/* Next Steps Grid */}
       <div className="grid sm:grid-cols-3 gap-4">
         <Link 
-          to="/tools?tool=rentvsbuy"
+          to="/guides/rent-vs-buy"
           className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <TrendingUp className="h-5 w-5" />
+              <BookOpen className="h-5 w-5" />
             </div>
-            <p className="font-semibold">Rent vs Buy</p>
+            <p className="font-semibold">Rent vs Buy Guide</p>
           </div>
-          <p className="text-sm text-muted-foreground">Compare renting vs buying</p>
+          <p className="text-sm text-muted-foreground">Understand ownership tradeoffs</p>
         </Link>
 
         <Link 

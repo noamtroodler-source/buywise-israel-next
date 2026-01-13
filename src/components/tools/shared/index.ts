@@ -6,6 +6,7 @@ export { CashBreakdownTable } from './CashBreakdownTable';
 export { ToolDisclaimer, DISCLAIMER_VARIANTS } from './ToolDisclaimer';
 export { InputSection, SliderInput, NumberInput } from './InputSection';
 export { CTACard } from './CTACard';
+export { GuideCTACard } from './GuideCTACard';
 export { InfoBanner } from './InfoBanner';
 export { LTVIndicator } from './LTVIndicator';
 export { InsightCard } from './InsightCard';

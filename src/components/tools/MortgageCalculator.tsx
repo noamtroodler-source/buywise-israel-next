@@ -1,7 +1,7 @@
 // Mortgage Calculator - Unified Side-by-Side Layout for BuyWise Israel
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, BadgeCheck, HelpCircle, Share2 } from 'lucide-react';
+import { Calculator, RotateCcw, Save, ChevronDown, ArrowRight, Loader2, MapPin, Home, Info, TrendingUp, AlertTriangle, BadgeCheck, HelpCircle, Share2, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -747,17 +747,17 @@ function MortgageCalculatorContent() {
         </Link>
 
         <Link 
-          to="/areas"
+          to="/guides/mortgages"
           className="group p-5 rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-md transition-all"
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <MapPin className="h-5 w-5" />
+              <BookOpen className="h-5 w-5" />
             </div>
-            <p className="font-semibold">Explore Areas</p>
+            <p className="font-semibold">Mortgages Guide</p>
           </div>
           <p className="text-sm text-muted-foreground">
-            Discover neighborhoods and trends
+            Understand Israeli mortgage rules
           </p>
         </Link>
       </div>

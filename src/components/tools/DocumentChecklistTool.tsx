@@ -19,7 +19,8 @@ import {
   Calculator,
   ClipboardList,
   Home,
-  MapPin
+  MapPin,
+  BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -252,7 +253,7 @@ export function DocumentChecklistTool() {
       <div className="grid sm:grid-cols-3 gap-4">
         <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=true-cost" />
         <CTACard title="Mortgage Calculator" description="Plan your financing strategy" icon={<Landmark className="h-5 w-5" />} buttonText="Plan Financing" buttonLink="/tools?tool=mortgage" />
-        <CTACard title="Explore Areas" description="Find the right neighborhood" icon={<MapPin className="h-5 w-5" />} buttonText="View Areas" buttonLink="/areas" />
+        <CTACard title="Talking to Professionals" description="What to ask lawyers and agents" icon={<BookOpen className="h-5 w-5" />} buttonText="Read Guide" buttonLink="/guides/talking-to-professionals" />
       </div>
       <ToolFeedback toolName="Document Checklist" variant="inline" />
     </div>

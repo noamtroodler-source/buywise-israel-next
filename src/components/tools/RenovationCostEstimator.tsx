@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp } from 'lucide-react';
+import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -942,11 +942,11 @@ export function RenovationCostEstimator() {
           buttonText="Check Affordability"
         />
         <CTACard
-          icon={<FileText className="h-5 w-5" />}
-          title="Document Checklist"
-          description="Track permits and contractor documents"
-          buttonLink="/tools/document-checklist"
-          buttonText="View Checklist"
+          icon={<BookOpen className="h-5 w-5" />}
+          title="New vs Resale Guide"
+          description="Understand renovation implications"
+          buttonLink="/guides/new-vs-resale"
+          buttonText="Read Guide"
         />
       </div>
       

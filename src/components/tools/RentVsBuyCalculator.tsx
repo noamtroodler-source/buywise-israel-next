@@ -46,6 +46,7 @@ import {
   SourceAttribution,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
+import { BookOpen } from 'lucide-react';
 
 import { getBuyerCategoryLabel, getBuyerTaxCategory, useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateTaxAmount, BuyerType } from '@/lib/calculations/purchaseTax';
@@ -1206,11 +1207,11 @@ export function RentVsBuyCalculator() {
           variant="muted"
         />
         <CTACard
-          title="Explore Areas"
-          description="Research city market data and trends"
-          buttonText="Browse Areas"
-          buttonLink="/areas"
-          icon={<MapPin className="h-5 w-5" />}
+          title="Understand the Decision"
+          description="Read our complete rent vs buy guide"
+          buttonText="Read Guide"
+          buttonLink="/guides/rent-vs-buy"
+          icon={<BookOpen className="h-5 w-5" />}
           variant="muted"
         />
       </div>
