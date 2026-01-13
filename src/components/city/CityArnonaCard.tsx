@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Receipt, Info, User } from 'lucide-react';
+import { Receipt, Info, User, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
+import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
 
 interface CityArnonaCardProps {
   arnonaRateSqm: number | null;
@@ -56,7 +57,19 @@ export function CityArnonaCard({ arnonaRateSqm, arnonaMonthlyAvg, cityName }: Ci
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Apartment size</span>
+            <span className="text-muted-foreground flex items-center gap-1">
+              Apartment size
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3 w-3 text-muted-foreground/70" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-xs whitespace-pre-line">{ARNONA_AREA_TOOLTIP}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </span>
             <span className="font-medium">{apartmentSize} m²</span>
           </div>
           <Slider

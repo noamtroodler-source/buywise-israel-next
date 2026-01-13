@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Building2, Receipt, Info, TrendingUp, TrendingDown, User } from 'lucide-react';
+import { DollarSign, Building2, Receipt, Info, TrendingUp, TrendingDown, User, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } 
 import { MarketData } from '@/types/projects';
 import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
+import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
 
 interface MarketOverviewCardsProps {
   marketData: MarketData[];
@@ -266,7 +267,19 @@ export function MarketOverviewCards({
                 {/* Size Slider */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">Apartment size</span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      Apartment size
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <HelpCircle className="h-3 w-3 text-muted-foreground/70" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p className="text-xs whitespace-pre-line">{ARNONA_AREA_TOOLTIP}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </span>
                     <span className="text-sm font-medium">{apartmentSize}m²</span>
                   </div>
                   <Slider

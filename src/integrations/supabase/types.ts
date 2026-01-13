@@ -363,6 +363,9 @@ export type Database = {
           rental_4_room_min: number | null
           slug: string
           socioeconomic_rank: number | null
+          tama38_expiry_date: string | null
+          tama38_notes: string | null
+          tama38_status: string | null
           updated_at: string
           yoy_price_change: number | null
         }
@@ -401,6 +404,9 @@ export type Database = {
           rental_4_room_min?: number | null
           slug: string
           socioeconomic_rank?: number | null
+          tama38_expiry_date?: string | null
+          tama38_notes?: string | null
+          tama38_status?: string | null
           updated_at?: string
           yoy_price_change?: number | null
         }
@@ -439,6 +445,9 @@ export type Database = {
           rental_4_room_min?: number | null
           slug?: string
           socioeconomic_rank?: number | null
+          tama38_expiry_date?: string | null
+          tama38_notes?: string | null
+          tama38_status?: string | null
           updated_at?: string
           yoy_price_change?: number | null
         }
