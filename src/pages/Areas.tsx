@@ -52,7 +52,7 @@ interface Region {
 const regions: Region[] = [
   {
     id: 'coastal',
-    name: 'Coastal & Greater Tel Aviv',
+    name: 'Coastal',
     shortName: 'Coastal',
     subtitle: 'Beach life, urban energy & metro convenience',
     icon: Sun,
@@ -67,7 +67,7 @@ const regions: Region[] = [
   },
   {
     id: 'central',
-    name: 'Central Israel',
+    name: 'Central',
     shortName: 'Central',
     subtitle: 'Family suburbs, Jerusalem area & growing communities',
     icon: Building,
@@ -89,9 +89,9 @@ const regions: Region[] = [
     ],
   },
   {
-    id: 'northern',
-    name: 'Northern Israel',
-    shortName: 'Northern',
+    id: 'north',
+    name: 'North',
+    shortName: 'North',
     subtitle: 'Lifestyle value & scenic living',
     icon: Trees,
     cities: [
@@ -100,9 +100,9 @@ const regions: Region[] = [
     ],
   },
   {
-    id: 'southern',
-    name: 'Southern Israel',
-    shortName: 'Southern',
+    id: 'south',
+    name: 'South',
+    shortName: 'South',
     subtitle: 'Affordable frontier & resort living',
     icon: Heart,
     cities: [
