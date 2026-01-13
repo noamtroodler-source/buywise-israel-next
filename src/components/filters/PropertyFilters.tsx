@@ -147,7 +147,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               className={cn(
                 "px-4 py-2.5 text-sm font-medium transition-all",
                 isSoldView 
-                  ? "bg-muted text-foreground" 
+                  ? "bg-primary text-primary-foreground" 
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
               )}
               onClick={() => onSoldToggle?.(true)}
