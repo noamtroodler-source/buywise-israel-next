@@ -7,10 +7,12 @@ import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
+import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CityOpener } from '@/components/city/CityOpener';
+import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
 
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
@@ -23,16 +25,13 @@ import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties
 import { useCityDetails } from '@/hooks/useCityDetails';
 
 // City Identity Sentences - universally true, one-liner descriptions
-const cityIdentities: Record<string, string> = {
+// Fallback identity sentences for cities without database data
+const fallbackIdentities: Record<string, string> = {
   'tel-aviv': "Tel Aviv is Israel's cultural and economic capital — a Mediterranean metropolis known for its beaches, nightlife, and startup ecosystem.",
   'herzliya': "Herzliya is a coastal tech hub north of Tel Aviv, home to Israel's \"Silicon Wadi\" and luxury beachfront living.",
   'jerusalem': "Jerusalem is Israel's capital and spiritual center — a city of historical significance, diverse neighborhoods, and strong community ties.",
-  'haifa': "Haifa is a port city on Mount Carmel, known for its multicultural atmosphere, tech sector, and Mediterranean views.",
   'raanana': "Ra'anana is a family-friendly suburb with excellent schools, a strong Anglo community, and proximity to Tel Aviv.",
-  'netanya': "Netanya is a coastal city known for its cliff-side beaches, affordable housing, and growing French-speaking community.",
-  'modiin': "Modi'in is a planned city between Tel Aviv and Jerusalem, designed for families with modern infrastructure and green spaces.",
   'beer-sheva': "Beer Sheva is the capital of the Negev, home to Ben-Gurion University and emerging as a tech and innovation hub.",
-  'ashdod': "Ashdod is a port city with affordable coastal living, a growing population, and strong industrial base.",
   'ashkelon': "Ashkelon is a southern coastal city known for archaeological sites, beaches, and affordable housing.",
   'eilat': "Eilat is Israel's Red Sea resort city — tax-free, tourism-focused, with year-round warm weather.",
   'ramat-gan': "Ramat Gan is an urban center adjacent to Tel Aviv, known for the Diamond Exchange and growing residential demand.",
@@ -45,12 +44,10 @@ const cityIdentities: Record<string, string> = {
   'rosh-haayin': "Rosh HaAyin is a hilltop city east of Tel Aviv, known for its diverse population and train connectivity.",
   'shoham': "Shoham is a small planned community between Tel Aviv and Jerusalem, known for quiet suburban living.",
   'givat-shmuel': "Givat Shmuel is one of Israel's smallest cities, bordering Ramat Gan, with strong residential demand.",
-  'caesarea': "Caesarea is an exclusive coastal community with archaeological sites, a golf course, and luxury villas.",
   'zichron-yaakov': "Zichron Yaakov is a wine country town on Mount Carmel, known for historic architecture and boutique living.",
   'pardes-hanna': "Pardes Hanna-Karkur is a rural community in the Sharon region, offering quiet living near nature.",
   'kiryat-tivon': "Kiryat Tivon is a green suburban town near Haifa, popular with families seeking a quieter lifestyle.",
   'yokneam': "Yokneam is a Jezreel Valley town with a growing tech park, near Haifa and the Galilee.",
-  'hadera': "Hadera is a central coastal city with improving infrastructure and affordable housing options.",
   'nahariya': "Nahariya is Israel's northernmost coastal city, known for its beaches, German heritage, and relaxed atmosphere.",
   'beit-shemesh': "Beit Shemesh is a growing city west of Jerusalem, with distinct secular and religious neighborhoods.",
   'mevaseret-zion': "Mevaseret Zion is a suburban town overlooking Jerusalem, known for its mountain views and family atmosphere.",
@@ -58,101 +55,6 @@ const cityIdentities: Record<string, string> = {
   'gush-etzion': "Gush Etzion is a bloc of communities in the Judean Hills, known for its historical significance and scenic landscapes.",
   'maale-adumim': "Ma'ale Adumim is a city east of Jerusalem, offering suburban living with mountain views.",
   'givat-zeev': "Givat Ze'ev is a residential town north of Jerusalem, popular with families seeking affordable housing.",
-};
-
-// Worth Watching data per city
-const cityMarketFactors: Record<string, MarketFactor[]> = {
-  'tel-aviv': [
-    {
-      title: 'Red Line Light Rail Opening',
-      description: 'First metro line will transform transit and boost areas near stations',
-      icon: 'transit',
-      timing: '2025',
-    },
-    {
-      title: 'Tama 38 Policy Changes',
-      description: 'Proposed limits on urban renewal could reduce new supply',
-      icon: 'policy',
-    },
-    {
-      title: 'Port Area Redevelopment',
-      description: 'New towers and public spaces coming to northern waterfront',
-      icon: 'development',
-      timing: 'In Progress',
-    },
-  ],
-  'jerusalem': [
-    {
-      title: 'Blue Line Extension',
-      description: 'Light rail expansion connecting more neighborhoods to city center',
-      icon: 'transit',
-      timing: '2026',
-    },
-    {
-      title: 'Talpiot Industrial Zone',
-      description: 'Major rezoning for mixed-use development underway',
-      icon: 'zoning',
-    },
-    {
-      title: 'American Embassy Impact',
-      description: 'Continued investment in Arnona and surrounding areas',
-      icon: 'infrastructure',
-    },
-  ],
-  'haifa': [
-    {
-      title: 'Tech Hub Expansion',
-      description: 'Growing high-tech presence driving demand for housing',
-      icon: 'development',
-    },
-    {
-      title: 'Haifa Bay Development',
-      description: 'Major waterfront transformation with new residential towers',
-      icon: 'infrastructure',
-      timing: 'In Progress',
-    },
-    {
-      title: 'Carmelit Renovation',
-      description: 'Underground railway modernization improving connectivity',
-      icon: 'transit',
-    },
-  ],
-  'herzliya': [
-    {
-      title: 'Herzliya Pituach Growth',
-      description: 'Continued high-tech expansion driving premium housing demand',
-      icon: 'development',
-    },
-    {
-      title: 'Marina Development',
-      description: 'New luxury residential and commercial projects on waterfront',
-      icon: 'infrastructure',
-      timing: 'In Progress',
-    },
-    {
-      title: 'Highway 2 Improvements',
-      description: 'Better access to Tel Aviv increasing commuter appeal',
-      icon: 'transit',
-    },
-  ],
-  'raanana': [
-    {
-      title: 'Tech Park Expansion',
-      description: 'New office towers bringing more high-income residents',
-      icon: 'development',
-    },
-    {
-      title: 'Rail Connection Plans',
-      description: 'Proposed light rail to Tel Aviv could boost property values',
-      icon: 'transit',
-      timing: 'Proposed',
-    },
-    {
-      title: 'School District Excellence',
-      description: 'Top-rated schools continuing to attract families',
-      icon: 'policy',
-    },
-  ],
 };
 
 // Hero Images (high resolution 1920x800)

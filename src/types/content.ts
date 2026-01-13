@@ -77,6 +77,31 @@ export interface City {
   key_developments?: string | null;
   renovation_cost_basic?: number | null;
   renovation_cost_premium?: number | null;
+  // New fields for enhanced city data
+  identity_sentence?: string | null;
+  card_description?: string | null;
+  region?: string | null;
+  tags?: string[] | null;
+  arnona_discounts?: string | null;
+  commute_time_jerusalem?: number | null;
+  data_sources?: Record<string, string> | null;
+  // Range fields for honest ranges
+  average_price_sqm_min?: number | null;
+  average_price_sqm_max?: number | null;
+  arnona_rate_sqm_min?: number | null;
+  arnona_rate_sqm_max?: number | null;
+  gross_yield_percent_min?: number | null;
+  gross_yield_percent_max?: number | null;
+  net_yield_percent_min?: number | null;
+  net_yield_percent_max?: number | null;
+  renovation_cost_basic_min?: number | null;
+  renovation_cost_basic_max?: number | null;
+  renovation_cost_premium_min?: number | null;
+  renovation_cost_premium_max?: number | null;
+  average_vaad_bayit_min?: number | null;
+  average_vaad_bayit_max?: number | null;
+  rental_5_room_min?: number | null;
+  rental_5_room_max?: number | null;
 }
 
 export type BlogSortOption = 'newest' | 'most_viewed' | 'most_saved';
