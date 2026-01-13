@@ -48,7 +48,11 @@ export function CityCombobox({ value, onValueChange, placeholder = 'Select a cit
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent 
+        className="w-[300px] p-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:duration-100 data-[state=closed]:duration-75 data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0 data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0" 
+        align="start"
+        sideOffset={6}
+      >
         <Command filter={(value, search) => {
           // Use fuzzy matcher
           return cityMatchesQuery(value, search) ? 1 : 0;
