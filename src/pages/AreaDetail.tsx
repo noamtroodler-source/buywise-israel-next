@@ -139,7 +139,7 @@ export default function CityDetail() {
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
-  const { data: historicalPrices = [] } = useHistoricalPrices(slug || '', 10);
+  const { data: historicalPrices = [] } = useHistoricalPrices(slug || '');
   if (cityLoading) {
     return (
       <Layout>
