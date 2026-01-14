@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -231,6 +231,39 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       return found?.label || 'Newest Listings';
     }
     return 'Newest Listings';
+  };
+
+  // Check if any filters are active (excluding sort and listing_status)
+  const hasActiveFilters = useMemo(() => {
+    return !!(
+      filters.city ||
+      filters.neighborhoods?.length ||
+      filters.min_price ||
+      filters.max_price ||
+      filters.min_rooms ||
+      filters.min_bathrooms ||
+      filters.property_types?.length ||
+      filters.features?.length ||
+      filters.min_size ||
+      filters.max_size ||
+      filters.min_parking ||
+      filters.condition ||
+      filters.min_year_built ||
+      filters.min_floor ||
+      filters.max_floor ||
+      filters.max_days_listed ||
+      filters.allows_pets?.length ||
+      filters.available_by ||
+      filters.available_now
+    );
+  }, [filters]);
+
+  // Clear all filters except listing_status and sort_by
+  const clearAllFilters = () => {
+    onFiltersChange({
+      listing_status: filters.listing_status,
+      sort_by: filters.sort_by,
+    });
   };
 
   // Filter button base styles
@@ -675,6 +708,19 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           <SlidersHorizontal className="h-4 w-4" />
           <span>More Filters</span>
         </Button>
+
+        {/* Clear All Filters - Only shown when filters are active */}
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+            onClick={clearAllFilters}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Clear</span>
+          </Button>
+        )}
 
         {/* Sort & Alert Section */}
         <div className="flex items-center gap-3">
