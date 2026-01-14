@@ -18,7 +18,7 @@ export function DataFetchError({
   if (compact) {
     return (
       <div className={cn("flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg", className)}>
-        <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+        <AlertCircle className="h-4 w-4 text-primary shrink-0" />
         <span>{message}</span>
         {onRetry && (
           <Button variant="ghost" size="sm" onClick={onRetry} className="h-7 px-2 ml-auto">
@@ -31,8 +31,8 @@ export function DataFetchError({
 
   return (
     <div className={cn("text-center py-12 space-y-4", className)}>
-      <div className="w-12 h-12 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
-        <AlertCircle className="h-6 w-6 text-destructive" />
+      <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+        <AlertCircle className="h-6 w-6 text-primary" />
       </div>
       <div className="space-y-1">
         <p className="font-medium text-foreground">{message}</p>
