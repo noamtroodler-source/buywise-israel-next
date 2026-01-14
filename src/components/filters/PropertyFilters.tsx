@@ -440,8 +440,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               <PriceRangeSlider
                 minValue={filters.min_price}
                 maxValue={filters.max_price}
-                onMinChange={(val) => updateFilter('min_price', val)}
-                onMaxChange={(val) => updateFilter('max_price', val)}
+                onRangeChange={(min, max) => {
+                  // single update to avoid stale-props overwriting
+                  onFiltersChange({ ...filters, min_price: min, max_price: max });
+                }}
                 baseMin={0}
                 baseMax={listingType === 'for_rent' ? 30000 : 10000000}
                 baseStep={listingType === 'for_rent' ? 500 : 50000}
