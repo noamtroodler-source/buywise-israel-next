@@ -524,7 +524,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-5">
               {/* Header */}
               <div className="flex items-center justify-between">
