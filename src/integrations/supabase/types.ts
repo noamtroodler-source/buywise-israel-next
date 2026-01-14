@@ -355,6 +355,7 @@ export type Database = {
           has_train_station: boolean | null
           hero_image: string | null
           highlights: string[] | null
+          historical_data_notes: Json | null
           id: string
           identity_sentence: string | null
           investment_score: number | null
@@ -419,6 +420,7 @@ export type Database = {
           has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
+          historical_data_notes?: Json | null
           id?: string
           identity_sentence?: string | null
           investment_score?: number | null
@@ -483,6 +485,7 @@ export type Database = {
           has_train_station?: boolean | null
           hero_image?: string | null
           highlights?: string[] | null
+          historical_data_notes?: Json | null
           id?: string
           identity_sentence?: string | null
           investment_score?: number | null
@@ -615,6 +618,53 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "report_versions"
             referencedColumns: ["version_key"]
+          },
+        ]
+      }
+      city_market_cycles: {
+        Row: {
+          avg_annual_growth: number | null
+          city_slug: string
+          created_at: string | null
+          cycle_name: string
+          id: string
+          notes: string | null
+          period_end: number
+          period_start: number
+          sort_order: number | null
+          total_growth_percent: number | null
+        }
+        Insert: {
+          avg_annual_growth?: number | null
+          city_slug: string
+          created_at?: string | null
+          cycle_name: string
+          id?: string
+          notes?: string | null
+          period_end: number
+          period_start: number
+          sort_order?: number | null
+          total_growth_percent?: number | null
+        }
+        Update: {
+          avg_annual_growth?: number | null
+          city_slug?: string
+          created_at?: string | null
+          cycle_name?: string
+          id?: string
+          notes?: string | null
+          period_end?: number
+          period_start?: number
+          sort_order?: number | null
+          total_growth_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_market_cycles_city_slug_fkey"
+            columns: ["city_slug"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["slug"]
           },
         ]
       }
@@ -886,8 +936,10 @@ export type Database = {
           average_price_sqm: number | null
           city: string
           created_at: string
+          data_level: string | null
           id: string
           notes: string | null
+          source: string | null
           transaction_count: number | null
           year: number
           yoy_change_percent: number | null
@@ -897,8 +949,10 @@ export type Database = {
           average_price_sqm?: number | null
           city: string
           created_at?: string
+          data_level?: string | null
           id?: string
           notes?: string | null
+          source?: string | null
           transaction_count?: number | null
           year: number
           yoy_change_percent?: number | null
@@ -908,8 +962,10 @@ export type Database = {
           average_price_sqm?: number | null
           city?: string
           created_at?: string
+          data_level?: string | null
           id?: string
           notes?: string | null
+          source?: string | null
           transaction_count?: number | null
           year?: number
           yoy_change_percent?: number | null
