@@ -68,6 +68,24 @@ export function useCityPriceComparison(citySlugs: string[], startYear: number, e
   });
 }
 
+// Hook for fetching historical prices for multiple cities (for All Time comparison)
+export function useHistoricalPriceComparison(cityNames: string[]) {
+  return useQuery({
+    queryKey: ['historical-price-comparison', cityNames],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('historical_prices')
+        .select('*')
+        .in('city', cityNames)
+        .order('year', { ascending: true });
+
+      if (error) throw error;
+      return data as HistoricalPrice[];
+    },
+    enabled: cityNames.length > 0,
+  });
+}
+
 export function calculateCAGR(startPrice: number, endPrice: number, years: number): number {
   if (startPrice <= 0 || years <= 0) return 0;
   const cagr = (Math.pow(endPrice / startPrice, 1 / years) - 1) * 100;
