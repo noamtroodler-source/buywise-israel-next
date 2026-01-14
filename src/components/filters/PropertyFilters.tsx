@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -417,28 +418,34 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-4">
-              <h3 className="font-semibold text-lg">Price Range</h3>
-              
-              <div className="flex gap-3">
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Min ($)"
-                  value={formatWithCommas(filters.min_price)}
-                  onChange={(e) => updateFilter('min_price', parseCommaNumber(e.target.value))}
-                  className="flex-1 rounded-lg"
-                />
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Max ($)"
-                  value={formatWithCommas(filters.max_price)}
-                  onChange={(e) => updateFilter('max_price', parseCommaNumber(e.target.value))}
-                  className="flex-1 rounded-lg"
-                />
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg">Price Range</h3>
+                {(filters.min_price || filters.max_price) && (
+                  <button 
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      updateFilter('min_price', undefined);
+                      updateFilter('max_price', undefined);
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
+              
+              <PriceRangeSlider
+                minValue={filters.min_price}
+                maxValue={filters.max_price}
+                onMinChange={(val) => updateFilter('min_price', val)}
+                onMaxChange={(val) => updateFilter('max_price', val)}
+                sliderMin={0}
+                sliderMax={listingType === 'for_rent' ? 30000 : 10000000}
+                step={listingType === 'for_rent' ? 500 : 50000}
+                currency="₪"
+                maxLabel={listingType === 'for_rent' ? '₪30K+' : '₪10M+'}
+              />
 
               <Link 
                 to="/tools" 
