@@ -240,6 +240,8 @@ export default function CityDetail() {
               gross_yield_percent_min: (city as any).gross_yield_percent_min,
               gross_yield_percent_max: (city as any).gross_yield_percent_max,
             }}
+            dataSources={(city as any).data_sources}
+            lastVerified={canonicalMetrics?.updated_at}
           />
         )}
 
@@ -258,6 +260,8 @@ export default function CityDetail() {
             marketData={marketData}
             cityName={city.name}
             arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+            dataSources={(city as any).data_sources}
+            lastVerified={canonicalMetrics?.updated_at}
           />
         </section>
 
@@ -270,6 +274,8 @@ export default function CityDetail() {
               canonicalMetrics={canonicalMetrics}
               historicalPrices={historicalPrices}
               yoyChange={city.yoy_price_change}
+              dataSources={(city as any).data_sources}
+              lastVerified={canonicalMetrics?.updated_at}
             />
           </section>
         )}

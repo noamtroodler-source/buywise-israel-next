@@ -17,6 +17,7 @@ import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { useCities } from '@/hooks/useCities';
 import { useCityComparison } from '@/hooks/useMarketData';
+import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 
 interface PriceTrendsSectionProps {
   marketData: MarketData[];
@@ -24,6 +25,8 @@ interface PriceTrendsSectionProps {
   canonicalMetrics?: CanonicalMetrics | null;
   historicalPrices?: HistoricalPrice[];
   yoyChange?: number | null;
+  dataSources?: Record<string, string> | null;
+  lastVerified?: string | null;
 }
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -40,7 +43,9 @@ export function PriceTrendsSection({
   cityName, 
   canonicalMetrics, 
   historicalPrices = [],
-  yoyChange 
+  yoyChange,
+  dataSources,
+  lastVerified
 }: PriceTrendsSectionProps) {
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
   const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
@@ -274,6 +279,15 @@ export function PriceTrendsSection({
                 ))}
               </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Source Attribution - below chart */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <InlineSourceBadge 
+              sources={dataSources} 
+              lastVerified={lastVerified}
+              variant="subtle"
+            />
           </div>
 
           {/* Insight */}
