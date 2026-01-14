@@ -152,8 +152,8 @@ export default function PropertyDetail() {
               />
             </motion.div>
 
-            {/* Time Machine - Only for sold properties */}
-            {property.listing_status === 'sold' && (
+            {/* Time Machine - For sold and for_sale properties */}
+            {(property.listing_status === 'sold' || property.listing_status === 'for_sale') && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -164,6 +164,7 @@ export default function PropertyDetail() {
                   salePrice={property.price}
                   city={property.city}
                   sizeSqm={property.size_sqm}
+                  listingStatus={property.listing_status}
                 />
               </motion.div>
             )}
