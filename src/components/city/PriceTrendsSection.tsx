@@ -57,8 +57,8 @@ export function PriceTrendsSection({
     return allCities.map((c) => ({ name: c.name, slug: c.slug }));
   }, [allCities]);
 
-  // Process chart data for multiple cities
-  const chartData = useMemo(() => {
+  // Process monthly chart data for short-term views (6m, 1y)
+  const monthlyChartData = useMemo(() => {
     // If only one city and it's the current city, use the prop data
     if (selectedCities.length === 1 && selectedCities[0] === cityName) {
       const monthly = marketData
@@ -97,11 +97,32 @@ export function PriceTrendsSection({
       });
   }, [marketData, comparisonData, selectedCities, cityName]);
 
+  // Process yearly chart data for "All Time" view using historical_prices
+  const yearlyChartData = useMemo(() => {
+    if (!historicalPrices.length) return [];
+    
+    // Average apartment size in sqm for estimating price/sqm where missing
+    const AVG_APARTMENT_SIZE = 90;
+    
+    return historicalPrices
+      .filter(p => p.average_price || p.average_price_sqm)
+      .sort((a, b) => a.year - b.year)
+      .map(p => ({
+        name: String(p.year),
+        [cityName]: p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE),
+        isEstimated: !p.average_price_sqm,
+      }));
+  }, [historicalPrices, cityName]);
+
   const filteredData = useMemo(() => {
-    if (period === '6m') return chartData.slice(-6);
-    if (period === '1y') return chartData.slice(-12);
-    return chartData;
-  }, [chartData, period]);
+    if (period === 'all') {
+      // Use yearly historical data for "All Time" view
+      return yearlyChartData;
+    }
+    // Use monthly data for short-term views
+    if (period === '6m') return monthlyChartData.slice(-6);
+    return monthlyChartData.slice(-12); // 1y
+  }, [monthlyChartData, yearlyChartData, period]);
 
   // Calculate 10-year growth (for current city only)
   const growthMetrics = useMemo(() => {
