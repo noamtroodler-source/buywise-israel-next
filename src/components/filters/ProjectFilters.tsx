@@ -10,6 +10,7 @@ import { useDevelopers } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link } from 'react-router-dom';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 export interface ProjectFiltersType {
   city?: string;
@@ -69,6 +70,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   
   const { data: cities } = useCities();
   const { data: developers } = useDevelopers();
+  const { currency, exchangeRate } = usePreferences();
 
   const filteredDevelopers = developers?.filter(dev => 
     dev.name.toLowerCase().includes(developerSearch.toLowerCase())
@@ -373,11 +375,11 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               maxValue={filters.max_price}
               onMinChange={(val) => updateFilter('min_price', val)}
               onMaxChange={(val) => updateFilter('max_price', val)}
-              sliderMin={0}
-              sliderMax={15000000}
-              step={100000}
-              currency="₪"
-              maxLabel="₪15M+"
+              baseMin={0}
+              baseMax={15000000}
+              baseStep={100000}
+              currency={currency}
+              exchangeRate={exchangeRate}
             />
 
             <Link 

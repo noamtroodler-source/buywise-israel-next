@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
@@ -107,6 +108,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const { data: neighborhoods } = useNeighborhoods(filters.city);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { currency, exchangeRate } = usePreferences();
   
   // Check if lot size filter should be shown (for house-type properties)
   const showLotSizeFilter = useMemo(() => {
@@ -440,11 +442,11 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 maxValue={filters.max_price}
                 onMinChange={(val) => updateFilter('min_price', val)}
                 onMaxChange={(val) => updateFilter('max_price', val)}
-                sliderMin={0}
-                sliderMax={listingType === 'for_rent' ? 30000 : 10000000}
-                step={listingType === 'for_rent' ? 500 : 50000}
-                currency="₪"
-                maxLabel={listingType === 'for_rent' ? '₪30K+' : '₪10M+'}
+                baseMin={0}
+                baseMax={listingType === 'for_rent' ? 30000 : 10000000}
+                baseStep={listingType === 'for_rent' ? 500 : 50000}
+                currency={currency}
+                exchangeRate={exchangeRate}
               />
 
               <Link 
