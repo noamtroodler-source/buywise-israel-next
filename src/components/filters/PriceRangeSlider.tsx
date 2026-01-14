@@ -76,7 +76,7 @@ export function PriceRangeSlider({
           <span>{defaultMaxLabel}</span>
         </div>
         <SliderPrimitive.Root
-          className="relative flex w-full touch-none select-none items-center"
+          className="relative flex w-full touch-none select-none items-center h-5"
           value={sliderValues}
           onValueChange={handleSliderChange}
           min={sliderMin}
@@ -88,10 +88,12 @@ export function PriceRangeSlider({
             <SliderPrimitive.Range className="absolute h-full bg-primary" />
           </SliderPrimitive.Track>
           <SliderPrimitive.Thumb 
-            className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing" 
+            className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing hover:border-primary/80 hover:scale-110 z-10 focus:z-20" 
+            aria-label="Minimum price"
           />
           <SliderPrimitive.Thumb 
-            className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing" 
+            className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing hover:border-primary/80 hover:scale-110 z-10 focus:z-20" 
+            aria-label="Maximum price"
           />
         </SliderPrimitive.Root>
       </div>
