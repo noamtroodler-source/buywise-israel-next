@@ -24,7 +24,15 @@ export function useHistoricalPrices(citySlug: string, years?: number) {
   return useQuery({
     queryKey: ['historical-prices', citySlug, years],
     queryFn: async () => {
-      const cityName = slugToCityName(citySlug);
+      // First, get the canonical city name from the cities table
+      const { data: cityData, error: cityError } = await supabase
+        .from('cities')
+        .select('name')
+        .eq('slug', citySlug)
+        .single();
+
+      // Use canonical name from DB, fallback to slug conversion
+      const cityName = cityData?.name || slugToCityName(citySlug);
 
       let query = supabase
         .from('historical_prices')
