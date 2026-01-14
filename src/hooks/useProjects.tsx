@@ -1,6 +1,50 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Developer, Project, ProjectUnit } from '@/types/projects';
+import { ProjectFiltersType } from '@/components/filters/ProjectFilters';
+
+/**
+ * Lightweight hook that only fetches the count of matching projects
+ * Used for "Show X results" in filter Apply buttons
+ */
+export function useProjectCount(filters?: ProjectFiltersType) {
+  return useQuery({
+    queryKey: ['projects', 'count', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true);
+
+      if (filters?.city) {
+        query = query.eq('city', filters.city);
+      }
+      if (filters?.status) {
+        query = query.eq('status', filters.status as any);
+      }
+      if (filters?.min_price) {
+        query = query.gte('price_from', filters.min_price);
+      }
+      if (filters?.max_price) {
+        query = query.lte('price_from', filters.max_price);
+      }
+      if (filters?.completion_year) {
+        // Filter projects completing in a specific year
+        const startOfYear = `${filters.completion_year}-01-01`;
+        const endOfYear = `${filters.completion_year}-12-31`;
+        query = query.gte('completion_date', startOfYear).lte('completion_date', endOfYear);
+      }
+      if (filters?.developer_id) {
+        query = query.eq('developer_id', filters.developer_id);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 10000, // Cache for 10s to avoid excessive queries
+  });
+}
 
 export function useDevelopers() {
   return useQuery({

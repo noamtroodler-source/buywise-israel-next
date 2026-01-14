@@ -11,6 +11,7 @@ import { CompareBar } from '@/components/property/CompareBar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen } from 'lucide-react';
+import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,14 +59,15 @@ export default function Listings() {
     }
   }, [listingStatus]);
 
-  const { data: properties, isLoading } = useProperties(filters);
+  // Extract isFetching for loading overlay during filter changes
+  const { data: properties, isLoading, isFetching } = useProperties(filters);
 
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
     setFilters(updatedFilters);
     
-    // Update URL params
+    // Update URL params - use replace: true to preserve scroll position
     const params = new URLSearchParams();
     params.set('status', urlStatus);
     if (updatedFilters.city) params.set('city', updatedFilters.city);
@@ -74,13 +76,13 @@ export default function Listings() {
     if (updatedFilters.max_price) params.set('max_price', String(updatedFilters.max_price));
     if (updatedFilters.min_rooms) params.set('min_rooms', String(updatedFilters.min_rooms));
     if (updatedFilters.sort_by) params.set('sort', updatedFilters.sort_by);
-    setSearchParams(params);
+    setSearchParams(params, { replace: true });
   };
 
   const handleSoldToggle = (showSold: boolean) => {
     const params = new URLSearchParams(searchParams);
     params.set('status', showSold ? 'sold' : 'for_sale');
-    setSearchParams(params);
+    setSearchParams(params, { replace: true });
   };
 
   const getPageContent = () => {
@@ -153,15 +155,17 @@ export default function Listings() {
           </p>
         )}
 
-        {/* Property Grid */}
+        {/* Property Grid with loading overlay */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded-xl" />)}
           </div>
         ) : properties && properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
-          </div>
+          <ListingsGrid isFetching={isFetching && !isLoading}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
+            </div>
+          </ListingsGrid>
         ) : (
           <div className="text-center py-16 max-w-lg mx-auto">
             {/* Icon */}

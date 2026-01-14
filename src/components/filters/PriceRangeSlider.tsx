@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import { Input } from "@/components/ui/input";
 interface PriceRangeSliderProps {
@@ -111,16 +112,35 @@ export function PriceRangeSlider({
   const displayMinValue = toDisplayValue(minValue);
   const displayMaxValue = toDisplayValue(maxValue);
   
+  // Local state for immediate visual feedback during slider drag
+  const [localSliderValues, setLocalSliderValues] = useState<[number, number] | null>(null);
+  
+  // Debounce timer ref
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // Clamp values for slider (prevent weird states)
   const safeDisplayMin = displayMinValue ?? displayMin;
   const safeDisplayMax = displayMaxValue ?? displayMax;
   
-  const sliderValues: [number, number] = [
+  // Use local values during drag, otherwise use prop values
+  const sliderValues: [number, number] = localSliderValues ?? [
     Math.min(safeDisplayMin, safeDisplayMax),
     Math.max(safeDisplayMin, safeDisplayMax)
   ];
+  
+  // Sync local state when props change (but not during drag)
+  useEffect(() => {
+    if (!localSliderValues) return;
+    // If props match local, clear local state
+    if (
+      toDisplayValue(minValue) === localSliderValues[0] &&
+      toDisplayValue(maxValue) === localSliderValues[1]
+    ) {
+      setLocalSliderValues(null);
+    }
+  }, [minValue, maxValue]);
 
-  const emitRange = React.useCallback(
+  const emitRange = useCallback(
     (nextMin: number | undefined, nextMax: number | undefined) => {
       if (onRangeChange) {
         onRangeChange(nextMin, nextMax);
@@ -132,11 +152,39 @@ export function PriceRangeSlider({
     [onRangeChange, onMinChange, onMaxChange]
   );
 
+  // Debounced emit for slider - updates after 400ms of no movement
+  const debouncedEmit = useCallback(
+    (nextMinBase: number | undefined, nextMaxBase: number | undefined) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        emitRange(nextMinBase, nextMaxBase);
+        debounceTimerRef.current = null;
+      }, 400);
+    },
+    [emitRange]
+  );
+  
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleSliderChange = (values: number[]) => {
+    // Update local state immediately for visual feedback
+    setLocalSliderValues([values[0], values[1]]);
+    
     // Convert display values back to base (ILS) for storage
     const newMinBase = values[0] === displayMin ? undefined : toBaseValue(values[0]);
     const newMaxBase = values[1] === displayMax ? undefined : toBaseValue(values[1]);
-    emitRange(newMinBase, newMaxBase);
+    
+    // Debounced emit to parent - updates results after 400ms pause
+    debouncedEmit(newMinBase, newMaxBase);
   };
   
   const handleMinInputChange = (displayValue: number | undefined) => {

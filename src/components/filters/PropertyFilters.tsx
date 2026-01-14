@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
 import { useNeighborhoods } from '@/hooks/useNeighborhoods';
+import { usePropertyCount } from '@/hooks/useProperties';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
@@ -109,6 +110,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const { user } = useAuth();
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
+  
+  // Dynamic count for Apply buttons - shows preview of matching results
+  const { data: previewCount, isFetching: countLoading } = usePropertyCount(filters);
   
   // Check if lot size filter should be shown (for house-type properties)
   const showLotSizeFilter = useMemo(() => {
@@ -402,7 +406,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   setNeighborhoodSearch('');
                 }}
               >
-                Apply
+                {countLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
               </Button>
             </div>
           </PopoverContent>
@@ -575,7 +582,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   className="w-full"
                   onClick={() => setBedsAndBathsOpen(false)}
                 >
-                  Apply
+                  {countLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
                 </Button>
               </div>
             </div>
@@ -1059,7 +1069,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               className="flex-1 rounded-full bg-primary"
               onClick={() => setMoreFiltersOpen(false)}
             >
-              Apply Filters
+              {countLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply Filters'}
             </Button>
           </div>
         </SheetContent>
