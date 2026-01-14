@@ -100,20 +100,20 @@ export function PropertyValueSnapshot({
           {rentalComparisonPercent !== null && (
             <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                {rentalComparisonPercent > 0 ? (
-                  <TrendingUp className="h-4 w-4 text-orange-500" />
-                ) : rentalComparisonPercent < 0 ? (
-                  <TrendingDown className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Minus className="h-4 w-4" />
-                )}
+              {rentalComparisonPercent > 0 ? (
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              ) : rentalComparisonPercent < 0 ? (
+                <TrendingDown className="h-4 w-4 text-primary" />
+              ) : (
+                <Minus className="h-4 w-4" />
+              )}
                 <span className="text-sm">vs Market Rate</span>
               </div>
               <p className={`text-2xl font-bold ${
                 rentalComparisonPercent > 0 
-                  ? 'text-orange-500' 
+                  ? 'text-muted-foreground' 
                   : rentalComparisonPercent < 0 
-                    ? 'text-green-500' 
+                    ? 'text-primary' 
                     : 'text-foreground'
               }`}>
                 {rentalComparisonPercent > 0 ? '+' : ''}{rentalComparisonPercent}%
@@ -185,9 +185,9 @@ export function PropertyValueSnapshot({
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {purchaseComparisonPercent > 0 ? (
-                <TrendingUp className="h-4 w-4 text-orange-500" />
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
               ) : purchaseComparisonPercent < 0 ? (
-                <TrendingDown className="h-4 w-4 text-green-500" />
+                <TrendingDown className="h-4 w-4 text-primary" />
               ) : (
                 <Minus className="h-4 w-4" />
               )}
@@ -195,9 +195,9 @@ export function PropertyValueSnapshot({
             </div>
             <p className={`text-2xl font-bold ${
               purchaseComparisonPercent > 0 
-                ? 'text-orange-500' 
+                ? 'text-muted-foreground' 
                 : purchaseComparisonPercent < 0 
-                  ? 'text-green-500' 
+                  ? 'text-primary' 
                   : 'text-foreground'
             }`}>
               {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
@@ -217,9 +217,9 @@ export function PropertyValueSnapshot({
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {priceChange > 0 ? (
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                <TrendingUp className="h-4 w-4 text-primary" />
               ) : priceChange < 0 ? (
-                <TrendingDown className="h-4 w-4 text-red-500" />
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <Minus className="h-4 w-4" />
               )}
@@ -227,9 +227,9 @@ export function PropertyValueSnapshot({
             </div>
             <p className={`text-2xl font-bold ${
               priceChange > 0 
-                ? 'text-green-500' 
+                ? 'text-primary' 
                 : priceChange < 0 
-                  ? 'text-red-500' 
+                  ? 'text-muted-foreground' 
                   : 'text-foreground'
             }`}>
               {priceChange > 0 ? '+' : ''}{priceChange}%

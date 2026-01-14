@@ -93,7 +93,7 @@ export function InlineSourceBadge({
 
   const content = (
     <span className={baseStyles}>
-      <ShieldCheck className="h-3.5 w-3.5 text-green-600 shrink-0" />
+      <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
       <span>
         {displaySources}{hasMoreSources && ' +'}
         {formattedDate && <span className="opacity-70"> · {formattedDate}</span>}
@@ -110,7 +110,7 @@ export function InlineSourceBadge({
         <TooltipContent className="max-w-xs p-3" side="bottom">
           <div className="space-y-2">
             <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-              <ShieldCheck className="h-4 w-4 text-green-600" />
+              <ShieldCheck className="h-4 w-4 text-primary" />
               Verified Data Sources
             </div>
             <div className="space-y-1.5">
@@ -159,7 +159,7 @@ export function VerificationBadge({
             'inline-flex items-center gap-1 text-xs text-muted-foreground cursor-help',
             className
           )}>
-            <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             <span className="hidden sm:inline">Verified{formattedDate && ` ${formattedDate}`}</span>
           </span>
         </TooltipTrigger>

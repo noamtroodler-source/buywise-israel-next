@@ -182,12 +182,12 @@ export function TotalCostCalculator() {
                   max={new Date().getFullYear()}
                 />
                 {isOlehEligible && (
-                  <Badge variant="secondary" className="text-green-700 bg-green-100">
+                  <Badge variant="secondary" className="text-primary bg-primary/10">
                     ✓ Eligible for Oleh tax benefits ({7 - (new Date().getFullYear() - aliyahYear!)} years remaining)
                   </Badge>
                 )}
                 {aliyahYear && !isOlehEligible && (
-                  <Badge variant="secondary" className="text-amber-700 bg-amber-100">
+                  <Badge variant="secondary" className="text-muted-foreground bg-muted">
                     ⚠ 7-year benefit period expired
                   </Badge>
                 )}
@@ -250,9 +250,9 @@ export function TotalCostCalculator() {
                   max={48}
                   step={3}
                 />
-                <Alert variant="default" className="bg-amber-50 border-amber-200">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-800 text-xs">
+                <Alert variant="default" className="bg-primary/5 border-primary/20">
+                  <AlertTriangle className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-primary text-xs">
                     <strong>Building Index Warning (מדד תשומות הבנייה):</strong> Final price may increase ~{((calculations.indexLinkage.annualRate) * (constructionMonths / 12) * 100).toFixed(1)}% 
                     ({formatCurrency(calculations.indexLinkage.linkageAmount)}) due to construction cost indexation.
                   </AlertDescription>
@@ -329,8 +329,8 @@ export function TotalCostCalculator() {
 
             {/* Tax Savings */}
             {taxResult.savings && taxResult.savings.vsInvestor > 0 && buyerType !== 'investor' && (
-              <Alert className="bg-green-50 border-green-200">
-                <AlertDescription className="text-green-800 text-sm">
+              <Alert className="bg-primary/5 border-primary/20">
+                <AlertDescription className="text-primary text-sm">
                   <strong>You save:</strong> {formatCurrency(taxResult.savings.vsInvestor)} vs. investor rates
                 </AlertDescription>
               </Alert>
@@ -396,7 +396,7 @@ export function TotalCostCalculator() {
                       <span className="font-medium">{formatCurrency(calculations.bankGuarantee)}</span>
                     </div>
                     {calculations.indexLinkage.linkageAmount > 0 && (
-                      <div className="flex justify-between text-amber-700">
+                      <div className="flex justify-between text-primary">
                         <span>Est. Index Linkage (הצמדה למדד):</span>
                         <span className="font-medium">{formatCurrency(calculations.indexLinkage.linkageAmount)}</span>
                       </div>

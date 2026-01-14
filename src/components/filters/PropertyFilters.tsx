@@ -228,7 +228,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
   // Filter button base styles
   const filterButtonBase = "h-11 gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all";
-  const filterButtonActive = "bg-amber-100 border-amber-300 text-foreground";
+  const filterButtonActive = "bg-primary text-primary-foreground border-primary";
 
   return (
     <TooltipProvider>
@@ -316,7 +316,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                       className={cn(
                         "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
                         filters.city === city.name 
-                          ? "bg-amber-400 text-foreground font-medium" 
+                          ? "bg-primary text-primary-foreground font-medium" 
                           : "hover:bg-muted"
                       )}
                       onClick={() => {

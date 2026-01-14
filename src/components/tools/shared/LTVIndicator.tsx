@@ -19,9 +19,9 @@ export function LTVIndicator({ ltv, maxLTV, className }: LTVIndicatorProps) {
   const status = getStatus();
 
   const variantStyles = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning-foreground border-warning/20',
-    danger: 'bg-destructive/10 text-destructive border-destructive/20',
+    success: 'bg-primary/10 text-primary border-primary/20',
+    warning: 'bg-muted text-muted-foreground border-border',
+    danger: 'bg-muted text-foreground border-border',
   };
 
   return (
@@ -35,9 +35,9 @@ export function LTVIndicator({ ltv, maxLTV, className }: LTVIndicatorProps) {
           <div 
             className={cn(
               "h-full rounded-full transition-all",
-              status.variant === 'success' && "bg-success",
-              status.variant === 'warning' && "bg-warning",
-              status.variant === 'danger' && "bg-destructive"
+              status.variant === 'success' && "bg-primary",
+              status.variant === 'warning' && "bg-primary/60",
+              status.variant === 'danger' && "bg-muted-foreground"
             )}
             style={{ width: `${Math.min(ltv / maxLTV * 100, 100)}%` }}
           />

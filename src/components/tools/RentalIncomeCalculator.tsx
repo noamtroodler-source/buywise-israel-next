@@ -251,9 +251,9 @@ export function RentalIncomeCalculator() {
 
             {/* Break-even Alert */}
             {monthlyRent <= TAX_FREE_THRESHOLD && (
-              <Alert className="bg-green-50 border-green-200">
-                <Check className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
+              <Alert className="bg-primary/5 border-primary/20">
+                <Check className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-primary">
                   Your rent is below the ₪{TAX_FREE_THRESHOLD.toLocaleString()} exemption threshold. 
                   <strong> You pay ₪0 in tax!</strong>
                 </AlertDescription>
@@ -261,9 +261,9 @@ export function RentalIncomeCalculator() {
             )}
 
             {monthlyRent > TAX_FREE_THRESHOLD && (
-              <Alert variant="default" className="bg-amber-50 border-amber-200">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-800">
+              <Alert variant="default" className="bg-muted border-border">
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                <AlertDescription className="text-muted-foreground">
                   You're {formatCurrency(calculations.aboveExemption)} above the tax-free threshold. 
                   Consider the 10% flat tax method.
                 </AlertDescription>
@@ -296,7 +296,7 @@ export function RentalIncomeCalculator() {
                           {formatCurrency(method.tax)}/yr
                         </span>
                         {!isBest && savings > 0 && (
-                          <span className="text-xs text-red-600 ml-2">
+                          <span className="text-xs text-muted-foreground ml-2">
                             +{formatCurrency(savings)}
                           </span>
                         )}
@@ -359,14 +359,14 @@ export function RentalIncomeCalculator() {
                   <span>Gross Rental Income:</span>
                   <span className="font-medium">{formatCurrency(calculations.annualRent)}</span>
                 </div>
-                <div className="flex justify-between text-red-600">
+                <div className="flex justify-between text-muted-foreground">
                   <span>- Tax ({calculations.bestMethod.name}):</span>
                   <span>-{formatCurrency(calculations.bestMethod.tax)}</span>
                 </div>
                 <hr className="my-1" />
                 <div className="flex justify-between font-semibold">
                   <span>Net After Tax:</span>
-                  <span className="text-green-600">{formatCurrency(calculations.annualRent - calculations.bestMethod.tax)}</span>
+                  <span className="text-primary">{formatCurrency(calculations.annualRent - calculations.bestMethod.tax)}</span>
                 </div>
               </div>
             </div>
