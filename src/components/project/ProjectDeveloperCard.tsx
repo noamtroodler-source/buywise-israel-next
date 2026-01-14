@@ -36,7 +36,7 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">{developer.name}</h3>
               {developer.is_verified && (
-                <Badge variant="secondary" className="gap-1 text-xs bg-green-50 text-green-700 border-green-200">
+                <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                   <CheckCircle className="h-3 w-3" />
                   Verified
                 </Badge>

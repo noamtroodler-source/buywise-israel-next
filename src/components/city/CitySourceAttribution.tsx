@@ -48,8 +48,8 @@ export function CitySourceAttribution({ sources, lastVerified, className }: City
           <CardContent className="py-5">
             {/* Header with verification badge */}
             <div className="flex items-center gap-2 text-sm text-foreground mb-4">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
               </div>
               <span className="font-medium">Data verified from official sources</span>
               {formattedDate && (

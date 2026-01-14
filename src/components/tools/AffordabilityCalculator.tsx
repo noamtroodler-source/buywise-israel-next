@@ -396,19 +396,19 @@ function AffordabilityCalculatorContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Affordability Score</span><span className={cn("font-medium", calculations.affordabilityScore >= 80 ? "text-green-600" : calculations.affordabilityScore >= 60 ? "text-yellow-600" : "text-red-600")}>{calculations.affordabilityScore >= 80 ? 'Comfortable' : calculations.affordabilityScore >= 60 ? 'Stretched' : 'At Limit'}</span></div>
-                <Progress value={calculations.affordabilityScore} className={cn("h-2", calculations.affordabilityScore >= 80 ? "[&>div]:bg-green-500" : calculations.affordabilityScore >= 60 ? "[&>div]:bg-yellow-500" : "[&>div]:bg-red-500")} />
+                <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Affordability Score</span><span className={cn("font-medium", calculations.affordabilityScore >= 80 ? "text-primary" : calculations.affordabilityScore >= 60 ? "text-muted-foreground" : "text-foreground")}>{calculations.affordabilityScore >= 80 ? 'Comfortable' : calculations.affordabilityScore >= 60 ? 'Stretched' : 'At Limit'}</span></div>
+                <Progress value={calculations.affordabilityScore} className={cn("h-2", calculations.affordabilityScore >= 80 ? "[&>div]:bg-primary" : calculations.affordabilityScore >= 60 ? "[&>div]:bg-primary/60" : "[&>div]:bg-muted-foreground")} />
               </div>
               <div className="space-y-2 pt-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Income Breakdown</p>
                 <div className="h-3 rounded-full overflow-hidden flex">
                   <div style={{ width: `${calculations.mortgagePercent}%` }} className="bg-primary" />
-                  <div style={{ width: `${calculations.debtsPercent}%` }} className="bg-destructive/60" />
+                  <div style={{ width: `${calculations.debtsPercent}%` }} className="bg-muted-foreground/40" />
                   <div style={{ width: `${calculations.remainingPercent}%` }} className="bg-muted" />
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary" />Mortgage {calculations.mortgagePercent.toFixed(0)}%</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-destructive/60" />Debts {calculations.debtsPercent.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" />Debts {calculations.debtsPercent.toFixed(0)}%</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted border border-border" />Free {calculations.remainingPercent.toFixed(0)}%</span>
                 </div>
               </div>
@@ -417,7 +417,7 @@ function AffordabilityCalculatorContent() {
                   <strong>Rate sensitivity:</strong> If rates rise 1%, your max budget drops by ~{formatPrice(Math.round(calculations.stressedReduction / 2))}
                 </p>
               </div>
-              {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20"><AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" /><p className="text-xs text-yellow-700">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20"><BadgeCheck className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" /><p className="text-xs text-blue-700">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
+              {calculations.limitingFactor === 'LTV' ? <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><AlertTriangle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your down payment limits your budget. With more cash down, you could afford a higher-priced property.</p></div> : <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20"><BadgeCheck className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><p className="text-xs text-primary">Your income is the limiting factor. Paying off existing debts would increase your buying power.</p></div>}
             </CardContent>
           </Card>
         }

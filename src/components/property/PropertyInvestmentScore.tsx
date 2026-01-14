@@ -147,20 +147,20 @@ export function PropertyInvestmentScore({
   }, [price, city, sizeSqm, bedrooms, cityData, historicalPrices]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return 'text-green-600';
-    if (score >= 5) return 'text-amber-600';
-    return 'text-red-600';
+    if (score >= 7) return 'text-primary';
+    if (score >= 5) return 'text-muted-foreground';
+    return 'text-foreground';
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 7) return 'bg-green-500';
-    if (score >= 5) return 'bg-amber-500';
-    return 'bg-red-500';
+    if (score >= 7) return 'bg-primary';
+    if (score >= 5) return 'bg-primary/50';
+    return 'bg-muted-foreground';
   };
 
   const getTrendIcon = (value: number) => {
-    if (value > 0) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (value < 0) return <TrendingDown className="h-4 w-4 text-red-600" />;
+    if (value > 0) return <TrendingUp className="h-4 w-4 text-primary" />;
+    if (value < 0) return <TrendingDown className="h-4 w-4 text-muted-foreground" />;
     return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
@@ -187,7 +187,6 @@ export function PropertyInvestmentScore({
           <div className="flex flex-col items-end gap-1">
             <Badge 
               variant={metrics.appreciationPotential === 'high' ? 'default' : 'secondary'}
-              className={metrics.appreciationPotential === 'high' ? 'bg-green-600' : ''}
             >
               {metrics.appreciationPotential.charAt(0).toUpperCase() + metrics.appreciationPotential.slice(1)} Potential
             </Badge>
@@ -277,7 +276,7 @@ export function PropertyInvestmentScore({
               <Home className="h-3.5 w-3.5" />
               <span className="text-xs">Price vs City Avg</span>
             </div>
-            <p className={`font-semibold ${metrics.priceVsCityAvg < 0 ? 'text-green-600' : metrics.priceVsCityAvg > 15 ? 'text-amber-600' : ''}`}>
+            <p className={`font-semibold ${metrics.priceVsCityAvg < 0 ? 'text-primary' : ''}`}>
               {metrics.priceVsCityAvg > 0 ? '+' : ''}{metrics.priceVsCityAvg}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
