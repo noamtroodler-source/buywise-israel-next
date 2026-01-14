@@ -20,21 +20,26 @@ function slugToCityName(slug: string): string {
     .join(' ');
 }
 
-export function useHistoricalPrices(citySlug: string, years: number = 10) {
+export function useHistoricalPrices(citySlug: string, years?: number) {
   return useQuery({
     queryKey: ['historical-prices', citySlug, years],
     queryFn: async () => {
-      const currentYear = new Date().getFullYear();
-      const startYear = currentYear - years;
       const cityName = slugToCityName(citySlug);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('historical_prices')
         .select('*')
         .eq('city', cityName)
-        .gte('year', startYear)
         .order('year', { ascending: true });
 
+      // Only filter by year if explicitly requested
+      if (years) {
+        const currentYear = new Date().getFullYear();
+        const startYear = currentYear - years;
+        query = query.gte('year', startYear);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as HistoricalPrice[];
     },
