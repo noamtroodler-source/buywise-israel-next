@@ -13,7 +13,7 @@ import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CityOpener } from '@/components/city/CityOpener';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
-import { CityAppreciationExplorer } from '@/components/city/CityAppreciationExplorer';
+
 
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
@@ -281,13 +281,6 @@ export default function CityDetail() {
           </section>
         )}
 
-        {/* 5.5 What If I Bought Here? Widget */}
-        {historicalPrices.length > 1 && (
-          <CityAppreciationExplorer 
-            cityName={city.name}
-            historicalPrices={historicalPrices}
-          />
-        )}
 
         {/* 6. Worth Watching */}
         <section id="watching">
