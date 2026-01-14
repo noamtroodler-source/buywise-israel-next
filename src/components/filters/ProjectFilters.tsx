@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCities } from '@/hooks/useCities';
@@ -350,7 +351,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Price Range</h3>
@@ -367,24 +368,17 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               )}
             </div>
             
-            <div className="flex gap-3">
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Min (₪)"
-                value={formatWithCommas(filters.min_price)}
-                onChange={(e) => updateFilter('min_price', parseCommaNumber(e.target.value))}
-                className="flex-1 rounded-lg"
-              />
-              <Input
-                type="text"
-                inputMode="numeric"
-                placeholder="Max (₪)"
-                value={formatWithCommas(filters.max_price)}
-                onChange={(e) => updateFilter('max_price', parseCommaNumber(e.target.value))}
-                className="flex-1 rounded-lg"
-              />
-            </div>
+            <PriceRangeSlider
+              minValue={filters.min_price}
+              maxValue={filters.max_price}
+              onMinChange={(val) => updateFilter('min_price', val)}
+              onMaxChange={(val) => updateFilter('max_price', val)}
+              sliderMin={0}
+              sliderMax={15000000}
+              step={100000}
+              currency="₪"
+              maxLabel="₪15M+"
+            />
 
             <Link 
               to="/tools?tool=affordability" 
