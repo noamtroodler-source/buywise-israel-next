@@ -47,9 +47,10 @@ const getNiceUsdMax = (rawUsdMax: number): number => {
   return Math.ceil(rawUsdMax / 100000) * 100000;
 };
 
-const formatWithCommas = (value: number | undefined): string => {
+const formatWithCommas = (value: number | undefined, symbol?: string): string => {
   if (value === undefined || value === null) return '';
-  return value.toLocaleString('en-US');
+  const formatted = value.toLocaleString('en-US');
+  return symbol ? `${symbol}${formatted}` : formatted;
 };
 
 const parseCommaNumber = (value: string): number | undefined => {
@@ -252,7 +253,7 @@ export function PriceRangeSlider({
             type="text"
             inputMode="numeric"
             placeholder={`Min (${symbol})`}
-            value={formatWithCommas(displayMinValue)}
+            value={formatWithCommas(displayMinValue, displayMinValue !== undefined ? symbol : undefined)}
             onChange={(e) => handleMinInputChange(parseCommaNumber(e.target.value))}
             className="rounded-lg"
           />
@@ -266,7 +267,7 @@ export function PriceRangeSlider({
             type="text"
             inputMode="numeric"
             placeholder={`Max (${symbol})`}
-            value={formatWithCommas(displayMaxValue)}
+            value={formatWithCommas(displayMaxValue, displayMaxValue !== undefined ? symbol : undefined)}
             onChange={(e) => handleMaxInputChange(parseCommaNumber(e.target.value))}
             className="rounded-lg"
           />
