@@ -10,7 +10,7 @@ import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { CompareBar } from '@/components/property/CompareBar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { History, Search, Bell, MapPin, RotateCcw, BookOpen } from 'lucide-react';
+import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
 export default function Listings() {
@@ -195,18 +195,18 @@ export default function Listings() {
                 {(filters.min_price || filters.max_price) && (
                   <li className="flex items-start gap-2">
                     <span className="text-primary flex-shrink-0">₪</span>
-                    Consider widening your price range — Israeli property prices vary significantly by neighborhood
+                    Consider widening your price range — Israeli property prices vary significantly by city
                   </li>
                 )}
                 {filters.min_rooms && (
                   <li className="flex items-start gap-2">
-                    <span className="text-primary flex-shrink-0">🏠</span>
-                    Flexible on room count? Israeli "rooms" include living areas, so 3 rooms = 2 bedrooms
+                    <Home className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                    In Israel, "rooms" include living areas — a 3-room apartment typically has 2 bedrooms
                   </li>
                 )}
                 {!filters.city && !filters.min_price && !filters.max_price && !filters.min_rooms && (
                   <li className="flex items-start gap-2">
-                    <span className="text-primary flex-shrink-0">💡</span>
+                    <Lightbulb className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
                     New listings are added regularly — create an alert to get notified
                   </li>
                 )}
@@ -228,17 +228,31 @@ export default function Listings() {
               </Button>
             </div>
 
-            {/* Explore Areas Link */}
+            {/* Explore More Links */}
             <div className="mt-8 pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground mb-3">
                 Not sure where to look?
               </p>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/areas" className="text-primary">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Explore Areas & Neighborhoods
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/areas" className="text-primary">
+                    <Compass className="h-4 w-4 mr-2" />
+                    Explore Areas
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/guides" className="text-primary">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Read Guides
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/tools" className="text-primary">
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Use Tools
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         )}
