@@ -11,9 +11,10 @@ import { useProjects } from '@/hooks/useProjects';
 import { ProjectFilters, ProjectFiltersType } from '@/components/filters/ProjectFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
 export default function Projects() {
-  const { data: projects = [], isLoading } = useProjects();
+  const { data: projects = [], isLoading, isFetching } = useProjects();
   const [filters, setFilters] = useState<ProjectFiltersType>({});
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const { user } = useAuth();
@@ -177,99 +178,101 @@ export default function Projects() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProjects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Link to={`/projects/${project.slug}`}>
-                    <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
-                      <div className="aspect-[16/10] overflow-hidden relative">
-                        <img
-                          src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
-                          alt={project.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        {project.is_featured && (
-                          <div className="absolute top-3 left-3">
-                            <Badge className="bg-accent text-accent-foreground">Featured</Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-5 space-y-3">
-                        <div className="space-y-1">
-                          <h2 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                            {project.name}
-                          </h2>
-                          {project.developer && (
-                            <p className="text-sm text-primary font-medium">
-                              by {project.developer.name}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                          <MapPin className="h-4 w-4 flex-shrink-0" />
-                          <span className="line-clamp-1">
-                            {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-                          </span>
-                        </div>
-
-                        {/* Unit Types & Completion */}
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Home className="h-4 w-4" />
-                            <span>{getUnitTypeLabel(project)} Units</span>
-                          </div>
-                          {project.completion_date && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(project.completion_date).getFullYear()}</span>
+            <ListingsGrid isFetching={isFetching && !isLoading}>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredProjects.map((project, index) => (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Link to={`/projects/${project.slug}`}>
+                      <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
+                        <div className="aspect-[16/10] overflow-hidden relative">
+                          <img
+                            src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
+                            alt={project.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {project.is_featured && (
+                            <div className="absolute top-3 left-3">
+                              <Badge className="bg-accent text-accent-foreground">Featured</Badge>
                             </div>
                           )}
                         </div>
+                        <CardContent className="p-5 space-y-3">
+                          <div className="space-y-1">
+                            <h2 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {project.name}
+                            </h2>
+                            {project.developer && (
+                              <p className="text-sm text-primary font-medium">
+                                by {project.developer.name}
+                              </p>
+                            )}
+                          </div>
 
-                        {/* Project Status Progress Bar */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              {project.status === 'planning' && 'Planning Phase'}
-                              {project.status === 'pre_sale' && 'Pre-Sale'}
-                              {project.status === 'under_construction' && 'Construction Progress'}
-                              {project.status === 'completed' && 'Ready for Move-In'}
-                            </span>
-                            <span className="font-medium text-primary">
-                              {project.status === 'planning' && 'Coming Soon'}
-                              {project.status === 'pre_sale' && 'Starting Soon'}
-                              {project.status === 'under_construction' && `${(project as any).construction_progress_percent || 0}%`}
-                              {project.status === 'completed' && '100%'}
+                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="line-clamp-1">
+                              {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
                             </span>
                           </div>
-                          <Progress 
-                            value={
-                              project.status === 'completed' ? 100 :
-                              project.status === 'under_construction' ? ((project as any).construction_progress_percent || 0) :
-                              0
-                            } 
-                            className="h-1.5" 
-                          />
-                        </div>
 
-                        <div className="pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground">Starting from</p>
-                          <p className="text-xl font-bold text-primary">
-                            {formatPrice(project.price_from)}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
+                          {/* Unit Types & Completion */}
+                          <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Home className="h-4 w-4" />
+                              <span>{getUnitTypeLabel(project)} Units</span>
+                            </div>
+                            {project.completion_date && (
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Calendar className="h-4 w-4" />
+                                <span>{new Date(project.completion_date).getFullYear()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Project Status Progress Bar */}
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">
+                                {project.status === 'planning' && 'Planning Phase'}
+                                {project.status === 'pre_sale' && 'Pre-Sale'}
+                                {project.status === 'under_construction' && 'Construction Progress'}
+                                {project.status === 'completed' && 'Ready for Move-In'}
+                              </span>
+                              <span className="font-medium text-primary">
+                                {project.status === 'planning' && 'Coming Soon'}
+                                {project.status === 'pre_sale' && 'Starting Soon'}
+                                {project.status === 'under_construction' && `${(project as any).construction_progress_percent || 0}%`}
+                                {project.status === 'completed' && '100%'}
+                              </span>
+                            </div>
+                            <Progress 
+                              value={
+                                project.status === 'completed' ? 100 :
+                                project.status === 'under_construction' ? ((project as any).construction_progress_percent || 0) :
+                                0
+                              } 
+                              className="h-1.5" 
+                            />
+                          </div>
+
+                          <div className="pt-3 border-t border-border">
+                            <p className="text-xs text-muted-foreground">Starting from</p>
+                            <p className="text-xl font-bold text-primary">
+                              {formatPrice(project.price_from)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </ListingsGrid>
           )}
         </motion.div>
 

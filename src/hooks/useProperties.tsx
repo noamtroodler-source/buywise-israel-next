@@ -2,6 +2,117 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 
+/**
+ * Lightweight hook that only fetches the count of matching properties
+ * Used for "Show X results" in filter Apply buttons
+ */
+export function usePropertyCount(filters?: PropertyFilters) {
+  return useQuery({
+    queryKey: ['properties', 'count', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_published', true);
+
+      if (filters?.city) {
+        query = query.ilike('city', `%${filters.city}%`);
+      }
+      if (filters?.neighborhoods && filters.neighborhoods.length > 0) {
+        query = query.in('neighborhood', filters.neighborhoods);
+      } else if (filters?.neighborhood) {
+        query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
+      }
+      if (filters?.property_types && filters.property_types.length > 0) {
+        query = query.in('property_type', filters.property_types as any);
+      } else if (filters?.property_type) {
+        query = query.eq('property_type', filters.property_type as any);
+      }
+      if (filters?.listing_status) {
+        query = query.eq('listing_status', filters.listing_status);
+      }
+      if (filters?.min_price) {
+        query = query.gte('price', filters.min_price);
+      }
+      if (filters?.max_price) {
+        query = query.lte('price', filters.max_price);
+      }
+      if (filters?.min_rooms) {
+        query = query.gte('bedrooms', filters.min_rooms);
+      }
+      if (filters?.max_rooms) {
+        query = query.lte('bedrooms', filters.max_rooms);
+      }
+      if (filters?.min_bathrooms) {
+        query = query.gte('bathrooms', filters.min_bathrooms);
+      }
+      if (filters?.min_size) {
+        query = query.gte('size_sqm', filters.min_size);
+      }
+      if (filters?.max_size) {
+        query = query.lte('size_sqm', filters.max_size);
+      }
+      if (filters?.min_floor !== undefined) {
+        query = query.gte('floor', filters.min_floor);
+      }
+      if (filters?.max_floor !== undefined) {
+        query = query.lte('floor', filters.max_floor);
+      }
+      if (filters?.min_lot_size) {
+        query = query.gte('lot_size_sqm', filters.min_lot_size);
+      }
+      if (filters?.max_lot_size) {
+        query = query.lte('lot_size_sqm', filters.max_lot_size);
+      }
+      if (filters?.min_year_built) {
+        query = query.gte('year_built', filters.min_year_built);
+      }
+      if (filters?.max_year_built) {
+        query = query.lte('year_built', filters.max_year_built);
+      }
+      if (filters?.max_days_listed) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - filters.max_days_listed);
+        query = query.gte('created_at', cutoffDate.toISOString());
+      }
+      if (filters?.min_parking) {
+        query = query.gte('parking', filters.min_parking);
+      }
+      if (filters?.is_furnished !== undefined) {
+        query = query.eq('is_furnished', filters.is_furnished);
+      }
+      if (filters?.is_accessible !== undefined) {
+        query = query.eq('is_accessible', filters.is_accessible);
+      }
+      if (filters?.condition && filters.condition.length > 0) {
+        query = query.in('condition', filters.condition);
+      }
+      if (filters?.features && filters.features.length > 0) {
+        query = query.contains('features', filters.features);
+      }
+      if (filters?.available_now) {
+        const today = new Date().toISOString().split('T')[0];
+        query = query.or(`entry_date.is.null,entry_date.lte.${today}`);
+      }
+      if (filters?.available_by) {
+        query = query.or(`entry_date.is.null,entry_date.lte.${filters.available_by}`);
+      }
+      if (filters?.allows_pets && filters.allows_pets.length > 0) {
+        const petFilters = [...filters.allows_pets];
+        if (!petFilters.includes('all')) {
+          petFilters.push('all');
+        }
+        query = query.in('allows_pets', petFilters);
+      }
+
+      const { count, error } = await query;
+      if (error) throw error;
+      return count ?? 0;
+    },
+    staleTime: 10000, // Cache for 10s to avoid excessive queries
+  });
+}
+
 export function useProperties(filters?: PropertyFilters) {
   return useQuery({
     queryKey: ['properties', filters],

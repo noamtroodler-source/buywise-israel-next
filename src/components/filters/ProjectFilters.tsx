@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCities } from '@/hooks/useCities';
-import { useDevelopers } from '@/hooks/useProjects';
+import { useDevelopers, useProjectCount } from '@/hooks/useProjects';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link } from 'react-router-dom';
@@ -71,6 +71,9 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   const { data: cities } = useCities();
   const { data: developers } = useDevelopers();
   const { currency, exchangeRate } = usePreferences();
+  
+  // Dynamic count for Apply buttons - shows preview of matching results
+  const { data: previewCount, isFetching: countLoading } = useProjectCount(filters);
 
   const filteredDevelopers = developers?.filter(dev => 
     dev.name.toLowerCase().includes(developerSearch.toLowerCase())
@@ -333,7 +336,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   className="w-full"
                   onClick={() => setBedsAndBathsOpen(false)}
                 >
-                  Apply
+                  {countLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
                 </Button>
               </div>
             </div>
