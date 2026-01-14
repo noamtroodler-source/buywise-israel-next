@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { MarketData } from '@/types/projects';
-import { VerificationBadge } from '@/components/shared/InlineSourceBadge';
+import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 
 interface CityQuickStatsProps {
   marketData: MarketData[];
@@ -199,9 +199,10 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
           {hasVerifiedData && (
             <>
               <div className="hidden sm:block w-px h-5 bg-border" />
-              <VerificationBadge 
-                hasVerifiedData={hasVerifiedData} 
-                lastVerified={lastVerified} 
+              <InlineSourceBadge 
+                sources={dataSources}
+                lastVerified={lastVerified}
+                variant="subtle"
               />
             </>
           )}
