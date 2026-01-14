@@ -197,8 +197,17 @@ export function PriceRangeSlider({
     emitRange(minValue, nextMaxBase);
   };
 
-  const defaultMinLabel = minLabel ?? formatShortLabel(displayMin, symbol);
-  const defaultMaxLabel = maxLabel ?? `${formatShortLabel(displayMax, symbol)}+`;
+  // Show actual selected value in labels, or base bound if no selection
+  const actualMinDisplay = sliderValues[0] > displayMin 
+    ? formatShortLabel(sliderValues[0], symbol)
+    : formatShortLabel(displayMin, symbol);
+
+  const actualMaxDisplay = sliderValues[1] < displayMax
+    ? formatShortLabel(sliderValues[1], symbol)
+    : `${formatShortLabel(displayMax, symbol)}+`;
+
+  const defaultMinLabel = minLabel ?? actualMinDisplay;
+  const defaultMaxLabel = maxLabel ?? actualMaxDisplay;
 
   return (
     <div className="space-y-4">
