@@ -335,6 +335,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                           city: city.name,
                           neighborhoods: undefined,
                         });
+                        setCityOpen(false);
                         setCitySearch('');
                       }}
                     >
