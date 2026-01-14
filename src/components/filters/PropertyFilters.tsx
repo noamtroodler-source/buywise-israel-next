@@ -533,8 +533,11 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <button 
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      updateFilter('min_rooms', undefined);
-                      updateFilter('min_bathrooms', undefined);
+                      onFiltersChange({
+                        ...filters,
+                        min_rooms: undefined,
+                        min_bathrooms: undefined
+                      });
                     }}
                   >
                     Clear
@@ -576,7 +579,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                           ? "bg-primary text-primary-foreground border-primary" 
                           : "border-border hover:bg-muted"
                       )}
-                      onClick={() => updateFilter('min_rooms', num)}
+                      onClick={() => updateFilter('min_rooms', filters.min_rooms === num ? undefined : num)}
                     >
                       {num}{num === 7 ? '+' : '+'}
                     </button>
@@ -608,7 +611,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                           ? "bg-primary text-primary-foreground border-primary" 
                           : "border-border hover:bg-muted"
                       )}
-                      onClick={() => updateFilter('min_bathrooms', num)}
+                      onClick={() => updateFilter('min_bathrooms', filters.min_bathrooms === num ? undefined : num)}
                     >
                       {num}+
                     </button>
