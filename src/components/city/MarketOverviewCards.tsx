@@ -9,12 +9,15 @@ import { MarketData } from '@/types/projects';
 import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
 import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
+import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 
 interface MarketOverviewCardsProps {
   marketData: MarketData[];
   cityName: string;
   arnonaRateSqm?: number | null;
   propertyTypes?: { name: string; value: number }[];
+  dataSources?: Record<string, string> | null;
+  lastVerified?: string | null;
 }
 
 const NATIONAL_AVG_PRICE_SQM = 32000;
@@ -24,7 +27,9 @@ export function MarketOverviewCards({
   marketData, 
   cityName, 
   arnonaRateSqm,
-  propertyTypes = []
+  propertyTypes = [],
+  dataSources,
+  lastVerified
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
   const { data: buyerProfile } = useBuyerProfile();
@@ -75,8 +80,18 @@ export function MarketOverviewCards({
       <div className="container">
         {/* Section Header */}
         <div className="mb-10">
-          <h2 className="text-2xl font-semibold text-foreground">Market Overview</h2>
-          <p className="text-muted-foreground mt-1">Key numbers to understand {cityName}'s real estate market</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground">Market Overview</h2>
+              <p className="text-muted-foreground mt-1">Key numbers to understand {cityName}'s real estate market</p>
+            </div>
+            {/* Inline Source Attribution */}
+            <InlineSourceBadge 
+              sources={dataSources} 
+              lastVerified={lastVerified}
+              variant="standard"
+            />
+          </div>
         </div>
 
         {/* 3-Card Grid */}

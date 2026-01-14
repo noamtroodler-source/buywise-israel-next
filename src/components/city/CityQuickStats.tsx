@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { MarketData } from '@/types/projects';
+import { VerificationBadge } from '@/components/shared/InlineSourceBadge';
 
 interface CityQuickStatsProps {
   marketData: MarketData[];
@@ -22,11 +23,15 @@ interface CityQuickStatsProps {
     gross_yield_percent_min?: number | null;
     gross_yield_percent_max?: number | null;
   };
+  dataSources?: Record<string, string> | null;
+  lastVerified?: string | null;
 }
 
 const NATIONAL_AVG_PRICE_SQM = 22800;
 
-export function CityQuickStats({ marketData, canonicalMetrics, cityData }: CityQuickStatsProps) {
+export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSources, lastVerified }: CityQuickStatsProps) {
+  // Determine if we have verified data
+  const hasVerifiedData = !!(dataSources && Object.keys(dataSources).length > 0);
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
   
   const latestData = marketData[0];
@@ -188,6 +193,17 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData }: CityQ
                 </SelectContent>
               </Select>
             </div>
+          )}
+
+          {/* Verification Badge - end of strip */}
+          {hasVerifiedData && (
+            <>
+              <div className="hidden sm:block w-px h-5 bg-border" />
+              <VerificationBadge 
+                hasVerifiedData={hasVerifiedData} 
+                lastVerified={lastVerified} 
+              />
+            </>
           )}
         </div>
       </div>
