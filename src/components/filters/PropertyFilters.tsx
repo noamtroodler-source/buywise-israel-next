@@ -290,12 +290,15 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Location</h3>
-                {(filters.city || filters.neighborhoods?.length) && (
+              {(filters.city || filters.neighborhoods?.length) && (
                   <button 
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      updateFilter('city', undefined);
-                      updateFilter('neighborhoods', undefined);
+                      onFiltersChange({
+                        ...filters,
+                        city: undefined,
+                        neighborhoods: undefined,
+                      });
                     }}
                   >
                     Clear
@@ -327,8 +330,11 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                           : "hover:bg-muted"
                       )}
                       onClick={() => {
-                        updateFilter('city', city.name);
-                        updateFilter('neighborhoods', undefined);
+                        onFiltersChange({
+                          ...filters,
+                          city: city.name,
+                          neighborhoods: undefined,
+                        });
                         setCitySearch('');
                       }}
                     >
