@@ -373,8 +373,9 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             <PriceRangeSlider
               minValue={filters.min_price}
               maxValue={filters.max_price}
-              onMinChange={(val) => updateFilter('min_price', val)}
-              onMaxChange={(val) => updateFilter('max_price', val)}
+              onRangeChange={(min, max) => {
+                onFiltersChange({ ...filters, min_price: min, max_price: max });
+              }}
               baseMin={0}
               baseMax={15000000}
               baseStep={100000}

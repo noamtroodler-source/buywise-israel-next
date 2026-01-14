@@ -1,13 +1,14 @@
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-
 interface PriceRangeSliderProps {
   minValue: number | undefined;
   maxValue: number | undefined;
-  onMinChange: (value: number | undefined) => void;
-  onMaxChange: (value: number | undefined) => void;
+  /** Preferred: single callback that updates both values at once (prevents stale-props overwrites) */
+  onRangeChange?: (min: number | undefined, max: number | undefined) => void;
+  /** Legacy callbacks (still supported) */
+  onMinChange?: (value: number | undefined) => void;
+  onMaxChange?: (value: number | undefined) => void;
   /** Base bounds in ILS - will be converted for display if currency is USD */
   baseMin?: number;
   baseMax?: number;
@@ -72,6 +73,7 @@ const formatShortLabel = (value: number, symbol: string): string => {
 export function PriceRangeSlider({
   minValue,
   maxValue,
+  onRangeChange,
   onMinChange,
   onMaxChange,
   baseMin = 0,
@@ -118,20 +120,33 @@ export function PriceRangeSlider({
     Math.max(safeDisplayMin, safeDisplayMax)
   ];
 
+  const emitRange = React.useCallback(
+    (nextMin: number | undefined, nextMax: number | undefined) => {
+      if (onRangeChange) {
+        onRangeChange(nextMin, nextMax);
+        return;
+      }
+      onMinChange?.(nextMin);
+      onMaxChange?.(nextMax);
+    },
+    [onRangeChange, onMinChange, onMaxChange]
+  );
+
   const handleSliderChange = (values: number[]) => {
     // Convert display values back to base (ILS) for storage
     const newMinBase = values[0] === displayMin ? undefined : toBaseValue(values[0]);
     const newMaxBase = values[1] === displayMax ? undefined : toBaseValue(values[1]);
-    onMinChange(newMinBase);
-    onMaxChange(newMaxBase);
+    emitRange(newMinBase, newMaxBase);
   };
   
   const handleMinInputChange = (displayValue: number | undefined) => {
-    onMinChange(toBaseValue(displayValue));
+    const nextMinBase = toBaseValue(displayValue);
+    emitRange(nextMinBase, maxValue);
   };
   
   const handleMaxInputChange = (displayValue: number | undefined) => {
-    onMaxChange(toBaseValue(displayValue));
+    const nextMaxBase = toBaseValue(displayValue);
+    emitRange(minValue, nextMaxBase);
   };
 
   const defaultMinLabel = minLabel ?? formatShortLabel(displayMin, symbol);
