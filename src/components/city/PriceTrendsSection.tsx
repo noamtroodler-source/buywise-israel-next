@@ -54,7 +54,7 @@ export function PriceTrendsSection({
   const earliestYear = historicalPrices.length > 0 
     ? Math.min(...historicalPrices.map(p => p.year)) 
     : new Date().getFullYear();
-  const hasLimitedHistory = historicalPrices.length < 4;
+  const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
   
   // Default to '1y', but ensure we don't default to 'all' if limited history
   const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
