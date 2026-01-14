@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import type { MarketData } from '@/types/projects';
 import { CanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
+import { HistoricalPrice, calculateCAGR, useHistoricalPriceComparison } from '@/hooks/useHistoricalPrices';
 import { CityComparisonSelector } from './CityComparisonSelector';
 import { CityAppreciationExplorer } from './CityAppreciationExplorer';
 import { useCities } from '@/hooks/useCities';
@@ -32,10 +32,11 @@ interface PriceTrendsSectionProps {
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const NATIONAL_AVG_YIELD = 2.8;
 
+// Brand colors: Primary blue at different lightness levels only
 const LINE_COLORS = [
-  'hsl(var(--primary))',
-  'hsl(38, 92%, 50%)', // amber
-  'hsl(160, 84%, 39%)', // emerald
+  'hsl(var(--primary))',        // Primary city: full primary blue
+  'hsl(213, 94%, 55%)',         // 2nd city: lighter blue
+  'hsl(213, 94%, 68%)',         // 3rd city: even lighter blue
 ];
 
 export function PriceTrendsSection({ 
@@ -52,6 +53,7 @@ export function PriceTrendsSection({
 
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
+  const { data: historicalComparisonData = [] } = useHistoricalPriceComparison(selectedCities);
 
   const availableCities = useMemo(() => {
     return allCities.map((c) => ({ name: c.name, slug: c.slug }));
@@ -99,20 +101,35 @@ export function PriceTrendsSection({
 
   // Process yearly chart data for "All Time" view using historical_prices
   const yearlyChartData = useMemo(() => {
-    if (!historicalPrices.length) return [];
+    // Use comparison data if multiple cities selected, otherwise use prop data
+    const dataSource = selectedCities.length > 1 ? historicalComparisonData : historicalPrices;
+    
+    if (!dataSource.length) return [];
     
     // Average apartment size in sqm for estimating price/sqm where missing
     const AVG_APARTMENT_SIZE = 90;
     
-    return historicalPrices
-      .filter(p => p.average_price || p.average_price_sqm)
-      .sort((a, b) => a.year - b.year)
-      .map(p => ({
-        name: String(p.year),
-        [cityName]: p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE),
-        isEstimated: !p.average_price_sqm,
+    // Group by year and merge city data
+    const yearMap = new Map<number, Record<string, number>>();
+    
+    dataSource.forEach(p => {
+      if (!p.average_price && !p.average_price_sqm) return;
+      
+      const pricePerSqm = p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE);
+      if (pricePerSqm <= 0) return;
+      
+      const existing = yearMap.get(p.year) || {};
+      existing[p.city] = pricePerSqm;
+      yearMap.set(p.year, existing);
+    });
+    
+    return Array.from(yearMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([year, values]) => ({
+        name: String(year),
+        ...values,
       }));
-  }, [historicalPrices, cityName]);
+  }, [historicalPrices, historicalComparisonData, selectedCities]);
 
   const filteredData = useMemo(() => {
     if (period === 'all') {
