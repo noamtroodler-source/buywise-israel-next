@@ -32,11 +32,11 @@ interface PriceTrendsSectionProps {
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const NATIONAL_AVG_YIELD = 2.8;
 
-// Brand colors: Primary blue at different lightness levels only
+// Brand colors: Distinct hues in cool-tone family for clear chart differentiation
 const LINE_COLORS = [
-  'hsl(var(--primary))',        // Primary city: full primary blue
-  'hsl(213, 94%, 55%)',         // 2nd city: lighter blue
-  'hsl(213, 94%, 68%)',         // 3rd city: even lighter blue
+  'hsl(var(--primary))',        // Primary city: brand blue
+  'hsl(190, 80%, 42%)',         // 2nd city: teal/cyan
+  'hsl(258, 55%, 52%)',         // 3rd city: indigo/purple
 ];
 
 export function PriceTrendsSection({ 

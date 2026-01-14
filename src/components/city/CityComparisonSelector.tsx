@@ -29,11 +29,11 @@ interface CityComparisonSelectorProps {
   availableCities: City[];
 }
 
-// Brand colors: Primary blue at different opacities only
+// Brand colors: Distinct hues in cool-tone family for clear differentiation
 const CITY_COLORS = [
-  { bg: 'bg-primary/20', text: 'text-primary', border: 'border-primary/30' },
-  { bg: 'bg-primary/15', text: 'text-primary/80', border: 'border-primary/25' },
-  { bg: 'bg-primary/10', text: 'text-primary/60', border: 'border-primary/20' },
+  { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/30', dot: 'bg-primary' },
+  { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-300', dot: 'bg-teal-500' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-300', dot: 'bg-indigo-500' },
 ];
 
 export function CityComparisonSelector({
@@ -97,7 +97,7 @@ export function CityComparisonSelector({
           >
             <span className={cn(
               'w-2 h-2 rounded-full mr-2',
-              index === 0 ? 'bg-primary' : index === 1 ? 'bg-primary/70' : 'bg-primary/50'
+              colorClass.dot
             )} />
             {city}
             {!isCurrentCity && (
