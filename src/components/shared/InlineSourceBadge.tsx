@@ -2,12 +2,30 @@ import { ShieldCheck, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+// Support both flat string and nested {date, source} formats
+type SourceValue = string | { date?: string; source?: string };
+
 interface InlineSourceBadgeProps {
-  sources?: Record<string, string> | null;
+  sources?: Record<string, SourceValue> | null;
   lastVerified?: string | null;
   variant?: 'subtle' | 'standard' | 'compact';
   className?: string;
 }
+
+// Extract the source string from either format
+const getSourceString = (value: SourceValue): string => {
+  if (typeof value === 'string') return value;
+  return value?.source || '';
+};
+
+// Format source value for display (includes date if available)
+const formatSourceDisplay = (value: SourceValue): string => {
+  if (typeof value === 'string') return value;
+  const parts: string[] = [];
+  if (value?.source) parts.push(value.source);
+  if (value?.date) parts.push(`(${value.date})`);
+  return parts.join(' ') || '';
+};
 
 /**
  * Compact inline source attribution badge for displaying at data points.
@@ -50,14 +68,19 @@ export function InlineSourceBadge({
     return words[0]?.substring(0, 10) || source;
   };
 
-  const uniqueSources = [...new Set(Object.values(sources).map(abbreviateSource))];
+  const uniqueSources = [...new Set(
+    Object.values(sources)
+      .map(v => getSourceString(v))
+      .filter(Boolean)
+      .map(abbreviateSource)
+  )];
   const displaySources = uniqueSources.slice(0, 3).join(', ');
   const hasMoreSources = uniqueSources.length > 3;
 
   // Full source details for tooltip
   const fullSourceList = Object.entries(sources).map(([key, value]) => ({
     label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    value,
+    value: formatSourceDisplay(value),
   }));
 
   const baseStyles = cn(

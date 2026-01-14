@@ -4,11 +4,23 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 
+// Support both flat string and nested {date, source} formats
+type SourceValue = string | { date?: string; source?: string };
+
 interface CitySourceAttributionProps {
-  sources?: Record<string, string> | null;
+  sources?: Record<string, SourceValue> | null;
   lastVerified?: string | null;
   className?: string;
 }
+
+// Format source value for display (includes date if available)
+const formatSourceValue = (value: SourceValue): string => {
+  if (typeof value === 'string') return value;
+  const parts: string[] = [];
+  if (value?.source) parts.push(value.source);
+  if (value?.date) parts.push(`(${value.date})`);
+  return parts.join(' ') || '';
+};
 
 const SOURCE_LABELS: Record<string, string> = {
   price_data: 'Price Data',
@@ -52,7 +64,7 @@ export function CitySourceAttribution({ sources, lastVerified, className }: City
                   <span className="font-medium text-foreground/80">
                     {SOURCE_LABELS[key] || key.replace(/_/g, ' ')}:
                   </span>{' '}
-                  {value}
+                  {formatSourceValue(value)}
                 </div>
               ))}
             </div>
