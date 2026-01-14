@@ -15,10 +15,10 @@ import type { MarketData } from '@/types/projects';
 import { CanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
 import { CityComparisonSelector } from './CityComparisonSelector';
+import { CityAppreciationExplorer } from './CityAppreciationExplorer';
 import { useCities } from '@/hooks/useCities';
 import { useCityComparison } from '@/hooks/useMarketData';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
-
 interface PriceTrendsSectionProps {
   marketData: MarketData[];
   cityName: string;
@@ -301,6 +301,14 @@ export function PriceTrendsSection({
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          {/* What If Widget - Compact inline */}
+          {historicalPrices.length > 1 && (
+            <CityAppreciationExplorer 
+              cityName={cityName}
+              historicalPrices={historicalPrices}
+            />
+          )}
 
           {/* Source Attribution - below chart */}
           <div className="flex items-center justify-between flex-wrap gap-2">
