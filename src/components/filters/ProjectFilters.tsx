@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -94,6 +94,27 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       return found?.label || 'Newest First';
     }
     return 'Newest First';
+  };
+
+  // Check if any filters are active (excluding sort)
+  const hasActiveFilters = useMemo(() => {
+    return !!(
+      filters.city ||
+      filters.status ||
+      filters.min_price ||
+      filters.max_price ||
+      filters.completion_year ||
+      filters.min_rooms ||
+      filters.min_bathrooms ||
+      filters.developer_id
+    );
+  }, [filters]);
+
+  // Clear all filters except sort_by
+  const clearAllFilters = () => {
+    onFiltersChange({
+      sort_by: filters.sort_by,
+    });
   };
 
   const filterButtonBase = "h-11 gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all";
@@ -523,6 +544,19 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </div>
         </PopoverContent>
       </Popover>
+
+      {/* Clear All Filters - Only shown when filters are active */}
+      {hasActiveFilters && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+          onClick={clearAllFilters}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          <span>Clear</span>
+        </Button>
+      )}
 
       {/* Sort & Create Alert */}
       <div className="flex items-center gap-2 ml-auto">
