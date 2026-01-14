@@ -48,8 +48,16 @@ export function PriceTrendsSection({
   dataSources,
   lastVerified
 }: PriceTrendsSectionProps) {
-  const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
   const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
+  
+  // Determine if we have enough historical data for "All Time" view
+  const earliestYear = historicalPrices.length > 0 
+    ? Math.min(...historicalPrices.map(p => p.year)) 
+    : new Date().getFullYear();
+  const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
+  
+  // Default to '1y', but ensure we don't default to 'all' if limited history
+  const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
 
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
@@ -248,7 +256,9 @@ export function PriceTrendsSection({
               <TabsList className="bg-background">
                 <TabsTrigger value="6m" className="text-xs">6 Months</TabsTrigger>
                 <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
-                <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
+                {!hasLimitedHistory && (
+                  <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
+                )}
               </TabsList>
             </Tabs>
           </div>
@@ -334,6 +344,11 @@ export function PriceTrendsSection({
               lastVerified={lastVerified}
               variant="subtle"
             />
+            {hasLimitedHistory && (
+              <span className="text-xs text-muted-foreground italic">
+                Historical data available from {earliestYear}
+              </span>
+            )}
           </div>
 
           {/* Insight */}
