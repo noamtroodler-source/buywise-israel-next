@@ -20,6 +20,10 @@ export interface CanonicalMetrics {
   rental_4_room_max: number | null;
   rental_5_room_min: number | null;
   rental_5_room_max: number | null;
+  // Property mix percentages (CBS Q3-Q4 2025)
+  resale_percent: number | null;
+  new_projects_percent: number | null;
+  rentals_percent: number | null;
   source_priority: string | null;
   created_at: string;
   updated_at: string;
