@@ -9,8 +9,8 @@ export function useMarketData(city?: string) {
       let query = supabase
         .from('market_data')
         .select('*')
-        .order('year', { ascending: false })
-        .order('month', { ascending: false });
+        .order('year', { ascending: true })
+        .order('month', { ascending: true });
 
       if (city) {
         query = query.eq('city', city);
@@ -20,6 +20,7 @@ export function useMarketData(city?: string) {
       if (error) throw error;
       return data as MarketData[];
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes - ensures fresh data on page load
   });
 }
 
