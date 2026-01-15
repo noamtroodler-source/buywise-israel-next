@@ -49,9 +49,9 @@ export function CityOpener({
     }
 
     // Card 3: Community
-    const angloContext = angloPresence === 'large' 
+    const angloContext = angloPresence === 'High' 
       ? 'a strong English-speaking'
-      : angloPresence === 'medium'
+      : angloPresence === 'Medium'
         ? 'a growing English-speaking'
         : 'the local';
     

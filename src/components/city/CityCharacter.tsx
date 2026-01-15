@@ -44,11 +44,10 @@ export function CityCharacter({
   }
 
   // Add Anglo presence if significant
-  if (angloPresence && angloPresence !== 'minimal') {
+  if (angloPresence && angloPresence !== 'Low') {
     const angloDescriptions: Record<string, string> = {
-      'strong': 'Large English-speaking community',
-      'moderate': 'Growing English-speaking community',
-      'emerging': 'Small but growing Anglo presence',
+      'High': 'Large English-speaking community',
+      'Medium': 'Growing English-speaking community',
     };
     characterCards.push({
       icon: Users,
