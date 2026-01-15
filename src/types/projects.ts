@@ -78,12 +78,14 @@ export interface MarketData {
   id: string;
   city: string;
   neighborhood: string | null;
+  district: string | null;
   year: number;
-  month: number | null;
+  month: number | null; // For quarterly: 1-4, for monthly: 1-12
+  quarter: number | null; // Alias for clarity when using quarterly data
   average_price_sqm: number | null;
   median_price: number | null;
   total_transactions: number | null;
   price_change_percent: number | null;
-  data_type: string;
+  data_type: 'quarterly' | 'yearly' | 'monthly';
   created_at: string;
 }

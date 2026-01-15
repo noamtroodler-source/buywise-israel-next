@@ -1041,6 +1041,7 @@ export type Database = {
           city: string
           created_at: string
           data_type: string | null
+          district: string | null
           id: string
           median_price: number | null
           month: number | null
@@ -1054,6 +1055,7 @@ export type Database = {
           city: string
           created_at?: string
           data_type?: string | null
+          district?: string | null
           id?: string
           median_price?: number | null
           month?: number | null
@@ -1067,6 +1069,7 @@ export type Database = {
           city?: string
           created_at?: string
           data_type?: string | null
+          district?: string | null
           id?: string
           median_price?: number | null
           month?: number | null
