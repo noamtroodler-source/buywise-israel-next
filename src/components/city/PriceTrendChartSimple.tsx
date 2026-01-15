@@ -23,7 +23,7 @@ interface PriceTrendChartSimpleProps {
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function PriceTrendChartSimple({ marketData, cityName }: PriceTrendChartSimpleProps) {
-  const [period, setPeriod] = useState<"6m" | "1y" | "all">("6m");
+  const [period, setPeriod] = useState<"1y" | "5y" | "all">("1y");
   const normalizedCityName = cityName.trim();
 
   const monthly = useMemo(() => {
@@ -45,8 +45,8 @@ export function PriceTrendChartSimple({ marketData, cityName }: PriceTrendChartS
   }, [monthly]);
 
   const filteredData = useMemo(() => {
-    if (period === "6m") return chartData.slice(-6);
     if (period === "1y") return chartData.slice(-12);
+    if (period === "5y") return chartData.slice(-60);
     return chartData;
   }, [chartData, period]);
 
@@ -75,11 +75,11 @@ export function PriceTrendChartSimple({ marketData, cityName }: PriceTrendChartS
             </CardTitle>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-muted">
-                <TabsTrigger value="6m" className="text-xs">
-                  6M
-                </TabsTrigger>
                 <TabsTrigger value="1y" className="text-xs">
                   1Y
+                </TabsTrigger>
+                <TabsTrigger value="5y" className="text-xs">
+                  5Y
                 </TabsTrigger>
                 <TabsTrigger value="all" className="text-xs">
                   All
