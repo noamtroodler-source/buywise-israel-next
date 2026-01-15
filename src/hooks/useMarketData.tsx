@@ -34,7 +34,7 @@ export function useCityComparison(cities: string[]) {
         .from('market_data')
         .select('*')
         .in('city', cities)
-        .eq('data_type', 'monthly')
+        .eq('data_type', 'quarterly')
         .order('year', { ascending: true })
         .order('month', { ascending: true });
 
@@ -52,7 +52,7 @@ export function useLatestMarketData() {
       const { data, error } = await supabase
         .from('market_data')
         .select('*')
-        .eq('data_type', 'monthly')
+        .eq('data_type', 'quarterly')
         .order('year', { ascending: false })
         .order('month', { ascending: false })
         .limit(20);

@@ -29,7 +29,7 @@ interface PriceTrendsSectionProps {
   lastVerified?: string | null;
 }
 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 const NATIONAL_AVG_YIELD = 2.8;
 
 // Brand colors: Distinct hues in cool-tone family for clear chart differentiation
@@ -59,25 +59,24 @@ export function PriceTrendsSection({
   // Default to '1y'
   const [period, setPeriod] = useState<'1y' | '5y' | 'all'>('1y');
 
-  // Determine if we have enough monthly data for 5Y view (require 24+ months)
+  // Determine if we have enough quarterly data for 5Y view (require 12+ quarters = 3 years)
   const hasSufficient5YData = useMemo(() => {
-    // Need to calculate this before filtering - check total monthly points available
-    const monthlyPoints = marketData.filter(d => d.data_type === 'monthly' && d.month != null);
-    return monthlyPoints.length >= 24;
+    const quarterlyPoints = marketData.filter(d => d.data_type === 'quarterly' && d.month != null);
+    return quarterlyPoints.length >= 12;
   }, [marketData]);
 
-  // Get earliest monthly data date for transparency note
-  const earliestMonthlyDate = useMemo(() => {
-    const monthly = marketData
-      .filter(d => d.data_type === 'monthly' && d.month != null)
+  // Get earliest quarterly data date for transparency note
+  const earliestQuarterlyDate = useMemo(() => {
+    const quarterly = marketData
+      .filter(d => d.data_type === 'quarterly' && d.month != null)
       .sort((a, b) => {
         const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
         const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
         return ak.localeCompare(bk);
       });
-    if (monthly.length === 0) return null;
-    const first = monthly[0];
-    return `${months[(first.month || 1) - 1]} ${first.year}`;
+    if (quarterly.length === 0) return null;
+    const first = quarterly[0];
+    return `${quarters[(first.month || 1) - 1]} ${first.year}`;
   }, [marketData]);
 
   // Reset period if selected tab becomes unavailable
@@ -98,20 +97,20 @@ export function PriceTrendsSection({
     return allCities.map((c) => ({ name: c.name, slug: c.slug }));
   }, [allCities]);
 
-  // Process monthly chart data for short-term views (6m, 1y)
-  const monthlyChartData = useMemo(() => {
+  // Process quarterly chart data for short-term views (1y, 5y)
+  const quarterlyChartData = useMemo(() => {
     // If only one city and it's the current city, use the prop data
     if (selectedCities.length === 1 && selectedCities[0] === cityName) {
-      const monthly = marketData
-        .filter((d) => d.data_type === 'monthly' && d.month != null)
+      const quarterly = marketData
+        .filter((d) => d.data_type === 'quarterly' && d.month != null)
         .sort((a, b) => {
           const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
           const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
           return ak.localeCompare(bk);
         });
 
-      return monthly.map((d) => ({
-        name: `${months[(d.month || 1) - 1]} ${d.year}`,
+      return quarterly.map((d) => ({
+        name: `${quarters[(d.month || 1) - 1]} ${d.year}`,
         [cityName]: d.average_price_sqm || 0,
       }));
     }
@@ -130,9 +129,9 @@ export function PriceTrendsSection({
     return Array.from(dateMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, values]) => {
-        const [year, month] = key.split('-');
+        const [year, quarter] = key.split('-');
         return {
-          name: `${months[parseInt(month) - 1]} ${year}`,
+          name: `${quarters[parseInt(quarter) - 1]} ${year}`,
           ...values,
         };
       });
@@ -175,10 +174,10 @@ export function PriceTrendsSection({
       // Use yearly historical data for "All Time" view
       return yearlyChartData;
     }
-    // Use monthly data for short-term views
-    if (period === '5y') return monthlyChartData.slice(-60); // 5 years of monthly
-    return monthlyChartData.slice(-12); // 1y
-  }, [monthlyChartData, yearlyChartData, period]);
+    // Use quarterly data for short-term views
+    if (period === '5y') return quarterlyChartData.slice(-20); // 5 years = 20 quarters
+    return quarterlyChartData.slice(-4); // 1y = 4 quarters
+  }, [quarterlyChartData, yearlyChartData, period]);
 
   // Calculate 10-year growth (for current city only)
   const growthMetrics = useMemo(() => {
@@ -372,17 +371,24 @@ export function PriceTrendsSection({
 
           {/* Source Attribution - below chart */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <InlineSourceBadge 
-              sources={dataSources} 
-              lastVerified={lastVerified}
-              variant="subtle"
-            />
+            <div className="flex items-center gap-2">
+              <InlineSourceBadge 
+                sources={dataSources} 
+                lastVerified={lastVerified}
+                variant="subtle"
+              />
+              {period !== 'all' && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  CBS Quarterly District Index
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground italic">
               {hasLimitedHistory && (
                 <span>Historical data from {earliestYear}</span>
               )}
-              {!hasSufficient5YData && earliestMonthlyDate && (
-                <span>Monthly data from {earliestMonthlyDate}</span>
+              {!hasSufficient5YData && earliestQuarterlyDate && (
+                <span>Quarterly data from {earliestQuarterlyDate}</span>
               )}
             </div>
           </div>
