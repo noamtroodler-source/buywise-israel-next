@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -56,8 +56,39 @@ export function PriceTrendsSection({
     : new Date().getFullYear();
   const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
   
-  // Default to '1y', but ensure we don't default to 'all' if limited history
+  // Default to '1y'
   const [period, setPeriod] = useState<'1y' | '5y' | 'all'>('1y');
+
+  // Determine if we have enough monthly data for 5Y view (require 24+ months)
+  const hasSufficient5YData = useMemo(() => {
+    // Need to calculate this before filtering - check total monthly points available
+    const monthlyPoints = marketData.filter(d => d.data_type === 'monthly' && d.month != null);
+    return monthlyPoints.length >= 24;
+  }, [marketData]);
+
+  // Get earliest monthly data date for transparency note
+  const earliestMonthlyDate = useMemo(() => {
+    const monthly = marketData
+      .filter(d => d.data_type === 'monthly' && d.month != null)
+      .sort((a, b) => {
+        const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
+        const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
+        return ak.localeCompare(bk);
+      });
+    if (monthly.length === 0) return null;
+    const first = monthly[0];
+    return `${months[(first.month || 1) - 1]} ${first.year}`;
+  }, [marketData]);
+
+  // Reset period if selected tab becomes unavailable
+  useEffect(() => {
+    if (period === '5y' && !hasSufficient5YData) {
+      setPeriod('1y');
+    }
+    if (period === 'all' && hasLimitedHistory) {
+      setPeriod('1y');
+    }
+  }, [hasSufficient5YData, hasLimitedHistory, period]);
 
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
@@ -255,7 +286,9 @@ export function PriceTrendsSection({
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-background">
                 <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
-                <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
+                {hasSufficient5YData && (
+                  <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
+                )}
                 {!hasLimitedHistory && (
                   <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
                 )}
@@ -338,17 +371,20 @@ export function PriceTrendsSection({
           )}
 
           {/* Source Attribution - below chart */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <InlineSourceBadge 
               sources={dataSources} 
               lastVerified={lastVerified}
               variant="subtle"
             />
-            {hasLimitedHistory && (
-              <span className="text-xs text-muted-foreground italic">
-                Historical data available from {earliestYear}
-              </span>
-            )}
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground italic">
+              {hasLimitedHistory && (
+                <span>Historical data from {earliestYear}</span>
+              )}
+              {!hasSufficient5YData && earliestMonthlyDate && (
+                <span>Monthly data from {earliestMonthlyDate}</span>
+              )}
+            </div>
           </div>
 
           {/* Insight */}
