@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
-import { Eye, Train, Landmark, Building2, MapPinned, FileText, Calendar } from 'lucide-react';
+import { Eye, Train, Landmark, Building2, MapPinned, FileText, Calendar, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export interface MarketFactor {
   title: string;
   description: string;
-  icon: 'transit' | 'policy' | 'development' | 'infrastructure' | 'zoning';
+  icon: 'transit' | 'policy' | 'development' | 'infrastructure' | 'zoning' | 'community';
   timing?: string;
 }
 
@@ -14,12 +14,13 @@ interface CityWorthWatchingNewProps {
   cityName: string;
 }
 
-const iconMap = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   transit: Train,
   policy: Landmark,
   development: Building2,
   infrastructure: MapPinned,
   zoning: FileText,
+  community: Users,
 };
 
 export function CityWorthWatchingNew({ factors, cityName }: CityWorthWatchingNewProps) {
@@ -50,7 +51,7 @@ export function CityWorthWatchingNew({ factors, cityName }: CityWorthWatchingNew
           {/* Card Grid - Matches Tools page style */}
           <div className="grid md:grid-cols-3 gap-6">
             {factors.map((factor, index) => {
-              const IconComponent = iconMap[factor.icon];
+              const IconComponent = iconMap[factor.icon] || Eye;
               return (
                 <motion.div
                   key={index}
