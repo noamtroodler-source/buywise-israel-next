@@ -384,6 +384,8 @@ export type Database = {
           rental_4_room_min: number | null
           rental_5_room_max: number | null
           rental_5_room_min: number | null
+          rental_5room_max: number | null
+          rental_5room_min: number | null
           slug: string
           socioeconomic_rank: number | null
           tags: string[] | null
@@ -449,6 +451,8 @@ export type Database = {
           rental_4_room_min?: number | null
           rental_5_room_max?: number | null
           rental_5_room_min?: number | null
+          rental_5room_max?: number | null
+          rental_5room_min?: number | null
           slug: string
           socioeconomic_rank?: number | null
           tags?: string[] | null
@@ -514,6 +518,8 @@ export type Database = {
           rental_4_room_min?: number | null
           rental_5_room_max?: number | null
           rental_5_room_min?: number | null
+          rental_5room_max?: number | null
+          rental_5room_min?: number | null
           slug?: string
           socioeconomic_rank?: number | null
           tags?: string[] | null
