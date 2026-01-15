@@ -57,7 +57,7 @@ export function PriceTrendsSection({
   const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
   
   // Default to '1y', but ensure we don't default to 'all' if limited history
-  const [period, setPeriod] = useState<'6m' | '1y' | 'all'>('1y');
+  const [period, setPeriod] = useState<'1y' | '5y' | 'all'>('1y');
 
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
@@ -145,7 +145,7 @@ export function PriceTrendsSection({
       return yearlyChartData;
     }
     // Use monthly data for short-term views
-    if (period === '6m') return monthlyChartData.slice(-6);
+    if (period === '5y') return monthlyChartData.slice(-60); // 5 years of monthly
     return monthlyChartData.slice(-12); // 1y
   }, [monthlyChartData, yearlyChartData, period]);
 
@@ -254,8 +254,8 @@ export function PriceTrendsSection({
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-background">
-                <TabsTrigger value="6m" className="text-xs">6 Months</TabsTrigger>
                 <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
+                <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
                 {!hasLimitedHistory && (
                   <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
                 )}
