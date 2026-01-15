@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Eye, Clock, Bookmark, Share2, ChevronRight, Loader2, Calculator } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,10 @@ export default function BlogPost() {
 
   const headings = extractHeadings(post.content);
   const contentWithIds = addHeadingIds(post.content);
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedContent = DOMPurify.sanitize(contentWithIds, {
+    ADD_ATTR: ['id'], // Allow id attributes for anchor links
+  });
   const isSaved = isArticleSaved(post.id);
 
   return (
@@ -243,7 +248,7 @@ export default function BlogPost() {
                   prose-strong:text-foreground
                   prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground
                   prose-img:rounded-xl"
-                dangerouslySetInnerHTML={{ __html: contentWithIds }}
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             </motion.div>
 
