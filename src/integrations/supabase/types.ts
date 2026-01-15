@@ -538,6 +538,7 @@ export type Database = {
           last_verified: string | null
           median_apartment_price: number | null
           net_yield_percent: number | null
+          new_projects_percent: number | null
           rental_2_room_max: number | null
           rental_2_room_min: number | null
           rental_3_room_max: number | null
@@ -546,7 +547,9 @@ export type Database = {
           rental_4_room_min: number | null
           rental_5_room_max: number | null
           rental_5_room_min: number | null
+          rentals_percent: number | null
           report_version_key: string
+          resale_percent: number | null
           source_page_ref: string | null
           source_priority: string | null
           updated_at: string
@@ -564,6 +567,7 @@ export type Database = {
           last_verified?: string | null
           median_apartment_price?: number | null
           net_yield_percent?: number | null
+          new_projects_percent?: number | null
           rental_2_room_max?: number | null
           rental_2_room_min?: number | null
           rental_3_room_max?: number | null
@@ -572,7 +576,9 @@ export type Database = {
           rental_4_room_min?: number | null
           rental_5_room_max?: number | null
           rental_5_room_min?: number | null
+          rentals_percent?: number | null
           report_version_key: string
+          resale_percent?: number | null
           source_page_ref?: string | null
           source_priority?: string | null
           updated_at?: string
@@ -590,6 +596,7 @@ export type Database = {
           last_verified?: string | null
           median_apartment_price?: number | null
           net_yield_percent?: number | null
+          new_projects_percent?: number | null
           rental_2_room_max?: number | null
           rental_2_room_min?: number | null
           rental_3_room_max?: number | null
@@ -598,7 +605,9 @@ export type Database = {
           rental_4_room_min?: number | null
           rental_5_room_max?: number | null
           rental_5_room_min?: number | null
+          rentals_percent?: number | null
           report_version_key?: string
+          resale_percent?: number | null
           source_page_ref?: string | null
           source_priority?: string | null
           updated_at?: string

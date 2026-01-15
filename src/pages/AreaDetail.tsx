@@ -261,6 +261,11 @@ export default function CityDetail() {
             marketData={marketData}
             cityName={city.name}
             arnonaRateSqm={canonicalMetrics?.arnona_rate_sqm ?? city.arnona_rate_sqm}
+            propertyTypes={canonicalMetrics ? [
+              { name: 'Resale', value: canonicalMetrics.resale_percent || 55 },
+              { name: 'New Projects', value: canonicalMetrics.new_projects_percent || 30 },
+              { name: 'Rentals', value: canonicalMetrics.rentals_percent || 15 },
+            ] : undefined}
             dataSources={(city as any).data_sources}
             lastVerified={canonicalMetrics?.updated_at}
           />
