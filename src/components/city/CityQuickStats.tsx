@@ -79,6 +79,9 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
     if (selectedRooms === 4 && cityData?.rental_4_room_min && cityData?.rental_4_room_max) {
       return `${formatRentalPrice(cityData.rental_4_room_min)}–${formatRentalPrice(cityData.rental_4_room_max)}`;
     }
+    if (selectedRooms === 5 && cityData?.rental_5_room_min && cityData?.rental_5_room_max) {
+      return `${formatRentalPrice(cityData.rental_5_room_min)}–${formatRentalPrice(cityData.rental_5_room_max)}`;
+    }
     
     return null;
   };
