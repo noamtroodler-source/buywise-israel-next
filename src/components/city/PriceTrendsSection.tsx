@@ -56,7 +56,12 @@ export function PriceTrendsSection({
     : new Date().getFullYear();
   const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
   
-  // Default to '1y'
+  // Determine if we have quarterly data at all
+  const hasQuarterlyData = useMemo(() => {
+    return marketData.some(d => d.data_type === 'quarterly' && d.month != null);
+  }, [marketData]);
+
+  // Default to 'all' if no quarterly data, otherwise '1y'
   const [period, setPeriod] = useState<'1y' | '5y' | 'all'>('1y');
 
   // Determine if we have enough quarterly data for 5Y view (require 12+ quarters = 3 years)
@@ -79,15 +84,16 @@ export function PriceTrendsSection({
     return `${quarters[(first.month || 1) - 1]} ${first.year}`;
   }, [marketData]);
 
-  // Reset period if selected tab becomes unavailable
+  // Auto-switch to 'all' if no quarterly data available, or reset if tab becomes unavailable
   useEffect(() => {
-    if (period === '5y' && !hasSufficient5YData) {
+    if (!hasQuarterlyData && historicalPrices.length > 0) {
+      setPeriod('all');
+    } else if (period === '5y' && !hasSufficient5YData) {
+      setPeriod('1y');
+    } else if (period === 'all' && hasLimitedHistory) {
       setPeriod('1y');
     }
-    if (period === 'all' && hasLimitedHistory) {
-      setPeriod('1y');
-    }
-  }, [hasSufficient5YData, hasLimitedHistory, period]);
+  }, [hasQuarterlyData, hasSufficient5YData, hasLimitedHistory, historicalPrices.length, period]);
 
   const { data: allCities = [] } = useCities();
   const { data: comparisonData = [] } = useCityComparison(selectedCities);
@@ -262,7 +268,9 @@ export function PriceTrendsSection({
     return parts.join(' ') || `${cityName} has shown consistent market activity over the tracked period.`;
   };
 
-  if (filteredData.length === 0) return null;
+  // Only hide if we have NO data from any source
+  const hasAnyData = quarterlyChartData.length > 0 || yearlyChartData.length > 0;
+  if (!hasAnyData) return null;
 
   return (
     <section className="py-16 bg-muted/40">
@@ -284,8 +292,10 @@ export function PriceTrendsSection({
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
               <TabsList className="bg-background">
-                <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
-                {hasSufficient5YData && (
+                {hasQuarterlyData && (
+                  <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
+                )}
+                {hasQuarterlyData && hasSufficient5YData && (
                   <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
                 )}
                 {!hasLimitedHistory && (
@@ -377,9 +387,14 @@ export function PriceTrendsSection({
                 lastVerified={lastVerified}
                 variant="subtle"
               />
-              {period !== 'all' && (
+              {period !== 'all' && hasQuarterlyData && (
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                   CBS Quarterly District Index
+                </span>
+              )}
+              {!hasQuarterlyData && (
+                <span className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded">
+                  Yearly data (quarterly not available)
                 </span>
               )}
             </div>

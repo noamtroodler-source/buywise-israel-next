@@ -272,7 +272,7 @@ export default function CityDetail() {
         </section>
 
         {/* 5. Price Trends Chart */}
-        {marketData.length > 0 && (
+        {(marketData.length > 0 || historicalPrices.length > 0) && (
           <section id="trends">
             <PriceTrendsSection
               marketData={marketData}
