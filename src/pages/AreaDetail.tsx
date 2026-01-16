@@ -6,9 +6,8 @@ import { useCity } from '@/hooks/useCities';
 import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { useHistoricalPrices } from '@/hooks/useHistoricalPrices';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
-
+import { getDistrictForCity } from '@/lib/utils/districtMapping';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CityOpener } from '@/components/city/CityOpener';
@@ -140,7 +139,7 @@ export default function CityDetail() {
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
-  const { data: historicalPrices = [] } = useHistoricalPrices(slug || '');
+  const districtName = city ? getDistrictForCity(city.name) : null;
   if (cityLoading) {
     return (
       <Layout>
@@ -272,14 +271,11 @@ export default function CityDetail() {
         </section>
 
         {/* 5. Price Trends Chart */}
-        {(marketData.length > 0 || historicalPrices.length > 0) && (
+        {districtName && (
           <section id="trends">
             <PriceTrendsSection
-              marketData={marketData}
               cityName={city.name}
-              canonicalMetrics={canonicalMetrics}
-              historicalPrices={historicalPrices}
-              yoyChange={city.yoy_price_change}
+              districtName={districtName}
               dataSources={(city as any).data_sources}
               lastVerified={canonicalMetrics?.updated_at}
             />

@@ -13,7 +13,7 @@
  */
 
 export const CITY_TO_DISTRICT: Record<string, string> = {
-  // Tel Aviv District
+  // Tel Aviv District - Greater Tel Aviv metropolitan area
   'Tel Aviv': 'Tel Aviv District',
   'Ramat Gan': 'Tel Aviv District',
   'Givatayim': 'Tel Aviv District',
@@ -26,23 +26,25 @@ export const CITY_TO_DISTRICT: Record<string, string> = {
   'Herzliya': 'Tel Aviv District',
   'Givat Shmuel': 'Tel Aviv District',
   'Rosh HaAyin': 'Tel Aviv District',
-  'Shoham': 'Tel Aviv District',
   
-  // Central District
+  // Central District - Sharon region and central cities
   "Modi'in": 'Central District',
   'Netanya': 'Central District',
   'Hadera': 'Central District',
   'Pardes Hanna': 'Central District',
   'Zichron Yaakov': 'Central District',
   'Caesarea': 'Central District',
+  'Shoham': 'Central District',
   
-  // Haifa District
+  // Haifa District - Haifa metro and Carmel region
   'Haifa': 'Haifa District',
-  'Nahariya': 'Haifa District',
   'Kiryat Tivon': 'Haifa District',
-  'Yokneam': 'Haifa District',
   
-  // Jerusalem District
+  // Northern District - Galilee and northern coastal cities
+  'Nahariya': 'Northern District',
+  'Yokneam': 'Northern District',
+  
+  // Jerusalem District - Jerusalem and surrounding communities
   'Jerusalem': 'Jerusalem District',
   'Mevaseret Zion': 'Jerusalem District',
   'Givat Zeev': 'Jerusalem District',
@@ -51,7 +53,7 @@ export const CITY_TO_DISTRICT: Record<string, string> = {
   'Efrat': 'Jerusalem District',
   'Gush Etzion': 'Jerusalem District',
   
-  // Southern District
+  // Southern District - Negev and southern coastal cities
   'Beer Sheva': 'Southern District',
   'Ashkelon': 'Southern District',
   'Ashdod': 'Southern District',
@@ -62,6 +64,7 @@ export const DISTRICTS = [
   'Tel Aviv District',
   'Central District',
   'Haifa District',
+  'Northern District',
   'Jerusalem District',
   'Southern District',
 ] as const;

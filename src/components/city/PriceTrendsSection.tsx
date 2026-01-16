@@ -11,140 +11,124 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { MarketData } from '@/types/projects';
-import { CanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { HistoricalPrice } from '@/hooks/useHistoricalPrices';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { useDistrictPriceIndex } from '@/hooks/useDistrictPriceIndex';
 
 interface PriceTrendsSectionProps {
-  marketData: MarketData[];
   cityName: string;
-  canonicalMetrics?: CanonicalMetrics | null;
-  historicalPrices?: HistoricalPrice[];
-  yoyChange?: number | null;
+  districtName: string | null;
   dataSources?: Record<string, string> | null;
   lastVerified?: string | null;
 }
 
-const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-
 export function PriceTrendsSection({ 
-  marketData, 
   cityName, 
-  canonicalMetrics, 
-  historicalPrices = [],
-  yoyChange,
+  districtName,
   dataSources,
   lastVerified
 }: PriceTrendsSectionProps) {
-  // Determine if we have enough historical data for "All Time" view
-  const earliestYear = historicalPrices.length > 0 
-    ? Math.min(...historicalPrices.map(p => p.year)) 
-    : new Date().getFullYear();
-  const hasLimitedHistory = historicalPrices.length < 8 || earliestYear > 2017;
-  
-  // Determine if we have quarterly data at all
-  const hasQuarterlyData = useMemo(() => {
-    return marketData.some(d => d.data_type === 'quarterly' && d.month != null);
-  }, [marketData]);
-
-  // Default to 'all' if no quarterly data, otherwise '1y'
   const [period, setPeriod] = useState<'1y' | '5y' | 'all'>('1y');
+  
+  // Fetch district-level index data
+  const { data: districtData = [], isLoading } = useDistrictPriceIndex(districtName);
 
-  // Determine if we have enough quarterly data for 5Y view (require 12+ quarters = 3 years)
-  const hasSufficient5YData = useMemo(() => {
-    const quarterlyPoints = marketData.filter(d => d.data_type === 'quarterly' && d.month != null);
-    return quarterlyPoints.length >= 12;
-  }, [marketData]);
-
-  // Get earliest quarterly data date for transparency note
-  const earliestQuarterlyDate = useMemo(() => {
-    const quarterly = marketData
-      .filter(d => d.data_type === 'quarterly' && d.month != null)
+  // Separate quarterly and yearly data
+  const quarterlyData = useMemo(() => {
+    return districtData
+      .filter(d => d.period_type === 'quarter')
       .sort((a, b) => {
-        const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
-        const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
-        return ak.localeCompare(bk);
-      });
-    if (quarterly.length === 0) return null;
-    const first = quarterly[0];
-    return `${quarters[(first.month || 1) - 1]} ${first.year}`;
-  }, [marketData]);
+        if (a.year !== b.year) return a.year - b.year;
+        return (a.quarter || 0) - (b.quarter || 0);
+      })
+      .map(d => ({
+        name: `Q${d.quarter} ${d.year}`,
+        index: d.index_value,
+        yoy: d.yoy_change_percent,
+        qoq: d.qoq_change_percent,
+      }));
+  }, [districtData]);
 
-  // Auto-switch to 'all' if no quarterly data available, or reset if tab becomes unavailable
+  const yearlyData = useMemo(() => {
+    return districtData
+      .filter(d => d.period_type === 'year')
+      .sort((a, b) => a.year - b.year)
+      .map(d => ({
+        name: String(d.year),
+        index: d.index_value,
+        yoy: d.yoy_change_percent,
+      }));
+  }, [districtData]);
+
+  // Determine available views
+  const hasQuarterlyData = quarterlyData.length >= 4;
+  const hasSufficient5YData = quarterlyData.length >= 12;
+  const hasYearlyData = yearlyData.length >= 3;
+
+  // Auto-adjust period if current selection is unavailable
   useEffect(() => {
-    if (!hasQuarterlyData && historicalPrices.length > 0) {
+    if (period === '1y' && !hasQuarterlyData && hasYearlyData) {
       setPeriod('all');
     } else if (period === '5y' && !hasSufficient5YData) {
-      setPeriod('1y');
-    } else if (period === 'all' && hasLimitedHistory) {
+      setPeriod(hasQuarterlyData ? '1y' : 'all');
+    } else if (period === 'all' && !hasYearlyData && hasQuarterlyData) {
       setPeriod('1y');
     }
-  }, [hasQuarterlyData, hasSufficient5YData, hasLimitedHistory, historicalPrices.length, period]);
+  }, [hasQuarterlyData, hasSufficient5YData, hasYearlyData, period]);
 
-  // Process quarterly chart data for short-term views (1y, 5y) - single city only (no comparison)
-  const quarterlyChartData = useMemo(() => {
-    const quarterly = marketData
-      .filter((d) => d.data_type === 'quarterly' && d.month != null)
-      .sort((a, b) => {
-        const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
-        const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
-        return ak.localeCompare(bk);
-      });
-
-    return quarterly.map((d) => ({
-      name: `${quarters[(d.month || 1) - 1]} ${d.year}`,
-      price: d.average_price_sqm || 0,
-    }));
-  }, [marketData]);
-
-  // Process yearly chart data for "All Time" view using historical_prices - single city only
-  const yearlyChartData = useMemo(() => {
-    if (!historicalPrices.length) return [];
-    
-    // Average apartment size in sqm for estimating price/sqm where missing
-    const AVG_APARTMENT_SIZE = 90;
-    
-    return historicalPrices
-      .filter(p => p.average_price || p.average_price_sqm)
-      .map(p => {
-        const pricePerSqm = p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE);
-        return {
-          name: String(p.year),
-          price: pricePerSqm,
-        };
-      })
-      .filter(d => d.price > 0)
-      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
-  }, [historicalPrices]);
-
+  // Get filtered data based on period
   const filteredData = useMemo(() => {
     if (period === 'all') {
-      // Use yearly historical data for "All Time" view
-      return yearlyChartData;
+      return yearlyData;
     }
-    // Use quarterly data for short-term views
-    if (period === '5y') return quarterlyChartData.slice(-20); // 5 years = 20 quarters
-    return quarterlyChartData.slice(-4); // 1y = 4 quarters
-  }, [quarterlyChartData, yearlyChartData, period]);
+    if (period === '5y') {
+      return quarterlyData.slice(-20); // 5 years = 20 quarters
+    }
+    return quarterlyData.slice(-4); // 1 year = 4 quarters
+  }, [quarterlyData, yearlyData, period]);
 
-  // Custom tooltip for chart
+  // Calculate total growth for display
+  const totalGrowth = useMemo(() => {
+    if (filteredData.length < 2) return null;
+    const first = filteredData[0].index;
+    const last = filteredData[filteredData.length - 1].index;
+    return ((last - first) / first * 100).toFixed(1);
+  }, [filteredData]);
+
+  // Custom tooltip
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
+    const data = payload[0].payload;
     
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-        <p className="font-medium text-foreground text-sm mb-1">{label}</p>
-        <span className="text-sm font-semibold text-primary">
-          ₪{typeof payload[0].value === 'number' ? payload[0].value.toLocaleString() : payload[0].value}/m²
-        </span>
+        <p className="font-medium text-foreground text-sm mb-2">{label}</p>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">Index</span>
+            <span className="text-sm font-semibold text-primary">
+              {Number(data.index).toFixed(1)}
+            </span>
+          </div>
+          {data.yoy != null && (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-xs text-muted-foreground">YoY Change</span>
+              <span className={`text-sm font-medium ${data.yoy >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                {data.yoy >= 0 ? '+' : ''}{Number(data.yoy).toFixed(1)}%
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
-  // Only hide if we have NO data from any source
-  const hasAnyData = quarterlyChartData.length > 0 || yearlyChartData.length > 0;
-  if (!hasAnyData) return null;
+  // Don't render if no data
+  if (isLoading || (!hasQuarterlyData && !hasYearlyData)) {
+    return null;
+  }
+
+  // Get a friendly district label (without "District" suffix for display)
+  const districtLabel = districtName?.replace(' District', '') || 'Regional';
 
   return (
     <section className="py-16 bg-muted/40">
@@ -159,7 +143,7 @@ export function PriceTrendsSection({
             <div>
               <h2 className="text-2xl font-semibold text-foreground">Broader Market Conditions</h2>
               <p className="text-muted-foreground mt-1">
-                Regional price movement over time
+                {districtLabel} region price movement over time
               </p>
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
@@ -167,10 +151,10 @@ export function PriceTrendsSection({
                 {hasQuarterlyData && (
                   <TabsTrigger value="1y" className="text-xs">1 Year</TabsTrigger>
                 )}
-                {hasQuarterlyData && hasSufficient5YData && (
+                {hasSufficient5YData && (
                   <TabsTrigger value="5y" className="text-xs">5 Years</TabsTrigger>
                 )}
-                {!hasLimitedHistory && (
+                {hasYearlyData && (
                   <TabsTrigger value="all" className="text-xs">All Time</TabsTrigger>
                 )}
               </TabsList>
@@ -182,8 +166,8 @@ export function PriceTrendsSection({
             <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-muted-foreground leading-relaxed">
               Israel's Central Bureau of Statistics publishes price indices at the regional level, not per city. 
-              This chart shows verified regional trends as background context for your research — use it to understand 
-              the broader market environment, not to predict specific city performance.
+              {cityName} is part of the <span className="font-medium text-foreground">{districtLabel}</span> region. 
+              This chart shows verified regional trends as background context for your research.
             </p>
           </div>
 
@@ -202,14 +186,15 @@ export function PriceTrendsSection({
                 <YAxis
                   tick={{ fontSize: 11 }}
                   className="text-muted-foreground"
-                  tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
+                  domain={['dataMin - 20', 'dataMax + 20']}
+                  tickFormatter={(value) => value.toFixed(0)}
                   axisLine={{ className: 'stroke-border' }}
                   tickLine={{ className: 'stroke-border' }}
                 />
                 <RechartsTooltip content={<CustomTooltip />} />
                 <Line
                   type="monotone"
-                  dataKey="price"
+                  dataKey="index"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2.5}
                   dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
@@ -222,31 +207,24 @@ export function PriceTrendsSection({
 
           {/* Source Attribution - below chart */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <InlineSourceBadge 
-                sources={dataSources} 
+                sources={{ 'CBS': 'Central Bureau of Statistics' }} 
                 lastVerified={lastVerified}
                 variant="subtle"
               />
-              {period !== 'all' && hasQuarterlyData && (
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                  CBS Regional Index
-                </span>
-              )}
-              {!hasQuarterlyData && (
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                  Yearly regional data
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                {period === 'all' ? 'Yearly Index' : 'Quarterly Index'} • Base: Oct-Nov 2017
+              </span>
+              {totalGrowth && (
+                <span className={`text-xs px-2 py-0.5 rounded ${Number(totalGrowth) >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                  {Number(totalGrowth) >= 0 ? '+' : ''}{totalGrowth}% total
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground italic">
-              {hasLimitedHistory && (
-                <span>Data available from {earliestYear}</span>
-              )}
-              {!hasSufficient5YData && earliestQuarterlyDate && (
-                <span>Quarterly data from {earliestQuarterlyDate}</span>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground italic">
+              Data from 2017 • {districtLabel} District
+            </p>
           </div>
         </motion.div>
       </div>

@@ -805,6 +805,48 @@ export type Database = {
         }
         Relationships: []
       }
+      district_price_index: {
+        Row: {
+          created_at: string
+          district_name: string
+          id: string
+          index_base_year: string | null
+          index_value: number
+          month: number | null
+          period_type: string
+          qoq_change_percent: number | null
+          quarter: number | null
+          year: number
+          yoy_change_percent: number | null
+        }
+        Insert: {
+          created_at?: string
+          district_name: string
+          id?: string
+          index_base_year?: string | null
+          index_value: number
+          month?: number | null
+          period_type: string
+          qoq_change_percent?: number | null
+          quarter?: number | null
+          year: number
+          yoy_change_percent?: number | null
+        }
+        Update: {
+          created_at?: string
+          district_name?: string
+          id?: string
+          index_base_year?: string | null
+          index_value?: number
+          month?: number | null
+          period_type?: string
+          qoq_change_percent?: number | null
+          quarter?: number | null
+          year?: number
+          yoy_change_percent?: number | null
+        }
+        Relationships: []
+      }
       document_checklist_items: {
         Row: {
           created_at: string
