@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lightbulb } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   CartesianGrid,
@@ -13,12 +13,9 @@ import {
 } from 'recharts';
 import type { MarketData } from '@/types/projects';
 import { CanonicalMetrics } from '@/hooks/useCanonicalMetrics';
-import { HistoricalPrice, calculateCAGR, useHistoricalPriceComparison } from '@/hooks/useHistoricalPrices';
-import { CityComparisonSelector } from './CityComparisonSelector';
-import { CityAppreciationExplorer } from './CityAppreciationExplorer';
-import { useCities } from '@/hooks/useCities';
-import { useCityComparison } from '@/hooks/useMarketData';
+import { HistoricalPrice } from '@/hooks/useHistoricalPrices';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+
 interface PriceTrendsSectionProps {
   marketData: MarketData[];
   cityName: string;
@@ -30,14 +27,6 @@ interface PriceTrendsSectionProps {
 }
 
 const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-const NATIONAL_AVG_YIELD = 2.8;
-
-// Brand colors: Distinct hues in cool-tone family for clear chart differentiation
-const LINE_COLORS = [
-  'hsl(var(--primary))',        // Primary city: brand blue
-  'hsl(190, 80%, 42%)',         // 2nd city: teal/cyan
-  'hsl(258, 55%, 52%)',         // 3rd city: indigo/purple
-];
 
 export function PriceTrendsSection({ 
   marketData, 
@@ -48,8 +37,6 @@ export function PriceTrendsSection({
   dataSources,
   lastVerified
 }: PriceTrendsSectionProps) {
-  const [selectedCities, setSelectedCities] = useState<string[]>([cityName]);
-  
   // Determine if we have enough historical data for "All Time" view
   const earliestYear = historicalPrices.length > 0 
     ? Math.min(...historicalPrices.map(p => p.year)) 
@@ -95,85 +82,41 @@ export function PriceTrendsSection({
     }
   }, [hasQuarterlyData, hasSufficient5YData, hasLimitedHistory, historicalPrices.length, period]);
 
-  const { data: allCities = [] } = useCities();
-  const { data: comparisonData = [] } = useCityComparison(selectedCities);
-  const { data: historicalComparisonData = [] } = useHistoricalPriceComparison(selectedCities);
-
-  const availableCities = useMemo(() => {
-    return allCities.map((c) => ({ name: c.name, slug: c.slug }));
-  }, [allCities]);
-
-  // Process quarterly chart data for short-term views (1y, 5y)
+  // Process quarterly chart data for short-term views (1y, 5y) - single city only (no comparison)
   const quarterlyChartData = useMemo(() => {
-    // If only one city and it's the current city, use the prop data
-    if (selectedCities.length === 1 && selectedCities[0] === cityName) {
-      const quarterly = marketData
-        .filter((d) => d.data_type === 'quarterly' && d.month != null)
-        .sort((a, b) => {
-          const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
-          const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
-          return ak.localeCompare(bk);
-        });
-
-      return quarterly.map((d) => ({
-        name: `${quarters[(d.month || 1) - 1]} ${d.year}`,
-        [cityName]: d.average_price_sqm || 0,
-      }));
-    }
-
-    // Multiple cities - use comparison data
-    const dateMap = new Map<string, Record<string, number>>();
-
-    comparisonData.forEach((d) => {
-      if (d.month == null) return;
-      const key = `${d.year}-${String(d.month).padStart(2, '0')}`;
-      const existing = dateMap.get(key) || {};
-      existing[d.city] = d.average_price_sqm || 0;
-      dateMap.set(key, existing);
-    });
-
-    return Array.from(dateMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, values]) => {
-        const [year, quarter] = key.split('-');
-        return {
-          name: `${quarters[parseInt(quarter) - 1]} ${year}`,
-          ...values,
-        };
+    const quarterly = marketData
+      .filter((d) => d.data_type === 'quarterly' && d.month != null)
+      .sort((a, b) => {
+        const ak = `${a.year}-${String(a.month).padStart(2, '0')}`;
+        const bk = `${b.year}-${String(b.month).padStart(2, '0')}`;
+        return ak.localeCompare(bk);
       });
-  }, [marketData, comparisonData, selectedCities, cityName]);
 
-  // Process yearly chart data for "All Time" view using historical_prices
+    return quarterly.map((d) => ({
+      name: `${quarters[(d.month || 1) - 1]} ${d.year}`,
+      price: d.average_price_sqm || 0,
+    }));
+  }, [marketData]);
+
+  // Process yearly chart data for "All Time" view using historical_prices - single city only
   const yearlyChartData = useMemo(() => {
-    // Use comparison data if multiple cities selected, otherwise use prop data
-    const dataSource = selectedCities.length > 1 ? historicalComparisonData : historicalPrices;
-    
-    if (!dataSource.length) return [];
+    if (!historicalPrices.length) return [];
     
     // Average apartment size in sqm for estimating price/sqm where missing
     const AVG_APARTMENT_SIZE = 90;
     
-    // Group by year and merge city data
-    const yearMap = new Map<number, Record<string, number>>();
-    
-    dataSource.forEach(p => {
-      if (!p.average_price && !p.average_price_sqm) return;
-      
-      const pricePerSqm = p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE);
-      if (pricePerSqm <= 0) return;
-      
-      const existing = yearMap.get(p.year) || {};
-      existing[p.city] = pricePerSqm;
-      yearMap.set(p.year, existing);
-    });
-    
-    return Array.from(yearMap.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([year, values]) => ({
-        name: String(year),
-        ...values,
-      }));
-  }, [historicalPrices, historicalComparisonData, selectedCities]);
+    return historicalPrices
+      .filter(p => p.average_price || p.average_price_sqm)
+      .map(p => {
+        const pricePerSqm = p.average_price_sqm || Math.round((p.average_price || 0) / AVG_APARTMENT_SIZE);
+        return {
+          name: String(p.year),
+          price: pricePerSqm,
+        };
+      })
+      .filter(d => d.price > 0)
+      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+  }, [historicalPrices]);
 
   const filteredData = useMemo(() => {
     if (period === 'all') {
@@ -185,87 +128,18 @@ export function PriceTrendsSection({
     return quarterlyChartData.slice(-4); // 1y = 4 quarters
   }, [quarterlyChartData, yearlyChartData, period]);
 
-  // Calculate 10-year growth (for current city only)
-  const growthMetrics = useMemo(() => {
-    if (historicalPrices.length < 2) return null;
-    
-    const sortedPrices = [...historicalPrices].sort((a, b) => a.year - b.year);
-    const firstValidPrice = sortedPrices.find(p => p.average_price_sqm && p.average_price_sqm > 0);
-    const lastValidPrice = sortedPrices.reverse().find(p => p.average_price_sqm && p.average_price_sqm > 0);
-    
-    if (!firstValidPrice || !lastValidPrice || firstValidPrice.year === lastValidPrice.year) return null;
-    
-    const startPrice = firstValidPrice.average_price_sqm!;
-    const endPrice = lastValidPrice.average_price_sqm!;
-    const years = lastValidPrice.year - firstValidPrice.year;
-    
-    const totalAppreciation = ((endPrice - startPrice) / startPrice) * 100;
-    const cagr = calculateCAGR(startPrice, endPrice, years);
-    
-    return {
-      totalAppreciation: Math.round(totalAppreciation),
-      cagr,
-      years,
-    };
-  }, [historicalPrices]);
-
-  const grossYield = canonicalMetrics?.gross_yield_percent ?? null;
-  const priceChange = yoyChange ?? canonicalMetrics?.yoy_price_change ?? null;
-
-  // Custom tooltip for multi-city comparison
+  // Custom tooltip for chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-3">
-        <p className="font-medium text-foreground text-sm mb-2">{label}</p>
-        <div className="space-y-1">
-          {payload.map((entry: any, index: number) => (
-            <div key={entry.dataKey} className="flex items-center gap-2">
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: entry.stroke }}
-              />
-              <span className="text-sm text-muted-foreground">{entry.dataKey}:</span>
-              <span className="text-sm font-semibold" style={{ color: entry.stroke }}>
-                ₪{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}/m²
-              </span>
-            </div>
-          ))}
-        </div>
+        <p className="font-medium text-foreground text-sm mb-1">{label}</p>
+        <span className="text-sm font-semibold text-primary">
+          ₪{typeof payload[0].value === 'number' ? payload[0].value.toLocaleString() : payload[0].value}/m²
+        </span>
       </div>
     );
-  };
-
-  // Generate insight text
-  const generateInsight = () => {
-    const parts: string[] = [];
-    
-    if (growthMetrics) {
-      parts.push(`Over the past ${growthMetrics.years} years, ${cityName} has seen +${growthMetrics.totalAppreciation}% total appreciation (${growthMetrics.cagr}% annually).`);
-    }
-    
-    if (priceChange !== null) {
-      if (priceChange > 5) {
-        parts.push(`The market is currently heating up with ${priceChange.toFixed(1)}% year-over-year growth.`);
-      } else if (priceChange > 0) {
-        parts.push(`Prices are showing steady growth at ${priceChange.toFixed(1)}% year-over-year.`);
-      } else if (priceChange < -2) {
-        parts.push(`The market is cooling with prices down ${Math.abs(priceChange).toFixed(1)}% from last year.`);
-      } else {
-        parts.push(`Prices are holding steady compared to last year.`);
-      }
-    }
-    
-    if (grossYield !== null) {
-      if (grossYield >= NATIONAL_AVG_YIELD) {
-        parts.push(`Rental yields of ${grossYield.toFixed(1)}% are above the national average, making this attractive for investors.`);
-      } else {
-        parts.push(`Rental yields of ${grossYield.toFixed(1)}% are typical for an appreciation-focused market.`);
-      }
-    }
-    
-    return parts.join(' ') || `${cityName} has shown consistent market activity over the tracked period.`;
   };
 
   // Only hide if we have NO data from any source
@@ -283,11 +157,9 @@ export function PriceTrendsSection({
           {/* Header with Period Selector */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-foreground">Price Trends</h2>
+              <h2 className="text-2xl font-semibold text-foreground">Broader Market Conditions</h2>
               <p className="text-muted-foreground mt-1">
-                {selectedCities.length > 1 
-                  ? 'Compare how markets have moved over time'
-                  : `How ${cityName}'s market has moved over time`}
+                Regional price movement over time
               </p>
             </div>
             <Tabs value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
@@ -305,34 +177,14 @@ export function PriceTrendsSection({
             </Tabs>
           </div>
 
-          {/* City Comparison Selector */}
-          <CityComparisonSelector
-            currentCity={cityName}
-            selectedCities={selectedCities}
-            onCitiesChange={setSelectedCities}
-            availableCities={availableCities}
-          />
-
-          {/* Key Metrics */}
-          <div className="flex flex-wrap gap-6 text-sm">
-            {growthMetrics && (
-              <div className="bg-background rounded-lg px-4 py-2 border border-border/50">
-                <span className="font-semibold text-foreground">+{growthMetrics.totalAppreciation}%</span>
-                <span className="text-muted-foreground ml-1.5">{growthMetrics.years}-year growth</span>
-              </div>
-            )}
-            {priceChange !== null && (
-              <div className="bg-background rounded-lg px-4 py-2 border border-border/50">
-                <span className="font-semibold text-foreground">{priceChange > 0 ? '+' : ''}{priceChange.toFixed(1)}%</span>
-                <span className="text-muted-foreground ml-1.5">this year</span>
-              </div>
-            )}
-            {grossYield !== null && (
-              <div className="bg-background rounded-lg px-4 py-2 border border-border/50">
-                <span className="font-semibold text-foreground">{grossYield.toFixed(1)}%</span>
-                <span className="text-muted-foreground ml-1.5">gross yield</span>
-              </div>
-            )}
+          {/* Explanatory Info Banner */}
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-background border border-border/50 text-sm">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-muted-foreground leading-relaxed">
+              Israel's Central Bureau of Statistics publishes price indices at the regional level, not per city. 
+              This chart shows verified regional trends as background context for your research — use it to understand 
+              the broader market environment, not to predict specific city performance.
+            </p>
           </div>
 
           {/* Chart */}
@@ -355,29 +207,18 @@ export function PriceTrendsSection({
                   tickLine={{ className: 'stroke-border' }}
                 />
                 <RechartsTooltip content={<CustomTooltip />} />
-                {selectedCities.map((city, index) => (
-                  <Line
-                    key={city}
-                    type="monotone"
-                    dataKey={city}
-                    stroke={LINE_COLORS[index] || LINE_COLORS[0]}
-                    strokeWidth={2.5}
-                    dot={{ fill: LINE_COLORS[index] || LINE_COLORS[0], strokeWidth: 0, r: 3 }}
-                    activeDot={{ r: 5, strokeWidth: 0 }}
-                    connectNulls
-                  />
-                ))}
+                <Line
+                  type="monotone"
+                  dataKey="price"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2.5}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                  connectNulls
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
-
-          {/* What If Widget - Compact inline */}
-          {historicalPrices.length > 1 && (
-            <CityAppreciationExplorer 
-              cityName={cityName}
-              historicalPrices={historicalPrices}
-            />
-          )}
 
           {/* Source Attribution - below chart */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -389,32 +230,23 @@ export function PriceTrendsSection({
               />
               {period !== 'all' && hasQuarterlyData && (
                 <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                  CBS Quarterly District Index
+                  CBS Regional Index
                 </span>
               )}
               {!hasQuarterlyData && (
-                <span className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded">
-                  Yearly data (quarterly not available)
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                  Yearly regional data
                 </span>
               )}
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground italic">
               {hasLimitedHistory && (
-                <span>Historical data from {earliestYear}</span>
+                <span>Data available from {earliestYear}</span>
               )}
               {!hasSufficient5YData && earliestQuarterlyDate && (
                 <span>Quarterly data from {earliestQuarterlyDate}</span>
               )}
             </div>
-          </div>
-
-          {/* Insight */}
-          <div className="flex gap-3 p-4 rounded-xl bg-background border border-border/50">
-            <Lightbulb className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              <span className="font-medium text-foreground">What this means: </span>
-              {generateInsight()}
-            </p>
           </div>
         </motion.div>
       </div>
