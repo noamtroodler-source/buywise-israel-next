@@ -12,19 +12,20 @@ interface PriceAnalyticsProps {
   isLoading?: boolean;
 }
 
+// BuyWise brand-compliant palette (blue tones only)
 const COLORS = [
   'hsl(var(--primary))',
-  'hsl(190, 80%, 42%)',
-  'hsl(258, 55%, 52%)',
-  'hsl(142, 71%, 45%)',
-  'hsl(45, 93%, 47%)',
+  'hsl(213, 70%, 55%)',
+  'hsl(213, 60%, 65%)',
+  'hsl(213, 50%, 75%)',
+  'hsl(213, 40%, 85%)',
   'hsl(var(--muted-foreground))',
 ];
 
 export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle>Price Analytics</CardTitle>
         </CardHeader>
@@ -43,26 +44,26 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="rounded-2xl border-border/50 overflow-hidden">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-lg flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-primary" />
           Price Analytics
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6 pb-4 border-b">
-          <div className="text-center">
-            <p className="text-2xl font-bold">{formatPrice(data?.avgPlatformPrice || 0)}</p>
+        <div className="grid grid-cols-3 gap-4 mb-6 pb-4 border-b border-border/50">
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">{formatPrice(data?.avgPlatformPrice || 0)}</p>
             <p className="text-xs text-muted-foreground">Average Price</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold">{formatPrice(data?.medianPrice || 0)}</p>
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">{formatPrice(data?.medianPrice || 0)}</p>
             <p className="text-xs text-muted-foreground">Median Price</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold">
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">
               ₪{((data?.avgPlatformPriceSqm || 0) / 1000).toFixed(1)}K
             </p>
             <p className="text-xs text-muted-foreground">Avg Price/sqm</p>
@@ -72,8 +73,8 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
         <div className="grid grid-cols-2 gap-6">
           {/* Price Range Distribution */}
           <div>
-            <p className="text-sm font-medium mb-3 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+              <TrendingUp className="h-4 w-4 text-primary" />
               Price Distribution
             </p>
             {(data?.priceRanges || []).length > 0 ? (
@@ -81,7 +82,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                 {(data?.priceRanges || []).map((range, index) => (
                   <div key={range.range} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span>{range.range}</span>
+                      <span className="text-foreground">{range.range}</span>
                       <span className="text-muted-foreground">
                         {range.count} ({range.percentage.toFixed(0)}%)
                       </span>
@@ -107,8 +108,8 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
 
           {/* Bedroom Distribution */}
           <div>
-            <p className="text-sm font-medium mb-3 flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+              <Building className="h-4 w-4 text-primary" />
               Bedroom Distribution
             </p>
             {(data?.bedroomDistribution || []).length > 0 ? (
@@ -134,8 +135,8 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                         if (active && payload && payload.length) {
                           const item = payload[0].payload;
                           return (
-                            <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
-                              <p className="font-medium">{item.bedrooms}</p>
+                            <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
+                              <p className="font-semibold text-foreground">{item.bedrooms}</p>
                               <p className="text-muted-foreground">
                                 {item.count} ({item.percentage.toFixed(0)}%)
                               </p>
@@ -154,7 +155,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                         className="h-2 w-2 rounded-full" 
                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                       />
-                      <span>{item.bedrooms}: {item.count}</span>
+                      <span className="text-foreground">{item.bedrooms}: {item.count}</span>
                     </div>
                   ))}
                 </div>
@@ -169,9 +170,9 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
 
         {/* City Prices */}
         {(data?.cityPrices || []).length > 0 && (
-          <div className="mt-6 pt-4 border-t">
-            <p className="text-sm font-medium mb-3 flex items-center gap-2">
-              <Home className="h-4 w-4 text-muted-foreground" />
+          <div className="mt-6 pt-4 border-t border-border/50">
+            <p className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
+              <Home className="h-4 w-4 text-primary" />
               Average Price by City
             </p>
             <ResponsiveContainer width="100%" height={180}>
@@ -181,7 +182,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
               >
                 <XAxis 
                   dataKey="city" 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--foreground))' }}
                   tickLine={false}
                   axisLine={false}
                   interval={0}
@@ -190,7 +191,7 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                   height={50}
                 />
                 <YAxis 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => formatPrice(value)}
@@ -201,24 +202,20 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
                     if (active && payload && payload.length) {
                       const item = payload[0].payload;
                       return (
-                        <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
-                          <p className="font-medium">{item.city}</p>
-                          <p className="text-muted-foreground">
-                            Avg: {formatPrice(item.avgPrice)}
-                          </p>
-                          <p className="text-muted-foreground">
-                            Per sqm: ₪{(item.avgPriceSqm / 1000).toFixed(1)}K
-                          </p>
-                          <p className="text-muted-foreground">
-                            {item.count} listings
-                          </p>
+                        <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
+                          <p className="font-semibold text-foreground">{item.city}</p>
+                          <div className="text-muted-foreground space-y-0.5">
+                            <p>Avg: {formatPrice(item.avgPrice)}</p>
+                            <p>Per sqm: ₪{(item.avgPriceSqm / 1000).toFixed(1)}K</p>
+                            <p>{item.count} listings</p>
+                          </div>
                         </div>
                       );
                     }
                     return null;
                   }}
                 />
-                <Bar dataKey="avgPrice" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="avgPrice" radius={[6, 6, 0, 0]}>
                   {(data?.cityPrices || []).slice(0, 6).map((_, index) => (
                     <Cell 
                       key={`cell-${index}`} 

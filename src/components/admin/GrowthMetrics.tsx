@@ -15,17 +15,17 @@ interface GrowthMetricsProps {
 }
 
 const METRIC_CONFIG = {
-  users: { icon: UserPlus, color: 'hsl(var(--primary))' },
-  properties: { icon: Home, color: 'hsl(190, 80%, 42%)' },
-  inquiries: { icon: MessageSquare, color: 'hsl(258, 55%, 52%)' },
-  views: { icon: Eye, color: 'hsl(142, 71%, 45%)' },
-  agents: { icon: Users, color: 'hsl(45, 93%, 47%)' },
+  users: { icon: UserPlus, label: 'Users' },
+  properties: { icon: Home, label: 'Properties' },
+  inquiries: { icon: MessageSquare, label: 'Inquiries' },
+  views: { icon: Eye, label: 'Views' },
+  agents: { icon: Users, label: 'Agents' },
 };
 
 export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs previous period' }: GrowthMetricsProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle>Growth Metrics</CardTitle>
         </CardHeader>
@@ -45,8 +45,8 @@ export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs pr
   ] : [];
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="rounded-2xl border-border/50 overflow-hidden">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-lg flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           Growth Metrics
@@ -55,27 +55,29 @@ export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs pr
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         {/* Growth Cards */}
         <div className="grid grid-cols-5 gap-3 mb-4">
           {metrics.map((metric) => {
             const config = METRIC_CONFIG[metric.key as keyof typeof METRIC_CONFIG];
             const Icon = config.icon;
+            const isPositive = metric.change > 0;
+            const isNeutral = metric.change === 0;
             
             return (
               <div 
                 key={metric.key}
-                className="p-3 rounded-lg bg-muted/30 text-center"
+                className="p-3 rounded-xl bg-primary/5 text-center"
               >
                 <div className="flex items-center justify-center mb-1">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
-                <p className="text-xl font-bold">{metric.current}</p>
-                <p className="text-xs text-muted-foreground mb-1">{metric.label}</p>
+                <p className="text-xl font-bold text-foreground">{metric.current}</p>
+                <p className="text-xs text-muted-foreground mb-1">{config.label}</p>
                 <div className={`flex items-center justify-center gap-1 text-xs ${
-                  metric.isPositive ? 'text-green-600' : metric.change === 0 ? 'text-muted-foreground' : 'text-red-600'
+                  isNeutral ? 'text-muted-foreground' : 'text-primary'
                 }`}>
-                  {metric.change > 0 ? (
+                  {isPositive ? (
                     <TrendingUp className="h-3 w-3" />
                   ) : metric.change < 0 ? (
                     <TrendingDown className="h-3 w-3" />
@@ -94,20 +96,20 @@ export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs pr
 
         {/* Trend Chart */}
         {trendData && trendData.length > 0 && (
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium mb-3">Activity Trend</p>
+          <div className="pt-4 border-t border-border/50">
+            <p className="text-sm font-semibold mb-3 text-foreground">Activity Trend</p>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   tickLine={false}
                   axisLine={false}
                   width={30}
@@ -116,8 +118,8 @@ export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs pr
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
-                          <p className="font-medium">{label}</p>
+                        <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
+                          <p className="font-semibold text-foreground">{label}</p>
                           {payload.map((entry) => (
                             <p key={entry.dataKey} className="text-muted-foreground">
                               {entry.name}: {entry.value}
@@ -141,7 +143,7 @@ export function GrowthMetrics({ data, trendData, isLoading, periodLabel = 'vs pr
                   type="monotone" 
                   dataKey="inquiries" 
                   name="Inquiries"
-                  stroke="hsl(258, 55%, 52%)" 
+                  stroke="hsl(213, 60%, 65%)" 
                   strokeWidth={2}
                   dot={false}
                 />
