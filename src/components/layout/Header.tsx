@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,9 +23,11 @@ export function Header() {
   const { isAgent, isAdmin } = useUserRole();
   const { data: profile } = useProfile();
   const { favoriteIds } = useFavorites();
+  const { data: myAgency } = useMyAgency();
   const navigate = useNavigate();
   
   const favoriteCount = favoriteIds?.length || 0;
+  const isAgencyAdmin = !!myAgency;
 
   const handleSignOut = async () => {
     await signOut();
@@ -133,6 +136,14 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {isAgencyAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/agency" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Agency Portal
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2">
@@ -222,6 +233,16 @@ export function Header() {
                   >
                     <Building2 className="h-4 w-4" />
                     Agent Dashboard
+                  </Link>
+                )}
+                {isAgencyAdmin && (
+                  <Link 
+                    to="/agency" 
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Users className="h-4 w-4" />
+                    Agency Portal
                   </Link>
                 )}
                 {isAdmin && (
