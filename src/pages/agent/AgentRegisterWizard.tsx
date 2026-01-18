@@ -18,6 +18,7 @@ import {
   Clock,
   CheckCircle2
 } from 'lucide-react';
+import { ApplicationSubmittedDialog } from '@/components/agent/ApplicationSubmittedDialog';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +64,7 @@ export default function AgentRegisterWizard() {
   const [isValidatingCode, setIsValidatingCode] = useState(false);
   const [validatedAgencyId, setValidatedAgencyId] = useState<string | null>(null);
   const [validatedAgencyName, setValidatedAgencyName] = useState<string | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -179,7 +181,7 @@ export default function AgentRegisterWizard() {
         bio: formData.bio || undefined,
       });
       
-      navigate('/agent');
+      setShowSuccessDialog(true);
     } catch (error) {
       // Error handled by mutation
     }
@@ -730,6 +732,11 @@ export default function AgentRegisterWizard() {
           </motion.div>
         </div>
       </div>
+
+      <ApplicationSubmittedDialog 
+        open={showSuccessDialog} 
+        onClose={() => setShowSuccessDialog(false)} 
+      />
     </Layout>
   );
 }
