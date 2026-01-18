@@ -15,6 +15,7 @@ const adminNavItems = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/properties', label: 'Properties', icon: Home },
   { href: '/admin/agents', label: 'Agents', icon: Building2 },
+  { href: '/admin/agencies', label: 'Agencies', icon: Building },
   { href: '/admin/projects', label: 'Projects', icon: Building },
   { href: '/admin/developers', label: 'Developers', icon: Building },
   { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
