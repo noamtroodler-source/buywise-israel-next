@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, XCircle, FileText, Send } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, XCircle, FileText, Send, Copy, MoreHorizontal, Home, Key } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { useDuplicateProperty, useUpdatePropertyStatus } from '@/hooks/useAgentProfile';
 
 type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
 
@@ -39,9 +47,12 @@ const getVerificationBadge = (status: VerificationStatus | undefined) => {
 };
 
 export default function AgentProperties() {
+  const navigate = useNavigate();
   const { data: properties = [], isLoading } = useAgentProperties();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
+  const duplicateProperty = useDuplicateProperty();
+  const updateStatus = useUpdatePropertyStatus();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -51,6 +62,22 @@ export default function AgentProperties() {
       case 'rented': return 'Rented';
       default: return status;
     }
+  };
+
+  const handleDuplicate = (propertyId: string) => {
+    duplicateProperty.mutate(propertyId, {
+      onSuccess: (result) => {
+        navigate(`/agent/properties/${result.newPropertyId}/edit`);
+      },
+    });
+  };
+
+  const handleMarkAsSold = (propertyId: string) => {
+    updateStatus.mutate({ id: propertyId, listing_status: 'sold' });
+  };
+
+  const handleMarkAsRented = (propertyId: string) => {
+    updateStatus.mutate({ id: propertyId, listing_status: 'rented' });
   };
 
   // Filter properties by verification status
@@ -139,30 +166,65 @@ export default function AgentProperties() {
               </Button>
             )}
 
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                  <Trash2 className="h-4 w-4" />
+            {/* Quick Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Property</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete "{property.title}"? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteProperty.mutate(property.id)}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleDuplicate(property.id)}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate Listing
+                </DropdownMenuItem>
+                
+                {status === 'approved' && property.listing_status === 'for_sale' && (
+                  <DropdownMenuItem onClick={() => handleMarkAsSold(property.id)}>
+                    <Home className="h-4 w-4 mr-2" />
+                    Mark as Sold
+                  </DropdownMenuItem>
+                )}
+                
+                {status === 'approved' && property.listing_status === 'for_rent' && (
+                  <DropdownMenuItem onClick={() => handleMarkAsRented(property.id)}>
+                    <Key className="h-4 w-4 mr-2" />
+                    Mark as Rented
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteProperty.mutate(property.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

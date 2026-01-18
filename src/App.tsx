@@ -26,6 +26,7 @@ import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentProperties from "./pages/agent/AgentProperties";
 import NewPropertyWizard from "./pages/agent/NewPropertyWizard";
 import AgentAnalytics from "./pages/agent/AgentAnalytics";
+import AgentSettings from "./pages/agent/AgentSettings";
 import EditProperty from "./pages/agent/EditProperty";
 import AgencyRegister from "./pages/agency/AgencyRegister";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
@@ -141,6 +142,11 @@ const App = () => (
             <Route path="/agent/analytics" element={
               <ProtectedRoute requiredRole="agent">
                 <AgentAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/agent/settings" element={
+              <ProtectedRoute requiredRole="agent">
+                <AgentSettings />
               </ProtectedRoute>
             } />
             <Route path="/agent/properties" element={
