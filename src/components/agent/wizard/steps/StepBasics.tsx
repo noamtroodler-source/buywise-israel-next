@@ -3,8 +3,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
-import { Home, MapPin, DollarSign } from 'lucide-react';
-import { CityAutocomplete } from '../CityAutocomplete';
+import { Home, MapPin, DollarSign, AlertCircle } from 'lucide-react';
+import { AddressAutocomplete } from '../AddressAutocomplete';
+import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -22,6 +23,25 @@ const listingStatuses: { value: ListingStatus; label: string }[] = [
 
 export function StepBasics() {
   const { data, updateData } = usePropertyWizard();
+
+  const handleAddressSelect = (address: {
+    streetAddress: string;
+    neighborhood: string;
+    city: string;
+    latitude: number;
+    longitude: number;
+    placeId: string;
+    fullAddress: string;
+  }) => {
+    updateData({
+      address: address.streetAddress || address.fullAddress,
+      city: address.city || data.city, // Keep existing if not found
+      neighborhood: address.neighborhood || data.neighborhood, // Keep existing if not found
+      latitude: address.latitude,
+      longitude: address.longitude,
+      place_id: address.placeId,
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -136,13 +156,28 @@ export function StepBasics() {
             <h3 className="font-semibold">Location</h3>
           </div>
           
+          <div className="space-y-2">
+            <Label>Street Address *</Label>
+            <AddressAutocomplete
+              value={data.address}
+              onAddressSelect={handleAddressSelect}
+              placeholder="Start typing: Rothschild 42, Tel Aviv..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Search for an address to auto-fill location details
+            </p>
+          </div>
+
+          {/* Auto-filled location fields */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>City *</Label>
-              <CityAutocomplete
+              <Label htmlFor="city">City *</Label>
+              <Input
+                id="city"
                 value={data.city}
-                onValueChange={(city) => updateData({ city })}
-                placeholder="e.g., Tel Aviv"
+                onChange={(e) => updateData({ city: e.target.value })}
+                placeholder="Auto-filled from address"
+                className="h-11 rounded-xl"
               />
             </div>
             <div className="space-y-2">
@@ -151,21 +186,33 @@ export function StepBasics() {
                 id="neighborhood"
                 value={data.neighborhood}
                 onChange={(e) => updateData({ neighborhood: e.target.value })}
-                placeholder="e.g., Neve Tzedek"
+                placeholder="Auto-filled or enter manually"
                 className="h-11 rounded-xl"
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Street Address *</Label>
-            <Input
-              id="address"
-              value={data.address}
-              onChange={(e) => updateData({ address: e.target.value })}
-              placeholder="e.g., Rothschild Blvd 42"
-              className="h-11 rounded-xl"
-            />
-          </div>
+
+          {/* Map Preview */}
+          {data.latitude && data.longitude ? (
+            <div className="space-y-2">
+              <Label>Confirm Location</Label>
+              <div className="h-[180px] rounded-xl overflow-hidden border border-border">
+                <PropertyMiniMapWrapper
+                  latitude={data.latitude}
+                  longitude={data.longitude}
+                  propertyTitle={data.title || 'Property Location'}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If the pin is incorrect, search for a different address above
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Select an address from the dropdown to enable map location</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
