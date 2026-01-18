@@ -1,11 +1,12 @@
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, MessageCircle, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
 import { useAgentAnalytics } from '@/hooks/useAgentAnalytics';
+import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
 
 export default function AgentAnalytics() {
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
@@ -27,9 +28,21 @@ export default function AgentAnalytics() {
     ? `${analytics.conversionRate.toFixed(1)}%`
     : '—';
 
+  // Prepare chart data
+  const propertyChartData = properties.map(property => {
+    const stats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
+    return {
+      propertyId: property.id,
+      title: property.title,
+      views: stats?.views || property.views_count || 0,
+      saves: stats?.saves || 0,
+      inquiries: stats?.inquiries || 0,
+    };
+  });
+
   return (
     <Layout>
-      <div className="container py-8 max-w-5xl">
+      <div className="container py-8 max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,50 +116,23 @@ export default function AgentAnalytics() {
             </Card>
           </div>
 
-          {/* Inquiry Breakdown */}
-          {analytics && analytics.totalInquiries > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Inquiry Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="p-2 rounded-full bg-green-100">
-                      <MessageCircle className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{analytics.inquiriesByType.whatsapp}</p>
-                      <p className="text-sm text-muted-foreground">WhatsApp</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="p-2 rounded-full bg-blue-100">
-                      <Phone className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{analytics.inquiriesByType.call}</p>
-                      <p className="text-sm text-muted-foreground">Phone Calls</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                    <div className="p-2 rounded-full bg-purple-100">
-                      <Mail className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{analytics.inquiriesByType.email}</p>
-                      <p className="text-sm text-muted-foreground">Emails</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Conversion Funnel */}
+          <FunnelMetrics
+            views={analytics?.totalViews || 0}
+            saves={analytics?.totalSaves || 0}
+            inquiries={analytics?.totalInquiries || 0}
+          />
 
-          {/* Property Performance */}
+          {/* Charts Row */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, call: 0, email: 0, form: 0 }} />
+            <PropertyPerformanceChart data={propertyChartData} />
+          </div>
+
+          {/* Property Performance Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Listing Performance</CardTitle>
+              <CardTitle>Detailed Listing Performance</CardTitle>
             </CardHeader>
             <CardContent>
               {properties.length === 0 ? (
@@ -157,6 +143,10 @@ export default function AgentAnalytics() {
                 <div className="space-y-3">
                   {properties.map((property) => {
                     const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
+                    const views = propertyStats?.views || property.views_count || 0;
+                    const saves = propertyStats?.saves || 0;
+                    const inquiries = propertyStats?.inquiries || 0;
+                    const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';
                     
                     return (
                       <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
@@ -171,18 +161,22 @@ export default function AgentAnalytics() {
                             <p className="text-sm text-muted-foreground">{property.city}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-6 text-sm">
+                        <div className="flex items-center gap-4 sm:gap-6 text-sm">
                           <div className="text-center">
-                            <p className="font-medium">{propertyStats?.views || property.views_count || 0}</p>
+                            <p className="font-medium">{views}</p>
                             <p className="text-xs text-muted-foreground">views</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-medium">{propertyStats?.saves || 0}</p>
+                            <p className="font-medium">{saves}</p>
                             <p className="text-xs text-muted-foreground">saves</p>
                           </div>
                           <div className="text-center">
-                            <p className="font-medium">{propertyStats?.inquiries || 0}</p>
+                            <p className="font-medium">{inquiries}</p>
                             <p className="text-xs text-muted-foreground">inquiries</p>
+                          </div>
+                          <div className="text-center hidden sm:block">
+                            <p className="font-medium">{convRate}%</p>
+                            <p className="text-xs text-muted-foreground">conv.</p>
                           </div>
                         </div>
                       </div>
