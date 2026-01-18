@@ -21,12 +21,14 @@ import BlogPost from "./pages/BlogPost";
 import Areas from "./pages/Areas";
 import AreaDetail from "./pages/AreaDetail";
 import Tools from "./pages/Tools";
-import AgentRegister from "./pages/agent/AgentRegister";
+import AgentRegisterWizard from "./pages/agent/AgentRegisterWizard";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentProperties from "./pages/agent/AgentProperties";
 import NewPropertyWizard from "./pages/agent/NewPropertyWizard";
 import AgentAnalytics from "./pages/agent/AgentAnalytics";
 import EditProperty from "./pages/agent/EditProperty";
+import AgencyRegister from "./pages/agency/AgencyRegister";
+import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import Developers from "./pages/Developers";
 import DeveloperDetail from "./pages/DeveloperDetail";
 import Projects from "./pages/Projects";
@@ -124,12 +126,17 @@ const App = () => (
             } />
             <Route path="/agent/register" element={
               <ProtectedRoute>
-                <AgentRegister />
+                <AgentRegisterWizard />
               </ProtectedRoute>
             } />
             <Route path="/agent" element={
               <ProtectedRoute requiredRole="agent">
                 <AgentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/agent/analytics" element={
+              <ProtectedRoute requiredRole="agent">
+                <AgentAnalytics />
               </ProtectedRoute>
             } />
             <Route path="/agent/properties" element={
@@ -145,6 +152,17 @@ const App = () => (
             <Route path="/agent/properties/:id/edit" element={
               <ProtectedRoute requiredRole="agent">
                 <EditProperty />
+              </ProtectedRoute>
+            } />
+            {/* Agency Routes */}
+            <Route path="/agency/register" element={
+              <ProtectedRoute>
+                <AgencyRegister />
+              </ProtectedRoute>
+            } />
+            <Route path="/agency" element={
+              <ProtectedRoute>
+                <AgencyDashboard />
               </ProtectedRoute>
             } />
             {/* Dev tools - temporarily public for hero image generation */}
