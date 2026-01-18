@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users } from 'lucide-react';
@@ -7,11 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
+import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: leadStats } = useLeadStats();
+  
+  // Onboarding checklist dismiss state (persisted in localStorage)
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    const dismissed = localStorage.getItem('agent-onboarding-dismissed');
+    return dismissed !== 'true';
+  });
+
+  const handleDismissOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('agent-onboarding-dismissed', 'true');
+  };
 
   const isLoading = profileLoading || propertiesLoading;
 
@@ -87,6 +100,19 @@ export default function AgentDashboard() {
               </Button>
             </div>
           </div>
+
+          {/* Onboarding Checklist for new agents */}
+          {showOnboarding && (
+            <OnboardingChecklist
+              agentProfile={agentProfile}
+              properties={properties.map(p => ({
+                id: p.id,
+                verification_status: (p as any).verification_status,
+                views_count: p.views_count,
+              }))}
+              onDismiss={handleDismissOnboarding}
+            />
+          )}
 
           {/* Changes Requested Alert */}
           {statusCounts.changes_requested > 0 && (

@@ -1,10 +1,16 @@
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, XCircle, FileText, Send, Copy, MoreHorizontal, Home, Key } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, 
+  XCircle, FileText, Send, Copy, MoreHorizontal, Home, Key, 
+  RefreshCw, Archive, CheckSquare, Square, X
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +31,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
-import { useDuplicateProperty, useUpdatePropertyStatus } from '@/hooks/useAgentProfile';
+import { useDuplicateProperty, useUpdatePropertyStatus, useRenewProperty } from '@/hooks/useAgentProfile';
+import { toast } from 'sonner';
 
 type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
 
@@ -53,6 +60,11 @@ export default function AgentProperties() {
   const submitForReview = useSubmitForReview();
   const duplicateProperty = useDuplicateProperty();
   const updateStatus = useUpdatePropertyStatus();
+  const renewProperty = useRenewProperty();
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -78,6 +90,65 @@ export default function AgentProperties() {
 
   const handleMarkAsRented = (propertyId: string) => {
     updateStatus.mutate({ id: propertyId, listing_status: 'rented' });
+  };
+
+  // Bulk action handlers
+  const handleSelectAll = (currentProperties: typeof properties) => {
+    if (selectedIds.size === currentProperties.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(currentProperties.map(p => p.id)));
+    }
+  };
+
+  const handleToggleSelect = (propertyId: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(propertyId)) {
+      newSelected.delete(propertyId);
+    } else {
+      newSelected.add(propertyId);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkRenew = async () => {
+    const selectedArray = Array.from(selectedIds);
+    let successCount = 0;
+    
+    for (const id of selectedArray) {
+      try {
+        await renewProperty.mutateAsync(id);
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to renew property ${id}:`, error);
+      }
+    }
+    
+    toast.success(`Renewed ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    const selectedArray = Array.from(selectedIds);
+    let successCount = 0;
+    
+    for (const id of selectedArray) {
+      try {
+        await deleteProperty.mutateAsync(id);
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to delete property ${id}:`, error);
+      }
+    }
+    
+    toast.success(`Deleted ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    setSelectedIds(new Set());
+    setIsBulkDeleting(false);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set());
   };
 
   // Filter properties by verification status
@@ -109,13 +180,23 @@ export default function AgentProperties() {
     const badge = getVerificationBadge(status);
     const BadgeIcon = badge.icon;
     const adminNotes = (property as any).admin_notes;
+    const isSelected = selectedIds.has(property.id);
 
     return (
       <div
-        className="flex flex-col gap-3 p-4 rounded-lg border border-border"
+        className={`flex flex-col gap-3 p-4 rounded-lg border transition-colors ${
+          isSelected ? 'border-primary bg-primary/5' : 'border-border'
+        }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
+            {/* Checkbox for bulk selection */}
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => handleToggleSelect(property.id)}
+              className="flex-shrink-0"
+            />
+            
             <img
               src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
               alt={property.title}
@@ -179,6 +260,11 @@ export default function AgentProperties() {
                   Duplicate Listing
                 </DropdownMenuItem>
                 
+                <DropdownMenuItem onClick={() => renewProperty.mutate(property.id)}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Renew Listing
+                </DropdownMenuItem>
+                
                 {status === 'approved' && property.listing_status === 'for_sale' && (
                   <DropdownMenuItem onClick={() => handleMarkAsSold(property.id)}>
                     <Home className="h-4 w-4 mr-2" />
@@ -230,12 +316,102 @@ export default function AgentProperties() {
 
         {/* Admin feedback for changes requested */}
         {status === 'changes_requested' && adminNotes && (
-          <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm">
+          <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm ml-10">
             <p className="font-medium text-orange-800 mb-1">Admin Feedback:</p>
             <p className="text-orange-700">{adminNotes}</p>
           </div>
         )}
       </div>
+    );
+  };
+
+  // Bulk action bar component
+  const BulkActionBar = ({ currentProperties }: { currentProperties: typeof properties }) => {
+    const allSelected = currentProperties.length > 0 && selectedIds.size === currentProperties.length;
+    const someSelected = selectedIds.size > 0;
+
+    return (
+      <AnimatePresence>
+        {someSelected && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <Card className="shadow-lg border-primary/20">
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                  <span className="font-medium">
+                    {selectedIds.size} selected
+                  </span>
+                </div>
+                
+                <div className="h-6 w-px bg-border" />
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkRenew}
+                    disabled={renewProperty.isPending}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Renew All
+                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete All
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {selectedIds.size} Properties</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {selectedIds.size} properties? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleBulkDelete}
+                          disabled={isBulkDeleting}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {isBulkDeleting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            'Delete All'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearSelection}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     );
   };
 
@@ -267,7 +443,7 @@ export default function AgentProperties() {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue="all">
+            <Tabs defaultValue="all" onValueChange={() => setSelectedIds(new Set())}>
               <TabsList className="mb-4">
                 <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
                 <TabsTrigger value="draft">Drafts ({statusCounts.draft})</TabsTrigger>
@@ -278,26 +454,53 @@ export default function AgentProperties() {
                 <TabsTrigger value="approved">Live ({statusCounts.approved})</TabsTrigger>
               </TabsList>
 
-              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved'] as const).map((tab) => (
-                <TabsContent key={tab} value={tab}>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{filterByStatus(tab).length} Properties</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {filterByStatus(tab).length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">No properties in this category</p>
-                      ) : (
-                        <div className="space-y-4">
-                          {filterByStatus(tab).map((property) => (
-                            <PropertyRow key={property.id} property={property} />
-                          ))}
+              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved'] as const).map((tab) => {
+                const filteredProperties = filterByStatus(tab);
+                return (
+                  <TabsContent key={tab} value={tab}>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle>{filteredProperties.length} Properties</CardTitle>
+                          {filteredProperties.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSelectAll(filteredProperties)}
+                              className="text-muted-foreground"
+                            >
+                              {selectedIds.size === filteredProperties.length ? (
+                                <>
+                                  <CheckSquare className="h-4 w-4 mr-1" />
+                                  Deselect All
+                                </>
+                              ) : (
+                                <>
+                                  <Square className="h-4 w-4 mr-1" />
+                                  Select All
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              ))}
+                      </CardHeader>
+                      <CardContent>
+                        {filteredProperties.length === 0 ? (
+                          <p className="text-center text-muted-foreground py-8">No properties in this category</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {filteredProperties.map((property) => (
+                              <PropertyRow key={property.id} property={property} />
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <BulkActionBar currentProperties={filteredProperties} />
+                  </TabsContent>
+                );
+              })}
             </Tabs>
           )}
         </motion.div>
