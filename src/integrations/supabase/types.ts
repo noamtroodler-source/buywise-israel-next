@@ -189,6 +189,9 @@ export type Database = {
           license_number: string | null
           name: string
           neighborhoods_covered: string[] | null
+          notify_email: boolean | null
+          notify_on_approval: boolean | null
+          notify_on_inquiry: boolean | null
           phone: string | null
           response_time_hours: number | null
           specializations: string[] | null
@@ -213,6 +216,9 @@ export type Database = {
           license_number?: string | null
           name: string
           neighborhoods_covered?: string[] | null
+          notify_email?: boolean | null
+          notify_on_approval?: boolean | null
+          notify_on_inquiry?: boolean | null
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
@@ -237,6 +243,9 @@ export type Database = {
           license_number?: string | null
           name?: string
           neighborhoods_covered?: string[] | null
+          notify_email?: boolean | null
+          notify_on_approval?: boolean | null
+          notify_on_inquiry?: boolean | null
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
@@ -1790,6 +1799,7 @@ export type Database = {
       property_inquiries: {
         Row: {
           agent_id: string
+          contacted_at: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -1797,12 +1807,15 @@ export type Database = {
           is_read: boolean | null
           message: string | null
           name: string | null
+          notes: string | null
           phone: string | null
           property_id: string
+          status: string | null
           user_id: string | null
         }
         Insert: {
           agent_id: string
+          contacted_at?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -1810,12 +1823,15 @@ export type Database = {
           is_read?: boolean | null
           message?: string | null
           name?: string | null
+          notes?: string | null
           phone?: string | null
           property_id: string
+          status?: string | null
           user_id?: string | null
         }
         Update: {
           agent_id?: string
+          contacted_at?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -1823,8 +1839,10 @@ export type Database = {
           is_read?: boolean | null
           message?: string | null
           name?: string | null
+          notes?: string | null
           phone?: string | null
           property_id?: string
+          status?: string | null
           user_id?: string | null
         }
         Relationships: [
