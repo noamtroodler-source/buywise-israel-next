@@ -46,6 +46,8 @@ import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import AdminListingReview from "./pages/admin/AdminListingReview";
 import AdminAgents from "./pages/admin/AdminAgents";
 import AdminAgencies from "./pages/admin/AdminAgencies";
+import AdminDevelopers from "./pages/admin/AdminDevelopers";
+import AdminProjects from "./pages/admin/AdminProjects";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
@@ -252,6 +254,8 @@ const App = () => (
               <Route path="properties" element={<AdminProperties />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
+              <Route path="developers" element={<AdminDevelopers />} />
+              <Route path="projects" element={<AdminProjects />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
               <Route path="*" element={<NotFound />} />
