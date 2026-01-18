@@ -133,6 +133,7 @@ export default function AgentRegisterWizard() {
         email: formData.email,
         phone: formData.phone || undefined,
         license_number: formData.license_number || undefined,
+        agency_id: validatedAgencyId || undefined,
         agency_name: validatedAgencyName || undefined,
         years_experience: formData.years_experience,
         languages: formData.languages,
