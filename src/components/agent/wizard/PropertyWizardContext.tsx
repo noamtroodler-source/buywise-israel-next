@@ -10,6 +10,9 @@ export interface PropertyWizardData {
   city: string;
   neighborhood: string;
   address: string;
+  latitude: number | null;
+  longitude: number | null;
+  place_id: string;
   
   // Step 2: Details
   bedrooms: number;
@@ -55,6 +58,9 @@ const defaultData: PropertyWizardData = {
   city: '',
   neighborhood: '',
   address: '',
+  latitude: null,
+  longitude: null,
+  place_id: '',
   bedrooms: 0,
   bathrooms: 0,
   size_sqm: undefined,
@@ -101,7 +107,7 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
   const canGoNext = (() => {
     switch (currentStep) {
       case 0: // Basics
-        return !!(data.title && data.price > 0 && data.city && data.address);
+        return !!(data.title && data.price > 0 && data.city && data.address && data.latitude && data.longitude);
       case 1: // Details
         return data.bedrooms >= 0 && data.bathrooms >= 0;
       case 2: // Features

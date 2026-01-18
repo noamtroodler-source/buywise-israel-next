@@ -16,6 +16,8 @@ export interface CreatePropertyData {
   address: string;
   city: string;
   neighborhood?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   bedrooms: number;
   bathrooms: number;
   size_sqm?: number;
