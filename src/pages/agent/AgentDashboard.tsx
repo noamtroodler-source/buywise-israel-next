@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
+  const { data: leadStats } = useLeadStats();
 
   const isLoading = profileLoading || propertiesLoading;
 
@@ -135,7 +137,7 @@ export default function AgentDashboard() {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => {}}>
               <Link to="/agent/properties">
                 <CardContent className="flex items-center gap-4 p-6">
@@ -146,6 +148,29 @@ export default function AgentDashboard() {
                     <h3 className="font-semibold">Manage Properties</h3>
                     <p className="text-sm text-muted-foreground">
                       View, edit, or delete your listings
+                    </p>
+                  </div>
+                </CardContent>
+              </Link>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <Link to="/agent/leads">
+                <CardContent className="flex items-center gap-4 p-6">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">Leads</h3>
+                      {(leadStats?.new || 0) > 0 && (
+                        <Badge variant="default" className="text-xs">
+                          {leadStats?.new} new
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Manage buyer inquiries
                     </p>
                   </div>
                 </CardContent>
