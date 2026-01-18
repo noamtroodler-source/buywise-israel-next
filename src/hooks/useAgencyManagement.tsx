@@ -282,3 +282,61 @@ export function useAgencyStats(agencyId: string | undefined) {
     enabled: !!agencyId,
   });
 }
+
+interface UpdateAgencyData {
+  id: string;
+  name?: string;
+  description?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  logo_url?: string | null;
+  cities_covered?: string[] | null;
+  specializations?: string[] | null;
+  is_accepting_agents?: boolean;
+}
+
+export function useUpdateAgency() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...data }: UpdateAgencyData) => {
+      const { error } = await supabase
+        .from('agencies')
+        .update(data)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myAgency'] });
+      queryClient.invalidateQueries({ queryKey: ['agency'] });
+      toast.success('Agency profile updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update agency: ' + error.message);
+    },
+  });
+}
+
+export function useDeactivateInvite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (inviteId: string) => {
+      const { error } = await supabase
+        .from('agency_invites')
+        .update({ is_active: false })
+        .eq('id', inviteId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyInvites'] });
+      toast.success('Invite code deactivated');
+    },
+    onError: (error) => {
+      toast.error('Failed to deactivate invite: ' + error.message);
+    },
+  });
+}

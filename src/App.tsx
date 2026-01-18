@@ -32,6 +32,7 @@ import EditProperty from "./pages/agent/EditProperty";
 import AgencyRegister from "./pages/agency/AgencyRegister";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyAnalytics from "./pages/agency/AgencyAnalytics";
+import AgencySettings from "./pages/agency/AgencySettings";
 import Developers from "./pages/Developers";
 import DeveloperDetail from "./pages/DeveloperDetail";
 import Projects from "./pages/Projects";
@@ -185,6 +186,11 @@ const App = () => (
             <Route path="/agency/analytics" element={
               <ProtectedRoute>
                 <AgencyAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/agency/settings" element={
+              <ProtectedRoute>
+                <AgencySettings />
               </ProtectedRoute>
             } />
             {/* Dev tools - temporarily public for hero image generation */}

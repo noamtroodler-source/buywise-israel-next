@@ -98,6 +98,12 @@ export default function AgencyDashboard() {
                 </Link>
               </Button>
               <Button variant="outline" asChild>
+                <Link to="/agency/settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
                 <Link to={`/agencies/${agency.slug}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Public Page
