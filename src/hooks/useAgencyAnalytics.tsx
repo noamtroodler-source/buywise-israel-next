@@ -1,20 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAgentProfile } from './useAgentProperties';
+import { useMyAgency } from './useAgencyManagement';
+import { DateRangeFilter } from './useAgentAnalytics';
 
-interface PropertyAnalytics {
-  propertyId: string;
+interface AgentPerformance {
+  agentId: string;
+  agentName: string;
+  avatarUrl: string | null;
   views: number;
   saves: number;
   inquiries: number;
+  activeListings: number;
 }
 
-interface AgentAnalyticsData {
+interface AgencyAnalyticsData {
   totalViews: number;
   totalSaves: number;
   totalInquiries: number;
   conversionRate: number;
-  propertyAnalytics: PropertyAnalytics[];
+  agentPerformance: AgentPerformance[];
   inquiriesByType: {
     whatsapp: number;
     call: number;
@@ -23,21 +27,19 @@ interface AgentAnalyticsData {
   };
 }
 
-export type DateRangeFilter = '7d' | '30d' | '90d' | 'all';
-
-export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
-  const { data: agentProfile } = useAgentProfile();
+export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
+  const { data: agency } = useMyAgency();
 
   return useQuery({
-    queryKey: ['agent-analytics', agentProfile?.id, dateRange],
-    queryFn: async (): Promise<AgentAnalyticsData> => {
-      if (!agentProfile) {
+    queryKey: ['agency-analytics', agency?.id, dateRange],
+    queryFn: async (): Promise<AgencyAnalyticsData> => {
+      if (!agency) {
         return {
           totalViews: 0,
           totalSaves: 0,
           totalInquiries: 0,
           conversionRate: 0,
-          propertyAnalytics: [],
+          agentPerformance: [],
           inquiriesByType: { whatsapp: 0, call: 0, email: 0, form: 0 },
         };
       }
@@ -51,28 +53,38 @@ export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
         dateFilter = cutoffDate.toISOString();
       }
 
-      // Fetch agent's properties with views
-      const { data: properties, error: propertiesError } = await supabase
-        .from('properties')
-        .select('id, views_count')
-        .eq('agent_id', agentProfile.id);
+      // Get all agents in agency
+      const { data: agents, error: agentsError } = await supabase
+        .from('agents')
+        .select('id, name, avatar_url')
+        .eq('agency_id', agency.id);
 
-      if (propertiesError) throw propertiesError;
+      if (agentsError) throw agentsError;
 
-      const propertyIds = properties?.map(p => p.id) || [];
+      const agentIds = agents?.map(a => a.id) || [];
       
-      if (propertyIds.length === 0) {
+      if (agentIds.length === 0) {
         return {
           totalViews: 0,
           totalSaves: 0,
           totalInquiries: 0,
           conversionRate: 0,
-          propertyAnalytics: [],
+          agentPerformance: [],
           inquiriesByType: { whatsapp: 0, call: 0, email: 0, form: 0 },
         };
       }
 
-      // Fetch favorites (saves) for agent's properties with optional date filter
+      // Fetch all properties for agency agents
+      const { data: properties, error: propertiesError } = await supabase
+        .from('properties')
+        .select('id, agent_id, views_count, verification_status')
+        .in('agent_id', agentIds);
+
+      if (propertiesError) throw propertiesError;
+
+      const propertyIds = properties?.map(p => p.id) || [];
+
+      // Fetch favorites with optional date filter
       let favoritesQuery = supabase
         .from('favorites')
         .select('property_id, created_at')
@@ -85,11 +97,11 @@ export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
       const { data: favorites, error: favoritesError } = await favoritesQuery;
       if (favoritesError) throw favoritesError;
 
-      // Fetch inquiries for agent's properties with optional date filter
+      // Fetch inquiries with optional date filter
       let inquiriesQuery = supabase
         .from('property_inquiries')
-        .select('property_id, inquiry_type, created_at')
-        .eq('agent_id', agentProfile.id);
+        .select('property_id, agent_id, inquiry_type, created_at')
+        .in('agent_id', agentIds);
       
       if (dateFilter) {
         inquiriesQuery = inquiriesQuery.gte('created_at', dateFilter);
@@ -98,12 +110,11 @@ export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
       const { data: inquiries, error: inquiriesError } = await inquiriesQuery;
       if (inquiriesError) throw inquiriesError;
 
-      // For views, we need to query property_views if date filtering is enabled
+      // Get views (with date filter if applicable)
       let totalViews = 0;
-      let viewsByProperty: Record<string, number> = {};
-      
+      let viewsByAgent: Record<string, number> = {};
+
       if (dateFilter) {
-        // Use property_views table for date-filtered view counts
         const { data: viewsData, error: viewsError } = await supabase
           .from('property_views')
           .select('property_id')
@@ -112,30 +123,42 @@ export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
         
         if (viewsError) throw viewsError;
         
-        // Count views per property
         viewsData?.forEach(v => {
-          viewsByProperty[v.property_id] = (viewsByProperty[v.property_id] || 0) + 1;
+          const property = properties?.find(p => p.id === v.property_id);
+          if (property) {
+            viewsByAgent[property.agent_id] = (viewsByAgent[property.agent_id] || 0) + 1;
+          }
         });
         totalViews = viewsData?.length || 0;
       } else {
-        // Use views_count from properties table for all-time
-        totalViews = properties?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
         properties?.forEach(p => {
-          viewsByProperty[p.id] = p.views_count || 0;
+          viewsByAgent[p.agent_id] = (viewsByAgent[p.agent_id] || 0) + (p.views_count || 0);
         });
+        totalViews = properties?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0;
       }
 
       const totalSaves = favorites?.length || 0;
       const totalInquiries = inquiries?.length || 0;
       const conversionRate = totalViews > 0 ? (totalInquiries / totalViews) * 100 : 0;
 
-      // Group by property
-      const propertyAnalytics: PropertyAnalytics[] = propertyIds.map(propertyId => ({
-        propertyId,
-        views: viewsByProperty[propertyId] || 0,
-        saves: favorites?.filter(f => f.property_id === propertyId).length || 0,
-        inquiries: inquiries?.filter(i => i.property_id === propertyId).length || 0,
-      }));
+      // Build per-agent performance
+      const agentPerformance: AgentPerformance[] = agents?.map(agent => {
+        const agentProperties = properties?.filter(p => p.agent_id === agent.id) || [];
+        const agentPropertyIds = agentProperties.map(p => p.id);
+        
+        return {
+          agentId: agent.id,
+          agentName: agent.name,
+          avatarUrl: agent.avatar_url,
+          views: viewsByAgent[agent.id] || 0,
+          saves: favorites?.filter(f => agentPropertyIds.includes(f.property_id)).length || 0,
+          inquiries: inquiries?.filter(i => i.agent_id === agent.id).length || 0,
+          activeListings: agentProperties.filter(p => (p as any).verification_status === 'approved').length,
+        };
+      }) || [];
+
+      // Sort by views descending
+      agentPerformance.sort((a, b) => b.views - a.views);
 
       // Group inquiries by type
       const inquiriesByType = {
@@ -150,10 +173,10 @@ export function useAgentAnalytics(dateRange: DateRangeFilter = 'all') {
         totalSaves,
         totalInquiries,
         conversionRate,
-        propertyAnalytics,
+        agentPerformance,
         inquiriesByType,
       };
     },
-    enabled: !!agentProfile,
+    enabled: !!agency,
   });
 }

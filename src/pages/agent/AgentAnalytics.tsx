@@ -1,16 +1,32 @@
+import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
-import { useAgentAnalytics } from '@/hooks/useAgentAnalytics';
+import { useAgentAnalytics, DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const dateRangeOptions: { value: DateRangeFilter; label: string }[] = [
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+  { value: '90d', label: 'Last 90 days' },
+  { value: 'all', label: 'All time' },
+];
 
 export default function AgentAnalytics() {
+  const [dateRange, setDateRange] = useState<DateRangeFilter>('30d');
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
-  const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics();
+  const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics(dateRange);
 
   const isLoading = propertiesLoading || analyticsLoading;
 
@@ -28,13 +44,15 @@ export default function AgentAnalytics() {
     ? `${analytics.conversionRate.toFixed(1)}%`
     : '—';
 
+  const dateRangeLabel = dateRangeOptions.find(o => o.value === dateRange)?.label || 'All time';
+
   // Prepare chart data
   const propertyChartData = properties.map(property => {
     const stats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
     return {
       propertyId: property.id,
       title: property.title,
-      views: stats?.views || property.views_count || 0,
+      views: stats?.views || 0,
       saves: stats?.saves || 0,
       inquiries: stats?.inquiries || 0,
     };
@@ -48,7 +66,7 @@ export default function AgentAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <Button variant="ghost" asChild className="mb-2">
                 <Link to="/agent">
@@ -58,6 +76,23 @@ export default function AgentAnalytics() {
               </Button>
               <h1 className="text-2xl font-bold">Analytics</h1>
               <p className="text-muted-foreground">Track your listing performance</p>
+            </div>
+            
+            {/* Date Range Selector */}
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeFilter)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -72,7 +107,7 @@ export default function AgentAnalytics() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">{analytics?.totalViews || 0}</p>
-                <p className="text-xs text-muted-foreground">All time</p>
+                <p className="text-xs text-muted-foreground">{dateRangeLabel}</p>
               </CardContent>
             </Card>
 
@@ -143,7 +178,7 @@ export default function AgentAnalytics() {
                 <div className="space-y-3">
                   {properties.map((property) => {
                     const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
-                    const views = propertyStats?.views || property.views_count || 0;
+                    const views = propertyStats?.views || 0;
                     const saves = propertyStats?.saves || 0;
                     const inquiries = propertyStats?.inquiries || 0;
                     const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';

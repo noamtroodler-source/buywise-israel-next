@@ -2,6 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Constants for listing freshness
+export const STALE_THRESHOLD_DAYS = 25;
+export const EXPIRED_THRESHOLD_DAYS = 30;
+
 interface UpdateAgentProfileData {
   id: string;
   name?: string;
@@ -14,6 +18,28 @@ interface UpdateAgentProfileData {
   specializations?: string[] | null;
   neighborhoods_covered?: string[] | null;
   avatar_url?: string | null;
+}
+
+export function useRenewProperty() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (propertyId: string) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({ last_renewed_at: new Date().toISOString() } as any)
+        .eq('id', propertyId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      toast.success('Listing renewed successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to renew listing: ' + error.message);
+    },
+  });
 }
 
 export function useUpdateAgentProfile() {
