@@ -71,6 +71,12 @@ import Agencies from "./pages/Agencies";
 import AgencyDetail from "./pages/AgencyDetail";
 import ForAgents from "./pages/ForAgents";
 import DeveloperRegister from "./pages/developer/DeveloperRegister";
+import DeveloperDashboard from "./pages/developer/DeveloperDashboard";
+import DeveloperProjects from "./pages/developer/DeveloperProjects";
+import DeveloperAnalytics from "./pages/developer/DeveloperAnalytics";
+import DeveloperSettings from "./pages/developer/DeveloperSettings";
+import DeveloperLeads from "./pages/developer/DeveloperLeads";
+import NewProjectWizard from "./pages/developer/NewProjectWizard";
 
 const queryClient = new QueryClient();
 
@@ -198,6 +204,36 @@ const App = () => (
             <Route path="/developer/register" element={
               <ProtectedRoute>
                 <DeveloperRegister />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer" element={
+              <ProtectedRoute requiredRole="developer">
+                <DeveloperDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/projects" element={
+              <ProtectedRoute requiredRole="developer">
+                <DeveloperProjects />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/projects/new" element={
+              <ProtectedRoute requiredRole="developer">
+                <NewProjectWizard />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/analytics" element={
+              <ProtectedRoute requiredRole="developer">
+                <DeveloperAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/leads" element={
+              <ProtectedRoute requiredRole="developer">
+                <DeveloperLeads />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/settings" element={
+              <ProtectedRoute requiredRole="developer">
+                <DeveloperSettings />
               </ProtectedRoute>
             } />
             {/* Dev tools - temporarily public for hero image generation */}

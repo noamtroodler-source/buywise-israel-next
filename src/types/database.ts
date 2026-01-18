@@ -4,7 +4,7 @@ export type ListingType = 'for_sale' | 'for_rent' | 'projects';
 export type PropertyCondition = 'new' | 'renovated' | 'good' | 'needs_renovation';
 export type AlertFrequency = 'instant' | 'daily' | 'weekly';
 export type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'size_desc' | 'rooms_desc';
-export type AppRole = 'admin' | 'agent' | 'user';
+export type AppRole = 'admin' | 'agent' | 'developer' | 'user';
 
 export interface Profile {
   id: string;
