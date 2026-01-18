@@ -887,6 +887,9 @@ export type Database = {
       }
       developers: {
         Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           description: string | null
           email: string | null
@@ -897,11 +900,17 @@ export type Database = {
           name: string
           phone: string | null
           slug: string
+          status: string | null
           total_projects: number | null
           updated_at: string
+          user_id: string | null
+          verification_status: string | null
           website: string | null
         }
         Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -912,11 +921,17 @@ export type Database = {
           name: string
           phone?: string | null
           slug: string
+          status?: string | null
           total_projects?: number | null
           updated_at?: string
+          user_id?: string | null
+          verification_status?: string | null
           website?: string | null
         }
         Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
@@ -927,8 +942,11 @@ export type Database = {
           name?: string
           phone?: string | null
           slug?: string
+          status?: string | null
           total_projects?: number | null
           updated_at?: string
+          user_id?: string | null
+          verification_status?: string | null
           website?: string | null
         }
         Relationships: []
@@ -1492,6 +1510,66 @@ export type Database = {
         }
         Relationships: []
       }
+      project_inquiries: {
+        Row: {
+          budget_range: string | null
+          created_at: string
+          developer_id: string
+          email: string
+          id: string
+          is_read: boolean | null
+          message: string
+          name: string
+          phone: string | null
+          preferred_unit_type: string | null
+          project_id: string
+          user_id: string | null
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string
+          developer_id: string
+          email: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          name: string
+          phone?: string | null
+          preferred_unit_type?: string | null
+          project_id: string
+          user_id?: string | null
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string
+          developer_id?: string
+          email?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          name?: string
+          phone?: string | null
+          preferred_unit_type?: string | null
+          project_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_inquiries_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_inquiries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_units: {
         Row: {
           bathrooms: number | null
@@ -1545,9 +1623,42 @@ export type Database = {
           },
         ]
       }
+      project_views: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          session_id: string | null
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          session_id?: string | null
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          session_id?: string | null
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_views_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           address: string | null
+          admin_feedback: string | null
           amenities: string[] | null
           available_units: number | null
           city: string
@@ -1563,6 +1674,7 @@ export type Database = {
           images: string[] | null
           is_featured: boolean | null
           is_published: boolean | null
+          last_renewed_at: string | null
           latitude: number | null
           longitude: number | null
           name: string
@@ -1570,14 +1682,19 @@ export type Database = {
           price_from: number | null
           price_to: number | null
           representing_agent_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           slug: string
           status: Database["public"]["Enums"]["project_status"] | null
+          submitted_at: string | null
           total_units: number | null
           updated_at: string
+          verification_status: string | null
           views_count: number | null
         }
         Insert: {
           address?: string | null
+          admin_feedback?: string | null
           amenities?: string[] | null
           available_units?: number | null
           city: string
@@ -1593,6 +1710,7 @@ export type Database = {
           images?: string[] | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          last_renewed_at?: string | null
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -1600,14 +1718,19 @@ export type Database = {
           price_from?: number | null
           price_to?: number | null
           representing_agent_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           slug: string
           status?: Database["public"]["Enums"]["project_status"] | null
+          submitted_at?: string | null
           total_units?: number | null
           updated_at?: string
+          verification_status?: string | null
           views_count?: number | null
         }
         Update: {
           address?: string | null
+          admin_feedback?: string | null
           amenities?: string[] | null
           available_units?: number | null
           city?: string
@@ -1623,6 +1746,7 @@ export type Database = {
           images?: string[] | null
           is_featured?: boolean | null
           is_published?: boolean | null
+          last_renewed_at?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string
@@ -1630,10 +1754,14 @@ export type Database = {
           price_from?: number | null
           price_to?: number | null
           representing_agent_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["project_status"] | null
+          submitted_at?: string | null
           total_units?: number | null
           updated_at?: string
+          verification_status?: string | null
           views_count?: number | null
         }
         Relationships: [
@@ -2245,7 +2373,7 @@ export type Database = {
     }
     Enums: {
       agent_status: "pending" | "active" | "suspended"
-      app_role: "admin" | "agent" | "user"
+      app_role: "admin" | "agent" | "user" | "developer"
       listing_status: "for_sale" | "for_rent" | "sold" | "rented"
       project_status:
         | "planning"
@@ -2393,7 +2521,7 @@ export const Constants = {
   public: {
     Enums: {
       agent_status: ["pending", "active", "suspended"],
-      app_role: ["admin", "agent", "user"],
+      app_role: ["admin", "agent", "user", "developer"],
       listing_status: ["for_sale", "for_rent", "sold", "rented"],
       project_status: [
         "planning",
