@@ -66,7 +66,7 @@ export function useAgentRegistration() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userRoles'] });
       queryClient.invalidateQueries({ queryKey: ['agentProfile'] });
-      toast.success('Successfully registered as an agent!');
+      // Toast handled by the success dialog
     },
     onError: (error) => {
       toast.error('Failed to register: ' + error.message);
