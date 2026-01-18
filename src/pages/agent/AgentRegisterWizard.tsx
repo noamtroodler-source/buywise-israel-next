@@ -512,16 +512,16 @@ export default function AgentRegisterWizard() {
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => updateField('bio', e.target.value)}
-                placeholder="Tell potential clients about yourself, your experience, and what makes you a great agent..."
-                rows={4}
+                placeholder="Brief intro about yourself and your expertise..."
+                rows={3}
                 className="rounded-xl resize-none"
-                maxLength={500}
+                maxLength={160}
               />
               <div className="flex justify-end">
                 <span className={`text-xs px-2 py-1 rounded-full ${
-                  formData.bio.length > 450 ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+                  formData.bio.length > 140 ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
                 }`}>
-                  {formData.bio.length}/500
+                  {formData.bio.length}/160
                 </span>
               </div>
             </motion.div>
