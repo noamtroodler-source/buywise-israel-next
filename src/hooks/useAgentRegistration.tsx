@@ -9,6 +9,7 @@ export interface AgentRegistrationData {
   phone?: string;
   bio?: string;
   license_number?: string;
+  agency_id?: string;
   agency_name?: string;
   years_experience?: number;
   languages?: string[];
@@ -33,7 +34,9 @@ export function useAgentRegistration() {
           phone: data.phone,
           bio: data.bio,
           license_number: data.license_number,
+          agency_id: data.agency_id || null,
           agency_name: data.agency_name,
+          joined_via: data.agency_id ? 'invite_code' : null,
           years_experience: data.years_experience || 0,
           languages: data.languages || ['Hebrew', 'English'],
           specializations: data.specializations,

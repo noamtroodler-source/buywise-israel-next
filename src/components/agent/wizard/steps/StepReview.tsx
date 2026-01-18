@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   MapPin, Bed, Bath, Ruler, Building, Calendar, Car,
-  Thermometer, CheckCircle, Edit2
+  Thermometer, CheckCircle, Edit2, Eye
 } from 'lucide-react';
+import { PropertyPreviewDialog } from './PropertyPreviewDialog';
 
 interface StepReviewProps {
   onEditStep: (step: number) => void;
@@ -13,6 +15,7 @@ interface StepReviewProps {
 
 export function StepReview({ onEditStep }: StepReviewProps) {
   const { data } = usePropertyWizard();
+  const [showPreview, setShowPreview] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -50,12 +53,20 @@ export function StepReview({ onEditStep }: StepReviewProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-1">Review Your Listing</h2>
-        <p className="text-sm text-muted-foreground">
-          Make sure everything looks good before submitting
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Review Your Listing</h2>
+          <p className="text-sm text-muted-foreground">
+            Make sure everything looks good before submitting
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setShowPreview(true)} className="gap-2">
+          <Eye className="h-4 w-4" />
+          Preview as Buyer
+        </Button>
       </div>
+
+      <PropertyPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
       {/* Preview Card */}
       <Card className="overflow-hidden">
