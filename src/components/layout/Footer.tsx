@@ -68,6 +68,9 @@ export function Footer() {
             
             <h4 className="text-sm font-semibold text-foreground mt-6">For Professionals</h4>
             <nav className="flex flex-col gap-2">
+              <Link to="/advertise" className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">
+                Advertise with Us
+              </Link>
               <Link to="/for-agents" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 For Agents & Agencies
               </Link>

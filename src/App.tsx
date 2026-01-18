@@ -73,6 +73,7 @@ import Agencies from "./pages/Agencies";
 import AgencyDetail from "./pages/AgencyDetail";
 import ForAgents from "./pages/ForAgents";
 import ForDevelopers from "./pages/ForDevelopers";
+import Advertise from "./pages/Advertise";
 import DeveloperRegister from "./pages/developer/DeveloperRegister";
 import DeveloperDashboard from "./pages/developer/DeveloperDashboard";
 import DeveloperProjects from "./pages/developer/DeveloperProjects";
@@ -131,6 +132,7 @@ const App = () => (
             <Route path="/about" element={<Principles />} />
             <Route path="/for-agents" element={<ForAgents />} />
             <Route path="/for-developers" element={<ForDevelopers />} />
+            <Route path="/advertise" element={<Advertise />} />
             
             <Route path="/profile" element={
               <ProtectedRoute>
