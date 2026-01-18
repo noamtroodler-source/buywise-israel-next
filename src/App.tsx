@@ -70,6 +70,7 @@ import AgentDetail from "./pages/AgentDetail";
 import Agencies from "./pages/Agencies";
 import AgencyDetail from "./pages/AgencyDetail";
 import ForAgents from "./pages/ForAgents";
+import DeveloperRegister from "./pages/developer/DeveloperRegister";
 
 const queryClient = new QueryClient();
 
@@ -191,6 +192,12 @@ const App = () => (
             <Route path="/agency/settings" element={
               <ProtectedRoute>
                 <AgencySettings />
+              </ProtectedRoute>
+            } />
+            {/* Developer Routes */}
+            <Route path="/developer/register" element={
+              <ProtectedRoute>
+                <DeveloperRegister />
               </ProtectedRoute>
             } />
             {/* Dev tools - temporarily public for hero image generation */}
