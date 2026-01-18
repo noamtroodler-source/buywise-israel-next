@@ -1,0 +1,133 @@
+import { createContext, useContext, useState, ReactNode } from 'react';
+
+export type ProjectStatus = 'planning' | 'pre_sale' | 'under_construction' | 'completed';
+
+export interface ProjectWizardData {
+  // Step 1: Basics
+  name: string;
+  city: string;
+  neighborhood: string;
+  address: string;
+  status: ProjectStatus;
+  
+  // Step 2: Details
+  total_units: number | undefined;
+  available_units: number | undefined;
+  price_from: number | undefined;
+  price_to: number | undefined;
+  construction_start: string | undefined;
+  completion_date: string | undefined;
+  construction_progress_percent: number;
+  
+  // Step 3: Amenities
+  amenities: string[];
+  
+  // Step 4: Photos
+  images: string[];
+  floor_plans: string[];
+  
+  // Step 5: Description
+  description: string;
+}
+
+interface ProjectWizardContextType {
+  data: ProjectWizardData;
+  updateData: (updates: Partial<ProjectWizardData>) => void;
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
+  goNext: () => void;
+  goBack: () => void;
+  canGoNext: boolean;
+  isLastStep: boolean;
+}
+
+const defaultData: ProjectWizardData = {
+  name: '',
+  city: '',
+  neighborhood: '',
+  address: '',
+  status: 'planning',
+  total_units: undefined,
+  available_units: undefined,
+  price_from: undefined,
+  price_to: undefined,
+  construction_start: undefined,
+  completion_date: undefined,
+  construction_progress_percent: 0,
+  amenities: [],
+  images: [],
+  floor_plans: [],
+  description: '',
+};
+
+const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);
+
+const TOTAL_STEPS = 6;
+
+export function ProjectWizardProvider({ children }: { children: ReactNode }) {
+  const [data, setData] = useState<ProjectWizardData>(defaultData);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const updateData = (updates: Partial<ProjectWizardData>) => {
+    setData(prev => ({ ...prev, ...updates }));
+  };
+
+  const goNext = () => {
+    if (currentStep < TOTAL_STEPS - 1) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
+
+  const goBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  // Validation for each step
+  const canGoNext = (() => {
+    switch (currentStep) {
+      case 0: // Basics
+        return !!(data.name && data.city);
+      case 1: // Details
+        return true; // Optional
+      case 2: // Amenities
+        return true; // Optional
+      case 3: // Photos
+        return data.images.length >= 1;
+      case 4: // Description
+        return !!data.description;
+      case 5: // Review
+        return true;
+      default:
+        return false;
+    }
+  })();
+
+  const isLastStep = currentStep === TOTAL_STEPS - 1;
+
+  return (
+    <ProjectWizardContext.Provider
+      value={{
+        data,
+        updateData,
+        currentStep,
+        setCurrentStep,
+        goNext,
+        goBack,
+        canGoNext,
+        isLastStep,
+      }}
+    >
+      {children}
+    </ProjectWizardContext.Provider>
+  );
+}
+
+export function useProjectWizard() {
+  const context = useContext(ProjectWizardContext);
+  if (!context) {
+    throw new Error('useProjectWizard must be used within ProjectWizardProvider');
+  }
+  return context;
+}
