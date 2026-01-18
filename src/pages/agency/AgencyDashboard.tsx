@@ -92,6 +92,12 @@ export default function AgencyDashboard() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" asChild>
+                <Link to="/agency/analytics">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Analytics
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
                 <Link to={`/agencies/${agency.slug}`}>
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Public Page

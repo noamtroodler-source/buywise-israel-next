@@ -1667,6 +1667,7 @@ export type Database = {
           is_featured: boolean | null
           is_furnished: boolean | null
           is_published: boolean | null
+          last_renewed_at: string | null
           latitude: number | null
           listing_status: Database["public"]["Enums"]["listing_status"]
           longitude: number | null
@@ -1710,6 +1711,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_renewed_at?: string | null
           latitude?: number | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
@@ -1753,6 +1755,7 @@ export type Database = {
           is_featured?: boolean | null
           is_furnished?: boolean | null
           is_published?: boolean | null
+          last_renewed_at?: string | null
           latitude?: number | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
