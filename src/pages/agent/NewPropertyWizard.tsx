@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 import { PropertyWizardProvider, usePropertyWizard } from '@/components/agent/wizard/PropertyWizardContext';
 import { 
@@ -15,7 +16,7 @@ import {
   StepDescription, 
   StepReview 
 } from '@/components/agent/wizard/steps';
-import { useCreateProperty } from '@/hooks/useAgentProperties';
+import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import confetti from 'canvas-confetti';
 
 const steps = [
@@ -30,8 +31,12 @@ const steps = [
 function WizardContent() {
   const navigate = useNavigate();
   const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = usePropertyWizard();
+  const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check if agent is verified (status is 'active')
+  const isAgentVerified = agentProfile?.status === 'active';
 
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
@@ -181,29 +186,41 @@ function WizardContent() {
             </Button>
 
             {isLastStep ? (
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleSaveDraft}
-                  disabled={isSubmitting}
-                >
-                  Save as Draft
-                </Button>
-                <Button
-                  onClick={handleSubmitForReview}
-                  disabled={isSubmitting || !canGoNext}
-                  className="gap-2"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Submit for Review
-                      <Sparkles className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+              <div className="flex flex-col gap-3">
+                {!isAgentVerified && (
+                  <Alert variant="default" className="bg-amber-50 border-amber-200">
+                    <ShieldAlert className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-amber-800">Pending Verification</AlertTitle>
+                    <AlertDescription className="text-amber-700">
+                      Your agent license is pending verification. You can save drafts, but submissions for review are disabled until your account is approved.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={isSubmitting}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    onClick={handleSubmitForReview}
+                    disabled={isSubmitting || !canGoNext || !isAgentVerified}
+                    className="gap-2"
+                    title={!isAgentVerified ? 'Agent verification required' : undefined}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Submit for Review
+                        <Sparkles className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button

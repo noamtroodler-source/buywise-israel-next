@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
@@ -114,6 +115,25 @@ export default function AgentDashboard() {
               </Button>
             </div>
           </div>
+
+          {/* Pending Verification Alert */}
+          {agentProfile?.status === 'pending' && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <ShieldAlert className="h-5 w-5 text-blue-600" />
+              <AlertTitle className="text-blue-800">License Verification Pending</AlertTitle>
+              <AlertDescription className="text-blue-700">
+                Your agent license is currently under review. You can create draft listings, but you won't be able to submit them for publication until your account is verified. This typically takes 24-48 hours.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Verified Agent Badge */}
+          {agentProfile?.status === 'active' && (
+            <div className="flex items-center gap-2 text-sm text-primary">
+              <ShieldCheck className="h-4 w-4" />
+              <span className="font-medium">Verified Agent</span>
+            </div>
+          )}
 
           {/* Onboarding Checklist for new agents */}
           {showOnboarding && (
