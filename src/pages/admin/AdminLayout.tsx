@@ -2,13 +2,16 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Home, Building, Building2, 
-  FileText, MapPin, BarChart3, Settings 
+  FileText, MapPin, BarChart3, Settings, ClipboardCheck 
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { usePendingReviewCount } from '@/hooks/useListingReview';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/review', label: 'Listing Review', icon: ClipboardCheck, showBadge: true },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/properties', label: 'Properties', icon: Home },
   { href: '/admin/agents', label: 'Agents', icon: Building2 },
@@ -22,6 +25,7 @@ const adminNavItems = [
 
 export function AdminLayout() {
   const location = useLocation();
+  const { data: pendingCount } = usePendingReviewCount();
 
   return (
     <Layout>
@@ -54,6 +58,18 @@ export function AdminLayout() {
                     >
                       <item.icon className="h-5 w-5" />
                       {item.label}
+                      {item.showBadge && pendingCount && pendingCount > 0 && (
+                        <Badge 
+                          className={cn(
+                            "ml-auto",
+                            isActive 
+                              ? "bg-primary-foreground text-primary" 
+                              : "bg-yellow-100 text-yellow-800"
+                          )}
+                        >
+                          {pendingCount}
+                        </Badge>
+                      )}
                     </Link>
                   );
                 })}

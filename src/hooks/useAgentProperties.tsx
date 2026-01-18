@@ -4,6 +4,8 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property, PropertyType, ListingStatus } from '@/types/database';
 
+export type VerificationStatus = 'draft' | 'pending_review' | 'changes_requested' | 'approved' | 'rejected';
+
 export interface CreatePropertyData {
   title: string;
   description?: string;
@@ -27,6 +29,8 @@ export interface CreatePropertyData {
   entry_date?: string;
   ac_type?: 'none' | 'split' | 'central' | 'mini_central';
   vaad_bayit_monthly?: number;
+  verification_status?: VerificationStatus;
+  submitted_at?: string;
 }
 
 export function useAgentProfile() {
@@ -76,29 +80,71 @@ export function useCreateProperty() {
   const { data: agentProfile } = useAgentProfile();
 
   return useMutation({
-    mutationFn: async (propertyData: CreatePropertyData) => {
+    mutationFn: async (propertyData: CreatePropertyData & { submitForReview?: boolean }) => {
       if (!agentProfile) throw new Error('Agent profile not found');
 
-      const { data, error } = await supabase
+      const { submitForReview, ...data } = propertyData;
+      
+      // Determine verification status based on action
+      const verificationStatus: VerificationStatus = submitForReview ? 'pending_review' : 'draft';
+      const submittedAt = submitForReview ? new Date().toISOString() : null;
+
+      const { data: created, error } = await supabase
         .from('properties')
         .insert({
-          ...propertyData,
+          ...data,
           agent_id: agentProfile.id,
-          property_type: propertyData.property_type as any,
+          property_type: data.property_type as any,
+          verification_status: verificationStatus,
+          submitted_at: submittedAt,
+          is_published: false, // Always start unpublished, admin will publish on approval
         } as any)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return { data: created, submitForReview };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success('Property created successfully');
+      queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
+      
+      if (result.submitForReview) {
+        toast.success('Listing submitted for review! We\'ll notify you when it\'s approved.');
+      } else {
+        toast.success('Draft saved successfully');
+      }
     },
     onError: (error) => {
       toast.error('Failed to create property: ' + error.message);
+    },
+  });
+}
+
+export function useSubmitForReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (propertyId: string) => {
+      const { error } = await supabase
+        .from('properties')
+        .update({
+          verification_status: 'pending_review',
+          submitted_at: new Date().toISOString(),
+          rejection_reason: null, // Clear previous rejection reason
+        } as any)
+        .eq('id', propertyId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agentProperties'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
+      toast.success('Listing submitted for review!');
+    },
+    onError: (error) => {
+      toast.error('Failed to submit: ' + error.message);
     },
   });
 }

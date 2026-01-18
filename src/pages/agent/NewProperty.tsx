@@ -72,7 +72,7 @@ export default function NewProperty() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent, submitForReview: boolean = false) => {
     e.preventDefault();
     
     const features = featuresInput
@@ -81,7 +81,7 @@ export default function NewProperty() {
       .filter(Boolean);
 
     createProperty.mutate(
-      { ...formData, features },
+      { ...formData, features, submitForReview },
       { onSuccess: () => navigate('/agent/properties') }
     );
   };
@@ -378,40 +378,38 @@ export default function NewProperty() {
                   />
                 </div>
 
-                {/* Publish */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                  <div>
-                    <p className="font-medium">Publish immediately</p>
-                    <p className="text-sm text-muted-foreground">
-                      Make this property visible to everyone
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_published}
-                    onCheckedChange={(checked) => updateField('is_published', checked)}
-                  />
-                </div>
-
                 {/* Submit */}
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    type="submit"
+                    type="button"
+                    onClick={(e) => handleSubmit(e, true)}
                     className="flex-1"
                     disabled={createProperty.isPending}
                   >
                     {createProperty.isPending && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}
-                    Create Property
+                    Submit for Review
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
+                    onClick={(e) => handleSubmit(e, false)}
+                    disabled={createProperty.isPending}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
                     onClick={() => navigate(-1)}
                   >
                     Cancel
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  All listings are reviewed before going live to ensure quality.
+                </p>
               </form>
             </CardContent>
           </Card>
