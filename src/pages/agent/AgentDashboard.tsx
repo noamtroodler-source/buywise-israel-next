@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useLeadStats } from '@/hooks/useAgentLeads';
 import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
+import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
+import { differenceInDays, parseISO } from 'date-fns';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
@@ -38,6 +40,18 @@ export default function AgentDashboard() {
   };
   
   const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
+
+  // Count stale listings (approved listings older than threshold)
+  const staleListings = useMemo(() => {
+    const now = new Date();
+    return properties.filter(p => {
+      if ((p as any).verification_status !== 'approved') return false;
+      const renewedAt = (p as any).last_renewed_at || p.created_at;
+      if (!renewedAt) return false;
+      const daysSinceRenewal = differenceInDays(now, parseISO(renewedAt));
+      return daysSinceRenewal >= STALE_THRESHOLD_DAYS;
+    });
+  }, [properties]);
 
   if (isLoading) {
     return (
@@ -112,6 +126,22 @@ export default function AgentDashboard() {
               }))}
               onDismiss={handleDismissOnboarding}
             />
+          )}
+
+          {/* Stale Listings Alert */}
+          {staleListings.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center gap-3">
+              <RefreshCw className="h-5 w-5 text-amber-600 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium text-amber-800">Listings Need Renewal</p>
+                <p className="text-sm text-amber-700">
+                  {staleListings.length} listing{staleListings.length > 1 ? 's are' : ' is'} over {STALE_THRESHOLD_DAYS} days old. Renew to stay visible to buyers.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" asChild className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100">
+                <Link to="/agent/properties?tab=stale">Renew Now</Link>
+              </Button>
+            </div>
           )}
 
           {/* Changes Requested Alert */}
