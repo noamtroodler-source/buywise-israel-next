@@ -23,7 +23,31 @@ export function StepDescription() {
 
   const descriptionLength = data.description.length;
   const minLength = 100;
-  const optimalLength = 300;
+  const optimalMin = 300;
+  const optimalMax = 500;
+  const warningLength = 1500;
+  const maxLength = 2000;
+
+  const getCharacterFeedback = () => {
+    if (descriptionLength < minLength) {
+      return { text: `${descriptionLength} characters (minimum ${minLength})`, color: 'text-primary' };
+    }
+    if (descriptionLength < optimalMin) {
+      return { text: `${descriptionLength} characters · ${optimalMin - descriptionLength} more for optimal`, color: 'text-muted-foreground' };
+    }
+    if (descriptionLength <= optimalMax) {
+      return { text: `${descriptionLength} characters · Great length!`, color: 'text-primary' };
+    }
+    if (descriptionLength < warningLength) {
+      return { text: `${descriptionLength} characters`, color: 'text-muted-foreground' };
+    }
+    if (descriptionLength < maxLength) {
+      return { text: `${descriptionLength} characters · ${maxLength - descriptionLength} remaining`, color: 'text-primary' };
+    }
+    return { text: `Maximum reached (${maxLength})`, color: 'text-destructive' };
+  };
+
+  const feedback = getCharacterFeedback();
 
   return (
     <div className="space-y-8">
@@ -47,20 +71,18 @@ export function StepDescription() {
             id="description"
             value={data.description}
             onChange={(e) => updateData({ description: e.target.value })}
+            maxLength={maxLength}
             placeholder="Describe the property, its best features, the neighborhood, and why someone would love living here..."
             rows={8}
             className="rounded-xl resize-none"
           />
           <div className="flex justify-between text-xs">
-            <span className={descriptionLength < minLength ? 'text-primary' : 'text-muted-foreground'}>
-              {descriptionLength} characters
-              {descriptionLength < minLength && ` (minimum ${minLength})`}
+            <span className={feedback.color}>
+              {feedback.text}
             </span>
-            {descriptionLength >= minLength && descriptionLength < optimalLength && (
-              <span className="text-muted-foreground">
-                Tip: {optimalLength - descriptionLength} more for optimal length
-              </span>
-            )}
+            <span className="text-muted-foreground">
+              Recommended: {optimalMin}-{optimalMax}
+            </span>
           </div>
         </div>
 
