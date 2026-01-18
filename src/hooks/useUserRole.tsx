@@ -25,6 +25,7 @@ export function useUserRole() {
   const hasRole = (role: AppRole) => roles.includes(role);
   const isAgent = hasRole('agent');
   const isAdmin = hasRole('admin');
+  const isDeveloper = hasRole('developer');
   const isUser = hasRole('user');
 
   return {
@@ -33,6 +34,7 @@ export function useUserRole() {
     hasRole,
     isAgent,
     isAdmin,
+    isDeveloper,
     isUser,
   };
 }

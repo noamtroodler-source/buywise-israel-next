@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,18 +16,21 @@ import { useProfile } from '@/hooks/useProfile';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
+import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { isAgent, isAdmin } = useUserRole();
+  const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const { data: profile } = useProfile();
   const { favoriteIds } = useFavorites();
   const { data: myAgency } = useMyAgency();
+  const { data: developerProfile } = useDeveloperProfile();
   const navigate = useNavigate();
   
   const favoriteCount = favoriteIds?.length || 0;
   const isAgencyAdmin = !!myAgency;
+  const hasDeveloperProfile = !!developerProfile;
 
   const handleSignOut = async () => {
     await signOut();
@@ -150,6 +153,14 @@ export function Header() {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {(isDeveloper || hasDeveloperProfile) && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/developer" className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4" />
+                      Developer Portal
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2">
@@ -249,6 +260,16 @@ export function Header() {
                   >
                     <Users className="h-4 w-4" />
                     Agency Portal
+                  </Link>
+                )}
+                {(isDeveloper || hasDeveloperProfile) && (
+                  <Link 
+                    to="/developer" 
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Landmark className="h-4 w-4" />
+                    Developer Portal
                   </Link>
                 )}
                 {isAdmin && (
