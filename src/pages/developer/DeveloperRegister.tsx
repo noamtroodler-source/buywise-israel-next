@@ -65,8 +65,7 @@ export default function DeveloperRegister() {
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
-      toast.error('Please log in to register as a developer');
-      navigate('/auth?redirect=/developer/register');
+      navigate('/auth?tab=signup&role=developer');
     }
   }, [user, authLoading, navigate]);
 

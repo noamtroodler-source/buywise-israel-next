@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Loader2, Upload } from 'lucide-react';
@@ -18,8 +18,15 @@ const specializations = ['Residential', 'Luxury', 'Commercial', 'New Constructio
 
 export default function AgencyRegister() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Redirect non-authenticated users to auth page with role context
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth?tab=signup&role=agency');
+    }
+  }, [user, loading, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',

@@ -15,7 +15,7 @@ import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
 import { PostSignupSuggestions } from '@/components/onboarding/PostSignupSuggestions';
 import { PasswordStrengthInput } from '@/components/auth/PasswordStrengthInput';
 import { toast } from 'sonner';
-import { Shield, Loader2, Mail } from 'lucide-react';
+import { Shield, Loader2, Mail, User, Building2, Landmark } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -24,6 +24,39 @@ const authSchema = z.object({
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
+
+type ProfessionalRole = 'agent' | 'agency' | 'developer' | null;
+
+const roleConfig = {
+  agent: {
+    icon: User,
+    title: "Join as a Real Estate Agent",
+    description: "Create your account to start listing properties and connecting with buyers",
+    redirectTo: "/agent/register",
+    buttonText: "Create Agent Account",
+  },
+  agency: {
+    icon: Building2,
+    title: "Register Your Agency",
+    description: "Create your admin account to set up your real estate agency",
+    redirectTo: "/agency/register",
+    buttonText: "Create Agency Account",
+  },
+  developer: {
+    icon: Landmark,
+    title: "Join as a Property Developer",
+    description: "Create your account to showcase your development projects",
+    redirectTo: "/developer/register",
+    buttonText: "Create Developer Account",
+  },
+  default: {
+    icon: Shield,
+    title: "Welcome to BuyWise Israel",
+    description: "Create your account to start your property journey",
+    redirectTo: "/",
+    buttonText: "Create Account",
+  },
+};
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -35,21 +68,43 @@ export default function Auth() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
+  
+  // Get professional role from URL params
+  const roleParam = searchParams.get('role') as ProfessionalRole;
+  const isProfessionalSignup = roleParam && ['agent', 'agency', 'developer'].includes(roleParam);
+  const config = isProfessionalSignup ? roleConfig[roleParam] : roleConfig.default;
+  const IconComponent = config.icon;
 
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
     defaultValues: { email: '', password: '', fullName: '' },
   });
 
+  // Handle already logged-in users with professional role
+  useEffect(() => {
+    if (user && !loading && isProfessionalSignup) {
+      // Already logged in and trying to register as professional - go directly to registration
+      navigate(config.redirectTo);
+      return;
+    }
+  }, [user, loading, isProfessionalSignup, config.redirectTo, navigate]);
+
   useEffect(() => {
     if (user && !loading && !profileLoading) {
-      if (justSignedUp && !buyerProfile) {
+      // If professional signup, redirect to registration page
+      if (justSignedUp && isProfessionalSignup) {
+        navigate(config.redirectTo);
+        return;
+      }
+      
+      // Regular buyer flow
+      if (justSignedUp && !buyerProfile && !isProfessionalSignup) {
         setShowOnboarding(true);
-      } else if (!showOnboarding && !showPostSignupSuggestions) {
+      } else if (!showOnboarding && !showPostSignupSuggestions && !isProfessionalSignup) {
         navigate('/');
       }
     }
-  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate]);
+  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -76,7 +131,11 @@ export default function Auth() {
           }
         } else {
           setJustSignedUp(true);
-          toast.success('Account created successfully!');
+          if (isProfessionalSignup) {
+            toast.success('Account created! Redirecting to complete your registration...');
+          } else {
+            toast.success('Account created successfully!');
+          }
         }
       } else {
         const { error } = await signIn(data.email, data.password);
@@ -84,7 +143,12 @@ export default function Auth() {
           toast.error('Invalid email or password');
         } else {
           toast.success('Welcome back!');
-          navigate('/');
+          // If signing in with professional role, redirect to registration
+          if (isProfessionalSignup) {
+            navigate(config.redirectTo);
+          } else {
+            navigate('/');
+          }
         }
       }
     } finally {
@@ -108,13 +172,15 @@ export default function Auth() {
         <Card className="shadow-lg border-border/50">
           <CardHeader className="text-center space-y-2 pb-2">
             <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-              <Shield className="h-6 w-6 text-primary" />
+              <IconComponent className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome to BuyWise Israel</CardTitle>
+            <CardTitle className="text-2xl font-bold">{config.title}</CardTitle>
             <CardDescription className="text-muted-foreground">
               {activeTab === 'signup' 
-                ? 'Create your account to start your property journey' 
-                : 'Sign in to access your saved properties'}
+                ? config.description
+                : isProfessionalSignup 
+                  ? 'Sign in to continue your registration'
+                  : 'Sign in to access your saved properties'}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
@@ -196,7 +262,7 @@ export default function Auth() {
                         Please wait...
                       </>
                     ) : activeTab === 'signup' ? (
-                      'Create Account'
+                      config.buttonText
                     ) : (
                       'Sign In'
                     )}
@@ -215,15 +281,20 @@ export default function Auth() {
         </Card>
       </div>
       
-      <BuyerOnboarding 
-        open={showOnboarding} 
-        onComplete={handleOnboardingComplete} 
-      />
-      
-      <PostSignupSuggestions
-        open={showPostSignupSuggestions}
-        onClose={handlePostSignupClose}
-      />
+      {/* Only show buyer onboarding for non-professional signups */}
+      {!isProfessionalSignup && (
+        <>
+          <BuyerOnboarding 
+            open={showOnboarding} 
+            onComplete={handleOnboardingComplete} 
+          />
+          
+          <PostSignupSuggestions
+            open={showPostSignupSuggestions}
+            onClose={handlePostSignupClose}
+          />
+        </>
+      )}
     </Layout>
   );
 }
