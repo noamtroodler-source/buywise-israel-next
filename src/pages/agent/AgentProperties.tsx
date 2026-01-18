@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, 
   XCircle, FileText, Send, Copy, MoreHorizontal, Home, Key, 
-  RefreshCw, Archive, CheckSquare, Square, X
+  RefreshCw, Archive, CheckSquare, Square, X, AlertTriangle
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,8 +31,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
-import { useDuplicateProperty, useUpdatePropertyStatus, useRenewProperty } from '@/hooks/useAgentProfile';
+import { useDuplicateProperty, useUpdatePropertyStatus, useRenewProperty, STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { toast } from 'sonner';
+import { differenceInDays, parseISO } from 'date-fns';
 
 type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
 
@@ -55,6 +56,8 @@ const getVerificationBadge = (status: VerificationStatus | undefined) => {
 
 export default function AgentProperties() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'all';
   const { data: properties = [], isLoading } = useAgentProperties();
   const deleteProperty = useDeleteProperty();
   const submitForReview = useSubmitForReview();
@@ -151,9 +154,19 @@ export default function AgentProperties() {
     setSelectedIds(new Set());
   };
 
+  // Helper to check if a property is stale
+  const isPropertyStale = (property: typeof properties[0]) => {
+    if ((property as any).verification_status !== 'approved') return false;
+    const renewedAt = (property as any).last_renewed_at || property.created_at;
+    if (!renewedAt) return false;
+    const daysSinceRenewal = differenceInDays(new Date(), parseISO(renewedAt));
+    return daysSinceRenewal >= STALE_THRESHOLD_DAYS;
+  };
+
   // Filter properties by verification status
-  const filterByStatus = (status: VerificationStatus | 'all') => {
+  const filterByStatus = (status: VerificationStatus | 'all' | 'stale') => {
     if (status === 'all') return properties;
+    if (status === 'stale') return properties.filter(p => isPropertyStale(p));
     return properties.filter(p => (p as any).verification_status === status);
   };
 
@@ -163,6 +176,7 @@ export default function AgentProperties() {
     pending_review: filterByStatus('pending_review').length,
     changes_requested: filterByStatus('changes_requested').length,
     approved: filterByStatus('approved').length,
+    stale: filterByStatus('stale').length,
   };
 
   if (isLoading) {
@@ -175,12 +189,13 @@ export default function AgentProperties() {
     );
   }
 
-  const PropertyRow = ({ property }: { property: typeof properties[0] }) => {
+  const PropertyRow = ({ property, showStaleWarning = false }: { property: typeof properties[0]; showStaleWarning?: boolean }) => {
     const status = (property as any).verification_status as VerificationStatus;
     const badge = getVerificationBadge(status);
     const BadgeIcon = badge.icon;
     const adminNotes = (property as any).admin_notes;
     const isSelected = selectedIds.has(property.id);
+    const isStale = isPropertyStale(property);
 
     return (
       <div
@@ -214,6 +229,12 @@ export default function AgentProperties() {
                   <BadgeIcon className="h-3 w-3" />
                   {badge.label}
                 </Badge>
+                {(showStaleWarning || isStale) && status === 'approved' && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    Needs Renewal
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -443,8 +464,8 @@ export default function AgentProperties() {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue="all" onValueChange={() => setSelectedIds(new Set())}>
-              <TabsList className="mb-4">
+            <Tabs defaultValue={initialTab} onValueChange={() => setSelectedIds(new Set())}>
+              <TabsList className="mb-4 flex-wrap h-auto gap-1">
                 <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
                 <TabsTrigger value="draft">Drafts ({statusCounts.draft})</TabsTrigger>
                 <TabsTrigger value="pending_review">Pending ({statusCounts.pending_review})</TabsTrigger>
@@ -452,9 +473,15 @@ export default function AgentProperties() {
                   Changes ({statusCounts.changes_requested})
                 </TabsTrigger>
                 <TabsTrigger value="approved">Live ({statusCounts.approved})</TabsTrigger>
+                {statusCounts.stale > 0 && (
+                  <TabsTrigger value="stale" className="text-amber-700 data-[state=active]:bg-amber-100">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Needs Renewal ({statusCounts.stale})
+                  </TabsTrigger>
+                )}
               </TabsList>
 
-              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved'] as const).map((tab) => {
+              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved', 'stale'] as const).map((tab) => {
                 const filteredProperties = filterByStatus(tab);
                 return (
                   <TabsContent key={tab} value={tab}>
@@ -490,7 +517,11 @@ export default function AgentProperties() {
                         ) : (
                           <div className="space-y-4">
                             {filteredProperties.map((property) => (
-                              <PropertyRow key={property.id} property={property} />
+                              <PropertyRow 
+                                key={property.id} 
+                                property={property} 
+                                showStaleWarning={tab === 'stale'}
+                              />
                             ))}
                           </div>
                         )}
