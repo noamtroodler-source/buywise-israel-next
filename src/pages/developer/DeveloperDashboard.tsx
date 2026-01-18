@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,11 @@ export default function DeveloperDashboard() {
             className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
           >
             <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
+                <Link to="/">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </Button>
               <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-sm">
                 <Building className="h-8 w-8 text-primary" />
               </div>

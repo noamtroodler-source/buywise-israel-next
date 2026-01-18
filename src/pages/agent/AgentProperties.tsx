@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, 
   XCircle, FileText, Send, Copy, MoreHorizontal, Home, Key, 
-  RefreshCw, Archive, CheckSquare, Square, X, AlertTriangle
+  RefreshCw, Archive, CheckSquare, Square, X, AlertTriangle, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -444,6 +444,13 @@ export default function AgentProperties() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
+          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 mb-4 -ml-2">
+            <Link to="/agent">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-foreground">My Properties</h1>
             <Button asChild>
