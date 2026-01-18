@@ -1,115 +1,128 @@
-import { User, Building2, Landmark, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { User, Building2, Landmark, Check, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-interface ProfessionalType {
-  id: "agent" | "agency" | "developer";
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  color: string;
-}
-
-const professionalTypes: ProfessionalType[] = [
+const professionalTypes = [
   {
-    id: "agent",
     icon: User,
     title: "Individual Agent",
-    description: "Independent agents looking to list properties and connect with international buyers",
-    color: "from-primary/10 to-primary/5",
+    description: "Independent agents looking to list properties and connect with international buyers.",
+    features: [
+      "Personal agent profile page",
+      "Unlimited property listings",
+      "Direct buyer inquiries",
+      "Performance analytics",
+      "Verified agent badge",
+    ],
+    href: "/agent/register",
+    buttonText: "Register as Agent",
+    popular: false,
   },
   {
-    id: "agency",
     icon: Building2,
     title: "Agency / Team",
-    description: "Real estate firms managing multiple agents with unified brand presence",
-    color: "from-primary/10 to-primary/5",
+    description: "Real estate firms managing multiple agents with unified brand presence.",
+    features: [
+      "Branded agency profile",
+      "Team member management",
+      "Agent invite system",
+      "Consolidated analytics",
+      "Priority support",
+      "Featured placement",
+    ],
+    href: "/agency/register",
+    buttonText: "Register Agency",
+    popular: true,
   },
   {
-    id: "developer",
     icon: Landmark,
     title: "Property Developer",
-    description: "Construction companies showcasing new development projects to Anglo buyers",
-    color: "from-primary/10 to-primary/5",
+    description: "Construction companies and developers showcasing new development projects.",
+    features: [
+      "Project showcase pages",
+      "Unit inventory management",
+      "Construction progress updates",
+      "Project inquiry tracking",
+      "Developer verification",
+    ],
+    href: "/developer/register",
+    buttonText: "Register as Developer",
+    popular: false,
   },
 ];
 
-interface ProfessionalTypeChooserProps {
-  onSelect: (type: "agent" | "agency" | "developer") => void;
-  selectedType?: "agent" | "agency" | "developer";
-}
-
-export function ProfessionalTypeChooser({ onSelect, selectedType }: ProfessionalTypeChooserProps) {
+export function ProfessionalTypeChooser() {
   return (
-    <section className="py-16 bg-background">
+    <section id="choose-path" className="py-20 bg-background scroll-mt-20">
       <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Choose Your Professional Type
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Choose Your Path
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Select your role to see tailored benefits and registration options
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {professionalTypes.map((type, index) => (
-            <motion.button
-              key={type.id}
+            <motion.div
+              key={index}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              onClick={() => onSelect(type.id)}
-              className={cn(
-                "group relative p-8 rounded-2xl border-2 transition-all duration-300 text-left",
-                "hover:shadow-lg hover:border-primary/50 hover:-translate-y-1",
-                selectedType === type.id
-                  ? "border-primary bg-primary/5 shadow-md"
-                  : "border-border bg-card"
-              )}
+              className={`relative bg-card border rounded-2xl p-8 ${
+                type.popular
+                  ? "border-primary shadow-lg scale-[1.02]"
+                  : "border-border hover:border-primary/30"
+              } transition-all`}
             >
-              <div
-                className={cn(
-                  "w-14 h-14 rounded-xl flex items-center justify-center mb-5",
-                  "bg-gradient-to-br",
-                  type.color,
-                  selectedType === type.id && "bg-primary/20"
-                )}
-              >
-                <type.icon
-                  className={cn(
-                    "h-7 w-7",
-                    selectedType === type.id ? "text-primary" : "text-primary/70"
-                  )}
-                />
+              {type.popular && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  Most Popular
+                </Badge>
+              )}
+
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                <type.icon className="h-7 w-7 text-primary" />
               </div>
 
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 {type.title}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-sm text-muted-foreground mb-6">
                 {type.description}
               </p>
 
-              <div
-                className={cn(
-                  "inline-flex items-center text-sm font-medium transition-colors",
-                  selectedType === type.id
-                    ? "text-primary"
-                    : "text-muted-foreground group-hover:text-primary"
-                )}
-              >
-                Learn more
-                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </div>
+              <ul className="space-y-3 mb-8">
+                {type.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <span className="text-muted-foreground">{feature}</span>
+                  </li>
+                ))}
+              </ul>
 
-              {selectedType === type.id && (
-                <motion.div
-                  layoutId="selected-indicator"
-                  className="absolute inset-0 rounded-2xl border-2 border-primary pointer-events-none"
-                />
-              )}
-            </motion.button>
+              <Button
+                asChild
+                className="w-full"
+                variant={type.popular ? "default" : "outline"}
+              >
+                <Link to={type.href}>
+                  {type.buttonText}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </motion.div>
           ))}
         </div>
       </div>

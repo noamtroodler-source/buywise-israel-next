@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import {
   Accordion,
   AccordionContent,
@@ -5,63 +6,87 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqs = [
+const faqItems = [
   {
-    question: "How much does it cost to list on BuyWise Israel?",
-    answer: "We're currently in our growth phase and offering free listings for verified professionals. Future pricing will be competitive and designed to provide excellent ROI for your listings.",
+    question: "Is BuyWise Israel free to join?",
+    answer:
+      "Yes! Creating a professional profile and listing properties is completely free. We're focused on building the best platform for Anglo buyers and professionals in Israel.",
   },
   {
-    question: "How long does the verification process take?",
-    answer: "Most verifications are completed within 24-48 hours. We review your credentials to ensure quality and trust on our platform.",
+    question: "What types of professionals can join?",
+    answer:
+      "We welcome individual real estate agents, real estate agencies/teams, and property developers. Each professional type has tailored features designed for their specific needs.",
   },
   {
-    question: "Can I list properties if I'm part of an agency?",
-    answer: "Yes! You can either register as an individual agent or have your agency admin invite you using their agency's invite code. Both options give you full listing capabilities.",
+    question: "How does the verification process work?",
+    answer:
+      "After you submit your registration, our team reviews your credentials within 1-2 business days. Verified professionals receive a badge on their profile and get priority placement in search results.",
   },
   {
-    question: "What types of properties can I list?",
-    answer: "Agents can list apartments, houses, penthouses, duplexes, and more. Developers can showcase new construction projects with multiple unit types. Rentals and sales are both supported.",
+    question: "What makes BuyWise different from other platforms?",
+    answer:
+      "We specialize exclusively in the Anglo market—English-speaking buyers from North America, UK, South Africa, and Australia. Our entire platform is in English, and we provide tools specifically designed for international buyers.",
   },
   {
-    question: "How do buyers contact me?",
-    answer: "Buyers can reach you directly via WhatsApp, phone call, or email inquiry form. All contact methods appear on your listings—you control which methods are available.",
+    question: "Can I manage multiple agents under one agency?",
+    answer:
+      "Absolutely! Agency accounts include team management features, invite codes for agents, consolidated analytics, and branded agency pages that showcase all your team members.",
   },
   {
-    question: "Do you provide analytics?",
-    answer: "Yes! All professionals get access to a dashboard showing listing views, inquiry counts, and engagement metrics. Agencies get aggregated team analytics.",
+    question: "How do I receive buyer inquiries?",
+    answer:
+      "Buyers can contact you directly through WhatsApp, phone, or email via your listing pages. You'll receive notifications and can track all inquiries in your professional dashboard.",
   },
   {
-    question: "Can I transfer my agency to a new admin?",
-    answer: "Yes, agency ownership can be transferred. Contact our support team and we'll assist with the transition.",
-  },
-  {
-    question: "What makes BuyWise Israel different?",
-    answer: "We're the only platform built specifically for English-speaking buyers looking at Israeli real estate. Our tools, guides, and interface are designed to bridge the language and knowledge gap.",
+    question: "Can developers showcase new construction projects?",
+    answer:
+      "Yes! Developer accounts include project showcase pages, unit inventory management, construction progress tracking, and dedicated project inquiry forms.",
   },
 ];
 
 export function AdvertiseFAQ() {
   return (
-    <section className="py-16 bg-background">
+    <section className="py-20 bg-muted/30">
       <div className="container">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             Frequently Asked Questions
           </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Everything you need to know about joining BuyWise Israel as a professional.
+          </p>
+        </motion.div>
 
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-left text-foreground hover:text-primary">
-                  {faq.question}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="max-w-3xl mx-auto"
+        >
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqItems.map((item, index) => (
+              <AccordionItem
+                key={index}
+                value={`item-${index}`}
+                className="bg-card border border-border rounded-xl px-6 data-[state=open]:border-primary/30"
+              >
+                <AccordionTrigger className="text-left font-medium hover:no-underline py-5">
+                  {item.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
-                  {faq.answer}
+                <AccordionContent className="text-muted-foreground pb-5">
+                  {item.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
