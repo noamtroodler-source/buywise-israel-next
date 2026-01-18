@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, Clock, Send, XCircle } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useProperty } from '@/hooks/useProperties';
-import { useUpdateProperty } from '@/hooks/useAgentProperties';
+import { useUpdateProperty, useSubmitForReview, VerificationStatus } from '@/hooks/useAgentProperties';
 import { PropertyType, ListingStatus } from '@/types/database';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
@@ -39,11 +40,50 @@ const acTypes = [
   { value: 'mini_central', label: 'Mini Central (מיני מרכזי)' },
 ];
 
+const statusConfig: Record<VerificationStatus, { 
+  label: string; 
+  variant: 'default' | 'secondary' | 'destructive' | 'outline'; 
+  icon: typeof Clock;
+  description: string;
+}> = {
+  draft: { 
+    label: 'Draft', 
+    variant: 'secondary', 
+    icon: Clock,
+    description: 'This listing is a draft. Submit for review to get it published.'
+  },
+  pending_review: { 
+    label: 'Pending Review', 
+    variant: 'secondary', 
+    icon: Clock,
+    description: 'This listing is awaiting admin review. You\'ll be notified once reviewed.'
+  },
+  approved: { 
+    label: 'Published', 
+    variant: 'default', 
+    icon: CheckCircle2,
+    description: 'This listing is live and visible to buyers. Major changes will require re-review.'
+  },
+  changes_requested: { 
+    label: 'Changes Requested', 
+    variant: 'destructive', 
+    icon: AlertCircle,
+    description: 'Admin has requested changes. Please review the feedback and re-submit.'
+  },
+  rejected: { 
+    label: 'Rejected', 
+    variant: 'destructive', 
+    icon: XCircle,
+    description: 'This listing was rejected. Please review the feedback below.'
+  },
+};
+
 export default function EditProperty() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id || '');
   const updateProperty = useUpdateProperty();
+  const submitForReview = useSubmitForReview();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -61,7 +101,6 @@ export default function EditProperty() {
     total_floors: undefined as number | undefined,
     year_built: undefined as number | undefined,
     images: [] as string[],
-    is_published: true,
     entry_date: undefined as string | undefined,
     ac_type: undefined as 'none' | 'split' | 'central' | 'mini_central' | undefined,
     vaad_bayit_monthly: undefined as number | undefined,
@@ -69,6 +108,11 @@ export default function EditProperty() {
 
   const [featuresInput, setFeaturesInput] = useState('');
   const [isImmediateEntry, setIsImmediateEntry] = useState(true);
+
+  const verificationStatus = ((property as any)?.verification_status || 'draft') as VerificationStatus;
+  const rejectionReason = (property as any)?.rejection_reason;
+  const statusInfo = statusConfig[verificationStatus];
+  const StatusIcon = statusInfo?.icon || Clock;
 
   useEffect(() => {
     if (property) {
@@ -88,7 +132,6 @@ export default function EditProperty() {
         total_floors: property.total_floors || undefined,
         year_built: property.year_built || undefined,
         images: property.images || [],
-        is_published: property.is_published ?? true,
         entry_date: property.entry_date || undefined,
         ac_type: property.ac_type || undefined,
         vaad_bayit_monthly: property.vaad_bayit_monthly || undefined,
@@ -117,6 +160,27 @@ export default function EditProperty() {
     );
   };
 
+  const handleSubmitForReview = () => {
+    if (!id) return;
+    
+    // First save changes, then submit for review
+    const features = featuresInput
+      .split(',')
+      .map(f => f.trim())
+      .filter(Boolean);
+
+    updateProperty.mutate(
+      { id, ...formData, features },
+      { 
+        onSuccess: () => {
+          submitForReview.mutate(id, {
+            onSuccess: () => navigate('/agent/properties')
+          });
+        }
+      }
+    );
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -140,6 +204,10 @@ export default function EditProperty() {
     );
   }
 
+  const canResubmit = verificationStatus === 'draft' || verificationStatus === 'changes_requested' || verificationStatus === 'rejected';
+  const isLive = verificationStatus === 'approved';
+  const isPending = verificationStatus === 'pending_review';
+
   return (
     <Layout>
       <div className="container py-8 max-w-3xl">
@@ -152,6 +220,66 @@ export default function EditProperty() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
+
+          {/* Status Banner */}
+          <Card className={
+            verificationStatus === 'approved' ? 'border-green-200 bg-green-50/50' :
+            verificationStatus === 'changes_requested' || verificationStatus === 'rejected' ? 'border-red-200 bg-red-50/50' :
+            verificationStatus === 'pending_review' ? 'border-yellow-200 bg-yellow-50/50' :
+            ''
+          }>
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-4">
+                <StatusIcon className={
+                  verificationStatus === 'approved' ? 'h-6 w-6 text-green-600' :
+                  verificationStatus === 'changes_requested' || verificationStatus === 'rejected' ? 'h-6 w-6 text-red-600' :
+                  verificationStatus === 'pending_review' ? 'h-6 w-6 text-yellow-600' :
+                  'h-6 w-6 text-muted-foreground'
+                } />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Status</h3>
+                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{statusInfo.description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Rejection/Feedback Alert */}
+          {(verificationStatus === 'changes_requested' || verificationStatus === 'rejected') && rejectionReason && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Admin Feedback</AlertTitle>
+              <AlertDescription className="mt-2 whitespace-pre-wrap">
+                {rejectionReason}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Live Listing Warning */}
+          {isLive && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Live Listing</AlertTitle>
+              <AlertDescription>
+                This listing is currently published. Saving changes will update the live listing immediately. 
+                Major changes may trigger a re-review.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Pending Review Notice */}
+          {isPending && (
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <Clock className="h-4 w-4 text-yellow-600" />
+              <AlertTitle className="text-yellow-800">Under Review</AlertTitle>
+              <AlertDescription className="text-yellow-700">
+                This listing is currently being reviewed. You can still make edits, but they won't affect the review process.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Card>
             <CardHeader>
@@ -430,35 +558,42 @@ export default function EditProperty() {
                   />
                 </div>
 
-                {/* Publish */}
-                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                  <div>
-                    <p className="font-medium">Published</p>
-                    <p className="text-sm text-muted-foreground">
-                      Property is visible to everyone
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_published}
-                    onCheckedChange={(checked) => updateField('is_published', checked)}
-                  />
-                </div>
-
-                {/* Submit */}
-                <div className="flex gap-4">
+                {/* Submit Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
+                  {/* Save Changes - Always available */}
                   <Button
                     type="submit"
+                    variant={canResubmit ? 'outline' : 'default'}
                     className="flex-1"
-                    disabled={updateProperty.isPending}
+                    disabled={updateProperty.isPending || submitForReview.isPending}
                   >
                     {updateProperty.isPending && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}
-                    Save Changes
+                    {isLive ? 'Update Live Listing' : 'Save Changes'}
                   </Button>
+
+                  {/* Submit for Review - Only for draft/changes_requested/rejected */}
+                  {canResubmit && (
+                    <Button
+                      type="button"
+                      onClick={handleSubmitForReview}
+                      className="flex-1"
+                      disabled={updateProperty.isPending || submitForReview.isPending}
+                    >
+                      {submitForReview.isPending && (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      )}
+                      <Send className="h-4 w-4 mr-2" />
+                      {verificationStatus === 'changes_requested' || verificationStatus === 'rejected' 
+                        ? 'Re-submit for Review' 
+                        : 'Submit for Review'}
+                    </Button>
+                  )}
+
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => navigate(-1)}
                   >
                     Cancel
