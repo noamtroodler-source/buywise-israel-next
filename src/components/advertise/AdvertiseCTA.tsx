@@ -1,78 +1,66 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Building2, Landmark, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const ctaOptions = [
-  {
-    icon: User,
-    title: "Individual Agent",
-    description: "List properties and connect with buyers",
-    href: "/agent/register",
-    buttonText: "Register as Agent",
-  },
-  {
-    icon: Building2,
-    title: "Real Estate Agency",
-    description: "Manage your team and brand presence",
-    href: "/agency/register",
-    buttonText: "Register Agency",
-  },
-  {
-    icon: Landmark,
-    title: "Property Developer",
-    description: "Showcase your new construction projects",
-    href: "/developer/register",
-    buttonText: "Register as Developer",
-  },
-];
 
 export function AdvertiseCTA() {
   return (
-    <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-primary/10">
+    <section className="py-20 bg-background">
       <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Ready to Get Started?
-          </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Join hundreds of professionals already reaching Anglo buyers on BuyWise Israel
-          </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary/80 p-10 md:p-16 text-center"
+        >
+          {/* Decorative elements */}
+          <div className="absolute -top-1/4 -right-1/4 w-1/2 h-1/2 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-white/5 rounded-full blur-3xl" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {ctaOptions.map((option, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="bg-card border border-border rounded-2xl p-8 text-center hover:shadow-lg transition-shadow"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-                <option.icon className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">{option.title}</h3>
-              <p className="text-sm text-muted-foreground mb-6">{option.description}</p>
-              <Button asChild className="w-full">
-                <Link to={option.href}>
-                  {option.buttonText}
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
+              Ready to Grow Your Business?
+            </h2>
+            <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
+              Join BuyWise Israel today and start connecting with motivated Anglo buyers actively searching for Israeli real estate.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-4 mb-8">
+              <Button
+                size="lg"
+                variant="secondary"
+                asChild
+                className="bg-white text-primary hover:bg-white/90"
+              >
+                <Link to="/agent/register">
+                  Register as Agent
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-            </motion.div>
-          ))}
-        </div>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="border-white text-white hover:bg-white/10"
+              >
+                <Link to="/agency/register">Register Agency</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="border-white text-white hover:bg-white/10"
+              >
+                <Link to="/developer/register">Register Developer</Link>
+              </Button>
+            </div>
 
-        <div className="text-center mt-10">
-          <p className="text-sm text-muted-foreground">
-            Have questions?{" "}
-            <Link to="/contact" className="text-primary hover:underline">
-              Contact our team
-            </Link>
-          </p>
-        </div>
+            <p className="text-sm text-white/60">
+              No credit card required · Free forever · Start in minutes
+            </p>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
