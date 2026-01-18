@@ -32,8 +32,10 @@ export function StepDetails() {
                 type="number"
                 min="0"
                 max="20"
-                value={data.bedrooms}
-                onChange={(e) => updateData({ bedrooms: Number(e.target.value) })}
+                value={data.bedrooms || ''}
+                onChange={(e) => updateData({ bedrooms: Number(e.target.value) || 0 })}
+                onFocus={(e) => e.target.select()}
+                placeholder="0"
                 className="h-11 rounded-xl"
               />
             </div>
@@ -45,8 +47,10 @@ export function StepDetails() {
                 min="0"
                 max="10"
                 step="0.5"
-                value={data.bathrooms}
-                onChange={(e) => updateData({ bathrooms: Number(e.target.value) })}
+                value={data.bathrooms || ''}
+                onChange={(e) => updateData({ bathrooms: Number(e.target.value) || 0 })}
+                onFocus={(e) => e.target.select()}
+                placeholder="0"
                 className="h-11 rounded-xl"
               />
             </div>
@@ -146,8 +150,10 @@ export function StepDetails() {
               type="number"
               min="0"
               max="10"
-              value={data.parking}
-              onChange={(e) => updateData({ parking: Number(e.target.value) })}
+              value={data.parking || ''}
+              onChange={(e) => updateData({ parking: Number(e.target.value) || 0 })}
+              onFocus={(e) => e.target.select()}
+              placeholder="0"
               className="h-11 rounded-xl"
             />
           </div>
