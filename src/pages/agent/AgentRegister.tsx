@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Loader2 } from 'lucide-react';
@@ -13,8 +13,15 @@ import { useAgentRegistration } from '@/hooks/useAgentRegistration';
 
 export default function AgentRegister() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const agentRegistration = useAgentRegistration();
+
+  // Redirect non-authenticated users to auth page with role context
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth?tab=signup&role=agent');
+    }
+  }, [user, loading, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',

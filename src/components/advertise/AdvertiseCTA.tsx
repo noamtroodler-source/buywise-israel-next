@@ -33,7 +33,7 @@ export function AdvertiseCTA() {
                 asChild
                 className="bg-white text-primary hover:bg-white/90"
               >
-                <Link to="/agent/register">
+                <Link to="/auth?tab=signup&role=agent">
                   Register as Agent
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -44,7 +44,7 @@ export function AdvertiseCTA() {
                 asChild
                 className="border-white text-white hover:bg-white/10"
               >
-                <Link to="/agency/register">Register Agency</Link>
+                <Link to="/auth?tab=signup&role=agency">Register Agency</Link>
               </Button>
               <Button
                 size="lg"
@@ -52,7 +52,7 @@ export function AdvertiseCTA() {
                 asChild
                 className="border-white text-white hover:bg-white/10"
               >
-                <Link to="/developer/register">Register Developer</Link>
+                <Link to="/auth?tab=signup&role=developer">Register Developer</Link>
               </Button>
             </div>
 
