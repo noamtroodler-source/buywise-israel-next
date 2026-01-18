@@ -3,7 +3,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const conditions = [
   { value: 'new', label: 'New (from developer)' },
@@ -49,26 +50,28 @@ export function StepFeatures() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-semibold mb-1">Features & Amenities</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold mb-1">Features & Amenities</h2>
+        <p className="text-muted-foreground">
           Highlight what makes this property special
         </p>
       </div>
 
       <div className="space-y-6">
         {/* Condition */}
-        <div>
-          <h3 className="font-medium mb-4 flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Property Condition
-          </h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Wrench className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Property Condition</h3>
+          </div>
           <Select
             value={data.condition}
             onValueChange={(v) => updateData({ condition: v })}
           >
-            <SelectTrigger className="w-full sm:w-64">
+            <SelectTrigger className="w-full sm:w-64 h-11 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -82,16 +85,18 @@ export function StepFeatures() {
         </div>
 
         {/* A/C */}
-        <div>
-          <h3 className="font-medium mb-4 flex items-center gap-2">
-            <Thermometer className="h-4 w-4" />
-            Air Conditioning
-          </h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Thermometer className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Air Conditioning</h3>
+          </div>
           <Select
             value={data.ac_type}
             onValueChange={(v) => updateData({ ac_type: v })}
           >
-            <SelectTrigger className="w-full sm:w-64">
+            <SelectTrigger className="w-full sm:w-64 h-11 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -105,11 +110,13 @@ export function StepFeatures() {
         </div>
 
         {/* Entry Date */}
-        <div>
-          <h3 className="font-medium mb-4 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Entry Date
-          </h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Entry Date</h3>
+          </div>
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -122,7 +129,7 @@ export function StepFeatures() {
                   });
                 }}
               />
-              <Label htmlFor="immediate" className="text-sm font-normal">
+              <Label htmlFor="immediate" className="text-sm font-normal cursor-pointer">
                 Immediate entry available
               </Label>
             </div>
@@ -132,41 +139,61 @@ export function StepFeatures() {
                 value={data.entry_date || ''}
                 onChange={(e) => updateData({ entry_date: e.target.value || undefined })}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full sm:w-64"
+                className="w-full sm:w-64 h-11 rounded-xl"
               />
             )}
           </div>
         </div>
 
         {/* Va'ad Bayit */}
-        <div className="space-y-2">
-          <Label htmlFor="vaad_bayit">Va'ad Bayit (₪/month)</Label>
-          <Input
-            id="vaad_bayit"
-            type="number"
-            min="0"
-            value={data.vaad_bayit_monthly || ''}
-            onChange={(e) => updateData({ vaad_bayit_monthly: e.target.value ? Number(e.target.value) : undefined })}
-            placeholder="e.g., 350"
-            className="w-full sm:w-64"
-          />
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Building className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Building Fee</h3>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="vaad_bayit">Va'ad Bayit (₪/month)</Label>
+            <Input
+              id="vaad_bayit"
+              type="number"
+              min="0"
+              value={data.vaad_bayit_monthly || ''}
+              onChange={(e) => updateData({ vaad_bayit_monthly: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="e.g., 350"
+              className="w-full sm:w-64 h-11 rounded-xl"
+            />
+          </div>
         </div>
 
         {/* Feature Checkboxes */}
-        <div>
-          <h3 className="font-medium mb-4">Property Features</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Property Features</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {commonFeatures.map((feature) => (
-              <div key={feature.id} className="flex items-center space-x-2">
+              <label
+                key={feature.id}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-all text-sm text-center",
+                  data.features.includes(feature.id)
+                    ? "bg-primary/10 border-primary text-primary font-medium"
+                    : "border-border hover:border-primary/50 hover:bg-muted/50"
+                )}
+              >
                 <Checkbox
                   id={feature.id}
                   checked={data.features.includes(feature.id)}
                   onCheckedChange={() => toggleFeature(feature.id)}
+                  className="sr-only"
                 />
-                <Label htmlFor={feature.id} className="text-sm font-normal cursor-pointer">
-                  {feature.label}
-                </Label>
-              </div>
+                {feature.label}
+              </label>
             ))}
           </div>
         </div>

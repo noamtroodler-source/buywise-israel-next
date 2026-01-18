@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { FileText, Plus, X, Lightbulb } from 'lucide-react';
+import { FileText, Plus, X, Lightbulb, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 export function StepDescription() {
@@ -26,31 +26,33 @@ export function StepDescription() {
   const optimalLength = 300;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-semibold mb-1">Description</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold mb-1">Description</h2>
+        <p className="text-muted-foreground">
           Tell the story of this property to attract buyers
         </p>
       </div>
 
       <div className="space-y-6">
         {/* Main Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Property Description *
-          </Label>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Property Description *</h3>
+          </div>
           <Textarea
             id="description"
             value={data.description}
             onChange={(e) => updateData({ description: e.target.value })}
             placeholder="Describe the property, its best features, the neighborhood, and why someone would love living here..."
             rows={8}
-            className="resize-none"
+            className="rounded-xl resize-none"
           />
           <div className="flex justify-between text-xs">
-            <span className={descriptionLength < minLength ? 'text-destructive' : 'text-muted-foreground'}>
+            <span className={descriptionLength < minLength ? 'text-primary' : 'text-muted-foreground'}>
               {descriptionLength} characters
               {descriptionLength < minLength && ` (minimum ${minLength})`}
             </span>
@@ -63,12 +65,14 @@ export function StepDescription() {
         </div>
 
         {/* Writing Tips */}
-        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-          <h3 className="font-medium flex items-center gap-2">
-            <Lightbulb className="h-4 w-4" />
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/30 border border-primary/10">
+          <h3 className="font-semibold flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Lightbulb className="h-4 w-4 text-primary" />
+            </div>
             Writing Tips
           </h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
+          <ul className="text-sm text-muted-foreground space-y-1.5 ml-10">
             <li>• Start with the most compelling feature</li>
             <li>• Mention natural light, views, and outdoor space</li>
             <li>• Describe the neighborhood and nearby amenities</li>
@@ -78,22 +82,28 @@ export function StepDescription() {
         </div>
 
         {/* Highlights */}
-        <div className="space-y-3">
-          <Label className="flex items-center gap-2">
-            Key Highlights
-            <span className="text-muted-foreground font-normal">(optional, up to 5)</span>
-          </Label>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Key Highlights</h3>
+              <p className="text-xs text-muted-foreground">Optional, up to 5</p>
+            </div>
+          </div>
           
           {data.highlights.length > 0 && (
             <div className="space-y-2">
               {data.highlights.map((highlight, index) => (
-                <div key={index} className="flex items-center gap-2 bg-muted/50 p-2 rounded">
+                <div key={index} className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                   <span className="text-sm flex-1">{highlight}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeHighlight(index)}
+                    className="rounded-lg hover:bg-primary/10"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -108,6 +118,7 @@ export function StepDescription() {
                 value={newHighlight}
                 onChange={(e) => setNewHighlight(e.target.value)}
                 placeholder="e.g., Renovated in 2023"
+                className="h-11 rounded-xl"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -115,7 +126,7 @@ export function StepDescription() {
                   }
                 }}
               />
-              <Button type="button" variant="outline" onClick={addHighlight}>
+              <Button type="button" variant="outline" onClick={addHighlight} className="rounded-xl h-11 px-4">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
