@@ -41,6 +41,7 @@ import AdminBlog from "./pages/admin/AdminBlog";
 import AdminAccuracyAudit from "./pages/admin/AdminAccuracyAudit";
 import AdminListingReview from "./pages/admin/AdminListingReview";
 import AdminAgents from "./pages/admin/AdminAgents";
+import AdminAgencies from "./pages/admin/AdminAgencies";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
@@ -178,6 +179,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="review" element={<AdminListingReview />} />
               <Route path="agents" element={<AdminAgents />} />
+              <Route path="agencies" element={<AdminAgencies />} />
               <Route path="properties" element={<AdminProperties />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="blog" element={<AdminBlog />} />
