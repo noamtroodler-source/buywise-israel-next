@@ -52,15 +52,15 @@ export function StepReview({ onEditStep }: StepReviewProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-semibold mb-1">Review Your Listing</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-2xl font-bold mb-1">Review Your Listing</h2>
+          <p className="text-muted-foreground">
             Make sure everything looks good before submitting
           </p>
         </div>
-        <Button variant="outline" onClick={() => setShowPreview(true)} className="gap-2">
+        <Button variant="outline" onClick={() => setShowPreview(true)} className="gap-2 rounded-xl">
           <Eye className="h-4 w-4" />
           Preview as Buyer
         </Button>
@@ -69,7 +69,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
       <PropertyPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
       {/* Preview Card */}
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-2xl border-primary/20">
         {/* Cover Image */}
         {data.images.length > 0 && (
           <div className="aspect-video relative">
@@ -78,7 +78,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
               alt="Cover"
               className="w-full h-full object-cover"
             />
-            <Badge className="absolute top-3 left-3">
+            <Badge className="absolute top-3 left-3 rounded-lg">
               {data.listing_status === 'for_sale' ? 'For Sale' : 'For Rent'}
             </Badge>
           </div>
@@ -86,8 +86,8 @@ export function StepReview({ onEditStep }: StepReviewProps) {
 
         <CardContent className="p-6 space-y-6">
           {/* Title & Price */}
-          <div className="flex justify-between items-start">
-            <div>
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
               <h3 className="text-xl font-bold">{data.title || 'Untitled'}</h3>
               <p className="text-muted-foreground flex items-center gap-1 mt-1">
                 <MapPin className="h-4 w-4" />
@@ -102,13 +102,13 @@ export function StepReview({ onEditStep }: StepReviewProps) {
                 <p className="text-sm text-muted-foreground">/month</p>
               )}
             </div>
-            <Button variant="ghost" size="sm" onClick={() => onEditStep(0)}>
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(0)} className="rounded-lg">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Quick Stats */}
-          <div className="flex flex-wrap gap-4 py-4 border-y">
+          <div className="flex flex-wrap gap-4 py-4 border-y border-border">
             <div className="flex items-center gap-1.5">
               <Bed className="h-4 w-4 text-muted-foreground" />
               <span>{data.bedrooms} beds</span>
@@ -135,7 +135,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
                 <span>{data.parking} parking</span>
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={() => onEditStep(1)}>
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(1)} className="rounded-lg ml-auto">
               <Edit2 className="h-4 w-4" />
             </Button>
           </div>
@@ -143,27 +143,27 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           {/* Features */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium">Features</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(2)}>
+              <h4 className="font-semibold">Features</h4>
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(2)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{conditionLabels[data.condition] || data.condition}</Badge>
+              <Badge variant="outline" className="rounded-lg">{conditionLabels[data.condition] || data.condition}</Badge>
               {data.ac_type !== 'none' && (
-                <Badge variant="outline" className="flex items-center gap-1">
+                <Badge variant="outline" className="flex items-center gap-1 rounded-lg">
                   <Thermometer className="h-3 w-3" />
                   A/C
                 </Badge>
               )}
               {data.is_immediate_entry && (
-                <Badge variant="outline" className="flex items-center gap-1">
+                <Badge variant="outline" className="flex items-center gap-1 rounded-lg">
                   <Calendar className="h-3 w-3" />
                   Immediate Entry
                 </Badge>
               )}
               {data.features.map((f) => (
-                <Badge key={f} variant="secondary">
+                <Badge key={f} variant="secondary" className="rounded-lg">
                   {featureLabels[f] || f}
                 </Badge>
               ))}
@@ -173,8 +173,8 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           {/* Photos */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium">Photos ({data.images.length})</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(3)}>
+              <h4 className="font-semibold">Photos ({data.images.length})</h4>
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(3)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
@@ -184,7 +184,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
                   key={i}
                   src={img}
                   alt={`Photo ${i + 1}`}
-                  className="h-16 w-16 object-cover rounded flex-shrink-0"
+                  className="h-16 w-16 object-cover rounded-xl flex-shrink-0"
                 />
               ))}
             </div>
@@ -193,8 +193,8 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           {/* Description */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium">Description</h4>
-              <Button variant="ghost" size="sm" onClick={() => onEditStep(4)}>
+              <h4 className="font-semibold">Description</h4>
+              <Button variant="ghost" size="sm" onClick={() => onEditStep(4)} className="rounded-lg">
                 <Edit2 className="h-4 w-4" />
               </Button>
             </div>
@@ -202,7 +202,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
               <ul className="mb-3 space-y-1">
                 {data.highlights.map((h, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <CheckCircle className="h-4 w-4 text-primary" />
                     {h}
                   </li>
                 ))}
@@ -215,7 +215,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
         </CardContent>
       </Card>
 
-      <div className="bg-muted/50 p-4 rounded-lg">
+      <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/30 border border-primary/10">
         <p className="text-sm text-center text-muted-foreground">
           After submission, your listing will be reviewed by our team before going live.
           This usually takes less than 24 hours.

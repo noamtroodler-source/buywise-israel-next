@@ -1,6 +1,6 @@
 import { ImageUpload } from '@/components/agent/ImageUpload';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Camera, AlertCircle, CheckCircle } from 'lucide-react';
+import { Camera, AlertCircle, CheckCircle, ImageIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function StepPhotos() {
@@ -11,65 +11,77 @@ export function StepPhotos() {
   const hasEnoughPhotos = data.images.length >= minPhotos;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-xl font-semibold mb-1">Photos</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-2xl font-bold mb-1">Photos</h2>
+        <p className="text-muted-foreground">
           Great photos are the #1 factor in getting buyer interest
         </p>
       </div>
 
-      {/* Photo tips */}
-      <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-        <h3 className="font-medium flex items-center gap-2">
-          <Camera className="h-4 w-4" />
-          Photo Tips
-        </h3>
-        <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• Use landscape orientation (horizontal)</li>
-          <li>• Take photos during daylight with lights on</li>
-          <li>• Include living room, kitchen, bedrooms, bathrooms, balcony</li>
-          <li>• Show the view if it's a selling point</li>
-          <li>• First photo will be the cover image</li>
-        </ul>
+      <div className="space-y-6">
+        {/* Photo tips */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/30 border border-primary/10">
+          <h3 className="font-semibold flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Camera className="h-4 w-4 text-primary" />
+            </div>
+            Photo Tips
+          </h3>
+          <ul className="text-sm text-muted-foreground space-y-1.5 ml-10">
+            <li>• Use landscape orientation (horizontal)</li>
+            <li>• Take photos during daylight with lights on</li>
+            <li>• Include living room, kitchen, bedrooms, bathrooms, balcony</li>
+            <li>• Show the view if it's a selling point</li>
+            <li>• First photo will be the cover image</li>
+          </ul>
+        </div>
+
+        {/* Status */}
+        {data.images.length > 0 && (
+          <Alert variant={hasEnoughPhotos ? "default" : "destructive"} className={hasEnoughPhotos ? "border-primary/20 bg-primary/5" : ""}>
+            {hasEnoughPhotos ? (
+              <CheckCircle className="h-4 w-4 text-primary" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            <AlertDescription>
+              {data.images.length} photo{data.images.length !== 1 ? 's' : ''} uploaded
+              {data.images.length < recommendedPhotos && hasEnoughPhotos && (
+                <span className="text-muted-foreground">
+                  {' '}— We recommend at least {recommendedPhotos} photos
+                </span>
+              )}
+              {!hasEnoughPhotos && (
+                <span>
+                  {' '}— Minimum {minPhotos} photo required to continue
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Image Upload */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ImageIcon className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Upload Images</h3>
+          </div>
+          <ImageUpload
+            images={data.images}
+            onImagesChange={(images) => updateData({ images })}
+            maxImages={20}
+          />
+        </div>
+
+        {data.images.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground py-4">
+            Upload at least {minPhotos} photo to continue
+          </p>
+        )}
       </div>
-
-      {/* Status */}
-      {data.images.length > 0 && (
-        <Alert variant={hasEnoughPhotos ? "default" : "destructive"}>
-          {hasEnoughPhotos ? (
-            <CheckCircle className="h-4 w-4" />
-          ) : (
-            <AlertCircle className="h-4 w-4" />
-          )}
-          <AlertDescription>
-            {data.images.length} photo{data.images.length !== 1 ? 's' : ''} uploaded
-            {data.images.length < recommendedPhotos && hasEnoughPhotos && (
-              <span className="text-muted-foreground">
-                {' '}— We recommend at least {recommendedPhotos} photos
-              </span>
-            )}
-            {!hasEnoughPhotos && (
-              <span>
-                {' '}— Minimum {minPhotos} photo required to continue
-              </span>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Image Upload */}
-      <ImageUpload
-        images={data.images}
-        onImagesChange={(images) => updateData({ images })}
-        maxImages={20}
-      />
-
-      {data.images.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground">
-          Upload at least {minPhotos} photo to continue
-        </p>
-      )}
     </div>
   );
 }
