@@ -65,6 +65,16 @@ export function Footer() {
                 Blog & Articles
               </Link>
             </nav>
+            
+            <h4 className="text-sm font-semibold text-foreground mt-6">For Professionals</h4>
+            <nav className="flex flex-col gap-2">
+              <Link to="/agent/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Become an Agent
+              </Link>
+              <Link to="/agency/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Register Agency
+              </Link>
+            </nav>
           </div>
 
           {/* Contact */}

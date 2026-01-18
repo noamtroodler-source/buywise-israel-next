@@ -36,9 +36,9 @@ export default function AgentDashboard() {
 
   const statusCards = [
     { key: 'draft', label: 'Drafts', icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted' },
-    { key: 'pending_review', label: 'Pending Review', icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { key: 'pending_review', label: 'Pending Review', icon: Clock, color: 'text-primary', bg: 'bg-primary/10' },
     { key: 'changes_requested', label: 'Changes Requested', icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { key: 'approved', label: 'Live', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+    { key: 'approved', label: 'Live', icon: CheckCircle, color: 'text-primary', bg: 'bg-primary/10' },
   ];
 
   return (
@@ -83,15 +83,15 @@ export default function AgentDashboard() {
           {/* Changes Requested Alert */}
           {statusCounts.changes_requested > 0 && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <AlertCircle className="h-5 w-5 text-orange-600 flex-shrink-0" />
               <div className="flex-1">
                 <p className="font-medium text-orange-800">Action Required</p>
                 <p className="text-sm text-orange-700">
                   {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes before approval.
                 </p>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/agent/properties">View</Link>
+              <Button variant="outline" size="sm" asChild className="flex-shrink-0">
+                <Link to="/agent/properties?tab=changes_requested">View</Link>
               </Button>
             </div>
           )}
@@ -189,9 +189,14 @@ export default function AgentDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-1 rounded ${
-                          property.is_published ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
+                          (property as any).verification_status === 'approved' 
+                            ? 'bg-primary/10 text-primary' 
+                            : 'bg-muted text-muted-foreground'
                         }`}>
-                          {property.is_published ? 'Published' : 'Draft'}
+                          {(property as any).verification_status === 'approved' ? 'Live' : 
+                           (property as any).verification_status === 'pending_review' ? 'Pending' :
+                           (property as any).verification_status === 'changes_requested' ? 'Changes Needed' :
+                           'Draft'}
                         </span>
                         <Button variant="ghost" size="sm" asChild>
                           <Link to={`/agent/properties/${property.id}/edit`}>Edit</Link>

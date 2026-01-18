@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, XCircle, FileText, Send } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,16 +16,32 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useAgentProperties, useDeleteProperty, useUpdateProperty } from '@/hooks/useAgentProperties';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAgentProperties, useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+
+type VerificationStatus = 'draft' | 'pending_review' | 'approved' | 'changes_requested' | 'rejected';
+
+const getVerificationBadge = (status: VerificationStatus | undefined) => {
+  switch (status) {
+    case 'draft':
+      return { label: 'Draft', icon: FileText, className: 'bg-muted text-muted-foreground' };
+    case 'pending_review':
+      return { label: 'Pending Review', icon: Clock, className: 'bg-primary/10 text-primary' };
+    case 'approved':
+      return { label: 'Approved', icon: CheckCircle, className: 'bg-primary/10 text-primary' };
+    case 'changes_requested':
+      return { label: 'Changes Requested', icon: AlertCircle, className: 'bg-orange-100 text-orange-700' };
+    case 'rejected':
+      return { label: 'Rejected', icon: XCircle, className: 'bg-muted text-muted-foreground' };
+    default:
+      return { label: 'Unknown', icon: FileText, className: 'bg-muted text-muted-foreground' };
+  }
+};
 
 export default function AgentProperties() {
   const { data: properties = [], isLoading } = useAgentProperties();
   const deleteProperty = useDeleteProperty();
-  const updateProperty = useUpdateProperty();
-
-  const togglePublish = (id: string, currentStatus: boolean) => {
-    updateProperty.mutate({ id, is_published: !currentStatus });
-  };
+  const submitForReview = useSubmitForReview();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -37,6 +53,20 @@ export default function AgentProperties() {
     }
   };
 
+  // Filter properties by verification status
+  const filterByStatus = (status: VerificationStatus | 'all') => {
+    if (status === 'all') return properties;
+    return properties.filter(p => (p as any).verification_status === status);
+  };
+
+  const statusCounts = {
+    all: properties.length,
+    draft: filterByStatus('draft').length,
+    pending_review: filterByStatus('pending_review').length,
+    changes_requested: filterByStatus('changes_requested').length,
+    approved: filterByStatus('approved').length,
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -46,6 +76,106 @@ export default function AgentProperties() {
       </Layout>
     );
   }
+
+  const PropertyRow = ({ property }: { property: typeof properties[0] }) => {
+    const status = (property as any).verification_status as VerificationStatus;
+    const badge = getVerificationBadge(status);
+    const BadgeIcon = badge.icon;
+    const adminNotes = (property as any).admin_notes;
+
+    return (
+      <div
+        className="flex flex-col gap-3 p-4 rounded-lg border border-border"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img
+              src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+              alt={property.title}
+              className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
+            />
+            <div className="min-w-0">
+              <h3 className="font-semibold line-clamp-1">{property.title}</h3>
+              <p className="text-sm text-muted-foreground truncate">{property.address}, {property.city}</p>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <Badge variant="outline">{getStatusLabel(property.listing_status)}</Badge>
+                <span className="text-sm font-medium">
+                  ₪{property.price.toLocaleString()}
+                </span>
+                <Badge className={`${badge.className} gap-1`}>
+                  <BadgeIcon className="h-3 w-3" />
+                  {badge.label}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {status === 'draft' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => submitForReview.mutate(property.id)}
+                disabled={submitForReview.isPending}
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Submit
+              </Button>
+            )}
+
+            <Button variant="ghost" size="sm" asChild>
+              <Link to={`/agent/properties/${property.id}/edit`}>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Link>
+            </Button>
+
+            {status === 'approved' && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link to={`/properties/${property.id}`}>
+                  <Eye className="h-4 w-4 mr-1" />
+                  View
+                </Link>
+              </Button>
+            )}
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteProperty.mutate(property.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+
+        {/* Admin feedback for changes requested */}
+        {status === 'changes_requested' && adminNotes && (
+          <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-sm">
+            <p className="font-medium text-orange-800 mb-1">Admin Feedback:</p>
+            <p className="text-orange-700">{adminNotes}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Layout>
@@ -75,92 +205,38 @@ export default function AgentProperties() {
               </CardContent>
             </Card>
           ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>{properties.length} Properties</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {properties.map((property) => (
-                    <div
-                      key={property.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-border"
-                    >
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                          alt={property.title}
-                          className="h-16 w-16 rounded-lg object-cover"
-                        />
-                        <div>
-                          <h3 className="font-semibold line-clamp-1">{property.title}</h3>
-                          <p className="text-sm text-muted-foreground">{property.address}, {property.city}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline">{getStatusLabel(property.listing_status)}</Badge>
-                            <span className="text-sm font-medium">
-                              ₪{property.price.toLocaleString()}
-                            </span>
-                          </div>
+            <Tabs defaultValue="all">
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
+                <TabsTrigger value="draft">Drafts ({statusCounts.draft})</TabsTrigger>
+                <TabsTrigger value="pending_review">Pending ({statusCounts.pending_review})</TabsTrigger>
+                <TabsTrigger value="changes_requested">
+                  Changes ({statusCounts.changes_requested})
+                </TabsTrigger>
+                <TabsTrigger value="approved">Live ({statusCounts.approved})</TabsTrigger>
+              </TabsList>
+
+              {(['all', 'draft', 'pending_review', 'changes_requested', 'approved'] as const).map((tab) => (
+                <TabsContent key={tab} value={tab}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{filterByStatus(tab).length} Properties</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {filterByStatus(tab).length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">No properties in this category</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {filterByStatus(tab).map((property) => (
+                            <PropertyRow key={property.id} property={property} />
+                          ))}
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => togglePublish(property.id, property.is_published || false)}
-                          disabled={updateProperty.isPending}
-                        >
-                          {property.is_published ? (
-                            <>
-                              <EyeOff className="h-4 w-4 mr-1" />
-                              Unpublish
-                            </>
-                          ) : (
-                            <>
-                              <Eye className="h-4 w-4 mr-1" />
-                              Publish
-                            </>
-                          )}
-                        </Button>
-
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/agent/properties/${property.id}/edit`}>
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Link>
-                        </Button>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Property</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{property.title}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteProperty.mutate(property.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
           )}
         </motion.div>
       </div>
