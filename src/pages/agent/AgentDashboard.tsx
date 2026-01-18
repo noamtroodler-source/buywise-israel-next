@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, MessageSquare, Loader2 } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
 
 export default function AgentDashboard() {
@@ -12,8 +13,15 @@ export default function AgentDashboard() {
 
   const isLoading = profileLoading || propertiesLoading;
 
-  const publishedCount = properties.filter(p => p.is_published).length;
-  const unpublishedCount = properties.filter(p => !p.is_published).length;
+  // Count by verification status
+  const statusCounts = {
+    draft: properties.filter(p => (p as any).verification_status === 'draft').length,
+    pending_review: properties.filter(p => (p as any).verification_status === 'pending_review').length,
+    changes_requested: properties.filter(p => (p as any).verification_status === 'changes_requested').length,
+    approved: properties.filter(p => (p as any).verification_status === 'approved').length,
+    rejected: properties.filter(p => (p as any).verification_status === 'rejected').length,
+  };
+  
   const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
 
   if (isLoading) {
@@ -25,6 +33,13 @@ export default function AgentDashboard() {
       </Layout>
     );
   }
+
+  const statusCards = [
+    { key: 'draft', label: 'Drafts', icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted' },
+    { key: 'pending_review', label: 'Pending Review', icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { key: 'changes_requested', label: 'Changes Requested', icon: AlertCircle, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { key: 'approved', label: 'Live', icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+  ];
 
   return (
     <Layout>
@@ -49,68 +64,65 @@ export default function AgentDashboard() {
                 </p>
               </div>
             </div>
-            <Button asChild>
-              <Link to="/agent/properties/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Property
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/agent/analytics">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link to="/agent/properties/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Property
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Listings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Home className="h-5 w-5 text-primary" />
-                  <span className="text-2xl font-bold">{properties.length}</span>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Changes Requested Alert */}
+          {statusCounts.changes_requested > 0 && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <div className="flex-1">
+                <p className="font-medium text-orange-800">Action Required</p>
+                <p className="text-sm text-orange-700">
+                  {statusCounts.changes_requested} listing{statusCounts.changes_requested > 1 ? 's' : ''} need{statusCounts.changes_requested === 1 ? 's' : ''} changes before approval.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/agent/properties">View</Link>
+              </Button>
+            </div>
+          )}
 
+          {/* Status Cards */}
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+            {statusCards.map((s) => (
+              <Card key={s.key}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${s.bg}`}>
+                      <s.icon className={`h-5 w-5 ${s.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{statusCounts[s.key as keyof typeof statusCounts]}</p>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Published
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-green-600" />
-                  <span className="text-2xl font-bold">{publishedCount}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Drafts
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-2xl font-bold">{unpublishedCount}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Views
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-accent" />
-                  <span className="text-2xl font-bold">{totalViews}</span>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Eye className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{totalViews}</p>
+                    <p className="text-xs text-muted-foreground">Total Views</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
