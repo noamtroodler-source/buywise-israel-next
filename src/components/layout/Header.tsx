@@ -91,6 +91,12 @@ export function Header() {
             Blog
           </Link>
           <Link 
+            to="/for-agents" 
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            For Agents
+          </Link>
+          <Link 
             to="/about" 
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -307,6 +313,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
+            </Link>
+            <Link 
+              to="/for-agents" 
+              className="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              For Agents
             </Link>
             <Link 
               to="/about" 

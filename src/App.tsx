@@ -65,6 +65,7 @@ import NotFound from "./pages/NotFound";
 import AgentDetail from "./pages/AgentDetail";
 import Agencies from "./pages/Agencies";
 import AgencyDetail from "./pages/AgencyDetail";
+import ForAgents from "./pages/ForAgents";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
             <Route path="/agencies/:slug" element={<AgencyDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<Principles />} />
+            <Route path="/for-agents" element={<ForAgents />} />
             
             <Route path="/profile" element={
               <ProtectedRoute>

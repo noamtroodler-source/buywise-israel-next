@@ -66,10 +66,14 @@ export function Footer() {
               </Link>
             </nav>
             
-            <h4 className="text-sm font-semibold text-foreground mt-6">For Professionals</h4>
+            <h4 className="text-sm font-semibold text-foreground mt-6">For Agents & Agencies</h4>
+            <p className="text-xs text-muted-foreground">List properties & grow your business</p>
             <nav className="flex flex-col gap-2">
+              <Link to="/for-agents" className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">
+                Learn More →
+              </Link>
               <Link to="/agent/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Become an Agent
+                Register as Agent
               </Link>
               <Link to="/agency/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Register Agency
