@@ -1,0 +1,236 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DollarSign, TrendingUp, Home, Building } from 'lucide-react';
+import { PriceAnalyticsData } from '@/hooks/usePriceAnalytics';
+import { 
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, 
+  Tooltip, Cell, PieChart, Pie 
+} from 'recharts';
+
+interface PriceAnalyticsProps {
+  data: PriceAnalyticsData | undefined;
+  isLoading?: boolean;
+}
+
+const COLORS = [
+  'hsl(var(--primary))',
+  'hsl(190, 80%, 42%)',
+  'hsl(258, 55%, 52%)',
+  'hsl(142, 71%, 45%)',
+  'hsl(45, 93%, 47%)',
+  'hsl(var(--muted-foreground))',
+];
+
+export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Price Analytics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[350px] w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const formatPrice = (price: number) => {
+    if (price >= 1000000) {
+      return `₪${(price / 1000000).toFixed(1)}M`;
+    }
+    return `₪${(price / 1000).toFixed(0)}K`;
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-primary" />
+          Price Analytics
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Summary Stats */}
+        <div className="grid grid-cols-3 gap-4 mb-6 pb-4 border-b">
+          <div className="text-center">
+            <p className="text-2xl font-bold">{formatPrice(data?.avgPlatformPrice || 0)}</p>
+            <p className="text-xs text-muted-foreground">Average Price</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold">{formatPrice(data?.medianPrice || 0)}</p>
+            <p className="text-xs text-muted-foreground">Median Price</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold">
+              ₪{((data?.avgPlatformPriceSqm || 0) / 1000).toFixed(1)}K
+            </p>
+            <p className="text-xs text-muted-foreground">Avg Price/sqm</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          {/* Price Range Distribution */}
+          <div>
+            <p className="text-sm font-medium mb-3 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              Price Distribution
+            </p>
+            {(data?.priceRanges || []).length > 0 ? (
+              <div className="space-y-2">
+                {(data?.priceRanges || []).map((range, index) => (
+                  <div key={range.range} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{range.range}</span>
+                      <span className="text-muted-foreground">
+                        {range.count} ({range.percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all"
+                        style={{ 
+                          width: `${range.percentage}%`,
+                          backgroundColor: COLORS[index % COLORS.length]
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-[150px] flex items-center justify-center text-muted-foreground text-sm">
+                No price data available
+              </div>
+            )}
+          </div>
+
+          {/* Bedroom Distribution */}
+          <div>
+            <p className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Building className="h-4 w-4 text-muted-foreground" />
+              Bedroom Distribution
+            </p>
+            {(data?.bedroomDistribution || []).length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={120}>
+                  <PieChart>
+                    <Pie
+                      data={data?.bedroomDistribution || []}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={30}
+                      outerRadius={50}
+                      paddingAngle={2}
+                      dataKey="count"
+                      nameKey="bedrooms"
+                    >
+                      {(data?.bedroomDistribution || []).map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const item = payload[0].payload;
+                          return (
+                            <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
+                              <p className="font-medium">{item.bedrooms}</p>
+                              <p className="text-muted-foreground">
+                                {item.count} ({item.percentage.toFixed(0)}%)
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-2 justify-center mt-2">
+                  {(data?.bedroomDistribution || []).map((item, index) => (
+                    <div key={item.bedrooms} className="flex items-center gap-1 text-xs">
+                      <div 
+                        className="h-2 w-2 rounded-full" 
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <span>{item.bedrooms}: {item.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="h-[150px] flex items-center justify-center text-muted-foreground text-sm">
+                No bedroom data available
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* City Prices */}
+        {(data?.cityPrices || []).length > 0 && (
+          <div className="mt-6 pt-4 border-t">
+            <p className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Home className="h-4 w-4 text-muted-foreground" />
+              Average Price by City
+            </p>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart 
+                data={(data?.cityPrices || []).slice(0, 6)}
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+              >
+                <XAxis 
+                  dataKey="city" 
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis 
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => formatPrice(value)}
+                  width={50}
+                />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
+                          <p className="font-medium">{item.city}</p>
+                          <p className="text-muted-foreground">
+                            Avg: {formatPrice(item.avgPrice)}
+                          </p>
+                          <p className="text-muted-foreground">
+                            Per sqm: ₪{(item.avgPriceSqm / 1000).toFixed(1)}K
+                          </p>
+                          <p className="text-muted-foreground">
+                            {item.count} listings
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="avgPrice" radius={[4, 4, 0, 0]}>
+                  {(data?.cityPrices || []).slice(0, 6).map((_, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
