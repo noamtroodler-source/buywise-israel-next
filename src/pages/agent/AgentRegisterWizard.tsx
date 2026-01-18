@@ -246,17 +246,29 @@ export default function AgentRegisterWizard() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="license_number" className="text-sm font-medium">License Number *</Label>
+                <Label htmlFor="license_number" className="text-sm font-medium">Real Estate License Number *</Label>
                 <div className="relative">
-                  <BadgeCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <BadgeCheck className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${
+                    formData.license_number && /^\d{5,6}$/.test(formData.license_number) 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground'
+                  }`} />
                   <Input
                     id="license_number"
                     value={formData.license_number}
-                    onChange={(e) => updateField('license_number', e.target.value)}
-                    placeholder="Required for verification"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 6) {
+                        updateField('license_number', value);
+                      }
+                    }}
+                    placeholder="123456"
+                    maxLength={6}
+                    inputMode="numeric"
                     className="pl-10 h-11 rounded-xl"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">5-6 digit license number</p>
               </div>
             </motion.div>
           </motion.div>
