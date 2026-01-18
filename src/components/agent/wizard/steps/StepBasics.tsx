@@ -112,23 +112,17 @@ export function StepBasics() {
             </Label>
             <Input
               id="price"
-              type="number"
-              min="0"
-              value={data.price || ''}
-              onChange={(e) => updateData({ price: Number(e.target.value) })}
-              placeholder={data.listing_status === 'for_rent' ? 'e.g., 8000' : 'e.g., 2500000'}
+              type="text"
+              inputMode="numeric"
+              value={data.price ? data.price.toLocaleString('en-US') : ''}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/,/g, '');
+                const num = parseInt(raw, 10);
+                updateData({ price: isNaN(num) ? 0 : num });
+              }}
+              placeholder={data.listing_status === 'for_rent' ? 'e.g., 8,000' : 'e.g., 2,500,000'}
               className="h-11 rounded-xl"
             />
-            {data.price > 0 && (
-              <p className="text-sm font-medium text-primary">
-                {new Intl.NumberFormat('he-IL', {
-                  style: 'currency',
-                  currency: 'ILS',
-                  maximumFractionDigits: 0,
-                }).format(data.price)}
-                {data.listing_status === 'for_rent' ? ' /month' : ''}
-              </p>
-            )}
           </div>
         </div>
 
