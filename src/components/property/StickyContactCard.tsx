@@ -6,6 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { MessageCircle, Phone, Mail, Clock, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { trackInquiry } from '@/hooks/useInquiryTracking';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Agent {
   id?: string;
@@ -18,6 +20,7 @@ interface Agent {
 
 interface StickyContactCardProps {
   agent?: Agent | null;
+  propertyId?: string;
   propertyTitle: string;
   className?: string;
   onContactClick?: () => void;
@@ -30,6 +33,7 @@ interface StickyContactCardProps {
 
 export function StickyContactCard({ 
   agent, 
+  propertyId,
   propertyTitle, 
   className = '', 
   onContactClick,
@@ -39,6 +43,7 @@ export function StickyContactCard({
   currency = 'ILS'
 }: StickyContactCardProps) {
   const formatPricePerArea = useFormatPricePerArea();
+  const { user } = useAuth();
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -46,6 +51,16 @@ export function StickyContactCard({
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
+      // Track the inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'whatsapp',
+          userId: user?.id,
+        });
+      }
+      
       const cleanPhone = agent.phone.replace(/\D/g, '');
       const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
@@ -54,12 +69,32 @@ export function StickyContactCard({
 
   const handleCall = () => {
     if (agent?.phone) {
+      // Track the inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'call',
+          userId: user?.id,
+        });
+      }
+      
       window.location.href = `tel:${agent.phone}`;
     }
   };
 
   const handleEmail = () => {
     if (agent?.email) {
+      // Track the inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'email',
+          userId: user?.id,
+        });
+      }
+      
       const subject = encodeURIComponent(`Inquiry: ${propertyTitle}`);
       window.location.href = `mailto:${agent.email}?subject=${subject}`;
     }
@@ -213,12 +248,46 @@ export function StickyContactCard({
 }
 
 // Mobile version - fixed bottom bar
-export function MobileContactBar({ agent, propertyTitle }: { agent?: Agent | null; propertyTitle: string }) {
+interface MobileContactBarProps {
+  agent?: Agent | null;
+  propertyId?: string;
+  propertyTitle: string;
+}
+
+export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileContactBarProps) {
+  const { user } = useAuth();
+
   const handleWhatsApp = () => {
     if (agent?.phone) {
+      // Track the inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'whatsapp',
+          userId: user?.id,
+        });
+      }
+      
       const cleanPhone = agent.phone.replace(/\D/g, '');
       const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+    }
+  };
+
+  const handleCall = () => {
+    if (agent?.phone) {
+      // Track the inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'call',
+          userId: user?.id,
+        });
+      }
+      
+      window.location.href = `tel:${agent.phone}`;
     }
   };
 
@@ -248,7 +317,7 @@ export function MobileContactBar({ agent, propertyTitle }: { agent?: Agent | nul
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => window.location.href = `tel:${agent.phone}`}
+            onClick={handleCall}
           >
             <Phone className="h-5 w-5" />
           </Button>
