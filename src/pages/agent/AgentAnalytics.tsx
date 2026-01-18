@@ -1,17 +1,17 @@
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, MessageCircle, Phone, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
+import { useAgentProperties } from '@/hooks/useAgentProperties';
+import { useAgentAnalytics } from '@/hooks/useAgentAnalytics';
 
 export default function AgentAnalytics() {
-  const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
+  const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics();
 
-  const isLoading = profileLoading || propertiesLoading;
-  const totalViews = properties.reduce((sum, p) => sum + (p.views_count || 0), 0);
+  const isLoading = propertiesLoading || analyticsLoading;
 
   if (isLoading) {
     return (
@@ -22,6 +22,10 @@ export default function AgentAnalytics() {
       </Layout>
     );
   }
+
+  const conversionRateDisplay = analytics?.totalViews && analytics.totalViews > 0 
+    ? `${analytics.conversionRate.toFixed(1)}%`
+    : '—';
 
   return (
     <Layout>
@@ -54,7 +58,7 @@ export default function AgentAnalytics() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{totalViews}</p>
+                <p className="text-3xl font-bold">{analytics?.totalViews || 0}</p>
                 <p className="text-xs text-muted-foreground">All time</p>
               </CardContent>
             </Card>
@@ -67,8 +71,8 @@ export default function AgentAnalytics() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">—</p>
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+                <p className="text-3xl font-bold">{analytics?.totalSaves || 0}</p>
+                <p className="text-xs text-muted-foreground">Users who favorited</p>
               </CardContent>
             </Card>
 
@@ -80,8 +84,8 @@ export default function AgentAnalytics() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">—</p>
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+                <p className="text-3xl font-bold">{analytics?.totalInquiries || 0}</p>
+                <p className="text-xs text-muted-foreground">WhatsApp, calls, emails</p>
               </CardContent>
             </Card>
 
@@ -93,11 +97,51 @@ export default function AgentAnalytics() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">—</p>
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+                <p className="text-3xl font-bold">{conversionRateDisplay}</p>
+                <p className="text-xs text-muted-foreground">Inquiries / Views</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Inquiry Breakdown */}
+          {analytics && analytics.totalInquiries > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Inquiry Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-full bg-green-100">
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{analytics.inquiriesByType.whatsapp}</p>
+                      <p className="text-sm text-muted-foreground">WhatsApp</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-full bg-blue-100">
+                      <Phone className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{analytics.inquiriesByType.call}</p>
+                      <p className="text-sm text-muted-foreground">Phone Calls</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-full bg-purple-100">
+                      <Mail className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{analytics.inquiriesByType.email}</p>
+                      <p className="text-sm text-muted-foreground">Emails</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Property Performance */}
           <Card>
@@ -111,27 +155,39 @@ export default function AgentAnalytics() {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {properties.map((property) => (
-                    <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                          alt={property.title}
-                          className="h-12 w-12 rounded object-cover"
-                        />
-                        <div>
-                          <p className="font-medium line-clamp-1">{property.title}</p>
-                          <p className="text-sm text-muted-foreground">{property.city}</p>
+                  {properties.map((property) => {
+                    const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
+                    
+                    return (
+                      <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <img
+                            src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+                            alt={property.title}
+                            className="h-12 w-12 rounded object-cover flex-shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="font-medium line-clamp-1">{property.title}</p>
+                            <p className="text-sm text-muted-foreground">{property.city}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm">
+                          <div className="text-center">
+                            <p className="font-medium">{propertyStats?.views || property.views_count || 0}</p>
+                            <p className="text-xs text-muted-foreground">views</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">{propertyStats?.saves || 0}</p>
+                            <p className="text-xs text-muted-foreground">saves</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">{propertyStats?.inquiries || 0}</p>
+                            <p className="text-xs text-muted-foreground">inquiries</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="text-center">
-                          <p className="font-medium">{property.views_count || 0}</p>
-                          <p className="text-xs text-muted-foreground">views</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

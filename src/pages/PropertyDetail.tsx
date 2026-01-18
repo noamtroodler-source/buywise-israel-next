@@ -222,6 +222,7 @@ export default function PropertyDetail() {
             <div className="sticky top-6">
               <StickyContactCard 
                 agent={property.agent}
+                propertyId={property.id}
                 propertyTitle={property.title}
                 pricePerSqm={pricePerSqm}
                 daysOnMarket={daysOnMarket}
@@ -239,6 +240,7 @@ export default function PropertyDetail() {
       {/* Mobile Contact Bar */}
       <MobileContactBar 
         agent={property.agent}
+        propertyId={property.id}
         propertyTitle={property.title}
       />
     </Layout>
