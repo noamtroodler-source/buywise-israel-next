@@ -1,7 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Building2, Loader2, Check, UserPlus } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Building2, 
+  Loader2, 
+  Check, 
+  UserPlus,
+  User,
+  Mail,
+  Phone,
+  BadgeCheck,
+  Globe,
+  Briefcase,
+  FileText,
+  Clock,
+  CheckCircle2
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,14 +33,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const steps = [
-  { title: 'Basic Info', description: 'Your contact details' },
-  { title: 'Agency', description: 'Join or go independent' },
-  { title: 'Profile', description: 'Your experience' },
-  { title: 'Complete', description: 'Review & submit' },
+  { title: 'Basic Info', description: 'Your contact details', icon: User },
+  { title: 'Agency', description: 'Join or go independent', icon: Building2 },
+  { title: 'Profile', description: 'Your experience', icon: Briefcase },
+  { title: 'Complete', description: 'Review & submit', icon: CheckCircle2 },
 ];
 
 const languages = ['Hebrew', 'English', 'Russian', 'French', 'Spanish', 'Arabic', 'Amharic', 'Yiddish'];
 const specializations = ['Residential', 'Luxury', 'Commercial', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
 export default function AgentRegisterWizard() {
   const navigate = useNavigate();
@@ -70,7 +99,6 @@ export default function AgentRegisterWizard() {
     
     setIsValidatingCode(true);
     try {
-      // Check if invite code exists and is valid
       const { data, error } = await supabase
         .from('agency_invites')
         .select('agency_id, agencies(name)')
@@ -151,132 +179,234 @@ export default function AgentRegisterWizard() {
     switch (currentStep) {
       case 0:
         return (
-          <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Contact Details</h3>
+                <p className="text-sm text-muted-foreground">How buyers and agencies can reach you</p>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  placeholder="Your full name"
-                />
+                <Label htmlFor="name" className="text-sm font-medium">Full Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    placeholder="Your full name"
+                    className="pl-10 h-11 rounded-xl"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                />
+                <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    className="pl-10 h-11 rounded-xl"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => updateField('phone', e.target.value)}
-                  placeholder="+972-XX-XXX-XXXX"
-                />
+                <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => updateField('phone', e.target.value)}
+                    placeholder="+972-XX-XXX-XXXX"
+                    className="pl-10 h-11 rounded-xl"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="license_number">License Number *</Label>
-                <Input
-                  id="license_number"
-                  value={formData.license_number}
-                  onChange={(e) => updateField('license_number', e.target.value)}
-                  placeholder="Required for verification"
-                />
+                <Label htmlFor="license_number" className="text-sm font-medium">License Number *</Label>
+                <div className="relative">
+                  <BadgeCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="license_number"
+                    value={formData.license_number}
+                    onChange={(e) => updateField('license_number', e.target.value)}
+                    placeholder="Required for verification"
+                    className="pl-10 h-11 rounded-xl"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         );
 
       case 1:
         return (
-          <div className="space-y-6">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Agency Affiliation</h3>
+                <p className="text-sm text-muted-foreground">Work independently or join an agency</p>
+              </div>
+            </motion.div>
+
             <RadioGroup
               value={formData.agency_choice}
               onValueChange={(v) => updateField('agency_choice', v as any)}
               className="space-y-4"
             >
-              <div className="flex items-start space-x-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
-                <RadioGroupItem value="independent" id="independent" />
-                <div className="flex-1">
-                  <Label htmlFor="independent" className="cursor-pointer font-medium">
-                    I'm an independent agent
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Work independently without an agency affiliation
-                  </p>
-                </div>
-              </div>
+              <motion.div variants={itemVariants}>
+                <label 
+                  htmlFor="independent"
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.agency_choice === 'independent' 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <RadioGroupItem value="independent" id="independent" className="mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="font-semibold">I'm an independent agent</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 ml-10">
+                      Work independently without an agency affiliation. Full control over your listings and client relationships.
+                    </p>
+                  </div>
+                </label>
+              </motion.div>
 
-              <div className="flex items-start space-x-3 p-4 rounded-lg border hover:bg-muted/50 cursor-pointer">
-                <RadioGroupItem value="invite_code" id="invite_code" />
-                <div className="flex-1">
-                  <Label htmlFor="invite_code" className="cursor-pointer font-medium">
-                    I have an agency invite code
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Join an agency using a code from your agency admin
-                  </p>
-                </div>
-              </div>
+              <motion.div variants={itemVariants}>
+                <label 
+                  htmlFor="invite_code"
+                  className={`flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.agency_choice === 'invite_code' 
+                      ? 'border-primary bg-primary/5 shadow-sm' 
+                      : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                  }`}
+                >
+                  <RadioGroupItem value="invite_code" id="invite_code" className="mt-1" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="font-semibold">I have an agency invite code</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2 ml-10">
+                      Join an agency using a code from your agency admin
+                    </p>
+                  </div>
+                </label>
+              </motion.div>
             </RadioGroup>
 
             {formData.agency_choice === 'invite_code' && (
-              <div className="space-y-3 pl-7">
-                <Label htmlFor="invite_code_input">Enter Invite Code</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="invite_code_input"
-                    value={formData.invite_code}
-                    onChange={(e) => {
-                      updateField('invite_code', e.target.value);
-                      setValidatedAgencyId(null);
-                      setValidatedAgencyName(null);
-                    }}
-                    placeholder="e.g., ABC123XYZ"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={validateInviteCode}
-                    disabled={isValidatingCode || !formData.invite_code.trim()}
-                  >
-                    {isValidatingCode ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Validate'
-                    )}
-                  </Button>
-                </div>
-                {validatedAgencyName && (
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <Check className="h-4 w-4" />
-                    Joining: {validatedAgencyName}
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-4 pt-2"
+              >
+                <div className="bg-muted/30 rounded-xl p-5 border border-border/50">
+                  <Label htmlFor="invite_code_input" className="text-sm font-medium">Enter Invite Code</Label>
+                  <div className="flex gap-3 mt-2">
+                    <Input
+                      id="invite_code_input"
+                      value={formData.invite_code}
+                      onChange={(e) => {
+                        updateField('invite_code', e.target.value);
+                        setValidatedAgencyId(null);
+                        setValidatedAgencyName(null);
+                      }}
+                      placeholder="e.g., ABC123XYZ"
+                      className="flex-1 h-11 rounded-xl"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={validateInviteCode}
+                      disabled={isValidatingCode || !formData.invite_code.trim()}
+                      className="rounded-xl h-11 px-5"
+                    >
+                      {isValidatingCode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Validate'
+                      )}
+                    </Button>
                   </div>
-                )}
-              </div>
+                  {validatedAgencyName && (
+                    <div className="flex items-center gap-2 mt-3 p-3 rounded-lg bg-primary/10 text-primary">
+                      <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="text-sm font-medium">Joining: {validatedAgencyName}</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="years_experience">Years of Experience</Label>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Professional Profile</h3>
+                <p className="text-sm text-muted-foreground">Help buyers learn more about you</p>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="years_experience" className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Years of Experience
+              </Label>
               <Select
                 value={String(formData.years_experience)}
                 onValueChange={(v) => updateField('years_experience', Number(v))}
               >
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-64 h-11 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -287,111 +417,154 @@ export default function AgentRegisterWizard() {
                   <SelectItem value="10">10+ years</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </motion.div>
 
-            <div className="space-y-3">
-              <Label>Languages Spoken *</Label>
+            <motion.div variants={itemVariants} className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                Languages Spoken *
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {languages.map((lang) => (
-                  <div key={lang} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`lang-${lang}`}
-                      checked={formData.languages.includes(lang)}
-                      onCheckedChange={() => toggleArrayItem('languages', lang)}
-                    />
-                    <Label htmlFor={`lang-${lang}`} className="text-sm font-normal cursor-pointer">
-                      {lang}
-                    </Label>
-                  </div>
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => toggleArrayItem('languages', lang)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      formData.languages.includes(lang)
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
+                    }`}
+                  >
+                    {lang}
+                  </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-3">
-              <Label>Specializations</Label>
+            <motion.div variants={itemVariants} className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                Specializations
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {specializations.map((spec) => (
-                  <div key={spec} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`spec-${spec}`}
-                      checked={formData.specializations.includes(spec)}
-                      onCheckedChange={() => toggleArrayItem('specializations', spec)}
-                    />
-                    <Label htmlFor={`spec-${spec}`} className="text-sm font-normal cursor-pointer">
-                      {spec}
-                    </Label>
-                  </div>
+                  <button
+                    key={spec}
+                    type="button"
+                    onClick={() => toggleArrayItem('specializations', spec)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      formData.specializations.includes(spec)
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
+                    }`}
+                  >
+                    {spec}
+                  </button>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="bio" className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Bio
+              </Label>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => updateField('bio', e.target.value)}
                 placeholder="Tell potential clients about yourself, your experience, and what makes you a great agent..."
                 rows={4}
+                className="rounded-xl resize-none"
+                maxLength={500}
               />
-              <p className="text-xs text-muted-foreground">
-                {formData.bio.length}/500 characters
-              </p>
-            </div>
-          </div>
+              <div className="flex justify-end">
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  formData.bio.length > 450 ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+                }`}>
+                  {formData.bio.length}/500
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
         );
 
       case 3:
         return (
-          <div className="space-y-6">
-            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-              <h3 className="font-medium">Review Your Information</h3>
-              <div className="grid gap-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Name:</span>
-                  <span className="font-medium">{formData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span className="font-medium">{formData.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span className="font-medium">{formData.phone || 'Not provided'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">License:</span>
-                  <span className="font-medium">{formData.license_number}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Agency:</span>
-                  <span className="font-medium">
-                    {validatedAgencyName || 'Independent'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Languages:</span>
-                  <span className="font-medium">{formData.languages.join(', ')}</span>
-                </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Review Your Application</h3>
+                <p className="text-sm text-muted-foreground">Make sure everything looks correct</p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              variants={itemVariants}
+              className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6 rounded-2xl border border-border/50"
+            >
+              <div className="grid gap-4">
+                {[
+                  { label: 'Name', value: formData.name, icon: User },
+                  { label: 'Email', value: formData.email, icon: Mail },
+                  { label: 'Phone', value: formData.phone || 'Not provided', icon: Phone },
+                  { label: 'License', value: formData.license_number, icon: BadgeCheck },
+                  { label: 'Agency', value: validatedAgencyName || 'Independent', icon: Building2 },
+                  { label: 'Languages', value: formData.languages.join(', '), icon: Globe },
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </span>
+                    <span className="font-medium text-sm">{item.value}</span>
+                  </div>
+                ))}
                 {formData.specializations.length > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Specializations:</span>
-                    <span className="font-medium">{formData.specializations.join(', ')}</span>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                      <Briefcase className="h-4 w-4" />
+                      Specializations
+                    </span>
+                    <span className="font-medium text-sm">{formData.specializations.join(', ')}</span>
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-primary/5 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">What happens next?</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Your application will be reviewed within 24-48 hours</li>
-                <li>• We'll verify your license number</li>
-                <li>• Once approved, you can start adding listings</li>
-                <li>• You'll receive an email notification when approved</li>
+            <motion.div 
+              variants={itemVariants}
+              className="bg-primary/5 p-5 rounded-xl border border-primary/10"
+            >
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                What happens next?
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  'Your application will be reviewed within 24-48 hours',
+                  "We'll verify your license number",
+                  'Once approved, you can start adding listings',
+                  "You'll receive an email notification when approved"
+                ].map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
               </ul>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         );
 
       default:
@@ -399,97 +572,125 @@ export default function AgentRegisterWizard() {
     }
   };
 
+  const StepIcon = steps[currentStep].icon;
+
   return (
     <Layout>
-      <div className="container py-8 max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Progress */}
-          <div className="flex items-center justify-between mb-8">
-            {steps.map((step, index) => {
-              const isCompleted = index < currentStep;
-              const isCurrent = index === currentStep;
-              return (
-                <div key={step.title} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        isCompleted ? 'bg-primary text-primary-foreground' :
-                        isCurrent ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' :
-                        'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+      {/* Gradient Background */}
+      <div className="relative bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background overflow-hidden">
+        {/* Decorative blur elements */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2" />
+        
+        <div className="container py-8 md:py-12 max-w-2xl relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            {/* Premium Progress Indicator */}
+            <div className="flex items-center justify-between mb-8">
+              {steps.map((step, index) => {
+                const isCompleted = index < currentStep;
+                const isCurrent = index === currentStep;
+                const Icon = step.icon;
+                return (
+                  <div key={step.title} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all ${
+                          isCompleted 
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
+                            : isCurrent 
+                              ? 'bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-lg shadow-primary/20' 
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                      </div>
+                      <p className={`text-xs mt-2 hidden sm:block font-medium ${
+                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {step.title}
+                      </p>
                     </div>
-                    <p className={`text-xs mt-1 hidden sm:block ${isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                      {step.title}
-                    </p>
+                    {index < steps.length - 1 && (
+                      <div className={`flex-1 h-1 mx-3 rounded-full transition-colors ${
+                        isCompleted ? 'bg-primary' : 'bg-muted'
+                      }`} />
+                    )}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-2 ${isCompleted ? 'bg-primary' : 'bg-muted'}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserPlus className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">{steps[currentStep].title}</CardTitle>
-              <CardDescription>{steps[currentStep].description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AnimatePresence mode="wait">
-                <motion.div
+            {/* Premium Main Card */}
+            <Card className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+              <CardHeader className="text-center pb-2 pt-8">
+                <motion.div 
                   key={currentStep}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mx-auto mb-4 h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-lg shadow-primary/10"
                 >
-                  {renderStep()}
+                  <StepIcon className="h-10 w-10 text-primary" />
                 </motion.div>
-              </AnimatePresence>
-            </CardContent>
-          </Card>
+                <CardTitle className="text-2xl md:text-3xl font-bold">{steps[currentStep].title}</CardTitle>
+                <CardDescription className="text-base">{steps[currentStep].description}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {renderStep()}
+                  </motion.div>
+                </AnimatePresence>
+              </CardContent>
+            </Card>
 
-          {/* Navigation */}
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={goBack}
-              disabled={currentStep === 0}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-
-            {currentStep === steps.length - 1 ? (
+            {/* Premium Navigation Buttons */}
+            <div className="flex justify-between gap-4">
               <Button
-                onClick={handleSubmit}
-                disabled={agentRegistration.isPending}
+                variant="outline"
+                onClick={goBack}
+                disabled={currentStep === 0}
+                className="rounded-xl h-12 px-6"
               >
-                {agentRegistration.isPending ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4 mr-2" />
-                )}
-                Submit Application
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
               </Button>
-            ) : (
-              <Button onClick={goNext} disabled={!canGoNext()}>
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            )}
-          </div>
-        </motion.div>
+
+              {currentStep === steps.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={agentRegistration.isPending}
+                  className="rounded-xl h-12 px-8 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                >
+                  {agentRegistration.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
+                  Submit Application
+                </Button>
+              ) : (
+                <Button 
+                  onClick={goNext} 
+                  disabled={!canGoNext()}
+                  className="rounded-xl h-12 px-8 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </Layout>
   );
