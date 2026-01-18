@@ -16,12 +16,15 @@ export type Database = {
     Tables: {
       agencies: {
         Row: {
+          admin_user_id: string | null
           cities_covered: string[] | null
           created_at: string | null
+          default_invite_code: string | null
           description: string | null
           email: string | null
           founded_year: number | null
           id: string
+          is_accepting_agents: boolean | null
           is_verified: boolean | null
           logo_url: string | null
           name: string
@@ -32,12 +35,15 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          admin_user_id?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
+          default_invite_code?: string | null
           description?: string | null
           email?: string | null
           founded_year?: number | null
           id?: string
+          is_accepting_agents?: boolean | null
           is_verified?: boolean | null
           logo_url?: string | null
           name: string
@@ -48,12 +54,15 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          admin_user_id?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
+          default_invite_code?: string | null
           description?: string | null
           email?: string | null
           founded_year?: number | null
           id?: string
+          is_accepting_agents?: boolean | null
           is_verified?: boolean | null
           logo_url?: string | null
           name?: string
@@ -65,16 +74,117 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_invites: {
+        Row: {
+          agency_id: string
+          code: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          updated_at: string | null
+          uses_remaining: number | null
+        }
+        Insert: {
+          agency_id: string
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string | null
+          uses_remaining?: number | null
+        }
+        Update: {
+          agency_id?: string
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          updated_at?: string | null
+          uses_remaining?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_invites_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_join_requests: {
+        Row: {
+          agency_id: string
+          agent_id: string
+          id: string
+          message: string | null
+          rejection_reason: string | null
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          agency_id: string
+          agent_id: string
+          id?: string
+          message?: string | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          agency_id?: string
+          agent_id?: string
+          id?: string
+          message?: string | null
+          rejection_reason?: string | null
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_join_requests_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_join_requests_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           agency_id: string | null
           agency_name: string | null
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           email: string
           id: string
           is_verified: boolean | null
+          joined_via: string | null
           languages: string[] | null
           license_number: string | null
           name: string
@@ -82,6 +192,7 @@ export type Database = {
           phone: string | null
           response_time_hours: number | null
           specializations: string[] | null
+          status: Database["public"]["Enums"]["agent_status"]
           updated_at: string
           user_id: string | null
           years_experience: number | null
@@ -89,12 +200,15 @@ export type Database = {
         Insert: {
           agency_id?: string | null
           agency_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           email: string
           id?: string
           is_verified?: boolean | null
+          joined_via?: string | null
           languages?: string[] | null
           license_number?: string | null
           name: string
@@ -102,6 +216,7 @@ export type Database = {
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
+          status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
           user_id?: string | null
           years_experience?: number | null
@@ -109,12 +224,15 @@ export type Database = {
         Update: {
           agency_id?: string | null
           agency_name?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           email?: string
           id?: string
           is_verified?: boolean | null
+          joined_via?: string | null
           languages?: string[] | null
           license_number?: string | null
           name?: string
@@ -122,6 +240,7 @@ export type Database = {
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
+          status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
           user_id?: string | null
           years_experience?: number | null
@@ -1529,6 +1648,7 @@ export type Database = {
         Row: {
           ac_type: string | null
           address: string
+          admin_notes: string | null
           agent_id: string | null
           allows_pets: string | null
           bathrooms: number | null
@@ -1555,17 +1675,23 @@ export type Database = {
           parking: number | null
           price: number
           property_type: Database["public"]["Enums"]["property_type"]
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           size_sqm: number | null
+          submitted_at: string | null
           title: string
           total_floors: number | null
           updated_at: string
           vaad_bayit_monthly: number | null
+          verification_status: Database["public"]["Enums"]["verification_status"]
           views_count: number | null
           year_built: number | null
         }
         Insert: {
           ac_type?: string | null
           address: string
+          admin_notes?: string | null
           agent_id?: string | null
           allows_pets?: string | null
           bathrooms?: number | null
@@ -1592,17 +1718,23 @@ export type Database = {
           parking?: number | null
           price: number
           property_type?: Database["public"]["Enums"]["property_type"]
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           size_sqm?: number | null
+          submitted_at?: string | null
           title: string
           total_floors?: number | null
           updated_at?: string
           vaad_bayit_monthly?: number | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
           views_count?: number | null
           year_built?: number | null
         }
         Update: {
           ac_type?: string | null
           address?: string
+          admin_notes?: string | null
           agent_id?: string | null
           allows_pets?: string | null
           bathrooms?: number | null
@@ -1629,11 +1761,16 @@ export type Database = {
           parking?: number | null
           price?: number
           property_type?: Database["public"]["Enums"]["property_type"]
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           size_sqm?: number | null
+          submitted_at?: string | null
           title?: string
           total_floors?: number | null
           updated_at?: string
           vaad_bayit_monthly?: number | null
+          verification_status?: Database["public"]["Enums"]["verification_status"]
           views_count?: number | null
           year_built?: number | null
         }
@@ -1643,6 +1780,101 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_inquiries: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          email: string | null
+          id: string
+          inquiry_type: string
+          is_read: boolean | null
+          message: string | null
+          name: string | null
+          phone: string | null
+          property_id: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          inquiry_type: string
+          is_read?: boolean | null
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          property_id: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          inquiry_type?: string
+          is_read?: boolean | null
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          property_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_inquiries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_inquiries_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_views: {
+        Row: {
+          id: string
+          property_id: string
+          referrer: string | null
+          session_id: string | null
+          source: string | null
+          viewed_at: string | null
+          viewer_user_id: string | null
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+          viewed_at?: string | null
+          viewer_user_id?: string | null
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          referrer?: string | null
+          session_id?: string | null
+          source?: string | null
+          viewed_at?: string | null
+          viewer_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_views_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -1988,8 +2220,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
     }
     Enums: {
+      agent_status: "pending" | "active" | "suspended"
       app_role: "admin" | "agent" | "user"
       listing_status: "for_sale" | "for_rent" | "sold" | "rented"
       project_status:
@@ -2004,6 +2238,12 @@ export type Database = {
         | "cottage"
         | "land"
         | "commercial"
+      verification_status:
+        | "draft"
+        | "pending_review"
+        | "changes_requested"
+        | "approved"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2131,6 +2371,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      agent_status: ["pending", "active", "suspended"],
       app_role: ["admin", "agent", "user"],
       listing_status: ["for_sale", "for_rent", "sold", "rented"],
       project_status: [
@@ -2146,6 +2387,13 @@ export const Constants = {
         "cottage",
         "land",
         "commercial",
+      ],
+      verification_status: [
+        "draft",
+        "pending_review",
+        "changes_requested",
+        "approved",
+        "rejected",
       ],
     },
   },
