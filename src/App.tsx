@@ -24,7 +24,8 @@ import Tools from "./pages/Tools";
 import AgentRegister from "./pages/agent/AgentRegister";
 import AgentDashboard from "./pages/agent/AgentDashboard";
 import AgentProperties from "./pages/agent/AgentProperties";
-import NewProperty from "./pages/agent/NewProperty";
+import NewPropertyWizard from "./pages/agent/NewPropertyWizard";
+import AgentAnalytics from "./pages/agent/AgentAnalytics";
 import EditProperty from "./pages/agent/EditProperty";
 import Developers from "./pages/Developers";
 import DeveloperDetail from "./pages/DeveloperDetail";
@@ -138,7 +139,7 @@ const App = () => (
             } />
             <Route path="/agent/properties/new" element={
               <ProtectedRoute requiredRole="agent">
-                <NewProperty />
+                <NewPropertyWizard />
               </ProtectedRoute>
             } />
             <Route path="/agent/properties/:id/edit" element={
