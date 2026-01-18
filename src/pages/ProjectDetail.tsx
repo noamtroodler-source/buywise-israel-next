@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
+import { useProjectViewTracking } from '@/hooks/useProjectViewTracking';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import {
   ProjectHero,
@@ -30,6 +31,9 @@ export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: project, isLoading, error } = useProject(slug || '');
   const { data: units = [] } = useProjectUnits(project?.id || '');
+
+  // Track project views
+  useProjectViewTracking(project?.id);
 
   if (isLoading) {
     return (

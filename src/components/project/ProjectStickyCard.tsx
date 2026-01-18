@@ -1,4 +1,4 @@
-import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle, User } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle, User, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
+import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
 
 interface RepresentingAgent {
   id: string;
@@ -29,6 +30,7 @@ interface ProjectStickyCardProps {
 
 export function ProjectStickyCard({ project, developer, representingAgent, selectedUnit, onContactClick }: ProjectStickyCardProps) {
   const formatPrice = useFormatPrice();
+  const { mutate: trackInquiry } = useProjectInquiryTracking();
 
   const displayPrice = selectedUnit?.price || project.price_from;
 
@@ -38,6 +40,40 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     } else {
       const section = document.getElementById('developer-section');
       section?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Track inquiry helpers
+  const handleWhatsAppClick = (source: 'developer' | 'agent') => {
+    if (developer) {
+      trackInquiry({
+        projectId: project.id,
+        developerId: developer.id,
+        inquiryType: 'whatsapp',
+        projectName: project.name,
+      });
+    }
+  };
+
+  const handleCallClick = (source: 'developer' | 'agent') => {
+    if (developer) {
+      trackInquiry({
+        projectId: project.id,
+        developerId: developer.id,
+        inquiryType: 'call',
+        projectName: project.name,
+      });
+    }
+  };
+
+  const handleEmailClick = (source: 'developer' | 'agent') => {
+    if (developer) {
+      trackInquiry({
+        projectId: project.id,
+        developerId: developer.id,
+        inquiryType: 'email',
+        projectName: project.name,
+      });
     }
   };
 
@@ -73,6 +109,14 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     },
   ];
 
+  // Add construction progress to quick facts if available
+  if (project.construction_progress_percent !== null && project.construction_progress_percent !== undefined) {
+    quickFacts.push({
+      label: 'Construction',
+      value: `${project.construction_progress_percent}% complete`
+    });
+  }
+
   const buyerProtections = [
     'Bank guarantee (Law of Sale)',
     'Fixed payment schedule',
@@ -106,7 +150,12 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
       </div>
       <div className="space-y-2">
         {agentWhatsappUrl && (
-          <Button className="w-full" size="lg" asChild>
+          <Button 
+            className="w-full" 
+            size="lg" 
+            asChild
+            onClick={() => handleWhatsAppClick('agent')}
+          >
             <a href={agentWhatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp Agent
@@ -115,7 +164,12 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         )}
         <div className="grid grid-cols-2 gap-2">
           {representingAgent?.phone && (
-            <Button variant="outline" size="sm" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              onClick={() => handleCallClick('agent')}
+            >
               <a href={`tel:${representingAgent.phone}`}>
                 <Phone className="h-4 w-4 mr-1.5" />
                 Call
@@ -127,6 +181,7 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
             size="sm" 
             asChild
             className={representingAgent?.phone ? '' : 'col-span-2'}
+            onClick={() => handleEmailClick('agent')}
           >
             <a href={`mailto:${representingAgent?.email}`}>
               <Mail className="h-4 w-4 mr-1.5" />
@@ -169,7 +224,12 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
       )}
       <div className="space-y-2">
         {developerWhatsappUrl && (
-          <Button className="w-full" size="lg" asChild>
+          <Button 
+            className="w-full" 
+            size="lg" 
+            asChild
+            onClick={() => handleWhatsAppClick('developer')}
+          >
             <a href={developerWhatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp Developer
@@ -178,7 +238,12 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         )}
         <div className="grid grid-cols-2 gap-2">
           {developer?.phone && (
-            <Button variant="outline" size="sm" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              onClick={() => handleCallClick('developer')}
+            >
               <a href={`tel:${developer.phone}`}>
                 <Phone className="h-4 w-4 mr-1.5" />
                 Call
@@ -188,7 +253,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleContactClick}
+            onClick={() => {
+              handleEmailClick('developer');
+              handleContactClick();
+            }}
             className={developer?.phone ? '' : 'col-span-2'}
           >
             <Mail className="h-4 w-4 mr-1.5" />
@@ -213,6 +281,30 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     >
       <Card className="shadow-lg border-primary/10">
         <CardContent className="p-5 space-y-4">
+          {/* Construction Progress Mini Display */}
+          {project.construction_progress_percent !== null && project.construction_progress_percent !== undefined && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <TrendingUp className="h-4 w-4" />
+                    Construction Progress
+                  </span>
+                  <span className="font-semibold text-primary">{project.construction_progress_percent}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-primary"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${project.construction_progress_percent}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+
           {/* Contact Section - Tabbed if both agent and developer exist */}
           {representingAgent ? (
             <Tabs defaultValue="agent" className="w-full">
@@ -280,20 +372,42 @@ interface MobileContactBarProps {
 }
 
 export function ProjectMobileContactBar({ project, developer, representingAgent }: MobileContactBarProps) {
+  const { mutate: trackInquiry } = useProjectInquiryTracking();
+  
   // Prioritize agent contact if assigned
-  const primaryContact = representingAgent || developer;
   const primaryPhone = representingAgent?.phone || developer?.phone;
-  const primaryName = representingAgent?.name || developer?.name || 'the team';
   
   const whatsappUrl = primaryPhone 
     ? `https://wa.me/${primaryPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi${representingAgent ? ` ${representingAgent.name}` : ''}, I'm interested in ${project.name}`)}`
     : null;
 
+  const handleWhatsAppClick = () => {
+    if (developer) {
+      trackInquiry({
+        projectId: project.id,
+        developerId: developer.id,
+        inquiryType: 'whatsapp',
+        projectName: project.name,
+      });
+    }
+  };
+
+  const handleCallClick = () => {
+    if (developer) {
+      trackInquiry({
+        projectId: project.id,
+        developerId: developer.id,
+        inquiryType: 'call',
+        projectName: project.name,
+      });
+    }
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
       <div className="flex gap-3 max-w-lg mx-auto">
         {whatsappUrl ? (
-          <Button className="flex-1" size="lg" asChild>
+          <Button className="flex-1" size="lg" asChild onClick={handleWhatsAppClick}>
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4 mr-2" />
               {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
@@ -306,7 +420,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
           </Button>
         )}
         {primaryPhone && (
-          <Button variant="outline" size="lg" asChild>
+          <Button variant="outline" size="lg" asChild onClick={handleCallClick}>
             <a href={`tel:${primaryPhone}`}>
               <Phone className="h-4 w-4" />
             </a>

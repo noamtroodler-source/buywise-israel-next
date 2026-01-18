@@ -35,6 +35,7 @@ export interface Project {
   currency: string;
   completion_date: string | null;
   construction_start: string | null;
+  construction_progress_percent: number | null;
   amenities: string[] | null;
   images: string[] | null;
   floor_plans: string[] | null;
