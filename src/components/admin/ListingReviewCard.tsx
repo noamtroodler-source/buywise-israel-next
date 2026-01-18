@@ -27,9 +27,9 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
-  onApprove: (id: string, notes?: string) => void;
-  onRequestChanges: (id: string, reason: string, notes?: string) => void;
-  onReject: (id: string, reason: string, notes?: string) => void;
+  onApprove: (id: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
+  onRequestChanges: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
+  onReject: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   isLoading?: boolean;
 }
 
@@ -55,12 +55,12 @@ export function ListingReviewCard({
   };
 
   const handleApprove = () => {
-    onApprove(property.id, adminNotes || undefined);
+    onApprove(property.id, adminNotes || undefined, property.agent?.id, property.title);
   };
 
   const handleRequestChanges = () => {
     if (!reason.trim()) return;
-    onRequestChanges(property.id, reason, adminNotes || undefined);
+    onRequestChanges(property.id, reason, adminNotes || undefined, property.agent?.id, property.title);
     setShowChangesDialog(false);
     setReason('');
     setAdminNotes('');
@@ -68,7 +68,7 @@ export function ListingReviewCard({
 
   const handleReject = () => {
     if (!reason.trim()) return;
-    onReject(property.id, reason, adminNotes || undefined);
+    onReject(property.id, reason, adminNotes || undefined, property.agent?.id, property.title);
     setShowRejectDialog(false);
     setReason('');
     setAdminNotes('');

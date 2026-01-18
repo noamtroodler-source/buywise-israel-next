@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, User } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, User, Bell } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useAgentProfile } from '@/hooks/useAgentProperties';
 import { useUpdateAgentProfile } from '@/hooks/useAgentProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +54,12 @@ export default function AgentSettings() {
     neighborhoods_covered: '',
   });
 
+  const [notificationSettings, setNotificationSettings] = useState({
+    notify_email: true,
+    notify_on_inquiry: true,
+    notify_on_approval: true,
+  });
+
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -67,6 +75,11 @@ export default function AgentSettings() {
         languages: agentProfile.languages || [],
         specializations: agentProfile.specializations || [],
         neighborhoods_covered: agentProfile.neighborhoods_covered?.join(', ') || '',
+      });
+      setNotificationSettings({
+        notify_email: agentProfile.notify_email ?? true,
+        notify_on_inquiry: agentProfile.notify_on_inquiry ?? true,
+        notify_on_approval: agentProfile.notify_on_approval ?? true,
       });
       setAvatarUrl(agentProfile.avatar_url);
     }
@@ -135,6 +148,9 @@ export default function AgentSettings() {
       specializations: formData.specializations.length > 0 ? formData.specializations : null,
       neighborhoods_covered: neighborhoods.length > 0 ? neighborhoods : null,
       avatar_url: avatarUrl,
+      notify_email: notificationSettings.notify_email,
+      notify_on_inquiry: notificationSettings.notify_on_inquiry,
+      notify_on_approval: notificationSettings.notify_on_approval,
     });
   };
 
@@ -358,6 +374,72 @@ export default function AgentSettings() {
                     <p className="text-xs text-muted-foreground">
                       Separate multiple neighborhoods with commas
                     </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Notification Settings */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                      Email Notifications
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Email Notifications</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive notifications via email
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_email}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_email: checked }))
+                        }
+                      />
+                    </div>
+
+                    <div className={cn(
+                      "space-y-4 pl-4 border-l-2 border-muted",
+                      !notificationSettings.notify_email && "opacity-50 pointer-events-none"
+                    )}>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>New Lead Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Get notified when someone inquires about your listings
+                          </p>
+                        </div>
+                        <Switch
+                          checked={notificationSettings.notify_on_inquiry}
+                          onCheckedChange={(checked) => 
+                            setNotificationSettings(prev => ({ ...prev, notify_on_inquiry: checked }))
+                          }
+                          disabled={!notificationSettings.notify_email}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Listing Approval Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Get notified when your listings are approved or need changes
+                          </p>
+                        </div>
+                        <Switch
+                          checked={notificationSettings.notify_on_approval}
+                          onCheckedChange={(checked) => 
+                            setNotificationSettings(prev => ({ ...prev, notify_on_approval: checked }))
+                          }
+                          disabled={!notificationSettings.notify_email}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

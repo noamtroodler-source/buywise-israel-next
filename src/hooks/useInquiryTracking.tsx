@@ -8,10 +8,29 @@ interface TrackInquiryParams {
   propertyId: string;
   agentId: string;
   inquiryType: InquiryType;
+  propertyTitle?: string;
   name?: string;
   email?: string;
   phone?: string;
   message?: string;
+}
+
+async function sendInquiryNotification(params: TrackInquiryParams) {
+  try {
+    await supabase.functions.invoke('send-notification', {
+      body: {
+        type: 'new_inquiry',
+        agentId: params.agentId,
+        propertyId: params.propertyId,
+        propertyTitle: params.propertyTitle || 'Your property',
+        inquiryType: params.inquiryType,
+        inquirerName: params.name,
+        inquirerEmail: params.email,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to send inquiry notification:', error);
+  }
 }
 
 /**
@@ -36,6 +55,10 @@ export function useInquiryTracking() {
         });
 
       if (error) throw error;
+
+      // Send notification to agent (async, don't wait)
+      sendInquiryNotification(params);
+
       return data;
     },
     // Silent tracking - don't show errors to users
@@ -63,6 +86,9 @@ export async function trackInquiry(params: TrackInquiryParams & { userId?: strin
         phone: params.phone || null,
         message: params.message || null,
       });
+
+    // Send notification to agent (async, don't wait)
+    sendInquiryNotification(params);
   } catch (error) {
     console.error('Failed to track inquiry:', error);
   }

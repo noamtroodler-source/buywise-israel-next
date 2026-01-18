@@ -18,6 +18,9 @@ interface UpdateAgentProfileData {
   specializations?: string[] | null;
   neighborhoods_covered?: string[] | null;
   avatar_url?: string | null;
+  notify_email?: boolean;
+  notify_on_inquiry?: boolean;
+  notify_on_approval?: boolean;
 }
 
 export function useRenewProperty() {

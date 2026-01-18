@@ -98,11 +98,36 @@ export function usePendingReviewCount() {
   });
 }
 
+async function sendNotification(payload: {
+  type: string;
+  agentId: string;
+  propertyId?: string;
+  propertyTitle?: string;
+  message?: string;
+  rejectionReason?: string;
+  inquirerName?: string;
+  inquirerEmail?: string;
+  inquiryType?: string;
+}) {
+  try {
+    await supabase.functions.invoke('send-notification', {
+      body: payload,
+    });
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
+}
+
 export function useApproveListing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, adminNotes }: { id: string; adminNotes?: string }) => {
+    mutationFn: async ({ id, adminNotes, agentId, propertyTitle }: { 
+      id: string; 
+      adminNotes?: string;
+      agentId?: string;
+      propertyTitle?: string;
+    }) => {
       const { error } = await supabase
         .from('properties')
         .update({
@@ -114,6 +139,16 @@ export function useApproveListing() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send notification to agent
+      if (agentId) {
+        await sendNotification({
+          type: 'listing_approved',
+          agentId,
+          propertyId: id,
+          propertyTitle: propertyTitle || 'Your property',
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
@@ -130,7 +165,13 @@ export function useRequestChanges() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, reason, adminNotes }: { id: string; reason: string; adminNotes?: string }) => {
+    mutationFn: async ({ id, reason, adminNotes, agentId, propertyTitle }: { 
+      id: string; 
+      reason: string; 
+      adminNotes?: string;
+      agentId?: string;
+      propertyTitle?: string;
+    }) => {
       const { error } = await supabase
         .from('properties')
         .update({
@@ -143,6 +184,17 @@ export function useRequestChanges() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send notification to agent
+      if (agentId) {
+        await sendNotification({
+          type: 'changes_requested',
+          agentId,
+          propertyId: id,
+          propertyTitle: propertyTitle || 'Your property',
+          message: reason,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
@@ -159,7 +211,13 @@ export function useRejectListing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, reason, adminNotes }: { id: string; reason: string; adminNotes?: string }) => {
+    mutationFn: async ({ id, reason, adminNotes, agentId, propertyTitle }: { 
+      id: string; 
+      reason: string; 
+      adminNotes?: string;
+      agentId?: string;
+      propertyTitle?: string;
+    }) => {
       const { error } = await supabase
         .from('properties')
         .update({
@@ -172,6 +230,17 @@ export function useRejectListing() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send notification to agent
+      if (agentId) {
+        await sendNotification({
+          type: 'listing_rejected',
+          agentId,
+          propertyId: id,
+          propertyTitle: propertyTitle || 'Your property',
+          rejectionReason: reason,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listingsForReview'] });
