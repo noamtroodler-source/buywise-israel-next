@@ -40,7 +40,7 @@ const steps = [
 ];
 
 const languages = ['Hebrew', 'English', 'Russian', 'French', 'Spanish', 'Arabic', 'Amharic', 'Yiddish'];
-const specializations = ['Residential', 'Luxury', 'Commercial', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
+const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -86,12 +86,22 @@ export default function AgentRegisterWizard() {
   };
 
   const toggleArrayItem = (field: 'languages' | 'specializations', item: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].includes(item)
-        ? prev[field].filter(i => i !== item)
-        : [...prev[field], item]
-    }));
+    setFormData(prev => {
+      const isSelected = prev[field].includes(item);
+      
+      // Limit specializations to max 3
+      if (field === 'specializations' && !isSelected && prev[field].length >= 3) {
+        toast.info('You can select up to 3 specializations');
+        return prev;
+      }
+      
+      return {
+        ...prev,
+        [field]: isSelected
+          ? prev[field].filter(i => i !== item)
+          : [...prev[field], item]
+      };
+    });
   };
 
   const validateInviteCode = async () => {
@@ -464,22 +474,32 @@ export default function AgentRegisterWizard() {
               <Label className="text-sm font-medium flex items-center gap-2">
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
                 Specializations
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({formData.specializations.length}/3)
+                </span>
               </Label>
               <div className="flex flex-wrap gap-2">
-                {specializations.map((spec) => (
-                  <button
-                    key={spec}
-                    type="button"
-                    onClick={() => toggleArrayItem('specializations', spec)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      formData.specializations.includes(spec)
-                        ? 'bg-primary text-primary-foreground shadow-md'
-                        : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
-                    }`}
-                  >
-                    {spec}
-                  </button>
-                ))}
+                {specializations.map((spec) => {
+                  const isSelected = formData.specializations.includes(spec);
+                  const isDisabled = !isSelected && formData.specializations.length >= 3;
+                  return (
+                    <button
+                      key={spec}
+                      type="button"
+                      onClick={() => toggleArrayItem('specializations', spec)}
+                      disabled={isDisabled}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : isDisabled
+                            ? 'bg-muted/30 text-muted-foreground/50 border border-border/50 cursor-not-allowed'
+                            : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border'
+                      }`}
+                    >
+                      {spec}
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
 
