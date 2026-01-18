@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { Home, MapPin, DollarSign } from 'lucide-react';
+import { CityCombobox } from '@/components/home/CityCombobox';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -137,12 +138,11 @@ export function StepBasics() {
           
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="city">City *</Label>
-              <Input
-                id="city"
+              <Label>City *</Label>
+              <CityCombobox
                 value={data.city}
-                onChange={(e) => updateData({ city: e.target.value })}
-                placeholder="e.g., Tel Aviv"
+                onValueChange={(city) => updateData({ city })}
+                placeholder="Select a city..."
                 className="h-11 rounded-xl"
               />
             </div>
