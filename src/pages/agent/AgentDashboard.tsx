@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,12 @@ export default function AgentDashboard() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/agent/settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </Button>
               <Button variant="outline" asChild>
                 <Link to="/agent/analytics">
                   <BarChart3 className="h-4 w-4 mr-2" />
