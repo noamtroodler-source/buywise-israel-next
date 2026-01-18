@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Eye, MessageSquare, TrendingUp, Users, 
-  Home, Calendar, Clock
+  Home, Calendar, BarChart3
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,32 +53,40 @@ export default function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Analytics</h2>
-          <p className="text-muted-foreground">Comprehensive platform performance metrics</p>
+      {/* Premium Header with gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%)]" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Platform Analytics</h2>
+              <p className="text-muted-foreground">Comprehensive performance metrics & insights</p>
+            </div>
+          </div>
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[140px] bg-background/80 backdrop-blur-sm">
+              <Calendar className="h-4 w-4 mr-2 text-primary" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={dateRange} onValueChange={setDateRange}>
-          <SelectTrigger className="w-[140px]">
-            <Calendar className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7">Last 7 days</SelectItem>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* Key Metrics */}
+      {/* Key Metrics - Premium Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Views', value: stats?.totalViews7d || 0, sub: 'Last 7 days', icon: Eye },
-          { label: 'Total Inquiries', value: stats?.totalInquiries7d || 0, sub: 'Last 7 days', icon: MessageSquare },
-          { label: 'Active Listings', value: stats?.totalProperties || 0, sub: 'Total properties', icon: Home },
-          { label: 'Registered Users', value: stats?.totalUsers || 0, sub: `+${stats?.newUsersThisWeek || 0} this week`, icon: Users },
+          { label: 'Total Views', value: stats?.totalViews7d || 0, sub: 'Last 7 days', icon: Eye, gradient: 'from-primary/10 to-primary/5' },
+          { label: 'Total Inquiries', value: stats?.totalInquiries7d || 0, sub: 'Last 7 days', icon: MessageSquare, gradient: 'from-primary/8 to-transparent' },
+          { label: 'Active Listings', value: stats?.totalProperties || 0, sub: 'Total properties', icon: Home, gradient: 'from-primary/10 to-primary/5' },
+          { label: 'Registered Users', value: stats?.totalUsers || 0, sub: `+${stats?.newUsersThisWeek || 0} this week`, icon: Users, gradient: 'from-primary/8 to-transparent' },
         ].map((metric, index) => (
           <motion.div
             key={metric.label}
@@ -86,12 +94,12 @@ export default function AdminAnalytics() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <Card className={`border-primary/20 bg-gradient-to-br ${metric.gradient} rounded-2xl overflow-hidden`}>
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{metric.label}</p>
-                    <p className="text-3xl font-bold text-foreground">
+                    <p className="text-sm text-muted-foreground font-medium">{metric.label}</p>
+                    <p className="text-3xl font-bold text-foreground mt-1">
                       {statsLoading ? '...' : metric.value.toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">{metric.sub}</p>
@@ -106,15 +114,15 @@ export default function AdminAnalytics() {
         ))}
       </div>
 
-      {/* Tabbed Analytics */}
+      {/* Tabbed Analytics - Premium Styling */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full max-w-2xl">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          <TabsTrigger value="agents">Agents</TabsTrigger>
-          <TabsTrigger value="inquiries">Inquiries</TabsTrigger>
-          <TabsTrigger value="growth">Growth</TabsTrigger>
-          <TabsTrigger value="market">Market</TabsTrigger>
+        <TabsList className="bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Overview</TabsTrigger>
+          <TabsTrigger value="inventory" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventory</TabsTrigger>
+          <TabsTrigger value="agents" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Agents</TabsTrigger>
+          <TabsTrigger value="inquiries" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inquiries</TabsTrigger>
+          <TabsTrigger value="growth" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Growth</TabsTrigger>
+          <TabsTrigger value="market" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Market</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">

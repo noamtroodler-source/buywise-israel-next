@@ -15,7 +15,7 @@ interface AgentLeaderboardProps {
 export function AgentLeaderboard({ data, isLoading, limit = 10 }: AgentLeaderboardProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle>Agent Leaderboard</CardTitle>
         </CardHeader>
@@ -33,8 +33,8 @@ export function AgentLeaderboard({ data, isLoading, limit = 10 }: AgentLeaderboa
   const agents = (data?.agents || []).slice(0, limit);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="rounded-2xl border-border/50 overflow-hidden">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-lg flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
@@ -48,23 +48,23 @@ export function AgentLeaderboard({ data, isLoading, limit = 10 }: AgentLeaderboa
           </Link>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         {/* Summary Stats */}
-        <div className="grid grid-cols-4 gap-3 mb-4 pb-4 border-b">
-          <div className="text-center">
-            <p className="text-2xl font-bold">{data?.totalAgents || 0}</p>
+        <div className="grid grid-cols-4 gap-3 mb-4 pb-4 border-b border-border/50">
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">{data?.totalAgents || 0}</p>
             <p className="text-xs text-muted-foreground">Total Agents</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-yellow-600">{data?.pendingAgents || 0}</p>
+          <div className="text-center p-3 rounded-xl bg-primary/10">
+            <p className="text-2xl font-bold text-primary">{data?.pendingAgents || 0}</p>
             <p className="text-xs text-muted-foreground">Pending</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold">{(data?.avgListingsPerAgent || 0).toFixed(1)}</p>
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">{(data?.avgListingsPerAgent || 0).toFixed(1)}</p>
             <p className="text-xs text-muted-foreground">Avg Listings</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold">{(data?.avgInquiriesPerAgent || 0).toFixed(1)}</p>
+          <div className="text-center p-3 rounded-xl bg-primary/5">
+            <p className="text-2xl font-bold text-foreground">{(data?.avgInquiriesPerAgent || 0).toFixed(1)}</p>
             <p className="text-xs text-muted-foreground">Avg Inquiries</p>
           </div>
         </div>
@@ -92,20 +92,20 @@ export function AgentLeaderboard({ data, isLoading, limit = 10 }: AgentLeaderboa
             {agents.map((agent, index) => (
               <div
                 key={agent.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-primary/5 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                     {index + 1}
                   </div>
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-9 w-9 border-2 border-primary/20">
                     <AvatarImage src={agent.avatarUrl || undefined} alt={agent.name} />
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
                       {agent.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm">{agent.name}</p>
+                    <p className="font-medium text-sm text-foreground">{agent.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {agent.agencyName || 'Independent'}
                     </p>
@@ -132,8 +132,8 @@ export function AgentLeaderboard({ data, isLoading, limit = 10 }: AgentLeaderboa
                   </div>
                   <div className="text-center min-w-[50px]">
                     <div className="flex items-center gap-1 text-muted-foreground">
-                      <TrendingUp className="h-3 w-3" />
-                      <span className="font-medium text-foreground">{agent.responseRate.toFixed(0)}%</span>
+                      <TrendingUp className="h-3 w-3 text-primary" />
+                      <span className="font-medium text-primary">{agent.responseRate.toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>

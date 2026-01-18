@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { 
-  AlertTriangle, CheckCircle2, Home, ImageOff, 
+  AlertCircle, CheckCircle2, Home, ImageOff, 
   FileText, Clock, DollarSign 
 } from 'lucide-react';
 import { InventoryHealth } from '@/hooks/useInventoryHealth';
@@ -12,25 +13,26 @@ interface InventoryHealthCardProps {
   isLoading?: boolean;
 }
 
+// BuyWise brand-compliant palette
 const STATUS_COLORS: Record<string, string> = {
   'For Sale': 'hsl(var(--primary))',
-  'For Rent': 'hsl(190, 80%, 42%)',
-  'Sold': 'hsl(258, 55%, 52%)',
-  'Rented': 'hsl(142, 71%, 45%)',
+  'For Rent': 'hsl(213, 70%, 55%)',
+  'Sold': 'hsl(213, 50%, 70%)',
+  'Rented': 'hsl(213, 40%, 80%)',
   'Other': 'hsl(var(--muted-foreground))',
 };
 
 const VERIFICATION_COLORS: Record<string, string> = {
-  'Approved': 'hsl(142, 71%, 45%)',
-  'Pending Review': 'hsl(45, 93%, 47%)',
+  'Approved': 'hsl(var(--primary))',
+  'Pending Review': 'hsl(213, 60%, 65%)',
   'Draft': 'hsl(var(--muted-foreground))',
-  'Rejected': 'hsl(0, 84%, 60%)',
+  'Rejected': 'hsl(213, 30%, 50%)',
 };
 
 export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProps) {
   if (isLoading) {
     return (
-      <Card>
+      <Card className="rounded-2xl border-border/50">
         <CardHeader>
           <CardTitle>Inventory Health</CardTitle>
         </CardHeader>
@@ -46,33 +48,29 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
       label: 'Missing Images',
       count: data?.qualityMetrics.withoutImages || 0,
       icon: ImageOff,
-      severity: 'warning',
     },
     {
       label: 'Short Descriptions',
       count: data?.qualityMetrics.shortDescriptions || 0,
       icon: FileText,
-      severity: 'info',
     },
     {
       label: 'Stale (30+ days)',
       count: data?.qualityMetrics.staleListings || 0,
       icon: Clock,
-      severity: 'warning',
     },
     {
       label: 'Missing Price',
       count: data?.qualityMetrics.missingPrice || 0,
       icon: DollarSign,
-      severity: 'error',
     },
   ];
 
   const totalIssues = qualityIssues.reduce((sum, issue) => sum + issue.count, 0);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="rounded-2xl border-border/50 overflow-hidden">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/5 to-transparent">
         <CardTitle className="text-lg flex items-center gap-2">
           <Home className="h-5 w-5 text-primary" />
           Inventory Health
@@ -81,11 +79,11 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <div className="grid grid-cols-2 gap-6">
           {/* Listing Type Breakdown */}
           <div>
-            <p className="text-sm font-medium mb-2">By Listing Type</p>
+            <p className="text-sm font-semibold mb-2 text-foreground">By Listing Type</p>
             <div className="h-[120px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -111,8 +109,8 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
                       if (active && payload && payload.length) {
                         const item = payload[0].payload;
                         return (
-                          <div className="bg-background border rounded-lg shadow-lg p-2 text-sm">
-                            <p className="font-medium">{item.type}</p>
+                          <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
+                            <p className="font-semibold text-foreground">{item.type}</p>
                             <p className="text-muted-foreground">
                               {item.count} ({item.percentage.toFixed(1)}%)
                             </p>
@@ -132,7 +130,7 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
                     className="h-2 w-2 rounded-full" 
                     style={{ backgroundColor: STATUS_COLORS[item.type] || STATUS_COLORS['Other'] }}
                   />
-                  <span>{item.type}: {item.count}</span>
+                  <span className="text-foreground">{item.type}: {item.count}</span>
                 </div>
               ))}
             </div>
@@ -140,7 +138,7 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
 
           {/* Verification Status */}
           <div>
-            <p className="text-sm font-medium mb-2">By Status</p>
+            <p className="text-sm font-semibold mb-2 text-foreground">By Status</p>
             <div className="space-y-2">
               {(data?.verificationBreakdown || []).map((item) => (
                 <div key={item.status} className="flex items-center justify-between">
@@ -151,9 +149,9 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
                         backgroundColor: VERIFICATION_COLORS[item.status] || 'hsl(var(--muted-foreground))' 
                       }}
                     />
-                    <span className="text-sm">{item.status}</span>
+                    <span className="text-sm text-foreground">{item.status}</span>
                   </div>
-                  <span className="text-sm font-medium">{item.count}</span>
+                  <span className="text-sm font-medium text-foreground">{item.count}</span>
                 </div>
               ))}
             </div>
@@ -161,37 +159,33 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
         </div>
 
         {/* Quality Issues */}
-        <div className="mt-4 pt-4 border-t">
+        <div className="mt-4 pt-4 border-t border-border/50">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium flex items-center gap-2">
+            <p className="text-sm font-semibold flex items-center gap-2 text-foreground">
               {totalIssues > 0 ? (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                <AlertCircle className="h-4 w-4 text-primary" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-primary" />
               )}
               Quality Issues
             </p>
             {totalIssues > 0 && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600">
+              <Badge variant="secondary" className="text-xs">
                 {totalIssues} items need attention
-              </span>
+              </Badge>
             )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             {qualityIssues.map((issue) => (
               <div 
                 key={issue.label}
-                className={`flex items-center gap-2 p-2 rounded-lg text-sm ${
+                className={`flex items-center gap-2 p-2 rounded-xl text-sm transition-colors ${
                   issue.count > 0 
-                    ? issue.severity === 'error' 
-                      ? 'bg-red-500/10 text-red-600' 
-                      : issue.severity === 'warning'
-                      ? 'bg-yellow-500/10 text-yellow-600'
-                      : 'bg-muted/50 text-muted-foreground'
+                    ? 'bg-primary/10 text-foreground' 
                     : 'bg-muted/30 text-muted-foreground'
                 }`}
               >
-                <issue.icon className="h-4 w-4" />
+                <issue.icon className={`h-4 w-4 ${issue.count > 0 ? 'text-primary' : ''}`} />
                 <span className="flex-1">{issue.label}</span>
                 <span className="font-medium">{issue.count}</span>
               </div>
