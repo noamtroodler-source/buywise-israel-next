@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, Clock, Send, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, Clock, Send, XCircle, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useProperty } from '@/hooks/useProperties';
-import { useUpdateProperty, useSubmitForReview, VerificationStatus } from '@/hooks/useAgentProperties';
+import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
 import { PropertyType, ListingStatus } from '@/types/database';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
@@ -82,8 +82,12 @@ export default function EditProperty() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: property, isLoading } = useProperty(id || '');
+  const { data: agentProfile } = useAgentProfile();
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
+  
+  // Check if agent is verified (status is 'active')
+  const isAgentVerified = agentProfile?.status === 'active';
 
   const [formData, setFormData] = useState({
     title: '',
@@ -573,22 +577,31 @@ export default function EditProperty() {
                     {isLive ? 'Update Live Listing' : 'Save Changes'}
                   </Button>
 
-                  {/* Submit for Review - Only for draft/changes_requested/rejected */}
+                  {/* Submit for Review - Only for draft/changes_requested/rejected AND verified agents */}
                   {canResubmit && (
-                    <Button
-                      type="button"
-                      onClick={handleSubmitForReview}
-                      className="flex-1"
-                      disabled={updateProperty.isPending || submitForReview.isPending}
-                    >
-                      {submitForReview.isPending && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <div className="flex flex-col gap-2 flex-1">
+                      {!isAgentVerified && (
+                        <div className="flex items-center gap-2 text-xs text-amber-600">
+                          <ShieldAlert className="h-3 w-3" />
+                          <span>Agent verification required</span>
+                        </div>
                       )}
-                      <Send className="h-4 w-4 mr-2" />
-                      {verificationStatus === 'changes_requested' || verificationStatus === 'rejected' 
-                        ? 'Re-submit for Review' 
-                        : 'Submit for Review'}
-                    </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSubmitForReview}
+                        className="w-full"
+                        disabled={updateProperty.isPending || submitForReview.isPending || !isAgentVerified}
+                        title={!isAgentVerified ? 'Your agent license must be verified before submitting listings' : undefined}
+                      >
+                        {submitForReview.isPending && (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        )}
+                        <Send className="h-4 w-4 mr-2" />
+                        {verificationStatus === 'changes_requested' || verificationStatus === 'rejected' 
+                          ? 'Re-submit for Review' 
+                          : 'Submit for Review'}
+                      </Button>
+                    </div>
                   )}
 
                   <Button
