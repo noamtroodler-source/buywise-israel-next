@@ -11,6 +11,7 @@ import { usePendingReviewCount } from '@/hooks/useListingReview';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/review', label: 'Listing Review', icon: ClipboardCheck, showBadge: true },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/properties', label: 'Properties', icon: Home },

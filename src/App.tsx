@@ -48,6 +48,7 @@ import AdminAgents from "./pages/admin/AdminAgents";
 import AdminAgencies from "./pages/admin/AdminAgencies";
 import AdminDevelopers from "./pages/admin/AdminDevelopers";
 import AdminProjects from "./pages/admin/AdminProjects";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import HeroImageGenerator from "./pages/admin/HeroImageGenerator";
 import HeroPreview from "./pages/admin/HeroPreview";
 import Glossary from "./pages/Glossary";
@@ -251,6 +252,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<AdminDashboard />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="review" element={<AdminListingReview />} />
               <Route path="agents" element={<AdminAgents />} />
               <Route path="agencies" element={<AdminAgencies />} />

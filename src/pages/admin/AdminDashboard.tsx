@@ -1,135 +1,181 @@
-import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Users, Home, Building2, Building, FileText, MapPin, TrendingUp, Eye } from 'lucide-react';
+import { 
+  Users, Home, Building2, Building, FileText, MapPin, 
+  TrendingUp, Eye, BarChart3, ArrowRight 
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { ActionItemsStrip } from '@/components/admin/ActionItemsStrip';
+import { AdminStatsCard } from '@/components/admin/AdminStatsCard';
+import { ViewsTrendChart } from '@/components/admin/ViewsTrendChart';
+import { InquiryBreakdownChart } from '@/components/admin/InquiryBreakdownChart';
+import { ActivityFeed } from '@/components/admin/ActivityFeed';
+import { usePlatformStats, useViewsTrend, useInquiryBreakdown } from '@/hooks/useAdminAnalytics';
+import { useRecentActivity } from '@/hooks/useRecentActivity';
 
 export default function AdminDashboard() {
-  const { data: stats } = useQuery({
-    queryKey: ['adminStats'],
-    queryFn: async () => {
-      const [
-        { count: usersCount },
-        { count: propertiesCount },
-        { count: agentsCount },
-        { count: projectsCount },
-        { count: developersCount },
-        { count: blogPostsCount },
-        { count: citiesCount },
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('properties').select('*', { count: 'exact', head: true }),
-        supabase.from('agents').select('*', { count: 'exact', head: true }),
-        supabase.from('projects').select('*', { count: 'exact', head: true }),
-        supabase.from('developers').select('*', { count: 'exact', head: true }),
-        supabase.from('blog_posts').select('*', { count: 'exact', head: true }),
-        supabase.from('cities').select('*', { count: 'exact', head: true }),
-      ]);
-
-      return {
-        users: usersCount || 0,
-        properties: propertiesCount || 0,
-        agents: agentsCount || 0,
-        projects: projectsCount || 0,
-        developers: developersCount || 0,
-        blogPosts: blogPostsCount || 0,
-        cities: citiesCount || 0,
-      };
-    },
-  });
+  const { data: stats, isLoading: statsLoading } = usePlatformStats();
+  const { data: viewsTrend, isLoading: viewsLoading } = useViewsTrend(30);
+  const { data: inquiryBreakdown, isLoading: inquiryLoading } = useInquiryBreakdown(30);
+  const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(15);
 
   const statCards = [
-    { label: 'Users', value: stats?.users || 0, icon: Users, href: '/admin/users', color: 'text-blue-600' },
-    { label: 'Properties', value: stats?.properties || 0, icon: Home, href: '/admin/properties', color: 'text-green-600' },
-    { label: 'Agents', value: stats?.agents || 0, icon: Building2, href: '/admin/agents', color: 'text-purple-600' },
-    { label: 'Projects', value: stats?.projects || 0, icon: Building, href: '/admin/projects', color: 'text-orange-600' },
-    { label: 'Developers', value: stats?.developers || 0, icon: Building, href: '/admin/developers', color: 'text-pink-600' },
-    { label: 'Blog Posts', value: stats?.blogPosts || 0, icon: FileText, href: '/admin/blog', color: 'text-cyan-600' },
-    { label: 'Cities', value: stats?.cities || 0, icon: MapPin, href: '/admin/cities', color: 'text-amber-600' },
+    { 
+      label: 'Total Users', 
+      value: stats?.totalUsers || 0, 
+      icon: Users, 
+      href: '/admin/users',
+      subtitle: `+${stats?.newUsersThisWeek || 0} this week`
+    },
+    { 
+      label: 'Properties', 
+      value: stats?.totalProperties || 0, 
+      icon: Home, 
+      href: '/admin/properties',
+      subtitle: `${stats?.pendingListings || 0} pending review`
+    },
+    { 
+      label: 'Views (7d)', 
+      value: stats?.totalViews7d || 0, 
+      icon: Eye, 
+      href: '/admin/analytics'
+    },
+    { 
+      label: 'Inquiries (7d)', 
+      value: stats?.totalInquiries7d || 0, 
+      icon: TrendingUp, 
+      href: '/admin/analytics'
+    },
+    { 
+      label: 'Agents', 
+      value: stats?.totalAgents || 0, 
+      icon: Building2, 
+      href: '/admin/agents',
+      subtitle: `${stats?.pendingAgents || 0} pending`
+    },
+    { 
+      label: 'Projects', 
+      value: stats?.totalProjects || 0, 
+      icon: Building, 
+      href: '/admin/projects',
+      subtitle: `${stats?.pendingProjects || 0} pending`
+    },
+    { 
+      label: 'Developers', 
+      value: stats?.totalDevelopers || 0, 
+      icon: Building, 
+      href: '/admin/developers'
+    },
+    { 
+      label: 'Blog Posts', 
+      value: stats?.totalBlogPosts || 0, 
+      icon: FileText, 
+      href: '/admin/blog'
+    },
+  ];
+
+  const quickActions = [
+    { label: 'Manage Properties', icon: Home, href: '/admin/properties' },
+    { label: 'Review Listings', icon: Eye, href: '/admin/review' },
+    { label: 'View Analytics', icon: BarChart3, href: '/admin/analytics' },
+    { label: 'Manage Agents', icon: Building2, href: '/admin/agents' },
+    { label: 'Update Market Data', icon: TrendingUp, href: '/admin/market-data' },
+    { label: 'Manage Cities', icon: MapPin, href: '/admin/cities' },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Overview</h2>
-        <p className="text-muted-foreground">Welcome to the admin dashboard</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Overview</h2>
+          <p className="text-muted-foreground">Platform performance at a glance</p>
+        </div>
+        <Button asChild variant="outline">
+          <Link to="/admin/analytics" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Full Analytics
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Action Items Strip */}
+      <ActionItemsStrip
+        pendingAgents={stats?.pendingAgents || 0}
+        pendingListings={stats?.pendingListings || 0}
+        pendingProjects={stats?.pendingProjects || 0}
+        newUsersToday={stats?.newUsersToday || 0}
+      />
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Link key={stat.label} to={stat.href}>
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                  </div>
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          <AdminStatsCard
+            key={stat.label}
+            title={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            href={stat.href}
+            subtitle={stat.subtitle}
+          />
         ))}
       </div>
 
+      {/* Charts Row */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link 
-              to="/admin/properties" 
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-            >
-              <Home className="h-5 w-5 text-primary" />
-              <span>Manage Properties</span>
-            </Link>
-            <Link 
-              to="/admin/blog" 
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-            >
-              <FileText className="h-5 w-5 text-primary" />
-              <span>Manage Blog Posts</span>
-            </Link>
-            <Link 
-              to="/admin/cities" 
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-            >
-              <MapPin className="h-5 w-5 text-primary" />
-              <span>Manage Cities</span>
-            </Link>
-            <Link 
-              to="/admin/market-data" 
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-            >
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span>Update Market Data</span>
-            </Link>
-          </CardContent>
-        </Card>
+        <ViewsTrendChart data={viewsTrend || []} isLoading={viewsLoading} />
+        <InquiryBreakdownChart data={inquiryBreakdown || []} isLoading={inquiryLoading} />
+      </div>
 
+      {/* Activity & Quick Actions */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ActivityFeed activities={recentActivity || []} isLoading={activityLoading} />
+        
         <Card>
-          <CardHeader>
-            <CardTitle>System Status</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-              <span className="text-green-700 dark:text-green-400">Database</span>
-              <span className="text-green-600 font-medium">Connected</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-              <span className="text-green-700 dark:text-green-400">Storage</span>
-              <span className="text-green-600 font-medium">Active</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
-              <span className="text-green-700 dark:text-green-400">Authentication</span>
-              <span className="text-green-600 font-medium">Enabled</span>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.label}
+                  to={action.href}
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors group"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <action.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium">{action.label}</span>
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* System Status */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold">System Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <span className="text-sm text-muted-foreground">Database</span>
+              <span className="text-sm font-medium text-primary">Connected</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <span className="text-sm text-muted-foreground">Storage</span>
+              <span className="text-sm font-medium text-primary">Active</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10">
+              <span className="text-sm text-muted-foreground">Authentication</span>
+              <span className="text-sm font-medium text-primary">Enabled</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
