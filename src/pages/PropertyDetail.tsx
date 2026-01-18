@@ -6,6 +6,7 @@ import { useCityDetails } from '@/hooks/useCityDetails';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { usePropertyViewTracking } from '@/hooks/usePropertyViewTracking';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
@@ -29,7 +30,10 @@ export default function PropertyDetail() {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addToRecentlyViewed } = useRecentlyViewed();
   
-  // Track this property view
+  // Track property view in database (for agent analytics)
+  usePropertyViewTracking(property?.id);
+  
+  // Track this property view locally (for recently viewed)
   useEffect(() => {
     if (id && property) {
       addToRecentlyViewed(id);
