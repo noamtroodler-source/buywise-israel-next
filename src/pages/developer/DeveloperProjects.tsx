@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Plus, Edit, Trash2, Eye, Loader2, Clock, CheckCircle, AlertCircle, 
-  XCircle, FileText, Send, MoreHorizontal, FolderKanban
+  XCircle, FileText, Send, MoreHorizontal, FolderKanban, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -240,6 +240,13 @@ export default function DeveloperProjects() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
+          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 mb-4 -ml-2">
+            <Link to="/developer">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-foreground">My Projects</h1>
             <Button asChild>
