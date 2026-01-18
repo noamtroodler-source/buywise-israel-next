@@ -18,9 +18,7 @@ export function usePropertyCount(filters?: PropertyFilters) {
       if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
-      if (filters?.neighborhoods && filters.neighborhoods.length > 0) {
-        query = query.in('neighborhood', filters.neighborhoods);
-      } else if (filters?.neighborhood) {
+      if (filters?.neighborhood) {
         query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
       }
       if (filters?.property_types && filters.property_types.length > 0) {
@@ -129,10 +127,7 @@ export function useProperties(filters?: PropertyFilters) {
       if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
-      // Neighborhood filter - supports both single and multi-select
-      if (filters?.neighborhoods && filters.neighborhoods.length > 0) {
-        query = query.in('neighborhood', filters.neighborhoods);
-      } else if (filters?.neighborhood) {
+      if (filters?.neighborhood) {
         query = query.ilike('neighborhood', `%${filters.neighborhood}%`);
       }
       if (filters?.property_types && filters.property_types.length > 0) {

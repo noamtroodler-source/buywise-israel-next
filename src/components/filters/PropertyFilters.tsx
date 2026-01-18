@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
-import { useNeighborhoods } from '@/hooks/useNeighborhoods';
+
 import { usePropertyCount } from '@/hooks/useProperties';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
@@ -103,10 +103,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [sortOpen, setSortOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
-  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
   
   const { data: cities } = useCities();
-  const { data: neighborhoods } = useNeighborhoods(filters.city);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
@@ -120,16 +118,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     return filters.property_types?.some(t => houseTypes.includes(t)) || false;
   }, [filters.property_types]);
   
-  // Filter neighborhoods based on search
-  const filteredNeighborhoods = useMemo(() => {
-    if (!neighborhoods) return [];
-    if (!neighborhoodSearch) return neighborhoods;
-    const search = neighborhoodSearch.toLowerCase();
-    return neighborhoods.filter(n => 
-      n.name.toLowerCase().includes(search) ||
-      n.hebrew_name?.toLowerCase().includes(search)
-    );
-  }, [neighborhoods, neighborhoodSearch]);
 
   const handleCreateAlertClick = () => {
     if (!user) {
@@ -171,7 +159,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       is_furnished: undefined,
       is_accessible: undefined,
       condition: undefined,
-      neighborhoods: undefined,
       // Rental-specific filters
       available_now: undefined,
       available_by: undefined,
@@ -216,14 +203,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     return 'any';
   };
   
-  const toggleNeighborhood = (neighborhoodName: string) => {
-    const current = filters.neighborhoods || [];
-    if (current.includes(neighborhoodName)) {
-      updateFilter('neighborhoods', current.filter(n => n !== neighborhoodName));
-    } else {
-      updateFilter('neighborhoods', [...current, neighborhoodName]);
-    }
-  };
 
   const getSortLabel = () => {
     if (filters.sort_by) {
@@ -237,7 +216,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const hasActiveFilters = useMemo(() => {
     return !!(
       filters.city ||
-      filters.neighborhoods?.length ||
       filters.min_price ||
       filters.max_price ||
       filters.min_rooms ||
@@ -306,16 +284,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           <PopoverTrigger asChild>
             <Button 
               variant="outline" 
-              className={cn(filterButtonBase, (filters.city || filters.neighborhoods?.length) && "border-primary/50", cityOpen && filterButtonActive)}
+              className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
             >
               <MapPin className="h-4 w-4" />
-              <span>
-                {filters.city 
-                  ? filters.neighborhoods?.length 
-                    ? `${filters.city} (${filters.neighborhoods.length})`
-                    : filters.city
-                  : 'City'}
-              </span>
+              <span>{filters.city || 'City'}</span>
               {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
@@ -323,14 +295,13 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Location</h3>
-              {(filters.city || filters.neighborhoods?.length) && (
+                {filters.city && (
                   <button 
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
                       onFiltersChange({
                         ...filters,
                         city: undefined,
-                        neighborhoods: undefined,
                       });
                     }}
                   >
@@ -378,59 +349,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 </div>
               </div>
 
-              {/* Neighborhood Selection - Only shown when city is selected */}
-              {filters.city && neighborhoods && neighborhoods.length > 0 && (
-                <div className="space-y-2 pt-2 border-t">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Neighborhoods</Label>
-                    {filters.neighborhoods && filters.neighborhoods.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {filters.neighborhoods.length} selected
-                      </span>
-                    )}
-                  </div>
-                  
-                  {neighborhoods.length > 6 && (
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search neighborhoods..."
-                        value={neighborhoodSearch}
-                        onChange={(e) => setNeighborhoodSearch(e.target.value)}
-                        className="pl-10 rounded-lg h-9 text-sm"
-                      />
-                    </div>
-                  )}
-
-                  <div className="max-h-[140px] overflow-y-auto space-y-0.5">
-                    {filteredNeighborhoods.map(neighborhood => {
-                      const isSelected = filters.neighborhoods?.includes(neighborhood.name) || false;
-                      return (
-                        <button
-                          key={neighborhood.id}
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-lg hover:bg-muted transition-colors text-left"
-                          onClick={() => toggleNeighborhood(neighborhood.name)}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                            isSelected 
-                              ? "border-primary bg-primary" 
-                              : "border-border"
-                          )}>
-                            {isSelected && (
-                              <Check className="h-3 w-3 text-primary-foreground" />
-                            )}
-                          </div>
-                          <span className="flex-1">{neighborhood.name}</span>
-                          {neighborhood.price_tier && (
-                            <span className="text-xs text-muted-foreground capitalize">{neighborhood.price_tier}</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               <Link 
                 to="/tools" 
@@ -443,7 +361,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 className="w-full"
                 onClick={() => {
                   setCityOpen(false);
-                  setNeighborhoodSearch('');
                 }}
               >
                 {countLoading ? (
