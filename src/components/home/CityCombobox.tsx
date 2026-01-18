@@ -22,11 +22,12 @@ interface CityComboboxProps {
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 }
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', "Ra'anana", "Modi'in"];
 
-export function CityCombobox({ value, onValueChange, placeholder = 'Select a city...' }: CityComboboxProps) {
+export function CityCombobox({ value, onValueChange, placeholder = 'Select a city...', className }: CityComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const { data: cities = [] } = useCities();
 
@@ -40,7 +41,7 @@ export function CityCombobox({ value, onValueChange, placeholder = 'Select a cit
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full h-12 justify-start gap-2 font-normal border-input hover:bg-muted/50"
+          className={cn("w-full h-12 justify-start gap-2 font-normal border-input hover:bg-muted/50", className)}
         >
           <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className={cn("truncate", !value && "text-muted-foreground")}>
