@@ -28,8 +28,11 @@ export type Database = {
           is_verified: boolean | null
           logo_url: string | null
           name: string
+          office_address: string | null
+          office_hours: string | null
           phone: string | null
           slug: string
+          social_links: Json | null
           specializations: string[] | null
           updated_at: string | null
           website: string | null
@@ -47,8 +50,11 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           name: string
+          office_address?: string | null
+          office_hours?: string | null
           phone?: string | null
           slug: string
+          social_links?: Json | null
           specializations?: string[] | null
           updated_at?: string | null
           website?: string | null
@@ -66,13 +72,57 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           name?: string
+          office_address?: string | null
+          office_hours?: string | null
           phone?: string | null
           slug?: string
+          social_links?: Json | null
           specializations?: string[] | null
           updated_at?: string | null
           website?: string | null
         }
         Relationships: []
+      }
+      agency_announcements: {
+        Row: {
+          agency_id: string
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_pinned: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_announcements_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agency_invites: {
         Row: {
@@ -83,6 +133,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean | null
+          label: string | null
           max_uses: number | null
           updated_at: string | null
           uses_remaining: number | null
@@ -95,6 +146,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          label?: string | null
           max_uses?: number | null
           updated_at?: string | null
           uses_remaining?: number | null
@@ -107,6 +159,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          label?: string | null
           max_uses?: number | null
           updated_at?: string | null
           uses_remaining?: number | null
@@ -1843,7 +1896,9 @@ export type Database = {
       }
       property_inquiries: {
         Row: {
+          agency_id: string | null
           agent_id: string
+          assigned_to: string | null
           contacted_at: string | null
           created_at: string | null
           email: string | null
@@ -1859,7 +1914,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          agency_id?: string | null
           agent_id: string
+          assigned_to?: string | null
           contacted_at?: string | null
           created_at?: string | null
           email?: string | null
@@ -1875,7 +1932,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          agency_id?: string | null
           agent_id?: string
+          assigned_to?: string | null
           contacted_at?: string | null
           created_at?: string | null
           email?: string | null
@@ -1892,8 +1951,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "property_inquiries_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "property_inquiries_agent_id_fkey"
             columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_inquiries_assigned_to_fkey"
+            columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "agents"
             referencedColumns: ["id"]
