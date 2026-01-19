@@ -69,8 +69,9 @@ export default function Auth() {
   const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
   
-  // Get professional role from URL params
+  // Get professional role and invite code from URL params
   const roleParam = searchParams.get('role') as ProfessionalRole;
+  const inviteCode = searchParams.get('code');
   const isProfessionalSignup = roleParam && ['agent', 'agency', 'developer'].includes(roleParam);
   const config = isProfessionalSignup ? roleConfig[roleParam] : roleConfig.default;
   const IconComponent = config.icon;
@@ -84,16 +85,22 @@ export default function Auth() {
   useEffect(() => {
     if (user && !loading && isProfessionalSignup) {
       // Already logged in and trying to register as professional - go directly to registration
-      navigate(config.redirectTo);
+      const redirectUrl = inviteCode 
+        ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
+        : config.redirectTo;
+      navigate(redirectUrl);
       return;
     }
-  }, [user, loading, isProfessionalSignup, config.redirectTo, navigate]);
+  }, [user, loading, isProfessionalSignup, config.redirectTo, navigate, inviteCode]);
 
   useEffect(() => {
     if (user && !loading && !profileLoading) {
       // If professional signup, redirect to registration page
       if (justSignedUp && isProfessionalSignup) {
-        navigate(config.redirectTo);
+        const redirectUrl = inviteCode 
+          ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
+          : config.redirectTo;
+        navigate(redirectUrl);
         return;
       }
       
@@ -104,7 +111,7 @@ export default function Auth() {
         navigate('/');
       }
     }
-  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo]);
+  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo, inviteCode]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
