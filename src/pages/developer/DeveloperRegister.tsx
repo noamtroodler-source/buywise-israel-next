@@ -15,6 +15,7 @@ import { useDeveloperRegistration } from '@/hooks/useDeveloperRegistration';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DeveloperSubmittedDialog } from '@/components/developer/DeveloperSubmittedDialog';
 
 const steps = [
   { title: 'Company Basics', description: 'Your company details' },
@@ -43,6 +44,7 @@ export default function DeveloperRegister() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -191,7 +193,7 @@ export default function DeveloperRegister() {
         logo_url: formData.logo_url || undefined,
       });
       
-      navigate('/developer');
+      setShowSuccessDialog(true);
     } catch (error) {
       // Error handled by mutation
     }
@@ -490,6 +492,11 @@ export default function DeveloperRegister() {
           </Card>
         </motion.div>
       </div>
+
+      <DeveloperSubmittedDialog
+        open={showSuccessDialog}
+        onOpenChange={setShowSuccessDialog}
+      />
     </Layout>
   );
 }
