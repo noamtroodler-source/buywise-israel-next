@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Megaphone, Pin, Plus, Trash2, Edit2, Loader2, X
+  Megaphone, Pin, Plus, Trash2, Edit2, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -30,36 +29,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  is_pinned: boolean;
-  created_at: string;
-}
+import { 
+  useAgencyAnnouncements, 
+  useCreateAnnouncement, 
+  useUpdateAnnouncement, 
+  useDeleteAnnouncement,
+  Announcement 
+} from '@/hooks/useAgencyAnnouncements';
 
 interface AgencyAnnouncementsProps {
-  announcements: Announcement[];
-  isAdmin: boolean;
-  onCreateAnnouncement: (data: { title: string; content: string; is_pinned: boolean }) => void;
-  onUpdateAnnouncement: (id: string, data: { title?: string; content?: string; is_pinned?: boolean }) => void;
-  onDeleteAnnouncement: (id: string) => void;
-  isCreating?: boolean;
-  isUpdating?: boolean;
-  isDeleting?: boolean;
+  agencyId: string;
 }
 
-export function AgencyAnnouncements({
-  announcements,
-  isAdmin,
-  onCreateAnnouncement,
-  onUpdateAnnouncement,
-  onDeleteAnnouncement,
-  isCreating,
-  isUpdating,
-  isDeleting,
-}: AgencyAnnouncementsProps) {
+export function AgencyAnnouncements({ agencyId }: AgencyAnnouncementsProps) {
+  const { data: announcements = [] } = useAgencyAnnouncements(agencyId);
+  const createAnnouncement = useCreateAnnouncement();
+  const updateAnnouncement = useUpdateAnnouncement();
+  const deleteAnnouncement = useDeleteAnnouncement();
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -78,9 +65,17 @@ export function AgencyAnnouncements({
 
   const handleCreate = () => {
     if (!title.trim() || !content.trim()) return;
-    onCreateAnnouncement({ title: title.trim(), content: content.trim(), is_pinned: isPinned });
-    resetForm();
-    setCreateDialogOpen(false);
+    createAnnouncement.mutate({ 
+      agencyId, 
+      title: title.trim(), 
+      content: content.trim(), 
+      is_pinned: isPinned 
+    }, {
+      onSuccess: () => {
+        resetForm();
+        setCreateDialogOpen(false);
+      },
+    });
   };
 
   const handleEdit = (announcement: Announcement) => {
@@ -93,21 +88,28 @@ export function AgencyAnnouncements({
 
   const handleUpdate = () => {
     if (!selectedAnnouncement || !title.trim() || !content.trim()) return;
-    onUpdateAnnouncement(selectedAnnouncement.id, {
+    updateAnnouncement.mutate({
+      id: selectedAnnouncement.id,
       title: title.trim(),
       content: content.trim(),
       is_pinned: isPinned,
+    }, {
+      onSuccess: () => {
+        resetForm();
+        setSelectedAnnouncement(null);
+        setEditDialogOpen(false);
+      },
     });
-    resetForm();
-    setSelectedAnnouncement(null);
-    setEditDialogOpen(false);
   };
 
   const handleDelete = () => {
     if (!selectedAnnouncement) return;
-    onDeleteAnnouncement(selectedAnnouncement.id);
-    setSelectedAnnouncement(null);
-    setDeleteDialogOpen(false);
+    deleteAnnouncement.mutate(selectedAnnouncement.id, {
+      onSuccess: () => {
+        setSelectedAnnouncement(null);
+        setDeleteDialogOpen(false);
+      },
+    });
   };
 
   const sortedAnnouncements = [...announcements].sort((a, b) => {
@@ -126,22 +128,21 @@ export function AgencyAnnouncements({
           </div>
           <CardTitle>Announcements</CardTitle>
         </div>
-        {isAdmin && (
-          <Button 
-            size="sm" 
-            className="rounded-xl"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New
-          </Button>
-        )}
+        <Button 
+          size="sm" 
+          className="rounded-xl"
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New
+        </Button>
       </CardHeader>
       <CardContent className="pt-4">
         {sortedAnnouncements.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No announcements yet</p>
+            <p className="text-xs mt-1">Create one to share with your team</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -176,29 +177,27 @@ export function AgencyAnnouncements({
                       </p>
                     </div>
                     
-                    {isAdmin && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(announcement)}
-                          className="h-8 w-8 p-0 rounded-lg"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedAnnouncement(announcement);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="h-8 w-8 p-0 rounded-lg text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(announcement)}
+                        className="h-8 w-8 p-0 rounded-lg"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAnnouncement(announcement);
+                          setDeleteDialogOpen(true);
+                        }}
+                        className="h-8 w-8 p-0 rounded-lg text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -261,10 +260,10 @@ export function AgencyAnnouncements({
             </Button>
             <Button 
               onClick={handleCreate}
-              disabled={!title.trim() || !content.trim() || isCreating}
+              disabled={!title.trim() || !content.trim() || createAnnouncement.isPending}
               className="rounded-xl"
             >
-              {isCreating ? (
+              {createAnnouncement.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
@@ -322,10 +321,10 @@ export function AgencyAnnouncements({
             </Button>
             <Button 
               onClick={handleUpdate}
-              disabled={!title.trim() || !content.trim() || isUpdating}
+              disabled={!title.trim() || !content.trim() || updateAnnouncement.isPending}
               className="rounded-xl"
             >
-              {isUpdating ? (
+              {updateAnnouncement.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
@@ -351,10 +350,10 @@ export function AgencyAnnouncements({
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={deleteAnnouncement.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
             >
-              {isDeleting ? (
+              {deleteAnnouncement.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...
