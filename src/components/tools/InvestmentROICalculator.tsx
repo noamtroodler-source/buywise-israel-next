@@ -426,12 +426,12 @@ export function InvestmentROICalculator() {
 
             {/* City Benchmark Comparison */}
             {selectedCity && (
-              <Alert variant={calculations.yieldVsBenchmark >= 0 ? 'default' : 'destructive'} 
-                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-green-50 border-green-200' : ''}>
+              <Alert variant={calculations.yieldVsBenchmark >= 0 ? 'default' : 'default'} 
+                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-primary/5 border-primary/20' : ''}>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   {calculations.yieldVsBenchmark >= 0 ? (
-                    <span className="text-green-800">
+                    <span className="text-primary">
                       {calculations.yieldVsBenchmark.toFixed(2)}% above {selectedCityData?.name} average yield
                     </span>
                   ) : (
@@ -464,7 +464,7 @@ export function InvestmentROICalculator() {
                   <span className="text-muted-foreground">Gross Rent:</span>
                   <span className="font-medium">{formatCurrency(calculations.annualRent)}</span>
                 </div>
-                <div className="flex justify-between text-amber-600">
+                <div className="flex justify-between text-muted-foreground">
                   <span>- Vacancy ({vacancyRate}%):</span>
                   <span>-{formatCurrency(calculations.annualRent - calculations.effectiveRent)}</span>
                 </div>
@@ -473,19 +473,19 @@ export function InvestmentROICalculator() {
                   <span className="font-medium">{formatCurrency(calculations.netOperatingIncome)}</span>
                 </div>
                 {useLeverage && (
-                  <div className="flex justify-between text-red-600">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>- Mortgage Payments:</span>
                     <span>-{formatCurrency(calculations.mortgagePayment * 12)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-red-600">
+                <div className="flex justify-between text-muted-foreground">
                   <span>- Tax ({calculations.taxMethod}):</span>
                   <span>-{formatCurrency(calculations.annualTax)}</span>
                 </div>
                 <hr />
                 <div className="flex justify-between font-semibold">
                   <span>Annual Cash Flow:</span>
-                  <span className={calculations.annualCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  <span className={calculations.annualCashFlow >= 0 ? 'text-primary' : 'text-muted-foreground'}>
                     {formatCurrency(calculations.annualCashFlow)}
                   </span>
                 </div>

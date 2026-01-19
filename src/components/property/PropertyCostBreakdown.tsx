@@ -290,7 +290,7 @@ export function PropertyCostBreakdown({
               <div>
                 <span className="text-muted-foreground">Purchase Tax (Mas Rechisha)</span>
                 {buyerCategory === 'oleh' && (
-                  <Badge variant="secondary" className="ml-2 text-xs bg-green-100 text-green-700">Oleh rate</Badge>
+                  <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh rate</Badge>
                 )}
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Effective rate: {effectiveTaxRate.toFixed(2)}%

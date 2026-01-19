@@ -106,9 +106,9 @@ export function MortgageWizard() {
                 <div className="flex justify-between items-start">
                   <h4 className="font-semibold text-sm">{track.name}</h4>
                   <span className={`text-xs px-2 py-0.5 rounded ${
-                    track.riskLevel === 'Low' ? 'bg-green-100 text-green-700' :
-                    track.riskLevel === 'Medium' ? 'bg-amber-100 text-amber-700' :
-                    'bg-red-100 text-red-700'
+                    track.riskLevel === 'Low' ? 'bg-primary/10 text-primary' :
+                    track.riskLevel === 'Medium' ? 'bg-muted text-muted-foreground' :
+                    'bg-muted text-foreground'
                   }`}>
                     {track.riskLevel} Risk
                   </span>
@@ -271,8 +271,8 @@ export function MortgageWizard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
+        <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-primary" />
             Your Mortgage Track Recommendation
           </CardTitle>
         </CardHeader>
