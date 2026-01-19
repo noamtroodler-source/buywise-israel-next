@@ -1,12 +1,12 @@
-import { ImageUpload } from '@/components/agent/ImageUpload';
+import { SortableImageUpload } from '@/components/agent/SortableImageUpload';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Camera, AlertCircle, CheckCircle, ImageIcon } from 'lucide-react';
+import { Camera, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function StepPhotos() {
   const { data, updateData } = usePropertyWizard();
   
-  const minPhotos = 1;
+  const minPhotos = 3;
   const recommendedPhotos = 5;
   const hasEnoughPhotos = data.images.length >= minPhotos;
 
@@ -54,31 +54,24 @@ export function StepPhotos() {
               )}
               {!hasEnoughPhotos && (
                 <span>
-                  {' '}— Minimum {minPhotos} photo required to continue
+                  {' '}— Minimum {minPhotos} photos required to continue
                 </span>
               )}
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Image Upload */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <ImageIcon className="h-4 w-4 text-primary" />
-            </div>
-            <h3 className="font-semibold">Upload Images</h3>
-          </div>
-          <ImageUpload
-            images={data.images}
-            onImagesChange={(images) => updateData({ images })}
-            maxImages={20}
-          />
-        </div>
+        {/* Sortable Image Upload */}
+        <SortableImageUpload
+          images={data.images}
+          onImagesChange={(images) => updateData({ images })}
+          maxImages={20}
+          minImages={minPhotos}
+        />
 
         {data.images.length === 0 && (
           <p className="text-center text-sm text-muted-foreground py-4">
-            Upload at least {minPhotos} photo to continue
+            Upload at least {minPhotos} photos to continue
           </p>
         )}
       </div>
