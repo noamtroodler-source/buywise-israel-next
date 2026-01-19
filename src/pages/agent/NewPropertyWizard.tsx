@@ -19,7 +19,7 @@ import {
 import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
-import confetti from 'canvas-confetti';
+import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -46,6 +46,8 @@ function WizardContent() {
   const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [submittedTitle, setSubmittedTitle] = useState('');
   
   // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
@@ -121,17 +123,8 @@ function WizardContent() {
       });
       
       autoSave.clearSavedData();
-      
-      // Celebration!
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      setTimeout(() => {
-        navigate('/agent/properties');
-      }, 1500);
+      setSubmittedTitle(data.title);
+      setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -288,6 +281,12 @@ function WizardContent() {
             </motion.div>
           </motion.div>
         </div>
+
+        <PropertySubmittedDialog
+          open={showSuccessDialog}
+          onClose={() => setShowSuccessDialog(false)}
+          propertyTitle={submittedTitle}
+        />
       </div>
     </Layout>
   );
