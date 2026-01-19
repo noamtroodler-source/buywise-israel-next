@@ -12,19 +12,21 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { useRemoveAgentFromAgency } from '@/hooks/useAgencyManagement';
 
 interface RemoveAgentDialogProps {
+  agentId: string;
   agentName: string;
-  onConfirm: () => void;
-  isPending?: boolean;
 }
 
-export function RemoveAgentDialog({ agentName, onConfirm, isPending }: RemoveAgentDialogProps) {
+export function RemoveAgentDialog({ agentId, agentName }: RemoveAgentDialogProps) {
   const [open, setOpen] = useState(false);
+  const removeAgent = useRemoveAgentFromAgency();
 
   const handleConfirm = () => {
-    onConfirm();
-    setOpen(false);
+    removeAgent.mutate({ agentId }, {
+      onSuccess: () => setOpen(false),
+    });
   };
 
   return (
@@ -52,10 +54,10 @@ export function RemoveAgentDialog({ agentName, onConfirm, isPending }: RemoveAge
           <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={isPending}
+            disabled={removeAgent.isPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
           >
-            {isPending ? (
+            {removeAgent.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Removing...

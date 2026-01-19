@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, addDays } from 'date-fns';
-import { Loader2, Plus, Calendar } from 'lucide-react';
+import { Loader2, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,64 +8,53 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useCreateInviteCode } from '@/hooks/useAgencyManagement';
 
 interface CreateInviteDialogProps {
-  onSubmit: (data: { label?: string; maxUses?: number; expiresAt?: string }) => void;
-  isPending?: boolean;
+  agencyId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function CreateInviteDialog({ onSubmit, isPending }: CreateInviteDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInviteDialogProps) {
   const [label, setLabel] = useState('');
   const [hasMaxUses, setHasMaxUses] = useState(false);
   const [maxUses, setMaxUses] = useState(10);
   const [hasExpiry, setHasExpiry] = useState(false);
   const [expiryDays, setExpiryDays] = useState(30);
+  
+  const createInvite = useCreateInviteCode();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const data: { label?: string; maxUses?: number; expiresAt?: string } = {};
-    
-    if (label.trim()) {
-      data.label = label.trim();
-    }
-    
-    if (hasMaxUses && maxUses > 0) {
-      data.maxUses = maxUses;
-    }
-    
-    if (hasExpiry && expiryDays > 0) {
-      data.expiresAt = addDays(new Date(), expiryDays).toISOString();
-    }
-    
-    onSubmit(data);
-    
-    // Reset form
-    setLabel('');
-    setHasMaxUses(false);
-    setMaxUses(10);
-    setHasExpiry(false);
-    setExpiryDays(30);
-    setOpen(false);
+    createInvite.mutate({
+      agencyId,
+      label: label.trim() || undefined,
+      maxUses: hasMaxUses && maxUses > 0 ? maxUses : undefined,
+      expiresAt: hasExpiry && expiryDays > 0 ? addDays(new Date(), expiryDays).toISOString() : undefined,
+    }, {
+      onSuccess: () => {
+        // Reset form
+        setLabel('');
+        setHasMaxUses(false);
+        setMaxUses(10);
+        setHasExpiry(false);
+        setExpiryDays(30);
+        onOpenChange(false);
+      },
+    });
   };
 
   const expiryDate = hasExpiry ? addDays(new Date(), expiryDays) : null;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="rounded-xl">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Invite Code
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-2xl sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -155,11 +144,11 @@ export function CreateInviteDialog({ onSubmit, isPending }: CreateInviteDialogPr
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending} className="rounded-xl">
-              {isPending ? (
+            <Button type="submit" disabled={createInvite.isPending} className="rounded-xl">
+              {createInvite.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...

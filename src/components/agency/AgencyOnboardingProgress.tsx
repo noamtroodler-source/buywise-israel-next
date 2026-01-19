@@ -29,10 +29,10 @@ interface AgencyOnboardingProgressProps {
     specializations: string[] | null;
   };
   teamCount: number;
-  listingsCount: number;
+  listingsCount?: number;
 }
 
-export function AgencyOnboardingProgress({ agency, teamCount, listingsCount }: AgencyOnboardingProgressProps) {
+export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 }: AgencyOnboardingProgressProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isDismissed, setIsDismissed] = useState(false);
 

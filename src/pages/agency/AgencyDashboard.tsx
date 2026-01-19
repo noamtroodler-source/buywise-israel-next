@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
-  UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash
+  UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
+  MessageSquare, FileText, Megaphone
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,25 +11,43 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
   useMyAgency, 
   useAgencyTeam, 
   useAgencyJoinRequests,
   useAgencyStats,
   useApproveJoinRequest,
   useRejectJoinRequest,
+  useUpdateAgentStatus,
+  useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
 import { useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { RemoveAgentDialog } from '@/components/agency/RemoveAgentDialog';
+import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
+import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
+import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
+  const { data: invites = [] } = useAgencyInvites(agency?.id);
   const { data: stats } = useAgencyStats(agency?.id);
+  const { data: announcements = [] } = useAgencyAnnouncements(agency?.id);
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
+  const updateAgentStatus = useUpdateAgentStatus();
   
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [createInviteOpen, setCreateInviteOpen] = useState(false);
 
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -109,6 +128,18 @@ export default function AgencyDashboard() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/leads">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Leads
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/listings">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Listings
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/analytics">
                     <Eye className="h-4 w-4 mr-2" />
                     Analytics
@@ -156,9 +187,12 @@ export default function AgencyDashboard() {
             ))}
           </div>
 
+          {/* Onboarding Progress */}
+          <AgencyOnboardingProgress agency={agency} teamCount={team.length} />
+
           {/* Tabs */}
           <Tabs defaultValue="team">
-            <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1">
+            <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1 flex-wrap h-auto">
               <TabsTrigger value="team" className="gap-2 rounded-lg">
                 <Users className="h-4 w-4" />
                 Team
@@ -169,6 +203,13 @@ export default function AgencyDashboard() {
                 Invites
                 {joinRequests.length > 0 && (
                   <Badge className="bg-primary/20 text-primary hover:bg-primary/20">{joinRequests.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="announcements" className="gap-2 rounded-lg">
+                <Megaphone className="h-4 w-4" />
+                Announcements
+                {announcements.filter(a => a.is_pinned).length > 0 && (
+                  <Badge variant="secondary">{announcements.filter(a => a.is_pinned).length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -209,12 +250,28 @@ export default function AgencyDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant={agent.status === 'active' ? 'default' : 'secondary'}>
-                              {agent.status}
-                            </Badge>
+                            <Select
+                              value={agent.status}
+                              onValueChange={(value: 'active' | 'suspended' | 'pending') => 
+                                updateAgentStatus.mutate({ agentId: agent.id, status: value })
+                              }
+                            >
+                              <SelectTrigger className="w-[120px] h-8 rounded-lg text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="suspended">Suspended</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                              </SelectContent>
+                            </Select>
                             {agent.is_verified && (
                               <Badge variant="outline" className="border-primary/30 text-primary">Verified</Badge>
                             )}
+                            <RemoveAgentDialog 
+                              agentId={agent.id} 
+                              agentName={agent.name}
+                            />
                           </div>
                         </motion.div>
                       ))}
@@ -285,65 +342,105 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              {/* Agent Invite Link */}
+              {/* All Invite Codes */}
               <Card className="rounded-2xl border-primary/10">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-                  <CardTitle>Agent Invite Link</CardTitle>
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
+                  <CardTitle>Invite Codes</CardTitle>
+                  <Button 
+                    size="sm" 
+                    className="rounded-xl"
+                    onClick={() => setCreateInviteOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    New Code
+                  </Button>
                 </CardHeader>
-                <CardContent className="pt-4">
+                <CardContent className="pt-4 space-y-3">
+                  {/* Default Invite Code */}
                   {agency.default_invite_code && (() => {
                     const inviteLink = `${window.location.origin}/auth?role=agent&tab=signup&code=${agency.default_invite_code}`;
                     return (
-                      <div className="space-y-3">
-                        {/* Invite Code */}
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                                <Hash className="h-5 w-5 text-primary" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm text-muted-foreground">Invite Code</p>
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <Hash className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
                                 <p className="text-xl font-bold font-mono tracking-wider text-foreground">
                                   {agency.default_invite_code}
                                 </p>
+                                <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                  Default
+                                </Badge>
                               </div>
+                              <p className="text-sm text-muted-foreground truncate" title={inviteLink}>
+                                {inviteLink}
+                              </p>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
-                              onClick={() => copyToClipboard(agency.default_invite_code!)}
-                            >
-                              {copiedCode === agency.default_invite_code ? (
-                                <>
-                                  <Check className="h-4 w-4 mr-1" />
-                                  Copied
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="h-4 w-4 mr-1" />
-                                  Copy Code
-                                </>
-                              )}
-                            </Button>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
+                            onClick={() => copyToClipboard(inviteLink)}
+                          >
+                            {copiedCode === inviteLink ? (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-1" />
+                                Copy Link
+                              </>
+                            )}
+                          </Button>
                         </div>
+                      </div>
+                    );
+                  })()}
 
-                        {/* Shareable Link */}
-                        <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                                <ExternalLink className="h-5 w-5 text-primary" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm text-muted-foreground">Shareable Invite Link</p>
-                                <p className="text-sm font-mono text-muted-foreground truncate" title={inviteLink}>
-                                  {inviteLink}
-                                </p>
-                              </div>
+                  {/* Custom Invite Codes */}
+                  {invites.filter(invite => invite.code !== agency?.default_invite_code).map((invite, index) => {
+                    const inviteLink = `${window.location.origin}/auth?role=agent&tab=signup&code=${invite.code}`;
+                    return (
+                      <motion.div
+                        key={invite.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className={`p-4 rounded-xl border ${invite.is_active ? 'bg-muted/30 border-border/50' : 'bg-muted/20 border-border/30 opacity-60'}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-lg font-bold font-mono tracking-wider">
+                                {invite.code}
+                              </p>
+                              {invite.label && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {invite.label}
+                                </Badge>
+                              )}
+                              {!invite.is_active && (
+                                <Badge variant="outline" className="text-xs text-destructive border-destructive/30">
+                                  Deactivated
+                                </Badge>
+                              )}
                             </div>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              {invite.uses_remaining !== null && (
+                                <span>{invite.uses_remaining} uses left</span>
+                              )}
+                              {invite.expires_at && (
+                                <span>Expires: {new Date(invite.expires_at).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                          </div>
+                          {invite.is_active && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -358,25 +455,36 @@ export default function AgencyDashboard() {
                               ) : (
                                 <>
                                   <Copy className="h-4 w-4 mr-1" />
-                                  Copy Link
+                                  Copy
                                 </>
                               )}
                             </Button>
-                          </div>
+                          )}
                         </div>
-
-                        <p className="text-xs text-muted-foreground">
-                          Share the code or link with agents to let them sign up and join your agency instantly
-                        </p>
-                      </div>
+                      </motion.div>
                     );
-                  })()}
+                  })}
+
+                  <p className="text-xs text-muted-foreground">
+                    Share invite codes with agents to let them sign up and join your agency instantly
+                  </p>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="announcements" className="space-y-4 mt-4">
+              <AgencyAnnouncements agencyId={agency.id} />
             </TabsContent>
           </Tabs>
         </motion.div>
       </div>
+
+      {/* Create Invite Dialog */}
+      <CreateInviteDialog 
+        agencyId={agency.id}
+        open={createInviteOpen}
+        onOpenChange={setCreateInviteOpen}
+      />
     </Layout>
   );
 }
