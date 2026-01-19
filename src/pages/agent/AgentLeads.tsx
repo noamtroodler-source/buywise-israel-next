@@ -16,6 +16,8 @@ import {
   BarChart3,
   ArrowLeft,
   MousePointerClick,
+  Eye,
+  Heart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -93,10 +95,10 @@ export default function AgentLeads() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {isLoading ? (
                 <>
-                  {[1, 2, 3, 4].map((i) => (
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
                     <Card key={i} className="rounded-2xl border-primary/10">
                       <CardContent className="p-4 text-center">
                         <Skeleton className="h-8 w-16 mx-auto mb-2" />
@@ -107,6 +109,24 @@ export default function AgentLeads() {
                 </>
               ) : (
                 <>
+                  <Card className="rounded-2xl border-primary/10">
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <p className="text-2xl font-bold">{(analytics?.totalViews || 0).toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Total Views</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="rounded-2xl border-primary/10">
+                    <CardContent className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <Heart className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <p className="text-2xl font-bold">{(analytics?.totalSaves || 0).toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">Total Saves</p>
+                    </CardContent>
+                  </Card>
                   <Card className="rounded-2xl border-primary/10">
                     <CardContent className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2 mb-1">

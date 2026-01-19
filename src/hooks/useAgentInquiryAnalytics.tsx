@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 export interface InquiryAnalytics {
   totalClicks: number;
+  totalViews: number;
+  totalSaves: number;
   whatsappClicks: number;
   callClicks: number;
   emailClicks: number;
@@ -133,8 +135,14 @@ export function useAgentInquiryAnalytics(dateRange: '7d' | '30d' | '90d' | 'all'
         .sort((a, b) => b.clicks - a.clicks)
         .slice(0, 10);
 
+      // Calculate totals
+      const totalViews = (properties || []).reduce((sum, p) => sum + (p.views_count || 0), 0);
+      const totalSaves = (saves || []).length;
+
       return {
         totalClicks: inquiries?.length || 0,
+        totalViews,
+        totalSaves,
         whatsappClicks: typeCounts.whatsapp,
         callClicks: typeCounts.call,
         emailClicks: typeCounts.email,
