@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -58,6 +58,7 @@ const itemVariants = {
 
 export default function AgentRegisterWizard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const agentRegistration = useAgentRegistration();
   const [currentStep, setCurrentStep] = useState(0);
@@ -65,6 +66,9 @@ export default function AgentRegisterWizard() {
   const [validatedAgencyId, setValidatedAgencyId] = useState<string | null>(null);
   const [validatedAgencyName, setValidatedAgencyName] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  
+  // Get invite code from URL params
+  const urlInviteCode = searchParams.get('code');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -72,8 +76,8 @@ export default function AgentRegisterWizard() {
     phone: '',
     license_number: '',
     // Agency
-    agency_choice: 'independent' as 'independent' | 'invite_code' | 'request_join',
-    invite_code: '',
+    agency_choice: (urlInviteCode ? 'invite_code' : 'independent') as 'independent' | 'invite_code' | 'request_join',
+    invite_code: urlInviteCode || '',
     agency_id: '',
     // Profile
     years_experience: 0,
@@ -82,6 +86,39 @@ export default function AgentRegisterWizard() {
     neighborhoods_covered: '',
     bio: '',
   });
+  
+  // Auto-validate invite code from URL on mount
+  useEffect(() => {
+    if (urlInviteCode && !validatedAgencyId) {
+      validateInviteCodeFromUrl(urlInviteCode);
+    }
+  }, [urlInviteCode]);
+  
+  const validateInviteCodeFromUrl = async (code: string) => {
+    setIsValidatingCode(true);
+    try {
+      const { data, error } = await supabase
+        .from('agency_invites')
+        .select('agency_id, agencies(name)')
+        .eq('code', code.trim())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setValidatedAgencyId(data.agency_id);
+        setValidatedAgencyName((data.agencies as any)?.name || 'Agency');
+        toast.success(`Invite code validated for ${(data.agencies as any)?.name || 'Agency'}`);
+      } else {
+        toast.error('Invalid or expired invite code');
+      }
+    } catch (error) {
+      console.error('Failed to validate invite code:', error);
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
 
   const updateField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));

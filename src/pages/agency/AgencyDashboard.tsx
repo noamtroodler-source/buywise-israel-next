@@ -285,42 +285,53 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              {/* Invite Code */}
+              {/* Agent Invite Link */}
               <Card className="rounded-2xl border-primary/10">
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
-                  <CardTitle>Invite Code</CardTitle>
+                  <CardTitle>Agent Invite Link</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  {agency.default_invite_code && (
-                    <div className="p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                            <Copy className="h-5 w-5 text-primary" />
+                  {agency.default_invite_code && (() => {
+                    const inviteLink = `${window.location.origin}/auth?role=agent&tab=signup&code=${agency.default_invite_code}`;
+                    return (
+                      <div className="p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <ExternalLink className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-primary">Shareable Invite Link</p>
+                              <p className="text-sm font-mono text-muted-foreground truncate" title={inviteLink}>
+                                {inviteLink}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-primary">Default Invite Code</p>
-                            <p className="text-xl font-mono font-bold tracking-wider">{agency.default_invite_code}</p>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
+                            onClick={() => copyToClipboard(inviteLink)}
+                          >
+                            {copiedCode === inviteLink ? (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-1" />
+                                Copy Link
+                              </>
+                            )}
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-xl border-primary/30 hover:bg-primary/10"
-                          onClick={() => copyToClipboard(agency.default_invite_code!)}
-                        >
-                          {copiedCode === agency.default_invite_code ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <p className="text-xs text-muted-foreground mt-3">
+                          Share this link with agents to let them sign up and join your agency instantly
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        Share this code with agents to let them join your agency
-                      </p>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </TabsContent>
