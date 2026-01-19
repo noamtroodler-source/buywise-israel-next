@@ -56,31 +56,31 @@ const statusConfig: Record<VerificationStatus, {
   },
   pending_review: { 
     label: 'Pending Review', 
-    variant: 'secondary', 
+    variant: 'outline', 
     icon: Clock,
     description: 'This listing is awaiting admin review.',
-    className: 'border-yellow-200 bg-yellow-50/50'
+    className: 'border-primary/30 bg-primary/5 text-primary'
   },
   approved: { 
     label: 'Published', 
     variant: 'default', 
     icon: CheckCircle2,
     description: 'This listing is live. Major changes may require re-review.',
-    className: 'border-green-200 bg-green-50/50'
+    className: ''
   },
   changes_requested: { 
     label: 'Changes Requested', 
-    variant: 'destructive', 
+    variant: 'outline', 
     icon: AlertCircle,
     description: 'Admin has requested changes. Please review feedback.',
-    className: 'border-red-200 bg-red-50/50'
+    className: 'border-primary/30 bg-primary/5 text-primary'
   },
   rejected: { 
     label: 'Rejected', 
-    variant: 'destructive', 
+    variant: 'outline', 
     icon: XCircle,
     description: 'This listing was rejected. Please review the feedback.',
-    className: 'border-red-200 bg-red-50/50'
+    className: 'border-primary/30 bg-primary/5 text-primary'
   },
 };
 
@@ -315,10 +315,10 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
             {/* Status Alerts */}
             {(verificationStatus === 'changes_requested' || verificationStatus === 'rejected') && rejectionReason && (
               <motion.div variants={itemVariants}>
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Admin Feedback</AlertTitle>
-                  <AlertDescription className="mt-2 whitespace-pre-wrap">
+                <Alert className="border-primary/30 bg-primary/5">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  <AlertTitle className="text-primary font-semibold">Admin Feedback</AlertTitle>
+                  <AlertDescription className="mt-2 whitespace-pre-wrap text-primary/80">
                     {rejectionReason}
                   </AlertDescription>
                 </Alert>
@@ -339,10 +339,10 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
 
             {isPending && (
               <motion.div variants={itemVariants}>
-                <Alert className="border-yellow-200 bg-yellow-50">
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                  <AlertTitle className="text-yellow-800">Under Review</AlertTitle>
-                  <AlertDescription className="text-yellow-700">
+                <Alert className="border-primary/20 bg-primary/5">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <AlertTitle className="text-primary">Under Review</AlertTitle>
+                  <AlertDescription className="text-primary/70">
                     This listing is currently being reviewed by our team.
                   </AlertDescription>
                 </Alert>
