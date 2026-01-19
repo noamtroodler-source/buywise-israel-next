@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { motion } from 'framer-motion';
 import { Hammer, Clock, Mail } from 'lucide-react';
 import {
   Dialog,
@@ -59,9 +60,14 @@ export function DeveloperSubmittedDialog({ open, onOpenChange }: DeveloperSubmit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-2xl">
         <DialogHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Hammer className="h-8 w-8 text-primary" />
-          </div>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center"
+          >
+            <Hammer className="w-10 h-10 text-primary" />
+          </motion.div>
           <DialogTitle className="text-2xl">Developer Application Submitted!</DialogTitle>
           <DialogDescription className="text-base">
             Thank you for registering as a developer on our platform. We're excited to showcase your projects to potential buyers.
@@ -69,9 +75,14 @@ export function DeveloperSubmittedDialog({ open, onOpenChange }: DeveloperSubmit
         </DialogHeader>
 
         <div className="space-y-3 my-4">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-4 w-4 text-primary" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl border border-border/50"
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="font-medium text-sm">Review in Progress</p>
@@ -79,11 +90,16 @@ export function DeveloperSubmittedDialog({ open, onOpenChange }: DeveloperSubmit
                 Our team will review your developer application within 1-2 business days.
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Mail className="h-4 w-4 text-primary" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl border border-border/50"
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Mail className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="font-medium text-sm">Email Notification</p>
@@ -91,7 +107,7 @@ export function DeveloperSubmittedDialog({ open, onOpenChange }: DeveloperSubmit
                 You'll receive an email once your developer account has been approved.
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         <Button onClick={handleClose} className="w-full h-11 rounded-xl">
