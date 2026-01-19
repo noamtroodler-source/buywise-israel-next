@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calculator, MapPin, Heart, Bell, ArrowRight, 
   Sparkles, Home, TrendingUp, BookOpen 
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useBuyerProfile, getBuyerTaxCategory } from '@/hooks/useBuyerProfile';
@@ -62,6 +64,36 @@ function SuggestionCard({ icon, title, description, action, onClick, highlight, 
 export function PostSignupSuggestions({ open, onClose }: PostSignupSuggestionsProps) {
   const navigate = useNavigate();
   const { data: buyerProfile } = useBuyerProfile();
+
+  // Trigger celebratory confetti when dialog opens
+  useEffect(() => {
+    if (open) {
+      const duration = 3000;
+      const end = Date.now() + duration;
+      const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'];
+
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    }
+  }, [open]);
   
   // Get personalized suggestions based on profile
   const buyerCategory = buyerProfile ? getBuyerTaxCategory(buyerProfile) : 'first_time';
