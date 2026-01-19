@@ -1,17 +1,17 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useLeadStats } from '@/hooks/useAgentLeads';
-import { useAgentProfile, useAgentProperties } from '@/hooks/useAgentProperties';
+import { useAgentProfile, useAgentProperties, AgentProperty } from '@/hooks/useAgentProperties';
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
@@ -27,6 +27,46 @@ export default function AgentDashboard() {
   const handleDismissOnboarding = () => {
     setShowOnboarding(false);
     localStorage.setItem('agent-onboarding-dismissed', 'true');
+  };
+
+  // Track dismissed approval alerts in localStorage
+  const [dismissedApprovals, setDismissedApprovals] = useState<string[]>(() => {
+    const stored = localStorage.getItem('dismissed-approval-alerts');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  // Find recently approved properties (within last 7 days)
+  const recentlyApproved = useMemo(() => {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    return properties.filter(p => {
+      if (p.verification_status !== 'approved' || !p.reviewed_at) return false;
+      if (dismissedApprovals.includes(p.id)) return false;
+      const reviewedDate = parseISO(p.reviewed_at);
+      return reviewedDate >= sevenDaysAgo;
+    }).sort((a, b) => 
+      new Date(b.reviewed_at!).getTime() - new Date(a.reviewed_at!).getTime()
+    );
+  }, [properties, dismissedApprovals]);
+
+  const handleDismissApproval = (propertyId: string) => {
+    const updated = [...dismissedApprovals, propertyId];
+    setDismissedApprovals(updated);
+    localStorage.setItem('dismissed-approval-alerts', JSON.stringify(updated));
+  };
+
+  const formatApprovalDate = (dateString: string) => {
+    const date = parseISO(dateString);
+    const time = format(date, 'h:mm a');
+    
+    if (isToday(date)) {
+      return `Today at ${time}`;
+    } else if (isYesterday(date)) {
+      return `Yesterday at ${time}`;
+    } else {
+      return `${format(date, 'MMM d, yyyy')} at ${time}`;
+    }
   };
 
   const isLoading = profileLoading || propertiesLoading;
@@ -129,6 +169,48 @@ export default function AgentDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Property Went Live Alerts */}
+          {recentlyApproved.map((property) => (
+            <motion.div
+              key={`approval-${property.id}`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4">
+                <button
+                  onClick={() => handleDismissApproval(property.id)}
+                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div className="flex items-start gap-4 pr-8">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <PartyPopper className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground">
+                      Congratulations! Your listing is now live
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      <span className="font-medium text-foreground">"{property.title}"</span> was approved and went live {formatApprovalDate(property.reviewed_at!)}
+                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      asChild
+                      className="h-auto p-0 mt-2 text-primary"
+                    >
+                      <Link to={`/properties/${property.id}`}>
+                        View Listing →
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
 
           {/* Pending Verification Alert */}
           {agentProfile?.status === 'pending' && (

@@ -6,6 +6,14 @@ import { Property, PropertyType, ListingStatus } from '@/types/database';
 
 export type VerificationStatus = 'draft' | 'pending_review' | 'changes_requested' | 'approved' | 'rejected';
 
+// Extended property type with verification fields for agent dashboard
+export interface AgentProperty extends Property {
+  verification_status: VerificationStatus;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  submitted_at: string | null;
+}
+
 export interface CreatePropertyData {
   title: string;
   description?: string;
@@ -71,7 +79,7 @@ export function useAgentProperties() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Property[];
+      return data as AgentProperty[];
     },
     enabled: !!agentProfile,
   });
