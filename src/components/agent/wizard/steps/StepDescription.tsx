@@ -179,12 +179,12 @@ export function StepDescription() {
                   <span className="text-sm">Analyzing your description...</span>
                 </div>
               ) : feedback && (
-                <div className={`p-4 ${feedback.hasIssues ? 'bg-amber-500/5 border-amber-500/20' : 'bg-green-500/5 border-green-500/20'}`}>
+              <div className={`p-4 ${feedback.hasIssues ? 'bg-amber-500/5' : 'bg-primary/5'}`}>
                   <div className="flex items-start gap-3">
                     {feedback.hasIssues ? (
                       <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                     ) : (
-                      <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     )}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm mb-2">
