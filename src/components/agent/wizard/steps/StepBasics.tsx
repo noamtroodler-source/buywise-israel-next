@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
-import { Home, MapPin, DollarSign, AlertCircle } from 'lucide-react';
+import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck } from 'lucide-react';
 import { AddressAutocomplete } from '../AddressAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 
@@ -57,6 +57,29 @@ export function StepBasics() {
 
   return (
     <div className="space-y-8">
+      {/* Quality Standards Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-muted/30 border border-primary/20">
+        <div className="flex gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-sm mb-1">Quality Standards</h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              Buyers Israel maintains high listing standards to ensure the best experience for buyers. All listings are reviewed before publication.
+            </p>
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              <p className="font-medium text-foreground/80">Listings may be returned for revision if:</p>
+              <ul className="list-disc list-inside ml-1 space-y-0.5">
+                <li>Photos are low quality or insufficient</li>
+                <li>Description contains errors or lacks detail</li>
+                <li>Information appears incomplete or inaccurate</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <h2 className="text-2xl font-bold mb-1">Property Basics</h2>
         <p className="text-muted-foreground">
