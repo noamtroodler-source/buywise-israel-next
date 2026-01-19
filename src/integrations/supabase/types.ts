@@ -2287,6 +2287,20 @@ export type Database = {
         Returns: boolean
       }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
+      validate_agency_invite_code: {
+        Args: { invite_code: string }
+        Returns: {
+          agency_id: string
+          agency_name: string
+        }[]
+      }
+      validate_default_invite_code: {
+        Args: { invite_code: string }
+        Returns: {
+          agency_id: string
+          agency_name: string
+        }[]
+      }
     }
     Enums: {
       agent_status: "pending" | "active" | "suspended"
