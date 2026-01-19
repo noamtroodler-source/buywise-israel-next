@@ -58,6 +58,8 @@ export function useMyAgency() {
         .from('agencies')
         .select('*')
         .eq('admin_user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
