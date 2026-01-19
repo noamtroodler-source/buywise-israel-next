@@ -119,7 +119,7 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
       case 2: // Features
         return true; // Optional step
       case 3: // Photos
-        return data.images.length >= 1; // At least 1 photo required
+        return data.images.length >= 3; // At least 3 photos required
       case 4: // Description
         return !!data.description;
       case 5: // Review
