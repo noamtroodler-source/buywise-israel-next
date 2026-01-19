@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
-  UserPlus, Settings, ExternalLink, ArrowLeft 
+  UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,12 +55,14 @@ export default function AgencyDashboard() {
     return (
       <Layout>
         <div className="container py-16 text-center">
-          <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <div className="h-20 w-20 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-6">
+            <Building2 className="h-10 w-10 text-muted-foreground/50" />
+          </div>
           <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
           <p className="text-muted-foreground mb-6">
             You don't have an agency registered yet.
           </p>
-          <Button asChild>
+          <Button asChild className="rounded-xl">
             <Link to="/agency/register">
               <Plus className="h-4 w-4 mr-2" />
               Register Your Agency
@@ -71,6 +73,13 @@ export default function AgencyDashboard() {
     );
   }
 
+  const statCards = [
+    { label: 'Team Members', value: stats?.totalAgents || 0, icon: Users },
+    { label: 'Active Listings', value: stats?.activeListings || 0, icon: Home },
+    { label: 'Pending Review', value: stats?.pendingListings || 0, icon: Clock },
+    { label: 'Total Views', value: stats?.totalViews || 0, icon: Eye },
+  ];
+
   return (
     <Layout>
       <div className="container py-8">
@@ -79,136 +88,122 @@ export default function AgencyDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
-                <Link to="/">
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
-              </Button>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Building2 className="h-6 w-6 text-primary" />
+          {/* Premium Header with gradient */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%)]" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" asChild className="rounded-xl hover:bg-primary/10 flex-shrink-0">
+                  <Link to="/">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 shadow-sm flex items-center justify-center">
+                  <Building2 className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-foreground">{agency.name}</h1>
+                    {agency.is_verified && (
+                      <BadgeCheck className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">Agency Dashboard</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">{agency.name}</h1>
-                <p className="text-muted-foreground">Agency Dashboard</p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/analytics">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Analytics
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to={`/agencies/${agency.slug}`}>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Public Page
+                  </Link>
+                </Button>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" asChild>
-                <Link to="/agency/analytics">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Analytics
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/agency/settings">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to={`/agencies/${agency.slug}`}>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View Public Page
-                </Link>
-              </Button>
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats with animations */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.totalAgents || 0}</p>
-                    <p className="text-xs text-muted-foreground">Team Members</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-50">
-                    <Home className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.activeListings || 0}</p>
-                    <p className="text-xs text-muted-foreground">Active Listings</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-yellow-50">
-                    <Home className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.pendingListings || 0}</p>
-                    <p className="text-xs text-muted-foreground">Pending Review</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-50">
-                    <Eye className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats?.totalViews || 0}</p>
-                    <p className="text-xs text-muted-foreground">Total Views</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {statCards.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
+                <Card className="border-primary/10 bg-gradient-to-br from-primary/5 to-transparent rounded-2xl hover:border-primary/20 transition-colors">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-primary/10">
+                        <stat.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                        <p className="text-xs text-muted-foreground">{stat.label}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </div>
 
           {/* Tabs */}
           <Tabs defaultValue="team">
-            <TabsList>
-              <TabsTrigger value="team" className="gap-2">
+            <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1">
+              <TabsTrigger value="team" className="gap-2 rounded-lg">
                 <Users className="h-4 w-4" />
                 Team
                 {team.length > 0 && <Badge variant="secondary">{team.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="invites" className="gap-2">
+              <TabsTrigger value="invites" className="gap-2 rounded-lg">
                 <UserPlus className="h-4 w-4" />
                 Invites
                 {joinRequests.length > 0 && (
-                  <Badge variant="destructive">{joinRequests.length}</Badge>
+                  <Badge className="bg-primary/20 text-primary hover:bg-primary/20">{joinRequests.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="team" className="space-y-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+            <TabsContent value="team" className="space-y-4 mt-4">
+              <Card className="rounded-2xl border-primary/10">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
                   <CardTitle>Team Members</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4">
                   {team.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No team members yet</p>
-                      <p className="text-sm">Share your invite code to add agents</p>
+                    <div className="text-center py-12 text-muted-foreground">
+                      <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                        <Users className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                      <p className="font-medium text-foreground mb-1">No team members yet</p>
+                      <p className="text-sm">Share your invite code to add agents to your agency</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {team.map((agent) => (
-                        <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      {team.map((agent, index) => (
+                        <motion.div
+                          key={agent.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-medium">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary">
                                 {agent.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
@@ -222,10 +217,10 @@ export default function AgencyDashboard() {
                               {agent.status}
                             </Badge>
                             {agent.is_verified && (
-                              <Badge variant="outline" className="text-green-600">Verified</Badge>
+                              <Badge variant="outline" className="border-primary/30 text-primary">Verified</Badge>
                             )}
                           </div>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   )}
@@ -233,28 +228,42 @@ export default function AgencyDashboard() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="invites" className="space-y-4">
+            <TabsContent value="invites" className="space-y-4 mt-4">
               {/* Join Requests */}
               {joinRequests.length > 0 && (
-                <Card>
-                  <CardHeader>
+                <Card className="rounded-2xl border-primary/10">
+                  <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
                     <CardTitle>Pending Join Requests</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    {joinRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div>
-                          <p className="font-medium">{request.agent.name}</p>
-                          <p className="text-sm text-muted-foreground">{request.agent.email}</p>
-                          {request.agent.license_number && (
-                            <p className="text-xs text-muted-foreground">
-                              License: {request.agent.license_number}
-                            </p>
-                          )}
+                  <CardContent className="space-y-3 pt-4">
+                    {joinRequests.map((request, index) => (
+                      <motion.div
+                        key={request.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">
+                              {request.agent.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium">{request.agent.name}</p>
+                            <p className="text-sm text-muted-foreground">{request.agent.email}</p>
+                            {request.agent.license_number && (
+                              <p className="text-xs text-muted-foreground">
+                                License: {request.agent.license_number}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
+                            className="rounded-xl"
                             onClick={() => approveRequest.mutate({
                               requestId: request.id,
                               agentId: request.agent_id,
@@ -267,24 +276,26 @@ export default function AgencyDashboard() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="rounded-xl"
                             onClick={() => rejectRequest.mutate({ requestId: request.id })}
                             disabled={rejectRequest.isPending}
                           >
                             Reject
                           </Button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </CardContent>
                 </Card>
               )}
 
               {/* Invite Codes */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+              <Card className="rounded-2xl border-primary/10">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
                   <CardTitle>Invite Codes</CardTitle>
                   <Button
                     size="sm"
+                    className="rounded-xl shadow-sm"
                     onClick={() => createInvite.mutate({ agencyId: agency.id })}
                     disabled={createInvite.isPending}
                   >
@@ -298,18 +309,24 @@ export default function AgencyDashboard() {
                     )}
                   </Button>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4">
                   {/* Default Code */}
                   {agency.default_invite_code && (
-                    <div className="mb-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="mb-4 p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-primary">Default Invite Code</p>
-                          <p className="text-lg font-mono font-bold">{agency.default_invite_code}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                            <Copy className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-primary">Default Invite Code</p>
+                            <p className="text-xl font-mono font-bold tracking-wider">{agency.default_invite_code}</p>
+                          </div>
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
+                          className="rounded-xl border-primary/30 hover:bg-primary/10"
                           onClick={() => copyToClipboard(agency.default_invite_code!)}
                         >
                           {copiedCode === agency.default_invite_code ? (
@@ -319,7 +336,7 @@ export default function AgencyDashboard() {
                           )}
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground mt-3">
                         Share this code with agents to let them join your agency
                       </p>
                     </div>
@@ -330,8 +347,14 @@ export default function AgencyDashboard() {
                     <div className="space-y-2">
                       {invites
                         .filter(i => i.code !== agency.default_invite_code)
-                        .map((invite) => (
-                          <div key={invite.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        .map((invite, index) => (
+                          <motion.div
+                            key={invite.id}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                            className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                          >
                             <div>
                               <p className="font-mono font-medium">{invite.code}</p>
                               <p className="text-xs text-muted-foreground">
@@ -344,6 +367,7 @@ export default function AgencyDashboard() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="rounded-xl hover:bg-primary/10"
                               onClick={() => copyToClipboard(invite.code)}
                             >
                               {copiedCode === invite.code ? (
@@ -352,7 +376,7 @@ export default function AgencyDashboard() {
                                 <Copy className="h-4 w-4" />
                               )}
                             </Button>
-                          </div>
+                          </motion.div>
                         ))}
                     </div>
                   )}
