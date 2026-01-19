@@ -85,6 +85,7 @@ import DeveloperAnalytics from "./pages/developer/DeveloperAnalytics";
 import DeveloperSettings from "./pages/developer/DeveloperSettings";
 import DeveloperLeads from "./pages/developer/DeveloperLeads";
 import NewProjectWizard from "./pages/developer/NewProjectWizard";
+import GetStarted from "./pages/GetStarted";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
                   <ScrollToTop />
               <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/get-started" element={<GetStarted />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
               <Route path="/compare" element={<Compare />} />

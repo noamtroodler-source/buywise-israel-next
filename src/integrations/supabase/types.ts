@@ -225,6 +225,47 @@ export type Database = {
           },
         ]
       }
+      agent_notifications: {
+        Row: {
+          action_url: string | null
+          agent_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          action_url?: string | null
+          agent_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          action_url?: string | null
+          agent_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_notifications_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           agency_id: string | null
@@ -235,16 +276,19 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string
+          email_verified_at: string | null
           id: string
           is_verified: boolean | null
           joined_via: string | null
           languages: string[] | null
+          last_active_at: string | null
           license_number: string | null
           name: string
           neighborhoods_covered: string[] | null
           notify_email: boolean | null
           notify_on_approval: boolean | null
           notify_on_inquiry: boolean | null
+          onboarding_completed_at: string | null
           phone: string | null
           response_time_hours: number | null
           specializations: string[] | null
@@ -262,16 +306,19 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email: string
+          email_verified_at?: string | null
           id?: string
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
+          last_active_at?: string | null
           license_number?: string | null
           name: string
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
@@ -289,16 +336,19 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string
+          email_verified_at?: string | null
           id?: string
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
+          last_active_at?: string | null
           license_number?: string | null
           name?: string
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null
           notify_on_approval?: boolean | null
           notify_on_inquiry?: boolean | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           response_time_hours?: number | null
           specializations?: string[] | null
