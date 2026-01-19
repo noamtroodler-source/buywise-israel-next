@@ -29,7 +29,7 @@ import NewPropertyWizard from "./pages/agent/NewPropertyWizard";
 import AgentAnalytics from "./pages/agent/AgentAnalytics";
 import AgentSettings from "./pages/agent/AgentSettings";
 import AgentLeads from "./pages/agent/AgentLeads";
-import EditProperty from "./pages/agent/EditProperty";
+import EditPropertyWizard from "./pages/agent/EditPropertyWizard";
 import AgencyRegister from "./pages/agency/AgencyRegister";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyAnalytics from "./pages/agency/AgencyAnalytics";
@@ -188,7 +188,7 @@ const App = () => (
             } />
             <Route path="/agent/properties/:id/edit" element={
               <ProtectedRoute requiredRole="agent">
-                <EditProperty />
+                <EditPropertyWizard />
               </ProtectedRoute>
             } />
             {/* Agency Routes */}
