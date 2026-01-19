@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
-  UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock
+  UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -294,40 +294,79 @@ export default function AgencyDashboard() {
                   {agency.default_invite_code && (() => {
                     const inviteLink = `${window.location.origin}/auth?role=agent&tab=signup&code=${agency.default_invite_code}`;
                     return (
-                      <div className="p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                              <ExternalLink className="h-5 w-5 text-primary" />
+                      <div className="space-y-3">
+                        {/* Invite Code */}
+                        <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                <Hash className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-muted-foreground">Invite Code</p>
+                                <p className="text-xl font-bold font-mono tracking-wider text-foreground">
+                                  {agency.default_invite_code}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-primary">Shareable Invite Link</p>
-                              <p className="text-sm font-mono text-muted-foreground truncate" title={inviteLink}>
-                                {inviteLink}
-                              </p>
-                            </div>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="rounded-xl flex-shrink-0"
+                              onClick={() => copyToClipboard(agency.default_invite_code!)}
+                            >
+                              {copiedCode === agency.default_invite_code ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-1" />
+                                  Copy Code
+                                </>
+                              )}
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
-                            onClick={() => copyToClipboard(inviteLink)}
-                          >
-                            {copiedCode === inviteLink ? (
-                              <>
-                                <Check className="h-4 w-4 mr-1" />
-                                Copied
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-4 w-4 mr-1" />
-                                Copy Link
-                              </>
-                            )}
-                          </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-3">
-                          Share this link with agents to let them sign up and join your agency instantly
+
+                        {/* Shareable Link */}
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                <ExternalLink className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-muted-foreground">Shareable Invite Link</p>
+                                <p className="text-sm font-mono text-muted-foreground truncate" title={inviteLink}>
+                                  {inviteLink}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
+                              onClick={() => copyToClipboard(inviteLink)}
+                            >
+                              {copiedCode === inviteLink ? (
+                                <>
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-1" />
+                                  Copy Link
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                          Share the code or link with agents to let them sign up and join your agency instantly
                         </p>
                       </div>
                     );
