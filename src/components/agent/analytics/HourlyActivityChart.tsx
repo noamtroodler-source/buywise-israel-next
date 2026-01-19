@@ -38,8 +38,8 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>When buyers tap your contact buttons throughout the day</p>
+                <TooltipContent className="font-normal">
+                  When buyers tap your contact buttons throughout the day
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -65,8 +65,8 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>When buyers tap your contact buttons throughout the day</p>
+                <TooltipContent className="font-normal">
+                  When buyers tap your contact buttons throughout the day
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
