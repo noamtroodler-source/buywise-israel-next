@@ -147,10 +147,14 @@ export function useCreateInviteCode() {
   return useMutation({
     mutationFn: async ({ 
       agencyId, 
-      maxUses 
+      maxUses,
+      expiresAt,
+      label,
     }: { 
       agencyId: string; 
       maxUses?: number;
+      expiresAt?: string;
+      label?: string;
     }) => {
       const code = Math.random().toString(36).substring(2, 10).toUpperCase();
       
@@ -162,6 +166,8 @@ export function useCreateInviteCode() {
           created_by: user?.id,
           uses_remaining: maxUses || null,
           max_uses: maxUses || null,
+          expires_at: expiresAt || null,
+          label: label || null,
           is_active: true,
         })
         .select()
@@ -339,6 +345,53 @@ export function useDeactivateInvite() {
     },
     onError: (error) => {
       toast.error('Failed to deactivate invite: ' + error.message);
+    },
+  });
+}
+
+export function useRemoveAgentFromAgency() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agentId }: { agentId: string }) => {
+      const { error } = await supabase
+        .from('agents')
+        .update({ 
+          agency_id: null,
+          status: 'active'
+        })
+        .eq('id', agentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      toast.success('Agent removed from agency');
+    },
+    onError: (error) => {
+      toast.error('Failed to remove agent: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateAgentStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agentId, status }: { agentId: string; status: 'active' | 'suspended' | 'pending' }) => {
+      const { error } = await supabase
+        .from('agents')
+        .update({ status })
+        .eq('id', agentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      toast.success('Agent status updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update status: ' + error.message);
     },
   });
 }
