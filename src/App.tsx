@@ -9,6 +9,7 @@ import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -88,14 +89,15 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <PreferencesProvider>
-        <CompareProvider>
-          <TooltipProvider>
-            <ErrorBoundary>
-              <Toaster />
-              <Sonner />
-            <BrowserRouter>
-              <ScrollToTop />
+      <GoogleMapsProvider>
+        <PreferencesProvider>
+          <CompareProvider>
+            <TooltipProvider>
+              <ErrorBoundary>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <ScrollToTop />
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/listings" element={<Listings />} />
@@ -263,13 +265,14 @@ const App = () => (
               <Route path="projects" element={<AdminProjects />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
-              <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </ErrorBoundary>
-        </TooltipProvider>
-      </CompareProvider>
-    </PreferencesProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </ErrorBoundary>
+          </TooltipProvider>
+        </CompareProvider>
+      </PreferencesProvider>
+    </GoogleMapsProvider>
   </AuthProvider>
 </QueryClientProvider>
 );
