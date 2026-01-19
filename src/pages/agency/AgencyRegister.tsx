@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AgencySubmittedDialog } from '@/components/agency/AgencySubmittedDialog';
 
 const cities = ['Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 'Netanya', 'Be\'er Sheva', 'Ashdod', 'Modiin', 'Petah Tikva'];
 const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
@@ -47,6 +48,7 @@ export default function AgencyRegister() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
 
   // Redirect non-authenticated users to auth page with role context
   useEffect(() => {
@@ -204,8 +206,7 @@ export default function AgencyRegister() {
           is_active: true,
         });
 
-      toast.success('Agency registered successfully!');
-      navigate(`/agency/${slug}`);
+      setShowSuccessDialog(true);
     } catch (error: any) {
       toast.error('Failed to register agency: ' + error.message);
     } finally {
@@ -477,6 +478,10 @@ export default function AgencyRegister() {
           </motion.div>
         </motion.div>
       </div>
+      <AgencySubmittedDialog 
+        open={showSuccessDialog} 
+        onOpenChange={setShowSuccessDialog} 
+      />
     </Layout>
   );
 }
