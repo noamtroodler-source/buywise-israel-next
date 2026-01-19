@@ -18,6 +18,7 @@ interface ParsedAddress {
 interface AddressAutocompleteProps {
   value: string;
   onAddressSelect: (address: ParsedAddress) => void;
+  onInputChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
 }
@@ -83,6 +84,7 @@ function parseNominatimResult(result: NominatimResult): ParsedAddress {
 function GoogleAddressAutocomplete({
   value,
   onAddressSelect,
+  onInputChange,
   placeholder,
   className,
 }: AddressAutocompleteProps) {
@@ -206,6 +208,7 @@ function GoogleAddressAutocomplete({
             setValue(e.target.value);
             setHasValidSelection(false);
             setSelectedIndex(-1);
+            onInputChange?.(e.target.value);
           }}
           onKeyDown={handleKeyDown}
           disabled={!ready}
@@ -263,6 +266,7 @@ function GoogleAddressAutocomplete({
 function NominatimAddressAutocomplete({
   value,
   onAddressSelect,
+  onInputChange,
   placeholder,
   className,
 }: AddressAutocompleteProps) {
@@ -290,10 +294,11 @@ function NominatimAddressAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNominatimInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     setHasValidSelection(false);
+    onInputChange?.(newValue);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -367,7 +372,7 @@ function NominatimAddressAutocomplete({
       <div className="relative">
         <Input
           value={inputValue}
-          onChange={handleInputChange}
+          onChange={handleNominatimInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
