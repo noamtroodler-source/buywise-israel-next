@@ -13,9 +13,7 @@ import {
   useMyAgency, 
   useAgencyTeam, 
   useAgencyJoinRequests,
-  useAgencyInvites,
   useAgencyStats,
-  useCreateInviteCode,
   useApproveJoinRequest,
   useRejectJoinRequest,
 } from '@/hooks/useAgencyManagement';
@@ -26,9 +24,7 @@ export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: joinRequests = [] } = useAgencyJoinRequests(agency?.id);
-  const { data: invites = [] } = useAgencyInvites(agency?.id);
   const { data: stats } = useAgencyStats(agency?.id);
-  const createInvite = useCreateInviteCode();
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
   
@@ -289,30 +285,14 @@ export default function AgencyDashboard() {
                 </Card>
               )}
 
-              {/* Invite Codes */}
+              {/* Invite Code */}
               <Card className="rounded-2xl border-primary/10">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
-                  <CardTitle>Invite Codes</CardTitle>
-                  <Button
-                    size="sm"
-                    className="rounded-xl shadow-sm"
-                    onClick={() => createInvite.mutate({ agencyId: agency.id })}
-                    disabled={createInvite.isPending}
-                  >
-                    {createInvite.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-1" />
-                        New Code
-                      </>
-                    )}
-                  </Button>
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
+                  <CardTitle>Invite Code</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  {/* Default Code */}
                   {agency.default_invite_code && (
-                    <div className="mb-4 p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
+                    <div className="p-5 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center">
@@ -339,45 +319,6 @@ export default function AgencyDashboard() {
                       <p className="text-xs text-muted-foreground mt-3">
                         Share this code with agents to let them join your agency
                       </p>
-                    </div>
-                  )}
-
-                  {/* Other Codes */}
-                  {invites.filter(i => i.code !== agency.default_invite_code).length > 0 && (
-                    <div className="space-y-2">
-                      {invites
-                        .filter(i => i.code !== agency.default_invite_code)
-                        .map((invite, index) => (
-                          <motion.div
-                            key={invite.id}
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
-                          >
-                            <div>
-                              <p className="font-mono font-medium">{invite.code}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {invite.uses_remaining !== null
-                                  ? `${invite.uses_remaining} uses remaining`
-                                  : 'Unlimited uses'}
-                                {!invite.is_active && ' • Inactive'}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="rounded-xl hover:bg-primary/10"
-                              onClick={() => copyToClipboard(invite.code)}
-                            >
-                              {copiedCode === invite.code ? (
-                                <Check className="h-4 w-4" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </motion.div>
-                        ))}
                     </div>
                   )}
                 </CardContent>
