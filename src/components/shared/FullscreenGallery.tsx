@@ -153,19 +153,19 @@ export function FullscreenGallery({
           </header>
 
           {/* Main Image Area */}
-          <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+          <div className="flex-1 min-h-0 relative flex items-center justify-center overflow-hidden">
             {/* Embla Carousel */}
-            <div className="w-full h-full overflow-hidden" ref={emblaRef}>
-              <div className="flex h-full">
+            <div className="w-full h-full" ref={emblaRef}>
+              <div className="flex h-full items-center">
                 {images.map((image, index) => (
                   <div
                     key={index}
-                    className="flex-shrink-0 w-full h-full flex items-center justify-center px-4 md:px-20 py-4"
+                    className="flex-shrink-0 w-full h-full flex items-center justify-center px-4 md:px-16"
                   >
                     <img
                       src={image}
                       alt={`${title} - Image ${index + 1}`}
-                      className="max-h-full max-w-full object-contain rounded-lg"
+                      className="max-h-[calc(100vh-220px)] max-w-full w-auto object-contain rounded-lg"
                     />
                   </div>
                 ))}
