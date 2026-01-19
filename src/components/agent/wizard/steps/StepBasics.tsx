@@ -35,13 +35,26 @@ export function StepBasics() {
   }) => {
     updateData({
       address: address.streetAddress || address.fullAddress,
-      city: address.city || data.city, // Keep existing if not found
-      neighborhood: address.neighborhood || data.neighborhood, // Keep existing if not found
+      city: address.city || data.city,
+      neighborhood: address.neighborhood || data.neighborhood,
       latitude: address.latitude,
       longitude: address.longitude,
       place_id: address.placeId,
     });
   };
+
+  // When user types without selecting, invalidate the location
+  const handleAddressInputChange = () => {
+    updateData({
+      latitude: null,
+      longitude: null,
+      place_id: '',
+    });
+  };
+
+  const hasAddressText = data.address.trim().length > 0;
+  const hasValidLocation = !!(data.latitude && data.longitude);
+  const showAddressWarning = hasAddressText && !hasValidLocation;
 
   return (
     <div className="space-y-8">
@@ -161,11 +174,18 @@ export function StepBasics() {
             <AddressAutocomplete
               value={data.address}
               onAddressSelect={handleAddressSelect}
+              onInputChange={handleAddressInputChange}
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
             />
-            <p className="text-xs text-muted-foreground">
-              Search for an address to auto-fill location details
-            </p>
+            {showAddressWarning ? (
+              <p className="text-xs text-destructive font-medium">
+                You must select an address from the dropdown suggestions
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Type to search, then select an address from the suggestions
+              </p>
+            )}
           </div>
 
           {/* Auto-filled location fields */}
@@ -208,9 +228,9 @@ export function StepBasics() {
               </p>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
               <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>Select an address from the dropdown to enable map location</span>
+              <span>Type an address above, then click on a result from the suggestions to confirm the location</span>
             </div>
           )}
         </div>
