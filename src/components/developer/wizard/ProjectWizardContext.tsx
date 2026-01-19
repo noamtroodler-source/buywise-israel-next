@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 export type ProjectStatus = 'planning' | 'pre_sale' | 'under_construction' | 'completed';
 
@@ -39,9 +39,12 @@ interface ProjectWizardContextType {
   goBack: () => void;
   canGoNext: boolean;
   isLastStep: boolean;
+  // New save-related properties
+  resetWizard: () => void;
+  loadFromSaved: (savedData: ProjectWizardData) => void;
 }
 
-const defaultData: ProjectWizardData = {
+export const defaultProjectData: ProjectWizardData = {
   name: '',
   city: '',
   neighborhood: '',
@@ -63,14 +66,24 @@ const defaultData: ProjectWizardData = {
 const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);
 
 const TOTAL_STEPS = 6;
+export const PROJECT_WIZARD_STORAGE_KEY = 'project-wizard-draft';
 
 export function ProjectWizardProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<ProjectWizardData>(defaultData);
+  const [data, setData] = useState<ProjectWizardData>(defaultProjectData);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const updateData = (updates: Partial<ProjectWizardData>) => {
+  const updateData = useCallback((updates: Partial<ProjectWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
+
+  const resetWizard = useCallback(() => {
+    setData(defaultProjectData);
+    setCurrentStep(0);
+  }, []);
+
+  const loadFromSaved = useCallback((savedData: ProjectWizardData) => {
+    setData(savedData);
+  }, []);
 
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
@@ -117,6 +130,8 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         goBack,
         canGoNext,
         isLastStep,
+        resetWizard,
+        loadFromSaved,
       }}
     >
       {children}
