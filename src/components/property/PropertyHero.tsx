@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -155,14 +155,6 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                 </>
               )}
 
-              {/* Image Counter */}
-              <div 
-                className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-1.5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Camera className="h-4 w-4" />
-                {selectedImageIndex + 1} / {images.length}
-              </div>
 
               {/* Progress Bar Indicator - Bottom of image */}
               {images.length > 1 && (
