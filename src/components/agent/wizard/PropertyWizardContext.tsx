@@ -18,6 +18,7 @@ export interface PropertyWizardData {
   bedrooms: number;
   bathrooms: number;
   size_sqm: number | undefined;
+  lot_size_sqm: number | undefined;
   floor: number | undefined;
   total_floors: number | undefined;
   year_built: number | undefined;
@@ -64,6 +65,7 @@ const defaultData: PropertyWizardData = {
   bedrooms: 0,
   bathrooms: 0,
   size_sqm: undefined,
+  lot_size_sqm: undefined,
   floor: undefined,
   total_floors: undefined,
   year_built: undefined,
@@ -109,6 +111,10 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
       case 0: // Basics
         return !!(data.title && data.price > 0 && data.city && data.address && data.latitude && data.longitude);
       case 1: // Details
+        // For land, lot_size is required; for others, rooms/baths are required
+        if (data.property_type === 'land') {
+          return (data.lot_size_sqm ?? 0) > 0;
+        }
         return data.bedrooms >= 0 && data.bathrooms >= 0;
       case 2: // Features
         return true; // Optional step

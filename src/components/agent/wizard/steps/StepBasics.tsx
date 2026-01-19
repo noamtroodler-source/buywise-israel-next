@@ -13,7 +13,6 @@ const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'penthouse', label: 'Penthouse' },
   { value: 'cottage', label: 'Cottage / Garden Apartment' },
   { value: 'land', label: 'Land' },
-  { value: 'commercial', label: 'Commercial' },
 ];
 
 const listingStatuses: { value: ListingStatus; label: string }[] = [
