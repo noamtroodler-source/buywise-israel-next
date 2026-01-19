@@ -13,7 +13,7 @@ import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary
 import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
-import { PropertyTimeMachine } from '@/components/property/PropertyTimeMachine';
+
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
@@ -156,22 +156,6 @@ export default function PropertyDetail() {
               />
             </motion.div>
 
-            {/* Time Machine - For sold and for_sale properties */}
-            {(property.listing_status === 'sold' || property.listing_status === 'for_sale') && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className="py-6 border-b border-border"
-              >
-                <PropertyTimeMachine
-                  salePrice={property.price}
-                  city={property.city}
-                  sizeSqm={property.size_sqm}
-                  listingStatus={property.listing_status}
-                />
-              </motion.div>
-            )}
 
             {/* Cost Breakdown - Only for sale/rent properties */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (
