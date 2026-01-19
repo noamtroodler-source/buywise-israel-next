@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 export interface AutoSaveState {
   isSaving: boolean;
@@ -13,6 +13,12 @@ interface UseAutoSaveOptions<T> {
   onSave?: () => Promise<void>;
   autoSaveInterval?: number; // in milliseconds, 0 to disable
   debounceMs?: number;
+  useSessionKey?: boolean; // If true, generates unique key per session
+}
+
+// Generate a unique session ID
+function generateSessionId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 export function useAutoSave<T>({
@@ -21,6 +27,7 @@ export function useAutoSave<T>({
   onSave,
   autoSaveInterval = 30000, // 30 seconds default
   debounceMs = 500,
+  useSessionKey = true, // Default to session-unique keys
 }: UseAutoSaveOptions<T>) {
   const [state, setState] = useState<AutoSaveState>({
     isSaving: false,
@@ -29,29 +36,21 @@ export function useAutoSave<T>({
     error: null,
   });
 
+  // Generate or reuse session ID for this wizard instance
+  const sessionIdRef = useRef<string>(generateSessionId());
+  
+  // Compute the actual storage key (session-unique if enabled)
+  const actualStorageKey = useMemo(() => {
+    if (useSessionKey) {
+      return `${storageKey}-${sessionIdRef.current}`;
+    }
+    return storageKey;
+  }, [storageKey, useSessionKey]);
+
   const initialDataRef = useRef<string | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = useRef<string | null>(null);
-
-  // Initialize from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.data && parsed.savedAt) {
-          initialDataRef.current = JSON.stringify(parsed.data);
-          setState(prev => ({
-            ...prev,
-            lastSavedAt: new Date(parsed.savedAt),
-          }));
-        }
-      }
-    } catch (e) {
-      console.error('Error loading saved data:', e);
-    }
-  }, [storageKey]);
 
   // Debounced save to localStorage
   useEffect(() => {
@@ -69,7 +68,7 @@ export function useAutoSave<T>({
             data,
             savedAt: new Date().toISOString(),
           };
-          localStorage.setItem(storageKey, JSON.stringify(saveData));
+          localStorage.setItem(actualStorageKey, JSON.stringify(saveData));
           lastSavedDataRef.current = currentData;
           setState(prev => ({
             ...prev,
@@ -93,7 +92,7 @@ export function useAutoSave<T>({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [data, storageKey, debounceMs]);
+  }, [data, actualStorageKey, debounceMs]);
 
   // Auto-save to database at intervals
   useEffect(() => {
@@ -150,7 +149,7 @@ export function useAutoSave<T>({
   }, [onSave, state.isSaving, data]);
 
   const clearSavedData = useCallback(() => {
-    localStorage.removeItem(storageKey);
+    localStorage.removeItem(actualStorageKey);
     lastSavedDataRef.current = null;
     initialDataRef.current = null;
     setState({
@@ -159,11 +158,11 @@ export function useAutoSave<T>({
       isDirty: false,
       error: null,
     });
-  }, [storageKey]);
+  }, [actualStorageKey]);
 
   const getSavedData = useCallback((): T | null => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = localStorage.getItem(actualStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         return parsed.data || null;
@@ -172,16 +171,16 @@ export function useAutoSave<T>({
       console.error('Error getting saved data:', e);
     }
     return null;
-  }, [storageKey]);
+  }, [actualStorageKey]);
 
   const hasSavedData = useCallback((): boolean => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = localStorage.getItem(actualStorageKey);
       return !!saved;
     } catch {
       return false;
     }
-  }, [storageKey]);
+  }, [actualStorageKey]);
 
   return {
     ...state,

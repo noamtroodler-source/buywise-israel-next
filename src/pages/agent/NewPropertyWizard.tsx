@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, Send, Loader2, Sparkles, ShieldAlert } from 'lucide-react';
@@ -19,7 +19,6 @@ import {
 import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
-import { ResumeDraftDialog } from '@/components/shared/ResumeDraftDialog';
 import confetti from 'canvas-confetti';
 
 const steps = [
@@ -43,55 +42,21 @@ const itemVariants = {
 
 function WizardContent() {
   const navigate = useNavigate();
-  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, resetWizard, loadFromSaved } = usePropertyWizard();
+  const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep } = usePropertyWizard();
   const { data: agentProfile } = useAgentProfile();
   const createProperty = useCreateProperty();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showResumeDialog, setShowResumeDialog] = useState(false);
-  const [savedDraftDate, setSavedDraftDate] = useState<Date | null>(null);
   
   // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
 
-  // Auto-save functionality
+  // Auto-save functionality with session-unique key (always starts fresh)
   const autoSave = useAutoSave<PropertyWizardData>({
     data,
     storageKey: PROPERTY_WIZARD_STORAGE_KEY,
     autoSaveInterval: 0, // Disable auto-save to DB for now, just localStorage
+    useSessionKey: true, // Each wizard session gets unique storage key
   });
-
-  // Check for existing draft on mount
-  useEffect(() => {
-    const checkSavedDraft = () => {
-      try {
-        const saved = localStorage.getItem(PROPERTY_WIZARD_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.data && parsed.data.title) {
-            setSavedDraftDate(parsed.savedAt ? new Date(parsed.savedAt) : null);
-            setShowResumeDialog(true);
-          }
-        }
-      } catch (e) {
-        console.error('Error checking saved draft:', e);
-      }
-    };
-    checkSavedDraft();
-  }, []);
-
-  const handleResumeDraft = () => {
-    const savedData = autoSave.getSavedData();
-    if (savedData) {
-      loadFromSaved(savedData);
-    }
-    setShowResumeDialog(false);
-  };
-
-  const handleStartFresh = () => {
-    autoSave.clearSavedData();
-    resetWizard();
-    setShowResumeDialog(false);
-  };
 
   const handleSaveDraft = async () => {
     setIsSubmitting(true);
@@ -324,16 +289,6 @@ function WizardContent() {
           </motion.div>
         </div>
       </div>
-
-      {/* Resume Draft Dialog */}
-      <ResumeDraftDialog
-        open={showResumeDialog}
-        onOpenChange={setShowResumeDialog}
-        onResume={handleResumeDraft}
-        onStartFresh={handleStartFresh}
-        savedAt={savedDraftDate}
-        type="property"
-      />
     </Layout>
   );
 }
