@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +41,16 @@ const allSpecializations = [
   { id: 'investment', label: 'Investment Properties' },
   { id: 'rentals', label: 'Rentals' },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+};
 
 export default function AgencySettings() {
   const navigate = useNavigate();
@@ -167,12 +176,14 @@ export default function AgencySettings() {
     return (
       <Layout>
         <div className="container py-16 text-center">
-          <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+          <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+            <Building2 className="h-8 w-8 text-muted-foreground" />
+          </div>
           <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
           <p className="text-muted-foreground mb-6">
             You need to register an agency first.
           </p>
-          <Button onClick={() => navigate('/agency/register')}>
+          <Button onClick={() => navigate('/agency/register')} className="rounded-xl">
             Register Agency
           </Button>
         </div>
@@ -182,149 +193,209 @@ export default function AgencySettings() {
 
   return (
     <Layout>
-      <div className="container py-8 max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <Button variant="ghost" onClick={() => navigate('/agency')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
+      <div className="min-h-screen relative">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background -z-10" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute top-40 right-20 w-96 h-96 bg-primary/3 rounded-full blur-3xl -z-10" />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Agency Settings</CardTitle>
-              <CardDescription>
-                Update your agency profile and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Logo */}
-                <div className="flex items-center gap-6">
-                  <div className="relative">
-                    <div className={cn(
-                      "h-24 w-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden",
-                      "border-2 border-dashed border-border"
-                    )}>
-                      {logoUrl ? (
-                        <img 
-                          src={logoUrl} 
-                          alt="Agency logo" 
-                          className="h-full w-full object-cover"
+        <div className="container py-8 max-w-3xl">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-8"
+          >
+            {/* Header */}
+            <motion.div variants={itemVariants}>
+              <Button variant="ghost" asChild className="mb-4 rounded-xl hover:bg-primary/5">
+                <Link to="/agency">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-foreground">Agency Settings</h1>
+                  <p className="text-muted-foreground">Update your agency profile and preferences</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Logo Upload Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
+                      <div className="relative group">
+                        <div className={cn(
+                          "h-24 w-24 rounded-2xl bg-card flex items-center justify-center overflow-hidden",
+                          "border-2 border-dashed border-border group-hover:border-primary/50 transition-colors"
+                        )}>
+                          {logoUrl ? (
+                            <img 
+                              src={logoUrl} 
+                              alt="Agency logo" 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Building2 className="h-12 w-12 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-base font-semibold">Agency Logo</Label>
+                        <label className={cn(
+                          "inline-flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer",
+                          "bg-primary/10 text-primary hover:bg-primary/20 transition-colors",
+                          uploading && "opacity-50 pointer-events-none"
+                        )}>
+                          {uploading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4" />
+                          )}
+                          <span className="text-sm font-medium">
+                            {uploading ? 'Uploading...' : 'Upload Logo'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                            disabled={uploading}
+                          />
+                        </label>
+                        <p className="text-xs text-muted-foreground">
+                          Recommended: Square image, at least 200x200px
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Basic Info Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Basic Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Agency Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => updateField('name', e.target.value)}
+                        required
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => updateField('description', e.target.value)}
+                        placeholder="Tell clients about your agency..."
+                        rows={4}
+                        className="rounded-xl resize-none"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Contact Info Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Contact Information</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="email" className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => updateField('email', e.target.value)}
+                          className="h-11 rounded-xl"
                         />
-                      ) : (
-                        <Building2 className="h-10 w-10 text-muted-foreground" />
-                      )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                          Phone
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => updateField('phone', e.target.value)}
+                          placeholder="+972..."
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Agency Logo</Label>
-                    <label className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-md cursor-pointer",
-                      "bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors",
-                      uploading && "opacity-50 pointer-events-none"
-                    )}>
-                      {uploading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Upload className="h-4 w-4" />
-                      )}
-                      <span className="text-sm font-medium">
-                        {uploading ? 'Uploading...' : 'Upload Logo'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoUpload}
-                        disabled={uploading}
-                      />
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      Recommended: Square image, at least 200x200px
-                    </p>
-                  </div>
-                </div>
 
-                {/* Basic Info */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Basic Information
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Agency Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => updateField('name', e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => updateField('description', e.target.value)}
-                      placeholder="Tell clients about your agency..."
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="website" className="flex items-center gap-2">
+                        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                        Website
+                      </Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => updateField('email', e.target.value)}
+                        id="website"
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => updateField('website', e.target.value)}
+                        placeholder="https://..."
+                        className="h-11 rounded-xl"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => updateField('phone', e.target.value)}
-                        placeholder="+972..."
-                      />
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Service Areas Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <MapPin className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Service Areas</CardTitle>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      type="url"
-                      value={formData.website}
-                      onChange={(e) => updateField('website', e.target.value)}
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Cities Covered */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Service Areas
-                  </h3>
-                  
-                  <div className="space-y-3">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="flex gap-2">
                       <Input
                         value={newCity}
                         onChange={(e) => setNewCity(e.target.value)}
                         placeholder="Add a city..."
                         list="city-suggestions"
+                        className="h-11 rounded-xl"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -337,7 +408,7 @@ export default function AgencySettings() {
                           <option key={city} value={city} />
                         ))}
                       </datalist>
-                      <Button type="button" variant="secondary" onClick={addCity}>
+                      <Button type="button" variant="outline" onClick={addCity} className="rounded-xl border-primary/20 hover:bg-primary/5">
                         Add
                       </Button>
                     </div>
@@ -348,13 +419,13 @@ export default function AgencySettings() {
                           <Badge 
                             key={city} 
                             variant="secondary"
-                            className="pl-3 pr-1 py-1.5 gap-1"
+                            className="pl-3 pr-1 py-1.5 gap-1 bg-primary/10 text-primary border-0 rounded-lg"
                           >
                             {city}
                             <button
                               type="button"
                               onClick={() => removeCity(city)}
-                              className="ml-1 rounded-full hover:bg-muted p-0.5"
+                              className="ml-1 rounded-full hover:bg-primary/20 p-0.5"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -362,136 +433,170 @@ export default function AgencySettings() {
                         ))}
                       </div>
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                <Separator />
-
-                {/* Specializations */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Specializations
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {allSpecializations.map((spec) => (
-                      <label
-                        key={spec.id}
-                        className={cn(
-                          "flex items-center justify-center p-3 rounded-lg border cursor-pointer transition-colors text-sm text-center",
-                          specializations.includes(spec.id)
-                            ? "bg-primary/10 border-primary text-primary"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="sr-only"
-                          checked={specializations.includes(spec.id)}
-                          onChange={() => toggleSpecialization(spec.id)}
-                        />
-                        {spec.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Agent Recruitment */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Agent Recruitment
-                  </h3>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-base">Accept New Agents</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Allow agents to request to join your agency
-                      </p>
+              {/* Specializations Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Specializations</CardTitle>
                     </div>
-                    <Switch
-                      checked={formData.is_accepting_agents}
-                      onCheckedChange={(checked) => updateField('is_accepting_agents', checked)}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Invite Codes Management */}
-                <div className="space-y-4">
-                  <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
-                    Invite Codes
-                  </h3>
-                  
-                  {invites.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No invite codes created yet.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {invites.map((invite) => (
-                        <div 
-                          key={invite.id} 
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {allSpecializations.map((spec) => (
+                        <label
+                          key={spec.id}
                           className={cn(
-                            "flex items-center justify-between p-3 rounded-lg",
-                            invite.is_active ? "bg-muted/50" : "bg-muted/30 opacity-60"
+                            "flex items-center justify-center p-3 rounded-xl border cursor-pointer transition-colors text-sm text-center",
+                            specializations.includes(spec.id)
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "border-border hover:border-primary/50"
                           )}
                         >
-                          <div>
-                            <p className="font-mono font-medium">
-                              {invite.code}
-                              {invite.code === agency.default_invite_code && (
-                                <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
-                              )}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {invite.uses_remaining !== null
-                                ? `${invite.uses_remaining} uses remaining`
-                                : 'Unlimited uses'}
-                              {!invite.is_active && ' • Deactivated'}
-                            </p>
-                          </div>
-                          {invite.is_active && invite.code !== agency.default_invite_code && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Deactivate Invite Code?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will prevent anyone from using this code to join your agency.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deactivateInvite.mutate(invite.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Deactivate
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={specializations.includes(spec.id)}
+                            onChange={() => toggleSpecialization(spec.id)}
+                          />
+                          {spec.label}
+                        </label>
                       ))}
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Create new invite codes from the Agency Dashboard
-                  </p>
-                </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                {/* Submit */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button type="button" variant="outline" onClick={() => navigate('/agency')}>
+              {/* Agent Recruitment Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Users className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Agent Recruitment</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Accept New Agents</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Allow agents to request to join your agency
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.is_accepting_agents}
+                        onCheckedChange={(checked) => updateField('is_accepting_agents', checked)}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Invite Codes Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle>Invite Codes</CardTitle>
+                        <CardDescription>Manage invite codes for your agency</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {invites.length === 0 ? (
+                      <p className="text-sm text-muted-foreground p-4 rounded-xl bg-muted/30 text-center">
+                        No invite codes created yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {invites.map((invite, index) => (
+                          <motion.div 
+                            key={invite.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className={cn(
+                              "flex items-center justify-between p-4 rounded-xl",
+                              invite.is_active ? "bg-muted/30" : "bg-muted/20 opacity-60"
+                            )}
+                          >
+                            <div>
+                              <p className="font-mono font-medium flex items-center gap-2">
+                                {invite.code}
+                                {invite.code === agency.default_invite_code && (
+                                  <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                    Default
+                                  </Badge>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {invite.uses_remaining !== null
+                                  ? `${invite.uses_remaining} uses remaining`
+                                  : 'Unlimited uses'}
+                                {!invite.is_active && ' • Deactivated'}
+                              </p>
+                            </div>
+                            {invite.is_active && invite.code !== agency.default_invite_code && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-2xl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Deactivate Invite Code?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will prevent anyone from using this code to join your agency.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deactivateInvite.mutate(invite.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                                    >
+                                      Deactivate
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Create new invite codes from the Agency Dashboard
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Sticky Save Button */}
+              <motion.div 
+                variants={itemVariants}
+                className="sticky bottom-4"
+              >
+                <div className="flex items-center justify-end gap-3 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
+                  <Button type="button" variant="outline" onClick={() => navigate('/agency')} className="rounded-xl">
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={updateAgency.isPending}>
+                  <Button type="submit" disabled={updateAgency.isPending} className="rounded-xl px-8">
                     {updateAgency.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -505,10 +610,10 @@ export default function AgencySettings() {
                     )}
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </motion.div>
+            </form>
+          </motion.div>
+        </div>
       </div>
     </Layout>
   );
