@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { PropertyType, ListingStatus } from '@/types/database';
 
 export interface PropertyWizardData {
@@ -49,9 +49,12 @@ interface PropertyWizardContextType {
   goBack: () => void;
   canGoNext: boolean;
   isLastStep: boolean;
+  // New save-related properties
+  resetWizard: () => void;
+  loadFromSaved: (savedData: PropertyWizardData) => void;
 }
 
-const defaultData: PropertyWizardData = {
+export const defaultPropertyData: PropertyWizardData = {
   title: '',
   property_type: 'apartment',
   listing_status: 'for_sale',
@@ -84,14 +87,24 @@ const defaultData: PropertyWizardData = {
 const PropertyWizardContext = createContext<PropertyWizardContextType | undefined>(undefined);
 
 const TOTAL_STEPS = 6;
+export const PROPERTY_WIZARD_STORAGE_KEY = 'property-wizard-draft';
 
 export function PropertyWizardProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<PropertyWizardData>(defaultData);
+  const [data, setData] = useState<PropertyWizardData>(defaultPropertyData);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const updateData = (updates: Partial<PropertyWizardData>) => {
+  const updateData = useCallback((updates: Partial<PropertyWizardData>) => {
     setData(prev => ({ ...prev, ...updates }));
-  };
+  }, []);
+
+  const resetWizard = useCallback(() => {
+    setData(defaultPropertyData);
+    setCurrentStep(0);
+  }, []);
+
+  const loadFromSaved = useCallback((savedData: PropertyWizardData) => {
+    setData(savedData);
+  }, []);
 
   const goNext = () => {
     if (currentStep < TOTAL_STEPS - 1) {
@@ -142,6 +155,8 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
         goBack,
         canGoNext,
         isLastStep,
+        resetWizard,
+        loadFromSaved,
       }}
     >
       {children}
