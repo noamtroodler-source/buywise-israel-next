@@ -26,7 +26,19 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Inquiry Sources</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <span>Inquiry Sources</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>How buyers contact you - WhatsApp, phone calls, emails, or contact forms</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-8">
