@@ -88,11 +88,38 @@ export default function AgencyRegister() {
     }));
   };
 
-  const generateSlug = (name: string) => {
+  const generateBaseSlug = (name: string) => {
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  };
+
+  const generateUniqueSlug = async (name: string): Promise<string> => {
+    const baseSlug = generateBaseSlug(name);
+    
+    // Check if base slug or similar slugs exist
+    const { data: existing } = await supabase
+      .from('agencies')
+      .select('slug')
+      .like('slug', `${baseSlug}%`);
+    
+    if (!existing || existing.length === 0) {
+      return baseSlug;
+    }
+    
+    const slugs = existing.map(a => a.slug);
+    if (!slugs.includes(baseSlug)) {
+      return baseSlug;
+    }
+    
+    // Find next available number suffix
+    let suffix = 2;
+    while (slugs.includes(`${baseSlug}-${suffix}`)) {
+      suffix++;
+    }
+    
+    return `${baseSlug}-${suffix}`;
   };
 
   const generateInviteCode = () => {
@@ -169,7 +196,7 @@ export default function AgencyRegister() {
         logoUrl = await uploadLogo();
       }
 
-      const slug = generateSlug(formData.name);
+      const slug = await generateUniqueSlug(formData.name);
       const defaultInviteCode = generateInviteCode();
 
       // Create the agency
