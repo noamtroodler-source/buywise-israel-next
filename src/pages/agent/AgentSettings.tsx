@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, User, Bell, FileText, Globe, Briefcase, MapPin } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, User, Bell, FileText, Globe, Briefcase } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,6 @@ export default function AgentSettings() {
     years_experience: undefined as number | undefined,
     languages: [] as string[],
     specializations: [] as string[],
-    neighborhoods_covered: '',
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -82,7 +81,6 @@ export default function AgentSettings() {
         years_experience: agentProfile.years_experience || undefined,
         languages: agentProfile.languages || [],
         specializations: agentProfile.specializations || [],
-        neighborhoods_covered: agentProfile.neighborhoods_covered?.join(', ') || '',
       });
       setNotificationSettings({
         notify_email: agentProfile.notify_email ?? true,
@@ -139,11 +137,6 @@ export default function AgentSettings() {
     e.preventDefault();
     if (!agentProfile) return;
 
-    const neighborhoods = formData.neighborhoods_covered
-      .split(',')
-      .map(n => n.trim())
-      .filter(Boolean);
-
     updateProfile.mutate({
       id: agentProfile.id,
       name: formData.name,
@@ -154,7 +147,6 @@ export default function AgentSettings() {
       years_experience: formData.years_experience || null,
       languages: formData.languages.length > 0 ? formData.languages : null,
       specializations: formData.specializations.length > 0 ? formData.specializations : null,
-      neighborhoods_covered: neighborhoods.length > 0 ? neighborhoods : null,
       avatar_url: avatarUrl,
       notify_email: notificationSettings.notify_email,
       notify_on_inquiry: notificationSettings.notify_on_inquiry,
@@ -431,33 +423,6 @@ export default function AgentSettings() {
                 </Card>
               </motion.div>
 
-              {/* Coverage Area */}
-              <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
-                  <CardContent className="p-6 space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <MapPin className="h-4 w-4 text-primary" />
-                      </div>
-                      <h3 className="font-semibold text-foreground">Coverage Area</h3>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="neighborhoods">Neighborhoods Covered</Label>
-                      <Input
-                        id="neighborhoods"
-                        value={formData.neighborhoods_covered}
-                        onChange={(e) => updateField('neighborhoods_covered', e.target.value)}
-                        placeholder="e.g., Rechavia, Baka, German Colony"
-                        className="h-11 rounded-xl"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Separate multiple neighborhoods with commas
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
 
               {/* Notification Settings */}
               <motion.div variants={itemVariants}>
