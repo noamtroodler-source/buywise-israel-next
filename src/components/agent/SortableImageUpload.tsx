@@ -140,17 +140,17 @@ export function SortableImageUpload({
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `property-images/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('properties')
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from('property-images')
+        .upload(filePath, file);
 
     if (uploadError) {
       throw uploadError;
     }
 
-    const { data } = supabase.storage
-      .from('properties')
-      .getPublicUrl(filePath);
+      const { data } = supabase.storage
+        .from('property-images')
+        .getPublicUrl(filePath);
 
     return data.publicUrl;
   }, []);
