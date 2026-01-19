@@ -158,7 +158,27 @@ export default function AgencyRegister() {
                       onChange={(e) => updateField('description', e.target.value)}
                       placeholder="Tell clients about your agency, your history, and what makes you unique..."
                       rows={4}
+                      maxLength={800}
                     />
+                    <div className="flex justify-between items-center text-xs">
+                      <span className={
+                        formData.description.length === 0 ? 'text-muted-foreground' :
+                        formData.description.length < 50 ? 'text-destructive' :
+                        formData.description.length < 150 ? 'text-yellow-600' :
+                        formData.description.length <= 400 ? 'text-green-600' :
+                        'text-orange-500'
+                      }>
+                        {formData.description.length}/800 characters
+                        {formData.description.length > 0 && formData.description.length < 50 && ' • Too short'}
+                        {formData.description.length >= 50 && formData.description.length < 150 && ' • Good start'}
+                        {formData.description.length >= 150 && formData.description.length <= 400 && ' • Great length!'}
+                        {formData.description.length > 400 && ' • Consider trimming'}
+                      </span>
+                      <span className="text-muted-foreground">Recommended: 150-400</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      💡 Include your founding story, expertise, team culture, and what sets you apart.
+                    </p>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
