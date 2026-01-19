@@ -33,8 +33,8 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>How buyers contact you - WhatsApp, phone calls, emails, or contact forms</p>
+                <TooltipContent className="font-normal">
+                  How buyers contact you - WhatsApp, phone calls, emails, or contact forms
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -59,8 +59,8 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent>
-                <p>How buyers contact you - WhatsApp, phone calls, emails, or contact forms</p>
+              <TooltipContent className="font-normal">
+                How buyers contact you - WhatsApp, phone calls, emails, or contact forms
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
