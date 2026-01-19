@@ -70,7 +70,7 @@ export function useDeveloperRegistration() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userRoles'] });
       queryClient.invalidateQueries({ queryKey: ['developerProfile'] });
-      toast.success('Successfully registered as a developer!');
+      // Success handled by the dialog
     },
     onError: (error) => {
       toast.error('Failed to register: ' + error.message);

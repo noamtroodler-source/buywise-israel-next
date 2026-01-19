@@ -22,13 +22,31 @@ export function ApplicationSubmittedDialog({ open, onClose }: ApplicationSubmitt
 
   useEffect(() => {
     if (open) {
-      // Trigger confetti with brand colors
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#3b82f6', '#60a5fa', '#93c5fd'],
-      });
+      // Trigger blue-tinted confetti celebration from both sides
+      const duration = 3000;
+      const end = Date.now() + duration;
+      const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'];
+
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
     }
   }, [open]);
 
