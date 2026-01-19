@@ -97,36 +97,29 @@ export default function AgentRegisterWizard() {
   const validateInviteCodeFromUrl = async (code: string) => {
     setIsValidatingCode(true);
     try {
-      // First check agency_invites table
+      // Use secure RPC function to validate invite code
       const { data: inviteData, error: inviteError } = await supabase
-        .from('agency_invites')
-        .select('agency_id, agencies(name)')
-        .eq('code', code.trim())
-        .eq('is_active', true)
-        .maybeSingle();
+        .rpc('validate_agency_invite_code', { invite_code: code.trim() });
 
       if (inviteError) throw inviteError;
 
-      if (inviteData) {
-        setValidatedAgencyId(inviteData.agency_id);
-        setValidatedAgencyName((inviteData.agencies as any)?.name || 'Agency');
-        toast.success(`Invite code validated for ${(inviteData.agencies as any)?.name || 'Agency'}`);
+      if (inviteData && inviteData.length > 0) {
+        setValidatedAgencyId(inviteData[0].agency_id);
+        setValidatedAgencyName(inviteData[0].agency_name || 'Agency');
+        toast.success(`Invite code validated for ${inviteData[0].agency_name || 'Agency'}`);
         return;
       }
 
-      // Fallback: check agencies.default_invite_code
-      const { data: agencyData, error: agencyError } = await supabase
-        .from('agencies')
-        .select('id, name')
-        .eq('default_invite_code', code.trim())
-        .maybeSingle();
+      // Fallback: check default invite code via secure RPC
+      const { data: defaultData, error: defaultError } = await supabase
+        .rpc('validate_default_invite_code', { invite_code: code.trim() });
 
-      if (agencyError) throw agencyError;
+      if (defaultError) throw defaultError;
 
-      if (agencyData) {
-        setValidatedAgencyId(agencyData.id);
-        setValidatedAgencyName(agencyData.name || 'Agency');
-        toast.success(`Invite code validated for ${agencyData.name || 'Agency'}`);
+      if (defaultData && defaultData.length > 0) {
+        setValidatedAgencyId(defaultData[0].agency_id);
+        setValidatedAgencyName(defaultData[0].agency_name || 'Agency');
+        toast.success(`Invite code validated for ${defaultData[0].agency_name || 'Agency'}`);
       } else {
         toast.error('Invalid or expired invite code');
       }
@@ -165,36 +158,29 @@ export default function AgentRegisterWizard() {
     
     setIsValidatingCode(true);
     try {
-      // First check agency_invites table
+      // Use secure RPC function to validate invite code
       const { data: inviteData, error: inviteError } = await supabase
-        .from('agency_invites')
-        .select('agency_id, agencies(name)')
-        .eq('code', formData.invite_code.trim())
-        .eq('is_active', true)
-        .maybeSingle();
+        .rpc('validate_agency_invite_code', { invite_code: formData.invite_code.trim() });
 
       if (inviteError) throw inviteError;
 
-      if (inviteData) {
-        setValidatedAgencyId(inviteData.agency_id);
-        setValidatedAgencyName((inviteData.agencies as any)?.name || 'Agency');
-        toast.success(`Valid code for ${(inviteData.agencies as any)?.name || 'Agency'}`);
+      if (inviteData && inviteData.length > 0) {
+        setValidatedAgencyId(inviteData[0].agency_id);
+        setValidatedAgencyName(inviteData[0].agency_name || 'Agency');
+        toast.success(`Valid code for ${inviteData[0].agency_name || 'Agency'}`);
         return;
       }
 
-      // Fallback: check agencies.default_invite_code
-      const { data: agencyData, error: agencyError } = await supabase
-        .from('agencies')
-        .select('id, name')
-        .eq('default_invite_code', formData.invite_code.trim())
-        .maybeSingle();
+      // Fallback: check default invite code via secure RPC
+      const { data: defaultData, error: defaultError } = await supabase
+        .rpc('validate_default_invite_code', { invite_code: formData.invite_code.trim() });
 
-      if (agencyError) throw agencyError;
+      if (defaultError) throw defaultError;
 
-      if (agencyData) {
-        setValidatedAgencyId(agencyData.id);
-        setValidatedAgencyName(agencyData.name || 'Agency');
-        toast.success(`Valid code for ${agencyData.name || 'Agency'}`);
+      if (defaultData && defaultData.length > 0) {
+        setValidatedAgencyId(defaultData[0].agency_id);
+        setValidatedAgencyName(defaultData[0].agency_name || 'Agency');
+        toast.success(`Valid code for ${defaultData[0].agency_name || 'Agency'}`);
       } else {
         toast.error('Invalid or expired invite code');
         setValidatedAgencyId(null);
