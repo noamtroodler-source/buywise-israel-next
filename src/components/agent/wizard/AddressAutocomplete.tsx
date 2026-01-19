@@ -1,25 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 import { Input } from '@/components/ui/input';
 import { Loader2, MapPin, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface AddressResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-  address: {
-    road?: string;
-    house_number?: string;
-    suburb?: string;
-    neighbourhood?: string;
-    city?: string;
-    town?: string;
-    village?: string;
-    state?: string;
-    country?: string;
-  };
-  place_id: number;
-}
+import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 
 interface ParsedAddress {
   streetAddress: string;
@@ -38,31 +22,264 @@ interface AddressAutocompleteProps {
   className?: string;
 }
 
-export function AddressAutocomplete({
+// Fallback to Nominatim when Google Maps is not available
+async function searchNominatim(query: string): Promise<NominatimResult[]> {
+  if (query.length < 3) return [];
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?` +
+      new URLSearchParams({
+        q: query,
+        format: 'json',
+        addressdetails: '1',
+        countrycodes: 'il',
+        limit: '5',
+        'accept-language': 'en',
+      }),
+      { headers: { 'User-Agent': 'BuywiseIsrael/1.0' } }
+    );
+    if (!response.ok) throw new Error('Search failed');
+    return response.json();
+  } catch {
+    return [];
+  }
+}
+
+interface NominatimResult {
+  display_name: string;
+  lat: string;
+  lon: string;
+  address: {
+    road?: string;
+    house_number?: string;
+    suburb?: string;
+    neighbourhood?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+  };
+  place_id: number;
+}
+
+function parseNominatimResult(result: NominatimResult): ParsedAddress {
+  const { address } = result;
+  const streetParts: string[] = [];
+  if (address.road) streetParts.push(address.road);
+  if (address.house_number) streetParts.push(address.house_number);
+  
+  return {
+    streetAddress: streetParts.join(' '),
+    neighborhood: address.neighbourhood || address.suburb || '',
+    city: address.city || address.town || address.village || '',
+    latitude: parseFloat(result.lat),
+    longitude: parseFloat(result.lon),
+    placeId: result.place_id.toString(),
+    fullAddress: result.display_name,
+  };
+}
+
+// Google Places component
+function GoogleAddressAutocomplete({
   value,
   onAddressSelect,
-  placeholder = 'Start typing an address...',
+  placeholder,
+  className,
+}: AddressAutocompleteProps) {
+  const [hasValidSelection, setHasValidSelection] = useState(!!value);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const {
+    ready,
+    value: inputValue,
+    suggestions: { status, data },
+    setValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: {
+      componentRestrictions: { country: 'il' },
+      types: ['address'],
+    },
+    debounce: 300,
+    defaultValue: value,
+  });
+
+  // Sync external value
+  useEffect(() => {
+    if (value) {
+      setValue(value, false);
+      setHasValidSelection(true);
+    }
+  }, [value, setValue]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        clearSuggestions();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [clearSuggestions]);
+
+  const handleSelect = useCallback(async (placeId: string, description: string) => {
+    setValue(description, false);
+    clearSuggestions();
+    setHasValidSelection(true);
+
+    try {
+      const results = await getGeocode({ placeId });
+      const { lat, lng } = await getLatLng(results[0]);
+      
+      // Parse address components
+      const components = results[0].address_components;
+      let streetNumber = '';
+      let streetName = '';
+      let neighborhood = '';
+      let city = '';
+
+      for (const component of components) {
+        const types = component.types;
+        if (types.includes('street_number')) {
+          streetNumber = component.long_name;
+        } else if (types.includes('route')) {
+          streetName = component.long_name;
+        } else if (types.includes('neighborhood') || types.includes('sublocality_level_1') || types.includes('sublocality')) {
+          neighborhood = component.long_name;
+        } else if (types.includes('locality')) {
+          city = component.long_name;
+        }
+      }
+
+      const streetAddress = streetNumber 
+        ? `${streetName} ${streetNumber}` 
+        : streetName;
+
+      onAddressSelect({
+        streetAddress,
+        neighborhood,
+        city,
+        latitude: lat,
+        longitude: lng,
+        placeId,
+        fullAddress: description,
+      });
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+    }
+  }, [setValue, clearSuggestions, onAddressSelect]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (status !== 'OK' || data.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(prev + 1, data.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(prev - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && data[selectedIndex]) {
+          handleSelect(data[selectedIndex].place_id, data[selectedIndex].description);
+        }
+        break;
+      case 'Escape':
+        clearSuggestions();
+        break;
+    }
+  };
+
+  const isOpen = status === 'OK' && data.length > 0;
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Input
+          value={inputValue}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setHasValidSelection(false);
+            setSelectedIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
+          disabled={!ready}
+          placeholder={placeholder}
+          className={cn(
+            'h-11 rounded-xl pr-10',
+            hasValidSelection && 'border-green-500/50 bg-green-500/5',
+            className
+          )}
+        />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          {!ready ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : hasValidSelection ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover shadow-lg">
+          <ul className="max-h-[240px] overflow-auto py-1">
+            {data.map((suggestion, index) => (
+              <li
+                key={suggestion.place_id}
+                onClick={() => handleSelect(suggestion.place_id, suggestion.description)}
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={cn(
+                  'flex cursor-pointer items-center gap-3 px-3 py-2.5 text-sm transition-colors',
+                  index === selectedIndex
+                    ? 'bg-accent text-accent-foreground'
+                    : 'hover:bg-accent/50'
+                )}
+              >
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">{suggestion.description}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Type at least 3 characters to search
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Nominatim fallback component
+function NominatimAddressAutocomplete({
+  value,
+  onAddressSelect,
+  placeholder,
   className,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
-  const [suggestions, setSuggestions] = useState<AddressResult[]>([]);
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [hasValidSelection, setHasValidSelection] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  // Sync external value changes
   useEffect(() => {
     setInputValue(value);
-    if (value) {
-      setHasValidSelection(true);
-    }
+    if (value) setHasValidSelection(true);
   }, [value]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -73,89 +290,25 @@ export function AddressAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const searchAddress = useCallback(async (query: string) => {
-    if (query.length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Use Nominatim with Israel country code for better results
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-        new URLSearchParams({
-          q: query,
-          format: 'json',
-          addressdetails: '1',
-          countrycodes: 'il',
-          limit: '5',
-          'accept-language': 'en',
-        }),
-        {
-          headers: {
-            'User-Agent': 'BuywiseIsrael/1.0',
-          },
-        }
-      );
-
-      if (!response.ok) throw new Error('Search failed');
-
-      const results: AddressResult[] = await response.json();
-      setSuggestions(results);
-      setIsOpen(results.length > 0);
-      setSelectedIndex(-1);
-    } catch (error) {
-      console.error('Address search error:', error);
-      setSuggestions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
     setHasValidSelection(false);
 
-    // Debounce the search
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    debounceRef.current = setTimeout(() => {
-      searchAddress(newValue);
+    debounceRef.current = setTimeout(async () => {
+      setIsLoading(true);
+      const results = await searchNominatim(newValue);
+      setSuggestions(results);
+      setIsOpen(results.length > 0);
+      setSelectedIndex(-1);
+      setIsLoading(false);
     }, 300);
   };
 
-  const parseAddressResult = (result: AddressResult): ParsedAddress => {
-    const { address } = result;
-    
-    // Build street address
-    const streetParts: string[] = [];
-    if (address.road) streetParts.push(address.road);
-    if (address.house_number) streetParts.push(address.house_number);
-    const streetAddress = streetParts.join(' ');
-
-    // Get neighborhood - Nominatim uses various fields
-    const neighborhood = address.neighbourhood || address.suburb || '';
-
-    // Get city - Nominatim uses city, town, or village
-    const city = address.city || address.town || address.village || '';
-
-    return {
-      streetAddress,
-      neighborhood,
-      city,
-      latitude: parseFloat(result.lat),
-      longitude: parseFloat(result.lon),
-      placeId: result.place_id.toString(),
-      fullAddress: result.display_name,
-    };
-  };
-
-  const handleSelect = (result: AddressResult) => {
-    const parsed = parseAddressResult(result);
+  const handleSelect = (result: NominatimResult) => {
+    const parsed = parseNominatimResult(result);
     setInputValue(parsed.streetAddress || parsed.fullAddress);
     setHasValidSelection(true);
     setIsOpen(false);
@@ -169,13 +322,11 @@ export function AddressAutocomplete({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : prev
-        );
+        setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : prev);
+        setSelectedIndex(prev => Math.max(prev - 1, 0));
         break;
       case 'Enter':
         e.preventDefault();
@@ -189,8 +340,7 @@ export function AddressAutocomplete({
     }
   };
 
-  const formatSuggestion = (result: AddressResult) => {
-    // Show a cleaner format: Street, Neighborhood/City
+  const formatSuggestion = (result: NominatimResult) => {
     const parts: string[] = [];
     const { address } = result;
     
@@ -216,7 +366,6 @@ export function AddressAutocomplete({
     <div ref={containerRef} className="relative">
       <div className="relative">
         <Input
-          ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -271,4 +420,16 @@ export function AddressAutocomplete({
       )}
     </div>
   );
+}
+
+// Main component that decides which implementation to use
+export function AddressAutocomplete(props: AddressAutocompleteProps) {
+  const { isLoaded, loadError } = useGoogleMaps();
+  
+  // Use Google Places if available, otherwise fall back to Nominatim
+  if (isLoaded && !loadError) {
+    return <GoogleAddressAutocomplete {...props} />;
+  }
+  
+  return <NominatimAddressAutocomplete {...props} />;
 }

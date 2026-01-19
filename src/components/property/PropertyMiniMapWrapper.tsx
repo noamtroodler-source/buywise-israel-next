@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState, useEffect, Component, ReactNode } from 'react';
 import { MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
+import { GoogleMiniMap } from '@/components/maps/GoogleMiniMap';
 
 const PropertyMiniMap = lazy(() => 
   import('./PropertyMiniMap').then(module => ({ default: module.PropertyMiniMap }))
@@ -18,6 +20,8 @@ interface Props {
   longitude: number;
   propertyTitle?: string;
   nearbyPOIs?: POIMarker[];
+  draggable?: boolean;
+  onPositionChange?: (lat: number, lng: number) => void;
 }
 
 // Simple inline error boundary for the map
@@ -67,15 +71,42 @@ function MapFallback({ latitude, longitude }: { latitude?: number; longitude?: n
   );
 }
 
-export function PropertyMiniMapWrapper({ latitude, longitude, propertyTitle, nearbyPOIs }: Props) {
+export function PropertyMiniMapWrapper({ 
+  latitude, 
+  longitude, 
+  propertyTitle, 
+  nearbyPOIs,
+  draggable = false,
+  onPositionChange,
+}: Props) {
   const [hasError, setHasError] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const { isLoaded: googleMapsLoaded, loadError: googleMapsError } = useGoogleMaps();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (hasError || !isMounted) {
+  if (!isMounted) {
+    return <MapFallback latitude={latitude} longitude={longitude} />;
+  }
+
+  // Prefer Google Maps if available
+  if (googleMapsLoaded && !googleMapsError) {
+    return (
+      <GoogleMiniMap
+        latitude={latitude}
+        longitude={longitude}
+        propertyTitle={propertyTitle}
+        nearbyPOIs={nearbyPOIs}
+        draggable={draggable}
+        onPositionChange={onPositionChange}
+      />
+    );
+  }
+
+  // Fall back to Leaflet/OpenStreetMap
+  if (hasError) {
     return <MapFallback latitude={latitude} longitude={longitude} />;
   }
 
