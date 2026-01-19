@@ -19,7 +19,7 @@ import {
 } from '@/components/agent/wizard/steps';
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
-import confetti from 'canvas-confetti';
+import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -96,6 +96,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
   const updateProperty = useUpdateProperty();
   const submitForReview = useSubmitForReview();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   
   const isAgentVerified = agentProfile?.status === 'active';
@@ -217,15 +218,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
       // Then submit for review
       await submitForReview.mutateAsync(propertyId);
       
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      
-      setTimeout(() => {
-        navigate('/agent/properties');
-      }, 1500);
+      setShowSuccessDialog(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -441,6 +434,13 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
             </motion.div>
           </motion.div>
         </div>
+
+        <PropertySubmittedDialog
+          open={showSuccessDialog}
+          onClose={() => setShowSuccessDialog(false)}
+          propertyTitle={data.title}
+          isResubmission={verificationStatus !== 'draft'}
+        />
       </div>
     </Layout>
   );
