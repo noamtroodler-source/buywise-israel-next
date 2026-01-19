@@ -296,7 +296,7 @@ export default function AgencyDashboard() {
                     return (
                       <div className="space-y-3">
                         {/* Invite Code */}
-                        <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -310,9 +310,9 @@ export default function AgencyDashboard() {
                               </div>
                             </div>
                             <Button
-                              variant="secondary"
+                              variant="outline"
                               size="sm"
-                              className="rounded-xl flex-shrink-0"
+                              className="rounded-xl border-primary/30 hover:bg-primary/10 flex-shrink-0"
                               onClick={() => copyToClipboard(agency.default_invite_code!)}
                             >
                               {copiedCode === agency.default_invite_code ? (
