@@ -11,10 +11,20 @@ export interface PropertyForReview {
   city: string;
   neighborhood: string | null;
   price: number;
+  currency: string | null;
   property_type: string;
+  listing_status: string;
   bedrooms: number | null;
   bathrooms: number | null;
   size_sqm: number | null;
+  floor: number | null;
+  total_floors: number | null;
+  year_built: number | null;
+  parking: number | null;
+  condition: string | null;
+  ac_type: string | null;
+  entry_date: string | null;
+  features: string[] | null;
   images: string[] | null;
   description: string | null;
   verification_status: VerificationStatus;
@@ -47,10 +57,20 @@ export function useListingsForReview(status?: VerificationStatus) {
           city,
           neighborhood,
           price,
+          currency,
           property_type,
+          listing_status,
           bedrooms,
           bathrooms,
           size_sqm,
+          floor,
+          total_floors,
+          year_built,
+          parking,
+          condition,
+          ac_type,
+          entry_date,
+          features,
           images,
           description,
           verification_status,
