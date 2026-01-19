@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { 
   Check, X, MessageSquare, Eye, MapPin, Bed, Bath, 
-  Ruler, Calendar, User, Building2, ExternalLink, ChevronDown, ChevronUp
+  Ruler, User, Building2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,8 +21,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { PropertyForReview } from '@/hooks/useListingReview';
-import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
@@ -43,6 +42,7 @@ export function ListingReviewCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showChangesDialog, setShowChangesDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
 
@@ -259,13 +259,15 @@ export function ListingReviewCard({
                   <X className="h-4 w-4 mr-1" />
                   Reject
                 </Button>
-                <Link to={`/property/${property.id}`} target="_blank" className="ml-auto">
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Preview
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-auto"
+                  onClick={() => setShowPreviewModal(true)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Preview
+                </Button>
               </div>
             </div>
           </div>
@@ -363,6 +365,13 @@ export function ListingReviewCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Preview Modal */}
+      <PropertyPreviewModal 
+        property={property} 
+        open={showPreviewModal} 
+        onOpenChange={setShowPreviewModal} 
+      />
     </>
   );
 }
