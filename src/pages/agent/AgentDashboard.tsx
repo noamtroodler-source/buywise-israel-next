@@ -35,6 +35,9 @@ export default function AgentDashboard() {
     return stored ? JSON.parse(stored) : [];
   });
 
+  // State for expanding batch approval list
+  const [showAllApproved, setShowAllApproved] = useState(false);
+
   // Find recently approved properties (within last 7 days)
   const recentlyApproved = useMemo(() => {
     const sevenDaysAgo = new Date();
@@ -50,10 +53,23 @@ export default function AgentDashboard() {
     );
   }, [properties, dismissedApprovals]);
 
+  // Visible approved properties (collapsed to 3 by default when batch)
+  const visibleApproved = showAllApproved 
+    ? recentlyApproved 
+    : recentlyApproved.slice(0, 3);
+
   const handleDismissApproval = (propertyId: string) => {
     const updated = [...dismissedApprovals, propertyId];
     setDismissedApprovals(updated);
     localStorage.setItem('dismissed-approval-alerts', JSON.stringify(updated));
+  };
+
+  const handleDismissAllApprovals = () => {
+    const allIds = recentlyApproved.map(p => p.id);
+    const updated = [...dismissedApprovals, ...allIds];
+    setDismissedApprovals(updated);
+    localStorage.setItem('dismissed-approval-alerts', JSON.stringify(updated));
+    setShowAllApproved(false);
   };
 
   const formatApprovalDate = (dateString: string) => {
@@ -170,17 +186,17 @@ export default function AgentDashboard() {
             </div>
           </div>
 
-          {/* Property Went Live Alerts */}
-          {recentlyApproved.map((property) => (
+          {/* Property Went Live Alerts - Single vs Batch */}
+          {recentlyApproved.length === 1 ? (
+            // Single approval - full card
             <motion.div
-              key={`approval-${property.id}`}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
               <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4">
                 <button
-                  onClick={() => handleDismissApproval(property.id)}
+                  onClick={() => handleDismissApproval(recentlyApproved[0].id)}
                   className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <X className="h-4 w-4 text-muted-foreground" />
@@ -194,7 +210,7 @@ export default function AgentDashboard() {
                       Congratulations! Your listing is now live
                     </h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      <span className="font-medium text-foreground">"{property.title}"</span> was approved and went live {formatApprovalDate(property.reviewed_at!)}
+                      <span className="font-medium text-foreground">"{recentlyApproved[0].title}"</span> was approved and went live {formatApprovalDate(recentlyApproved[0].reviewed_at!)}
                     </p>
                     <Button
                       variant="link"
@@ -202,7 +218,7 @@ export default function AgentDashboard() {
                       asChild
                       className="h-auto p-0 mt-2 text-primary"
                     >
-                      <Link to={`/properties/${property.id}`}>
+                      <Link to={`/properties/${recentlyApproved[0].id}`}>
                         View Listing →
                       </Link>
                     </Button>
@@ -210,7 +226,106 @@ export default function AgentDashboard() {
                 </div>
               </div>
             </motion.div>
-          ))}
+          ) : recentlyApproved.length >= 2 ? (
+            // Batch approvals - consolidated card
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-4">
+                <button
+                  onClick={handleDismissAllApprovals}
+                  className="absolute top-3 right-3 p-1 rounded-lg hover:bg-primary/10 transition-colors"
+                  title="Dismiss all"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+                
+                {/* Header */}
+                <div className="flex items-start gap-4 pr-8">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <PartyPopper className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      🎉 {recentlyApproved.length} Listings Are Now Live!
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your properties were approved and are visible to buyers
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Compact property list */}
+                <div className="mt-4 space-y-2 bg-background/50 rounded-lg p-3">
+                  {visibleApproved.map((property) => (
+                    <div 
+                      key={property.id}
+                      className="flex items-center justify-between text-sm gap-2"
+                    >
+                      <span className="truncate text-foreground font-medium min-w-0 flex-1">
+                        "{property.title}"
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-muted-foreground text-xs hidden sm:inline">
+                          {formatApprovalDate(property.reviewed_at!)}
+                        </span>
+                        <Link 
+                          to={`/properties/${property.id}`}
+                          className="text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <button 
+                          onClick={() => handleDismissApproval(property.id)}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          title="Dismiss"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Show more toggle */}
+                  {recentlyApproved.length > 3 && !showAllApproved && (
+                    <button 
+                      onClick={() => setShowAllApproved(true)}
+                      className="text-sm text-primary hover:underline pt-1"
+                    >
+                      Show {recentlyApproved.length - 3} more
+                    </button>
+                  )}
+                  {showAllApproved && recentlyApproved.length > 3 && (
+                    <button 
+                      onClick={() => setShowAllApproved(false)}
+                      className="text-sm text-muted-foreground hover:underline pt-1"
+                    >
+                      Show less
+                    </button>
+                  )}
+                </div>
+                
+                {/* Footer actions */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-primary/10">
+                  <Button variant="link" asChild className="h-auto p-0 text-primary">
+                    <Link to="/agent/properties?tab=approved">
+                      View All Live Listings →
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleDismissAllApprovals}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Dismiss All
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          ) : null}
 
           {/* Pending Verification Alert */}
           {agentProfile?.status === 'pending' && (
