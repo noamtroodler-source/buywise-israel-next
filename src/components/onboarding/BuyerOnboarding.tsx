@@ -208,7 +208,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium">New Oleh (Within 7 Years)</p>
-                          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
+                          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
                         </div>
                         <p className="text-sm text-muted-foreground">I made Aliyah recently — eligible for reduced purchase tax rates</p>
                       </div>

@@ -20,7 +20,7 @@ export function ProfilePriceAlerts() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <TrendingDown className="h-5 w-5 text-green-600" />
+          <TrendingDown className="h-5 w-5 text-primary" />
           Price Drop Alerts
         </CardTitle>
         {unreadCount > 0 && (
@@ -71,7 +71,7 @@ export function ProfilePriceAlerts() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                    notification.is_read ? 'bg-background' : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800'
+                    notification.is_read ? 'bg-background' : 'bg-primary/5 border-primary/20'
                   }`}
                 >
                   <div className="shrink-0 w-12 h-12 rounded-md bg-muted overflow-hidden">
@@ -98,7 +98,7 @@ export function ProfilePriceAlerts() {
                           {notification.property?.city}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 shrink-0">
+                      <Badge variant="secondary" className="bg-primary/10 text-primary shrink-0">
                         -{notification.drop_percent}%
                       </Badge>
                     </div>
@@ -107,7 +107,7 @@ export function ProfilePriceAlerts() {
                       <span className="line-through text-muted-foreground">
                         {formatPrice(notification.previous_price)}
                       </span>
-                      <span className="text-green-600 font-medium">
+                      <span className="text-primary font-medium">
                         → {formatPrice(notification.new_price)}
                       </span>
                     </div>

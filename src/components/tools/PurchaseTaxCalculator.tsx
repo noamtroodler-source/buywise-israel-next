@@ -80,10 +80,10 @@ export function PurchaseTaxCalculator() {
       return {
         ...item,
         percentage,
-        color: index === 0 ? 'bg-green-500' : 
-               index === 1 ? 'bg-blue-500' : 
-               index === 2 ? 'bg-amber-500' : 
-               index === 3 ? 'bg-orange-500' : 'bg-red-500'
+        color: index === 0 ? 'bg-primary/30' : 
+               index === 1 ? 'bg-primary/50' : 
+               index === 2 ? 'bg-primary/70' : 
+               index === 3 ? 'bg-primary/85' : 'bg-primary'
       };
     });
   }, [taxResult, propertyPrice]);
@@ -169,12 +169,12 @@ export function PurchaseTaxCalculator() {
           {olehBenefitInfo && (
             <div className="text-sm">
               {olehBenefitInfo.eligible ? (
-                <Badge variant="secondary" className="text-green-700 bg-green-100">
+                <Badge variant="secondary" className="text-primary bg-primary/10">
                   <Check className="h-3 w-3 mr-1" />
                   Eligible: {olehBenefitInfo.yearsRemaining} years remaining (until {olehBenefitInfo.expiryYear})
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="text-amber-700 bg-amber-100">
+                <Badge variant="secondary" className="text-muted-foreground bg-muted">
                   7-year benefit period expired
                 </Badge>
               )}
@@ -209,11 +209,11 @@ export function PurchaseTaxCalculator() {
                 {upgraderTimeline.deadline.toLocaleDateString('he-IL')}
               </p>
               {upgraderTimeline.isEligible ? (
-                <Badge variant="secondary" className="text-green-700 bg-green-100">
+                <Badge variant="secondary" className="text-primary bg-primary/10">
                   {upgraderTimeline.daysRemaining} days remaining
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="text-red-700 bg-red-100">
+                <Badge variant="secondary" className="text-muted-foreground bg-muted">
                   Deadline passed
                 </Badge>
               )}
@@ -319,7 +319,7 @@ export function PurchaseTaxCalculator() {
                       {formatCurrency(data.tax)}
                     </span>
                     {!isSelected && savings !== 0 && (
-                      <span className={`text-xs ml-2 ${savings > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`text-xs ml-2 ${savings > 0 ? 'text-primary' : 'text-muted-foreground'}`}>
                         {savings > 0 ? `+${formatCurrency(savings)}` : formatCurrency(savings)}
                       </span>
                     )}

@@ -129,7 +129,7 @@ export function BuyerProfileSelector({
                       <RadioGroupItem value="oleh_hadash" className="h-3.5 w-3.5" />
                       New Oleh (Within 7 Years)
                     </div>
-                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
+                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">Tax Benefit</span>
                   </Label>
                   <Label
                     className={cn(
@@ -280,7 +280,7 @@ export function BuyerProfileSelector({
                   <div className="space-y-1">
                     {derived.benefits.slice(0, 2).map((benefit, i) => (
                       <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                        <Check className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
                         {benefit}
                       </div>
                     ))}
@@ -290,7 +290,7 @@ export function BuyerProfileSelector({
                 {derived.warnings && derived.warnings.length > 0 && (
                   <div className="space-y-1">
                     {derived.warnings.slice(0, 1).map((warning, i) => (
-                      <div key={i} className="flex items-start gap-1.5 text-xs text-amber-600">
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                         <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                         {warning}
                       </div>
