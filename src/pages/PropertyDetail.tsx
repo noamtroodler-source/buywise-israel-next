@@ -203,7 +203,7 @@ export default function PropertyDetail() {
 
           {/* Sticky Sidebar - Desktop Only */}
           <div className="hidden lg:block">
-            <div className="sticky top-6">
+            <div className="sticky top-20">
               <StickyContactCard 
                 agent={property.agent}
                 propertyId={property.id}
