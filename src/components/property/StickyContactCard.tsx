@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Phone, Mail, Clock, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { MessageCircle, Mail, Clock, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
@@ -64,22 +64,6 @@ export function StickyContactCard({
       const cleanPhone = agent.phone.replace(/\D/g, '');
       const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-    }
-  };
-
-  const handleCall = () => {
-    if (agent?.phone) {
-      // Track the inquiry
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'call',
-          userId: user?.id,
-        });
-      }
-      
-      window.location.href = `tel:${agent.phone}`;
     }
   };
 
@@ -168,26 +152,15 @@ export function StickyContactCard({
             </Button>
           )}
           
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="flex-1 gap-1.5"
-              onClick={handleCall}
-              disabled={!agent?.phone}
-            >
-              <Phone className="h-4 w-4" />
-              Call
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1 gap-1.5"
-              onClick={handleEmail}
-              disabled={!agent?.email}
-            >
-              <Mail className="h-4 w-4" />
-              Email
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            className="w-full gap-1.5"
+            onClick={handleEmail}
+            disabled={!agent?.email}
+          >
+            <Mail className="h-4 w-4" />
+            Email
+          </Button>
           
           {agent && (
             <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
@@ -275,22 +248,6 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
     }
   };
 
-  const handleCall = () => {
-    if (agent?.phone) {
-      // Track the inquiry
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'call',
-          userId: user?.id,
-        });
-      }
-      
-      window.location.href = `tel:${agent.phone}`;
-    }
-  };
-
   const handleContact = () => {
     if (agent?.phone) {
       handleWhatsApp();
@@ -304,24 +261,15 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50 md:hidden">
-      <div className="max-w-lg mx-auto flex gap-2">
+      <div className="max-w-lg mx-auto">
         <Button 
-          className="flex-1 gap-2" 
+          className="w-full gap-2" 
           size="lg"
           onClick={handleContact}
         >
           <MessageCircle className="h-5 w-5" />
           {agent?.phone ? 'WhatsApp' : 'Contact Agent'}
         </Button>
-        {agent?.phone && (
-          <Button 
-            variant="outline" 
-            size="lg"
-            onClick={handleCall}
-          >
-            <Phone className="h-5 w-5" />
-          </Button>
-        )}
       </div>
     </div>
   );

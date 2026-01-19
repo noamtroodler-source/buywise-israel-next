@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Phone, MessageCircle, Mail } from 'lucide-react';
+import { MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -22,12 +22,6 @@ export function AgentContactSection({ agent, propertyTitle }: AgentContactSectio
     if (agent?.phone) {
       const message = encodeURIComponent(`Hi, I'm interested in the property: ${propertyTitle}`);
       window.open(`https://wa.me/${agent.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
-    }
-  };
-
-  const handleCall = () => {
-    if (agent?.phone) {
-      window.open(`tel:${agent.phone}`, '_self');
     }
   };
 
@@ -91,16 +85,6 @@ export function AgentContactSection({ agent, propertyTitle }: AgentContactSectio
             >
               <MessageCircle className="h-4 w-4" />
               WhatsApp
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="gap-2 flex-1 sm:flex-initial"
-              onClick={handleCall}
-              disabled={!agent.phone}
-            >
-              <Phone className="h-4 w-4" />
-              Call
             </Button>
 
             <Button 
