@@ -27,7 +27,7 @@ import {
   useUpdateAgentStatus,
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
-import { useState } from 'react';
+import { useAgencyAnnouncements } from '@/hooks/useAgencyAnnouncements';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RemoveAgentDialog } from '@/components/agency/RemoveAgentDialog';
