@@ -31,7 +31,19 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
     return (
       <Card className="rounded-2xl border-primary/10">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Activity by Hour</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <span>Activity by Hour</span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>When buyers tap your contact buttons throughout the day</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-8">
