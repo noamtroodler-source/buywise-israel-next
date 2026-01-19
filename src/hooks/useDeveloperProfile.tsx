@@ -21,6 +21,18 @@ export interface DeveloperProfile {
   approved_at: string | null;
   created_at: string;
   updated_at: string;
+  // New fields
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  office_address: string | null;
+  office_city: string | null;
+  company_size: string | null;
+  company_type: string | null;
+  specialties: string[] | null;
+  email_verified_at: string | null;
+  onboarding_completed_at: string | null;
+  last_active_at: string | null;
 }
 
 export function useDeveloperProfile() {

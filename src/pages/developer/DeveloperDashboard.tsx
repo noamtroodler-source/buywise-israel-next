@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
+import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
+import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
+import { DeveloperPerformanceInsights } from '@/components/developer/DeveloperPerformanceInsights';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,7 +101,14 @@ export default function DeveloperDashboard() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <DeveloperNotificationBell />
+              <Button variant="outline" asChild className="rounded-xl">
+                <Link to="/developer/leads">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Leads
+                </Link>
+              </Button>
               <Button variant="outline" asChild className="rounded-xl">
                 <Link to="/developer/settings">
                   <Settings className="h-4 w-4 mr-2" />
@@ -129,6 +139,11 @@ export default function DeveloperDashboard() {
           animate="visible"
           className="space-y-8"
         >
+          {/* Onboarding Progress */}
+          <motion.div variants={itemVariants}>
+            <DeveloperOnboardingProgress />
+          </motion.div>
+
           {/* Pending Verification Alert */}
           {developerProfile?.verification_status === 'pending' && (
             <motion.div variants={itemVariants}>
@@ -161,6 +176,11 @@ export default function DeveloperDashboard() {
               </div>
             </motion.div>
           )}
+
+          {/* Performance Insights */}
+          <motion.div variants={itemVariants}>
+            <DeveloperPerformanceInsights />
+          </motion.div>
 
           {/* Stats Cards */}
           <motion.div variants={itemVariants} className="grid gap-4 grid-cols-2 lg:grid-cols-6">

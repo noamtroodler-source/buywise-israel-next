@@ -988,21 +988,73 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          developer_id: string
+          id: string
+          is_read: boolean
+          message: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          developer_id: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          developer_id?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_notifications_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       developers: {
         Row: {
           admin_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          company_size: string | null
+          company_type: string | null
           created_at: string
           description: string | null
           email: string | null
+          email_verified_at: string | null
+          facebook_url: string | null
           founded_year: number | null
           id: string
+          instagram_url: string | null
           is_verified: boolean | null
+          last_active_at: string | null
+          linkedin_url: string | null
           logo_url: string | null
           name: string
+          office_address: string | null
+          office_city: string | null
+          onboarding_completed_at: string | null
           phone: string | null
           slug: string
+          specialties: string[] | null
           status: string | null
           total_projects: number | null
           updated_at: string
@@ -1014,16 +1066,27 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          company_size?: string | null
+          company_type?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
+          email_verified_at?: string | null
+          facebook_url?: string | null
           founded_year?: number | null
           id?: string
+          instagram_url?: string | null
           is_verified?: boolean | null
+          last_active_at?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name: string
+          office_address?: string | null
+          office_city?: string | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           slug: string
+          specialties?: string[] | null
           status?: string | null
           total_projects?: number | null
           updated_at?: string
@@ -1035,16 +1098,27 @@ export type Database = {
           admin_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          company_size?: string | null
+          company_type?: string | null
           created_at?: string
           description?: string | null
           email?: string | null
+          email_verified_at?: string | null
+          facebook_url?: string | null
           founded_year?: number | null
           id?: string
+          instagram_url?: string | null
           is_verified?: boolean | null
+          last_active_at?: string | null
+          linkedin_url?: string | null
           logo_url?: string | null
           name?: string
+          office_address?: string | null
+          office_city?: string | null
+          onboarding_completed_at?: string | null
           phone?: string | null
           slug?: string
+          specialties?: string[] | null
           status?: string | null
           total_projects?: number | null
           updated_at?: string
@@ -1540,9 +1614,13 @@ export type Database = {
           is_read: boolean | null
           message: string
           name: string
+          notes: string | null
           phone: string | null
           preferred_unit_type: string | null
           project_id: string
+          responded_at: string | null
+          response_method: string | null
+          status: string | null
           user_id: string | null
         }
         Insert: {
@@ -1554,9 +1632,13 @@ export type Database = {
           is_read?: boolean | null
           message: string
           name: string
+          notes?: string | null
           phone?: string | null
           preferred_unit_type?: string | null
           project_id: string
+          responded_at?: string | null
+          response_method?: string | null
+          status?: string | null
           user_id?: string | null
         }
         Update: {
@@ -1568,9 +1650,13 @@ export type Database = {
           is_read?: boolean | null
           message?: string
           name?: string
+          notes?: string | null
           phone?: string | null
           preferred_unit_type?: string | null
           project_id?: string
+          responded_at?: string | null
+          response_method?: string | null
+          status?: string | null
           user_id?: string | null
         }
         Relationships: [
