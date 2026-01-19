@@ -1,5 +1,7 @@
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as RechartsTooltip, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface HourlyActivityChartProps {
   data: { hour: number; count: number }[];
@@ -44,7 +46,19 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
     <Card className="rounded-2xl border-primary/10">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center justify-between">
-          <span>Activity by Hour</span>
+          <span className="flex items-center gap-2">
+            Activity by Hour
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>When buyers tap your contact buttons throughout the day</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </span>
           {peakHour.count > 0 && (
             <span className="text-sm font-normal text-muted-foreground">
               Peak: {formatHour(peakHour.hour)}
@@ -70,7 +84,7 @@ export function HourlyActivityChart({ data }: HourlyActivityChartProps) {
                 axisLine={false}
                 allowDecimals={false}
               />
-              <Tooltip
+              <RechartsTooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',

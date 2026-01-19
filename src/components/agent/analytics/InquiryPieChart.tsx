@@ -1,5 +1,7 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface InquiryPieChartProps {
   data: {
@@ -38,7 +40,19 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Inquiry Sources</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <span>Inquiry Sources</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>How buyers contact you - WhatsApp, phone calls, emails, or contact forms</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">
@@ -59,7 +73,7 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip
+              <RechartsTooltip
                 formatter={(value: number) => [value, 'Inquiries']}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
