@@ -54,6 +54,8 @@ export function StepBasics() {
   const hasAddressText = data.address.trim().length > 0;
   const hasValidLocation = !!(data.latitude && data.longitude);
   const showAddressWarning = hasAddressText && !hasValidLocation;
+  // Check if address has a street number (contains digits)
+  const hasMissingStreetNumber = hasValidLocation && !/\d+/.test(data.address);
 
   return (
     <div className="space-y-8">
@@ -200,8 +202,12 @@ export function StepBasics() {
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
             />
             {showAddressWarning ? (
-              <p className="text-xs text-destructive font-medium">
+              <p className="text-xs text-primary font-medium">
                 You must select an address from the dropdown suggestions
+              </p>
+            ) : hasMissingStreetNumber ? (
+              <p className="text-xs text-primary font-medium">
+                Please select an address with a street number (e.g., Rothschild 42)
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -250,7 +256,7 @@ export function StepBasics() {
               </p>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 rounded-lg p-3">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>Type an address above, then click on a result from the suggestions to confirm the location</span>
             </div>

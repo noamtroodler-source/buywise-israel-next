@@ -215,7 +215,7 @@ function GoogleAddressAutocomplete({
           placeholder={placeholder}
           className={cn(
             'h-11 rounded-xl pr-10',
-            hasValidSelection && 'border-green-500/50 bg-green-500/5',
+            hasValidSelection && 'border-primary/50 bg-primary/5',
             className
           )}
         />
@@ -223,7 +223,7 @@ function GoogleAddressAutocomplete({
           {!ready ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : hasValidSelection ? (
-            <Check className="h-4 w-4 text-green-500" />
+            <Check className="h-4 w-4 text-primary" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
@@ -380,7 +380,7 @@ function NominatimAddressAutocomplete({
           placeholder={placeholder}
           className={cn(
             'h-11 rounded-xl pr-10',
-            hasValidSelection && 'border-green-500/50 bg-green-500/5',
+            hasValidSelection && 'border-primary/50 bg-primary/5',
             className
           )}
         />
@@ -388,7 +388,7 @@ function NominatimAddressAutocomplete({
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           ) : hasValidSelection ? (
-            <Check className="h-4 w-4 text-green-500" />
+            <Check className="h-4 w-4 text-primary" />
           ) : (
             <MapPin className="h-4 w-4 text-muted-foreground" />
           )}
