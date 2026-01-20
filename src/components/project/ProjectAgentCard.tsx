@@ -6,7 +6,7 @@ import { Mail, MessageCircle, CheckCircle, ExternalLink, Building2, Globe, Clock
 import { Link } from 'react-router-dom';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 interface RepresentingAgent {
   id: string;
@@ -49,6 +49,7 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
         userId: user?.id,
       });
     }
+    openWhatsApp(whatsappUrl);
   };
 
   const handleEmail = () => {
@@ -139,11 +140,9 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
         {/* Contact Buttons */}
         <div className="grid grid-cols-2 gap-2">
           {agent.phone && whatsappUrl && (
-            <Button asChild onClick={handleWhatsAppClick} className="gap-2">
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </a>
+            <Button onClick={handleWhatsAppClick} className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
             </Button>
           )}
           <Button 

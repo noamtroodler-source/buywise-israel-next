@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useDeveloper, useDeveloperProjects } from '@/hooks/useProjects';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
-
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 export default function DeveloperDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: developer, isLoading, error } = useDeveloper(slug || '');
@@ -54,6 +54,11 @@ export default function DeveloperDetail() {
   const completedProjects = projects.filter(p => p.status === 'completed').length;
   const activeProjects = projects.filter(p => p.status !== 'completed').length;
 
+  // Build WhatsApp URL using the helper
+  const whatsappUrl = developer?.phone 
+    ? buildWhatsAppUrl(developer.phone, `Hi, I'm interested in your projects`)
+    : '';
+
   // Handle contact clicks with tracking
   const handleWhatsAppClick = () => {
     if (developer?.phone && projects[0]) {
@@ -64,6 +69,7 @@ export default function DeveloperDetail() {
         projectName: 'Developer Profile',
       });
     }
+    openWhatsApp(whatsappUrl);
   };
 
   const handleEmailClick = () => {
@@ -99,10 +105,6 @@ export default function DeveloperDetail() {
       </Layout>
     );
   }
-
-  const whatsappUrl = developer.phone
-    ? `https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in your projects`)}`
-    : null;
 
   return (
     <Layout>
@@ -189,11 +191,9 @@ export default function DeveloperDetail() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {whatsappUrl && (
-                  <Button className="w-full" size="lg" asChild onClick={handleWhatsAppClick}>
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      WhatsApp
-                    </a>
+                  <Button className="w-full" size="lg" onClick={handleWhatsAppClick}>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
                   </Button>
                 )}
                 <div className="grid grid-cols-2 gap-2">

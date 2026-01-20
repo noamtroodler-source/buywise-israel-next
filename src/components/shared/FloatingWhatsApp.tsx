@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
-import { openWhatsApp } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 export function FloatingWhatsApp() {
   const [isVisible, setIsVisible] = useState(false);
@@ -13,8 +13,8 @@ export function FloatingWhatsApp() {
 
   const handleOpenWhatsApp = () => {
     const phone = '972501234567';
-    const message = encodeURIComponent('Hi BuyWise! I have a question about...');
-    openWhatsApp(`https://wa.me/${phone}?text=${message}`);
+    const url = buildWhatsAppUrl(phone, 'Hi BuyWise! I have a question about...');
+    openWhatsApp(url);
   };
 
   return (
