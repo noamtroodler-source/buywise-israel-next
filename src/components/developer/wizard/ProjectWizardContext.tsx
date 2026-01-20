@@ -105,7 +105,8 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
   const canGoNext = (() => {
     switch (currentStep) {
       case 0: // Basics
-        return !!(data.name && data.city);
+        const hasValidAddress = data.address && data.latitude && data.longitude && /\d+/.test(data.address);
+        return !!(data.name && data.city && hasValidAddress);
       case 1: // Details
         return true; // Optional
       case 2: // Amenities
