@@ -3,6 +3,8 @@ import { MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { trackInquiry } from '@/hooks/useInquiryTracking';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Agent {
   id?: string;
@@ -16,11 +18,24 @@ interface Agent {
 interface AgentContactSectionProps {
   agent?: Agent | null;
   propertyTitle: string;
+  propertyId?: string;
 }
 
-export function AgentContactSection({ agent, propertyTitle }: AgentContactSectionProps) {
+export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentContactSectionProps) {
+  const { user } = useAuth();
+
   const handleWhatsApp = () => {
     if (agent?.phone) {
+      // Track inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'whatsapp',
+          propertyTitle,
+          userId: user?.id,
+        });
+      }
       const message = encodeURIComponent(`Hi, I'm interested in the property: ${propertyTitle}`);
       window.open(`https://wa.me/${agent.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
     }
@@ -28,6 +43,16 @@ export function AgentContactSection({ agent, propertyTitle }: AgentContactSectio
 
   const handleEmail = () => {
     if (agent?.email) {
+      // Track inquiry
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'email',
+          propertyTitle,
+          userId: user?.id,
+        });
+      }
       const subject = encodeURIComponent(`Inquiry about: ${propertyTitle}`);
       window.open(`mailto:${agent.email}?subject=${subject}`, '_self');
     }

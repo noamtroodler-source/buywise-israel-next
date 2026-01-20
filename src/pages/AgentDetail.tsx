@@ -10,7 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { 
   MessageCircle, 
-  Phone, 
   Mail, 
   Share2, 
   Building2, 
@@ -22,6 +21,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { trackInquiry } from '@/hooks/useInquiryTracking';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +31,7 @@ export default function AgentDetail() {
   const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past');
   const { data: stats } = useAgentStats(id || '');
   const formatPrice = useFormatPrice();
+  const { user } = useAuth();
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -45,20 +47,36 @@ export default function AgentDetail() {
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
+      // Track inquiry (use first active listing if available)
+      const propertyId = activeListings?.[0]?.id;
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'whatsapp',
+          propertyTitle: 'Agent Profile',
+          userId: user?.id,
+        });
+      }
       const cleanPhone = agent.phone.replace(/\D/g, '');
       const message = encodeURIComponent(`Hi ${agent.name}, I found your profile on BuyWise Israel and would like to connect.`);
       window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     }
   };
 
-  const handleCall = () => {
-    if (agent?.phone) {
-      window.location.href = `tel:${agent.phone}`;
-    }
-  };
-
   const handleEmail = () => {
     if (agent?.email) {
+      // Track inquiry (use first active listing if available)
+      const propertyId = activeListings?.[0]?.id;
+      if (propertyId && agent.id) {
+        trackInquiry({
+          propertyId,
+          agentId: agent.id,
+          inquiryType: 'email',
+          propertyTitle: 'Agent Profile',
+          userId: user?.id,
+        });
+      }
       const subject = encodeURIComponent(`Inquiry from BuyWise Israel`);
       window.location.href = `mailto:${agent.email}?subject=${subject}`;
     }
@@ -202,16 +220,10 @@ export default function AgentDetail() {
                     WhatsApp
                   </Button>
                 )}
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 gap-1.5" onClick={handleCall} disabled={!agent.phone}>
-                    <Phone className="h-4 w-4" />
-                    Call
-                  </Button>
-                  <Button variant="outline" className="flex-1 gap-1.5" onClick={handleEmail}>
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </Button>
-                </div>
+                <Button variant="outline" className="gap-1.5" onClick={handleEmail}>
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Button>
                 <Button variant="ghost" className="gap-2" onClick={handleShare}>
                   <Share2 className="h-4 w-4" />
                   Share Profile
