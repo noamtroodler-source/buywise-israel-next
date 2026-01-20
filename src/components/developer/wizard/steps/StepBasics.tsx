@@ -2,12 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjectWizard, ProjectStatus } from '../ProjectWizardContext';
-
-const cities = [
-  'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 'Netanya', 
-  'Be\'er Sheva', 'Ashdod', 'Modiin', 'Petah Tikva', 'Rishon LeZion',
-  'Bat Yam', 'Holon', 'Givatayim', 'Ramat Gan', 'Kfar Saba', 'Hod HaSharon'
-];
+import { useCities } from '@/hooks/useCities';
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'planning', label: 'Planning Phase' },
@@ -18,6 +13,7 @@ const statusOptions: { value: ProjectStatus; label: string }[] = [
 
 export function StepBasics() {
   const { data, updateData } = useProjectWizard();
+  const { data: cities = [] } = useCities();
 
   return (
     <div className="space-y-6">
@@ -51,8 +47,8 @@ export function StepBasics() {
               </SelectTrigger>
               <SelectContent>
                 {cities.map((city) => (
-                  <SelectItem key={city} value={city}>
-                    {city}
+                  <SelectItem key={city.slug} value={city.name}>
+                    {city.name}
                   </SelectItem>
                 ))}
               </SelectContent>
