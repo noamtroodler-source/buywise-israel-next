@@ -6,6 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -293,14 +294,12 @@ export default function AgentSettings() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
+                        <Label htmlFor="phone">WhatsApp Number</Label>
+                        <PhoneInput
                           id="phone"
-                          type="tel"
                           value={formData.phone}
-                          onChange={(e) => updateField('phone', e.target.value)}
-                          placeholder="+972..."
-                          className="h-11 rounded-xl"
+                          onChange={(value) => updateField('phone', value)}
+                          showWhatsAppIcon={true}
                         />
                       </div>
                       <div className="space-y-2">
