@@ -14,6 +14,8 @@ export interface PlatformStats {
   pendingAgents: number;
   pendingListings: number;
   pendingProjects: number;
+  pendingAgencies: number;
+  pendingDevelopers: number;
   newUsersToday: number;
   newUsersThisWeek: number;
   totalViews7d: number;
@@ -57,6 +59,8 @@ export function usePlatformStats() {
         { count: pendingAgents },
         { count: pendingListings },
         { count: pendingProjects },
+        { count: pendingAgencies },
+        { count: pendingDevelopers },
         { count: newUsersToday },
         { count: newUsersThisWeek },
         { count: totalViews7d },
@@ -73,6 +77,8 @@ export function usePlatformStats() {
         supabase.from('agents').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('properties').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending_review'),
         supabase.from('projects').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending_review'),
+        supabase.from('agencies').select('*', { count: 'exact', head: true }).eq('is_verified', false),
+        supabase.from('developers').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', today.toISOString()),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
         supabase.from('property_views').select('*', { count: 'exact', head: true }).gte('viewed_at', weekAgo.toISOString()),
@@ -91,6 +97,8 @@ export function usePlatformStats() {
         pendingAgents: pendingAgents || 0,
         pendingListings: pendingListings || 0,
         pendingProjects: pendingProjects || 0,
+        pendingAgencies: pendingAgencies || 0,
+        pendingDevelopers: pendingDevelopers || 0,
         newUsersToday: newUsersToday || 0,
         newUsersThisWeek: newUsersThisWeek || 0,
         totalViews7d: totalViews7d || 0,

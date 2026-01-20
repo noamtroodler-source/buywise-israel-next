@@ -104,6 +104,8 @@ export default function AdminDashboard() {
         pendingAgents={stats?.pendingAgents || 0}
         pendingListings={stats?.pendingListings || 0}
         pendingProjects={stats?.pendingProjects || 0}
+        pendingAgencies={stats?.pendingAgencies || 0}
+        pendingDevelopers={stats?.pendingDevelopers || 0}
         newUsersToday={stats?.newUsersToday || 0}
       />
 

@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AlertCircle, UserPlus, Home, Building, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { AlertCircle, UserPlus, Home, Building, ChevronRight, Building2, Landmark, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ActionItemsStripProps {
   pendingAgents: number;
   pendingListings: number;
   pendingProjects: number;
+  pendingAgencies: number;
+  pendingDevelopers: number;
   newUsersToday: number;
 }
 
@@ -15,6 +16,8 @@ export function ActionItemsStrip({
   pendingAgents,
   pendingListings,
   pendingProjects,
+  pendingAgencies,
+  pendingDevelopers,
   newUsersToday,
 }: ActionItemsStripProps) {
   const items = [
@@ -37,10 +40,22 @@ export function ActionItemsStrip({
       icon: Building,
     },
     {
+      label: 'Pending Agencies',
+      count: pendingAgencies,
+      href: '/admin/agencies',
+      icon: Building2,
+    },
+    {
+      label: 'Pending Developers',
+      count: pendingDevelopers,
+      href: '/admin/developers',
+      icon: Landmark,
+    },
+    {
       label: 'New Users Today',
       count: newUsersToday,
       href: '/admin/users',
-      icon: UserPlus,
+      icon: Users,
     },
   ];
 
@@ -58,7 +73,7 @@ export function ActionItemsStrip({
         <AlertCircle className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground">Action Required</span>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {items.map((item) => (
           <Link
             key={item.label}

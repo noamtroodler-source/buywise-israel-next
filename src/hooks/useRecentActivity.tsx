@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 export interface ActivityItem {
   id: string;
-  type: 'agent_registration' | 'listing_submission' | 'inquiry' | 'project_submission' | 'user_signup';
+  type: 'agent_registration' | 'listing_submission' | 'inquiry' | 'project_submission' | 'user_signup' | 'agency_registration' | 'developer_registration';
   title: string;
   description: string;
   timestamp: string;
@@ -104,6 +104,42 @@ export function useRecentActivity(limit: number = 20) {
           description: `${user.full_name || user.email || 'A user'} signed up`,
           timestamp: user.created_at,
           relativeTime: formatDistanceToNow(new Date(user.created_at), { addSuffix: true }),
+        });
+      });
+
+      // Fetch recent agency registrations
+      const { data: agencies } = await supabase
+        .from('agencies')
+        .select('id, name, created_at, is_verified')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      (agencies || []).forEach((agency) => {
+        activities.push({
+          id: `agency-${agency.id}`,
+          type: 'agency_registration',
+          title: 'Agency Registration',
+          description: `${agency.name} registered as an agency`,
+          timestamp: agency.created_at!,
+          relativeTime: formatDistanceToNow(new Date(agency.created_at!), { addSuffix: true }),
+        });
+      });
+
+      // Fetch recent developer registrations
+      const { data: developers } = await supabase
+        .from('developers')
+        .select('id, name, created_at, status')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      (developers || []).forEach((developer) => {
+        activities.push({
+          id: `developer-${developer.id}`,
+          type: 'developer_registration',
+          title: 'Developer Registration',
+          description: `${developer.name} submitted a developer application`,
+          timestamp: developer.created_at,
+          relativeTime: formatDistanceToNow(new Date(developer.created_at), { addSuffix: true }),
         });
       });
 
