@@ -18,6 +18,10 @@ interface EmailVerificationStepProps {
   disabled?: boolean;
 }
 
+// TEMPORARY: Skip email verification until domain is configured
+// To re-enable: set SKIP_VERIFICATION = false
+const SKIP_VERIFICATION = true;
+
 export function EmailVerificationStep({
   email,
   onEmailChange,
@@ -34,6 +38,17 @@ export function EmailVerificationStep({
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState('');
 
+  const isValidEmail = (emailToCheck: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToCheck);
+  };
+
+  // Auto-verify when email is valid (temporary bypass)
+  useEffect(() => {
+    if (SKIP_VERIFICATION && email && isValidEmail(email) && !isVerified) {
+      onVerified();
+    }
+  }, [email, isVerified, onVerified]);
+
   // Countdown timer
   useEffect(() => {
     if (countdown > 0) {
@@ -48,10 +63,6 @@ export function EmailVerificationStep({
       handleVerify();
     }
   }, [code]);
-
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
 
   const handleSendCode = async () => {
     if (!email || !isValidEmail(email)) {
