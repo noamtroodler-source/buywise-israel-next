@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +61,7 @@ export default function AgentDetail() {
         userId: user?.id,
       });
     }
+    openWhatsApp(whatsappUrl);
   };
 
   const handleEmail = () => {
@@ -214,11 +215,9 @@ export default function AgentDetail() {
               {/* Contact Buttons */}
               <div className="flex flex-col gap-2 md:min-w-[160px]">
                 {agent.phone && whatsappUrl && (
-                  <Button className="gap-2" asChild onClick={handleWhatsAppClick}>
-                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                      <MessageCircle className="h-4 w-4" />
-                      WhatsApp
-                    </a>
+                  <Button className="gap-2" onClick={handleWhatsAppClick}>
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
                   </Button>
                 )}
                 <Button variant="outline" className="gap-1.5" onClick={handleEmail}>

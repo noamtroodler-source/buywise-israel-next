@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
+import { buildWhatsAppUrl, openWhatsApp as openWhatsAppHelper } from "@/lib/whatsapp";
 
 const WHATSAPP_NUMBER = "972501234567"; // Replace with actual number
 const EMAIL_ADDRESS = "hello@buywiseisrael.com";
@@ -75,9 +76,9 @@ const Contact = () => {
     }
   };
 
-  const openWhatsApp = () => {
-    const message = encodeURIComponent("Hi BuyWise! I have a question about...");
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, "_blank");
+  const handleWhatsAppClick = () => {
+    const url = buildWhatsAppUrl(WHATSAPP_NUMBER, "Hi BuyWise! I have a question about...");
+    openWhatsAppHelper(url);
   };
 
   return (
@@ -248,7 +249,7 @@ const Contact = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  onClick={openWhatsApp}
+                  onClick={handleWhatsAppClick}
                   className="gap-2 px-6"
                 >
                   <MessageCircle className="w-5 h-5 text-green-600" />

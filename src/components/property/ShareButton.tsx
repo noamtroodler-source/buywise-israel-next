@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { buildWhatsAppShareUrl, openWhatsApp } from "@/lib/whatsapp";
 
 interface ShareButtonProps {
   propertyId: string;
@@ -32,8 +33,8 @@ export function ShareButton({ propertyId, propertyTitle, className = "", size = 
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${propertyUrl}`)}`;
-    window.open(whatsappUrl, "_blank");
+    const url = buildWhatsAppShareUrl(`${shareText}\n${propertyUrl}`);
+    openWhatsApp(url);
   };
 
   const handleTelegram = (e: React.MouseEvent) => {

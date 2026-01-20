@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 interface RepresentingAgent {
   id: string;
@@ -43,6 +44,15 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     }
   };
 
+  // Build WhatsApp URLs using the helper
+  const developerWhatsappUrl = developer?.phone 
+    ? buildWhatsAppUrl(developer.phone, `Hi, I'm interested in ${project.name}`)
+    : '';
+
+  const agentWhatsappUrl = representingAgent?.phone 
+    ? buildWhatsAppUrl(representingAgent.phone, `Hi ${representingAgent.name}, I'm interested in ${project.name}`)
+    : '';
+
   // Track inquiry helpers
   const handleWhatsAppClick = (source: 'developer' | 'agent') => {
     if (developer) {
@@ -53,6 +63,8 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
         projectName: project.name,
       });
     }
+    const url = source === 'agent' ? agentWhatsappUrl : developerWhatsappUrl;
+    openWhatsApp(url);
   };
 
   const handleCallClick = (source: 'developer' | 'agent') => {
@@ -80,14 +92,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
   // Calculate months to completion
   const monthsToCompletion = project.completion_date 
     ? Math.max(0, Math.ceil((new Date(project.completion_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)))
-    : null;
-
-  const developerWhatsappUrl = developer?.phone 
-    ? `https://wa.me/${developer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in ${project.name}`)}`
-    : null;
-
-  const agentWhatsappUrl = representingAgent?.phone 
-    ? `https://wa.me/${representingAgent.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${representingAgent.name}, I'm interested in ${project.name}`)}`
     : null;
 
   const quickFacts = [
@@ -153,13 +157,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
           <Button 
             className="w-full" 
             size="lg" 
-            asChild
             onClick={() => handleWhatsAppClick('agent')}
           >
-            <a href={agentWhatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              WhatsApp Agent
-            </a>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp Agent
           </Button>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -227,13 +228,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
           <Button 
             className="w-full" 
             size="lg" 
-            asChild
             onClick={() => handleWhatsAppClick('developer')}
           >
-            <a href={developerWhatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              WhatsApp Developer
-            </a>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp Developer
           </Button>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -378,8 +376,8 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
   const primaryPhone = representingAgent?.phone || developer?.phone;
   
   const whatsappUrl = primaryPhone 
-    ? `https://wa.me/${primaryPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi${representingAgent ? ` ${representingAgent.name}` : ''}, I'm interested in ${project.name}`)}`
-    : null;
+    ? buildWhatsAppUrl(primaryPhone, `Hi${representingAgent ? ` ${representingAgent.name}` : ''}, I'm interested in ${project.name}`)
+    : '';
 
   const handleWhatsAppClick = () => {
     if (developer) {
@@ -390,6 +388,7 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
         projectName: project.name,
       });
     }
+    openWhatsApp(whatsappUrl);
   };
 
   const handleCallClick = () => {
@@ -407,11 +406,9 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
       <div className="flex gap-3 max-w-lg mx-auto">
         {whatsappUrl ? (
-          <Button className="flex-1" size="lg" asChild onClick={handleWhatsAppClick}>
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
-            </a>
+          <Button className="flex-1" size="lg" onClick={handleWhatsAppClick}>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
           </Button>
         ) : (
           <Button className="flex-1" size="lg">
