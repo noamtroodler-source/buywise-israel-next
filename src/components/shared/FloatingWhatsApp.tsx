@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
+import { openWhatsApp } from '@/lib/whatsapp';
 
 export function FloatingWhatsApp() {
   const [isVisible, setIsVisible] = useState(false);
@@ -10,10 +11,10 @@ export function FloatingWhatsApp() {
     return () => clearTimeout(timer);
   }, []);
 
-  const openWhatsApp = () => {
+  const handleOpenWhatsApp = () => {
     const phone = '972501234567';
     const message = encodeURIComponent('Hi BuyWise! I have a question about...');
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    openWhatsApp(`https://wa.me/${phone}?text=${message}`);
   };
 
   return (
@@ -25,7 +26,7 @@ export function FloatingWhatsApp() {
           exit={{ opacity: 0, y: 20, scale: 0.8 }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
-          onClick={openWhatsApp}
+          onClick={handleOpenWhatsApp}
           className="fixed bottom-6 right-6 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center group"
           aria-label="Chat with us on WhatsApp"
         >
@@ -38,3 +39,4 @@ export function FloatingWhatsApp() {
     </AnimatePresence>
   );
 }
+

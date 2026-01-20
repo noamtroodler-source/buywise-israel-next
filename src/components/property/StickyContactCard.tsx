@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 interface Agent {
   id?: string;
@@ -63,6 +63,8 @@ export function StickyContactCard({
         userId: user?.id,
       });
     }
+
+    openWhatsApp(whatsappUrl);
   };
 
   const handleEmail = () => {
@@ -147,13 +149,10 @@ export function StickyContactCard({
             <Button 
               className="w-full gap-2" 
               size="lg"
-              asChild
               onClick={handleWhatsAppClick}
             >
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="h-5 w-5" />
-                WhatsApp
-              </a>
+              <MessageCircle className="h-5 w-5" />
+              WhatsApp
             </Button>
           )}
           
@@ -248,6 +247,8 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
         userId: user?.id,
       });
     }
+
+    openWhatsApp(whatsappUrl);
   };
 
   const handleScrollToContact = () => {
@@ -264,13 +265,10 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
           <Button 
             className="w-full gap-2" 
             size="lg"
-            asChild
             onClick={handleWhatsAppClick}
           >
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-5 w-5" />
-              WhatsApp
-            </a>
+            <MessageCircle className="h-5 w-5" />
+            WhatsApp
           </Button>
         </div>
       </div>
@@ -292,3 +290,4 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
     </div>
   );
 }
+
