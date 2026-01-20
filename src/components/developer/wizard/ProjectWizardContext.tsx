@@ -8,6 +8,8 @@ export interface ProjectWizardData {
   city: string;
   neighborhood: string;
   address: string;
+  latitude: number | undefined;
+  longitude: number | undefined;
   status: ProjectStatus;
   
   // Step 2: Details
@@ -49,6 +51,8 @@ export const defaultProjectData: ProjectWizardData = {
   city: '',
   neighborhood: '',
   address: '',
+  latitude: undefined,
+  longitude: undefined,
   status: 'planning',
   total_units: undefined,
   available_units: undefined,
