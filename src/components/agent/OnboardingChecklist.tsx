@@ -28,7 +28,9 @@ interface ChecklistItem {
 interface OnboardingChecklistProps {
   agentProfile: {
     avatar_url?: string | null;
-    neighborhoods_covered?: string[] | null;
+    bio?: string | null;
+    languages?: string[] | null;
+    specializations?: string[] | null;
   } | null;
   properties: {
     id: string;
@@ -45,12 +47,16 @@ export function OnboardingChecklist({
 }: OnboardingChecklistProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  // Calculate completion status for each item - check for optional enhancements
-  // (bio, phone, languages are already collected during registration)
-  const hasEnhancedProfile = Boolean(
-    agentProfile?.avatar_url && 
-    (agentProfile?.neighborhoods_covered?.length || 0) > 0
-  );
+  // Profile is "enhanced" if they have at least 3 of these 4 enhancements:
+  // - Profile photo, Bio, Languages, Specializations
+  const profileEnhancements = [
+    Boolean(agentProfile?.avatar_url),
+    Boolean(agentProfile?.bio && agentProfile.bio.length > 10),
+    (agentProfile?.languages?.length || 0) > 0,
+    (agentProfile?.specializations?.length || 0) > 0,
+  ];
+  const enhancementCount = profileEnhancements.filter(Boolean).length;
+  const hasEnhancedProfile = enhancementCount >= 3;
   
   const hasAddedListing = properties.length > 0;
   
@@ -71,7 +77,7 @@ export function OnboardingChecklist({
     {
       id: 'profile',
       title: 'Enhance your profile',
-      description: 'Add a photo and coverage areas',
+      description: 'Add a photo, bio, and expertise',
       completed: hasEnhancedProfile,
       href: '/agent/settings',
       icon: User,
