@@ -51,7 +51,13 @@ export function StickyContactCard({
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
-      // Track the inquiry
+      const cleanPhone = agent.phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
+      
+      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+      
+      // Track the inquiry AFTER (async, fire-and-forget)
       if (propertyId && agent.id) {
         trackInquiry({
           propertyId,
@@ -60,10 +66,6 @@ export function StickyContactCard({
           userId: user?.id,
         });
       }
-      
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     }
   };
 
@@ -236,7 +238,13 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
-      // Track the inquiry
+      const cleanPhone = agent.phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
+      
+      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+      
+      // Track the inquiry AFTER (async, fire-and-forget)
       if (propertyId && agent.id) {
         trackInquiry({
           propertyId,
@@ -245,10 +253,6 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
           userId: user?.id,
         });
       }
-      
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     }
   };
 

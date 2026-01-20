@@ -32,7 +32,15 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
 
   const handleWhatsApp = () => {
     if (agent.phone) {
-      // Track inquiry
+      const cleanPhone = agent.phone.replace(/\D/g, '');
+      const message = projectName 
+        ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
+        : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`;
+      
+      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
+      
+      // Track inquiry AFTER (async, fire-and-forget)
       if (projectId && developerId) {
         trackProjectInquiry({
           projectId,
@@ -42,11 +50,6 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
           userId: user?.id,
         });
       }
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = projectName 
-        ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
-        : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`;
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }
   };
 

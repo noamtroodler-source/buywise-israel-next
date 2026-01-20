@@ -26,7 +26,13 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
-      // Track inquiry
+      const cleanPhone = agent.phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`Hi, I'm interested in the property: ${propertyTitle}`);
+      
+      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+      
+      // Track inquiry AFTER (async, fire-and-forget)
       if (propertyId && agent.id) {
         trackInquiry({
           propertyId,
@@ -36,8 +42,6 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
           userId: user?.id,
         });
       }
-      const message = encodeURIComponent(`Hi, I'm interested in the property: ${propertyTitle}`);
-      window.open(`https://wa.me/${agent.phone.replace(/\D/g, '')}?text=${message}`, '_blank');
     }
   };
 
