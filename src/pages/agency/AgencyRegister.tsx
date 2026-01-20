@@ -11,12 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { EmailVerificationStep } from '@/components/auth/EmailVerificationStep';
 import { useAuth } from '@/hooks/useAuth';
+import { useCities } from '@/hooks/useCities';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AgencySubmittedDialog } from '@/components/agency/AgencySubmittedDialog';
 
-const cities = ['Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 'Netanya', 'Be\'er Sheva', 'Ashdod', 'Modiin', 'Petah Tikva'];
 const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
 
 const benefits = [
@@ -46,6 +46,7 @@ const itemVariants = {
 export default function AgencyRegister() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { data: cities = [] } = useCities();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -428,16 +429,16 @@ export default function AgencyRegister() {
                       {cities.map((city) => (
                         <button
                           type="button"
-                          key={city}
-                          onClick={() => toggleArrayItem('cities_covered', city)}
+                          key={city.slug}
+                          onClick={() => toggleArrayItem('cities_covered', city.name)}
                           className={cn(
                             "px-4 py-2 rounded-xl border text-sm font-medium transition-all",
-                            formData.cities_covered.includes(city)
+                            formData.cities_covered.includes(city.name)
                               ? "bg-primary text-primary-foreground border-primary shadow-sm"
                               : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:border-primary/30"
                           )}
                         >
-                          {city}
+                          {city.name}
                         </button>
                       ))}
                     </div>
