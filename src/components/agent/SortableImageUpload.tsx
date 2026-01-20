@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { X, Loader2, GripVertical, Star, ImagePlus } from 'lucide-react';
+import { X, Loader2, GripVertical, Star, ImagePlus, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DndContext,
@@ -37,6 +37,7 @@ interface SortableImageItemProps {
 }
 
 function SortableImageItem({ url, index, onRemove, onSetCover, isFirst }: SortableImageItemProps) {
+  const [hasError, setHasError] = useState(false);
   const {
     attributes,
     listeners,
@@ -57,12 +58,13 @@ function SortableImageItem({ url, index, onRemove, onSetCover, isFirst }: Sortab
       style={style}
       className={cn(
         "relative group rounded-xl overflow-hidden border-2 transition-all",
-        isFirst ? "border-primary ring-2 ring-primary/20" : "border-border",
+        hasError ? "border-destructive bg-destructive/5" :
+          isFirst ? "border-primary ring-2 ring-primary/20" : "border-border",
         isDragging && "opacity-50 scale-105 shadow-xl z-50"
       )}
     >
       {/* Cover badge for first image */}
-      {isFirst && (
+      {isFirst && !hasError && (
         <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-md shadow-md">
           <Star className="h-3 w-3 fill-current" />
           Cover
@@ -70,39 +72,53 @@ function SortableImageItem({ url, index, onRemove, onSetCover, isFirst }: Sortab
       )}
       
       {/* Position number for non-cover images */}
-      {!isFirst && (
+      {!isFirst && !hasError && (
         <div className="absolute top-2 left-2 z-10 flex items-center justify-center h-6 w-6 bg-background/90 backdrop-blur-sm text-foreground text-xs font-semibold rounded-full border shadow-sm">
           {index + 1}
         </div>
       )}
 
       {/* Drag handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute top-2 right-10 z-10 p-1.5 bg-background/90 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
-      >
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
-      </div>
+      {!hasError && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 right-10 z-10 p-1.5 bg-background/90 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
 
-      {/* Remove button */}
+      {/* Remove button - always visible when error */}
       <button
         type="button"
         onClick={onRemove}
-        className="absolute top-2 right-2 z-10 p-1.5 bg-destructive text-destructive-foreground rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+        className={cn(
+          "absolute top-2 right-2 z-10 p-1.5 bg-destructive text-destructive-foreground rounded-md transition-opacity hover:bg-destructive/90",
+          hasError ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
       >
         <X className="h-4 w-4" />
       </button>
 
-      {/* Image */}
-      <img
-        src={url}
-        alt={`Property image ${index + 1}`}
-        className="w-full h-32 object-cover"
-      />
+      {/* Image or Error State */}
+      {hasError ? (
+        <div className="w-full h-32 bg-destructive/10 flex flex-col items-center justify-center text-center p-2">
+          <AlertTriangle className="h-6 w-6 text-destructive mb-1" />
+          <span className="text-xs text-destructive font-medium">Failed to load</span>
+          <span className="text-xs text-muted-foreground">Remove and re-upload</span>
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt={`Property image ${index + 1}`}
+          className="w-full h-32 object-cover"
+          onError={() => setHasError(true)}
+        />
+      )}
 
-      {/* Set as cover button (only for non-first images) */}
-      {!isFirst && (
+      {/* Set as cover button (only for non-first images without error) */}
+      {!isFirst && !hasError && (
         <button
           type="button"
           onClick={onSetCover}
