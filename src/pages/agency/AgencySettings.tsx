@@ -6,6 +6,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -348,13 +349,10 @@ export default function AgencySettings() {
                           <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                           Phone
                         </Label>
-                        <Input
+                        <PhoneInput
                           id="phone"
-                          type="tel"
                           value={formData.phone}
-                          onChange={(e) => updateField('phone', e.target.value)}
-                          placeholder="+972..."
-                          className="h-11 rounded-xl"
+                          onChange={(value) => updateField('phone', value)}
                         />
                       </div>
                     </div>
