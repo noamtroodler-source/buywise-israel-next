@@ -6,6 +6,7 @@ import { Mail, MessageCircle, CheckCircle, ExternalLink, Building2, Globe, Clock
 import { Link } from 'react-router-dom';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 interface RepresentingAgent {
   id: string;
@@ -30,26 +31,23 @@ interface ProjectAgentCardProps {
 export function ProjectAgentCard({ agent, projectName, projectId, developerId }: ProjectAgentCardProps) {
   const { user } = useAuth();
 
-  const handleWhatsApp = () => {
-    if (agent.phone) {
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = projectName 
-        ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
-        : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`;
-      
-      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-      
-      // Track inquiry AFTER (async, fire-and-forget)
-      if (projectId && developerId) {
-        trackProjectInquiry({
-          projectId,
-          developerId,
-          inquiryType: 'whatsapp',
-          projectName,
-          userId: user?.id,
-        });
-      }
+  const whatsappMessage = projectName 
+    ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
+    : `Hi ${agent.name}, I'm interested in learning more about a project you represent.`;
+
+  const whatsappUrl = agent.phone 
+    ? buildWhatsAppUrl(agent.phone, whatsappMessage)
+    : '';
+
+  const handleWhatsAppClick = () => {
+    if (projectId && developerId) {
+      trackProjectInquiry({
+        projectId,
+        developerId,
+        inquiryType: 'whatsapp',
+        projectName,
+        userId: user?.id,
+      });
     }
   };
 
@@ -140,10 +138,12 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
 
         {/* Contact Buttons */}
         <div className="grid grid-cols-2 gap-2">
-          {agent.phone && (
-            <Button onClick={handleWhatsApp} className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
+          {agent.phone && whatsappUrl && (
+            <Button asChild onClick={handleWhatsAppClick} className="gap-2">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
             </Button>
           )}
           <Button 
