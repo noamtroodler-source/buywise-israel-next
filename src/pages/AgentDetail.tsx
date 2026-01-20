@@ -47,7 +47,13 @@ export default function AgentDetail() {
 
   const handleWhatsApp = () => {
     if (agent?.phone) {
-      // Track inquiry (use first active listing if available)
+      const cleanPhone = agent.phone.replace(/\D/g, '');
+      const message = encodeURIComponent(`Hi ${agent.name}, I found your profile on BuyWise Israel and would like to connect.`);
+      
+      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+      
+      // Track inquiry AFTER (async, fire-and-forget)
       const propertyId = activeListings?.[0]?.id;
       if (propertyId && agent.id) {
         trackInquiry({
@@ -58,9 +64,6 @@ export default function AgentDetail() {
           userId: user?.id,
         });
       }
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi ${agent.name}, I found your profile on BuyWise Israel and would like to connect.`);
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
     }
   };
 
