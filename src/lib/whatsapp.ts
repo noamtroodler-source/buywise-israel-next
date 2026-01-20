@@ -20,14 +20,48 @@ export function normalizePhoneForWhatsApp(phone: string): string {
     cleaned = '+' + cleaned;
   }
 
-  // Remove the + for wa.me (WhatsApp wants digits only)
+  // Remove the + for WhatsApp (WhatsApp wants digits only)
   return cleaned.replace(/^\+/, '');
 }
 
 /**
+ * Detect if we're on a mobile device
+ */
+function isMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
  * Build a WhatsApp URL for the given phone number and message
+ * Uses web.whatsapp.com for desktop (bypasses wa.me blocking) and wa.me for mobile
  */
 export function buildWhatsAppUrl(phone: string, message?: string): string {
+  const normalizedPhone = normalizePhoneForWhatsApp(phone);
+  if (!normalizedPhone) return '';
+
+  // On mobile, use wa.me (works best with app)
+  if (isMobileDevice()) {
+    const baseUrl = `https://wa.me/${normalizedPhone}`;
+    if (message) {
+      return `${baseUrl}?text=${encodeURIComponent(message)}`;
+    }
+    return baseUrl;
+  }
+
+  // On desktop, use web.whatsapp.com/send (bypasses wa.me/api.whatsapp.com blocking)
+  let url = `https://web.whatsapp.com/send?phone=${normalizedPhone}`;
+  if (message) {
+    url += `&text=${encodeURIComponent(message)}`;
+  }
+  return url;
+}
+
+/**
+ * Build a mobile-friendly WhatsApp URL (always uses wa.me)
+ * For use in QR codes where mobile scanning is expected
+ */
+export function buildMobileWhatsAppUrl(phone: string, message?: string): string {
   const normalizedPhone = normalizePhoneForWhatsApp(phone);
   if (!normalizedPhone) return '';
 
@@ -72,13 +106,45 @@ function tryAnchorClick(url: string): boolean {
   }
 }
 
+// Store the last attempted URL and phone for the fallback modal
+let lastAttemptedUrl = '';
+let lastAttemptedPhone = '';
+let lastAttemptedMessage = '';
+
+export function getLastWhatsAppAttempt() {
+  return {
+    url: lastAttemptedUrl,
+    phone: lastAttemptedPhone,
+    message: lastAttemptedMessage,
+  };
+}
+
+// Callback to show fallback modal - will be set by the modal component
+let showFallbackModalCallback: ((url: string, phone: string, message: string) => void) | null = null;
+
+export function setFallbackModalCallback(callback: ((url: string, phone: string, message: string) => void) | null) {
+  showFallbackModalCallback = callback;
+}
+
 /**
  * Show fallback UI when navigation is blocked
  */
-function showFallbackUI(url: string): void {
+function showFallbackUI(url: string, phone: string = '', message: string = ''): void {
+  // Store for potential modal use
+  lastAttemptedUrl = url;
+  lastAttemptedPhone = phone;
+  lastAttemptedMessage = message;
+
+  // If we have a modal callback registered, use it
+  if (showFallbackModalCallback) {
+    showFallbackModalCallback(url, phone, message);
+    return;
+  }
+
+  // Fallback to toast with copy options
   toast.error('WhatsApp was blocked', {
-    description: 'Your browser blocked the popup. Use the buttons below.',
-    duration: 10000,
+    description: 'Your browser or an extension blocked WhatsApp. Try disabling ad blockers or use the options below.',
+    duration: 15000,
     action: {
       label: 'Copy Link',
       onClick: () => {
@@ -87,7 +153,6 @@ function showFallbackUI(url: string): void {
             description: 'Paste it in a new browser tab to open WhatsApp.',
           });
         }).catch(() => {
-          // Fallback: show the URL in an alert
           toast.info('Copy this link manually:', {
             description: url,
             duration: 15000,
@@ -96,16 +161,6 @@ function showFallbackUI(url: string): void {
       },
     },
   });
-  
-  // Also try same-tab navigation as last resort after a short delay
-  setTimeout(() => {
-    const shouldNavigate = window.confirm(
-      'WhatsApp was blocked by your browser.\n\nClick OK to open WhatsApp in this tab, or Cancel to stay here.'
-    );
-    if (shouldNavigate) {
-      window.location.assign(url);
-    }
-  }, 500);
 }
 
 /**
@@ -115,22 +170,23 @@ function showFallbackUI(url: string): void {
  * 1) If inside iframe: try breaking out via window.top.location.assign
  * 2) Try programmatic anchor click (often bypasses popup blockers)
  * 3) Try window.open as fallback
- * 4) If all fail: show toast with "Copy Link" option and offer same-tab navigation
+ * 4) If all fail: show fallback modal with copy options and QR code
  */
-export function openWhatsApp(url: string): void {
+export function openWhatsApp(url: string, phone: string = '', message: string = ''): void {
   if (!url) {
     console.warn('[WhatsApp] No URL provided');
     return;
   }
 
-  console.debug('[WhatsApp] Attempting to open:', url);
+  console.debug('[WhatsApp] Opening URL:', url);
+  console.debug('[WhatsApp] Phone:', phone);
+  console.debug('[WhatsApp] Is mobile:', isMobileDevice());
   console.debug('[WhatsApp] In iframe:', isInIframe());
 
   // Strategy 1: Try iframe breakout
   if (isInIframe()) {
     try {
       console.debug('[WhatsApp] Trying iframe breakout via window.top');
-      // Using location.assign is more reliable than setting href directly
       window.top!.location.assign(url);
       return;
     } catch (error) {
@@ -143,8 +199,6 @@ export function openWhatsApp(url: string): void {
   // This works better than window.open in many browsers
   if (tryAnchorClick(url)) {
     // Give it a moment to see if it worked
-    // We can't really know for sure, but if we're still here after 100ms,
-    // the click probably triggered navigation
     return;
   }
 
@@ -163,12 +217,16 @@ export function openWhatsApp(url: string): void {
 
   // Strategy 4: If we get here, navigation was likely blocked
   console.debug('[WhatsApp] All navigation attempts may have failed, showing fallback UI');
-  showFallbackUI(url);
+  showFallbackUI(url, phone, message);
 }
 
 /**
  * Build a WhatsApp share URL (no phone number, just text)
  */
 export function buildWhatsAppShareUrl(text: string): string {
-  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+  if (isMobileDevice()) {
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
+  }
+  // On desktop, use web.whatsapp.com
+  return `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 }
