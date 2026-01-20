@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { 
   ArrowLeft, Loader2, MessageSquare, User, Mail, Phone, Home, 
-  Filter, Search, Check, Clock, UserCheck, X, ExternalLink
+  Filter, Search, Check, Clock, UserCheck, X, ExternalLink, Info
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,17 +18,25 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyLeads, useUpdateLeadStatus, useReassignLead } from '@/hooks/useAgencyLeads';
 import { cn } from '@/lib/utils';
 
+// Simplified to 3 statuses - removed "qualified"
 const statusConfig = {
   new: { label: 'New', icon: MessageSquare, color: 'bg-blue-500/10 text-blue-600 border-blue-200' },
-  contacted: { label: 'Contacted', icon: Phone, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200' },
-  qualified: { label: 'Qualified', icon: UserCheck, color: 'bg-green-500/10 text-green-600 border-green-200' },
+  in_progress: { label: 'In Progress', icon: Phone, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200' },
+  contacted: { label: 'In Progress', icon: Phone, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-200' }, // backwards compat
   closed: { label: 'Closed', icon: Check, color: 'bg-muted text-muted-foreground border-border' },
+};
+
+// Tooltips explaining each stat
+const statTooltips = {
+  total: "All inquiries from buyers across your agency's listings. Leads are created when someone clicks WhatsApp, Email, or submits a contact form.",
+  new: "Inquiries that haven't been acted on yet. Change status to 'In Progress' when you start working with a lead.",
+  in_progress: "Leads you're actively working with. Change to 'Closed' when the deal is done or the lead is no longer interested.",
 };
 
 export default function AgencyLeads() {
@@ -105,12 +113,11 @@ export default function AgencyLeads() {
     reassignLead.mutate({ leadId, agentId: newAgentId });
   };
 
-  // Stats
+  // Stats - simplified to 3 statuses
   const stats = {
     total: leads.length,
     new: leads.filter(l => l.status === 'new').length,
-    contacted: leads.filter(l => l.status === 'contacted').length,
-    qualified: leads.filter(l => l.status === 'qualified').length,
+    in_progress: leads.filter(l => l.status === 'in_progress' || l.status === 'contacted').length,
   };
 
   return (
@@ -136,42 +143,53 @@ export default function AgencyLeads() {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Total Leads', value: stats.total, icon: MessageSquare },
-              { label: 'New', value: stats.new, icon: Clock, highlight: stats.new > 0 },
-              { label: 'Contacted', value: stats.contacted, icon: Phone },
-              { label: 'Qualified', value: stats.qualified, icon: UserCheck },
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className={cn(
-                  "rounded-2xl border-primary/10",
-                  stat.highlight && "bg-primary/5 border-primary/20"
-                )}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "p-2 rounded-xl",
-                        stat.highlight ? "bg-primary/20" : "bg-primary/10"
-                      )}>
-                        <stat.icon className="h-4 w-4 text-primary" />
+          {/* Stats Cards with Tooltips */}
+          <TooltipProvider>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Total Leads', key: 'total', value: stats.total, icon: MessageSquare },
+                { label: 'New', key: 'new', value: stats.new, icon: Clock, highlight: stats.new > 0 },
+                { label: 'In Progress', key: 'in_progress', value: stats.in_progress, icon: Phone },
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card className={cn(
+                    "rounded-2xl border-primary/10",
+                    stat.highlight && "bg-primary/5 border-primary/20"
+                  )}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "p-2 rounded-xl",
+                            stat.highlight ? "bg-primary/20" : "bg-primary/10"
+                          )}>
+                            <stat.icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold">{stat.value}</p>
+                            <p className="text-xs text-muted-foreground">{stat.label}</p>
+                          </div>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground/50 hover:text-muted-foreground cursor-help transition-colors" />
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="max-w-[220px]">
+                            <p className="text-xs">{statTooltips[stat.key as keyof typeof statTooltips]}</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
-                      <div>
-                        <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </TooltipProvider>
 
           {/* Filters */}
           <Card className="rounded-2xl border-primary/10">
@@ -193,8 +211,7 @@ export default function AgencyLeads() {
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
@@ -337,8 +354,7 @@ export default function AgencyLeads() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
                                 <SelectItem value="closed">Closed</SelectItem>
                               </SelectContent>
                             </Select>
