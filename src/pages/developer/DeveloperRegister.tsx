@@ -11,6 +11,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EmailVerificationStep } from '@/components/auth/EmailVerificationStep';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeveloperRegistration } from '@/hooks/useDeveloperRegistration';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
@@ -46,6 +47,7 @@ export default function DeveloperRegister() {
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -118,7 +120,7 @@ export default function DeveloperRegister() {
   const canGoNext = () => {
     switch (currentStep) {
       case 0:
-        return formData.name && formData.email;
+        return formData.name && formData.email && isEmailVerified;
       case 1:
         return true; // Optional step
       case 2:
@@ -218,17 +220,17 @@ export default function DeveloperRegister() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">Contact Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField('email', e.target.value)}
-                  className={errors.email ? 'border-destructive' : ''}
-                />
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
+              <EmailVerificationStep
+                email={formData.email}
+                onEmailChange={(value) => {
+                  updateField('email', value);
+                  setIsEmailVerified(false);
+                }}
+                onVerified={() => setIsEmailVerified(true)}
+                isVerified={isEmailVerified}
+                type="developer"
+                name={formData.name}
+              />
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <PhoneInput
