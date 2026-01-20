@@ -3,39 +3,27 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Building2, CheckCircle2, XCircle, Users, Home, 
-  Globe, Mail, Phone, Calendar, ExternalLink, Trash2, Shield, ShieldOff
+  Globe, Mail, Phone, Calendar, ExternalLink, Trash2, Shield, ShieldOff, Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AgencyDetailSheet } from '@/components/admin/AgencyDetailSheet';
 import { 
   useAdminAgencies, 
   useAgencyStats, 
   useVerifyAgency, 
   useUnverifyAgency,
-  useDeleteAgency 
+  useDeleteAgency,
+  AdminAgency
 } from '@/hooks/useAdminAgencies';
 import { format } from 'date-fns';
 
 export default function AdminAgencies() {
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    action: 'verify' | 'unverify' | 'delete';
-    agencyId: string;
-    agencyName: string;
-  } | null>(null);
+  const [selectedAgency, setSelectedAgency] = useState<AdminAgency | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data: stats, isLoading: statsLoading } = useAgencyStats();
   const { data: agencies, isLoading: agenciesLoading } = useAdminAgencies();
@@ -44,37 +32,9 @@ export default function AdminAgencies() {
   const unverifyAgency = useUnverifyAgency();
   const deleteAgency = useDeleteAgency();
 
-  const handleAction = () => {
-    if (!confirmDialog) return;
-
-    const { action, agencyId } = confirmDialog;
-    switch (action) {
-      case 'verify':
-        verifyAgency.mutate(agencyId);
-        break;
-      case 'unverify':
-        unverifyAgency.mutate(agencyId);
-        break;
-      case 'delete':
-        deleteAgency.mutate(agencyId);
-        break;
-    }
-    setConfirmDialog(null);
-  };
-
-  const actionLabels = {
-    verify: { 
-      title: 'Verify Agency', 
-      description: 'This will mark the agency as verified and display a verification badge on their profile.' 
-    },
-    unverify: { 
-      title: 'Remove Verification', 
-      description: 'This will remove the verified status from the agency.' 
-    },
-    delete: { 
-      title: 'Delete Agency', 
-      description: 'This will permanently delete the agency and remove all agent associations. This action cannot be undone.' 
-    },
+  const handleOpenReview = (agency: AdminAgency) => {
+    setSelectedAgency(agency);
+    setSheetOpen(true);
   };
 
   return (
@@ -248,16 +208,20 @@ export default function AdminAgencies() {
 
                       {/* Actions */}
                       <div className="flex sm:flex-col gap-2 sm:w-32">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenReview(agency)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Review
+                        </Button>
                         {agency.is_verified ? (
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => setConfirmDialog({
-                              open: true,
-                              action: 'unverify',
-                              agencyId: agency.id,
-                              agencyName: agency.name,
-                            })}
+                            variant="ghost"
+                            className="text-muted-foreground"
+                            onClick={() => handleOpenReview(agency)}
                           >
                             <ShieldOff className="h-4 w-4 mr-1" />
                             Unverify
@@ -265,30 +229,12 @@ export default function AdminAgencies() {
                         ) : (
                           <Button
                             size="sm"
-                            onClick={() => setConfirmDialog({
-                              open: true,
-                              action: 'verify',
-                              agencyId: agency.id,
-                              agencyName: agency.name,
-                            })}
+                            onClick={() => handleOpenReview(agency)}
                           >
                             <Shield className="h-4 w-4 mr-1" />
                             Verify
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setConfirmDialog({
-                            open: true,
-                            action: 'delete',
-                            agencyId: agency.id,
-                            agencyName: agency.name,
-                          })}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -299,37 +245,17 @@ export default function AdminAgencies() {
         </CardContent>
       </Card>
 
-      {/* Confirmation Dialog */}
-      <AlertDialog 
-        open={confirmDialog?.open} 
-        onOpenChange={(open) => !open && setConfirmDialog(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDialog && actionLabels[confirmDialog.action].title}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDialog && (
-                <>
-                  Are you sure you want to {confirmDialog.action} <strong>{confirmDialog.agencyName}</strong>?
-                  <br /><br />
-                  {actionLabels[confirmDialog.action].description}
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleAction}
-              className={confirmDialog?.action === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
-            >
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Agency Detail Sheet */}
+      <AgencyDetailSheet
+        agency={selectedAgency}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onVerify={(id) => verifyAgency.mutate(id)}
+        onUnverify={(id) => unverifyAgency.mutate(id)}
+        onDelete={(id) => deleteAgency.mutate(id)}
+        isVerifying={verifyAgency.isPending}
+        isDeleting={deleteAgency.isPending}
+      />
     </motion.div>
   );
 }
