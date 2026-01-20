@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,6 +70,12 @@ export default function AgencySettings() {
     is_accepting_agents: true,
   });
 
+  const [notificationSettings, setNotificationSettings] = useState({
+    notify_email: true,
+    notify_on_lead: true,
+    notify_on_join_request: true,
+  });
+
   const [cities, setCities] = useState<string[]>([]);
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [newCity, setNewCity] = useState('');
@@ -85,6 +91,11 @@ export default function AgencySettings() {
         phone: agency.phone || '',
         website: agency.website || '',
         is_accepting_agents: agency.is_accepting_agents ?? true,
+      });
+      setNotificationSettings({
+        notify_email: (agency as any).notify_email ?? true,
+        notify_on_lead: (agency as any).notify_on_lead ?? true,
+        notify_on_join_request: (agency as any).notify_on_join_request ?? true,
       });
       setCities(agency.cities_covered || []);
       setSpecializations(agency.specializations || []);
@@ -160,7 +171,10 @@ export default function AgencySettings() {
       cities_covered: cities.length > 0 ? cities : null,
       specializations: specializations.length > 0 ? specializations : null,
       is_accepting_agents: formData.is_accepting_agents,
-    });
+      notify_email: notificationSettings.notify_email,
+      notify_on_lead: notificationSettings.notify_on_lead,
+      notify_on_join_request: notificationSettings.notify_on_join_request,
+    } as any);
   };
 
   if (isLoading) {
@@ -467,6 +481,64 @@ export default function AgencySettings() {
                           {spec.label}
                         </label>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Notifications Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      <CardTitle>Notifications</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Email Notifications</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive notifications via email
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_email}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_email: checked }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">New Lead Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when new leads come in
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_on_lead}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_on_lead: checked }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Join Request Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when agents request to join
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_on_join_request}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_on_join_request: checked }))
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>

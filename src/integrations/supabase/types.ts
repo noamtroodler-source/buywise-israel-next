@@ -28,6 +28,9 @@ export type Database = {
           is_verified: boolean | null
           logo_url: string | null
           name: string
+          notify_email: boolean | null
+          notify_on_join_request: boolean | null
+          notify_on_lead: boolean | null
           office_address: string | null
           office_hours: string | null
           phone: string | null
@@ -50,6 +53,9 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           name: string
+          notify_email?: boolean | null
+          notify_on_join_request?: boolean | null
+          notify_on_lead?: boolean | null
           office_address?: string | null
           office_hours?: string | null
           phone?: string | null
@@ -72,6 +78,9 @@ export type Database = {
           is_verified?: boolean | null
           logo_url?: string | null
           name?: string
+          notify_email?: boolean | null
+          notify_on_join_request?: boolean | null
+          notify_on_lead?: boolean | null
           office_address?: string | null
           office_hours?: string | null
           phone?: string | null
@@ -221,6 +230,47 @@ export type Database = {
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agency_notifications: {
+        Row: {
+          action_url: string | null
+          agency_id: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          action_url?: string | null
+          agency_id: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          action_url?: string | null
+          agency_id?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_notifications_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
         ]
@@ -1049,6 +1099,9 @@ export type Database = {
           linkedin_url: string | null
           logo_url: string | null
           name: string
+          notify_email: boolean | null
+          notify_on_approval: boolean | null
+          notify_on_inquiry: boolean | null
           office_address: string | null
           office_city: string | null
           onboarding_completed_at: string | null
@@ -1081,6 +1134,9 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           name: string
+          notify_email?: boolean | null
+          notify_on_approval?: boolean | null
+          notify_on_inquiry?: boolean | null
           office_address?: string | null
           office_city?: string | null
           onboarding_completed_at?: string | null
@@ -1113,6 +1169,9 @@ export type Database = {
           linkedin_url?: string | null
           logo_url?: string | null
           name?: string
+          notify_email?: boolean | null
+          notify_on_approval?: boolean | null
+          notify_on_inquiry?: boolean | null
           office_address?: string | null
           office_city?: string | null
           onboarding_completed_at?: string | null
