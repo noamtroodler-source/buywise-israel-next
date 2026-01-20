@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, UserPlus, Home, MessageSquare, Building, User } from 'lucide-react';
+import { Activity, UserPlus, Home, MessageSquare, Building, User, Building2, Landmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ActivityItem } from '@/hooks/useRecentActivity';
 
@@ -16,6 +16,8 @@ const activityIcons = {
   inquiry: MessageSquare,
   project_submission: Building,
   user_signup: User,
+  agency_registration: Building2,
+  developer_registration: Landmark,
 };
 
 const activityColors = {
@@ -24,6 +26,8 @@ const activityColors = {
   inquiry: 'bg-primary/10 text-primary',
   project_submission: 'bg-primary/10 text-primary',
   user_signup: 'bg-muted text-muted-foreground',
+  agency_registration: 'bg-primary/10 text-primary',
+  developer_registration: 'bg-primary/10 text-primary',
 };
 
 export function ActivityFeed({ activities, isLoading }: ActivityFeedProps) {
