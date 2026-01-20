@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
-import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 
 interface Agent {
   id?: string;
@@ -39,6 +39,8 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
         userId: user?.id,
       });
     }
+
+    openWhatsApp(whatsappUrl);
   };
 
   const handleEmail = () => {
@@ -106,13 +108,10 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
             {agent.phone && whatsappUrl && (
               <Button 
                 className="gap-2 flex-1 sm:flex-initial" 
-                asChild
                 onClick={handleWhatsAppClick}
               >
-                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
               </Button>
             )}
 
@@ -131,3 +130,4 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
     </Card>
   );
 }
+
