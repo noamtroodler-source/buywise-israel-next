@@ -34,6 +34,8 @@ import { RemoveAgentDialog } from '@/components/agency/RemoveAgentDialog';
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
 import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
+import { AgencyNotificationBell } from '@/components/agency/AgencyNotificationBell';
+import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformanceInsights';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -127,6 +129,7 @@ export default function AgencyDashboard() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <AgencyNotificationBell />
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/leads">
                     <MessageSquare className="h-4 w-4 mr-2" />
@@ -160,6 +163,9 @@ export default function AgencyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Performance Insights */}
+          <AgencyPerformanceInsights />
 
           {/* Stats with animations */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

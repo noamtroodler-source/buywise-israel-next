@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Upload, Building2, Save, Globe, Mail, Phone, Calendar, Linkedin, Instagram, Facebook, MapPin, Users, X, Briefcase } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, Loader2, Upload, Building2, Save, Globe, Mail, Phone, Calendar, Linkedin, Instagram, Facebook, MapPin, Users, X, Briefcase, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
@@ -77,6 +78,12 @@ export default function DeveloperSettings() {
     specialties: [] as string[],
   });
 
+  const [notificationSettings, setNotificationSettings] = useState({
+    notify_email: true,
+    notify_on_inquiry: true,
+    notify_on_approval: true,
+  });
+
   // Initialize form when developer data loads
   useEffect(() => {
     if (developer) {
@@ -95,6 +102,11 @@ export default function DeveloperSettings() {
         company_size: developer.company_size || '',
         company_type: developer.company_type || '',
         specialties: developer.specialties || [],
+      });
+      setNotificationSettings({
+        notify_email: (developer as any).notify_email ?? true,
+        notify_on_inquiry: (developer as any).notify_on_inquiry ?? true,
+        notify_on_approval: (developer as any).notify_on_approval ?? true,
       });
     }
   }, [developer]);
@@ -180,6 +192,9 @@ export default function DeveloperSettings() {
           company_size: formData.company_size || null,
           company_type: formData.company_type || null,
           specialties: formData.specialties.length > 0 ? formData.specialties : null,
+          notify_email: notificationSettings.notify_email,
+          notify_on_inquiry: notificationSettings.notify_on_inquiry,
+          notify_on_approval: notificationSettings.notify_on_approval,
         })
         .eq('id', developer.id);
 
@@ -575,6 +590,67 @@ export default function DeveloperSettings() {
                         />
                         <p className="text-xs text-muted-foreground">This will be displayed on your public profile and project pages.</p>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Notifications Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      Notifications
+                    </CardTitle>
+                    <CardDescription>
+                      Manage how you receive updates
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base font-medium">Email Notifications</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive notifications via email
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_email}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_email: checked }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base font-medium">New Inquiry Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when buyers inquire about your projects
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_on_inquiry}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_on_inquiry: checked }))
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label className="text-base font-medium">Project Approval Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when your projects are approved
+                        </p>
+                      </div>
+                      <Switch
+                        checked={notificationSettings.notify_on_approval}
+                        onCheckedChange={(checked) => 
+                          setNotificationSettings(prev => ({ ...prev, notify_on_approval: checked }))
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>
