@@ -125,6 +125,8 @@ export default function ProjectDetail() {
                   <ProjectAgentCard 
                     agent={project.representing_agent} 
                     projectName={project.name}
+                    projectId={project.id}
+                    developerId={project.developer_id || undefined}
                   />
                 </div>
               )}

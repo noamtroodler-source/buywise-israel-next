@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Phone, Mail, MessageCircle, CheckCircle, ExternalLink, Building2, Globe, Clock } from 'lucide-react';
+import { Mail, MessageCircle, CheckCircle, ExternalLink, Building2, Globe, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RepresentingAgent {
   id: string;
@@ -21,11 +23,25 @@ interface RepresentingAgent {
 interface ProjectAgentCardProps {
   agent: RepresentingAgent;
   projectName?: string;
+  projectId?: string;
+  developerId?: string;
 }
 
-export function ProjectAgentCard({ agent, projectName }: ProjectAgentCardProps) {
+export function ProjectAgentCard({ agent, projectName, projectId, developerId }: ProjectAgentCardProps) {
+  const { user } = useAuth();
+
   const handleWhatsApp = () => {
     if (agent.phone) {
+      // Track inquiry
+      if (projectId && developerId) {
+        trackProjectInquiry({
+          projectId,
+          developerId,
+          inquiryType: 'whatsapp',
+          projectName,
+          userId: user?.id,
+        });
+      }
       const cleanPhone = agent.phone.replace(/\D/g, '');
       const message = projectName 
         ? `Hi ${agent.name}, I'm interested in ${projectName} and would like more information.`
@@ -34,13 +50,17 @@ export function ProjectAgentCard({ agent, projectName }: ProjectAgentCardProps) 
     }
   };
 
-  const handleCall = () => {
-    if (agent.phone) {
-      window.location.href = `tel:${agent.phone}`;
-    }
-  };
-
   const handleEmail = () => {
+    // Track inquiry
+    if (projectId && developerId) {
+      trackProjectInquiry({
+        projectId,
+        developerId,
+        inquiryType: 'email',
+        projectName,
+        userId: user?.id,
+      });
+    }
     const subject = projectName 
       ? `Inquiry about ${projectName}`
       : 'Project Inquiry';
@@ -123,16 +143,10 @@ export function ProjectAgentCard({ agent, projectName }: ProjectAgentCardProps) 
               WhatsApp
             </Button>
           )}
-          {agent.phone && (
-            <Button variant="outline" onClick={handleCall} className="gap-2">
-              <Phone className="h-4 w-4" />
-              Call
-            </Button>
-          )}
           <Button 
             variant="outline" 
             onClick={handleEmail} 
-            className={agent.phone ? "col-span-2" : "col-span-2"}
+            className={agent.phone ? "" : "col-span-2"}
           >
             <Mail className="h-4 w-4 mr-2" />
             Email
