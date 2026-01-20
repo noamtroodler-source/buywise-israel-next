@@ -25,8 +25,9 @@ interface AgentContactSectionProps {
 export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentContactSectionProps) {
   const { user } = useAuth();
 
+  const whatsappMessage = `Hi, I'm interested in the property: ${propertyTitle}`;
   const whatsappUrl = agent?.phone 
-    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in the property: ${propertyTitle}`)
+    ? buildWhatsAppUrl(agent.phone, whatsappMessage)
     : '';
 
   const handleWhatsAppClick = () => {
@@ -40,7 +41,7 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
       });
     }
 
-    openWhatsApp(whatsappUrl);
+    openWhatsApp(whatsappUrl, agent?.phone || '', whatsappMessage);
   };
 
   const handleEmail = () => {

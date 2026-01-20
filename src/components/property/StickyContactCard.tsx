@@ -50,8 +50,9 @@ export function StickyContactCard({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const whatsappMessage = `Hi, I'm interested in: ${propertyTitle}`;
   const whatsappUrl = agent?.phone 
-    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in: ${propertyTitle}`)
+    ? buildWhatsAppUrl(agent.phone, whatsappMessage)
     : '';
 
   const handleWhatsAppClick = () => {
@@ -64,7 +65,7 @@ export function StickyContactCard({
       });
     }
 
-    openWhatsApp(whatsappUrl);
+    openWhatsApp(whatsappUrl, agent?.phone || '', whatsappMessage);
   };
 
   const handleEmail = () => {
@@ -234,8 +235,9 @@ interface MobileContactBarProps {
 export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileContactBarProps) {
   const { user } = useAuth();
 
+  const whatsappMessage = `Hi, I'm interested in: ${propertyTitle}`;
   const whatsappUrl = agent?.phone 
-    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in: ${propertyTitle}`)
+    ? buildWhatsAppUrl(agent.phone, whatsappMessage)
     : '';
 
   const handleWhatsAppClick = () => {
@@ -248,7 +250,7 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
       });
     }
 
-    openWhatsApp(whatsappUrl);
+    openWhatsApp(whatsappUrl, agent?.phone || '', whatsappMessage);
   };
 
   const handleScrollToContact = () => {

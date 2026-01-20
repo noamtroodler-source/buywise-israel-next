@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
+import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -99,8 +100,9 @@ const App = () => (
               <ErrorBoundary>
                 <Toaster />
                 <Sonner />
-                <BrowserRouter>
-                  <ScrollToTop />
+                <WhatsAppFallbackModal>
+                  <BrowserRouter>
+                    <ScrollToTop />
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/get-started" element={<GetStarted />} />
@@ -279,9 +281,10 @@ const App = () => (
               <Route path="projects" element={<AdminProjects />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </WhatsAppFallbackModal>
             </ErrorBoundary>
           </TooltipProvider>
         </CompareProvider>
