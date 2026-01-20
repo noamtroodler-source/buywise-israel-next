@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -45,25 +46,20 @@ export default function AgentDetail() {
     return `Typically responds within ${days} day${days > 1 ? 's' : ''}`;
   };
 
-  const handleWhatsApp = () => {
-    if (agent?.phone) {
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi ${agent.name}, I found your profile on BuyWise Israel and would like to connect.`);
-      
-      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-      
-      // Track inquiry AFTER (async, fire-and-forget)
-      const propertyId = activeListings?.[0]?.id;
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'whatsapp',
-          propertyTitle: 'Agent Profile',
-          userId: user?.id,
-        });
-      }
+  const whatsappUrl = agent?.phone 
+    ? buildWhatsAppUrl(agent.phone, `Hi ${agent?.name || ''}, I found your profile on BuyWise Israel and would like to connect.`)
+    : '';
+
+  const handleWhatsAppClick = () => {
+    const propertyId = activeListings?.[0]?.id;
+    if (propertyId && agent?.id) {
+      trackInquiry({
+        propertyId,
+        agentId: agent.id,
+        inquiryType: 'whatsapp',
+        propertyTitle: 'Agent Profile',
+        userId: user?.id,
+      });
     }
   };
 
@@ -217,10 +213,12 @@ export default function AgentDetail() {
 
               {/* Contact Buttons */}
               <div className="flex flex-col gap-2 md:min-w-[160px]">
-                {agent.phone && (
-                  <Button className="gap-2" onClick={handleWhatsApp}>
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
+                {agent.phone && whatsappUrl && (
+                  <Button className="gap-2" asChild onClick={handleWhatsAppClick}>
+                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
+                    </a>
                   </Button>
                 )}
                 <Button variant="outline" className="gap-1.5" onClick={handleEmail}>

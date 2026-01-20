@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 interface Agent {
   id?: string;
@@ -24,24 +25,19 @@ interface AgentContactSectionProps {
 export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentContactSectionProps) {
   const { user } = useAuth();
 
-  const handleWhatsApp = () => {
-    if (agent?.phone) {
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi, I'm interested in the property: ${propertyTitle}`);
-      
-      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-      
-      // Track inquiry AFTER (async, fire-and-forget)
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'whatsapp',
-          propertyTitle,
-          userId: user?.id,
-        });
-      }
+  const whatsappUrl = agent?.phone 
+    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in the property: ${propertyTitle}`)
+    : '';
+
+  const handleWhatsAppClick = () => {
+    if (propertyId && agent?.id) {
+      trackInquiry({
+        propertyId,
+        agentId: agent.id,
+        inquiryType: 'whatsapp',
+        propertyTitle,
+        userId: user?.id,
+      });
     }
   };
 
@@ -107,14 +103,18 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
 
           {/* Contact Buttons */}
           <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-            <Button 
-              className="gap-2 flex-1 sm:flex-initial" 
-              onClick={handleWhatsApp}
-              disabled={!agent.phone}
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </Button>
+            {agent.phone && whatsappUrl && (
+              <Button 
+                className="gap-2 flex-1 sm:flex-initial" 
+                asChild
+                onClick={handleWhatsAppClick}
+              >
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </a>
+              </Button>
+            )}
 
             <Button 
               variant="outline" 

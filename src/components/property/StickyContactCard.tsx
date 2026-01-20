@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
 
 interface Agent {
   id?: string;
@@ -49,23 +50,18 @@ export function StickyContactCard({
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const handleWhatsApp = () => {
-    if (agent?.phone) {
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
-      
-      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-      
-      // Track the inquiry AFTER (async, fire-and-forget)
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'whatsapp',
-          userId: user?.id,
-        });
-      }
+  const whatsappUrl = agent?.phone 
+    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in: ${propertyTitle}`)
+    : '';
+
+  const handleWhatsAppClick = () => {
+    if (propertyId && agent?.id) {
+      trackInquiry({
+        propertyId,
+        agentId: agent.id,
+        inquiryType: 'whatsapp',
+        userId: user?.id,
+      });
     }
   };
 
@@ -147,14 +143,17 @@ export function StickyContactCard({
 
         {/* Contact Buttons */}
         <CardContent className="p-5 space-y-3">
-          {agent?.phone && (
+          {agent?.phone && whatsappUrl && (
             <Button 
               className="w-full gap-2" 
               size="lg"
-              onClick={handleWhatsApp}
+              asChild
+              onClick={handleWhatsAppClick}
             >
-              <MessageCircle className="h-5 w-5" />
-              WhatsApp
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-5 w-5" />
+                WhatsApp
+              </a>
             </Button>
           )}
           
@@ -236,36 +235,47 @@ interface MobileContactBarProps {
 export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileContactBarProps) {
   const { user } = useAuth();
 
-  const handleWhatsApp = () => {
-    if (agent?.phone) {
-      const cleanPhone = agent.phone.replace(/\D/g, '');
-      const message = encodeURIComponent(`Hi, I'm interested in: ${propertyTitle}`);
-      
-      // Open WhatsApp FIRST (synchronous, preserves click context for popup)
-      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
-      
-      // Track the inquiry AFTER (async, fire-and-forget)
-      if (propertyId && agent.id) {
-        trackInquiry({
-          propertyId,
-          agentId: agent.id,
-          inquiryType: 'whatsapp',
-          userId: user?.id,
-        });
-      }
+  const whatsappUrl = agent?.phone 
+    ? buildWhatsAppUrl(agent.phone, `Hi, I'm interested in: ${propertyTitle}`)
+    : '';
+
+  const handleWhatsAppClick = () => {
+    if (propertyId && agent?.id) {
+      trackInquiry({
+        propertyId,
+        agentId: agent.id,
+        inquiryType: 'whatsapp',
+        userId: user?.id,
+      });
     }
   };
 
-  const handleContact = () => {
-    if (agent?.phone) {
-      handleWhatsApp();
-    } else {
-      const agentSection = document.getElementById('agent-contact-section');
-      if (agentSection) {
-        agentSection.scrollIntoView({ behavior: 'smooth' });
-      }
+  const handleScrollToContact = () => {
+    const agentSection = document.getElementById('agent-contact-section');
+    if (agentSection) {
+      agentSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  if (agent?.phone && whatsappUrl) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50 md:hidden">
+        <div className="max-w-lg mx-auto">
+          <Button 
+            className="w-full gap-2" 
+            size="lg"
+            asChild
+            onClick={handleWhatsAppClick}
+          >
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-5 w-5" />
+              WhatsApp
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50 md:hidden">
@@ -273,10 +283,10 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
         <Button 
           className="w-full gap-2" 
           size="lg"
-          onClick={handleContact}
+          onClick={handleScrollToContact}
         >
           <MessageCircle className="h-5 w-5" />
-          {agent?.phone ? 'WhatsApp' : 'Contact Agent'}
+          Contact Agent
         </Button>
       </div>
     </div>
