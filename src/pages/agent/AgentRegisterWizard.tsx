@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EmailVerificationStep } from '@/components/auth/EmailVerificationStep';
 import { useAuth } from '@/hooks/useAuth';
 import { useAgentRegistration } from '@/hooks/useAgentRegistration';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +68,7 @@ export default function AgentRegisterWizard() {
   const [validatedAgencyId, setValidatedAgencyId] = useState<string | null>(null);
   const [validatedAgencyName, setValidatedAgencyName] = useState<string | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
   
   // Get invite code from URL params
   const urlInviteCode = searchParams.get('code');
@@ -197,7 +199,7 @@ export default function AgentRegisterWizard() {
   const canGoNext = () => {
     switch (currentStep) {
       case 0:
-        return formData.name && formData.email && formData.license_number;
+        return formData.name && formData.email && formData.license_number && isEmailVerified;
       case 1:
         if (formData.agency_choice === 'invite_code') {
           return validatedAgencyId !== null;
@@ -280,19 +282,17 @@ export default function AgentRegisterWizard() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => updateField('email', e.target.value)}
-                    className="pl-10 h-11 rounded-xl"
-                  />
-                </div>
-              </div>
+              <EmailVerificationStep
+                email={formData.email}
+                onEmailChange={(value) => {
+                  updateField('email', value);
+                  setIsEmailVerified(false);
+                }}
+                onVerified={() => setIsEmailVerified(true)}
+                isVerified={isEmailVerified}
+                type="agent"
+                name={formData.name}
+              />
             </motion.div>
 
             <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">

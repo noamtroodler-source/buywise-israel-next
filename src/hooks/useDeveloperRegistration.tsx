@@ -44,6 +44,7 @@ export function useDeveloperRegistration() {
           verification_status: 'pending',
           is_verified: false,
           total_projects: 0,
+          email_verified_at: new Date().toISOString(),
         })
         .select()
         .single();

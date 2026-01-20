@@ -40,6 +40,7 @@ export function useAgentRegistration() {
           years_experience: data.years_experience || 0,
           languages: data.languages || ['Hebrew', 'English'],
           specializations: data.specializations,
+          email_verified_at: new Date().toISOString(),
         })
         .select()
         .single();

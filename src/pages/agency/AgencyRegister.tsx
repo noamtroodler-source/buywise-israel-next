@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { EmailVerificationStep } from '@/components/auth/EmailVerificationStep';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -50,6 +51,7 @@ export default function AgencyRegister() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   // Redirect non-authenticated users to auth page with role context
   useEffect(() => {
@@ -186,6 +188,11 @@ export default function AgencyRegister() {
     e.preventDefault();
     if (!user) {
       toast.error('You must be logged in');
+      return;
+    }
+
+    if (!isEmailVerified) {
+      toast.error('Please verify your email first');
       return;
     }
 
@@ -379,17 +386,17 @@ export default function AgencyRegister() {
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Contact Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => updateField('email', e.target.value)}
-                          required
-                          className="h-11 rounded-xl"
-                        />
-                      </div>
+                      <EmailVerificationStep
+                        email={formData.email}
+                        onEmailChange={(value) => {
+                          updateField('email', value);
+                          setIsEmailVerified(false);
+                        }}
+                        onVerified={() => setIsEmailVerified(true)}
+                        isVerified={isEmailVerified}
+                        type="agency"
+                        name={formData.name}
+                      />
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
                         <PhoneInput
