@@ -124,7 +124,8 @@ export function PropertyWizardProvider({ children }: { children: ReactNode }) {
   const canGoNext = (() => {
     switch (currentStep) {
       case 0: // Basics
-        return !!(data.title && data.price > 0 && data.city && data.address && data.latitude && data.longitude);
+        const hasStreetNumber = /\d+/.test(data.address);
+        return !!(data.title && data.price > 0 && data.city && data.address && data.latitude && data.longitude && hasStreetNumber);
       case 1: // Details
         // For land, lot_size is required; for others, rooms/baths are required
         if (data.property_type === 'land') {
