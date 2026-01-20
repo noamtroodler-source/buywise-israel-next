@@ -398,11 +398,12 @@ export default function AgencyRegister() {
                         name={formData.name}
                       />
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phone">WhatsApp Number</Label>
                         <PhoneInput
                           id="phone"
                           value={formData.phone}
                           onChange={(value) => updateField('phone', value)}
+                          showWhatsAppIcon={true}
                         />
                       </div>
                     </div>
