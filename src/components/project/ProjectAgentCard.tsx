@@ -65,9 +65,13 @@ export function ProjectAgentCard({ agent, projectName }: ProjectAgentCardProps) 
       <CardContent className="space-y-4">
         {/* Agent Info */}
         <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} />
-            <AvatarFallback className="bg-primary/10 text-primary text-lg">
+          <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+            <AvatarImage 
+              src={agent.avatar_url || undefined} 
+              alt={agent.name}
+              className="object-cover"
+            />
+            <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
               {initials}
             </AvatarFallback>
           </Avatar>

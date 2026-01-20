@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Agent {
   id?: string;
@@ -48,17 +49,16 @@ export function AgentContactSection({ agent, propertyTitle }: AgentContactSectio
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           {/* Agent Info */}
           <div className="flex items-center gap-3 flex-1">
-            {agent.avatar_url ? (
-              <img 
-                src={agent.avatar_url} 
+            <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+              <AvatarImage 
+                src={agent.avatar_url || undefined} 
                 alt={agent.name}
-                className="h-14 w-14 rounded-full object-cover"
+                className="object-cover"
               />
-            ) : (
-              <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-bold">
-                {agent.name.charAt(0)}
-              </div>
-            )}
+              <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
+                {agent.name.charAt(0)}{agent.name.split(' ')[1]?.charAt(0) || ''}
+              </AvatarFallback>
+            </Avatar>
             <div>
               {agent.id ? (
                 <Link 

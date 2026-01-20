@@ -113,9 +113,13 @@ export function StickyContactCard({
         {agent && (
           <>
             <div className="p-5 flex items-center gap-3 bg-muted/30">
-              <Avatar className="h-12 w-12 border-2 border-background">
-                <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} />
-                <AvatarFallback className="bg-primary/10 text-primary font-medium">
+              <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+                <AvatarImage 
+                  src={agent.avatar_url || undefined} 
+                  alt={agent.name}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-primary/10 to-primary/20 text-primary font-semibold text-lg">
                   {getInitials(agent.name)}
                 </AvatarFallback>
               </Avatar>
