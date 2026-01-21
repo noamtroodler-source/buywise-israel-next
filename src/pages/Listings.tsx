@@ -57,7 +57,7 @@ export default function Listings() {
     if (filters.listing_status !== listingStatus) {
       setFilters(prev => ({ ...prev, listing_status: listingStatus }));
     }
-  }, [listingStatus]);
+  }, [listingStatus, filters.listing_status]);
 
   // Use paginated properties hook
   const { 

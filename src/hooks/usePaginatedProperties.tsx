@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
@@ -97,11 +97,14 @@ export function usePaginatedProperties(
   }, [queryClient, filters]);
 
   // Reset page when filters change
-  const prevFilterKey = useState(filterKey)[0];
-  if (filterKey !== prevFilterKey) {
-    setPage(1);
-    setAllProperties([]);
-  }
+  const prevFilterKeyRef = useRef(filterKey);
+  useEffect(() => {
+    if (filterKey !== prevFilterKeyRef.current) {
+      prevFilterKeyRef.current = filterKey;
+      setPage(1);
+      setAllProperties([]);
+    }
+  }, [filterKey]);
 
   return {
     properties,
