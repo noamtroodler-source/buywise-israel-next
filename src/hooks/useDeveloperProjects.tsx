@@ -58,6 +58,24 @@ export function useDeveloperProjects() {
   });
 }
 
+export function useDeveloperProject(projectId: string) {
+  return useQuery({
+    queryKey: ['developerProject', projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error('Project not found');
+      return data as DeveloperProject;
+    },
+    enabled: !!projectId,
+  });
+}
+
 export function useCreateProject() {
   const queryClient = useQueryClient();
   const { data: developerProfile } = useDeveloperProfile();
