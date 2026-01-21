@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { 
   Check, X, MessageSquare, Eye, MapPin, Home, 
-  Building2, ChevronDown, ChevronUp, Calendar, Clock, FileImage, TrendingUp
+  Building2, ChevronDown, ChevronUp, Calendar, Clock, FileImage, TrendingUp, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { 
   Dialog,
   DialogContent,
@@ -29,7 +32,7 @@ import { UnitTypesPreview } from './UnitTypesPreview';
 
 interface ProjectReviewCardProps {
   project: AdminProject;
-  onApprove: (id: string, notes?: string) => void;
+  onApprove: (id: string, notes?: string, featureThis?: boolean, featureSlotType?: 'project_hero' | 'project_secondary') => void;
   onRequestChanges: (id: string, feedback: string) => void;
   onReject: (id: string, reason: string) => void;
   isLoading?: boolean;
@@ -102,6 +105,8 @@ export function ProjectReviewCard({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [featureThis, setFeatureThis] = useState(false);
+  const [featureSlotType, setFeatureSlotType] = useState<'project_hero' | 'project_secondary'>('project_hero');
 
   // Fetch units when expanded
   const { data: projectUnits = [] } = useAdminProjectUnits(isExpanded ? project.id : undefined);
@@ -128,7 +133,12 @@ export function ProjectReviewCard({
   };
 
   const handleApprove = () => {
-    onApprove(project.id, adminNotes || undefined);
+    onApprove(
+      project.id, 
+      adminNotes || undefined, 
+      featureThis, 
+      featureThis ? featureSlotType : undefined
+    );
   };
 
   const handleRequestChanges = () => {
@@ -377,7 +387,7 @@ export function ProjectReviewCard({
               </Collapsible>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-3 border-t mt-3">
+              <div className="flex flex-wrap items-center gap-2 pt-3 border-t mt-3">
                 {canTakeAction && (
                   <>
                     <Button
@@ -388,6 +398,39 @@ export function ProjectReviewCard({
                       <Check className="h-4 w-4 mr-1" />
                       Approve
                     </Button>
+                    
+                    {/* Feature checkbox with slot selection - only for pending */}
+                    {project.verification_status === 'pending_review' && (
+                      <div className="flex items-center gap-3 px-2 py-1.5 rounded-md bg-muted/30">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox 
+                            checked={featureThis} 
+                            onCheckedChange={(checked) => setFeatureThis(checked === true)}
+                          />
+                          <Star className="h-4 w-4 text-primary" />
+                          <span className="text-muted-foreground">Feature this</span>
+                        </label>
+                        
+                        {/* Slot type selector - only visible when checkbox is checked */}
+                        {featureThis && (
+                          <RadioGroup 
+                            value={featureSlotType} 
+                            onValueChange={(v) => setFeatureSlotType(v as 'project_hero' | 'project_secondary')}
+                            className="flex gap-3"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <RadioGroupItem value="project_hero" id={`hero-${project.id}`} />
+                              <Label htmlFor={`hero-${project.id}`} className="text-xs cursor-pointer">Hero</Label>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <RadioGroupItem value="project_secondary" id={`secondary-${project.id}`} />
+                              <Label htmlFor={`secondary-${project.id}`} className="text-xs cursor-pointer">Secondary</Label>
+                            </div>
+                          </RadioGroup>
+                        )}
+                      </div>
+                    )}
+                    
                     <Button
                       variant="outline"
                       onClick={() => setShowChangesDialog(true)}
