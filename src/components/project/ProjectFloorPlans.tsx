@@ -1,9 +1,15 @@
-import { useMemo } from 'react';
-import { Building2, Mail, Phone } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Building2, Mail, Phone, FileImage, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { ProjectUnit, Developer } from '@/types/projects';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -27,10 +33,15 @@ interface UnitTypeGroup {
   priceRange: { min: number; max: number };
   pricePerSqm: number;
   outdoor: string;
+  floorPlanUrl: string | null;
 }
 
 export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) {
   const formatPrice = useFormatPrice();
+  const [selectedFloorPlan, setSelectedFloorPlan] = useState<{
+    url: string;
+    type: string;
+  } | null>(null);
   
   // Group units by type with aggregated data
   const unitGroups = useMemo(() => {
@@ -48,7 +59,13 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
           priceRange: { min: Infinity, max: 0 },
           pricePerSqm: 0,
           outdoor: (unit as any).outdoor_space || 'Balcony',
+          floorPlanUrl: null,
         };
+      }
+      
+      // Capture first available floor plan URL for this type
+      if (unit.floor_plan_url && !groups[type].floorPlanUrl) {
+        groups[type].floorPlanUrl = unit.floor_plan_url;
       }
       
       if (unit.price) {
@@ -138,95 +155,162 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          Floor Plans & Units
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unit Type</TableHead>
-                <TableHead className="text-center">Rooms</TableHead>
-                <TableHead className="text-center">Baths</TableHead>
-                <TableHead className="text-center">Size (m²)</TableHead>
-                <TableHead className="text-center">Floors</TableHead>
-                <TableHead className="text-center">Outdoor</TableHead>
-                <TableHead className="text-right">Price From</TableHead>
-                <TableHead className="text-right">₪/m²</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {unitGroups.map((group) => (
-                <TableRow key={group.type}>
-                  <TableCell className="font-medium">{group.type}</TableCell>
-                  <TableCell className="text-center">{group.bedrooms}</TableCell>
-                  <TableCell className="text-center">{group.bathrooms}</TableCell>
-                  <TableCell className="text-center">{formatRange(group.sizeRange.min, group.sizeRange.max)}</TableCell>
-                  <TableCell className="text-center">{formatRange(group.floorRange.min, group.floorRange.max)}</TableCell>
-                  <TableCell className="text-center text-muted-foreground">{group.outdoor}</TableCell>
-                  <TableCell className="text-right font-semibold text-primary">
-                    {group.priceRange.min !== Infinity ? formatPrice(group.priceRange.min, 'ILS') : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}
-                  </TableCell>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-primary" />
+            Floor Plans & Units
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Unit Type</TableHead>
+                  <TableHead className="text-center">Floor Plan</TableHead>
+                  <TableHead className="text-center">Rooms</TableHead>
+                  <TableHead className="text-center">Baths</TableHead>
+                  <TableHead className="text-center">Size (m²)</TableHead>
+                  <TableHead className="text-center">Floors</TableHead>
+                  <TableHead className="text-center">Outdoor</TableHead>
+                  <TableHead className="text-right">Price From</TableHead>
+                  <TableHead className="text-right">₪/m²</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {unitGroups.map((group) => (
+                  <TableRow key={group.type}>
+                    <TableCell className="font-medium">{group.type}</TableCell>
+                    <TableCell className="text-center">
+                      {group.floorPlanUrl ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-primary hover:text-primary/80 gap-1"
+                          onClick={() => setSelectedFloorPlan({ url: group.floorPlanUrl!, type: group.type })}
+                        >
+                          <FileImage className="h-4 w-4" />
+                          View
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Coming Soon</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">{group.bedrooms}</TableCell>
+                    <TableCell className="text-center">{group.bathrooms}</TableCell>
+                    <TableCell className="text-center">{formatRange(group.sizeRange.min, group.sizeRange.max)}</TableCell>
+                    <TableCell className="text-center">{formatRange(group.floorRange.min, group.floorRange.max)}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{group.outdoor}</TableCell>
+                    <TableCell className="text-right font-semibold text-primary">
+                      {group.priceRange.min !== Infinity ? formatPrice(group.priceRange.min, 'ILS') : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-        {/* Mobile Cards */}
-        <div className="md:hidden space-y-3">
-          {unitGroups.map((group) => (
-            <div key={group.type} className="p-4 rounded-lg border border-border bg-muted/20">
-              <div className="mb-3">
-                <h4 className="font-semibold">{group.type}</h4>
-                <p className="text-sm text-muted-foreground">
-                  {group.bedrooms} Bed • {group.bathrooms} Bath • {formatRange(group.sizeRange.min, group.sizeRange.max)} m²
-                </p>
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-3">
+            {unitGroups.map((group) => (
+              <div key={group.type} className="p-4 rounded-lg border border-border bg-muted/20">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="font-semibold">{group.type}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {group.bedrooms} Bed • {group.bathrooms} Bath • {formatRange(group.sizeRange.min, group.sizeRange.max)} m²
+                    </p>
+                  </div>
+                  {/* Floor Plan Button */}
+                  {group.floorPlanUrl ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 flex-shrink-0"
+                      onClick={() => setSelectedFloorPlan({ url: group.floorPlanUrl!, type: group.type })}
+                    >
+                      <FileImage className="h-4 w-4" />
+                      Floor Plan
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic px-2 py-1 bg-muted rounded flex-shrink-0">
+                      Floor Plan Coming Soon
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Floors:</span>{' '}
+                    <span>{formatRange(group.floorRange.min, group.floorRange.max)}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Outdoor:</span>{' '}
+                    <span>{group.outdoor}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">From:</span>{' '}
+                    <span className="font-semibold text-primary">
+                      {group.priceRange.min !== Infinity ? formatPrice(group.priceRange.min, 'ILS') : 'N/A'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">₪/m²:</span>{' '}
+                    <span>{group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}</span>
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Floors:</span>{' '}
-                  <span>{formatRange(group.floorRange.min, group.floorRange.max)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Outdoor:</span>{' '}
-                  <span>{group.outdoor}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">From:</span>{' '}
-                  <span className="font-semibold text-primary">
-                    {group.priceRange.min !== Infinity ? formatPrice(group.priceRange.min, 'ILS') : 'N/A'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">₪/m²:</span>{' '}
-                  <span>{group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* CTA at bottom */}
-        <div className="mt-6 pt-4 border-t border-border text-center">
-          <p className="text-sm text-muted-foreground mb-3">
-            Want more details on specific units or availability?
-          </p>
-          <Button variant="outline" onClick={handleScrollToContact}>
-            <Mail className="h-4 w-4 mr-2" />
-            Request Full Floor Plans
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          {/* CTA at bottom */}
+          <div className="mt-6 pt-4 border-t border-border text-center">
+            <p className="text-sm text-muted-foreground mb-3">
+              Want more details on specific units or availability?
+            </p>
+            <Button variant="outline" onClick={handleScrollToContact}>
+              <Mail className="h-4 w-4 mr-2" />
+              Request Full Floor Plans
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Floor Plan Dialog */}
+      <Dialog open={!!selectedFloorPlan} onOpenChange={(open) => !open && setSelectedFloorPlan(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileImage className="h-5 w-5 text-primary" />
+              {selectedFloorPlan?.type} - Floor Plan
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative aspect-[4/3] w-full bg-muted rounded-lg overflow-hidden">
+            <img 
+              src={selectedFloorPlan?.url} 
+              alt={`Floor plan for ${selectedFloorPlan?.type}`}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="flex justify-center gap-3">
+            <Button variant="outline" asChild>
+              <a href={selectedFloorPlan?.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open Full Size
+              </a>
+            </Button>
+            <Button onClick={handleScrollToContact}>
+              <Mail className="h-4 w-4 mr-2" />
+              Request This Unit
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
