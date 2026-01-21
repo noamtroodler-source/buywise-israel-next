@@ -213,6 +213,11 @@ function GoogleAddressAutocomplete({
           onKeyDown={handleKeyDown}
           disabled={!ready}
           placeholder={placeholder}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-form-type="other"
           className={cn(
             'h-11 rounded-xl pr-10',
             hasValidSelection && 'border-primary/50 bg-primary/5',
@@ -378,6 +383,11 @@ function NominatimAddressAutocomplete({
             if (suggestions.length > 0) setIsOpen(true);
           }}
           placeholder={placeholder}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-form-type="other"
           className={cn(
             'h-11 rounded-xl pr-10',
             hasValidSelection && 'border-primary/50 bg-primary/5',
