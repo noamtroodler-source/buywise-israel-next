@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Upload, X, Loader2, Image as ImageIcon, FileText, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { X, Loader2, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useProjectWizard } from '../ProjectWizardContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,17 +9,12 @@ import { cn } from '@/lib/utils';
 export function StepPhotos() {
   const { data, updateData } = useProjectWizard();
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadingFloorPlan, setUploadingFloorPlan] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set());
-  const [brokenFloorPlans, setBrokenFloorPlans] = useState<Set<number>>(new Set());
 
   const handleImageError = (index: number) => {
     setBrokenImages(prev => new Set(prev).add(index));
   };
 
-  const handleFloorPlanError = (index: number) => {
-    setBrokenFloorPlans(prev => new Set(prev).add(index));
-  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -69,49 +63,6 @@ export function StepPhotos() {
     }
   };
 
-  const handleFloorPlanUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploadingFloorPlan(true);
-    const newUrls: string[] = [];
-
-    try {
-      for (const file of Array.from(files)) {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name} is too large (max 10MB)`);
-          continue;
-        }
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `floor-plans/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('property-images')
-          .upload(fileName, file);
-
-        if (uploadError) {
-          toast.error(`Failed to upload ${file.name}`);
-          continue;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('property-images')
-          .getPublicUrl(fileName);
-
-        newUrls.push(publicUrl);
-      }
-
-      if (newUrls.length > 0) {
-        updateData({ floor_plans: [...data.floor_plans, ...newUrls] });
-        toast.success(`Uploaded ${newUrls.length} floor plan${newUrls.length > 1 ? 's' : ''}`);
-      }
-    } finally {
-      setUploadingFloorPlan(false);
-      e.target.value = '';
-    }
-  };
-
   const removeImage = (index: number) => {
     const updated = data.images.filter((_, i) => i !== index);
     updateData({ images: updated });
@@ -128,28 +79,12 @@ export function StepPhotos() {
     });
   };
 
-  const removeFloorPlan = (index: number) => {
-    const updated = data.floor_plans.filter((_, i) => i !== index);
-    updateData({ floor_plans: updated });
-    // Update broken floor plans set
-    setBrokenFloorPlans(prev => {
-      const updated = new Set(prev);
-      updated.delete(index);
-      const shifted = new Set<number>();
-      updated.forEach(i => {
-        if (i > index) shifted.add(i - 1);
-        else shifted.add(i);
-      });
-      return shifted;
-    });
-  };
-
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-semibold mb-4">Project Photos</h2>
         <p className="text-muted-foreground mb-6">
-          Upload high-quality images and floor plans for your project.
+          Upload high-quality images for your project.
         </p>
       </div>
 
@@ -224,77 +159,6 @@ export function StepPhotos() {
         </div>
       </div>
 
-      {/* Floor Plans */}
-      <div className="space-y-4">
-        <Label>Floor Plans</Label>
-        <p className="text-sm text-muted-foreground">
-          Upload floor plan images or PDFs for different unit types.
-        </p>
-
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {data.floor_plans.map((url, index) => {
-            const isBroken = brokenFloorPlans.has(index);
-            const isPdf = url.toLowerCase().endsWith('.pdf');
-            return (
-              <div 
-                key={index} 
-                className={cn(
-                  "relative aspect-square rounded-lg overflow-hidden border bg-muted group",
-                  isBroken && "border-2 border-destructive bg-destructive/5"
-                )}
-              >
-                {isBroken ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-center p-3 bg-destructive/10">
-                    <AlertTriangle className="h-6 w-6 text-destructive mb-1" />
-                    <span className="text-xs text-destructive font-medium">Failed to load</span>
-                    <span className="text-xs text-muted-foreground">Remove and re-upload</span>
-                  </div>
-                ) : isPdf ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center">
-                    <FileText className="h-12 w-12 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground mt-2">PDF</span>
-                  </div>
-                ) : (
-                  <img
-                    src={url}
-                    alt={`Floor Plan ${index + 1}`}
-                    className="w-full h-full object-contain"
-                    onError={() => handleFloorPlanError(index)}
-                  />
-                )}
-                <button
-                  onClick={() => removeFloorPlan(index)}
-                  className={cn(
-                    "absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white hover:bg-black/70 transition-opacity",
-                    isBroken ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  )}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            );
-          })}
-
-          <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 cursor-pointer transition-colors">
-            {uploadingFloorPlan ? (
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            ) : (
-              <>
-                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                <span className="text-sm text-muted-foreground">Add Floor Plans</span>
-              </>
-            )}
-            <input
-              type="file"
-              accept="image/*,.pdf"
-              multiple
-              onChange={handleFloorPlanUpload}
-              className="hidden"
-              disabled={uploadingFloorPlan}
-            />
-          </label>
-        </div>
-      </div>
     </div>
   );
 }
