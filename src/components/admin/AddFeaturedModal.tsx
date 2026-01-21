@@ -4,6 +4,7 @@ import { Search, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -68,6 +69,9 @@ export function AddFeaturedModal<T>({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Search and select an item to feature on the homepage.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
