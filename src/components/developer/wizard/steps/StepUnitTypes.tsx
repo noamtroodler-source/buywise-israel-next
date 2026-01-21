@@ -269,8 +269,45 @@ export function StepUnitTypes() {
   const handleSave = () => {
     const finalName = formData.name === 'Custom' ? customName : formData.name;
     
+    // Validate all required fields (everything except floor plan)
+    const errors: string[] = [];
+    
     if (!finalName) {
-      toast.error('Please enter a unit type name');
+      errors.push('Unit type name');
+    }
+    if (formData.bedrooms === undefined || formData.bedrooms === null) {
+      errors.push('Rooms');
+    }
+    if (formData.bathrooms === undefined || formData.bathrooms === null) {
+      errors.push('Bathrooms');
+    }
+    if (!formData.sizeMin) {
+      errors.push('Size (From)');
+    }
+    if (!formData.sizeMax) {
+      errors.push('Size (To)');
+    }
+    if (!formData.floorMin) {
+      errors.push('Floor (From)');
+    }
+    if (!formData.floorMax) {
+      errors.push('Floor (To)');
+    }
+    if (!formData.priceMin) {
+      errors.push('Price (From)');
+    }
+    if (!formData.priceMax) {
+      errors.push('Price (To)');
+    }
+    if (!formData.outdoorSpace) {
+      errors.push('Outdoor space');
+    }
+    if (!formData.quantity) {
+      errors.push('Number of units');
+    }
+
+    if (errors.length > 0) {
+      toast.error(`Please fill in: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` and ${errors.length - 3} more` : ''}`);
       return;
     }
 
@@ -492,7 +529,7 @@ export function StepUnitTypes() {
 
             {/* Size Range */}
             <div className="space-y-2">
-              <Label>Size Range (m²)</Label>
+              <Label>Size Range (m²) *</Label>
               <div className="grid grid-cols-2 gap-3">
                 <FormattedNumberInput
                   value={formData.sizeMin}
@@ -512,7 +549,7 @@ export function StepUnitTypes() {
             {/* Floor Range */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5">
-                <Label>Floor Range</Label>
+                <Label>Floor Range *</Label>
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -546,7 +583,7 @@ export function StepUnitTypes() {
 
             {/* Price Range */}
             <div className="space-y-2">
-              <Label>Price Range (₪)</Label>
+              <Label>Price Range (₪) *</Label>
               <div className="grid grid-cols-2 gap-3">
                 <FormattedNumberInput
                   value={formData.priceMin}
@@ -567,7 +604,7 @@ export function StepUnitTypes() {
 
             {/* Outdoor Space */}
             <div className="space-y-2">
-              <Label>Outdoor Space</Label>
+              <Label>Outdoor Space *</Label>
               <RadioGroup
                 value={formData.outdoorSpace}
                 onValueChange={(v) => setFormData(prev => ({ ...prev, outdoorSpace: v as OutdoorSpaceType }))}
@@ -586,7 +623,7 @@ export function StepUnitTypes() {
 
             {/* Quantity */}
             <div className="space-y-2">
-              <Label>Number of Units</Label>
+              <Label>Number of Units *</Label>
               <Input
                 type="number"
                 placeholder="How many units of this type?"
