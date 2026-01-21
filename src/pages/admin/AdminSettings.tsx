@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Save, ExternalLink, RefreshCw, DollarSign, Percent, Calculator, Building } from 'lucide-react';
+import { Save, ExternalLink, RefreshCw, DollarSign, Percent, Calculator, Building, Home, Megaphone, Tag } from 'lucide-react';
 import { CalculatorConstant } from '@/hooks/useCalculatorConstants';
 
 interface ConstantGroup {
@@ -16,11 +17,13 @@ interface ConstantGroup {
   label: string;
   icon: React.ReactNode;
   constants: CalculatorConstant[];
+  isJson?: boolean;
 }
 
 export function AdminSettings() {
   const queryClient = useQueryClient();
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
+  const [editedJsonValues, setEditedJsonValues] = useState<Record<string, string>>({});
 
   const { data: constants, isLoading } = useQuery({
     queryKey: ['admin-calculator-constants'],
@@ -36,7 +39,7 @@ export function AdminSettings() {
     },
   });
 
-  const updateMutation = useMutation({
+  const updateNumericMutation = useMutation({
     mutationFn: async ({ id, value }: { id: string; value: number }) => {
       const { error } = await supabase
         .from('calculator_constants')
@@ -54,7 +57,25 @@ export function AdminSettings() {
     },
   });
 
-  const handleSave = (constant: CalculatorConstant) => {
+  const updateJsonMutation = useMutation({
+    mutationFn: async ({ id, value }: { id: string; value: unknown }) => {
+      const { error } = await supabase
+        .from('calculator_constants')
+        .update({ value_json: value as any, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-calculator-constants'] });
+      queryClient.invalidateQueries({ queryKey: ['calculator-constants'] });
+      toast.success('Setting updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update setting: ' + error.message);
+    },
+  });
+
+  const handleSaveNumeric = (constant: CalculatorConstant) => {
     const newValue = editedValues[constant.id];
     if (newValue === undefined) return;
     
@@ -64,7 +85,7 @@ export function AdminSettings() {
       return;
     }
     
-    updateMutation.mutate({ id: constant.id, value: numValue });
+    updateNumericMutation.mutate({ id: constant.id, value: numValue });
     setEditedValues((prev) => {
       const next = { ...prev };
       delete next[constant.id];
@@ -72,30 +93,67 @@ export function AdminSettings() {
     });
   };
 
+  const handleSaveJson = (constant: CalculatorConstant) => {
+    const newValue = editedJsonValues[constant.id];
+    if (newValue === undefined) return;
+    
+    try {
+      const jsonValue = JSON.parse(newValue);
+      updateJsonMutation.mutate({ id: constant.id, value: jsonValue });
+      setEditedJsonValues((prev) => {
+        const next = { ...prev };
+        delete next[constant.id];
+        return next;
+      });
+    } catch (e) {
+      toast.error('Invalid JSON format');
+    }
+  };
+
   const groupedConstants: ConstantGroup[] = [
     {
       category: 'general',
-      label: 'General Settings',
-      icon: <DollarSign className="h-5 w-5" />,
+      label: 'General',
+      icon: <DollarSign className="h-4 w-4" />,
       constants: constants?.filter((c) => c.category === 'general') || [],
     },
     {
       category: 'mortgage',
-      label: 'Mortgage Settings',
-      icon: <Building className="h-5 w-5" />,
+      label: 'Mortgage',
+      icon: <Building className="h-4 w-4" />,
       constants: constants?.filter((c) => c.category === 'mortgage') || [],
     },
     {
       category: 'fees',
-      label: 'Professional Fees',
-      icon: <Percent className="h-5 w-5" />,
+      label: 'Fees',
+      icon: <Percent className="h-4 w-4" />,
       constants: constants?.filter((c) => c.category === 'fees') || [],
     },
     {
       category: 'tax',
-      label: 'Tax Settings',
-      icon: <Calculator className="h-5 w-5" />,
+      label: 'Tax',
+      icon: <Calculator className="h-4 w-4" />,
       constants: constants?.filter((c) => c.category === 'tax') || [],
+    },
+    {
+      category: 'municipal',
+      label: 'Municipal',
+      icon: <Home className="h-4 w-4" />,
+      constants: constants?.filter((c) => c.category === 'municipal') || [],
+    },
+    {
+      category: 'arnona_discounts',
+      label: 'Arnona',
+      icon: <Tag className="h-4 w-4" />,
+      constants: constants?.filter((c) => c.category === 'arnona_discounts') || [],
+      isJson: true,
+    },
+    {
+      category: 'branding',
+      label: 'Branding',
+      icon: <Megaphone className="h-4 w-4" />,
+      constants: constants?.filter((c) => c.category === 'branding') || [],
+      isJson: true,
     },
   ];
 
@@ -107,6 +165,143 @@ export function AdminSettings() {
     );
   }
 
+  const renderConstantCard = (constant: CalculatorConstant, isJson: boolean) => {
+    if (isJson || constant.value_json) {
+      const currentValue = editedJsonValues[constant.id] ?? JSON.stringify(constant.value_json || {}, null, 2);
+      return (
+        <Card key={constant.id}>
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg">{constant.label || constant.constant_key}</CardTitle>
+                {constant.description && (
+                  <CardDescription>{constant.description}</CardDescription>
+                )}
+              </div>
+              {constant.source && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  {constant.source}
+                  {constant.source_url && (
+                    <a
+                      href={constant.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </Badge>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <Label htmlFor={constant.id}>JSON Value</Label>
+              <Textarea
+                id={constant.id}
+                value={currentValue}
+                onChange={(e) =>
+                  setEditedJsonValues((prev) => ({
+                    ...prev,
+                    [constant.id]: e.target.value,
+                  }))
+                }
+                className="font-mono text-sm min-h-[120px]"
+              />
+              <Button
+                onClick={() => handleSaveJson(constant)}
+                disabled={
+                  editedJsonValues[constant.id] === undefined ||
+                  updateJsonMutation.isPending
+                }
+                size="sm"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save
+              </Button>
+            </div>
+            {constant.effective_from && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Effective from: {new Date(constant.effective_from).toLocaleDateString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <Card key={constant.id}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-lg">{constant.label || constant.constant_key}</CardTitle>
+              {constant.description && (
+                <CardDescription>{constant.description}</CardDescription>
+              )}
+            </div>
+            {constant.source && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                {constant.source}
+                {constant.source_url && (
+                  <a
+                    href={constant.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-4">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor={constant.id}>Value</Label>
+              <Input
+                id={constant.id}
+                type="number"
+                step="any"
+                value={
+                  editedValues[constant.id] !== undefined
+                    ? editedValues[constant.id]
+                    : constant.value_numeric ?? ''
+                }
+                onChange={(e) =>
+                  setEditedValues((prev) => ({
+                    ...prev,
+                    [constant.id]: e.target.value,
+                  }))
+                }
+                className="max-w-xs"
+              />
+            </div>
+            <Button
+              onClick={() => handleSaveNumeric(constant)}
+              disabled={
+                editedValues[constant.id] === undefined ||
+                updateNumericMutation.isPending
+              }
+              size="sm"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+          </div>
+          {constant.effective_from && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Effective from: {new Date(constant.effective_from).toLocaleDateString()}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -117,11 +312,16 @@ export function AdminSettings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="flex flex-wrap h-auto gap-1">
           {groupedConstants.map((group) => (
             <TabsTrigger key={group.category} value={group.category} className="flex items-center gap-2">
               {group.icon}
-              <span className="hidden sm:inline">{group.label}</span>
+              <span>{group.label}</span>
+              {group.constants.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {group.constants.length}
+                </Badge>
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -135,75 +335,7 @@ export function AdminSettings() {
                 </CardContent>
               </Card>
             ) : (
-              group.constants.map((constant) => (
-                <Card key={constant.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{constant.label || constant.constant_key}</CardTitle>
-                        {constant.description && (
-                          <CardDescription>{constant.description}</CardDescription>
-                        )}
-                      </div>
-                      {constant.source && (
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          {constant.source}
-                          {constant.source_url && (
-                            <a
-                              href={constant.source_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end gap-4">
-                      <div className="flex-1 space-y-2">
-                        <Label htmlFor={constant.id}>Value</Label>
-                        <Input
-                          id={constant.id}
-                          type="number"
-                          step="any"
-                          value={
-                            editedValues[constant.id] !== undefined
-                              ? editedValues[constant.id]
-                              : constant.value_numeric ?? ''
-                          }
-                          onChange={(e) =>
-                            setEditedValues((prev) => ({
-                              ...prev,
-                              [constant.id]: e.target.value,
-                            }))
-                          }
-                          className="max-w-xs"
-                        />
-                      </div>
-                      <Button
-                        onClick={() => handleSave(constant)}
-                        disabled={
-                          editedValues[constant.id] === undefined ||
-                          updateMutation.isPending
-                        }
-                        size="sm"
-                      >
-                        <Save className="h-4 w-4 mr-2" />
-                        Save
-                      </Button>
-                    </div>
-                    {constant.effective_from && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Effective from: {new Date(constant.effective_from).toLocaleDateString()}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+              group.constants.map((constant) => renderConstantCard(constant, group.isJson || false))
             )}
           </TabsContent>
         ))}
