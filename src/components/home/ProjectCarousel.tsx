@@ -68,10 +68,14 @@ const getStatusLabel = (status: string) => {
       return 'Planning';
     case 'pre_sale':
       return 'Pre-Sale';
-    case 'under_construction':
-      return 'Under Construction';
-    case 'completed':
-      return 'Completed';
+    case 'foundation':
+      return 'Foundation';
+    case 'structure':
+      return 'Structure';
+    case 'finishing':
+      return 'Finishing';
+    case 'delivery':
+      return 'Delivery';
     default:
       return status;
   }
@@ -80,10 +84,12 @@ const getStatusLabel = (status: string) => {
 const getStatusColor = (status: string) => {
   // All project statuses use the same teal color for unified branding
   switch (status) {
-    case 'pre_sale':
-    case 'under_construction':
     case 'planning':
-    case 'completed':
+    case 'pre_sale':
+    case 'foundation':
+    case 'structure':
+    case 'finishing':
+    case 'delivery':
       return 'bg-project text-project-foreground';
     default:
       return 'bg-project text-project-foreground';

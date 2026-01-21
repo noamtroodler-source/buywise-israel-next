@@ -56,8 +56,8 @@ export default function DeveloperDetail() {
   const currentYear = new Date().getFullYear();
   const yearsActive = developer?.founded_year ? currentYear - developer.founded_year : null;
   const totalUnits = projects.reduce((acc, p) => acc + (p.total_units || 0), 0);
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const activeProjects = projects.filter(p => p.status !== 'completed').length;
+  const completedProjects = projects.filter(p => p.status === 'delivery').length;
+  const activeProjects = projects.filter(p => p.status !== 'delivery').length;
 
   // Build WhatsApp URL using the helper
   const whatsappUrl = developer?.phone 

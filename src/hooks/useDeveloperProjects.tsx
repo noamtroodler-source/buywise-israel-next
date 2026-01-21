@@ -14,7 +14,7 @@ export interface DeveloperProject {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
-  status: 'planning' | 'pre_sale' | 'under_construction' | 'completed';
+  status: 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
   total_units: number | null;
   available_units: number | null;
   price_from: number | null;
@@ -69,7 +69,7 @@ export function useCreateProject() {
       neighborhood?: string;
       address?: string;
       description?: string;
-      status: 'planning' | 'pre_sale' | 'under_construction' | 'completed';
+      status: 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
       total_units?: number;
       available_units?: number;
       price_from?: number;
@@ -104,7 +104,7 @@ export function useCreateProject() {
           neighborhood: projectData.neighborhood || null,
           address: projectData.address || null,
           description: projectData.description || null,
-          status: projectData.status,
+          status: projectData.status as any, // Cast until types regenerate
           total_units: projectData.total_units || null,
           available_units: projectData.available_units || null,
           price_from: projectData.price_from || null,
@@ -120,7 +120,7 @@ export function useCreateProject() {
           is_published: false,
           is_featured: false,
           views_count: 0,
-        })
+        } as any)
         .select()
         .single();
 
@@ -148,7 +148,7 @@ export function useUpdateProject() {
     mutationFn: async ({ id, ...updates }: Partial<DeveloperProject> & { id: string }) => {
       const { data, error } = await supabase
         .from('projects')
-        .update(updates)
+        .update(updates as any) // Cast until types regenerate
         .eq('id', id)
         .select()
         .single();

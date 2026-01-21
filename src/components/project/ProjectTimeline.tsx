@@ -8,27 +8,25 @@ interface ProjectTimelineProps {
 }
 
 const stages = [
-  { name: 'Planning', threshold: 0 },
-  { name: 'Pre-Sale', threshold: 10 },
-  { name: 'Foundation', threshold: 25 },
-  { name: 'Structure', threshold: 50 },
-  { name: 'Finishing', threshold: 75 },
-  { name: 'Delivery', threshold: 100 },
+  { name: 'Planning', status: 'planning' },
+  { name: 'Pre-Sale', status: 'pre_sale' },
+  { name: 'Foundation', status: 'foundation' },
+  { name: 'Structure', status: 'structure' },
+  { name: 'Finishing', status: 'finishing' },
+  { name: 'Delivery', status: 'delivery' },
 ];
 
 export function ProjectTimeline({ project }: ProjectTimelineProps) {
   const progress = project.construction_progress_percent || 0;
   
   const getCurrentStageIndex = () => {
-    for (let i = stages.length - 1; i >= 0; i--) {
-      if (progress >= stages[i].threshold) {
-        return i;
-      }
-    }
-    return 0;
+    return stages.findIndex(stage => stage.status === project.status);
   };
 
-  const currentStageIndex = getCurrentStageIndex();
+  const currentStageIndex = Math.max(0, getCurrentStageIndex());
+  
+  // Calculate visual progress based on stage index
+  const stageProgress = ((currentStageIndex) / (stages.length - 1)) * 100;
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'TBD';
@@ -65,7 +63,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
           <div className="absolute top-4 left-4 right-4 h-0.5 bg-border">
             <div 
               className="absolute inset-y-0 left-0 bg-primary transition-all duration-500"
-              style={{ width: `${Math.min(progress, 100)}%` }}
+              style={{ width: `${stageProgress}%` }}
             />
           </div>
           

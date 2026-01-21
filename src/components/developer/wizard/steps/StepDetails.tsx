@@ -96,7 +96,7 @@ export function StepDetails() {
         </div>
 
         {/* Construction Progress */}
-        {(data.status === 'under_construction' || data.status === 'completed') && (
+        {['foundation', 'structure', 'finishing', 'delivery'].includes(data.status) && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Construction Progress</Label>

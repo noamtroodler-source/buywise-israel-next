@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-export type ProjectStatus = 'planning' | 'pre_sale' | 'under_construction' | 'completed';
+export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
 
 export interface ProjectWizardData {
   // Step 1: Basics

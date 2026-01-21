@@ -8,10 +8,12 @@ import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWra
 import { AlertCircle, MapPin } from 'lucide-react';
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
-  { value: 'planning', label: 'Planning Phase' },
+  { value: 'planning', label: 'Planning' },
   { value: 'pre_sale', label: 'Pre-Sale' },
-  { value: 'under_construction', label: 'Under Construction' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'foundation', label: 'Foundation' },
+  { value: 'structure', label: 'Structure' },
+  { value: 'finishing', label: 'Finishing' },
+  { value: 'delivery', label: 'Delivery' },
 ];
 
 export function StepBasics() {
