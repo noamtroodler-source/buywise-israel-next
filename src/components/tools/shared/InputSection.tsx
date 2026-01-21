@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -111,6 +112,8 @@ interface NumberInputProps {
   helperText?: string;
   tooltip?: string;
   className?: string;
+  /** When true, displays with comma formatting (e.g., 1,000,000) */
+  formatWithCommas?: boolean;
 }
 
 export function NumberInput({
@@ -126,6 +129,7 @@ export function NumberInput({
   helperText,
   tooltip,
   className,
+  formatWithCommas = false,
 }: NumberInputProps) {
   return (
     <InputSection
@@ -134,28 +138,38 @@ export function NumberInput({
       tooltip={tooltip}
       className={className}
     >
-      <div className="relative">
-        {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            {prefix}
-          </span>
-        )}
-        <Input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          min={min}
-          max={max}
-          step={step}
+      {formatWithCommas ? (
+        <FormattedNumberInput
+          value={value || undefined}
+          onChange={(v) => onChange(v ?? 0)}
           placeholder={placeholder}
-          className={cn(prefix && "pl-8", suffix && "pr-12")}
+          prefix={prefix}
+          suffix={suffix}
         />
-        {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            {suffix}
-          </span>
-        )}
-      </div>
+      ) : (
+        <div className="relative">
+          {prefix && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {prefix}
+            </span>
+          )}
+          <Input
+            type="number"
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            min={min}
+            max={max}
+            step={step}
+            placeholder={placeholder}
+            className={cn(prefix && "pl-8", suffix && "pr-12")}
+          />
+          {suffix && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {suffix}
+            </span>
+          )}
+        </div>
+      )}
     </InputSection>
   );
 }

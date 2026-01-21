@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Bed, Bath, Ruler, Building, Calendar, Car, LandPlot } from 'lucide-react';
 
@@ -33,13 +34,12 @@ export function StepDetails() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="lot_size_sqm">Lot Size (m²) *</Label>
-              <Input
+              <FormattedNumberInput
                 id="lot_size_sqm"
-                type="number"
-                min="0"
-                value={data.lot_size_sqm || ''}
-                onChange={(e) => updateData({ lot_size_sqm: e.target.value ? Number(e.target.value) : undefined })}
+                value={data.lot_size_sqm}
+                onChange={(value) => updateData({ lot_size_sqm: value })}
                 placeholder="e.g., 500"
+                suffix="m²"
                 className="h-11 rounded-xl"
               />
             </div>
@@ -100,13 +100,12 @@ export function StepDetails() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="size_sqm">Living Area (m²)</Label>
-              <Input
+              <FormattedNumberInput
                 id="size_sqm"
-                type="number"
-                min="0"
-                value={data.size_sqm || ''}
-                onChange={(e) => updateData({ size_sqm: e.target.value ? Number(e.target.value) : undefined })}
+                value={data.size_sqm}
+                onChange={(value) => updateData({ size_sqm: value })}
                 placeholder="e.g., 95"
+                suffix="m²"
                 className="h-11 rounded-xl"
               />
               <p className="text-xs text-muted-foreground">

@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Thermometer, Calendar, Wrench, Sparkles, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -155,13 +156,12 @@ export function StepFeatures() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="vaad_bayit">Va'ad Bayit (₪/month)</Label>
-            <Input
+            <FormattedNumberInput
               id="vaad_bayit"
-              type="number"
-              min="0"
-              value={data.vaad_bayit_monthly || ''}
-              onChange={(e) => updateData({ vaad_bayit_monthly: e.target.value ? Number(e.target.value) : undefined })}
+              value={data.vaad_bayit_monthly}
+              onChange={(value) => updateData({ vaad_bayit_monthly: value })}
               placeholder="e.g., 350"
+              prefix="₪"
               className="w-full sm:w-64 h-11 rounded-xl"
             />
           </div>
