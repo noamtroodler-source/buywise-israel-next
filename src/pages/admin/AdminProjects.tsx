@@ -16,6 +16,8 @@ import {
   ProjectVerificationStatus,
 } from '@/hooks/useAdminProjects';
 import { ProjectReviewCard } from '@/components/admin/ProjectReviewCard';
+import { useAddFeaturedProject } from '@/hooks/useHomepageFeatured';
+import { toast } from 'sonner';
 
 export default function AdminProjects() {
   const [activeTab, setActiveTab] = useState<ProjectVerificationStatus | 'all'>('pending_review');
@@ -28,9 +30,10 @@ export default function AdminProjects() {
   const approveProject = useApproveProject();
   const requestChanges = useRequestProjectChanges();
   const rejectProject = useRejectProject();
+  const addFeaturedProject = useAddFeaturedProject();
 
   const isLoading = statsLoading || projectsLoading;
-  const isMutating = approveProject.isPending || requestChanges.isPending || rejectProject.isPending;
+  const isMutating = approveProject.isPending || requestChanges.isPending || rejectProject.isPending || addFeaturedProject.isPending;
 
   const statCards = [
     { key: 'pending_review', label: 'Pending Review', icon: ClipboardCheck, color: 'text-primary', bgColor: 'bg-primary/10' },
@@ -139,7 +142,28 @@ export default function AdminProjects() {
               >
                 <ProjectReviewCard
                   project={project}
-                  onApprove={(id, notes) => approveProject.mutate({ id, adminFeedback: notes })}
+                  onApprove={(id, notes, featureThis, featureSlotType) => {
+                    approveProject.mutate(
+                      { id, adminFeedback: notes },
+                      {
+                        onSuccess: () => {
+                          if (featureThis && featureSlotType) {
+                            const expiresAt = new Date();
+                            expiresAt.setDate(expiresAt.getDate() + 30);
+                            
+                            addFeaturedProject.mutate({
+                              projectId: id,
+                              slotType: featureSlotType,
+                              position: 1,
+                              expiresAt,
+                            });
+                            
+                            toast.success(`Project featured as ${featureSlotType === 'project_hero' ? 'Hero' : 'Secondary'}`);
+                          }
+                        }
+                      }
+                    );
+                  }}
                   onRequestChanges={(id, feedback) => requestChanges.mutate({ id, feedback })}
                   onReject={(id, reason) => rejectProject.mutate({ id, reason })}
                   isLoading={isMutating}
