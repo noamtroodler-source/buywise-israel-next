@@ -9,14 +9,13 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
 import { usePaginatedProjects } from '@/hooks/usePaginatedProjects';
-import { useRecentlyViewedProjects } from '@/hooks/useRecentlyViewedProjects';
+
 import { ProjectFilters, ProjectFiltersType } from '@/components/filters/ProjectFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
-import { RecentlyViewedStrip } from '@/components/listings/RecentlyViewedStrip';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 
 export default function Projects() {
@@ -34,9 +33,6 @@ export default function Projects() {
     hasNextPage, 
     loadMore 
   } = usePaginatedProjects(filters);
-
-  // Recently viewed projects
-  const { recentProjects, clearRecentlyViewed } = useRecentlyViewedProjects();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -122,14 +118,6 @@ export default function Projects() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Recently Viewed Section */}
-          {recentProjects.length > 0 && (
-            <RecentlyViewedStrip 
-              items={recentProjects} 
-              type="project" 
-              onClear={clearRecentlyViewed}
-            />
-          )}
 
           {/* Filters */}
           <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
