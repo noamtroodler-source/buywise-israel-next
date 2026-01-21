@@ -3,38 +3,67 @@ import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
-  Mail, ToggleLeft, BookOpen, Megaphone, Star
+  Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
+  Wrench, ChevronRight
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { usePendingReviewCount } from '@/hooks/useListingReview';
-
-const adminNavItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/featured', label: 'Featured', icon: Star },
-  { href: '/admin/settings', label: 'Site Settings', icon: Sliders },
-  { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
-  { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/admin/review', label: 'Listing Review', icon: ClipboardCheck, showBadge: true },
-  { href: '/admin/users', label: 'Users', icon: Users },
-  { href: '/admin/properties', label: 'Properties', icon: Home },
-  { href: '/admin/agents', label: 'Agents', icon: Building2 },
-  { href: '/admin/agencies', label: 'Agencies', icon: Building },
-  { href: '/admin/projects', label: 'Projects', icon: Building },
-  { href: '/admin/developers', label: 'Developers', icon: Building },
-  { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
-  { href: '/admin/cities', label: 'Cities', icon: MapPin },
-  { href: '/admin/market-data', label: 'Market Data', icon: BarChart3 },
-  { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
-  { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
-  { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
-];
+import { AdminNavSection, AdminNavItem } from '@/components/admin/AdminNavSection';
+import { usePlatformStats } from '@/hooks/useAdminAnalytics';
+import { AlertsBadge } from '@/components/admin/AdminAlertsPanel';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function AdminLayout() {
   const location = useLocation();
   const { data: pendingCount } = usePendingReviewCount();
+  const { data: stats } = usePlatformStats();
+
+  // Calculate totals for section badges
+  const totalReviewPending = 
+    (pendingCount || 0) + 
+    (stats?.pendingAgents || 0) + 
+    (stats?.pendingAgencies || 0) + 
+    (stats?.pendingDevelopers || 0) + 
+    (stats?.pendingProjects || 0);
+
+  const overviewItems = [
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
+  ];
+
+  const homepageItems = [
+    { href: '/admin/featured', label: 'Featured', icon: Star },
+    { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+  ];
+
+  const reviewItems = [
+    { href: '/admin/review', label: 'Listings', icon: ClipboardCheck, badge: pendingCount || 0 },
+    { href: '/admin/agents', label: 'Agents', icon: Building2, badge: stats?.pendingAgents || 0 },
+    { href: '/admin/agencies', label: 'Agencies', icon: Building, badge: stats?.pendingAgencies || 0 },
+    { href: '/admin/developers', label: 'Developers', icon: Building, badge: stats?.pendingDevelopers || 0 },
+    { href: '/admin/projects', label: 'Projects', icon: Building, badge: stats?.pendingProjects || 0 },
+  ];
+
+  const contentItems = [
+    { href: '/admin/properties', label: 'Properties', icon: Home },
+    { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
+    { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
+  ];
+
+  const marketItems = [
+    { href: '/admin/cities', label: 'Cities', icon: MapPin },
+    { href: '/admin/market-data', label: 'Market Data', icon: BarChart3 },
+  ];
+
+  const systemItems = [
+    { href: '/admin/settings', label: 'Site Settings', icon: Sliders },
+    { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
+    { href: '/admin/users', label: 'Users', icon: Users },
+    { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
+  ];
 
   return (
     <Layout>
@@ -43,46 +72,73 @@ export function AdminLayout() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-2 mb-8">
-            <Settings className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Manage your platform</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertsBadge />
+            </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar */}
             <aside className="lg:w-64 flex-shrink-0">
-              <nav className="space-y-1">
-                {adminNavItems.map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                        isActive 
-                          ? "bg-primary text-primary-foreground" 
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.label}
-                      {item.showBadge && pendingCount && pendingCount > 0 && (
-                        <Badge 
-                          className={cn(
-                            "ml-auto",
-                            isActive 
-                              ? "bg-primary-foreground text-primary" 
-                              : "bg-yellow-100 text-yellow-800"
-                          )}
-                        >
-                          {pendingCount}
-                        </Badge>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
+              <div className="sticky top-24">
+                <ScrollArea className="h-[calc(100vh-12rem)]">
+                  <nav className="space-y-1 pr-4">
+                    {/* Overview Section */}
+                    <AdminNavSection
+                      title="Overview"
+                      icon={LayoutDashboard}
+                      items={overviewItems}
+                      defaultOpen={true}
+                    />
+
+                    {/* Homepage Section */}
+                    <AdminNavSection
+                      title="Homepage"
+                      icon={Globe}
+                      items={homepageItems}
+                    />
+
+                    {/* Review Queue Section */}
+                    <AdminNavSection
+                      title="Review Queue"
+                      icon={ClipboardCheck}
+                      items={reviewItems}
+                      totalBadge={totalReviewPending}
+                    />
+
+                    {/* Content Section */}
+                    <AdminNavSection
+                      title="Content"
+                      icon={Package}
+                      items={contentItems}
+                    />
+
+                    {/* Market Data Section */}
+                    <AdminNavSection
+                      title="Market Data"
+                      icon={MapPin}
+                      items={marketItems}
+                    />
+
+                    {/* System Section */}
+                    <AdminNavSection
+                      title="System"
+                      icon={Wrench}
+                      items={systemItems}
+                    />
+                  </nav>
+                </ScrollArea>
+              </div>
             </aside>
 
             {/* Main Content */}

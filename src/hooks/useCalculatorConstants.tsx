@@ -14,6 +14,7 @@ export interface CalculatorConstant {
   effective_from: string | null;
   effective_until: string | null;
   is_current: boolean;
+  updated_at?: string | null;
 }
 
 export function useCalculatorConstants(category?: string) {

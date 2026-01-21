@@ -1,20 +1,22 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Users, Home, Building2, Building, FileText, MapPin, 
-  TrendingUp, Eye, BarChart3, ArrowRight, Star 
+  TrendingUp, Eye, BarChart3, ArrowRight, Star, RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ActionItemsStrip } from '@/components/admin/ActionItemsStrip';
+import { TodaysPriorities } from '@/components/admin/TodaysPriorities';
 import { AdminStatsCard } from '@/components/admin/AdminStatsCard';
 import { ViewsTrendChart } from '@/components/admin/ViewsTrendChart';
 import { InquiryBreakdownChart } from '@/components/admin/InquiryBreakdownChart';
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
+import { LiveIndicator } from '@/components/admin/LiveIndicator';
 import { usePlatformStats, useViewsTrend, useInquiryBreakdown } from '@/hooks/useAdminAnalytics';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 
 export default function AdminDashboard() {
-  const { data: stats, isLoading: statsLoading } = usePlatformStats();
+  const { data: stats, isLoading: statsLoading, dataUpdatedAt } = usePlatformStats();
   const { data: viewsTrend, isLoading: viewsLoading } = useViewsTrend(30);
   const { data: inquiryBreakdown, isLoading: inquiryLoading } = useInquiryBreakdown(30);
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity(15);
@@ -54,6 +56,13 @@ export default function AdminDashboard() {
       subtitle: `${stats?.pendingAgents || 0} pending`
     },
     { 
+      label: 'Agencies', 
+      value: stats?.totalAgencies || 0, 
+      icon: Building, 
+      href: '/admin/agencies',
+      subtitle: `${stats?.pendingAgencies || 0} pending`
+    },
+    { 
       label: 'Projects', 
       value: stats?.totalProjects || 0, 
       icon: Building, 
@@ -64,13 +73,8 @@ export default function AdminDashboard() {
       label: 'Developers', 
       value: stats?.totalDevelopers || 0, 
       icon: Building, 
-      href: '/admin/developers'
-    },
-    { 
-      label: 'Blog Posts', 
-      value: stats?.totalBlogPosts || 0, 
-      icon: FileText, 
-      href: '/admin/blog'
+      href: '/admin/developers',
+      subtitle: `${stats?.pendingDevelopers || 0} pending`
     },
   ];
 
@@ -91,22 +95,32 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-foreground">Overview</h2>
           <p className="text-muted-foreground">Platform performance at a glance</p>
         </div>
-        <Button asChild variant="outline">
-          <Link to="/admin/analytics" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Full Analytics
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <LiveIndicator 
+            lastUpdated={dataUpdatedAt ? new Date(dataUpdatedAt) : undefined}
+            queryKeys={[
+              ['platform-stats'],
+              ['admin-recent-activity'],
+              ['views-trend'],
+              ['inquiry-breakdown'],
+            ]}
+          />
+          <Button asChild variant="outline">
+            <Link to="/admin/analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Full Analytics
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Action Items Strip */}
-      <ActionItemsStrip
+      {/* Today's Priorities - NEW */}
+      <TodaysPriorities
         pendingAgents={stats?.pendingAgents || 0}
         pendingListings={stats?.pendingListings || 0}
         pendingProjects={stats?.pendingProjects || 0}
         pendingAgencies={stats?.pendingAgencies || 0}
         pendingDevelopers={stats?.pendingDevelopers || 0}
-        newUsersToday={stats?.newUsersToday || 0}
       />
 
       {/* Stats Grid */}
