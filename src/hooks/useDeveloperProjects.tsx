@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeveloperProfile } from './useDeveloperProfile';
 import { toast } from 'sonner';
+import { UnitTypeData } from '@/components/developer/wizard/ProjectWizardContext';
 
 export interface DeveloperProject {
   id: string;
@@ -86,6 +87,8 @@ export function useCreateProject() {
       city: string;
       neighborhood?: string;
       address?: string;
+      latitude?: number;
+      longitude?: number;
       description?: string;
       status: 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
       total_units?: number;
@@ -98,6 +101,7 @@ export function useCreateProject() {
       amenities?: string[];
       images?: string[];
       floor_plans?: string[];
+      unit_types?: UnitTypeData[];
       submitForReview?: boolean;
     }) => {
       if (!developerProfile?.id) throw new Error('Developer profile not found');
@@ -121,6 +125,8 @@ export function useCreateProject() {
           city: projectData.city,
           neighborhood: projectData.neighborhood || null,
           address: projectData.address || null,
+          latitude: projectData.latitude ?? null,
+          longitude: projectData.longitude ?? null,
           description: projectData.description || null,
           status: projectData.status as any, // Cast until types regenerate
           total_units: projectData.total_units || null,
@@ -143,6 +149,31 @@ export function useCreateProject() {
         .single();
 
       if (error) throw error;
+
+      // Insert unit types as project_units
+      if (projectData.unit_types && projectData.unit_types.length > 0) {
+        const unitsToInsert = projectData.unit_types.map(unitType => ({
+          project_id: data.id,
+          unit_type: unitType.name,
+          bedrooms: unitType.bedrooms,
+          bathrooms: unitType.bathrooms,
+          size_sqm: unitType.sizeMin || null,
+          floor: unitType.floorMin || null,
+          price: unitType.priceMin || null,
+          floor_plan_url: unitType.floorPlanUrl || null,
+          status: 'available',
+        }));
+
+        const { error: unitsError } = await supabase
+          .from('project_units')
+          .insert(unitsToInsert as any);
+
+        if (unitsError) {
+          console.error('Failed to insert project units:', unitsError);
+          // Don't throw - project was created successfully
+        }
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {

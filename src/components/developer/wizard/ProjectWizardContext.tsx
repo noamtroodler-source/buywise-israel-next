@@ -2,6 +2,24 @@ import { createContext, useContext, useState, ReactNode, useCallback } from 'rea
 
 export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
 
+export type OutdoorSpaceType = 'balcony' | 'garden' | 'roof_terrace' | 'none';
+
+export interface UnitTypeData {
+  id: string;
+  name: string;
+  bedrooms: number;
+  bathrooms: number;
+  sizeMin: number | undefined;
+  sizeMax: number | undefined;
+  floorMin: number | undefined;
+  floorMax: number | undefined;
+  priceMin: number | undefined;
+  priceMax: number | undefined;
+  outdoorSpace: OutdoorSpaceType;
+  floorPlanUrl: string | undefined;
+  quantity: number | undefined;
+}
+
 export interface ProjectWizardData {
   // Step 1: Basics
   name: string;
@@ -24,11 +42,14 @@ export interface ProjectWizardData {
   // Step 3: Amenities
   amenities: string[];
   
-  // Step 4: Photos
-  images: string[];
-  floor_plans: string[];
+  // Step 4: Unit Types (NEW)
+  unit_types: UnitTypeData[];
   
-  // Step 5: Description
+  // Step 5: Photos (gallery only - floor plans are per unit type now)
+  images: string[];
+  floor_plans: string[]; // Legacy - kept for backward compatibility
+  
+  // Step 6: Description
   description: string;
 }
 
@@ -41,7 +62,7 @@ interface ProjectWizardContextType {
   goBack: () => void;
   canGoNext: boolean;
   isLastStep: boolean;
-  // New save-related properties
+  // Save-related properties
   resetWizard: () => void;
   loadFromSaved: (savedData: ProjectWizardData) => void;
 }
@@ -62,6 +83,7 @@ export const defaultProjectData: ProjectWizardData = {
   completion_date: undefined,
   construction_progress_percent: 0,
   amenities: [],
+  unit_types: [],
   images: [],
   floor_plans: [],
   description: '',
@@ -69,7 +91,7 @@ export const defaultProjectData: ProjectWizardData = {
 
 const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7; // Updated from 6 to 7 with new Unit Types step
 export const PROJECT_WIZARD_STORAGE_KEY = 'project-wizard-draft';
 
 export function ProjectWizardProvider({ children }: { children: ReactNode }) {
@@ -119,11 +141,13 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         return true; // Optional fields, but if provided, must be valid
       case 2: // Amenities
         return true; // Optional
-      case 3: // Photos
+      case 3: // Unit Types
+        return true; // Optional - developers can add later
+      case 4: // Photos (Gallery)
         return data.images.length >= 1;
-      case 4: // Description
+      case 5: // Description
         return !!data.description;
-      case 5: // Review
+      case 6: // Review
         return true;
       default:
         return false;
