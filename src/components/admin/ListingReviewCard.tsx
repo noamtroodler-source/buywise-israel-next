@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Check, X, MessageSquare, Eye, MapPin, Bed, Bath, 
-  Ruler, User, Building2, ChevronDown, ChevronUp
+  Ruler, User, Building2, ChevronDown, ChevronUp, Star
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,13 +20,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PropertyForReview } from '@/hooks/useListingReview';
 import { formatDistanceToNow } from 'date-fns';
 import { PropertyPreviewModal } from './PropertyPreviewModal';
 
 interface ListingReviewCardProps {
   property: PropertyForReview;
-  onApprove: (id: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
+  onApprove: (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => void;
   onRequestChanges: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   onReject: (id: string, reason: string, notes?: string, agentId?: string, propertyTitle?: string) => void;
   isLoading?: boolean;
@@ -45,6 +46,7 @@ export function ListingReviewCard({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+  const [featureThis, setFeatureThis] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -55,7 +57,7 @@ export function ListingReviewCard({
   };
 
   const handleApprove = () => {
-    onApprove(property.id, adminNotes || undefined, property.agent?.id, property.title);
+    onApprove(property.id, adminNotes || undefined, property.agent?.id, property.title, featureThis);
   };
 
   const handleRequestChanges = () => {
@@ -232,7 +234,7 @@ export function ListingReviewCard({
               </Collapsible>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 pt-3 border-t mt-3">
+              <div className="flex flex-wrap items-center gap-2 pt-3 border-t mt-3">
                 <Button
                   onClick={handleApprove}
                   disabled={isLoading}
@@ -241,6 +243,19 @@ export function ListingReviewCard({
                   <Check className="h-4 w-4 mr-1" />
                   Approve
                 </Button>
+                
+                {/* Feature checkbox - only show for pending listings */}
+                {property.verification_status === 'pending_review' && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors">
+                    <Checkbox 
+                      checked={featureThis} 
+                      onCheckedChange={(checked) => setFeatureThis(checked === true)}
+                    />
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span className="text-muted-foreground">Feature this</span>
+                  </label>
+                )}
+                
                 <Button
                   variant="outline"
                   onClick={() => setShowChangesDialog(true)}

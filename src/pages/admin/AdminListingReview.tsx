@@ -14,6 +14,8 @@ import {
   useRejectListing,
   VerificationStatus,
 } from '@/hooks/useListingReview';
+import { useAddFeaturedProperty } from '@/hooks/useHomepageFeatured';
+import { toast } from 'sonner';
 
 export default function AdminListingReview() {
   const [activeTab, setActiveTab] = useState<VerificationStatus | 'all'>('pending_review');
@@ -26,12 +28,35 @@ export default function AdminListingReview() {
   const approveListing = useApproveListing();
   const requestChanges = useRequestChanges();
   const rejectListing = useRejectListing();
+  const addFeaturedProperty = useAddFeaturedProperty();
 
   const isLoading = statsLoading || listingsLoading;
   const isMutating = approveListing.isPending || requestChanges.isPending || rejectListing.isPending;
 
-  const handleApprove = (id: string, notes?: string) => {
-    approveListing.mutate({ id, adminNotes: notes });
+  const handleApprove = (id: string, notes?: string, agentId?: string, propertyTitle?: string, featureThis?: boolean) => {
+    const property = listings.find(p => p.id === id);
+    
+    approveListing.mutate(
+      { id, adminNotes: notes, agentId, propertyTitle },
+      {
+        onSuccess: () => {
+          if (featureThis && property) {
+            const slotType = property.listing_status === 'for_sale' ? 'property_sale' : 'property_rent';
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 7); // Default 7 days
+            
+            addFeaturedProperty.mutate(
+              { propertyId: id, slotType, expiresAt },
+              {
+                onSuccess: () => {
+                  toast.success('Property featured on homepage!');
+                },
+              }
+            );
+          }
+        }
+      }
+    );
   };
 
   const handleRequestChanges = (id: string, reason: string, notes?: string) => {
