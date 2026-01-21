@@ -240,7 +240,7 @@ export default function DeveloperProjects() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 mb-4 -ml-2">
+          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
             <Link to="/developer">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
