@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, MapPin, Building, Calendar, TrendingUp, ChevronLeft, ChevronRight, MessageCircle, Mail, Users, Sparkles } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { X, MapPin, Building, Calendar, TrendingUp, ChevronLeft, ChevronRight, MessageCircle, Mail, Users, Sparkles, FileImage, ExternalLink, BedDouble, Bath, Maximize, Layers, Trees } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useProjectWizard } from '../ProjectWizardContext';
 import useEmblaCarousel from 'embla-carousel-react';
 
@@ -59,11 +60,19 @@ interface ProjectPreviewDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const outdoorLabels: Record<string, string> = {
+  balcony: 'Balcony',
+  garden: 'Garden',
+  roof_terrace: 'Roof Terrace',
+  none: 'None',
+};
+
 export function ProjectPreviewDialog({ open, onOpenChange }: ProjectPreviewDialogProps) {
   const { data } = useProjectWizard();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [selectedFloorPlan, setSelectedFloorPlan] = useState<{ url: string; type: string } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -98,6 +107,20 @@ export function ProjectPreviewDialog({ open, onOpenChange }: ProjectPreviewDialo
       currency: 'ILS',
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  const formatRange = (min: number | undefined, max: number | undefined, suffix = '') => {
+    if (!min && !max) return 'N/A';
+    if (min === max || !max) return `${min}${suffix}`;
+    if (!min) return `${max}${suffix}`;
+    return `${min}-${max}${suffix}`;
+  };
+
+  const calculatePricePerSqm = (priceMin: number | undefined, sizeMin: number | undefined, sizeMax: number | undefined) => {
+    if (!priceMin || (!sizeMin && !sizeMax)) return null;
+    const avgSize = sizeMin && sizeMax ? (sizeMin + sizeMax) / 2 : (sizeMin || sizeMax || 0);
+    if (avgSize === 0) return null;
+    return Math.round(priceMin / avgSize);
   };
 
   const images = data.images.length > 0 ? data.images : ['/placeholder.svg'];
@@ -327,24 +350,147 @@ export function ProjectPreviewDialog({ open, onOpenChange }: ProjectPreviewDialo
                   </>
                 )}
 
-                {/* Floor Plans Preview */}
-                {data.floor_plans.length > 0 && (
+                {/* Floor Plans & Units Table */}
+                {data.unit_types.length > 0 && (
                   <>
                     <Separator />
                     <div>
-                      <h2 className="text-lg font-semibold mb-3">Floor Plans</h2>
-                      <div className="grid grid-cols-3 gap-2">
-                        {data.floor_plans.slice(0, 3).map((plan, index) => (
-                          <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
-                            <img src={plan} alt={`Floor plan ${index + 1}`} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
+                      <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <FileImage className="h-5 w-5 text-primary" />
+                        Floor Plans & Units
+                      </h2>
+                      
+                      {/* Desktop Table */}
+                      <div className="hidden md:block rounded-xl border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/50">
+                              <TableHead>Unit Type</TableHead>
+                              <TableHead>Floor Plan</TableHead>
+                              <TableHead className="text-center">Rooms</TableHead>
+                              <TableHead className="text-center">Baths</TableHead>
+                              <TableHead>Size</TableHead>
+                              <TableHead>Floors</TableHead>
+                              <TableHead>Outdoor</TableHead>
+                              <TableHead className="text-right">Price From</TableHead>
+                              <TableHead className="text-right">Price/m²</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.unit_types.map((unit, index) => {
+                              const pricePerSqm = calculatePricePerSqm(unit.priceMin, unit.sizeMin, unit.sizeMax);
+                              return (
+                                <TableRow key={index}>
+                                  <TableCell className="font-medium">{unit.name}</TableCell>
+                                  <TableCell>
+                                    {unit.floorPlanUrl ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setSelectedFloorPlan({ url: unit.floorPlanUrl!, type: unit.name })}
+                                        className="h-8 text-primary hover:text-primary"
+                                      >
+                                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                                        View
+                                      </Button>
+                                    ) : (
+                                      <span className="text-muted-foreground text-sm">Coming Soon</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <BedDouble className="h-3.5 w-3.5 text-muted-foreground" />
+                                      {unit.bedrooms}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <Bath className="h-3.5 w-3.5 text-muted-foreground" />
+                                      {unit.bathrooms}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1">
+                                      <Maximize className="h-3.5 w-3.5 text-muted-foreground" />
+                                      {formatRange(unit.sizeMin, unit.sizeMax, ' m²')}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1">
+                                      <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                      {formatRange(unit.floorMin, unit.floorMax)}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1">
+                                      <Trees className="h-3.5 w-3.5 text-muted-foreground" />
+                                      {outdoorLabels[unit.outdoorSpace] || 'None'}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    {unit.priceMin ? formatPrice(unit.priceMin) : 'TBD'}
+                                  </TableCell>
+                                  <TableCell className="text-right text-muted-foreground">
+                                    {pricePerSqm ? `₪${pricePerSqm.toLocaleString()}` : '—'}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
                       </div>
-                      {data.floor_plans.length > 3 && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          +{data.floor_plans.length - 3} more floor plans
-                        </p>
-                      )}
+
+                      {/* Mobile Cards */}
+                      <div className="md:hidden space-y-3">
+                        {data.unit_types.map((unit, index) => {
+                          const pricePerSqm = calculatePricePerSqm(unit.priceMin, unit.sizeMin, unit.sizeMax);
+                          return (
+                            <div key={index} className="border rounded-xl p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-semibold">{unit.name}</h3>
+                                {unit.floorPlanUrl && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedFloorPlan({ url: unit.floorPlanUrl!, type: unit.name })}
+                                    className="h-8 text-primary"
+                                  >
+                                    <FileImage className="h-4 w-4 mr-1" />
+                                    Floor Plan
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <BedDouble className="h-4 w-4 text-muted-foreground" />
+                                  <span>{unit.bedrooms} bed</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bath className="h-4 w-4 text-muted-foreground" />
+                                  <span>{unit.bathrooms} bath</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Maximize className="h-4 w-4 text-muted-foreground" />
+                                  <span>{formatRange(unit.sizeMin, unit.sizeMax, ' m²')}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between pt-2 border-t">
+                                <span className="text-muted-foreground text-sm">From</span>
+                                <div className="text-right">
+                                  <div className="font-semibold text-primary">
+                                    {unit.priceMin ? formatPrice(unit.priceMin) : 'TBD'}
+                                  </div>
+                                  {pricePerSqm && (
+                                    <div className="text-xs text-muted-foreground">
+                                      ₪{pricePerSqm.toLocaleString()}/m²
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </>
                 )}
@@ -429,6 +575,33 @@ export function ProjectPreviewDialog({ open, onOpenChange }: ProjectPreviewDialo
           </div>
         </ScrollArea>
       </DialogContent>
+
+      {/* Floor Plan Modal */}
+      <Dialog open={!!selectedFloorPlan} onOpenChange={(open) => !open && setSelectedFloorPlan(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileImage className="h-5 w-5 text-primary" />
+              {selectedFloorPlan?.type} - Floor Plan
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative aspect-[4/3] w-full bg-muted rounded-lg overflow-hidden">
+            {selectedFloorPlan && (
+              <img
+                src={selectedFloorPlan.url}
+                alt={`${selectedFloorPlan.type} floor plan`}
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+          <div className="flex justify-center">
+            <Button variant="outline" disabled className="gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Open Full Size
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
