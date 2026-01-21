@@ -4,8 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck } from 'lucide-react';
-import { AddressAutocomplete } from '../AddressAutocomplete';
+import { AddressAutocomplete, ParsedAddress } from '../AddressAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
+import { useCities } from '@/hooks/useCities';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -22,19 +23,13 @@ const listingStatuses: { value: ListingStatus; label: string }[] = [
 
 export function StepBasics() {
   const { data, updateData } = usePropertyWizard();
+  const { data: cities = [] } = useCities();
+  const supportedCityNames = cities.map(c => c.name);
 
-  const handleAddressSelect = (address: {
-    streetAddress: string;
-    neighborhood: string;
-    city: string;
-    latitude: number;
-    longitude: number;
-    placeId: string;
-    fullAddress: string;
-  }) => {
+  const handleAddressSelect = (address: ParsedAddress) => {
     updateData({
       address: address.streetAddress || address.fullAddress,
-      city: address.city || data.city,
+      city: address.matchedSupportedCity || address.city || data.city,
       neighborhood: address.neighborhood || data.neighborhood,
       latitude: address.latitude,
       longitude: address.longitude,
@@ -200,6 +195,7 @@ export function StepBasics() {
               onAddressSelect={handleAddressSelect}
               onInputChange={handleAddressInputChange}
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
+              supportedCities={supportedCityNames}
             />
             {showAddressWarning ? (
               <p className="text-xs text-primary font-medium">

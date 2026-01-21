@@ -4,11 +4,13 @@ import { Input } from '@/components/ui/input';
 import { Loader2, MapPin, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
+import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
 
-interface ParsedAddress {
+export interface ParsedAddress {
   streetAddress: string;
   neighborhood: string;
   city: string;
+  matchedSupportedCity?: string;
   latitude: number;
   longitude: number;
   placeId: string;
@@ -21,6 +23,7 @@ interface AddressAutocompleteProps {
   onInputChange?: (value: string) => void;
   placeholder?: string;
   className?: string;
+  supportedCities?: string[];
 }
 
 // Fallback to Nominatim when Google Maps is not available
@@ -80,6 +83,13 @@ function parseNominatimResult(result: NominatimResult): ParsedAddress {
   };
 }
 
+// Helper to find matching supported city
+function findMatchedCity(extractedCity: string, supportedCities?: string[]): string | null {
+  if (!supportedCities || supportedCities.length === 0) return extractedCity;
+  const match = supportedCities.find(supported => cityMatchesQuery(supported, extractedCity));
+  return match || null;
+}
+
 // Google Places component
 function GoogleAddressAutocomplete({
   value,
@@ -87,9 +97,11 @@ function GoogleAddressAutocomplete({
   onInputChange,
   placeholder,
   className,
+  supportedCities,
 }: AddressAutocompleteProps) {
   const [hasValidSelection, setHasValidSelection] = useState(!!value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -127,10 +139,6 @@ function GoogleAddressAutocomplete({
   }, [clearSuggestions]);
 
   const handleSelect = useCallback(async (placeId: string, description: string) => {
-    setValue(description, false);
-    clearSuggestions();
-    setHasValidSelection(true);
-
     try {
       const results = await getGeocode({ placeId });
       const { lat, lng } = await getLatLng(results[0]);
@@ -155,6 +163,22 @@ function GoogleAddressAutocomplete({
         }
       }
 
+      // Check if city is supported
+      const matchedCity = findMatchedCity(city, supportedCities);
+      if (supportedCities && supportedCities.length > 0 && !matchedCity) {
+        setUnsupportedCityError(city);
+        setValue('', false);
+        clearSuggestions();
+        setHasValidSelection(false);
+        onInputChange?.('');
+        return;
+      }
+
+      setUnsupportedCityError(null);
+      setValue(description, false);
+      clearSuggestions();
+      setHasValidSelection(true);
+
       const streetAddress = streetNumber 
         ? `${streetName} ${streetNumber}` 
         : streetName;
@@ -163,6 +187,7 @@ function GoogleAddressAutocomplete({
         streetAddress,
         neighborhood,
         city,
+        matchedSupportedCity: matchedCity || undefined,
         latitude: lat,
         longitude: lng,
         placeId,
@@ -171,7 +196,7 @@ function GoogleAddressAutocomplete({
     } catch (error) {
       console.error('Error geocoding address:', error);
     }
-  }, [setValue, clearSuggestions, onAddressSelect]);
+  }, [setValue, clearSuggestions, onAddressSelect, supportedCities, onInputChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (status !== 'OK' || data.length === 0) return;
@@ -258,7 +283,13 @@ function GoogleAddressAutocomplete({
         </div>
       )}
 
-      {!hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
+      {unsupportedCityError && (
+        <p className="mt-1 text-xs text-destructive">
+          "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
+        </p>
+      )}
+
+      {!unsupportedCityError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
         <p className="mt-1 text-xs text-muted-foreground">
           Type at least 3 characters to search
         </p>
@@ -274,6 +305,7 @@ function NominatimAddressAutocomplete({
   onInputChange,
   placeholder,
   className,
+  supportedCities,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
@@ -281,6 +313,7 @@ function NominatimAddressAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [hasValidSelection, setHasValidSelection] = useState(false);
+  const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
@@ -319,11 +352,28 @@ function NominatimAddressAutocomplete({
 
   const handleSelect = (result: NominatimResult) => {
     const parsed = parseNominatimResult(result);
+    
+    // Check if city is supported
+    const matchedCity = findMatchedCity(parsed.city, supportedCities);
+    if (supportedCities && supportedCities.length > 0 && !matchedCity) {
+      setUnsupportedCityError(parsed.city);
+      setInputValue('');
+      setHasValidSelection(false);
+      setIsOpen(false);
+      setSuggestions([]);
+      onInputChange?.('');
+      return;
+    }
+
+    setUnsupportedCityError(null);
     setInputValue(parsed.streetAddress || parsed.fullAddress);
     setHasValidSelection(true);
     setIsOpen(false);
     setSuggestions([]);
-    onAddressSelect(parsed);
+    onAddressSelect({
+      ...parsed,
+      matchedSupportedCity: matchedCity || undefined,
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -428,7 +478,13 @@ function NominatimAddressAutocomplete({
         </div>
       )}
 
-      {!hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
+      {unsupportedCityError && (
+        <p className="mt-1 text-xs text-destructive">
+          "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
+        </p>
+      )}
+
+      {!unsupportedCityError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
         <p className="mt-1 text-xs text-muted-foreground">
           Type at least 3 characters to search
         </p>
