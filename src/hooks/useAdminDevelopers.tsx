@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export type DeveloperStatus = 'pending' | 'approved' | 'suspended';
+export type DeveloperStatus = 'pending' | 'active' | 'suspended';
 
 export interface AdminDeveloper {
   id: string;
@@ -81,7 +81,7 @@ export function useDeveloperStats() {
 
       const stats = {
         pending: 0,
-        approved: 0,
+        active: 0,
         suspended: 0,
         total: data?.length || 0,
       };
@@ -106,7 +106,7 @@ export function useApproveDeveloper() {
       const { error } = await supabase
         .from('developers')
         .update({
-          status: 'approved',
+          status: 'active',
           verification_status: 'approved',
           is_verified: true,
           approved_at: new Date().toISOString(),
@@ -118,9 +118,11 @@ export function useApproveDeveloper() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-developers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-developer-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['developerProfile'] });
       toast.success('Developer approved successfully');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Approval error:', error);
       toast.error('Failed to approve developer');
     },
   });
@@ -161,7 +163,7 @@ export function useReinstateDeveloper() {
       const { error } = await supabase
         .from('developers')
         .update({
-          status: 'approved',
+          status: 'active',
           verification_status: 'approved',
           is_verified: true,
         })
@@ -172,9 +174,11 @@ export function useReinstateDeveloper() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-developers'] });
       queryClient.invalidateQueries({ queryKey: ['admin-developer-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['developerProfile'] });
       toast.success('Developer reinstated');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Reinstate error:', error);
       toast.error('Failed to reinstate developer');
     },
   });
