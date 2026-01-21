@@ -445,43 +445,6 @@ export function PropertyCostBreakdown({
           </div>
         </div>
         
-        {/* Cash to Close Summary */}
-        <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <h4 className="font-medium text-foreground">Cash to Close</h4>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>Total cash needed to complete the purchase, including down payment and one-time fees.</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Down Payment ({mortgageEstimate.downPaymentPercent}%)</span>
-              <span className="font-medium">{formatPrice(mortgageEstimate.downPayment, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">One-Time Costs</span>
-              <span className="font-medium">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</span>
-            </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between">
-              <span className="font-semibold">Total Cash Needed</span>
-              <span className="font-bold text-primary">
-                {formatPriceRange(
-                  mortgageEstimate.downPayment + totalOneTimeRange.low, 
-                  mortgageEstimate.downPayment + totalOneTimeRange.high, 
-                  'ILS'
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
         <p className="text-xs text-muted-foreground">
           * Based on 2025 tax brackets{cityData ? ` and ${city} municipal rates` : ''}. Actual costs may vary.
         </p>
