@@ -5,6 +5,13 @@ import { toast } from 'sonner';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType, DerivedBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
 
+export interface MortgagePreferencesJson {
+  down_payment_percent: number | null;
+  down_payment_amount: number | null;
+  term_years: number;
+  assumed_rate: number;
+}
+
 export interface BuyerProfile {
   id: string;
   user_id: string;
@@ -22,8 +29,20 @@ export interface BuyerProfile {
   arnona_discount_categories: string[];
   // Rental budget (optional)
   rental_budget?: number | null;
+  // Mortgage preferences (stored as JSON in DB, typed here)
+  mortgage_preferences?: MortgagePreferencesJson | null;
   created_at: string;
   updated_at: string;
+}
+
+// Helper to safely parse DB response to BuyerProfile
+function parseBuyerProfile(data: unknown): BuyerProfile | null {
+  if (!data) return null;
+  const raw = data as Record<string, unknown>;
+  return {
+    ...raw,
+    mortgage_preferences: raw.mortgage_preferences as MortgagePreferencesJson | null,
+  } as BuyerProfile;
 }
 
 export type BuyerProfileInsert = Omit<BuyerProfile, 'id' | 'created_at' | 'updated_at'>;
@@ -43,7 +62,7 @@ export function useBuyerProfile() {
         .maybeSingle();
 
       if (error) throw error;
-      return data as BuyerProfile | null;
+      return parseBuyerProfile(data);
     },
     enabled: !!user,
   });
@@ -76,7 +95,7 @@ export function useCreateBuyerProfile() {
         .single();
 
       if (error) throw error;
-      return data as BuyerProfile;
+      return parseBuyerProfile(data) as BuyerProfile;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyer-profile'] });
@@ -97,13 +116,13 @@ export function useUpdateBuyerProfile() {
 
       const { data, error } = await supabase
         .from('buyer_profiles')
-        .update(profileData)
+        .update(profileData as Record<string, unknown>)
         .eq('user_id', user.id)
         .select()
         .single();
 
       if (error) throw error;
-      return data as BuyerProfile;
+      return parseBuyerProfile(data) as BuyerProfile;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['buyer-profile'] });
