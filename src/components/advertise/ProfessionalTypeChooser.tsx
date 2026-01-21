@@ -34,7 +34,7 @@ const professionalTypes = [
     ],
     href: "/auth?tab=signup&role=agency",
     buttonText: "Register Agency",
-    popular: true,
+    popular: false,
   },
   {
     icon: Landmark,
