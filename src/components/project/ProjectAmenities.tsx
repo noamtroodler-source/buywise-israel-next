@@ -10,15 +10,15 @@ interface ProjectAmenitiesProps {
 
 const amenityCategories: Record<string, { icon: typeof Sparkles; keywords: string[] }> = {
   'Fitness & Wellness': { icon: Dumbbell, keywords: ['gym', 'fitness', 'yoga', 'spa', 'sauna'] },
-  'Pool & Water': { icon: Waves, keywords: ['pool', 'swimming', 'jacuzzi'] },
-  'Parking & Transport': { icon: Car, keywords: ['parking', 'garage', 'electric', 'charging'] },
-  'Outdoor & Green': { icon: Leaf, keywords: ['garden', 'terrace', 'balcony', 'rooftop', 'landscap'] },
-  'Family & Kids': { icon: Baby, keywords: ['playground', 'kids', 'children', 'family'] },
+  'Pool & Water': { icon: Waves, keywords: ['pool', 'swimming', 'jacuzzi', 'heated_pool', 'beach'] },
+  'Parking & Transport': { icon: Car, keywords: ['parking', 'garage', 'electric', 'charging', 'bicycle', 'ev_'] },
+  'Outdoor & Green': { icon: Leaf, keywords: ['garden', 'terrace', 'balcony', 'rooftop', 'landscap', 'private_garden', 'sukkot'] },
+  'Family & Kids': { icon: Baby, keywords: ['playground', 'kids', 'children', 'family', 'daycare'] },
   'Pet Friendly': { icon: Dog, keywords: ['pet', 'dog'] },
-  'Security': { icon: Shield, keywords: ['security', 'guard', 'cctv', 'surveillance', 'doorman', 'concierge'] },
+  'Security & Safety': { icon: Shield, keywords: ['security', 'guard', 'cctv', 'surveillance', 'doorman', 'concierge', 'mamad', 'safe room', 'generator'] },
   'Smart Home': { icon: Wifi, keywords: ['smart', 'wifi', 'internet', 'fiber'] },
-  'Community': { icon: Users, keywords: ['club', 'lounge', 'community', 'social'] },
-  'Comfort': { icon: Wind, keywords: ['ac', 'air condition', 'heating', 'elevator', 'lift'] },
+  'Community & Religious': { icon: Users, keywords: ['club', 'lounge', 'community', 'social', 'shul', 'synagogue', 'mikvah', 'event', 'commercial', 'coworking'] },
+  'Comfort & Accessibility': { icon: Wind, keywords: ['ac', 'air condition', 'heating', 'elevator', 'lift', 'shabbat', 'underfloor', 'accessible', 'lobby'] },
 };
 
 function categorizeAmenities(amenities: string[]) {
