@@ -57,6 +57,7 @@ const COMPANY_TYPE_OPTIONS = [
 
 export default function DeveloperSettings() {
   const { data: developer, isLoading, refetch } = useDeveloperProfile();
+  const [logoError, setLogoError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,6 +137,22 @@ export default function DeveloperSettings() {
       toast.error('Image must be less than 5MB');
       return;
     }
+
+    // Validate the image is actually loadable
+    const isValidImage = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = URL.createObjectURL(file);
+    });
+
+    if (!isValidImage) {
+      toast.error('Invalid image file. Please select a valid PNG or JPG.');
+      return;
+    }
+
+    // Reset logo error state when uploading new image
+    setLogoError(false);
 
     setUploading(true);
     try {
@@ -282,11 +299,12 @@ export default function DeveloperSettings() {
                     <div className="flex items-center gap-6 p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-muted/50 border border-border">
                       <div className="relative group">
                         <div className="h-24 w-24 rounded-2xl bg-card border-2 border-dashed border-border flex items-center justify-center overflow-hidden group-hover:border-primary/50 transition-colors">
-                          {developer?.logo_url ? (
+                          {developer?.logo_url && !logoError ? (
                             <img 
                               src={developer.logo_url} 
                               alt={developer.name} 
                               className="h-full w-full object-cover"
+                              onError={() => setLogoError(true)}
                             />
                           ) : (
                             <Building2 className="h-12 w-12 text-muted-foreground" />

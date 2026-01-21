@@ -14,11 +14,14 @@ import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
 
+import { useState } from 'react';
+
 export default function DeveloperDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: developer, isLoading, error } = useDeveloper(slug || '');
   const { data: projects = [] } = useDeveloperProjects(developer?.id || '');
   const { mutate: trackInquiry } = useProjectInquiryTracking();
+  const [logoError, setLogoError] = useState(false);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -143,11 +146,12 @@ export default function DeveloperDetail() {
             <Card className="lg:col-span-2">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-6">
-                  {developer.logo_url ? (
+                  {developer.logo_url && !logoError ? (
                     <img
                       src={developer.logo_url}
                       alt={developer.name}
                       className="h-24 w-24 object-contain rounded-lg bg-muted p-2"
+                      onError={() => setLogoError(true)}
                     />
                   ) : (
                     <div className="h-24 w-24 rounded-lg bg-primary/10 flex items-center justify-center">
