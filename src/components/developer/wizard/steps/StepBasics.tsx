@@ -102,6 +102,7 @@ export function StepBasics() {
               onInputChange={handleAddressInputChange}
               placeholder="Start typing: Rothschild 42, Tel Aviv..."
               supportedCities={supportedCityNames}
+              selectedCity={data.city}
             />
             {showAddressWarning ? (
               <p className="text-xs text-primary font-medium">
