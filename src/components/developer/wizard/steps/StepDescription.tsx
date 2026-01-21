@@ -5,6 +5,34 @@ import { useProjectWizard } from '../ProjectWizardContext';
 export function StepDescription() {
   const { data, updateData } = useProjectWizard();
 
+  const descriptionLength = data.description.length;
+  const minLength = 150;
+  const optimalMin = 400;
+  const optimalMax = 600;
+  const warningLength = 1500;
+  const maxLength = 2000;
+
+  const getCharacterFeedback = () => {
+    if (descriptionLength < minLength) {
+      return { text: `${descriptionLength} characters (minimum ${minLength})`, color: 'text-primary' };
+    }
+    if (descriptionLength < optimalMin) {
+      return { text: `${descriptionLength} characters · ${optimalMin - descriptionLength} more for optimal`, color: 'text-muted-foreground' };
+    }
+    if (descriptionLength <= optimalMax) {
+      return { text: `${descriptionLength} characters · Great length!`, color: 'text-primary' };
+    }
+    if (descriptionLength < warningLength) {
+      return { text: `${descriptionLength} characters`, color: 'text-muted-foreground' };
+    }
+    if (descriptionLength < maxLength) {
+      return { text: `${descriptionLength} characters · ${maxLength - descriptionLength} remaining`, color: 'text-primary' };
+    }
+    return { text: `Maximum reached (${maxLength})`, color: 'text-primary' };
+  };
+
+  const charFeedback = getCharacterFeedback();
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,13 +49,18 @@ export function StepDescription() {
             id="description"
             value={data.description}
             onChange={(e) => updateData({ description: e.target.value })}
+            maxLength={maxLength}
             placeholder="Describe your project's unique features, location benefits, target buyers, construction quality, and lifestyle it offers..."
             rows={10}
             className="resize-none"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{data.description.length} characters</span>
-            <span>Recommended: 300-1000 characters</span>
+          <div className="flex justify-between text-xs">
+            <span className={charFeedback.color}>
+              {charFeedback.text}
+            </span>
+            <span className="text-muted-foreground">
+              Recommended: {optimalMin}-{optimalMax}
+            </span>
           </div>
         </div>
 
