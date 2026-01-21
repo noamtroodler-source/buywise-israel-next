@@ -452,10 +452,10 @@ export function StepUnitTypes() {
               )}
             </div>
 
-            {/* Bedrooms & Bathrooms */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Bedrooms *</Label>
+{/* Rooms & Bathrooms */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Rooms *</Label>
                 <Select
                   value={String(formData.bedrooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, bedrooms: Number(v) }))}
