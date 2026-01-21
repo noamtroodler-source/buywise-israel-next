@@ -11,9 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
-import { RecentlyViewedStrip } from '@/components/listings/RecentlyViewedStrip';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
-import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -71,8 +69,6 @@ export default function Listings() {
     loadMore 
   } = usePaginatedProperties(filters);
 
-  // Recently viewed properties
-  const { recentProperties, clearRecentlyViewed } = useRecentlyViewed();
 
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
@@ -136,14 +132,6 @@ export default function Listings() {
       </div>
 
       <div className="container py-6">
-        {/* Recently Viewed Section */}
-        {recentProperties.length > 0 && (
-          <RecentlyViewedStrip 
-            items={recentProperties} 
-            type="property" 
-            onClear={clearRecentlyViewed}
-          />
-        )}
 
         {/* Sold View Info Banner */}
         {isSoldView && (
