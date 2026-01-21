@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -423,19 +424,23 @@ export default function DeveloperSettings() {
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2 sm:col-span-2">
                           <Label htmlFor="office_address" className="text-sm font-medium">Office Address</Label>
-                          <Input
-                            id="office_address"
-                            placeholder="Street address"
+                          <AddressAutocomplete
                             value={formData.office_address}
-                            onChange={(e) => setFormData({ ...formData, office_address: e.target.value })}
-                            className="h-11 rounded-xl"
+                            onAddressSelect={(address) => {
+                              setFormData({ 
+                                ...formData, 
+                                office_address: address.fullAddress,
+                                office_city: address.city 
+                              });
+                            }}
+                            placeholder="Start typing your office address..."
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="office_city" className="text-sm font-medium">City</Label>
                           <Input
                             id="office_city"
-                            placeholder="e.g., Tel Aviv"
+                            placeholder="Auto-filled from address"
                             value={formData.office_city}
                             onChange={(e) => setFormData({ ...formData, office_city: e.target.value })}
                             className="h-11 rounded-xl"
