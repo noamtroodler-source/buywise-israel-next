@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  MessageSquare, FileText, Megaphone, Mail
+  FileText, Megaphone, Mail
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -130,12 +130,6 @@ export default function AgencyDashboard() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <AgencyNotificationBell />
-                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-                  <Link to="/agency/leads">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Leads
-                  </Link>
-                </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/listings">
                     <FileText className="h-4 w-4 mr-2" />

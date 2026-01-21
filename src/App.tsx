@@ -36,7 +36,7 @@ import AgencyRegister from "./pages/agency/AgencyRegister";
 import AgencyDashboard from "./pages/agency/AgencyDashboard";
 import AgencyAnalytics from "./pages/agency/AgencyAnalytics";
 import AgencySettings from "./pages/agency/AgencySettings";
-import AgencyLeadsPage from "./pages/agency/AgencyLeads";
+
 import AgencyListingsPage from "./pages/agency/AgencyListings";
 import Developers from "./pages/Developers";
 import DeveloperDetail from "./pages/DeveloperDetail";
@@ -222,11 +222,6 @@ const App = () => (
             <Route path="/agency/settings" element={
               <ProtectedRoute>
                 <AgencySettings />
-              </ProtectedRoute>
-            } />
-            <Route path="/agency/leads" element={
-              <ProtectedRoute>
-                <AgencyLeadsPage />
               </ProtectedRoute>
             } />
             <Route path="/agency/listings" element={
