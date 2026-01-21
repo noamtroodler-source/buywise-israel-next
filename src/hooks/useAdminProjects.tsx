@@ -25,6 +25,9 @@ export interface AdminProject {
   submitted_at: string | null;
   reviewed_at: string | null;
   created_at: string;
+  status: string | null;
+  construction_start: string | null;
+  floor_plans: string[] | null;
   developer: {
     id: string;
     name: string;
