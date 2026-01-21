@@ -188,7 +188,7 @@ export default function AgencyDashboard() {
           </div>
 
           {/* Onboarding Progress */}
-          <AgencyOnboardingProgress agency={agency} teamCount={team.length} />
+          <AgencyOnboardingProgress agency={agency} teamCount={team.length} listingsCount={stats?.activeListings} />
 
           {/* Homepage Listing Opportunities */}
           <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
