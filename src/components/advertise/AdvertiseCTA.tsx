@@ -40,19 +40,25 @@ export function AdvertiseCTA() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
+                variant="secondary"
                 asChild
-                className="border-white text-white hover:bg-white/10"
+                className="bg-white text-primary hover:bg-white/90"
               >
-                <Link to="/auth?tab=signup&role=agency">Register Agency</Link>
+                <Link to="/auth?tab=signup&role=agency">
+                  Register Agency
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
               <Button
                 size="lg"
-                variant="outline"
+                variant="secondary"
                 asChild
-                className="border-white text-white hover:bg-white/10"
+                className="bg-white text-primary hover:bg-white/90"
               >
-                <Link to="/auth?tab=signup&role=developer">Register Developer</Link>
+                <Link to="/auth?tab=signup&role=developer">
+                  Register Developer
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             </div>
 
