@@ -43,6 +43,9 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import { AdminSettings } from "./pages/admin/AdminSettings";
+import { AdminCitiesPage } from "./pages/admin/AdminCitiesPage";
+import { AdminMarketDataPage } from "./pages/admin/AdminMarketDataPage";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
@@ -270,6 +273,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<AdminDashboard />} />
+              <Route path="settings" element={<AdminSettings />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="review" element={<AdminListingReview />} />
               <Route path="agents" element={<AdminAgents />} />
@@ -279,6 +283,8 @@ const App = () => (
               <Route path="blog" element={<AdminBlog />} />
               <Route path="developers" element={<AdminDevelopers />} />
               <Route path="projects" element={<AdminProjects />} />
+              <Route path="cities" element={<AdminCitiesPage />} />
+              <Route path="market-data" element={<AdminMarketDataPage />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
                     <Route path="*" element={<NotFound />} />
