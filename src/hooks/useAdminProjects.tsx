@@ -4,6 +4,37 @@ import { toast } from 'sonner';
 
 export type ProjectVerificationStatus = 'draft' | 'pending_review' | 'changes_requested' | 'approved' | 'rejected';
 
+export interface ProjectUnit {
+  id: string;
+  project_id: string;
+  unit_type: string;
+  bedrooms: number;
+  bathrooms: number;
+  size_sqm: number;
+  floor: number | null;
+  price: number | null;
+  floor_plan_url: string | null;
+  status: string | null;
+}
+
+export function useAdminProjectUnits(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ['admin-project-units', projectId],
+    queryFn: async (): Promise<ProjectUnit[]> => {
+      if (!projectId) return [];
+      const { data, error } = await supabase
+        .from('project_units')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('bedrooms');
+      
+      if (error) throw error;
+      return data as ProjectUnit[];
+    },
+    enabled: !!projectId,
+  });
+}
+
 export interface AdminProject {
   id: string;
   name: string;
