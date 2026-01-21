@@ -50,6 +50,8 @@ export type Database = {
       agencies: {
         Row: {
           admin_user_id: string | null
+          approved_at: string | null
+          approved_by: string | null
           cities_covered: string[] | null
           created_at: string | null
           default_invite_code: string | null
@@ -70,11 +72,15 @@ export type Database = {
           slug: string
           social_links: Json | null
           specializations: string[] | null
+          status: string | null
           updated_at: string | null
+          verification_status: string | null
           website: string | null
         }
         Insert: {
           admin_user_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
           default_invite_code?: string | null
@@ -95,11 +101,15 @@ export type Database = {
           slug: string
           social_links?: Json | null
           specializations?: string[] | null
+          status?: string | null
           updated_at?: string | null
+          verification_status?: string | null
           website?: string | null
         }
         Update: {
           admin_user_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           cities_covered?: string[] | null
           created_at?: string | null
           default_invite_code?: string | null
@@ -120,7 +130,9 @@ export type Database = {
           slug?: string
           social_links?: Json | null
           specializations?: string[] | null
+          status?: string | null
           updated_at?: string | null
+          verification_status?: string | null
           website?: string | null
         }
         Relationships: []
