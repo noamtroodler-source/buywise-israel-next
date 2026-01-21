@@ -1,7 +1,9 @@
-import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProjectWizard } from '../ProjectWizardContext';
+import { ProjectPreviewDialog } from './ProjectPreviewDialog';
 
 const statusLabels: Record<string, string> = {
   planning: 'Planning Phase',
@@ -43,6 +45,7 @@ interface StepReviewProps {
 
 export function StepReview({ onEditStep }: StepReviewProps) {
   const { data } = useProjectWizard();
+  const [showPreview, setShowPreview] = useState(false);
 
   const formatPrice = (price: number) => {
     return `₪${price.toLocaleString()}`;
@@ -50,12 +53,20 @@ export function StepReview({ onEditStep }: StepReviewProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Review Your Project</h2>
-        <p className="text-muted-foreground mb-6">
-          Please review all the information before submitting.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold mb-1">Review Your Project</h2>
+          <p className="text-muted-foreground">
+            Please review all the information before submitting.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => setShowPreview(true)} className="gap-2 rounded-xl">
+          <Eye className="h-4 w-4" />
+          Preview as Buyer
+        </Button>
       </div>
+
+      <ProjectPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
 
       {/* Main Image Preview */}
       {data.images.length > 0 && (
