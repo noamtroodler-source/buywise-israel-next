@@ -1,16 +1,16 @@
 import { GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCompare } from '@/contexts/CompareContext';
-import { toast } from 'sonner';
+import { useCompare, CompareCategory } from '@/contexts/CompareContext';
 import { cn } from '@/lib/utils';
 
 interface CompareButtonProps {
   propertyId: string;
+  category: CompareCategory;
   className?: string;
 }
 
-export function CompareButton({ propertyId, className }: CompareButtonProps) {
-  const { addToCompare, removeFromCompare, isInCompare, compareIds, maxItems } = useCompare();
+export function CompareButton({ propertyId, category, className }: CompareButtonProps) {
+  const { addToCompare, removeFromCompare, isInCompare } = useCompare();
   const isSelected = isInCompare(propertyId);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -20,11 +20,7 @@ export function CompareButton({ propertyId, className }: CompareButtonProps) {
     if (isSelected) {
       removeFromCompare(propertyId);
     } else {
-      if (compareIds.length >= maxItems) {
-        toast.error(`You can compare up to ${maxItems} properties`);
-        return;
-      }
-      addToCompare(propertyId);
+      addToCompare(propertyId, category);
     }
   };
 

@@ -12,6 +12,8 @@ import { ProjectFilters, ProjectFiltersType } from '@/components/filters/Project
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
+import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
+import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 
 export default function Projects() {
   const { data: projects = [], isLoading, isFetching } = useProjects();
@@ -199,6 +201,17 @@ export default function Projects() {
                             alt={project.name}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
+                          
+                          {/* Action Buttons - Top Right */}
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                            {/* Share - visible on hover */}
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
+                            </div>
+                            {/* Favorite - always visible */}
+                            <ProjectFavoriteButton projectId={project.id} />
+                          </div>
+                          
                           {project.is_featured && (
                             <div className="absolute top-3 left-3">
                               <Badge className="bg-accent text-accent-foreground">Featured</Badge>

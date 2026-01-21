@@ -25,9 +25,10 @@ interface PropertyCardProps {
   maxBadges?: 1 | 2 | 3;
   showCategoryBadge?: boolean;
   hideFeaturedBadge?: boolean;
+  compareCategory?: 'buy' | 'rent';
 }
 
-export function PropertyCard({ property, className, showCompareButton = true, showShareButton = false, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false }: PropertyCardProps) {
+export function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -242,9 +243,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
                     </div>
                   )}
-                  {showCompareButton && !showShareButton && (
+                  {showCompareButton && !showShareButton && compareCategory && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <CompareButton propertyId={property.id} />
+                      <CompareButton propertyId={property.id} category={compareCategory} />
                     </div>
                   )}
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
@@ -381,9 +382,9 @@ export function PropertyCard({ property, className, showCompareButton = true, sh
                       <ShareButton propertyId={property.id} propertyTitle={property.title} />
                     </div>
                   )}
-                  {showCompareButton && !showShareButton && (
+                  {showCompareButton && !showShareButton && compareCategory && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <CompareButton propertyId={property.id} />
+                      <CompareButton propertyId={property.id} category={compareCategory} />
                     </div>
                   )}
                   <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
