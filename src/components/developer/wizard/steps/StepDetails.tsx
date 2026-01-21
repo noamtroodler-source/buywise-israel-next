@@ -1,7 +1,29 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 import { useProjectWizard } from '../ProjectWizardContext';
+
+function LabelWithTooltip({ htmlFor, label, tooltip }: { 
+  htmlFor: string; 
+  label: string; 
+  tooltip: string; 
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      <Tooltip>
+        <TooltipTrigger type="button" className="cursor-help">
+          <Info className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-sm">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
 
 export function StepDetails() {
   const { data, updateData } = useProjectWizard();
@@ -19,7 +41,11 @@ export function StepDetails() {
         {/* Units */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="total_units">Total Units</Label>
+            <LabelWithTooltip 
+              htmlFor="total_units" 
+              label="Total Units"
+              tooltip="The total number of units in the entire project. This is a fixed number that typically doesn't change."
+            />
             <Input
               id="total_units"
               type="number"
@@ -31,7 +57,11 @@ export function StepDetails() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="available_units">Available Units</Label>
+            <LabelWithTooltip 
+              htmlFor="available_units" 
+              label="Available Units"
+              tooltip="Units still available for sale. Update this regularly (we recommend weekly) as units are sold to keep your listing accurate."
+            />
             <Input
               id="available_units"
               type="number"
@@ -46,7 +76,11 @@ export function StepDetails() {
         {/* Pricing */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="price_from">Price From (₪)</Label>
+            <LabelWithTooltip 
+              htmlFor="price_from" 
+              label="Starting Price (₪)"
+              tooltip="The lowest-priced unit in your project (e.g., smallest apartment, lowest floor). This is the 'החל מ' price shown to buyers."
+            />
             <Input
               id="price_from"
               type="number"
@@ -59,7 +93,11 @@ export function StepDetails() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="price_to">Price To (₪)</Label>
+            <LabelWithTooltip 
+              htmlFor="price_to" 
+              label="Maximum Price (₪)"
+              tooltip="The highest-priced unit in your project (e.g., penthouse, premium floor plan). Leave empty if all units are similarly priced."
+            />
             <Input
               id="price_to"
               type="number"
