@@ -2,7 +2,8 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Home, Building, Building2, 
-  FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders 
+  FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
+  Mail, ToggleLeft, BookOpen, Megaphone
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,8 @@ import { usePendingReviewCount } from '@/hooks/useListingReview';
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/settings', label: 'Site Settings', icon: Sliders },
+  { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
+  { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/review', label: 'Listing Review', icon: ClipboardCheck, showBadge: true },
   { href: '/admin/users', label: 'Users', icon: Users },
@@ -23,6 +26,8 @@ const adminNavItems = [
   { href: '/admin/blog', label: 'Blog Posts', icon: FileText },
   { href: '/admin/cities', label: 'Cities', icon: MapPin },
   { href: '/admin/market-data', label: 'Market Data', icon: BarChart3 },
+  { href: '/admin/glossary', label: 'Glossary', icon: BookOpen },
+  { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
   { href: '/admin/accuracy-audit', label: 'Accuracy Audit', icon: BarChart3 },
 ];
 

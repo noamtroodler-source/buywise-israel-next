@@ -46,6 +46,10 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AdminCitiesPage } from "./pages/admin/AdminCitiesPage";
 import { AdminMarketDataPage } from "./pages/admin/AdminMarketDataPage";
+import { AdminContactSubmissions } from "./pages/admin/AdminContactSubmissions";
+import { AdminFeatureFlags } from "./pages/admin/AdminFeatureFlags";
+import { AdminGlossary } from "./pages/admin/AdminGlossary";
+import { AdminAnnouncements } from "./pages/admin/AdminAnnouncements";
 import AdminProperties from "./pages/admin/AdminProperties";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminBlog from "./pages/admin/AdminBlog";
@@ -285,6 +289,10 @@ const App = () => (
               <Route path="projects" element={<AdminProjects />} />
               <Route path="cities" element={<AdminCitiesPage />} />
               <Route path="market-data" element={<AdminMarketDataPage />} />
+              <Route path="glossary" element={<AdminGlossary />} />
+              <Route path="contact" element={<AdminContactSubmissions />} />
+              <Route path="feature-flags" element={<AdminFeatureFlags />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
             </Route>
                     <Route path="*" element={<NotFound />} />
