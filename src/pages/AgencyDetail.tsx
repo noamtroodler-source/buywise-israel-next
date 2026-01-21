@@ -16,11 +16,28 @@ import { useQuery } from '@tanstack/react-query';
 
 export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const { user } = useAuth();
   const { data: agency, isLoading: agencyLoading, error } = useAgency(slug || '');
   const { data: agents, isLoading: agentsLoading } = useAgencyAgents(agency?.id);
   const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active');
   const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past');
   const { data: stats } = useAgencyStats(agency?.id);
+  
+  const { data: userAgent } = useQuery({
+    queryKey: ['user-agent', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('agents')
+        .select('agency_id')
+        .eq('user_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isOwner = agency && userAgent?.agency_id === agency.id;
 
   const handleShare = async () => {
     try {
@@ -74,24 +91,6 @@ export default function AgencyDetail() {
       </Layout>
     );
   }
-
-  // Check if current user is associated with this agency
-  const { user } = useAuth();
-  const { data: userAgent } = useQuery({
-    queryKey: ['user-agent', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase
-        .from('agents')
-        .select('agency_id')
-        .eq('user_id', user.id)
-        .single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
-
-  const isOwner = agency && userAgent?.agency_id === agency.id;
 
   return (
     <Layout>
