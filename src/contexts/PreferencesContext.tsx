@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 type Currency = 'ILS' | 'USD';
 type AreaUnit = 'sqm' | 'sqft';
@@ -17,7 +18,7 @@ interface PreferencesContextType {
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
-const DEFAULT_EXCHANGE_RATE = 3.65; // 1 USD = 3.65 ILS
+const FALLBACK_EXCHANGE_RATE = 3.65; // Fallback if DB fetch fails
 const STORAGE_KEY = 'buywise-preferences';
 const SQM_TO_SQFT = 10.764;
 
@@ -30,10 +31,33 @@ interface StoredPreferences {
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>('ILS');
-  const [exchangeRate, setExchangeRateState] = useState(DEFAULT_EXCHANGE_RATE);
+  const [exchangeRate, setExchangeRateState] = useState(FALLBACK_EXCHANGE_RATE);
   const [isCustomRate, setIsCustomRateState] = useState(false);
   const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqm');
+  const [defaultExchangeRate, setDefaultExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Fetch default exchange rate from database
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('calculator_constants')
+          .select('value_numeric')
+          .eq('constant_key', 'EXCHANGE_RATE_USD_ILS')
+          .eq('is_current', true)
+          .single();
+
+        if (!error && data?.value_numeric) {
+          setDefaultExchangeRate(Number(data.value_numeric));
+        }
+      } catch (e) {
+        console.error('Failed to fetch exchange rate:', e);
+      }
+    };
+
+    fetchExchangeRate();
+  }, []);
 
   // Load preferences from localStorage on mount
   useEffect(() => {
@@ -42,7 +66,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const prefs: StoredPreferences = JSON.parse(stored);
         setCurrencyState(prefs.currency || 'ILS');
-        setExchangeRateState(prefs.exchangeRate || DEFAULT_EXCHANGE_RATE);
+        setExchangeRateState(prefs.exchangeRate || FALLBACK_EXCHANGE_RATE);
         setIsCustomRateState(prefs.isCustomRate || false);
         setAreaUnitState(prefs.areaUnit || 'sqm');
       }
@@ -73,7 +97,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const setIsCustomRate = (custom: boolean) => {
     setIsCustomRateState(custom);
     if (!custom) {
-      setExchangeRateState(DEFAULT_EXCHANGE_RATE);
+      setExchangeRateState(defaultExchangeRate);
     }
   };
   const setAreaUnit = (u: AreaUnit) => setAreaUnitState(u);
@@ -88,7 +112,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setIsCustomRate,
       areaUnit,
       setAreaUnit,
-      defaultExchangeRate: DEFAULT_EXCHANGE_RATE,
+      defaultExchangeRate,
     }}>
       {children}
     </PreferencesContext.Provider>
@@ -102,13 +126,13 @@ export function usePreferences() {
     return {
       currency: 'ILS' as Currency,
       setCurrency: () => {},
-      exchangeRate: DEFAULT_EXCHANGE_RATE,
+      exchangeRate: FALLBACK_EXCHANGE_RATE,
       setExchangeRate: () => {},
       isCustomRate: false,
       setIsCustomRate: () => {},
       areaUnit: 'sqm' as AreaUnit,
       setAreaUnit: () => {},
-      defaultExchangeRate: DEFAULT_EXCHANGE_RATE,
+      defaultExchangeRate: FALLBACK_EXCHANGE_RATE,
     };
   }
   return context;

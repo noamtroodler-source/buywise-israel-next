@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Home, Building, Building2, 
-  FileText, MapPin, BarChart3, Settings, ClipboardCheck 
+  FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders 
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import { usePendingReviewCount } from '@/hooks/useListingReview';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/settings', label: 'Site Settings', icon: Sliders },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/review', label: 'Listing Review', icon: ClipboardCheck, showBadge: true },
   { href: '/admin/users', label: 'Users', icon: Users },
