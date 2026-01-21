@@ -32,7 +32,7 @@ import { format } from 'date-fns';
 
 const statusConfig: Record<DeveloperStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
   pending: { label: 'Pending', variant: 'secondary', icon: Clock },
-  approved: { label: 'Approved', variant: 'default', icon: UserCheck },
+  active: { label: 'Active', variant: 'default', icon: UserCheck },
   suspended: { label: 'Suspended', variant: 'destructive', icon: Ban },
 };
 
@@ -112,8 +112,8 @@ export default function AdminDevelopers() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Approved</p>
-                    <p className="text-2xl font-bold text-green-600">{stats?.approved || 0}</p>
+                    <p className="text-sm text-muted-foreground">Active</p>
+                    <p className="text-2xl font-bold text-green-600">{stats?.active || 0}</p>
                   </div>
                   <UserCheck className="h-8 w-8 text-green-600" />
                 </div>
@@ -148,7 +148,7 @@ export default function AdminDevelopers() {
                   <Badge variant="secondary" className="ml-1">{stats.pending}</Badge>
                 ) : null}
               </TabsTrigger>
-              <TabsTrigger value="approved">Approved</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="suspended">Suspended</TabsTrigger>
               <TabsTrigger value="all">All</TabsTrigger>
             </TabsList>
@@ -252,7 +252,7 @@ export default function AdminDevelopers() {
                                 Approve
                               </Button>
                             )}
-                            {status === 'approved' && (
+                            {status === 'active' && (
                               <Button
                                 size="sm"
                                 variant="destructive"
