@@ -108,7 +108,15 @@ export function ProjectWizardProvider({ children }: { children: ReactNode }) {
         const hasValidAddress = data.address && data.latitude && data.longitude && /\d+/.test(data.address);
         return !!(data.name && data.city && hasValidAddress);
       case 1: // Details
-        return true; // Optional
+        // If both dates are provided, completion must be after start
+        if (data.construction_start && data.completion_date) {
+          const startDate = new Date(data.construction_start);
+          const completionDate = new Date(data.completion_date);
+          if (completionDate <= startDate) {
+            return false; // Invalid: completion is not after start
+          }
+        }
+        return true; // Optional fields, but if provided, must be valid
       case 2: // Amenities
         return true; // Optional
       case 3: // Photos
