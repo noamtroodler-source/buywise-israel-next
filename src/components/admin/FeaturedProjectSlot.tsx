@@ -1,3 +1,4 @@
+import React from 'react';
 import { format, formatDistanceToNow, isPast, isBefore, addDays } from 'date-fns';
 import { Trash2, Clock, AlertTriangle, ExternalLink, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,14 +16,8 @@ interface FeaturedProjectSlotProps {
   isRemoving?: boolean;
 }
 
-export function FeaturedProjectSlot({ 
-  slot, 
-  slotLabel, 
-  isHero = false,
-  onRemove, 
-  onAdd,
-  isRemoving 
-}: FeaturedProjectSlotProps) {
+export const FeaturedProjectSlot = React.forwardRef<HTMLDivElement, FeaturedProjectSlotProps>(
+  ({ slot, slotLabel, isHero = false, onRemove, onAdd, isRemoving }, ref) => {
   const formatPrice = (price: number, currency: string = 'ILS') => {
     return new Intl.NumberFormat('en-IL', {
       style: 'currency',
@@ -194,4 +189,6 @@ export function FeaturedProjectSlot({
       </CardContent>
     </Card>
   );
-}
+});
+
+FeaturedProjectSlot.displayName = 'FeaturedProjectSlot';
