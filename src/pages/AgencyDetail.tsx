@@ -14,6 +14,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
+import { useState } from 'react';
+
 export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
@@ -22,6 +24,7 @@ export default function AgencyDetail() {
   const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active');
   const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past');
   const { data: stats } = useAgencyStats(agency?.id);
+  const [logoError, setLogoError] = useState(false);
   
   const { data: userAgent } = useQuery({
     queryKey: ['user-agent', user?.id],
@@ -112,8 +115,13 @@ export default function AgencyDetail() {
               {/* Logo */}
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                  {agency.logo_url ? (
-                    <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover" />
+                  {agency.logo_url && !logoError ? (
+                    <img 
+                      src={agency.logo_url} 
+                      alt={agency.name} 
+                      className="w-full h-full object-cover"
+                      onError={() => setLogoError(true)}
+                    />
                   ) : (
                     <Building2 className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground" />
                   )}

@@ -70,6 +70,7 @@ export default function AgentSettings() {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (agentProfile) {
@@ -109,6 +110,19 @@ export default function AgentSettings() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    // Validate the image is actually loadable
+    const isValidImage = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = URL.createObjectURL(file);
+    });
+
+    if (!isValidImage) {
+      toast.error('Invalid image file. Please select a valid PNG or JPG.');
+      return;
+    }
+
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -125,6 +139,7 @@ export default function AgentSettings() {
         .getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
+      setAvatarError(false);
       toast.success('Avatar uploaded');
     } catch (error) {
       console.error('Avatar upload error:', error);
@@ -214,11 +229,12 @@ export default function AgentSettings() {
                           "h-24 w-24 rounded-2xl bg-card flex items-center justify-center overflow-hidden",
                           "border-2 border-dashed border-border"
                         )}>
-                          {avatarUrl ? (
+                          {avatarUrl && !avatarError ? (
                             <img 
                               src={avatarUrl} 
                               alt="Avatar" 
                               className="h-full w-full object-cover"
+                              onError={() => setAvatarError(true)}
                             />
                           ) : (
                             <User className="h-10 w-10 text-muted-foreground" />

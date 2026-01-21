@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, CheckCircle2, Users, Home, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,6 +68,8 @@ interface AgencyCardProps {
 }
 
 function AgencyCard({ agency }: AgencyCardProps) {
+  const [logoError, setLogoError] = useState(false);
+  
   return (
     <Link to={`/agencies/${agency.slug}`}>
       <Card className="h-full hover:shadow-lg transition-shadow group">
@@ -74,8 +77,13 @@ function AgencyCard({ agency }: AgencyCardProps) {
           {/* Logo & Name */}
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-              {agency.logo_url ? (
-                <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover" />
+              {agency.logo_url && !logoError ? (
+                <img 
+                  src={agency.logo_url} 
+                  alt={agency.name} 
+                  className="w-full h-full object-cover"
+                  onError={() => setLogoError(true)}
+                />
               ) : (
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               )}

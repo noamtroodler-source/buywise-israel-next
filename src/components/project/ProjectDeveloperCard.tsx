@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Building, Phone, Mail, Globe, CheckCircle, ChevronRight, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ interface ProjectDeveloperCardProps {
 }
 
 export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
+  const [logoError, setLogoError] = useState(false);
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -21,11 +23,12 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
       <CardContent className="space-y-4">
         {/* Developer Info */}
         <div className="flex items-start gap-4">
-          {developer.logo_url ? (
+          {developer.logo_url && !logoError ? (
             <img
               src={developer.logo_url}
               alt={developer.name}
               className="w-16 h-16 object-contain rounded-lg bg-muted p-2"
+              onError={() => setLogoError(true)}
             />
           ) : (
             <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">

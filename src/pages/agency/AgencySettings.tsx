@@ -81,6 +81,7 @@ export default function AgencySettings() {
   const [newCity, setNewCity] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
     if (agency) {
@@ -131,6 +132,19 @@ export default function AgencySettings() {
     const file = e.target.files?.[0];
     if (!file || !user || !agency) return;
 
+    // Validate the image is actually loadable
+    const isValidImage = await new Promise<boolean>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = URL.createObjectURL(file);
+    });
+
+    if (!isValidImage) {
+      toast.error('Invalid image file. Please select a valid PNG or JPG.');
+      return;
+    }
+
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -147,6 +161,7 @@ export default function AgencySettings() {
         .getPublicUrl(fileName);
 
       setLogoUrl(publicUrl);
+      setLogoError(false);
       toast.success('Logo uploaded');
     } catch (error) {
       console.error('Logo upload error:', error);
@@ -251,11 +266,12 @@ export default function AgencySettings() {
                           "h-24 w-24 rounded-2xl bg-card flex items-center justify-center overflow-hidden",
                           "border-2 border-dashed border-border group-hover:border-primary/50 transition-colors"
                         )}>
-                          {logoUrl ? (
+                          {logoUrl && !logoError ? (
                             <img 
                               src={logoUrl} 
                               alt="Agency logo" 
                               className="h-full w-full object-cover"
+                              onError={() => setLogoError(true)}
                             />
                           ) : (
                             <Building2 className="h-12 w-12 text-muted-foreground" />
