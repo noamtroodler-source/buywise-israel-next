@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -492,18 +493,16 @@ export function StepUnitTypes() {
             <div className="space-y-2">
               <Label>Size Range (m²)</Label>
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="number"
+                <FormattedNumberInput
+                  value={formData.sizeMin}
+                  onChange={(v) => setFormData(prev => ({ ...prev, sizeMin: v }))}
                   placeholder="From"
-                  value={formData.sizeMin || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sizeMin: e.target.value ? Number(e.target.value) : undefined }))}
                   className="rounded-xl"
                 />
-                <Input
-                  type="number"
+                <FormattedNumberInput
+                  value={formData.sizeMax}
+                  onChange={(v) => setFormData(prev => ({ ...prev, sizeMax: v }))}
                   placeholder="To"
-                  value={formData.sizeMax || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sizeMax: e.target.value ? Number(e.target.value) : undefined }))}
                   className="rounded-xl"
                 />
               </div>
@@ -534,19 +533,19 @@ export function StepUnitTypes() {
             <div className="space-y-2">
               <Label>Price Range (₪)</Label>
               <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="number"
+                <FormattedNumberInput
+                  value={formData.priceMin}
+                  onChange={(v) => setFormData(prev => ({ ...prev, priceMin: v }))}
                   placeholder="From"
-                  value={formData.priceMin || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceMin: e.target.value ? Number(e.target.value) : undefined }))}
                   className="rounded-xl"
+                  prefix="₪"
                 />
-                <Input
-                  type="number"
+                <FormattedNumberInput
+                  value={formData.priceMax}
+                  onChange={(v) => setFormData(prev => ({ ...prev, priceMax: v }))}
                   placeholder="To"
-                  value={formData.priceMax || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priceMax: e.target.value ? Number(e.target.value) : undefined }))}
                   className="rounded-xl"
+                  prefix="₪"
                 />
               </div>
             </div>
