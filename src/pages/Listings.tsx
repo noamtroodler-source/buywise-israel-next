@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
-import { CompareBar } from '@/components/property/CompareBar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb } from 'lucide-react';
@@ -265,9 +264,6 @@ export default function Listings() {
         filters={filters}
         listingType={isRentals ? 'for_rent' : 'for_sale'}
       />
-
-      {/* Compare Bar */}
-      <CompareBar />
     </Layout>
   );
 }

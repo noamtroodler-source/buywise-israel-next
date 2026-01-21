@@ -1768,6 +1768,35 @@ export type Database = {
         }
         Relationships: []
       }
+      project_favorites: {
+        Row: {
+          created_at: string | null
+          id: string
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_favorites_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_inquiries: {
         Row: {
           budget_range: string | null

@@ -15,6 +15,7 @@ import Index from "./pages/Index";
 import Listings from "./pages/Listings";
 import PropertyDetail from "./pages/PropertyDetail";
 import Compare from "./pages/Compare";
+import CompareProjects from "./pages/CompareProjects";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
@@ -117,6 +118,7 @@ const App = () => (
               <Route path="/listings" element={<Listings />} />
               <Route path="/property/:id" element={<PropertyDetail />} />
               <Route path="/compare" element={<Compare />} />
+              <Route path="/compare-projects" element={<CompareProjects />} />
               <Route path="/auth" element={<Auth />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
