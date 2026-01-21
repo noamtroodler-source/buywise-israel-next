@@ -1,0 +1,124 @@
+/* Print-optimized styles for property and project detail pages */
+@media print {
+  /* Hide non-essential elements */
+  header,
+  footer,
+  nav,
+  .fixed,
+  .sticky,
+  .floating-button,
+  .back-to-top,
+  .whatsapp-button,
+  .sticky-contact-card,
+  .share-button,
+  .save-button,
+  button[aria-label="Share"],
+  button[aria-label="Save"],
+  button[aria-label="Scroll to top"],
+  .create-alert-dialog,
+  .mobile-nav,
+  .desktop-nav,
+  [data-radix-popper-content-wrapper],
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Reset background and colors */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Full-width content */
+  .container,
+  main {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Show all content, remove truncation */
+  .line-clamp-1,
+  .line-clamp-2,
+  .line-clamp-3,
+  .line-clamp-4,
+  .truncate {
+    -webkit-line-clamp: unset !important;
+    display: block !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+  }
+
+  /* Ensure images print properly */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Page break control */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+  }
+
+  .property-section,
+  .project-section,
+  section {
+    page-break-inside: avoid !important;
+  }
+
+  /* Clean up cards */
+  .card,
+  [class*="Card"] {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  /* Make links visible as text */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 10pt;
+    color: #666;
+  }
+
+  /* Hide external link indicators in nav */
+  a[href^="http"]:after,
+  a[href^="mailto"]:after,
+  a[href^="tel"]:after {
+    content: none !important;
+  }
+
+  /* Ensure key information is visible */
+  .price,
+  .property-price,
+  .project-price {
+    font-size: 16pt !important;
+    font-weight: bold !important;
+  }
+
+  /* Clean badge styling for print */
+  .badge,
+  [class*="Badge"] {
+    border: 1px solid #ccc !important;
+    background: #f5f5f5 !important;
+    color: black !important;
+  }
+
+  /* Grid adjustments for print */
+  .grid {
+    display: block !important;
+  }
+
+  .grid > * {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Print header with date */
+  @page {
+    margin: 1.5cm;
+  }
+}

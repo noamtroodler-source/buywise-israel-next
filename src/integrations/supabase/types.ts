@@ -563,6 +563,7 @@ export type Database = {
           is_upgrading: boolean | null
           onboarding_completed: boolean
           purchase_purpose: string
+          rental_budget: number | null
           residency_status: string
           updated_at: string
           upgrade_sale_date: string | null
@@ -579,6 +580,7 @@ export type Database = {
           is_upgrading?: boolean | null
           onboarding_completed?: boolean
           purchase_purpose?: string
+          rental_budget?: number | null
           residency_status?: string
           updated_at?: string
           upgrade_sale_date?: string | null
@@ -595,6 +597,7 @@ export type Database = {
           is_upgrading?: boolean | null
           onboarding_completed?: boolean
           purchase_purpose?: string
+          rental_budget?: number | null
           residency_status?: string
           updated_at?: string
           upgrade_sale_date?: string | null
@@ -2014,7 +2017,9 @@ export type Database = {
           longitude: number | null
           name: string
           neighborhood: string | null
+          original_price_from: number | null
           price_from: number | null
+          price_reduced_at: string | null
           price_to: number | null
           representing_agent_id: string | null
           reviewed_at: string | null
@@ -2050,7 +2055,9 @@ export type Database = {
           longitude?: number | null
           name: string
           neighborhood?: string | null
+          original_price_from?: number | null
           price_from?: number | null
+          price_reduced_at?: string | null
           price_to?: number | null
           representing_agent_id?: string | null
           reviewed_at?: string | null
@@ -2086,7 +2093,9 @@ export type Database = {
           longitude?: number | null
           name?: string
           neighborhood?: string | null
+          original_price_from?: number | null
           price_from?: number | null
+          price_reduced_at?: string | null
           price_to?: number | null
           representing_agent_id?: string | null
           reviewed_at?: string | null
@@ -2145,8 +2154,10 @@ export type Database = {
           longitude: number | null
           lot_size_sqm: number | null
           neighborhood: string | null
+          original_price: number | null
           parking: number | null
           price: number
+          price_reduced_at: string | null
           property_type: Database["public"]["Enums"]["property_type"]
           rejection_reason: string | null
           reviewed_at: string | null
@@ -2189,8 +2200,10 @@ export type Database = {
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
+          original_price?: number | null
           parking?: number | null
           price: number
+          price_reduced_at?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -2233,8 +2246,10 @@ export type Database = {
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
+          original_price?: number | null
           parking?: number | null
           price?: number
+          price_reduced_at?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
           rejection_reason?: string | null
           reviewed_at?: string | null
@@ -2447,6 +2462,35 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recently_viewed_projects: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recently_viewed_projects_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
-import { useProperties } from '@/hooks/useProperties';
+import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb } from 'lucide-react';
+import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
+import { RecentlyViewedStrip } from '@/components/listings/RecentlyViewedStrip';
+import { BackToTopButton } from '@/components/shared/BackToTopButton';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,8 +61,18 @@ export default function Listings() {
     }
   }, [listingStatus]);
 
-  // Extract isFetching for loading overlay during filter changes
-  const { data: properties, isLoading, isFetching } = useProperties(filters);
+  // Use paginated properties hook
+  const { 
+    properties, 
+    totalCount, 
+    isLoading, 
+    isFetching, 
+    hasNextPage, 
+    loadMore 
+  } = usePaginatedProperties(filters);
+
+  // Recently viewed properties
+  const { recentProperties, clearRecentlyViewed } = useRecentlyViewed();
 
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
@@ -123,6 +136,14 @@ export default function Listings() {
       </div>
 
       <div className="container py-6">
+        {/* Recently Viewed Section */}
+        {recentProperties.length > 0 && (
+          <RecentlyViewedStrip 
+            items={recentProperties} 
+            type="property" 
+            onClear={clearRecentlyViewed}
+          />
+        )}
 
         {/* Sold View Info Banner */}
         {isSoldView && (
@@ -148,9 +169,9 @@ export default function Listings() {
         </div>
 
         {/* Results Count */}
-        {!isLoading && properties && (
+        {!isLoading && (
           <p className="text-sm text-muted-foreground mb-4">
-            {properties.length} {properties.length === 1 ? 'property' : 'properties'} found
+            Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
           </p>
         )}
 
@@ -160,11 +181,34 @@ export default function Listings() {
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded-xl" />)}
           </div>
         ) : properties && properties.length > 0 ? (
-          <ListingsGrid isFetching={isFetching && !isLoading}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
-            </div>
-          </ListingsGrid>
+          <>
+            <ListingsGrid isFetching={isFetching && !isLoading}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
+              </div>
+            </ListingsGrid>
+
+            {/* Load More Button */}
+            {hasNextPage && (
+              <div className="flex justify-center mt-8">
+                <Button 
+                  onClick={loadMore} 
+                  disabled={isFetching}
+                  variant="outline"
+                  size="lg"
+                >
+                  {isFetching ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>Load More Properties</>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-16 max-w-lg mx-auto">
             {/* Icon */}
@@ -256,6 +300,9 @@ export default function Listings() {
           </div>
         )}
       </div>
+
+      {/* Back to Top Button */}
+      <BackToTopButton />
 
       {/* Create Alert Dialog */}
       <CreateAlertDialog
