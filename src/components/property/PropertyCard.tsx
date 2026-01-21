@@ -233,7 +233,7 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                     
                     if (hasPriceDrop && priceDropPercent >= 1) {
                       badges.push(
-                        <Badge key="price-drop" className="bg-primary/90 text-primary-foreground text-xs font-medium">
+                        <Badge key="price-drop" className="bg-muted text-foreground text-xs font-medium">
                           <TrendingDown className="h-3 w-3 mr-1" />
                           Price Drop
                         </Badge>
@@ -383,7 +383,7 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                     
                     if (hasPriceDrop && priceDropPercent >= 1) {
                       badges.push(
-                        <Badge key="price-drop" className="bg-primary/90 text-primary-foreground text-xs font-medium">
+                        <Badge key="price-drop" className="bg-muted text-foreground text-xs font-medium">
                           <TrendingDown className="h-3 w-3 mr-1" />
                           Price Drop
                         </Badge>
