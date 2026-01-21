@@ -1,7 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Building, Loader2, Check, Upload } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Building, 
+  Loader2, 
+  Check, 
+  Upload,
+  User,
+  Mail,
+  Phone,
+  Globe,
+  FileText,
+  CheckCircle2,
+  Sparkles,
+  Clock,
+  Briefcase,
+  X
+} from 'lucide-react';
 import { z } from 'zod';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,14 +32,27 @@ import { EmailVerificationStep } from '@/components/auth/EmailVerificationStep';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeveloperRegistration } from '@/hooks/useDeveloperRegistration';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
+import { useCities } from '@/hooks/useCities';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DeveloperSubmittedDialog } from '@/components/developer/DeveloperSubmittedDialog';
+import { cn } from '@/lib/utils';
 
 const steps = [
-  { title: 'Company Basics', description: 'Your company details' },
-  { title: 'Company Profile', description: 'About your business' },
-  { title: 'Review', description: 'Confirm & submit' },
+  { title: 'Company Basics', description: 'Your company details', icon: Building },
+  { title: 'Company Profile', description: 'About your business', icon: FileText },
+  { title: 'Review', description: 'Confirm & submit', icon: CheckCircle2 },
+];
+
+const specializations = ['Residential', 'Commercial', 'Mixed-Use', 'Luxury', 'Affordable Housing', 'Urban Renewal'];
+const companySizes = ['1-10 employees', '11-50 employees', '51-200 employees', '200+ employees'];
+const companyTypes = ['Private', 'Public', 'Partnership', 'Family Business'];
+
+const benefits = [
+  'Your own developer profile page',
+  'Showcase all your projects in one place',
+  'Receive inquiries directly from buyers',
+  'Analytics on project views and leads',
 ];
 
 // Validation schemas
@@ -38,16 +68,31 @@ const step2Schema = z.object({
   founded_year: z.number().min(1900).max(new Date().getFullYear()).optional(),
 });
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
 export default function DeveloperRegister() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const developerRegistration = useDeveloperRegistration();
   const { data: existingProfile, isLoading: profileLoading } = useDeveloperProfile();
+  const { data: cities = [] } = useCities();
   const [currentStep, setCurrentStep] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +102,10 @@ export default function DeveloperRegister() {
     description: '',
     founded_year: undefined as number | undefined,
     logo_url: '',
+    company_size: '',
+    company_type: '',
+    office_city: '',
+    specialties: [] as string[],
   });
 
   // Redirect if already registered
@@ -84,6 +133,22 @@ export default function DeveloperRegister() {
         return newErrors;
       });
     }
+  };
+
+  const toggleSpecialty = (specialty: string) => {
+    setFormData(prev => {
+      const isSelected = prev.specialties.includes(specialty);
+      if (!isSelected && prev.specialties.length >= 3) {
+        toast.info('You can select up to 3 specializations');
+        return prev;
+      }
+      return {
+        ...prev,
+        specialties: isSelected
+          ? prev.specialties.filter(s => s !== specialty)
+          : [...prev.specialties, specialty]
+      };
+    });
   };
 
   const validateStep = (step: number): boolean => {
@@ -142,26 +207,42 @@ export default function DeveloperRegister() {
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Logo must be under 2MB');
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Only JPG, PNG, or WebP files are allowed');
       return;
     }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload immediately
+    handleLogoUpload(file);
+  };
+
+  const removeLogo = () => {
+    setLogoPreview(null);
+    updateField('logo_url', '');
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (!user) return;
 
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `developer-logos/${user?.id}-${Date.now()}.${fileExt}`;
+      const fileName = `developer-logos/${user.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('property-images')
@@ -177,6 +258,7 @@ export default function DeveloperRegister() {
       toast.success('Logo uploaded successfully');
     } catch (error: any) {
       toast.error('Failed to upload logo: ' + error.message);
+      setLogoPreview(null);
     } finally {
       setIsUploading(false);
     }
@@ -202,24 +284,96 @@ export default function DeveloperRegister() {
     }
   };
 
+  const getDescriptionFeedback = () => {
+    const len = formData.description.length;
+    if (len === 0) return { text: '', className: 'text-muted-foreground' };
+    if (len < 50) return { text: ' • Too short', className: 'text-destructive' };
+    if (len < 150) return { text: ' • Good start', className: 'text-muted-foreground' };
+    if (len <= 500) return { text: ' • Great length!', className: 'text-primary font-medium' };
+    return { text: ' • Consider trimming', className: 'text-muted-foreground' };
+  };
+
+  const feedback = getDescriptionFeedback();
+
   const renderStep = () => {
     switch (currentStep) {
       case 0:
         return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Company Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => updateField('name', e.target.value)}
-                placeholder="Your Development Company"
-                className={errors.name ? 'border-destructive' : ''}
-              />
-              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
-            </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Building className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Company Details</h3>
+                <p className="text-sm text-muted-foreground">Basic information about your development company</p>
+              </div>
+            </motion.div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Logo Upload */}
+            <motion.div variants={itemVariants} className="space-y-3">
+              <Label className="text-sm font-medium">Company Logo</Label>
+              <div className="flex items-center gap-4">
+                {logoPreview || formData.logo_url ? (
+                  <div className="relative">
+                    <img 
+                      src={logoPreview || formData.logo_url} 
+                      alt="Logo preview" 
+                      className="h-20 w-20 rounded-xl object-cover border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-background/80 rounded-xl flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <label className="h-20 w-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center cursor-pointer transition-colors bg-muted/30">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+                <div className="text-sm text-muted-foreground">
+                  <p>Upload your company logo</p>
+                  <p className="text-xs">Max 2MB, JPG/PNG/WebP</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">Company Name *</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => updateField('name', e.target.value)}
+                  placeholder="Your Development Company"
+                  className={cn("pl-10 h-11 rounded-xl", errors.name && 'border-destructive')}
+                />
+              </div>
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">
               <EmailVerificationStep
                 email={formData.email}
                 onEmailChange={(value) => {
@@ -232,7 +386,7 @@ export default function DeveloperRegister() {
                 name={formData.name}
               />
               <div className="space-y-2">
-                <Label htmlFor="phone">WhatsApp Number</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">WhatsApp Number</Label>
                 <PhoneInput
                   id="phone"
                   value={formData.phone}
@@ -240,150 +394,304 @@ export default function DeveloperRegister() {
                   showWhatsAppIcon={true}
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-2">
-              <Label htmlFor="website">Company Website</Label>
-              <Input
-                id="website"
-                type="url"
-                value={formData.website}
-                onChange={(e) => updateField('website', e.target.value)}
-                placeholder="https://your-company.com"
-                className={errors.website ? 'border-destructive' : ''}
-              />
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="website" className="text-sm font-medium">Company Website</Label>
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => updateField('website', e.target.value)}
+                  placeholder="https://your-company.com"
+                  className={cn("pl-10 h-11 rounded-xl", errors.website && 'border-destructive')}
+                />
+              </div>
               {errors.website && <p className="text-sm text-destructive">{errors.website}</p>}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         );
 
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="founded_year">Year Founded</Label>
-              <Select
-                value={formData.founded_year?.toString() || ''}
-                onValueChange={(v) => updateField('founded_year', v ? Number(v) : undefined)}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 75 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Company Profile</h3>
+                <p className="text-sm text-muted-foreground">Tell potential buyers about your company</p>
+              </div>
+            </motion.div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Company Description</Label>
+            <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="founded_year" className="text-sm font-medium flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Year Founded
+                </Label>
+                <Select
+                  value={formData.founded_year?.toString() || ''}
+                  onValueChange={(v) => updateField('founded_year', v ? Number(v) : undefined)}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 75 }, (_, i) => new Date().getFullYear() - i).map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company_size" className="text-sm font-medium flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Company Size
+                </Label>
+                <Select
+                  value={formData.company_size}
+                  onValueChange={(v) => updateField('company_size', v)}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companySizes.map(size => (
+                      <SelectItem key={size} value={size}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="company_type" className="text-sm font-medium flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  Company Type
+                </Label>
+                <Select
+                  value={formData.company_type}
+                  onValueChange={(v) => updateField('company_type', v)}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyTypes.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="office_city" className="text-sm font-medium flex items-center gap-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  Office Location
+                </Label>
+                <Select
+                  value={formData.office_city}
+                  onValueChange={(v) => updateField('office_city', v)}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue placeholder="Select city" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cities.map(city => (
+                      <SelectItem key={city.slug} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-muted-foreground" />
+                Specializations
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({formData.specialties.length}/3)
+                </span>
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {specializations.map((spec) => {
+                  const isSelected = formData.specialties.includes(spec);
+                  const isDisabled = !isSelected && formData.specialties.length >= 3;
+                  return (
+                    <button
+                      key={spec}
+                      type="button"
+                      onClick={() => toggleSpecialty(spec)}
+                      disabled={isDisabled}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground shadow-md"
+                          : isDisabled
+                            ? "bg-muted/30 text-muted-foreground/50 border border-border/50 cursor-not-allowed"
+                            : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border"
+                      )}
+                    >
+                      {spec}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Company Description
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 placeholder="Tell potential buyers about your company, your track record, and what makes your developments unique..."
                 rows={5}
-                className={errors.description ? 'border-destructive' : ''}
+                maxLength={2000}
+                className={cn("rounded-xl resize-none", errors.description && 'border-destructive')}
               />
-              <p className="text-xs text-muted-foreground">
-                {formData.description.length}/2000 characters
-              </p>
-              {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Company Logo</Label>
-              <div className="flex items-center gap-4">
-                {formData.logo_url ? (
-                  <img
-                    src={formData.logo_url}
-                    alt="Company logo"
-                    className="h-16 w-16 rounded-lg object-cover border"
-                  />
-                ) : (
-                  <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
-                    <Building className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
-                <div>
-                  <label className="cursor-pointer">
-                    <Button variant="outline" size="sm" asChild disabled={isUploading}>
-                      <span>
-                        {isUploading ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Upload className="h-4 w-4 mr-2" />
-                        )}
-                        {formData.logo_url ? 'Change Logo' : 'Upload Logo'}
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      className="hidden"
-                    />
-                  </label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Max 2MB, JPG or PNG
-                  </p>
-                </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className={feedback.className}>
+                  {formData.description.length}/2000 characters
+                  {feedback.text}
+                </span>
+                <span className="text-muted-foreground">Recommended: 150-500</span>
               </div>
-            </div>
-          </div>
+              {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+            </motion.div>
+          </motion.div>
         );
 
       case 2:
         return (
-          <div className="space-y-6">
-            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-              <h3 className="font-medium">Review Your Information</h3>
-              <div className="grid gap-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Company Name:</span>
-                  <span className="font-medium">{formData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span className="font-medium">{formData.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Phone:</span>
-                  <span className="font-medium">{formData.phone || 'Not provided'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Website:</span>
-                  <span className="font-medium">{formData.website || 'Not provided'}</span>
-                </div>
-                {formData.founded_year && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Founded:</span>
-                    <span className="font-medium">{formData.founded_year}</span>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-6"
+          >
+            {/* Section Header */}
+            <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Review Your Application</h3>
+                <p className="text-sm text-muted-foreground">Make sure everything looks correct</p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              variants={itemVariants}
+              className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6 rounded-2xl border border-border/50"
+            >
+              <div className="grid gap-4">
+                {[
+                  { label: 'Company Name', value: formData.name, icon: Building },
+                  { label: 'Email', value: formData.email, icon: Mail },
+                  { label: 'Phone', value: formData.phone || 'Not provided', icon: Phone },
+                  { label: 'Website', value: formData.website || 'Not provided', icon: Globe },
+                  { label: 'Founded', value: formData.founded_year?.toString() || 'Not provided', icon: Clock },
+                  { label: 'Company Size', value: formData.company_size || 'Not provided', icon: User },
+                  { label: 'Company Type', value: formData.company_type || 'Not provided', icon: Briefcase },
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </span>
+                    <span className="font-medium text-sm">{item.value}</span>
+                  </div>
+                ))}
+                {formData.specialties.length > 0 && (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                      <Briefcase className="h-4 w-4" />
+                      Specializations
+                    </span>
+                    <span className="font-medium text-sm">{formData.specialties.join(', ')}</span>
                   </div>
                 )}
               </div>
               {formData.description && (
-                <div className="pt-2 border-t">
-                  <p className="text-muted-foreground text-sm mb-1">Description:</p>
+                <div className="pt-4 mt-4 border-t border-border/50">
+                  <p className="text-muted-foreground text-sm mb-2">Description:</p>
                   <p className="text-sm">{formData.description}</p>
                 </div>
               )}
-            </div>
+            </motion.div>
 
-            <div className="bg-primary/5 p-4 rounded-lg">
-              <h4 className="font-medium mb-2">What happens next?</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Your application will be reviewed within 24-48 hours</li>
-                <li>• We'll verify your company information</li>
-                <li>• Once approved, you can start adding projects</li>
-                <li>• You'll receive an email notification when approved</li>
+            <motion.div 
+              variants={itemVariants}
+              className="bg-primary/5 p-5 rounded-xl border border-primary/10"
+            >
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                What happens next?
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  'Your application will be reviewed within 24-48 hours',
+                  "We'll verify your company information",
+                  'Once approved, you can start adding projects',
+                  "You'll receive an email notification when approved"
+                ].map((item, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
               </ul>
-            </div>
-          </div>
+            </motion.div>
+
+            {/* Benefits Box */}
+            <motion.div 
+              variants={itemVariants}
+              className="bg-gradient-to-br from-primary/5 to-primary/10 p-5 rounded-2xl border border-primary/10"
+            >
+              <h4 className="font-semibold mb-4 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                What you'll get
+              </h4>
+              <div className="grid gap-3">
+                {benefits.map((benefit, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="flex items-center gap-3 text-sm"
+                  >
+                    <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-muted-foreground">{benefit}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
         );
 
       default:
@@ -401,99 +709,138 @@ export default function DeveloperRegister() {
     );
   }
 
+  const StepIcon = steps[currentStep].icon;
+
   return (
     <Layout>
-      <div className="container py-8 max-w-2xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          {/* Progress */}
-          <div className="flex items-center justify-between mb-8">
-            {steps.map((step, index) => {
-              const isCompleted = index < currentStep;
-              const isCurrent = index === currentStep;
-              return (
-                <div key={step.title} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        isCompleted ? 'bg-primary text-primary-foreground' :
-                        isCurrent ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' :
-                        'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+      {/* Gradient Background */}
+      <div className="relative bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background overflow-hidden">
+        {/* Decorative blur elements */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2" />
+        
+        <div className="container py-8 md:py-12 max-w-2xl relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+          >
+            {/* Back Navigation */}
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/')} 
+              className="rounded-xl hover:bg-primary/5 -ml-2"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+
+            {/* Premium Progress Indicator */}
+            <div className="flex items-center justify-between mb-8">
+              {steps.map((step, index) => {
+                const isCompleted = index < currentStep;
+                const isCurrent = index === currentStep;
+                const Icon = step.icon;
+                return (
+                  <div key={step.title} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-shrink-0">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium transition-all",
+                          isCompleted 
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
+                            : isCurrent 
+                              ? 'bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-lg shadow-primary/20' 
+                              : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                      </div>
+                      <p className={cn(
+                        "text-xs mt-2 hidden sm:block font-medium",
+                        isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      )}>
+                        {step.title}
+                      </p>
                     </div>
-                    <p className={`text-xs mt-1 hidden sm:block ${isCurrent ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                      {step.title}
-                    </p>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-2 ${isCompleted ? 'bg-primary' : 'bg-muted'}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Building className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">{steps[currentStep].title}</CardTitle>
-              <CardDescription>{steps[currentStep].description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {renderStep()}
-                </motion.div>
-              </AnimatePresence>
-
-              <div className="flex justify-between mt-8">
-                <Button
-                  variant="outline"
-                  onClick={goBack}
-                  disabled={currentStep === 0}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-
-                {currentStep === steps.length - 1 ? (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={developerRegistration.isPending}
-                  >
-                    {developerRegistration.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4 mr-2" />
+                    {index < steps.length - 1 && (
+                      <div className={cn(
+                        "flex-1 h-1 mx-3 rounded-full transition-colors",
+                        isCompleted ? 'bg-primary' : 'bg-muted'
+                      )} />
                     )}
-                    Submit Application
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={goNext}
-                    disabled={!canGoNext()}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Premium Main Card */}
+            <Card className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+              <CardHeader className="text-center pb-2 pt-8">
+                <motion.div 
+                  key={currentStep}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="mx-auto mb-4 h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-lg shadow-primary/10"
+                >
+                  <StepIcon className="h-10 w-10 text-primary" />
+                </motion.div>
+                <CardTitle className="text-2xl md:text-3xl font-bold">{steps[currentStep].title}</CardTitle>
+                <CardDescription className="text-base">{steps[currentStep].description}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    Next
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    {renderStep()}
+                  </motion.div>
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+
+            {/* Premium Navigation Buttons */}
+            <div className="flex justify-between gap-4">
+              <Button
+                variant="outline"
+                onClick={goBack}
+                disabled={currentStep === 0}
+                className="rounded-xl h-12 px-6"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+
+              {currentStep === steps.length - 1 ? (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={developerRegistration.isPending}
+                  className="rounded-xl h-12 px-8 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                >
+                  {developerRegistration.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4 mr-2" />
+                  )}
+                  Submit Application
+                </Button>
+              ) : (
+                <Button 
+                  onClick={goNext} 
+                  disabled={!canGoNext()}
+                  className="rounded-xl h-12 px-8 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       <DeveloperSubmittedDialog
