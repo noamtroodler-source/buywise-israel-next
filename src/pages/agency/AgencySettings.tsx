@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,6 +70,11 @@ export default function AgencySettings() {
     website: '',
     office_address: '',
     is_accepting_agents: true,
+    social_links: {
+      linkedin: '',
+      instagram: '',
+      facebook: '',
+    },
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -87,6 +92,7 @@ export default function AgencySettings() {
 
   useEffect(() => {
     if (agency) {
+      const socialLinks = (agency as any).social_links || {};
       setFormData({
         name: agency.name || '',
         description: agency.description || '',
@@ -95,6 +101,11 @@ export default function AgencySettings() {
         website: agency.website || '',
         office_address: (agency as any).office_address || '',
         is_accepting_agents: agency.is_accepting_agents ?? true,
+        social_links: {
+          linkedin: socialLinks.linkedin || '',
+          instagram: socialLinks.instagram || '',
+          facebook: socialLinks.facebook || '',
+        },
       });
       setNotificationSettings({
         notify_email: (agency as any).notify_email ?? true,
@@ -178,6 +189,11 @@ export default function AgencySettings() {
     e.preventDefault();
     if (!agency) return;
 
+    // Clean social links - only include non-empty values
+    const cleanedSocialLinks = Object.fromEntries(
+      Object.entries(formData.social_links).filter(([_, value]) => value.trim() !== '')
+    );
+
     updateAgency.mutate({
       id: agency.id,
       name: formData.name,
@@ -189,6 +205,7 @@ export default function AgencySettings() {
       cities_covered: cities.length > 0 ? cities : null,
       specializations: specializations.length > 0 ? specializations : null,
       is_accepting_agents: formData.is_accepting_agents,
+      social_links: Object.keys(cleanedSocialLinks).length > 0 ? cleanedSocialLinks : null,
       notify_email: notificationSettings.notify_email,
       notify_on_lead: notificationSettings.notify_on_lead,
       notify_on_join_request: notificationSettings.notify_on_join_request,
@@ -415,6 +432,78 @@ export default function AgencySettings() {
                         value={formData.website}
                         onChange={(e) => updateField('website', e.target.value)}
                         placeholder="https://..."
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Social Links Card */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle>Social Links</CardTitle>
+                        <CardDescription>Connect your professional profiles</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin" className="flex items-center gap-2">
+                        <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+                        LinkedIn
+                      </Label>
+                      <Input
+                        id="linkedin"
+                        type="url"
+                        value={formData.social_links.linkedin}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          social_links: { ...prev.social_links, linkedin: e.target.value }
+                        }))}
+                        placeholder="https://linkedin.com/company/youragency"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram" className="flex items-center gap-2">
+                        <Instagram className="h-4 w-4 text-[#E4405F]" />
+                        Instagram
+                      </Label>
+                      <Input
+                        id="instagram"
+                        type="url"
+                        value={formData.social_links.instagram}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          social_links: { ...prev.social_links, instagram: e.target.value }
+                        }))}
+                        placeholder="https://instagram.com/youragency"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook" className="flex items-center gap-2">
+                        <Facebook className="h-4 w-4 text-[#1877F2]" />
+                        Facebook
+                      </Label>
+                      <Input
+                        id="facebook"
+                        type="url"
+                        value={formData.social_links.facebook}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          social_links: { ...prev.social_links, facebook: e.target.value }
+                        }))}
+                        placeholder="https://facebook.com/youragency"
                         className="h-11 rounded-xl"
                       />
                     </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, User, Image, Building2, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, User, Image, Building2, CheckCircle2, ChevronDown, ChevronUp, Share2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,15 @@ export function DeveloperOnboardingProgress() {
       isComplete: !!developer?.logo_url,
       action: () => navigate('/developer/settings'),
       actionLabel: 'Add Logo',
+    },
+    {
+      id: 'socials',
+      label: 'Add social links',
+      description: 'Connect LinkedIn, Instagram, or Facebook',
+      icon: Share2,
+      isComplete: !!(developer?.linkedin_url || developer?.instagram_url || developer?.facebook_url),
+      action: () => navigate('/developer/settings'),
+      actionLabel: 'Add Socials',
     },
     {
       id: 'first_project',

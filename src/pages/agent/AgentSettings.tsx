@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Save, Upload, User, Bell, FileText, Globe, Briefcase } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, User, Bell, FileText, Globe, Briefcase, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,11 @@ export default function AgentSettings() {
     years_experience: undefined as number | undefined,
     languages: [] as string[],
     specializations: [] as string[],
+    social_links: {
+      linkedin: '',
+      instagram: '',
+      facebook: '',
+    },
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -74,6 +79,7 @@ export default function AgentSettings() {
 
   useEffect(() => {
     if (agentProfile) {
+      const socialLinks = (agentProfile as any).social_links || {};
       setFormData({
         name: agentProfile.name || '',
         email: agentProfile.email || '',
@@ -83,6 +89,11 @@ export default function AgentSettings() {
         years_experience: agentProfile.years_experience || undefined,
         languages: agentProfile.languages || [],
         specializations: agentProfile.specializations || [],
+        social_links: {
+          linkedin: socialLinks.linkedin || '',
+          instagram: socialLinks.instagram || '',
+          facebook: socialLinks.facebook || '',
+        },
       });
       setNotificationSettings({
         notify_email: agentProfile.notify_email ?? true,
@@ -153,6 +164,11 @@ export default function AgentSettings() {
     e.preventDefault();
     if (!agentProfile) return;
 
+    // Clean social links - only include non-empty values
+    const cleanedSocialLinks = Object.fromEntries(
+      Object.entries(formData.social_links).filter(([_, value]) => value.trim() !== '')
+    );
+
     updateProfile.mutate({
       id: agentProfile.id,
       name: formData.name,
@@ -164,10 +180,11 @@ export default function AgentSettings() {
       languages: formData.languages.length > 0 ? formData.languages : null,
       specializations: formData.specializations.length > 0 ? formData.specializations : null,
       avatar_url: avatarUrl,
+      social_links: Object.keys(cleanedSocialLinks).length > 0 ? cleanedSocialLinks : null,
       notify_email: notificationSettings.notify_email,
       notify_on_inquiry: notificationSettings.notify_on_inquiry,
       notify_on_approval: notificationSettings.notify_on_approval,
-    });
+    } as any);
   };
 
   if (isLoading) {
@@ -438,6 +455,78 @@ export default function AgentSettings() {
                 </Card>
               </motion.div>
 
+              {/* Social Links */}
+              <motion.div variants={itemVariants}>
+                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                  <CardContent className="p-6 space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">Social Links</h3>
+                        <p className="text-xs text-muted-foreground">Connect your professional profiles</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="linkedin" className="flex items-center gap-2">
+                          <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+                          LinkedIn
+                        </Label>
+                        <Input
+                          id="linkedin"
+                          type="url"
+                          value={formData.social_links.linkedin}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            social_links: { ...prev.social_links, linkedin: e.target.value }
+                          }))}
+                          placeholder="https://linkedin.com/in/yourprofile"
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="instagram" className="flex items-center gap-2">
+                          <Instagram className="h-4 w-4 text-[#E4405F]" />
+                          Instagram
+                        </Label>
+                        <Input
+                          id="instagram"
+                          type="url"
+                          value={formData.social_links.instagram}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            social_links: { ...prev.social_links, instagram: e.target.value }
+                          }))}
+                          placeholder="https://instagram.com/yourhandle"
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="facebook" className="flex items-center gap-2">
+                          <Facebook className="h-4 w-4 text-[#1877F2]" />
+                          Facebook
+                        </Label>
+                        <Input
+                          id="facebook"
+                          type="url"
+                          value={formData.social_links.facebook}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            social_links: { ...prev.social_links, facebook: e.target.value }
+                          }))}
+                          placeholder="https://facebook.com/yourpage"
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
               {/* Notification Settings */}
               <motion.div variants={itemVariants}>
