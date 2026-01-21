@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Check, X, MessageSquare, Eye, MapPin, Home, 
-  Building2, ChevronDown, ChevronUp, Calendar
+  Building2, ChevronDown, ChevronUp, Calendar, Clock, FileImage, TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { AdminProject, ProjectVerificationStatus } from '@/hooks/useAdminProjects';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ProjectPreviewModal } from './ProjectPreviewModal';
 
 interface ProjectReviewCardProps {
@@ -39,6 +39,15 @@ const statusConfig: Record<ProjectVerificationStatus, { label: string; className
   changes_requested: { label: 'Changes Requested', className: 'bg-primary/10 text-primary' },
   approved: { label: 'Approved', className: 'bg-primary/10 text-primary' },
   rejected: { label: 'Rejected', className: 'bg-destructive/10 text-destructive' },
+};
+
+const constructionStatusLabels: Record<string, string> = {
+  planning: 'Planning Phase',
+  pre_sale: 'Pre-Sale',
+  foundation: 'Foundation',
+  structure: 'Structure',
+  finishing: 'Finishing',
+  delivery: 'Delivery',
 };
 
 const amenityLabels: Record<string, string> = {
@@ -65,6 +74,17 @@ const amenityLabels: Record<string, string> = {
   smart_home: 'Smart Home',
   generator: 'Backup Generator',
   solar: 'Solar Panels',
+  dog_park: 'Dog Park',
+  tennis: 'Tennis Court',
+  basketball: 'Basketball Court',
+  bbq_area: 'BBQ Area',
+  wine_cellar: 'Wine Cellar',
+  cinema: 'Private Cinema',
+  guest_suite: 'Guest Suite',
+  bike_storage: 'Bike Storage',
+  package_lockers: 'Package Lockers',
+  club_room: 'Club Room',
+  kids_room: 'Kids Room',
 };
 
 export function ProjectReviewCard({ 
@@ -91,6 +111,15 @@ export function ProjectReviewCard({
       currency: 'ILS',
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'TBD';
+    try {
+      return format(new Date(dateString), 'MMM yyyy');
+    } catch {
+      return dateString;
+    }
   };
 
   const handleApprove = () => {
@@ -215,23 +244,71 @@ export function ProjectReviewCard({
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-4 pt-3 border-t">
+                    {/* Construction Status */}
+                    {project.status && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                          <TrendingUp className="h-4 w-4" />
+                          Construction Status
+                        </h4>
+                        <Badge variant="outline">
+                          {constructionStatusLabels[project.status] || project.status}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Timeline */}
+                    {(project.construction_start || project.completion_date) && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          Project Timeline
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                          {project.construction_start && (
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-xs text-muted-foreground">Construction Start</p>
+                              <p className="font-medium">{formatDate(project.construction_start)}</p>
+                            </div>
+                          )}
+                          {project.completion_date && (
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-xs text-muted-foreground">Expected Completion</p>
+                              <p className="font-medium">{formatDate(project.completion_date)}</p>
+                            </div>
+                          )}
+                          {project.construction_progress_percent !== null && (
+                            <div className="p-2 bg-muted/50 rounded">
+                              <p className="text-xs text-muted-foreground">Progress</p>
+                              <p className="font-medium">{project.construction_progress_percent}%</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Address */}
                     {project.address && (
                       <div>
                         <h4 className="text-sm font-medium mb-1">Address</h4>
                         <p className="text-sm text-muted-foreground">{project.address}</p>
                       </div>
                     )}
+
+                    {/* Full Description */}
                     {project.description && (
                       <div>
                         <h4 className="text-sm font-medium mb-1">Description</h4>
-                        <p className="text-sm text-muted-foreground line-clamp-4">{project.description}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{project.description}</p>
                       </div>
                     )}
+
+                    {/* Amenities */}
                     {project.amenities && project.amenities.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-medium mb-2">Amenities</h4>
-                        <div className="flex flex-wrap gap-1">
+                        <h4 className="text-sm font-medium mb-2">Amenities ({project.amenities.length})</h4>
+                        <div className="flex flex-wrap gap-1.5">
                           {project.amenities.map((amenity) => (
                             <Badge key={amenity} variant="secondary" className="text-xs">
                               {amenityLabels[amenity] || amenity}
@@ -240,6 +317,28 @@ export function ProjectReviewCard({
                         </div>
                       </div>
                     )}
+
+                    {/* Floor Plans */}
+                    {project.floor_plans && project.floor_plans.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
+                          <FileImage className="h-4 w-4" />
+                          Floor Plans ({project.floor_plans.length})
+                        </h4>
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {project.floor_plans.map((plan, i) => (
+                            <img
+                              key={i}
+                              src={plan}
+                              alt={`Floor Plan ${i + 1}`}
+                              className="h-24 w-20 object-cover rounded border flex-shrink-0"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* All Photos */}
                     {project.images && project.images.length > 1 && (
                       <div>
                         <h4 className="text-sm font-medium mb-2">All Photos ({project.images.length})</h4>
@@ -249,16 +348,19 @@ export function ProjectReviewCard({
                               key={i}
                               src={img}
                               alt={`Photo ${i + 1}`}
-                              className="h-20 w-20 object-cover rounded flex-shrink-0"
+                              className="h-20 w-28 object-cover rounded flex-shrink-0"
                             />
                           ))}
                         </div>
                       </div>
                     )}
+
+                    {/* Previous Feedback */}
                     {project.admin_feedback && (
-                      <div className="bg-muted/50 p-3 rounded">
-                        <h4 className="text-sm font-medium mb-1">
-                          Previous Feedback
+                      <div className="bg-primary/5 border border-primary/20 p-3 rounded">
+                        <h4 className="text-sm font-medium mb-1 flex items-center gap-1">
+                          <MessageSquare className="h-4 w-4" />
+                          Previous Admin Feedback
                         </h4>
                         <p className="text-sm text-muted-foreground">{project.admin_feedback}</p>
                       </div>

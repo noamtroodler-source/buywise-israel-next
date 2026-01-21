@@ -9,10 +9,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   X, ChevronLeft, ChevronRight, MapPin, Building2, Calendar,
-  Home, TrendingUp, Phone, Mail, MessageCircle, Info, Clock
+  Home, TrendingUp, Phone, Mail, MessageCircle, Info, Clock, FileImage
 } from 'lucide-react';
 import { AdminProject } from '@/hooks/useAdminProjects';
 import useEmblaCarousel from 'embla-carousel-react';
+import { format } from 'date-fns';
 
 interface ProjectPreviewModalProps {
   project: AdminProject;
@@ -20,7 +21,7 @@ interface ProjectPreviewModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const statusLabels: Record<string, string> = {
+const constructionStatusLabels: Record<string, string> = {
   planning: 'Planning Phase',
   pre_sale: 'Pre-Sale',
   foundation: 'Foundation',
@@ -72,6 +73,17 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
   const images = project.images || [];
+  const floorPlans = project.floor_plans || [];
+  const amenities = project.amenities || [];
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'TBD';
+    try {
+      return format(new Date(dateString), 'MMMM yyyy');
+    } catch {
+      return dateString;
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -150,6 +162,14 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
               <div className="lg:col-span-2 space-y-6">
                 {/* Hero Image Carousel */}
                 <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-muted">
+                  {/* Status Badges on Hero */}
+                  <div className="absolute top-3 left-3 z-10 flex gap-2">
+                    {project.status && (
+                      <Badge className="bg-background/80 backdrop-blur-sm text-foreground">
+                        {constructionStatusLabels[project.status] || project.status}
+                      </Badge>
+                    )}
+                  </div>
                   {images.length > 0 ? (
                     <>
                       <div className="overflow-hidden h-full" ref={emblaRef}>
@@ -308,17 +328,85 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
                   )}
                 </div>
 
+                {/* Timeline Section */}
+                {(project.construction_start || project.completion_date) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-primary" />
+                        Project Timeline
+                      </h2>
+                      <div className="grid grid-cols-2 gap-4">
+                        {project.construction_start && (
+                          <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Construction Start</p>
+                            <p className="font-medium">{formatDate(project.construction_start)}</p>
+                          </div>
+                        )}
+                        {project.completion_date && (
+                          <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Expected Completion</p>
+                            <p className="font-medium">{formatDate(project.completion_date)}</p>
+                          </div>
+                        )}
+                      </div>
+                      {project.construction_progress_percent !== null && project.construction_progress_percent > 0 && (
+                        <div className="mt-4">
+                          <div className="flex justify-between text-sm mb-2">
+                            <span className="text-muted-foreground">Construction Progress</span>
+                            <span className="font-medium">{project.construction_progress_percent}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${project.construction_progress_percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
                 {/* Amenities */}
-                {project.amenities && project.amenities.length > 0 && (
+                {amenities.length > 0 && (
                   <>
                     <Separator />
                     <div>
                       <h2 className="text-lg font-semibold mb-3">Amenities & Features</h2>
                       <div className="flex flex-wrap gap-2">
-                        {project.amenities.map((amenity) => (
+                        {amenities.map((amenity) => (
                           <Badge key={amenity} variant="secondary" className="text-sm py-1 px-3">
                             {amenityLabels[amenity] || amenity}
                           </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Floor Plans */}
+                {floorPlans.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <FileImage className="h-5 w-5 text-primary" />
+                        Floor Plans
+                      </h2>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {floorPlans.map((plan, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={plan}
+                              alt={`Floor Plan ${index + 1}`}
+                              className="w-full aspect-[3/4] object-cover rounded-lg border"
+                            />
+                            <div className="absolute bottom-2 left-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs">
+                              Plan {index + 1}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
