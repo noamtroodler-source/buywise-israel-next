@@ -38,16 +38,12 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
     : ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200'];
 
   const scrollPrev = useCallback(() => {
-    if (selectedImageIndex > 0) {
-      setSelectedImageIndex(selectedImageIndex - 1);
-    }
-  }, [selectedImageIndex]);
+    setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+  }, [images.length]);
 
   const scrollNext = useCallback(() => {
-    if (selectedImageIndex < images.length - 1) {
-      setSelectedImageIndex(selectedImageIndex + 1);
-    }
-  }, [selectedImageIndex, images.length]);
+    setSelectedImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+  }, [images.length]);
 
   // Scroll thumbnail carousel to keep selected image visible
   useEffect(() => {
@@ -132,18 +128,16 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background disabled:opacity-50"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background"
                     onClick={(e) => handleNavClick(e, scrollPrev)}
-                    disabled={selectedImageIndex === 0}
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background disabled:opacity-50"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background"
                     onClick={(e) => handleNavClick(e, scrollNext)}
-                    disabled={selectedImageIndex === images.length - 1}
                   >
                     <ChevronRight className="h-5 w-5" />
                   </Button>
