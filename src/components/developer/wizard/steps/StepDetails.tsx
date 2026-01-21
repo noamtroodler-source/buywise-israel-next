@@ -104,27 +104,45 @@ export function StepDetails() {
         </div>
 
         {/* Timeline */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="construction_start">Construction Start</Label>
-            <Input
-              id="construction_start"
-              type="date"
-              value={data.construction_start || ''}
-              onChange={(e) => updateData({ construction_start: e.target.value || undefined })}
-            />
-          </div>
+        {(() => {
+          const hasInvalidDates = 
+            data.construction_start && 
+            data.completion_date && 
+            new Date(data.completion_date) <= new Date(data.construction_start);
+          
+          return (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="construction_start">Construction Start</Label>
+                  <Input
+                    id="construction_start"
+                    type="date"
+                    value={data.construction_start || ''}
+                    onChange={(e) => updateData({ construction_start: e.target.value || undefined })}
+                  />
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="completion_date">Expected Completion</Label>
-            <Input
-              id="completion_date"
-              type="date"
-              value={data.completion_date || ''}
-              onChange={(e) => updateData({ completion_date: e.target.value || undefined })}
-            />
-          </div>
-        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="completion_date">Expected Completion</Label>
+                  <Input
+                    id="completion_date"
+                    type="date"
+                    min={data.construction_start || undefined}
+                    value={data.completion_date || ''}
+                    onChange={(e) => updateData({ completion_date: e.target.value || undefined })}
+                    className={hasInvalidDates ? "border-destructive" : ""}
+                  />
+                </div>
+              </div>
+              {hasInvalidDates && (
+                <p className="text-sm text-destructive">
+                  Expected Completion must be later than Construction Start date.
+                </p>
+              )}
+            </>
+          );
+        })()}
 
         {/* Construction Progress */}
         {['foundation', 'structure', 'finishing', 'delivery'].includes(data.status) && (
