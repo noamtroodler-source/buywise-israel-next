@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
 import { Input } from '@/components/ui/input';
-import { Loader2, MapPin, Check } from 'lucide-react';
+import { Loader2, MapPin, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
@@ -24,6 +24,7 @@ interface AddressAutocompleteProps {
   placeholder?: string;
   className?: string;
   supportedCities?: string[];
+  selectedCity?: string; // The city selected in the dropdown above - address must match
 }
 
 // Fallback to Nominatim when Google Maps is not available
@@ -98,10 +99,12 @@ function GoogleAddressAutocomplete({
   placeholder,
   className,
   supportedCities,
+  selectedCity,
 }: AddressAutocompleteProps) {
   const [hasValidSelection, setHasValidSelection] = useState(!!value);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
+  const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -167,6 +170,18 @@ function GoogleAddressAutocomplete({
       const matchedCity = findMatchedCity(city, supportedCities);
       if (supportedCities && supportedCities.length > 0 && !matchedCity) {
         setUnsupportedCityError(city);
+        setCityMismatchError(null);
+        setValue('', false);
+        clearSuggestions();
+        setHasValidSelection(false);
+        onInputChange?.('');
+        return;
+      }
+
+      // Check if city matches the selected city from dropdown
+      if (selectedCity && !cityMatchesQuery(selectedCity, city)) {
+        setCityMismatchError({ extracted: city, selected: selectedCity });
+        setUnsupportedCityError(null);
         setValue('', false);
         clearSuggestions();
         setHasValidSelection(false);
@@ -175,6 +190,7 @@ function GoogleAddressAutocomplete({
       }
 
       setUnsupportedCityError(null);
+      setCityMismatchError(null);
       setValue(description, false);
       clearSuggestions();
       setHasValidSelection(true);
@@ -196,7 +212,7 @@ function GoogleAddressAutocomplete({
     } catch (error) {
       console.error('Error geocoding address:', error);
     }
-  }, [setValue, clearSuggestions, onAddressSelect, supportedCities, onInputChange]);
+  }, [setValue, clearSuggestions, onAddressSelect, supportedCities, selectedCity, onInputChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (status !== 'OK' || data.length === 0) return;
@@ -233,6 +249,7 @@ function GoogleAddressAutocomplete({
             setValue(e.target.value);
             setHasValidSelection(false);
             setSelectedIndex(-1);
+            setCityMismatchError(null);
             onInputChange?.(e.target.value);
           }}
           onKeyDown={handleKeyDown}
@@ -284,12 +301,25 @@ function GoogleAddressAutocomplete({
       )}
 
       {unsupportedCityError && (
-        <p className="mt-1 text-xs text-destructive">
-          "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
-        </p>
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
+          </span>
+        </div>
       )}
 
-      {!unsupportedCityError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
+      {cityMismatchError && (
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            This address is in {cityMismatchError.extracted}, but you selected {cityMismatchError.selected} above. 
+            Please choose a matching address or change the city selection.
+          </span>
+        </div>
+      )}
+
+      {!unsupportedCityError && !cityMismatchError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
         <p className="mt-1 text-xs text-muted-foreground">
           Type at least 3 characters to search
         </p>
@@ -306,6 +336,7 @@ function NominatimAddressAutocomplete({
   placeholder,
   className,
   supportedCities,
+  selectedCity,
 }: AddressAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
@@ -314,6 +345,7 @@ function NominatimAddressAutocomplete({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [hasValidSelection, setHasValidSelection] = useState(false);
   const [unsupportedCityError, setUnsupportedCityError] = useState<string | null>(null);
+  const [cityMismatchError, setCityMismatchError] = useState<{ extracted: string; selected: string } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
@@ -336,6 +368,7 @@ function NominatimAddressAutocomplete({
     const newValue = e.target.value;
     setInputValue(newValue);
     setHasValidSelection(false);
+    setCityMismatchError(null);
     onInputChange?.(newValue);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -357,6 +390,19 @@ function NominatimAddressAutocomplete({
     const matchedCity = findMatchedCity(parsed.city, supportedCities);
     if (supportedCities && supportedCities.length > 0 && !matchedCity) {
       setUnsupportedCityError(parsed.city);
+      setCityMismatchError(null);
+      setInputValue('');
+      setHasValidSelection(false);
+      setIsOpen(false);
+      setSuggestions([]);
+      onInputChange?.('');
+      return;
+    }
+
+    // Check if city matches the selected city from dropdown
+    if (selectedCity && !cityMatchesQuery(selectedCity, parsed.city)) {
+      setCityMismatchError({ extracted: parsed.city, selected: selectedCity });
+      setUnsupportedCityError(null);
       setInputValue('');
       setHasValidSelection(false);
       setIsOpen(false);
@@ -366,6 +412,7 @@ function NominatimAddressAutocomplete({
     }
 
     setUnsupportedCityError(null);
+    setCityMismatchError(null);
     setInputValue(parsed.streetAddress || parsed.fullAddress);
     setHasValidSelection(true);
     setIsOpen(false);
@@ -479,12 +526,25 @@ function NominatimAddressAutocomplete({
       )}
 
       {unsupportedCityError && (
-        <p className="mt-1 text-xs text-destructive">
-          "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
-        </p>
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            "{unsupportedCityError}" is not a supported city. Please choose an address in one of our 25 focus cities.
+          </span>
+        </div>
       )}
 
-      {!unsupportedCityError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
+      {cityMismatchError && (
+        <div className="mt-1.5 flex items-start gap-2 text-xs text-primary bg-primary/10 rounded-lg p-2.5">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            This address is in {cityMismatchError.extracted}, but you selected {cityMismatchError.selected} above. 
+            Please choose a matching address or change the city selection.
+          </span>
+        </div>
+      )}
+
+      {!unsupportedCityError && !cityMismatchError && !hasValidSelection && inputValue.length > 0 && inputValue.length < 3 && (
         <p className="mt-1 text-xs text-muted-foreground">
           Type at least 3 characters to search
         </p>
