@@ -637,7 +637,7 @@ export default function DeveloperRegister() {
               {formData.description && (
                 <div className="pt-4 mt-4 border-t border-border/50">
                   <p className="text-muted-foreground text-sm mb-2">Description:</p>
-                  <p className="text-sm">{formData.description}</p>
+                  <p className="text-sm break-words">{formData.description}</p>
                 </div>
               )}
             </motion.div>
