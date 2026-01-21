@@ -281,11 +281,6 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                   New
                 </Badge>
               )}
-              {project.is_featured && !isNewListing && (
-                <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                  Featured
-                </Badge>
-              )}
             </div>
           </div>
 

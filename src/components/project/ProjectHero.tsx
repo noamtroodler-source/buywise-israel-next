@@ -162,9 +162,6 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
             <Badge className={getStatusColor(project.status || 'planning')}>
               {getStatusLabel(project.status || 'planning')}
             </Badge>
-            {project.is_featured && (
-              <Badge className="bg-accent text-accent-foreground">Featured</Badge>
-            )}
           </div>
 
           {/* Navigation Arrows */}

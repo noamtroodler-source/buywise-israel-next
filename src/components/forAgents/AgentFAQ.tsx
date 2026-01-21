@@ -36,8 +36,8 @@ const faqs = [
     answer: "Yes, you can list both sales and rental properties. Our platform supports apartments, houses, penthouses, and more across all major Israeli cities."
   },
   {
-    question: "How do I get featured placement?",
-    answer: "Featured placement options are coming soon! Sign up now to be first in line when we launch premium visibility features."
+    question: "How do I get homepage exposure?",
+    answer: "BuyWise Israel periodically highlights a limited number of listings on the homepage. Listings rotate weekly and are curated for quality. Availability, fit, and pricing are reviewed per listing. Contact hello@buywiseisrael.com to inquire about homepage exposure for your properties."
   }
 ];
 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,6 +143,44 @@ export default function DeveloperDashboard() {
           <motion.div variants={itemVariants}>
             <DeveloperOnboardingProgress />
           </motion.div>
+
+          {/* New Development Showcase */}
+          <motion.div variants={itemVariants}>
+            <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Home className="h-5 w-5 text-primary" />
+                  New Development Showcase
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  BuyWise Israel highlights a limited number of new residential developments on the homepage.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Development placements rotate monthly and are reviewed individually to ensure clarity and focus for buyers.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Availability, fit, and pricing are discussed per project.
+                </p>
+                
+                <div className="pt-2 border-t border-border/50">
+                  <a 
+                    href="mailto:hello@buywiseisrael.com" 
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                  >
+                    <Mail className="h-4 w-4" />
+                    hello@buywiseisrael.com
+                  </a>
+                </div>
+                
+                <p className="text-xs text-muted-foreground/70 pt-1">
+                  Homepage exposure does not include guaranteed placement, ranking, or performance metrics.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
 
           {/* Pending Verification Alert */}
           {developerProfile?.verification_status === 'pending' && (
