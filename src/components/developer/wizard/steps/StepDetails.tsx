@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Info } from 'lucide-react';
 import { useProjectWizard } from '../ProjectWizardContext';
 
@@ -46,12 +47,10 @@ export function StepDetails() {
               label="Total Units"
               tooltip="The total number of units in the entire project. This is a fixed number that typically doesn't change."
             />
-            <Input
+            <FormattedNumberInput
               id="total_units"
-              type="number"
-              min={1}
-              value={data.total_units || ''}
-              onChange={(e) => updateData({ total_units: e.target.value ? Number(e.target.value) : undefined })}
+              value={data.total_units}
+              onChange={(value) => updateData({ total_units: value })}
               placeholder="e.g., 120"
             />
           </div>
@@ -62,12 +61,10 @@ export function StepDetails() {
               label="Available Units"
               tooltip="Units still available for sale. Update this regularly (we recommend weekly) as units are sold to keep your listing accurate."
             />
-            <Input
+            <FormattedNumberInput
               id="available_units"
-              type="number"
-              min={0}
-              value={data.available_units || ''}
-              onChange={(e) => updateData({ available_units: e.target.value ? Number(e.target.value) : undefined })}
+              value={data.available_units}
+              onChange={(value) => updateData({ available_units: value })}
               placeholder="e.g., 45"
             />
           </div>
@@ -81,14 +78,12 @@ export function StepDetails() {
               label="Starting Price (₪)"
               tooltip="The lowest-priced unit in your project (e.g., smallest apartment, lowest floor). This is the 'החל מ' price shown to buyers."
             />
-            <Input
+            <FormattedNumberInput
               id="price_from"
-              type="number"
-              min={0}
-              step={10000}
-              value={data.price_from || ''}
-              onChange={(e) => updateData({ price_from: e.target.value ? Number(e.target.value) : undefined })}
+              value={data.price_from}
+              onChange={(value) => updateData({ price_from: value })}
               placeholder="e.g., 1,500,000"
+              prefix="₪"
             />
           </div>
 
@@ -98,14 +93,12 @@ export function StepDetails() {
               label="Maximum Price (₪)"
               tooltip="The highest-priced unit in your project (e.g., penthouse, premium floor plan). Leave empty if all units are similarly priced."
             />
-            <Input
+            <FormattedNumberInput
               id="price_to"
-              type="number"
-              min={0}
-              step={10000}
-              value={data.price_to || ''}
-              onChange={(e) => updateData({ price_to: e.target.value ? Number(e.target.value) : undefined })}
+              value={data.price_to}
+              onChange={(value) => updateData({ price_to: value })}
               placeholder="e.g., 4,500,000"
+              prefix="₪"
             />
           </div>
         </div>
