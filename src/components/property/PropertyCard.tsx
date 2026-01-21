@@ -215,13 +215,6 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                       );
                     }
                     
-                    if (property.is_featured && !hideFeaturedBadge) {
-                      badges.push(
-                        <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
-                          Featured
-                        </Badge>
-                      );
-                    }
                     
                     if (isNewListing) {
                       badges.push(
@@ -356,13 +349,6 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                       );
                     }
                     
-                    if (property.is_featured && !hideFeaturedBadge) {
-                      badges.push(
-                        <Badge key="featured" className="bg-accent text-accent-foreground text-xs font-medium">
-                          Featured
-                        </Badge>
-                      );
-                    }
                     
                     if (isNewListing) {
                       badges.push(

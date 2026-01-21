@@ -32,10 +32,10 @@ export function FeaturedShowcase() {
             viewport={{ once: true }}
           >
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-              Featured Properties
+              Properties
             </h2>
             <p className="text-base text-muted-foreground mt-1">
-              Hand-picked listings updated daily
+              Hand-picked listings updated weekly
             </p>
           </motion.div>
 

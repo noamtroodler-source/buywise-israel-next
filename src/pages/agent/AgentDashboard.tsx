@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper, Mail } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -359,7 +359,45 @@ export default function AgentDashboard() {
             />
           )}
 
-          {/* Stale Listings Alert - Blue palette */}
+          {/* Homepage Exposure Information */}
+          <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Home className="h-5 w-5 text-primary" />
+                Homepage Exposure (Optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                BuyWise Israel periodically highlights a limited number of resale and rental listings on the homepage.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Listings rotate weekly and are curated to maintain a high-quality experience for buyers. Placement is limited and not guaranteed.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Availability, fit, and pricing are reviewed per listing.
+              </p>
+              
+              <div className="pt-2 border-t border-border/50">
+                <a 
+                  href="mailto:hello@buywiseisrael.com" 
+                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                  <Mail className="h-4 w-4" />
+                  hello@buywiseisrael.com
+                </a>
+              </div>
+              
+              <p className="text-xs text-muted-foreground italic">
+                One listing per agent at a time.
+              </p>
+              
+              <p className="text-xs text-muted-foreground/70 pt-1">
+                Homepage exposure does not include guaranteed placement, ranking, or performance metrics.
+              </p>
+            </CardContent>
+          </Card>
+
           {staleListings.length > 0 && (
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
               <RefreshCw className="h-5 w-5 text-primary flex-shrink-0" />

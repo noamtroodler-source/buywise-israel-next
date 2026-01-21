@@ -358,11 +358,6 @@ export default function Favorites() {
                                   </Button>
                                 </div>
 
-                                {project.is_featured && (
-                                  <div className="absolute top-3 left-3">
-                                    <Badge className="bg-accent text-accent-foreground">Featured</Badge>
-                                  </div>
-                                )}
                               </div>
                               <CardContent className="p-5 space-y-3">
                                 <div className="space-y-1">

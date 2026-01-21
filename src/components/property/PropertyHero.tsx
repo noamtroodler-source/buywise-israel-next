@@ -124,11 +124,6 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                 <Badge className="text-sm px-3 py-1.5 bg-background/90 text-foreground backdrop-blur-sm border-0">
                   {statusLabels[property.listing_status] || property.listing_status}
                 </Badge>
-                {property.is_featured && (
-                  <Badge variant="default" className="text-sm px-3 py-1.5 bg-accent text-accent-foreground">
-                    Featured
-                  </Badge>
-                )}
               </div>
 
               {/* Navigation Arrows */}

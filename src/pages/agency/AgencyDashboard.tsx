@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  MessageSquare, FileText, Megaphone
+  MessageSquare, FileText, Megaphone, Mail
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -196,7 +196,44 @@ export default function AgencyDashboard() {
           {/* Onboarding Progress */}
           <AgencyOnboardingProgress agency={agency} teamCount={team.length} />
 
-          {/* Tabs */}
+          {/* Homepage Listing Opportunities */}
+          <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Home className="h-5 w-5 text-primary" />
+                Homepage Listing Opportunities
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                BuyWise Israel features a small number of resale and rental listings on the homepage, rotating weekly.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                All homepage placements are curated and reviewed based on quality and relevance for international buyers.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Availability, fit, and pricing vary by listing.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                To inquire about homepage exposure for a specific property, contact:
+              </p>
+              
+              <div className="pt-2 border-t border-border/50">
+                <a 
+                  href="mailto:hello@buywiseisrael.com" 
+                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                  <Mail className="h-4 w-4" />
+                  hello@buywiseisrael.com
+                </a>
+              </div>
+              
+              <p className="text-xs text-muted-foreground/70 pt-1">
+                Homepage exposure does not include guaranteed placement, ranking, or performance metrics.
+              </p>
+            </CardContent>
+          </Card>
+
           <Tabs defaultValue="team">
             <TabsList className="bg-muted/50 border border-border/50 rounded-xl p-1 flex-wrap h-auto">
               <TabsTrigger value="team" className="gap-2 rounded-lg">

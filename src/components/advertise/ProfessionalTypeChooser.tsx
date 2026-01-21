@@ -30,7 +30,7 @@ const professionalTypes = [
       "Agent invite system",
       "Consolidated analytics",
       "Priority support",
-      "Featured placement",
+      "Homepage exposure opportunities",
     ],
     href: "/auth?tab=signup&role=agency",
     buttonText: "Register Agency",
