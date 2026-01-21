@@ -212,13 +212,13 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                 <ProjectShareButton
                   projectSlug={project.slug}
                   projectName={project.name}
-                  className="h-7 w-7 rounded-full"
+                  className="h-8 w-8 rounded-md"
                 />
               </div>
               {/* Favorite - always visible */}
               <ProjectFavoriteButton
                 projectId={project.id}
-                className="h-7 w-7 rounded-full bg-background/80 hover:bg-background"
+                className="h-8 w-8 rounded-md bg-background/80 hover:bg-background"
               />
             </div>
 
