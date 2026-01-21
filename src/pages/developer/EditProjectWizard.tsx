@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { ProjectWizardProvider, useProjectWizard } from '@/components/developer/wizard/ProjectWizardContext';
+import { ProjectWizardProvider, useProjectWizard, UnitTypeData, OutdoorSpaceType } from '@/components/developer/wizard/ProjectWizardContext';
 import { StepBasics, StepDetails, StepAmenities, StepUnitTypes, StepPhotos, StepDescription, StepReview } from '@/components/developer/wizard/steps';
-import { useDeveloperProject, useUpdateProject, useSubmitProjectForReview } from '@/hooks/useDeveloperProjects';
+import { useDeveloperProject, useDeveloperProjectUnits, useUpdateProjectWithUnits, useSubmitProjectForReview, ProjectUnit } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 
@@ -57,19 +57,75 @@ const getStatusInfo = (status: string | null | undefined) => {
   }
 };
 
+// Convert database project_units to UnitTypeData format
+function convertUnitsToUnitTypes(units: ProjectUnit[]): UnitTypeData[] {
+  // Group units by unit_type name
+  const unitTypesMap = new Map<string, UnitTypeData>();
+  
+  units.forEach((unit, index) => {
+    const existing = unitTypesMap.get(unit.unit_type);
+    if (existing) {
+      // Update min/max values
+      if (unit.size_sqm) {
+        existing.sizeMin = Math.min(existing.sizeMin ?? Infinity, unit.size_sqm);
+        existing.sizeMax = Math.max(existing.sizeMax ?? 0, unit.size_sqm);
+      }
+      if (unit.price) {
+        existing.priceMin = Math.min(existing.priceMin ?? Infinity, unit.price);
+        existing.priceMax = Math.max(existing.priceMax ?? 0, unit.price);
+      }
+      if (unit.floor) {
+        existing.floorMin = Math.min(existing.floorMin ?? Infinity, unit.floor);
+        existing.floorMax = Math.max(existing.floorMax ?? 0, unit.floor);
+      }
+      // Update floor plan if not set
+      if (!existing.floorPlanUrl && unit.floor_plan_url) {
+        existing.floorPlanUrl = unit.floor_plan_url;
+      }
+      // Increment quantity
+      existing.quantity = (existing.quantity ?? 0) + 1;
+    } else {
+      unitTypesMap.set(unit.unit_type, {
+        id: crypto.randomUUID(),
+        name: unit.unit_type,
+        bedrooms: unit.bedrooms || 0,
+        bathrooms: unit.bathrooms || 0,
+        sizeMin: unit.size_sqm ?? undefined,
+        sizeMax: unit.size_sqm ?? undefined,
+        floorMin: unit.floor ?? undefined,
+        floorMax: unit.floor ?? undefined,
+        priceMin: unit.price ?? undefined,
+        priceMax: unit.price ?? undefined,
+        outdoorSpace: 'balcony' as OutdoorSpaceType,
+        floorPlanUrl: unit.floor_plan_url ?? undefined,
+        quantity: 1,
+        displayOrder: unit.display_order ?? index,
+      });
+    }
+  });
+
+  // Convert map to array and sort by displayOrder
+  return Array.from(unitTypesMap.values())
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+}
+
 function EditWizardContent({ projectId }: { projectId: string }) {
   const navigate = useNavigate();
   const { data: project, isLoading, error } = useDeveloperProject(projectId);
+  const { data: projectUnits, isLoading: isLoadingUnits } = useDeveloperProjectUnits(projectId);
   const { data: developerProfile } = useDeveloperProfile();
-  const updateProject = useUpdateProject();
+  const updateProjectWithUnits = useUpdateProjectWithUnits();
   const submitForReview = useSubmitProjectForReview();
   
   const { data, currentStep, setCurrentStep, goNext, goBack, canGoNext, isLastStep, loadFromSaved } = useProjectWizard();
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  // Load project data into wizard context
+  // Load project data and units into wizard context
   useEffect(() => {
-    if (project && !hasLoaded) {
+    if (project && projectUnits !== undefined && !hasLoaded) {
+      // Convert project_units to UnitTypeData format
+      const unitTypes = convertUnitsToUnitTypes(projectUnits);
+      
       loadFromSaved({
         name: project.name || '',
         status: (project.status as any) || 'planning',
@@ -86,19 +142,19 @@ function EditWizardContent({ projectId }: { projectId: string }) {
         completion_date: project.completion_date ?? undefined,
         construction_progress_percent: project.construction_progress_percent ?? 0,
         amenities: project.amenities || [],
-        unit_types: [], // Will be loaded from project_units separately
+        unit_types: unitTypes,
         images: project.images || [],
         floor_plans: project.floor_plans || [],
         description: project.description || '',
       });
       setHasLoaded(true);
     }
-  }, [project, hasLoaded, loadFromSaved]);
+  }, [project, projectUnits, hasLoaded, loadFromSaved]);
 
   const handleSaveChanges = async () => {
     if (!project) return;
     
-    await updateProject.mutateAsync({
+    await updateProjectWithUnits.mutateAsync({
       id: project.id,
       name: data.name,
       status: data.status as any,
@@ -118,6 +174,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
       images: data.images,
       floor_plans: data.floor_plans,
       description: data.description || null,
+      unit_types: data.unit_types, // Include unit types for sync
     });
   };
 
@@ -148,7 +205,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingUnits) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
@@ -176,7 +233,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
   const StatusIcon = statusInfo.icon;
   const canResubmit = project.verification_status === 'draft' || project.verification_status === 'changes_requested';
   const isDeveloperVerified = developerProfile?.verification_status === 'approved';
-  const isSaving = updateProject.isPending;
+  const isSaving = updateProjectWithUnits.isPending;
   const isSubmitting = submitForReview.isPending;
 
   return (

@@ -4,6 +4,22 @@ import { useDeveloperProfile } from './useDeveloperProfile';
 import { toast } from 'sonner';
 import { UnitTypeData } from '@/components/developer/wizard/ProjectWizardContext';
 
+// Interface for project units from database
+export interface ProjectUnit {
+  id: string;
+  project_id: string;
+  unit_type: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  size_sqm: number | null;
+  floor: number | null;
+  price: number | null;
+  floor_plan_url: string | null;
+  status: string | null;
+  display_order: number | null;
+  created_at: string;
+}
+
 export interface DeveloperProject {
   id: string;
   developer_id: string | null;
@@ -258,6 +274,91 @@ export function useSubmitProjectForReview() {
     },
     onError: (error) => {
       toast.error('Failed to submit: ' + error.message);
+    },
+  });
+}
+
+// Hook to fetch project units for a developer's project
+export function useDeveloperProjectUnits(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ['developerProjectUnits', projectId],
+    queryFn: async (): Promise<ProjectUnit[]> => {
+      if (!projectId) return [];
+
+      const { data, error } = await supabase
+        .from('project_units')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      return data as ProjectUnit[];
+    },
+    enabled: !!projectId,
+  });
+}
+
+// Hook to update project with unit types
+export function useUpdateProjectWithUnits() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      id, 
+      unit_types,
+      ...projectUpdates 
+    }: Partial<DeveloperProject> & { 
+      id: string; 
+      unit_types?: UnitTypeData[];
+    }) => {
+      // 1. Update project data
+      const { error: projectError } = await supabase
+        .from('projects')
+        .update(projectUpdates as any)
+        .eq('id', id);
+      
+      if (projectError) throw projectError;
+
+      // 2. Sync unit types if provided
+      if (unit_types !== undefined) {
+        // Delete existing units for this project
+        const { error: deleteError } = await supabase
+          .from('project_units')
+          .delete()
+          .eq('project_id', id);
+
+        if (deleteError) throw deleteError;
+
+        // Insert updated units with display_order
+        if (unit_types.length > 0) {
+          const unitsToInsert = unit_types.map((ut, index) => ({
+            project_id: id,
+            unit_type: ut.name,
+            bedrooms: ut.bedrooms,
+            bathrooms: ut.bathrooms,
+            size_sqm: ut.sizeMin || null,
+            floor: ut.floorMin || null,
+            price: ut.priceMin || null,
+            floor_plan_url: ut.floorPlanUrl || null,
+            display_order: index,
+            status: 'available',
+          }));
+
+          const { error: unitsError } = await supabase
+            .from('project_units')
+            .insert(unitsToInsert as any);
+
+          if (unitsError) throw unitsError;
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['developerProjects'] });
+      queryClient.invalidateQueries({ queryKey: ['developerProjectUnits'] });
+      toast.success('Project updated!');
+    },
+    onError: (error) => {
+      toast.error('Failed to update project: ' + error.message);
     },
   });
 }
