@@ -71,36 +71,23 @@ export function StepBasics() {
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="city">City *</Label>
-            <Select
-              value={data.city}
-              onValueChange={(value) => updateData({ city: value })}
-            >
-              <SelectTrigger className="h-11 rounded-xl">
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                {cities.map((city) => (
-                  <SelectItem key={city.slug} value={city.name}>
-                    {city.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="neighborhood">Neighborhood</Label>
-            <Input
-              id="neighborhood"
-              value={data.neighborhood}
-              onChange={(e) => updateData({ neighborhood: e.target.value })}
-              placeholder="e.g., Old North"
-              className="h-11 rounded-xl"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="city">City *</Label>
+          <Select
+            value={data.city}
+            onValueChange={(value) => updateData({ city: value })}
+          >
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue placeholder="Select city" />
+            </SelectTrigger>
+            <SelectContent>
+              {cities.map((city) => (
+                <SelectItem key={city.slug} value={city.name}>
+                  {city.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Location Section with AddressAutocomplete */}
