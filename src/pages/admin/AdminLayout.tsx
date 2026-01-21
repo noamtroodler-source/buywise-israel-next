@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
-  Mail, ToggleLeft, BookOpen, Megaphone
+  Mail, ToggleLeft, BookOpen, Megaphone, Star
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { usePendingReviewCount } from '@/hooks/useListingReview';
 
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/featured', label: 'Featured', icon: Star },
   { href: '/admin/settings', label: 'Site Settings', icon: Sliders },
   { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
   { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },

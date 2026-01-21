@@ -106,6 +106,42 @@ export function useFeaturedProjects() {
   return useQuery({
     queryKey: ['featuredProjects'],
     queryFn: async () => {
+      // First try to get from homepage_featured_slots (new system)
+      const { data: slots } = await supabase
+        .from('homepage_featured_slots')
+        .select('entity_id, slot_type, position')
+        .in('slot_type', ['project_hero', 'project_secondary'])
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+        .order('position', { ascending: true });
+
+      if (slots && slots.length > 0) {
+        const projectIds = slots.map(s => s.entity_id);
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`*, developer:developer_id (*)`)
+          .in('id', projectIds)
+          .eq('is_published', true);
+
+        if (error) throw error;
+        
+        // Sort: hero first, then secondary by position
+        const heroSlot = slots.find(s => s.slot_type === 'project_hero');
+        const secondarySlots = slots.filter(s => s.slot_type === 'project_secondary')
+          .sort((a, b) => a.position - b.position);
+        
+        const orderedIds = [
+          heroSlot?.entity_id,
+          ...secondarySlots.map(s => s.entity_id)
+        ].filter(Boolean);
+        
+        const sortedData = orderedIds
+          .map(id => data?.find(p => p.id === id))
+          .filter(Boolean) as Project[];
+        
+        return sortedData;
+      }
+
+      // Fallback to old is_featured system
       const { data, error } = await supabase
         .from('projects')
         .select(`*, developer:developer_id (*)`)

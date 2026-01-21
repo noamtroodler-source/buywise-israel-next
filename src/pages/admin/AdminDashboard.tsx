@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { 
   Users, Home, Building2, Building, FileText, MapPin, 
-  TrendingUp, Eye, BarChart3, ArrowRight 
+  TrendingUp, Eye, BarChart3, ArrowRight, Star 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,12 +75,12 @@ export default function AdminDashboard() {
   ];
 
   const quickActions = [
+    { label: 'Manage Featured', icon: Star, href: '/admin/featured' },
     { label: 'Manage Properties', icon: Home, href: '/admin/properties' },
     { label: 'Review Listings', icon: Eye, href: '/admin/review' },
     { label: 'View Analytics', icon: BarChart3, href: '/admin/analytics' },
     { label: 'Manage Agents', icon: Building2, href: '/admin/agents' },
     { label: 'Update Market Data', icon: TrendingUp, href: '/admin/market-data' },
-    { label: 'Manage Cities', icon: MapPin, href: '/admin/cities' },
   ];
 
   return (

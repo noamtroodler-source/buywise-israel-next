@@ -48,6 +48,7 @@ import { AdminSettings } from "./pages/admin/AdminSettings";
 import { AdminCitiesPage } from "./pages/admin/AdminCitiesPage";
 import { AdminMarketDataPage } from "./pages/admin/AdminMarketDataPage";
 import { AdminContactSubmissions } from "./pages/admin/AdminContactSubmissions";
+import AdminFeatured from "./pages/admin/AdminFeatured";
 import { AdminFeatureFlags } from "./pages/admin/AdminFeatureFlags";
 import { AdminGlossary } from "./pages/admin/AdminGlossary";
 import { AdminAnnouncements } from "./pages/admin/AdminAnnouncements";
@@ -297,6 +298,7 @@ const App = () => (
               <Route path="feature-flags" element={<AdminFeatureFlags />} />
               <Route path="announcements" element={<AdminAnnouncements />} />
               <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
+              <Route path="featured" element={<AdminFeatured />} />
             </Route>
                     <Route path="*" element={<NotFound />} />
                   </Routes>

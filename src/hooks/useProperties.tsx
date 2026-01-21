@@ -295,12 +295,37 @@ export function useFeaturedSaleProperties() {
   return useQuery({
     queryKey: ['properties', 'featured', 'for_sale'],
     queryFn: async () => {
+      // First try to get from homepage_featured_slots (new system)
+      const { data: slots } = await supabase
+        .from('homepage_featured_slots')
+        .select('entity_id, position')
+        .eq('slot_type', 'property_sale')
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+        .order('position', { ascending: true })
+        .limit(8);
+
+      if (slots && slots.length > 0) {
+        const propertyIds = slots.map(s => s.entity_id);
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`*, agent:agents(*)`)
+          .in('id', propertyIds)
+          .eq('is_published', true);
+
+        if (error) throw error;
+        
+        // Sort by slot position
+        const sortedData = propertyIds
+          .map(id => data?.find(p => p.id === id))
+          .filter(Boolean) as Property[];
+        
+        return sortedData;
+      }
+
+      // Fallback to old is_featured system
       const { data, error } = await supabase
         .from('properties')
-        .select(`
-          *,
-          agent:agents(*)
-        `)
+        .select(`*, agent:agents(*)`)
         .eq('is_published', true)
         .eq('is_featured', true)
         .eq('listing_status', 'for_sale')
@@ -317,12 +342,37 @@ export function useFeaturedRentalProperties() {
   return useQuery({
     queryKey: ['properties', 'featured', 'for_rent'],
     queryFn: async () => {
+      // First try to get from homepage_featured_slots (new system)
+      const { data: slots } = await supabase
+        .from('homepage_featured_slots')
+        .select('entity_id, position')
+        .eq('slot_type', 'property_rent')
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
+        .order('position', { ascending: true })
+        .limit(8);
+
+      if (slots && slots.length > 0) {
+        const propertyIds = slots.map(s => s.entity_id);
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`*, agent:agents(*)`)
+          .in('id', propertyIds)
+          .eq('is_published', true);
+
+        if (error) throw error;
+        
+        // Sort by slot position
+        const sortedData = propertyIds
+          .map(id => data?.find(p => p.id === id))
+          .filter(Boolean) as Property[];
+        
+        return sortedData;
+      }
+
+      // Fallback to old is_featured system
       const { data, error } = await supabase
         .from('properties')
-        .select(`
-          *,
-          agent:agents(*)
-        `)
+        .select(`*, agent:agents(*)`)
         .eq('is_published', true)
         .eq('is_featured', true)
         .eq('listing_status', 'for_rent')
