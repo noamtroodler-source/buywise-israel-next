@@ -79,7 +79,6 @@ export default function AgencySettings() {
 
   const [notificationSettings, setNotificationSettings] = useState({
     notify_email: true,
-    notify_on_lead: true,
     notify_on_join_request: true,
   });
 
@@ -109,7 +108,6 @@ export default function AgencySettings() {
       });
       setNotificationSettings({
         notify_email: (agency as any).notify_email ?? true,
-        notify_on_lead: (agency as any).notify_on_lead ?? true,
         notify_on_join_request: (agency as any).notify_on_join_request ?? true,
       });
       setCities(agency.cities_covered || []);
@@ -207,7 +205,6 @@ export default function AgencySettings() {
       is_accepting_agents: formData.is_accepting_agents,
       social_links: Object.keys(cleanedSocialLinks).length > 0 ? cleanedSocialLinks : null,
       notify_email: notificationSettings.notify_email,
-      notify_on_lead: notificationSettings.notify_on_lead,
       notify_on_join_request: notificationSettings.notify_on_join_request,
     } as any);
   };
@@ -631,20 +628,6 @@ export default function AgencySettings() {
                         checked={notificationSettings.notify_email}
                         onCheckedChange={(checked) => 
                           setNotificationSettings(prev => ({ ...prev, notify_email: checked }))
-                        }
-                      />
-                    </div>
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
-                      <div className="space-y-0.5">
-                        <Label className="text-base">New Lead Alerts</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get notified when new leads come in
-                        </p>
-                      </div>
-                      <Switch
-                        checked={notificationSettings.notify_on_lead}
-                        onCheckedChange={(checked) => 
-                          setNotificationSettings(prev => ({ ...prev, notify_on_lead: checked }))
                         }
                       />
                     </div>
