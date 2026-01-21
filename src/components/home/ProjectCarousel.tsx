@@ -1,21 +1,16 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, MapPin, Calendar, Building2, Share2, MessageCircle, Send, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import useEmblaCarousel from 'embla-carousel-react';
 import { useCallback, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
+import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
+import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 
 interface Project {
   id: string;
@@ -96,64 +91,6 @@ const getStatusColor = (status: string) => {
   }
 };
 
-function ShareButton({ projectSlug, projectName }: { projectSlug: string; projectName: string }) {
-  const projectUrl = `${window.location.origin}/projects/${projectSlug}`;
-  const shareText = `Check out this project: ${projectName}`;
-
-  const handleCopyLink = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(projectUrl);
-    toast({
-      title: "Link copied!",
-      description: "Project link copied to clipboard",
-    });
-  };
-
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${projectUrl}`)}`;
-    window.open(whatsappUrl, "_blank");
-  };
-
-  const handleTelegram = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(projectUrl)}&text=${encodeURIComponent(shareText)}`;
-    window.open(telegramUrl, "_blank");
-  };
-
-   return (
-     <DropdownMenu>
-       <DropdownMenuTrigger asChild>
-         <Button
-           variant="ghost"
-           size="icon"
-           onPointerDown={(e) => e.stopPropagation()}
-           onClick={(e) => e.stopPropagation()}
-           className="h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-         >
-           <Share2 className="h-3.5 w-3.5" />
-         </Button>
-       </DropdownMenuTrigger>
-       <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
-         <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
-           <LinkIcon className="h-4 w-4 mr-2" />
-           Copy Link
-         </DropdownMenuItem>
-         <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
-           <MessageCircle className="h-4 w-4 mr-2" />
-           WhatsApp
-         </DropdownMenuItem>
-         <DropdownMenuItem onClick={handleTelegram} className="cursor-pointer">
-           <Send className="h-4 w-4 mr-2" />
-           Telegram
-         </DropdownMenuItem>
-       </DropdownMenuContent>
-     </DropdownMenu>
-   );
-}
 
 function ProjectCard({ project, hideStatusBadge = false }: { project: Project; hideStatusBadge?: boolean }) {
   const placeholderImage = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=60';
@@ -267,6 +204,23 @@ function ProjectCard({ project, hideStatusBadge = false }: { project: Project; h
                  </button>
               </>
             )}
+
+            {/* Action Buttons - Top Right */}
+            <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+              {/* Share - visible on hover */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ProjectShareButton
+                  projectSlug={project.slug}
+                  projectName={project.name}
+                  className="h-7 w-7 rounded-full"
+                />
+              </div>
+              {/* Favorite - always visible */}
+              <ProjectFavoriteButton
+                projectId={project.id}
+                className="h-7 w-7 rounded-full bg-background/80 hover:bg-background"
+              />
+            </div>
 
             {/* Status Badge - Top Left (moved below progress bar) */}
             <div className="absolute top-6 left-2 flex gap-1.5 z-10">
