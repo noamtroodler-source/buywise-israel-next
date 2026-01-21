@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +10,9 @@ import { PropertyCard } from '@/components/property/PropertyCard';
 import { useAgency, useAgencyAgents, useAgencyListings, useAgencyStats } from '@/hooks/useAgency';
 import { toast } from 'sonner';
 import { Layout } from '@/components/layout/Layout';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -72,9 +75,37 @@ export default function AgencyDetail() {
     );
   }
 
+  // Check if current user is associated with this agency
+  const { user } = useAuth();
+  const { data: userAgent } = useQuery({
+    queryKey: ['user-agent', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('agents')
+        .select('agency_id')
+        .eq('user_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isOwner = agency && userAgent?.agency_id === agency.id;
+
   return (
     <Layout>
       <div className="container py-8 space-y-8">
+        {/* Back Navigation */}
+        {isOwner && (
+          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
+            <Link to="/agency">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        )}
+
         {/* Hero Card */}
         <Card className="overflow-hidden">
           <CardContent className="p-6 md:p-8">
