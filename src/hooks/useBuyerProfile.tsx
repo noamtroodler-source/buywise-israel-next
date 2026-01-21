@@ -20,6 +20,8 @@ export interface BuyerProfile {
   upgrade_sale_date: string | null;
   // Arnona discount eligibility
   arnona_discount_categories: string[];
+  // Rental budget (optional)
+  rental_budget?: number | null;
   created_at: string;
   updated_at: string;
 }

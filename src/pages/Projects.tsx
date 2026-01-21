@@ -1,26 +1,42 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, MapPin, Calendar, Loader2, Home } from 'lucide-react';
+import { Building, MapPin, Calendar, Loader2, Home, TrendingDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 
-import { useProjects } from '@/hooks/useProjects';
+import { usePaginatedProjects } from '@/hooks/usePaginatedProjects';
+import { useRecentlyViewedProjects } from '@/hooks/useRecentlyViewedProjects';
 import { ProjectFilters, ProjectFiltersType } from '@/components/filters/ProjectFilters';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
+import { RecentlyViewedStrip } from '@/components/listings/RecentlyViewedStrip';
+import { BackToTopButton } from '@/components/shared/BackToTopButton';
 
 export default function Projects() {
-  const { data: projects = [], isLoading, isFetching } = useProjects();
   const [filters, setFilters] = useState<ProjectFiltersType>({});
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Use paginated projects hook
+  const { 
+    projects, 
+    totalCount, 
+    isLoading, 
+    isFetching, 
+    hasNextPage, 
+    loadMore 
+  } = usePaginatedProjects(filters);
+
+  // Recently viewed projects
+  const { recentProjects, clearRecentlyViewed } = useRecentlyViewedProjects();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -55,65 +71,6 @@ export default function Projects() {
     }).format(price);
   };
 
-  // Filter and sort projects
-  const filteredProjects = useMemo(() => {
-    let result = [...projects];
-
-    // Apply city filter
-    if (filters.city) {
-      result = result.filter(p => p.city === filters.city);
-    }
-
-    // Apply status filter
-    if (filters.status) {
-      result = result.filter(p => p.status === filters.status);
-    }
-
-    // Apply price filters
-    if (filters.min_price) {
-      result = result.filter(p => p.price_from && p.price_from >= filters.min_price!);
-    }
-    if (filters.max_price) {
-      result = result.filter(p => p.price_from && p.price_from <= filters.max_price!);
-    }
-
-    // Apply completion year filter
-    if (filters.completion_year) {
-      result = result.filter(p => {
-        if (!p.completion_date) return false;
-        return new Date(p.completion_date).getFullYear() === filters.completion_year;
-      });
-    }
-
-    // Apply developer filter
-    if (filters.developer_id) {
-      result = result.filter(p => p.developer_id === filters.developer_id);
-    }
-
-    // Apply sorting
-    switch (filters.sort_by) {
-      case 'price_asc':
-        result.sort((a, b) => (a.price_from || 0) - (b.price_from || 0));
-        break;
-      case 'price_desc':
-        result.sort((a, b) => (b.price_from || 0) - (a.price_from || 0));
-        break;
-      case 'completion':
-        result.sort((a, b) => {
-          if (!a.completion_date) return 1;
-          if (!b.completion_date) return -1;
-          return new Date(a.completion_date).getTime() - new Date(b.completion_date).getTime();
-        });
-        break;
-      case 'newest':
-      default:
-        // Already sorted by created_at from the query
-        break;
-    }
-
-    return result;
-  }, [projects, filters]);
-
   const handleCreateAlert = () => {
     if (!user) {
       navigate('/auth?redirect=/projects');
@@ -124,12 +81,22 @@ export default function Projects() {
 
   // Extract unit type ranges from project data (mock based on price range)
   const getUnitTypeLabel = (project: typeof projects[0]) => {
-    // This is a simplified approach - in reality you'd fetch units data
-    // For now, we'll estimate based on price ranges
     const priceFrom = project.price_from || 0;
     if (priceFrom < 2000000) return '2-3 Room';
     if (priceFrom < 3500000) return '3-4 Room';
     return '4-5 Room';
+  };
+
+  // Check for price reduction
+  const isPriceReduced = (project: typeof projects[0]) => {
+    const originalPrice = (project as any).original_price_from;
+    return originalPrice && project.price_from && project.price_from < originalPrice;
+  };
+
+  const getPriceDropPercent = (project: typeof projects[0]) => {
+    const originalPrice = (project as any).original_price_from;
+    if (!originalPrice || !project.price_from) return 0;
+    return Math.round(((originalPrice - project.price_from) / originalPrice) * 100);
   };
 
   return (
@@ -155,7 +122,14 @@ export default function Projects() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-
+          {/* Recently Viewed Section */}
+          {recentProjects.length > 0 && (
+            <RecentlyViewedStrip 
+              items={recentProjects} 
+              type="project" 
+              onClear={clearRecentlyViewed}
+            />
+          )}
 
           {/* Filters */}
           <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
@@ -163,7 +137,7 @@ export default function Projects() {
           {/* Results Count */}
           {!isLoading && (
             <p className="text-sm text-muted-foreground">
-              {filteredProjects.length} project{filteredProjects.length !== 1 ? 's' : ''} found
+              Showing {projects.length} of {totalCount} project{totalCount !== 1 ? 's' : ''}
             </p>
           )}
 
@@ -172,123 +146,159 @@ export default function Projects() {
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : filteredProjects.length === 0 ? (
+          ) : projects.length === 0 ? (
             <div className="text-center py-12">
               <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-foreground mb-2">No projects found</h2>
               <p className="text-muted-foreground">
-                {projects.length > 0 
+                {totalCount > 0 
                   ? 'Try adjusting your filters to see more results.'
                   : 'New construction projects will be available soon.'
                 }
               </p>
             </div>
           ) : (
-            <ListingsGrid isFetching={isFetching && !isLoading}>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredProjects.map((project, index) => (
-                  <motion.div
-                    key={project.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Link to={`/projects/${project.slug}`}>
-                      <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
-                        <div className="aspect-[16/10] overflow-hidden relative">
-                          <img
-                            src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
-                            alt={project.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          
-                          {/* Action Buttons - Top Right */}
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                            {/* Share - visible on hover */}
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
-                            </div>
-                            {/* Favorite - always visible */}
-                            <ProjectFavoriteButton projectId={project.id} />
-                          </div>
-                          
-                        </div>
-                        <CardContent className="p-5 space-y-3">
-                          <div className="space-y-1">
-                            <h2 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                              {project.name}
-                            </h2>
-                            {project.developer && (
-                              <p className="text-sm text-primary font-medium">
-                                by {project.developer.name}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <span className="line-clamp-1">
-                              {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
-                            </span>
-                          </div>
-
-                          {/* Unit Types & Completion */}
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Home className="h-4 w-4" />
-                              <span>{getUnitTypeLabel(project)} Units</span>
-                            </div>
-                            {project.completion_date && (
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Calendar className="h-4 w-4" />
-                                <span>{new Date(project.completion_date).getFullYear()}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Project Status Progress Bar */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                {project.status === 'planning' && 'Planning Phase'}
-                                {project.status === 'pre_sale' && 'Pre-Sale'}
-                                {project.status === 'foundation' && 'Foundation'}
-                                {project.status === 'structure' && 'Structure'}
-                                {project.status === 'finishing' && 'Finishing'}
-                                {project.status === 'delivery' && 'Ready for Move-In'}
-                              </span>
-                              <span className="font-medium text-primary">
-                                {project.status === 'planning' && 'Coming Soon'}
-                                {project.status === 'pre_sale' && 'Starting Soon'}
-                                {['foundation', 'structure', 'finishing'].includes(project.status) && `${(project as any).construction_progress_percent || 0}%`}
-                                {project.status === 'delivery' && '100%'}
-                              </span>
-                            </div>
-                            <Progress 
-                              value={
-                                project.status === 'delivery' ? 100 :
-                                ['foundation', 'structure', 'finishing'].includes(project.status) ? ((project as any).construction_progress_percent || 0) :
-                                0
-                              } 
-                              className="h-1.5" 
+            <>
+              <ListingsGrid isFetching={isFetching && !isLoading}>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {projects.map((project, index) => (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Link to={`/projects/${project.slug}`}>
+                        <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
+                          <div className="aspect-[16/10] overflow-hidden relative">
+                            <img
+                              src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
+                              alt={project.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
-                          </div>
+                            
+                            {/* Badges - Top Left */}
+                            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                              {isPriceReduced(project) && getPriceDropPercent(project) >= 2 && (
+                                <Badge className="bg-green-600 text-white text-xs font-medium gap-1">
+                                  <TrendingDown className="h-3 w-3" />
+                                  -{getPriceDropPercent(project)}%
+                                </Badge>
+                              )}
+                            </div>
 
-                          <div className="pt-3 border-t border-border">
-                            <p className="text-xs text-muted-foreground">Starting from</p>
-                            <p className="text-xl font-bold text-primary">
-                              {formatPrice(project.price_from)}
-                            </p>
+                            {/* Action Buttons - Top Right */}
+                            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+                              {/* Share - visible on hover */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
+                              </div>
+                              {/* Favorite - always visible */}
+                              <ProjectFavoriteButton projectId={project.id} />
+                            </div>
+                            
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </ListingsGrid>
+                          <CardContent className="p-5 space-y-3">
+                            <div className="space-y-1">
+                              <h2 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                {project.name}
+                              </h2>
+                              {project.developer && (
+                                <p className="text-sm text-primary font-medium">
+                                  by {project.developer.name}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                              <MapPin className="h-4 w-4 flex-shrink-0" />
+                              <span className="line-clamp-1">
+                                {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
+                              </span>
+                            </div>
+
+                            {/* Unit Types & Completion */}
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Home className="h-4 w-4" />
+                                <span>{getUnitTypeLabel(project)} Units</span>
+                              </div>
+                              {project.completion_date && (
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(project.completion_date).getFullYear()}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Project Status Progress Bar */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  {project.status === 'planning' && 'Planning Phase'}
+                                  {project.status === 'pre_sale' && 'Pre-Sale'}
+                                  {project.status === 'foundation' && 'Foundation'}
+                                  {project.status === 'structure' && 'Structure'}
+                                  {project.status === 'finishing' && 'Finishing'}
+                                  {project.status === 'delivery' && 'Ready for Move-In'}
+                                </span>
+                                <span className="font-medium text-primary">
+                                  {project.status === 'planning' && 'Coming Soon'}
+                                  {project.status === 'pre_sale' && 'Starting Soon'}
+                                  {['foundation', 'structure', 'finishing'].includes(project.status) && `${(project as any).construction_progress_percent || 0}%`}
+                                  {project.status === 'delivery' && '100%'}
+                                </span>
+                              </div>
+                              <Progress 
+                                value={
+                                  project.status === 'delivery' ? 100 :
+                                  ['foundation', 'structure', 'finishing'].includes(project.status) ? ((project as any).construction_progress_percent || 0) :
+                                  0
+                                } 
+                                className="h-1.5" 
+                              />
+                            </div>
+
+                            <div className="pt-3 border-t border-border">
+                              <p className="text-xs text-muted-foreground">Starting from</p>
+                              <p className="text-xl font-bold text-primary">
+                                {formatPrice(project.price_from)}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </ListingsGrid>
+
+              {/* Load More Button */}
+              {hasNextPage && (
+                <div className="flex justify-center mt-8">
+                  <Button 
+                    onClick={loadMore} 
+                    disabled={isFetching}
+                    variant="outline"
+                    size="lg"
+                  >
+                    {isFetching ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>Load More Projects</>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </motion.div>
+
+        {/* Back to Top Button */}
+        <BackToTopButton />
 
         {/* Create Alert Dialog */}
         <CreateAlertDialog 
