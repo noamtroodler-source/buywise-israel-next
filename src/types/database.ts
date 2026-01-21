@@ -49,6 +49,7 @@ export interface Property {
   property_type: PropertyType;
   listing_status: ListingStatus;
   price: number;
+  original_price: number | null;
   currency: string;
   address: string;
   city: string;

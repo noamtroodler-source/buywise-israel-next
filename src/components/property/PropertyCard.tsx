@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +46,12 @@ export function PropertyCard({ property, className, showCompareButton = false, s
 
   // Check if property is new (listed within last 7 days)
   const isNewListing = daysOnMarket !== null && daysOnMarket <= 7;
+
+  // Calculate price drop
+  const hasPriceDrop = property.original_price && property.original_price > property.price;
+  const priceDropPercent = hasPriceDrop 
+    ? Math.round(((property.original_price - property.price) / property.original_price) * 100)
+    : 0;
 
   // Format days on market label
   const getDaysOnMarketLabel = () => {
@@ -225,6 +231,15 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                       );
                     }
                     
+                    if (hasPriceDrop && priceDropPercent >= 1) {
+                      badges.push(
+                        <Badge key="price-drop" className="bg-primary/90 text-primary-foreground text-xs font-medium">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          Price Drop
+                        </Badge>
+                      );
+                    }
+                    
                     return badges.slice(0, maxBadges);
                   })()}
                 </div>
@@ -247,12 +262,19 @@ export function PropertyCard({ property, className, showCompareButton = false, s
 
               {/* Content Section BELOW Image - Clean White Area */}
               <div className="p-3 bg-white border-t border-black/5">
-                <p className="font-bold text-foreground text-lg">
-                  {formatPrice(property.price, property.currency || 'ILS')}
-                  {property.listing_status === 'for_rent' && (
-                    <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                <div className="flex items-baseline gap-2">
+                  <p className="font-bold text-foreground text-lg">
+                    {formatPrice(property.price, property.currency || 'ILS')}
+                    {property.listing_status === 'for_rent' && (
+                      <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                    )}
+                  </p>
+                  {hasPriceDrop && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatPrice(property.original_price!, property.currency || 'ILS')}
+                    </span>
                   )}
-                </p>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {property.bedrooms} bd | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
                 </p>
@@ -359,6 +381,15 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                       );
                     }
                     
+                    if (hasPriceDrop && priceDropPercent >= 1) {
+                      badges.push(
+                        <Badge key="price-drop" className="bg-primary/90 text-primary-foreground text-xs font-medium">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          Price Drop
+                        </Badge>
+                      );
+                    }
+                    
                     return badges.slice(0, maxBadges);
                   })()}
                 </div>
@@ -380,12 +411,19 @@ export function PropertyCard({ property, className, showCompareButton = false, s
               <CardContent className="p-3 space-y-1.5">
                 {/* Price */}
                 <div className="flex items-baseline justify-between">
-                  <span className="font-bold text-foreground text-lg">
-                    {formatPrice(property.price, property.currency || 'ILS')}
-                    {property.listing_status === 'for_rent' && (
-                      <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold text-foreground text-lg">
+                      {formatPrice(property.price, property.currency || 'ILS')}
+                      {property.listing_status === 'for_rent' && (
+                        <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                      )}
+                    </span>
+                    {hasPriceDrop && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
                     )}
-                  </span>
+                  </div>
                   {property.listing_status === 'for_sale' && showMonthlyEstimate && (
                     <MonthlyEstimate price={property.price} />
                   )}
