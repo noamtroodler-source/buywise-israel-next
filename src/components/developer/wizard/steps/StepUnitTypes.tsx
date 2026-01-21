@@ -266,6 +266,11 @@ export function StepUnitTypes() {
     toast.success('Unit type removed');
   };
 
+  // Validation helpers for range fields
+  const sizeRangeError = formData.sizeMin && formData.sizeMax && formData.sizeMin > formData.sizeMax;
+  const floorRangeError = formData.floorMin && formData.floorMax && formData.floorMin > formData.floorMax;
+  const priceRangeError = formData.priceMin && formData.priceMax && formData.priceMin > formData.priceMax;
+
   const handleSave = () => {
     const finalName = formData.name === 'Custom' ? customName : formData.name;
     
@@ -306,8 +311,19 @@ export function StepUnitTypes() {
       errors.push('Number of units');
     }
 
+    // Check range validations
+    if (sizeRangeError) {
+      errors.push('Size range invalid');
+    }
+    if (floorRangeError) {
+      errors.push('Floor range invalid');
+    }
+    if (priceRangeError) {
+      errors.push('Price range invalid');
+    }
+
     if (errors.length > 0) {
-      toast.error(`Please fill in: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` and ${errors.length - 3} more` : ''}`);
+      toast.error(`Please fix: ${errors.slice(0, 3).join(', ')}${errors.length > 3 ? ` and ${errors.length - 3} more` : ''}`);
       return;
     }
 
@@ -535,15 +551,20 @@ export function StepUnitTypes() {
                   value={formData.sizeMin}
                   onChange={(v) => setFormData(prev => ({ ...prev, sizeMin: v }))}
                   placeholder="From"
-                  className="rounded-xl"
+                  className={cn("rounded-xl", sizeRangeError && "border-primary ring-1 ring-primary")}
                 />
                 <FormattedNumberInput
                   value={formData.sizeMax}
                   onChange={(v) => setFormData(prev => ({ ...prev, sizeMax: v }))}
                   placeholder="To"
-                  className="rounded-xl"
+                  className={cn("rounded-xl", sizeRangeError && "border-primary ring-1 ring-primary")}
                 />
               </div>
+              {sizeRangeError && (
+                <p className="text-sm text-primary flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
+                  "From" must be smaller than "To"
+                </p>
+              )}
             </div>
 
             {/* Floor Range */}
@@ -569,16 +590,21 @@ export function StepUnitTypes() {
                   placeholder="From"
                   value={formData.floorMin || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, floorMin: e.target.value ? Number(e.target.value) : undefined }))}
-                  className="rounded-xl"
+                  className={cn("rounded-xl", floorRangeError && "border-primary ring-1 ring-primary")}
                 />
                 <Input
                   type="number"
                   placeholder="To"
                   value={formData.floorMax || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, floorMax: e.target.value ? Number(e.target.value) : undefined }))}
-                  className="rounded-xl"
+                  className={cn("rounded-xl", floorRangeError && "border-primary ring-1 ring-primary")}
                 />
               </div>
+              {floorRangeError && (
+                <p className="text-sm text-primary flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
+                  "From" must be smaller than "To"
+                </p>
+              )}
             </div>
 
             {/* Price Range */}
@@ -589,17 +615,22 @@ export function StepUnitTypes() {
                   value={formData.priceMin}
                   onChange={(v) => setFormData(prev => ({ ...prev, priceMin: v }))}
                   placeholder="From"
-                  className="rounded-xl"
+                  className={cn("rounded-xl", priceRangeError && "border-primary ring-1 ring-primary")}
                   prefix="₪"
                 />
                 <FormattedNumberInput
                   value={formData.priceMax}
                   onChange={(v) => setFormData(prev => ({ ...prev, priceMax: v }))}
                   placeholder="To"
-                  className="rounded-xl"
+                  className={cn("rounded-xl", priceRangeError && "border-primary ring-1 ring-primary")}
                   prefix="₪"
                 />
               </div>
+              {priceRangeError && (
+                <p className="text-sm text-primary flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
+                  "From" must be smaller than "To"
+                </p>
+              )}
             </div>
 
             {/* Outdoor Space */}
