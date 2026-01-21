@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { Plus, Trash2, Edit2, Upload, Home, Bed, Bath, Ruler, Layers, DollarSign, Image, X, Loader2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, Upload, Home, Bed, Bath, Ruler, Layers, DollarSign, Image, X, Loader2, GripVertical, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -510,7 +511,21 @@ export function StepUnitTypes() {
 
             {/* Floor Range */}
             <div className="space-y-2">
-              <Label>Floor Range</Label>
+              <div className="flex items-center gap-1.5">
+                <Label>Floor Range</Label>
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                        <HelpCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-sm">
+                      <p>Which floors of the building is this unit type available on? For example, 2-10 means this unit type exists on floors 2 through 10.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   type="number"
