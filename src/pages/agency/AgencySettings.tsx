@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
@@ -67,6 +68,7 @@ export default function AgencySettings() {
     email: '',
     phone: '',
     website: '',
+    office_address: '',
     is_accepting_agents: true,
   });
 
@@ -91,6 +93,7 @@ export default function AgencySettings() {
         email: agency.email || '',
         phone: agency.phone || '',
         website: agency.website || '',
+        office_address: (agency as any).office_address || '',
         is_accepting_agents: agency.is_accepting_agents ?? true,
       });
       setNotificationSettings({
@@ -385,6 +388,20 @@ export default function AgencySettings() {
                           onChange={(value) => updateField('phone', value)}
                         />
                       </div>
+                    </div>
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="office_address" className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        Office Address
+                      </Label>
+                      <AddressAutocomplete
+                        value={formData.office_address}
+                        onAddressSelect={(address) => {
+                          updateField('office_address', address.fullAddress);
+                        }}
+                        placeholder="Start typing your office address..."
+                      />
                     </div>
 
                     <div className="space-y-2">

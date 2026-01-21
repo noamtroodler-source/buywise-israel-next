@@ -16,6 +16,7 @@ import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
 import { PropertyType, ListingStatus } from '@/types/database';
+import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -398,11 +399,20 @@ export default function EditProperty() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="address">Address *</Label>
-                    <Input
-                      id="address"
+                    <AddressAutocomplete
                       value={formData.address}
-                      onChange={(e) => updateField('address', e.target.value)}
-                      required
+                      onAddressSelect={(address) => {
+                        updateField('address', address.fullAddress);
+                        updateField('city', address.city);
+                        updateField('neighborhood', address.neighborhood);
+                        updateField('latitude', address.latitude);
+                        updateField('longitude', address.longitude);
+                      }}
+                      onInputChange={() => {
+                        updateField('latitude', undefined);
+                        updateField('longitude', undefined);
+                      }}
+                      placeholder="Start typing: Rothschild 42, Tel Aviv..."
                     />
                   </div>
                 </div>
