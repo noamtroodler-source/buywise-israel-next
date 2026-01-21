@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Eye, MessageSquare, Building2, Target, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Eye, MessageSquare, Building2, Minus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
@@ -26,8 +26,8 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: Me
   const isNeutral = change === 0;
 
   return (
-    <Card>
-      <CardContent className="p-4">
+    <Card className="h-full">
+      <CardContent className="p-4 flex flex-col h-full">
         <div className="flex items-start justify-between">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <Icon className="h-5 w-5 text-primary" />
@@ -35,8 +35,8 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: Me
           {previousValue !== undefined && (
             <div className={cn(
               "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-              isPositive && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-              !isPositive && !isNeutral && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+              isPositive && "bg-primary/10 text-primary",
+              !isPositive && !isNeutral && "bg-muted text-muted-foreground",
               isNeutral && "bg-muted text-muted-foreground"
             )}>
               {isPositive ? (
@@ -50,17 +50,18 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: Me
             </div>
           )}
         </div>
-        <div className="mt-3">
+        <div className="mt-3 flex-grow">
           <p className="text-2xl font-bold">
             {typeof value === 'number' ? value.toLocaleString() : value}{suffix}
           </p>
           <p className="text-sm text-muted-foreground">{title}</p>
         </div>
-        {previousValue !== undefined && (
-          <p className="text-xs text-muted-foreground mt-1">
-            vs {previousValue.toLocaleString()} last week
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          {previousValue !== undefined 
+            ? `vs ${previousValue.toLocaleString()} last week`
+            : '\u00A0'
+          }
+        </p>
       </CardContent>
     </Card>
   );
@@ -159,17 +160,11 @@ export function DeveloperPerformanceInsights() {
   });
 
   const activeProjects = projects.filter(p => p.verification_status === 'approved').length;
-  const conversionRate = thisWeekViews > 0 
-    ? ((thisWeekInquiries / thisWeekViews) * 100).toFixed(1)
-    : '0';
-  const lastWeekConversion = lastWeekViews > 0
-    ? ((lastWeekInquiries / lastWeekViews) * 100)
-    : 0;
 
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">This Week's Performance</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -203,19 +198,6 @@ export function DeveloperPerformanceInsights() {
             title="Active Projects"
             value={activeProjects}
             icon={Building2}
-          />
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <MetricCard
-            title="Conversion Rate"
-            value={conversionRate}
-            previousValue={lastWeekConversion}
-            icon={Target}
-            suffix="%"
           />
         </motion.div>
       </div>
