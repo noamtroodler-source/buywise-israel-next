@@ -43,7 +43,7 @@ export function ToolsSpotlight() {
         >
           <div>
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-              Plan Your Move
+              Plan Your Purchase
             </h2>
             <p className="text-base text-muted-foreground mt-1">
               Free calculators built for Israel
