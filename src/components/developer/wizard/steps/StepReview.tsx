@@ -6,8 +6,10 @@ import { useProjectWizard } from '../ProjectWizardContext';
 const statusLabels: Record<string, string> = {
   planning: 'Planning Phase',
   pre_sale: 'Pre-Sale',
-  under_construction: 'Under Construction',
-  completed: 'Completed',
+  foundation: 'Foundation',
+  structure: 'Structure',
+  finishing: 'Finishing',
+  delivery: 'Delivery',
 };
 
 const amenityLabels: Record<string, string> = {

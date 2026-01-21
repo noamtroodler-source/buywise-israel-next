@@ -93,6 +93,7 @@ import DeveloperAnalytics from "./pages/developer/DeveloperAnalytics";
 import DeveloperSettings from "./pages/developer/DeveloperSettings";
 import DeveloperLeads from "./pages/developer/DeveloperLeads";
 import NewProjectWizard from "./pages/developer/NewProjectWizard";
+import EditProjectWizard from "./pages/developer/EditProjectWizard";
 import GetStarted from "./pages/GetStarted";
 
 const queryClient = new QueryClient();
@@ -250,6 +251,11 @@ const App = () => (
             <Route path="/developer/projects/new" element={
               <ProtectedRoute requiredRole="developer">
                 <NewProjectWizard />
+              </ProtectedRoute>
+            } />
+            <Route path="/developer/projects/:id/edit" element={
+              <ProtectedRoute requiredRole="developer">
+                <EditProjectWizard />
               </ProtectedRoute>
             } />
             <Route path="/developer/analytics" element={
