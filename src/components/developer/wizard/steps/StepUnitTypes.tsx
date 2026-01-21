@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Trash2, Edit2, Upload, Home, Bed, Bath, Ruler, Layers, DollarSign, Image, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Upload, Home, Bed, Bath, Ruler, Layers, DollarSign, Image, X, Loader2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useProjectWizard, UnitTypeData, OutdoorSpaceType } from '../ProjectWizardContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const UNIT_TYPE_PRESETS = [
   '2-Room Apartment',
@@ -47,6 +65,137 @@ const defaultUnitType: Omit<UnitTypeData, 'id'> = {
   quantity: undefined,
 };
 
+// Sortable Unit Card Component
+interface SortableUnitCardProps {
+  unitType: UnitTypeData;
+  onEdit: () => void;
+  onDelete: () => void;
+  formatPrice: (price: number) => string;
+}
+
+function SortableUnitCard({ unitType, onEdit, onDelete, formatPrice }: SortableUnitCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: unitType.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group hover:border-primary/30 transition-colors",
+        isDragging && "opacity-50 shadow-xl z-50 bg-card"
+      )}
+    >
+      <CardContent className="p-4">
+        <div className="flex gap-3">
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center justify-center w-6 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 touch-none"
+          >
+            <GripVertical className="h-5 w-5" />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 flex-1 min-w-0">
+            {/* Floor Plan Preview */}
+            <div className="w-full sm:w-32 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+              {unitType.floorPlanUrl ? (
+                <img
+                  src={unitType.floorPlanUrl}
+                  alt={`${unitType.name} floor plan`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Image className="h-8 w-8 opacity-30" />
+                </div>
+              )}
+            </div>
+
+            {/* Unit Details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="font-semibold text-lg truncate">{unitType.name}</h3>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={onDelete}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Bed className="h-3.5 w-3.5" />
+                  {unitType.bedrooms} Bed
+                </span>
+                <span className="flex items-center gap-1">
+                  <Bath className="h-3.5 w-3.5" />
+                  {unitType.bathrooms} Bath
+                </span>
+                {(unitType.sizeMin || unitType.sizeMax) && (
+                  <span className="flex items-center gap-1">
+                    <Ruler className="h-3.5 w-3.5" />
+                    {unitType.sizeMin && unitType.sizeMax
+                      ? `${unitType.sizeMin}-${unitType.sizeMax} m²`
+                      : `${unitType.sizeMin || unitType.sizeMax} m²`}
+                  </span>
+                )}
+                {(unitType.floorMin || unitType.floorMax) && (
+                  <span className="flex items-center gap-1">
+                    <Layers className="h-3.5 w-3.5" />
+                    Floors {unitType.floorMin}-{unitType.floorMax}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {(unitType.priceMin || unitType.priceMax) && (
+                  <Badge variant="secondary" className="font-normal">
+                    <DollarSign className="h-3 w-3 mr-0.5" />
+                    {unitType.priceMin && unitType.priceMax
+                      ? `${formatPrice(unitType.priceMin)} - ${formatPrice(unitType.priceMax)}`
+                      : formatPrice(unitType.priceMin || unitType.priceMax!)}
+                  </Badge>
+                )}
+                {unitType.outdoorSpace !== 'none' && (
+                  <Badge variant="outline" className="font-normal capitalize">
+                    {unitType.outdoorSpace.replace('_', ' ')}
+                  </Badge>
+                )}
+                {unitType.quantity && (
+                  <Badge variant="outline" className="font-normal">
+                    {unitType.quantity} units
+                  </Badge>
+                )}
+                {unitType.floorPlanUrl && (
+                  <Badge variant="default" className="font-normal bg-primary/10 text-primary border-primary/20">
+                    Floor Plan Added
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function StepUnitTypes() {
   const { data, updateData } = useProjectWizard();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,6 +204,31 @@ export function StepUnitTypes() {
   const [isUploading, setIsUploading] = useState(false);
   const [customName, setCustomName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = data.unit_types.findIndex(ut => ut.id === active.id);
+      const newIndex = data.unit_types.findIndex(ut => ut.id === over.id);
+
+      updateData({
+        unit_types: arrayMove(data.unit_types, oldIndex, newIndex),
+      });
+
+      toast.success('Unit type order updated');
+    }
+  };
 
   const handleAddNew = () => {
     setEditingUnit(null);
@@ -182,11 +356,11 @@ export function StepUnitTypes() {
       <div>
         <h2 className="text-xl font-semibold mb-1">Unit Types & Floor Plans</h2>
         <p className="text-muted-foreground text-sm">
-          Define the types of units available in your project. Each type can have its own floor plan.
+          Define the types of units available in your project. Drag to reorder how they appear on the project page.
         </p>
       </div>
 
-      {/* Unit Type Cards */}
+      {/* Unit Type Cards with Drag-and-Drop */}
       <div className="space-y-4">
         {data.unit_types.length === 0 ? (
           <Card className="border-dashed border-2 border-muted-foreground/20">
@@ -203,94 +377,28 @@ export function StepUnitTypes() {
           </Card>
         ) : (
           <>
-            {data.unit_types.map((unitType) => (
-              <Card key={unitType.id} className="group hover:border-primary/30 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    {/* Floor Plan Preview */}
-                    <div className="w-full sm:w-32 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                      {unitType.floorPlanUrl ? (
-                        <img
-                          src={unitType.floorPlanUrl}
-                          alt={`${unitType.name} floor plan`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <Image className="h-8 w-8 opacity-30" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Unit Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-semibold text-lg truncate">{unitType.name}</h3>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(unitType)}>
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(unitType.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Bed className="h-3.5 w-3.5" />
-                          {unitType.bedrooms} Bed
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bath className="h-3.5 w-3.5" />
-                          {unitType.bathrooms} Bath
-                        </span>
-                        {(unitType.sizeMin || unitType.sizeMax) && (
-                          <span className="flex items-center gap-1">
-                            <Ruler className="h-3.5 w-3.5" />
-                            {unitType.sizeMin && unitType.sizeMax
-                              ? `${unitType.sizeMin}-${unitType.sizeMax} m²`
-                              : `${unitType.sizeMin || unitType.sizeMax} m²`}
-                          </span>
-                        )}
-                        {(unitType.floorMin || unitType.floorMax) && (
-                          <span className="flex items-center gap-1">
-                            <Layers className="h-3.5 w-3.5" />
-                            Floors {unitType.floorMin}-{unitType.floorMax}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
-                        {(unitType.priceMin || unitType.priceMax) && (
-                          <Badge variant="secondary" className="font-normal">
-                            <DollarSign className="h-3 w-3 mr-0.5" />
-                            {unitType.priceMin && unitType.priceMax
-                              ? `${formatPrice(unitType.priceMin)} - ${formatPrice(unitType.priceMax)}`
-                              : formatPrice(unitType.priceMin || unitType.priceMax!)}
-                          </Badge>
-                        )}
-                        {unitType.outdoorSpace !== 'none' && (
-                          <Badge variant="outline" className="font-normal capitalize">
-                            {unitType.outdoorSpace.replace('_', ' ')}
-                          </Badge>
-                        )}
-                        {unitType.quantity && (
-                          <Badge variant="outline" className="font-normal">
-                            {unitType.quantity} units
-                          </Badge>
-                        )}
-                        {unitType.floorPlanUrl && (
-                          <Badge variant="default" className="font-normal bg-primary/10 text-primary border-primary/20">
-                            Floor Plan Added
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={data.unit_types.map(ut => ut.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-4">
+                  {data.unit_types.map((unitType) => (
+                    <SortableUnitCard
+                      key={unitType.id}
+                      unitType={unitType}
+                      onEdit={() => handleEdit(unitType)}
+                      onDelete={() => handleDelete(unitType.id)}
+                      formatPrice={formatPrice}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
 
             <Button variant="outline" onClick={handleAddNew} className="w-full rounded-xl border-dashed">
               <Plus className="h-4 w-4 mr-2" />
@@ -304,7 +412,7 @@ export function StepUnitTypes() {
       <div className="bg-muted/50 p-4 rounded-lg text-sm text-muted-foreground">
         <p>
           <strong>Tip:</strong> Floor plans are optional but highly recommended. Projects with floor plans receive 
-          significantly more inquiries. You can always add them later.
+          significantly more inquiries. Drag the grip handle to reorder unit types.
         </p>
       </div>
 

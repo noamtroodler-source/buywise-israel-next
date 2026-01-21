@@ -18,6 +18,7 @@ export interface UnitTypeData {
   outdoorSpace: OutdoorSpaceType;
   floorPlanUrl: string | undefined;
   quantity: number | undefined;
+  displayOrder?: number; // For drag-and-drop ordering
 }
 
 export interface ProjectWizardData {

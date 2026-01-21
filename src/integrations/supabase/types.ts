@@ -1846,6 +1846,7 @@ export type Database = {
           bedrooms: number | null
           created_at: string
           currency: string | null
+          display_order: number | null
           floor: number | null
           floor_plan_url: string | null
           id: string
@@ -1860,6 +1861,7 @@ export type Database = {
           bedrooms?: number | null
           created_at?: string
           currency?: string | null
+          display_order?: number | null
           floor?: number | null
           floor_plan_url?: string | null
           id?: string
@@ -1874,6 +1876,7 @@ export type Database = {
           bedrooms?: number | null
           created_at?: string
           currency?: string | null
+          display_order?: number | null
           floor?: number | null
           floor_plan_url?: string | null
           id?: string
