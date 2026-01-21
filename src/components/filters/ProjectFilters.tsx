@@ -33,8 +33,10 @@ interface ProjectFiltersProps {
 const PROJECT_STATUSES = [
   { value: 'planning', label: 'Planning' },
   { value: 'pre_sale', label: 'Pre-Sale' },
-  { value: 'under_construction', label: 'Under Construction' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'foundation', label: 'Foundation' },
+  { value: 'structure', label: 'Structure' },
+  { value: 'finishing', label: 'Finishing' },
+  { value: 'delivery', label: 'Delivery' },
 ];
 
 const SORT_OPTIONS = [

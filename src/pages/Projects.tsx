@@ -24,8 +24,10 @@ export default function Projects() {
     switch (status) {
       case 'planning': return 'Planning';
       case 'pre_sale': return 'Pre-Sale';
-      case 'under_construction': return 'Under Construction';
-      case 'completed': return 'Completed';
+      case 'foundation': return 'Foundation';
+      case 'structure': return 'Structure';
+      case 'finishing': return 'Finishing';
+      case 'delivery': return 'Delivery';
       default: return status;
     }
   };
@@ -34,8 +36,10 @@ export default function Projects() {
     switch (status) {
       case 'planning': return 'bg-primary/70 text-primary-foreground';
       case 'pre_sale': return 'bg-primary text-primary-foreground';
-      case 'under_construction': return 'bg-primary text-primary-foreground';
-      case 'completed': return 'bg-muted text-muted-foreground';
+      case 'foundation': return 'bg-amber-500 text-white';
+      case 'structure': return 'bg-orange-500 text-white';
+      case 'finishing': return 'bg-yellow-500 text-white';
+      case 'delivery': return 'bg-green-500 text-white';
       default: return 'bg-secondary text-secondary-foreground';
     }
   };
@@ -240,20 +244,22 @@ export default function Projects() {
                               <span className="text-muted-foreground">
                                 {project.status === 'planning' && 'Planning Phase'}
                                 {project.status === 'pre_sale' && 'Pre-Sale'}
-                                {project.status === 'under_construction' && 'Construction Progress'}
-                                {project.status === 'completed' && 'Ready for Move-In'}
+                                {project.status === 'foundation' && 'Foundation'}
+                                {project.status === 'structure' && 'Structure'}
+                                {project.status === 'finishing' && 'Finishing'}
+                                {project.status === 'delivery' && 'Ready for Move-In'}
                               </span>
                               <span className="font-medium text-primary">
                                 {project.status === 'planning' && 'Coming Soon'}
                                 {project.status === 'pre_sale' && 'Starting Soon'}
-                                {project.status === 'under_construction' && `${(project as any).construction_progress_percent || 0}%`}
-                                {project.status === 'completed' && '100%'}
+                                {['foundation', 'structure', 'finishing'].includes(project.status) && `${(project as any).construction_progress_percent || 0}%`}
+                                {project.status === 'delivery' && '100%'}
                               </span>
                             </div>
                             <Progress 
                               value={
-                                project.status === 'completed' ? 100 :
-                                project.status === 'under_construction' ? ((project as any).construction_progress_percent || 0) :
+                                project.status === 'delivery' ? 100 :
+                                ['foundation', 'structure', 'finishing'].includes(project.status) ? ((project as any).construction_progress_percent || 0) :
                                 0
                               } 
                               className="h-1.5" 

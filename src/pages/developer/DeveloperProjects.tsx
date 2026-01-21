@@ -54,8 +54,10 @@ const getStatusLabel = (status: string) => {
   switch (status) {
     case 'planning': return 'Planning';
     case 'pre_sale': return 'Pre-Sale';
-    case 'under_construction': return 'Under Construction';
-    case 'completed': return 'Completed';
+    case 'foundation': return 'Foundation';
+    case 'structure': return 'Structure';
+    case 'finishing': return 'Finishing';
+    case 'delivery': return 'Delivery';
     default: return status;
   }
 };
@@ -124,7 +126,7 @@ export default function DeveloperProjects() {
 
           <div className="flex items-center gap-4 flex-shrink-0">
             {/* Progress indicator */}
-            {project.status === 'under_construction' && project.construction_progress_percent !== null && (
+            {['foundation', 'structure', 'finishing'].includes(project.status) && project.construction_progress_percent !== null && (
               <div className="hidden sm:flex flex-col items-end gap-1 min-w-[100px]">
                 <span className="text-xs text-muted-foreground">
                   {project.construction_progress_percent}% complete
