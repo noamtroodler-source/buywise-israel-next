@@ -344,9 +344,9 @@ export function StepUnitTypes() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a JPG, PNG, WebP, or PDF file');
+      toast.error('Please upload a JPG, PNG, or WebP image');
       return;
     }
 
@@ -675,7 +675,7 @@ export function StepUnitTypes() {
                         Click to upload floor plan
                       </p>
                       <p className="text-xs text-muted-foreground/60 mt-1">
-                        JPG, PNG, WebP, or PDF up to 10MB
+                        JPG, PNG, or WebP up to 10MB
                       </p>
                     </>
                   )}
@@ -684,7 +684,7 @@ export function StepUnitTypes() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={handleFloorPlanUpload}
               />
