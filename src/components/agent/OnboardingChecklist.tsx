@@ -10,7 +10,8 @@ import {
   Eye, 
   X, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Share2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,11 @@ interface OnboardingChecklistProps {
     bio?: string | null;
     languages?: string[] | null;
     specializations?: string[] | null;
+    social_links?: {
+      linkedin?: string;
+      instagram?: string;
+      facebook?: string;
+    } | null;
   } | null;
   properties: {
     id: string;
@@ -73,6 +79,12 @@ export function OnboardingChecklist({
     p => (p.views_count || 0) > 0
   );
 
+  const hasSocialLinks = Boolean(
+    agentProfile?.social_links?.linkedin ||
+    agentProfile?.social_links?.instagram ||
+    agentProfile?.social_links?.facebook
+  );
+
   const checklistItems: ChecklistItem[] = [
     {
       id: 'profile',
@@ -81,6 +93,14 @@ export function OnboardingChecklist({
       completed: hasEnhancedProfile,
       href: '/agent/settings',
       icon: User,
+    },
+    {
+      id: 'socials',
+      title: 'Add your social links',
+      description: 'Connect LinkedIn, Instagram, or Facebook',
+      completed: hasSocialLinks,
+      href: '/agent/settings',
+      icon: Share2,
     },
     {
       id: 'listing',

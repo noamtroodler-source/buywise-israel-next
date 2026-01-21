@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, Circle, X, ChevronDown, ChevronUp,
-  Image, FileText, Phone, Globe, MapPin, Briefcase, Users, Home
+  Image, FileText, Phone, Globe, MapPin, Briefcase, Users, Home, Share2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,11 @@ interface AgencyOnboardingProgressProps {
     website: string | null;
     cities_covered: string[] | null;
     specializations: string[] | null;
+    social_links?: {
+      linkedin?: string;
+      instagram?: string;
+      facebook?: string;
+    } | null;
   };
   teamCount: number;
   listingsCount?: number;
@@ -75,6 +80,14 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Link to your company website',
       icon: Globe,
       isComplete: !!agency.website,
+      link: '/agency/settings',
+    },
+    {
+      id: 'socials',
+      label: 'Add social links',
+      description: 'Connect LinkedIn, Instagram, or Facebook',
+      icon: Share2,
+      isComplete: !!(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook),
       link: '/agency/settings',
     },
     {
