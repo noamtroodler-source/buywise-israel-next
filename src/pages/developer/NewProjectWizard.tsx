@@ -13,7 +13,7 @@ import { useCreateProject } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
-import confetti from 'canvas-confetti';
+import { ProjectSubmittedDialog } from '@/components/developer/ProjectSubmittedDialog';
 
 const steps = [
   { title: 'Basics', description: 'Name, location, status' },
@@ -41,6 +41,7 @@ function WizardContent() {
   const { data: developerProfile } = useDeveloperProfile();
   const createProject = useCreateProject();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
 
   const isDeveloperVerified = developerProfile?.verification_status === 'approved';
 
@@ -111,9 +112,7 @@ function WizardContent() {
       });
       
       autoSave.clearSavedData();
-      
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      setTimeout(() => navigate('/developer/projects'), 1500);
+      setShowSubmittedDialog(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -265,6 +264,12 @@ function WizardContent() {
           </motion.div>
         </div>
       </div>
+
+      <ProjectSubmittedDialog
+        open={showSubmittedDialog}
+        onClose={() => setShowSubmittedDialog(false)}
+        projectName={data.name}
+      />
     </Layout>
   );
 }
