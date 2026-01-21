@@ -561,6 +561,7 @@ export type Database = {
           id: string
           is_first_property: boolean
           is_upgrading: boolean | null
+          mortgage_preferences: Json | null
           onboarding_completed: boolean
           purchase_purpose: string
           rental_budget: number | null
@@ -578,6 +579,7 @@ export type Database = {
           id?: string
           is_first_property?: boolean
           is_upgrading?: boolean | null
+          mortgage_preferences?: Json | null
           onboarding_completed?: boolean
           purchase_purpose?: string
           rental_budget?: number | null
@@ -595,6 +597,7 @@ export type Database = {
           id?: string
           is_first_property?: boolean
           is_upgrading?: boolean | null
+          mortgage_preferences?: Json | null
           onboarding_completed?: boolean
           purchase_purpose?: string
           rental_budget?: number | null

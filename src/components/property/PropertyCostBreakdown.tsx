@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, TrendingUp, Building2 } from 'lucide-react';
+import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, TrendingUp, Building2, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -9,6 +9,8 @@ import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/h
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useAuth } from '@/hooks/useAuth';
+import { useMortgageEstimate } from '@/hooks/useMortgagePreferences';
+import { MortgageAssumptionsPanel } from './MortgageAssumptionsPanel';
 import { Link } from 'react-router-dom';
 import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 
@@ -88,6 +90,9 @@ export function PropertyCostBreakdown({
   // Fetch city-specific data
   const citySlug = city?.toLowerCase().replace(/\s+/g, '-');
   const { data: cityData } = useCityDetails(citySlug || '');
+  
+  // Get mortgage estimate
+  const mortgageEstimate = useMortgageEstimate(price);
   
   // Calculate purchase tax from DB brackets
   const purchaseTax = useMemo(() => {
@@ -361,19 +366,48 @@ export function PropertyCostBreakdown({
         </div>
         </TooltipProvider>
 
-        {/* Monthly Costs */}
+        {/* Monthly Costs with Mortgage */}
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            <h4 className="font-medium text-foreground">Estimated Monthly</h4>
-            {city && cityData && (
-              <Badge variant="outline" className="text-xs ml-auto">
-                <MapPin className="h-3 w-3 mr-1" />
-                {city} rates
-              </Badge>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <h4 className="font-medium text-foreground">Estimated Monthly</h4>
+            </div>
+            <div className="flex items-center gap-2">
+              {city && cityData && (
+                <Badge variant="outline" className="text-xs">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {city} rates
+                </Badge>
+              )}
+              <MortgageAssumptionsPanel 
+                propertyPrice={price} 
+                currency={currency}
+              />
+            </div>
           </div>
           <div className="space-y-2 text-sm">
+            {/* Mortgage Payment Row - Hero item */}
+            <div className="flex justify-between py-3 border-b border-border/50">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Home className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">Mortgage Payment</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatPrice(mortgageEstimate.loanAmount, 'ILS')} loan · {mortgageEstimate.termYears}yr · 4.5–6% rates
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="font-semibold text-primary">
+                  {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  {mortgageEstimate.downPaymentPercent}% down
+                </p>
+              </div>
+            </div>
+            
             <div className="flex justify-between py-2 border-b border-border/50">
               <div>
                 <span className="text-muted-foreground">Arnona (monthly)</span>
@@ -398,9 +432,52 @@ export function PropertyCostBreakdown({
               <span className="text-muted-foreground">Home Insurance</span>
               <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
             </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-2">
-              <span className="font-semibold">Total Monthly (excl. mortgage)</span>
-              <span className="font-bold text-primary">{formatPrice(totalMonthly, 'ILS')}</span>
+            
+            {/* Total Monthly with mortgage */}
+            <div className="flex justify-between py-3 bg-primary/5 px-3 rounded-xl mt-2 border border-primary/20">
+              <span className="font-semibold text-foreground">Total Monthly</span>
+              <div className="text-right">
+                <span className="font-bold text-primary">
+                  {formatPrice(mortgageEstimate.monthlyPaymentLow + totalMonthly, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh + totalMonthly, 'ILS').replace('₪', '')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Cash to Close Summary */}
+        <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <h4 className="font-medium text-foreground">Cash to Close</h4>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Total cash needed to complete the purchase, including down payment and one-time fees.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Down Payment ({mortgageEstimate.downPaymentPercent}%)</span>
+              <span className="font-medium">{formatPrice(mortgageEstimate.downPayment, 'ILS')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">One-Time Costs</span>
+              <span className="font-medium">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</span>
+            </div>
+            <Separator className="my-2" />
+            <div className="flex justify-between">
+              <span className="font-semibold">Total Cash Needed</span>
+              <span className="font-bold text-primary">
+                {formatPriceRange(
+                  mortgageEstimate.downPayment + totalOneTimeRange.low, 
+                  mortgageEstimate.downPayment + totalOneTimeRange.high, 
+                  'ILS'
+                )}
+              </span>
             </div>
           </div>
         </div>
