@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFeaturedProjects } from '@/hooks/useProjects';
+import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
+import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 
 function formatPrice(price: number | null, currency: string = 'ILS') {
   if (!price) return 'Price on request';
@@ -93,6 +95,23 @@ export function ProjectsHighlight() {
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+              
+              {/* Action Buttons - Top Right */}
+              <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                {/* Share - visible on hover */}
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <ProjectShareButton
+                    projectSlug={mainProject.slug}
+                    projectName={mainProject.name}
+                    className="h-8 w-8 rounded-full"
+                  />
+                </div>
+                {/* Favorite - always visible */}
+                <ProjectFavoriteButton
+                  projectId={mainProject.id}
+                  className="h-8 w-8 rounded-full bg-background/80 hover:bg-background"
+                />
+              </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-primary text-primary-foreground text-xs">
@@ -134,6 +153,23 @@ export function ProjectsHighlight() {
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
+                
+                {/* Action Buttons - Top Right */}
+                <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+                  {/* Share - visible on hover */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ProjectShareButton
+                      projectSlug={project.slug}
+                      projectName={project.name}
+                      className="h-7 w-7 rounded-full"
+                    />
+                  </div>
+                  {/* Favorite - always visible */}
+                  <ProjectFavoriteButton
+                    projectId={project.id}
+                    className="h-7 w-7 rounded-full bg-background/80 hover:bg-background"
+                  />
+                </div>
                 <div className="absolute bottom-0 left-0 right-0 p-3">
                   <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">
                     New Project
