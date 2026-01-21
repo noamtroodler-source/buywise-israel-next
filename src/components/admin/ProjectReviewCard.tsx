@@ -21,9 +21,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { AdminProject, ProjectVerificationStatus } from '@/hooks/useAdminProjects';
+import { AdminProject, ProjectVerificationStatus, useAdminProjectUnits } from '@/hooks/useAdminProjects';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ProjectPreviewModal } from './ProjectPreviewModal';
+import { CategorizedAmenities } from './CategorizedAmenities';
+import { UnitTypesPreview } from './UnitTypesPreview';
 
 interface ProjectReviewCardProps {
   project: AdminProject;
@@ -100,6 +102,9 @@ export function ProjectReviewCard({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [reason, setReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
+
+  // Fetch units when expanded
+  const { data: projectUnits = [] } = useAdminProjectUnits(isExpanded ? project.id : undefined);
 
   const status = (project.verification_status || 'draft') as ProjectVerificationStatus;
   const statusInfo = statusConfig[status];
@@ -304,17 +309,19 @@ export function ProjectReviewCard({
                       </div>
                     )}
 
-                    {/* Amenities */}
+                    {/* Amenities - Categorized */}
                     {project.amenities && project.amenities.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-2">Amenities ({project.amenities.length})</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {project.amenities.map((amenity) => (
-                            <Badge key={amenity} variant="secondary" className="text-xs">
-                              {amenityLabels[amenity] || amenity}
-                            </Badge>
-                          ))}
-                        </div>
+                        <CategorizedAmenities amenities={project.amenities} compact />
+                      </div>
+                    )}
+
+                    {/* Unit Types Summary */}
+                    {projectUnits.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Unit Types</h4>
+                        <UnitTypesPreview units={projectUnits} compact />
                       </div>
                     )}
 

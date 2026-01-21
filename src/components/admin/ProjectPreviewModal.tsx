@@ -9,11 +9,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
   X, ChevronLeft, ChevronRight, MapPin, Building2, Calendar,
-  Home, TrendingUp, Phone, Mail, MessageCircle, Info, Clock, FileImage
+  Home, TrendingUp, Phone, Mail, MessageCircle, Info, Clock, FileImage, Loader2
 } from 'lucide-react';
-import { AdminProject } from '@/hooks/useAdminProjects';
+import { AdminProject, useAdminProjectUnits } from '@/hooks/useAdminProjects';
 import useEmblaCarousel from 'embla-carousel-react';
 import { format } from 'date-fns';
+import { CategorizedAmenities } from './CategorizedAmenities';
+import { UnitTypesPreview } from './UnitTypesPreview';
 
 interface ProjectPreviewModalProps {
   project: AdminProject;
@@ -71,6 +73,9 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+
+  // Fetch project units for this project
+  const { data: projectUnits = [], isLoading: unitsLoading } = useAdminProjectUnits(open ? project.id : undefined);
 
   const images = project.images || [];
   const floorPlans = project.floor_plans || [];
@@ -369,25 +374,33 @@ export function ProjectPreviewModal({ project, open, onOpenChange }: ProjectPrev
                   </>
                 )}
 
-                {/* Amenities */}
+                {/* Amenities - Categorized */}
                 {amenities.length > 0 && (
                   <>
                     <Separator />
                     <div>
                       <h2 className="text-lg font-semibold mb-3">Amenities & Features</h2>
-                      <div className="flex flex-wrap gap-2">
-                        {amenities.map((amenity) => (
-                          <Badge key={amenity} variant="secondary" className="text-sm py-1 px-3">
-                            {amenityLabels[amenity] || amenity}
-                          </Badge>
-                        ))}
-                      </div>
+                      <CategorizedAmenities amenities={amenities} />
                     </div>
                   </>
                 )}
 
-                {/* Floor Plans */}
-                {floorPlans.length > 0 && (
+                {/* Unit Types & Floor Plans */}
+                <>
+                  <Separator />
+                  <div>
+                    {unitsLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <UnitTypesPreview units={projectUnits} />
+                    )}
+                  </div>
+                </>
+
+                {/* Legacy Floor Plans (if no unit types defined) */}
+                {floorPlans.length > 0 && projectUnits.length === 0 && (
                   <>
                     <Separator />
                     <div>
