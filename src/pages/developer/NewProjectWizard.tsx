@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 import { ProjectWizardProvider, useProjectWizard, PROJECT_WIZARD_STORAGE_KEY, ProjectWizardData } from '@/components/developer/wizard/ProjectWizardContext';
-import { StepBasics, StepDetails, StepAmenities, StepPhotos, StepDescription, StepReview } from '@/components/developer/wizard/steps';
+import { StepBasics, StepDetails, StepAmenities, StepUnitTypes, StepPhotos, StepDescription, StepReview } from '@/components/developer/wizard/steps';
 import { useCreateProject } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -19,7 +19,8 @@ const steps = [
   { title: 'Basics', description: 'Name, location, status' },
   { title: 'Details', description: 'Units, pricing, timeline' },
   { title: 'Amenities', description: 'Building features' },
-  { title: 'Photos', description: 'Images and floor plans' },
+  { title: 'Unit Types', description: 'Units & floor plans' },
+  { title: 'Gallery', description: 'Project images' },
   { title: 'Description', description: 'Project story' },
   { title: 'Review', description: 'Check and submit' },
 ];
@@ -59,6 +60,8 @@ function WizardContent() {
         city: data.city,
         neighborhood: data.neighborhood || undefined,
         address: data.address || undefined,
+        latitude: data.latitude,
+        longitude: data.longitude,
         description: data.description || undefined,
         status: data.status,
         total_units: data.total_units,
@@ -71,6 +74,7 @@ function WizardContent() {
         amenities: data.amenities.length > 0 ? data.amenities : undefined,
         images: data.images.length > 0 ? data.images : undefined,
         floor_plans: data.floor_plans.length > 0 ? data.floor_plans : undefined,
+        unit_types: data.unit_types.length > 0 ? data.unit_types : undefined,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -88,6 +92,8 @@ function WizardContent() {
         city: data.city,
         neighborhood: data.neighborhood || undefined,
         address: data.address || undefined,
+        latitude: data.latitude,
+        longitude: data.longitude,
         description: data.description || undefined,
         status: data.status,
         total_units: data.total_units,
@@ -100,6 +106,7 @@ function WizardContent() {
         amenities: data.amenities.length > 0 ? data.amenities : undefined,
         images: data.images.length > 0 ? data.images : undefined,
         floor_plans: data.floor_plans.length > 0 ? data.floor_plans : undefined,
+        unit_types: data.unit_types.length > 0 ? data.unit_types : undefined,
         submitForReview: true,
       });
       
@@ -117,9 +124,10 @@ function WizardContent() {
       case 0: return <StepBasics />;
       case 1: return <StepDetails />;
       case 2: return <StepAmenities />;
-      case 3: return <StepPhotos />;
-      case 4: return <StepDescription />;
-      case 5: return <StepReview onEditStep={setCurrentStep} />;
+      case 3: return <StepUnitTypes />;
+      case 4: return <StepPhotos />;
+      case 5: return <StepDescription />;
+      case 6: return <StepReview onEditStep={setCurrentStep} />;
       default: return null;
     }
   };

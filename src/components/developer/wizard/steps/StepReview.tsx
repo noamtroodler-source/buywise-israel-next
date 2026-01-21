@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye } from 'lucide-react';
+import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye, Home, Bed, Bath } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProjectWizard } from '../ProjectWizardContext';
@@ -234,15 +234,40 @@ export function StepReview({ onEditStep }: StepReviewProps) {
         </div>
       )}
 
+      {/* Unit Types Section */}
+      {data.unit_types.length > 0 && (
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Unit Types ({data.unit_types.length})
+            </h4>
+            <Button variant="ghost" size="sm" onClick={() => onEditStep(3)}>
+              <Edit2 className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {data.unit_types.map((unitType) => (
+              <div key={unitType.id} className="flex items-center justify-between text-sm py-1 border-b last:border-0">
+                <span className="font-medium">{unitType.name}</span>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <span className="flex items-center gap-1"><Bed className="h-3 w-3" /> {unitType.bedrooms}</span>
+                  <span className="flex items-center gap-1"><Bath className="h-3 w-3" /> {unitType.bathrooms}</span>
+                  {unitType.floorPlanUrl && <Badge variant="outline" className="text-xs">Floor Plan</Badge>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Photos count */}
       <div className="bg-muted/50 p-4 rounded-lg flex items-center justify-between">
         <span className="text-sm">
-          <span className="font-medium">{data.images.length}</span> images
-          {data.floor_plans.length > 0 && (
-            <>, <span className="font-medium">{data.floor_plans.length}</span> floor plans</>
-          )}
+          <span className="font-medium">{data.images.length}</span> image{data.images.length !== 1 ? 's' : ''}
         </span>
-        <Button variant="ghost" size="sm" onClick={() => onEditStep(3)}>
+        <Button variant="ghost" size="sm" onClick={() => onEditStep(4)}>
           <Edit2 className="h-4 w-4 mr-1" />
           Edit Photos
         </Button>

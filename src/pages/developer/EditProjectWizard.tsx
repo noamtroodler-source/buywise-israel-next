@@ -8,12 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectWizardProvider, useProjectWizard } from '@/components/developer/wizard/ProjectWizardContext';
-import { StepBasics } from '@/components/developer/wizard/steps/StepBasics';
-import { StepDetails } from '@/components/developer/wizard/steps/StepDetails';
-import { StepAmenities } from '@/components/developer/wizard/steps/StepAmenities';
-import { StepPhotos } from '@/components/developer/wizard/steps/StepPhotos';
-import { StepDescription } from '@/components/developer/wizard/steps/StepDescription';
-import { StepReview } from '@/components/developer/wizard/steps/StepReview';
+import { StepBasics, StepDetails, StepAmenities, StepUnitTypes, StepPhotos, StepDescription, StepReview } from '@/components/developer/wizard/steps';
 import { useDeveloperProject, useUpdateProject, useSubmitProjectForReview } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
@@ -22,7 +17,8 @@ const steps = [
   { title: 'Basics', description: 'Name, location, status' },
   { title: 'Details', description: 'Units, pricing, timeline' },
   { title: 'Amenities', description: 'Building features' },
-  { title: 'Photos', description: 'Images and floor plans' },
+  { title: 'Unit Types', description: 'Units & floor plans' },
+  { title: 'Gallery', description: 'Project images' },
   { title: 'Description', description: 'Project story' },
   { title: 'Review', description: 'Check and submit' },
 ];
@@ -90,6 +86,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
         completion_date: project.completion_date ?? undefined,
         construction_progress_percent: project.construction_progress_percent ?? 0,
         amenities: project.amenities || [],
+        unit_types: [], // Will be loaded from project_units separately
         images: project.images || [],
         floor_plans: project.floor_plans || [],
         description: project.description || '',
@@ -143,9 +140,10 @@ function EditWizardContent({ projectId }: { projectId: string }) {
       case 0: return <StepBasics />;
       case 1: return <StepDetails />;
       case 2: return <StepAmenities />;
-      case 3: return <StepPhotos />;
-      case 4: return <StepDescription />;
-      case 5: return <StepReview onEditStep={handleEditStep} />;
+      case 3: return <StepUnitTypes />;
+      case 4: return <StepPhotos />;
+      case 5: return <StepDescription />;
+      case 6: return <StepReview onEditStep={handleEditStep} />;
       default: return null;
     }
   };
