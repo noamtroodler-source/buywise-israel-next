@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Save, Send, Loader2, CheckCircle, Clock, AlertCircle, XCircle, FileText } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, ArrowRight, Save, Send, Loader2, CheckCircle, Clock, AlertCircle, XCircle, FileText, ShieldAlert } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import { ProjectWizardProvider, useProjectWizard } from '@/components/developer/wizard/ProjectWizardContext';
 import { StepBasics } from '@/components/developer/wizard/steps/StepBasics';
 import { StepDetails } from '@/components/developer/wizard/steps/StepDetails';
@@ -15,57 +16,50 @@ import { StepDescription } from '@/components/developer/wizard/steps/StepDescrip
 import { StepReview } from '@/components/developer/wizard/steps/StepReview';
 import { useDeveloperProject, useUpdateProject, useSubmitProjectForReview } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
-import { Progress } from '@/components/ui/progress';
+import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
 
 const steps = [
-  { id: 0, name: 'Basics', description: 'Project fundamentals' },
-  { id: 1, name: 'Details', description: 'Pricing & units' },
-  { id: 2, name: 'Amenities', description: 'Features & facilities' },
-  { id: 3, name: 'Photos', description: 'Project images' },
-  { id: 4, name: 'Description', description: 'Marketing content' },
-  { id: 5, name: 'Review', description: 'Final check' },
+  { title: 'Basics', description: 'Name, location, status' },
+  { title: 'Details', description: 'Units, pricing, timeline' },
+  { title: 'Amenities', description: 'Building features' },
+  { title: 'Photos', description: 'Images and floor plans' },
+  { title: 'Description', description: 'Project story' },
+  { title: 'Review', description: 'Check and submit' },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 }
+  }
+};
 
 const getStatusInfo = (status: string | null | undefined) => {
   switch (status) {
     case 'draft':
-      return { label: 'Draft', icon: FileText, className: 'bg-muted text-muted-foreground' };
+      return { label: 'Draft', icon: FileText, variant: 'secondary' as const };
     case 'pending_review':
-      return { label: 'Pending Review', icon: Clock, className: 'bg-primary/10 text-primary' };
+      return { label: 'Pending Review', icon: Clock, variant: 'default' as const };
     case 'approved':
-      return { label: 'Live', icon: CheckCircle, className: 'bg-primary/10 text-primary' };
+      return { label: 'Live', icon: CheckCircle, variant: 'default' as const };
     case 'changes_requested':
-      return { label: 'Changes Requested', icon: AlertCircle, className: 'bg-destructive/10 text-destructive' };
+      return { label: 'Changes Requested', icon: AlertCircle, variant: 'outline' as const };
     case 'rejected':
-      return { label: 'Rejected', icon: XCircle, className: 'bg-destructive/10 text-destructive' };
+      return { label: 'Rejected', icon: XCircle, variant: 'destructive' as const };
     default:
-      return { label: 'Unknown', icon: FileText, className: 'bg-muted text-muted-foreground' };
+      return { label: 'Unknown', icon: FileText, variant: 'secondary' as const };
   }
 };
-
-function WizardProgress({ currentStep }: { currentStep: number }) {
-  const progressPercent = ((currentStep + 1) / steps.length) * 100;
-  
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between text-sm">
-        <span className="font-medium">{steps[currentStep]?.name}</span>
-        <span className="text-muted-foreground">Step {currentStep + 1} of {steps.length}</span>
-      </div>
-      <Progress value={progressPercent} className="h-2" />
-      <div className="hidden sm:flex justify-between">
-        {steps.map((step, idx) => (
-          <div 
-            key={step.id} 
-            className={`text-xs ${idx <= currentStep ? 'text-primary font-medium' : 'text-muted-foreground'}`}
-          >
-            {step.name}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function EditWizardContent({ projectId }: { projectId: string }) {
   const navigate = useNavigate();
@@ -189,149 +183,162 @@ function EditWizardContent({ projectId }: { projectId: string }) {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-        <div className="container max-w-4xl py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" asChild className="rounded-xl hover:bg-primary/5">
-                  <Link to="/developer/projects">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back
-                  </Link>
-                </Button>
-                <div>
-                  <h1 className="text-2xl font-bold">Edit Project</h1>
-                  <p className="text-sm text-muted-foreground">{project.name}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Badge className={`${statusInfo.className} gap-1`}>
-                  <StatusIcon className="h-3 w-3" />
-                  {statusInfo.label}
-                </Badge>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSaveChanges}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save
-                </Button>
-                
-                {canResubmit && (
-                  <Button
-                    size="sm"
-                    onClick={handleResubmit}
-                    disabled={isSubmitting || !isDeveloperVerified}
-                    title={!isDeveloperVerified ? 'Your developer profile must be approved first' : undefined}
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4 mr-2" />
-                    )}
-                    Submit for Review
-                  </Button>
-                )}
+      <div className="min-h-screen relative">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background -z-10" />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute top-40 right-20 w-96 h-96 bg-primary/3 rounded-full blur-3xl -z-10" />
+
+        <motion.div
+          className="container max-w-3xl py-8 space-y-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {/* Header */}
+          <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" asChild className="rounded-xl hover:bg-primary/5">
+                <Link to="/developer/projects">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Edit Project</h1>
+                <p className="text-sm text-muted-foreground">{project.name}</p>
               </div>
             </div>
+            
+            <Badge variant={statusInfo.variant} className="gap-1.5 w-fit">
+              <StatusIcon className="h-3.5 w-3.5" />
+              {statusInfo.label}
+            </Badge>
+          </motion.div>
 
-            {/* Status Alerts */}
-            {project.verification_status === 'changes_requested' && project.admin_feedback && (
-              <Alert className="border-destructive/20 bg-destructive/5">
-                <AlertCircle className="h-4 w-4 text-destructive" />
-                <AlertDescription className="text-destructive">
+          {/* Status Alerts */}
+          {project.verification_status === 'changes_requested' && project.admin_feedback && (
+            <motion.div variants={itemVariants}>
+              <Alert className="border-primary/20 bg-primary/5">
+                <AlertCircle className="h-4 w-4 text-primary" />
+                <AlertDescription>
                   <span className="font-medium">Changes requested:</span> {project.admin_feedback}
                 </AlertDescription>
               </Alert>
-            )}
+            </motion.div>
+          )}
 
-            {project.verification_status === 'approved' && (
+          {project.verification_status === 'approved' && (
+            <motion.div variants={itemVariants}>
               <Alert className="border-primary/20 bg-primary/5">
                 <CheckCircle className="h-4 w-4 text-primary" />
                 <AlertDescription>
                   This project is live. Changes will be visible immediately after saving.
                 </AlertDescription>
               </Alert>
-            )}
+            </motion.div>
+          )}
 
-            {project.verification_status === 'pending_review' && (
+          {project.verification_status === 'pending_review' && (
+            <motion.div variants={itemVariants}>
               <Alert className="border-primary/20 bg-primary/5">
                 <Clock className="h-4 w-4 text-primary" />
                 <AlertDescription>
                   This project is currently under review. You can still make changes while waiting.
                 </AlertDescription>
               </Alert>
-            )}
-
-            {!isDeveloperVerified && canResubmit && (
-              <Alert className="border-muted bg-muted/50">
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                <AlertDescription className="text-muted-foreground">
-                  Your developer profile must be approved before you can submit projects for review.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Progress */}
-            <WizardProgress currentStep={currentStep} />
-
-            {/* Step Content */}
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderStep()}
             </motion.div>
+          )}
 
-            {/* Navigation */}
-            <div className="flex justify-between pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={goBack}
-                disabled={currentStep === 0}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Previous
-              </Button>
+          {/* Progress */}
+          <motion.div variants={itemVariants}>
+            <WizardProgress currentStep={currentStep} steps={steps} />
+          </motion.div>
 
-              {!isLastStep ? (
-                <Button onClick={goNext} disabled={!canGoNext}>
-                  Next
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSaveChanges}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  Save Changes
-                </Button>
+          {/* Step Content */}
+          <motion.div variants={itemVariants}>
+            <Card className="rounded-2xl border-primary/20 hover:shadow-lg transition-all overflow-hidden">
+              <CardContent className="p-6 sm:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {renderStep()}
+                  </motion.div>
+                </AnimatePresence>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Navigation */}
+          <motion.div variants={itemVariants} className="sticky bottom-4">
+            <div className="flex flex-col gap-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
+              {/* Developer verification alert */}
+              {!isDeveloperVerified && canResubmit && (
+                <Alert className="border-primary/20 bg-primary/5 py-2">
+                  <ShieldAlert className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    Your developer profile must be approved before you can submit projects for review.
+                  </AlertDescription>
+                </Alert>
               )}
+
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={goBack}
+                  disabled={currentStep === 0}
+                  className="rounded-xl h-11"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Previous
+                </Button>
+
+                {isLastStep ? (
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleSaveChanges}
+                      disabled={isSaving}
+                      className="rounded-xl h-11"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Changes
+                    </Button>
+                    
+                    {canResubmit && (
+                      <Button
+                        onClick={handleResubmit}
+                        disabled={isSubmitting || !isDeveloperVerified}
+                        className="rounded-xl h-11 px-6"
+                      >
+                        {isSubmitting ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
+                        Submit for Review
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button onClick={goNext} disabled={!canGoNext} className="rounded-xl h-11 px-6">
+                    Next
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
+              </div>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </Layout>
   );
