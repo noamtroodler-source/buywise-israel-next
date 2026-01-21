@@ -12,6 +12,7 @@ export interface Developer {
   founded_year: number | null;
   total_projects: number;
   is_verified: boolean;
+  user_id: string | null;
   created_at: string;
   updated_at: string;
 }

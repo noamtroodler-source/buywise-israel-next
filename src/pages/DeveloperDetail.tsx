@@ -12,6 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { useDeveloper, useDeveloperProjects } from '@/hooks/useProjects';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { useAuth } from '@/hooks/useAuth';
+
 export default function DeveloperDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: developer, isLoading, error } = useDeveloper(slug || '');
@@ -83,6 +85,10 @@ export default function DeveloperDetail() {
     }
   };
 
+  // Check if current user owns this developer profile
+  const { user } = useAuth();
+  const isOwnProfile = developer && user?.id === developer.user_id;
+
   if (isLoading) {
     return (
       <Layout>
@@ -115,12 +121,21 @@ export default function DeveloperDetail() {
           className="space-y-8"
         >
           {/* Back Button */}
-          <Button variant="ghost" asChild>
-            <Link to="/developers">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              All Developers
-            </Link>
-          </Button>
+          {isOwnProfile ? (
+            <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
+              <Link to="/developer">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
+              <Link to="/developers">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                All Developers
+              </Link>
+            </Button>
+          )}
 
           {/* Developer Header with Stats */}
           <div className="grid gap-6 lg:grid-cols-3">

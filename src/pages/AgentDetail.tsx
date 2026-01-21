@@ -17,7 +17,8 @@ import {
   MapPin,
   FileText,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -129,9 +130,22 @@ export default function AgentDetail() {
     );
   }
 
+  // Check if current user owns this agent profile
+  const isOwnProfile = agent && user?.id === agent.user_id;
+
   return (
     <Layout>
       <div className="container py-6 md:py-8 space-y-6">
+        {/* Back Navigation */}
+        {isOwnProfile && (
+          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
+            <Link to="/agent">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        )}
+
         {/* Hero Section */}
         <Card className="overflow-hidden">
           <CardContent className="p-6 md:p-8">
