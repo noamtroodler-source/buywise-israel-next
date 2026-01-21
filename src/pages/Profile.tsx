@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, MessageCircle, Heart, Bell, Calculator, ArrowRight, Edit3, LogOut, Shield, Briefcase, Clock } from 'lucide-react';
+import { User, Mail, Calendar, MessageCircle, Heart, Bell, Calculator, ArrowRight, Edit3, LogOut, Shield, Briefcase, Clock, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
 import { ProfileStatsGrid } from '@/components/profile/ProfileStatsGrid';
 import { BuyerProfileCard } from '@/components/profile/BuyerProfileCard';
+import { MortgagePreferencesCard } from '@/components/profile/MortgagePreferencesCard';
 import { ProfileSearchAlerts } from '@/components/profile/ProfileSearchAlerts';
 import { SavedCalculatorResults } from '@/components/profile/SavedCalculatorResults';
 import { RecentlyViewedSection } from '@/components/profile/RecentlyViewedSection';
@@ -265,6 +266,9 @@ export default function Profile() {
               {/* Buyer Profile Card */}
               <BuyerProfileCard />
 
+              {/* Mortgage Preferences Card */}
+              <MortgagePreferencesCard />
+
               {/* Quick Actions */}
               <Card>
                 <CardHeader className="pb-3">
@@ -276,6 +280,15 @@ export default function Profile() {
                     title="View Saved Properties"
                     description="See your favorited listings"
                     onClick={() => navigate('/favorites')}
+                  />
+                  <QuickActionItem
+                    icon={<Home className="h-4 w-4" />}
+                    title="Mortgage Preferences"
+                    description="Set your budget defaults"
+                    onClick={() => {
+                      const element = document.getElementById('mortgage-preferences-section');
+                      element?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                   />
                   <QuickActionItem
                     icon={<Bell className="h-4 w-4" />}
@@ -294,12 +307,6 @@ export default function Profile() {
                       const element = document.getElementById('saved-calculator-results');
                       element?.scrollIntoView({ behavior: 'smooth' });
                     }}
-                  />
-                  <QuickActionItem
-                    icon={<Clock className="h-4 w-4" />}
-                    title="Recently Viewed"
-                    description="Continue where you left off"
-                    onClick={() => navigate('/listings?status=for_sale')}
                   />
                 </CardContent>
               </Card>

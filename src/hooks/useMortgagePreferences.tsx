@@ -18,6 +18,8 @@ export interface MortgagePreferences {
   down_payment_amount: number | null;
   term_years: number;
   assumed_rate: number;
+  monthly_income: number | null;
+  income_type: 'net' | 'gross' | null;
 }
 
 export interface MortgageEstimate {
@@ -37,6 +39,8 @@ const DEFAULT_PREFERENCES: MortgagePreferences = {
   down_payment_amount: null,
   term_years: DEFAULT_TERM_YEARS,
   assumed_rate: DEFAULT_RATE_MID,
+  monthly_income: null,
+  income_type: null,
 };
 
 /**

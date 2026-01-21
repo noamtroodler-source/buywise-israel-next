@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 
 interface BuyerOnboardingProps {
@@ -15,7 +17,9 @@ interface BuyerOnboardingProps {
   existingProfile?: BuyerProfile | null;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
+
+const LOAN_TERMS = [15, 20, 25, 30];
 
 const currentYear = new Date().getFullYear();
 const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
@@ -23,6 +27,14 @@ const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: BuyerOnboardingProps) {
   const [step, setStep] = useState<Step>(1);
   const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>(() => getInitialAnswers(existingProfile));
+  const [mortgagePrefs, setMortgagePrefs] = useState({
+    down_payment_percent: 25,
+    term_years: 25,
+    monthly_income: null as number | null,
+    income_type: 'net' as 'net' | 'gross',
+  });
+  const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
+  const [downPaymentAmount, setDownPaymentAmount] = useState<number | null>(null);
   
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
@@ -62,6 +74,9 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       // Skip Aliyah year if not Oleh
       return answers.residency_status === 'oleh_hadash' ? 2 : 3;
     }
+    if (currentStep === 5) {
+      return 6; // Go to optional mortgage step
+    }
     return (currentStep + 1) as Step;
   };
 
@@ -69,12 +84,15 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
       return 1;
     }
+    if (currentStep === 6) {
+      return 5;
+    }
     return (currentStep - 1) as Step;
   };
 
   const handleNext = () => {
     const nextStep = getNextStep(step);
-    if (nextStep <= 5) {
+    if (nextStep <= 6) {
       setStep(nextStep);
     } else {
       handleComplete();
@@ -87,19 +105,31 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     }
   };
 
+  const handleSkipMortgage = () => {
+    handleComplete();
+  };
+
   const handleComplete = async () => {
+    // Build mortgage preferences if user filled them in
+    const mortgagePreferences = step === 6 ? {
+      down_payment_percent: downPaymentMode === 'percent' ? mortgagePrefs.down_payment_percent : null,
+      down_payment_amount: downPaymentMode === 'amount' ? downPaymentAmount : null,
+      term_years: mortgagePrefs.term_years,
+      assumed_rate: 5.25,
+      monthly_income: mortgagePrefs.monthly_income,
+      income_type: mortgagePrefs.income_type,
+    } : undefined;
+
+    const profileData = {
+      ...answers,
+      onboarding_completed: true,
+      ...(mortgagePreferences && { mortgage_preferences: mortgagePreferences }),
+    };
+
     if (existingProfile) {
-      // Update existing profile
-      await updateProfile.mutateAsync({
-        ...answers,
-        onboarding_completed: true,
-      });
+      await updateProfile.mutateAsync(profileData);
     } else {
-      // Create new profile
-      await createProfile.mutateAsync({
-        ...answers,
-        onboarding_completed: true,
-      });
+      await createProfile.mutateAsync(profileData);
     }
     onComplete();
   };
@@ -118,6 +148,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         return !!answers.purchase_purpose;
       case 5:
         return !!answers.buyer_entity;
+      case 6:
+        return true; // Optional step, always can proceed
       default:
         return false;
     }
@@ -133,11 +165,12 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (step === 3) return 2;
     if (step === 4) return 3;
     if (step === 5) return 4;
+    if (step === 6) return 5;
     return step;
   };
 
   const getTotalSteps = () => {
-    return answers.residency_status === 'oleh_hadash' ? 5 : 4;
+    return answers.residency_status === 'oleh_hadash' ? 6 : 5;
   };
 
   const handleClose = () => {
@@ -399,6 +432,125 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 </RadioGroup>
               </motion.div>
             )}
+
+            {/* Step 6: Mortgage Preferences (Optional) */}
+            {step === 6 && (
+              <motion.div
+                key="step6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground">Set your mortgage preferences</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Optional — see personalized estimates on all properties
+                  </p>
+                </div>
+
+                {/* Down Payment */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Preferred Down Payment</Label>
+                    <div className="flex gap-1">
+                      <Toggle
+                        size="sm"
+                        pressed={downPaymentMode === 'percent'}
+                        onPressedChange={() => setDownPaymentMode('percent')}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Percent className="h-3 w-3 mr-1" />
+                        %
+                      </Toggle>
+                      <Toggle
+                        size="sm"
+                        pressed={downPaymentMode === 'amount'}
+                        onPressedChange={() => setDownPaymentMode('amount')}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Banknote className="h-3 w-3 mr-1" />
+                        ₪
+                      </Toggle>
+                    </div>
+                  </div>
+                  {downPaymentMode === 'percent' ? (
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        value={mortgagePrefs.down_payment_percent}
+                        onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, down_payment_percent: Number(e.target.value) })}
+                        min={25}
+                        max={100}
+                        className="pr-8"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                      <Input
+                        type="number"
+                        value={downPaymentAmount ?? ''}
+                        onChange={(e) => setDownPaymentAmount(e.target.value ? Number(e.target.value) : null)}
+                        className="pl-8"
+                        placeholder="1,500,000"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Loan Term */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Loan Term</Label>
+                  <Select
+                    value={String(mortgagePrefs.term_years)}
+                    onValueChange={(value) => setMortgagePrefs({ ...mortgagePrefs, term_years: Number(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOAN_TERMS.map((term) => (
+                        <SelectItem key={term} value={String(term)}>
+                          {term} years
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Monthly Income */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm">Monthly Income (optional)</Label>
+                    <Select
+                      value={mortgagePrefs.income_type}
+                      onValueChange={(value: 'net' | 'gross') => setMortgagePrefs({ ...mortgagePrefs, income_type: value })}
+                    >
+                      <SelectTrigger className="w-20 h-7 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="net">Net</SelectItem>
+                        <SelectItem value="gross">Gross</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                    <Input
+                      type="number"
+                      value={mortgagePrefs.monthly_income ?? ''}
+                      onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: e.target.value ? Number(e.target.value) : null })}
+                      className="pl-8"
+                      placeholder="35,000"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
@@ -412,23 +564,39 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed() || isPending}
-            className="gap-2"
-          >
-            {step === 5 || (step === 4 && answers.residency_status !== 'oleh_hadash') ? (
-              <>
-                {isPending ? 'Saving...' : 'Complete'}
-                <Check className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="h-4 w-4" />
-              </>
+          <div className="flex gap-2">
+            {step === 6 && (
+              <Button
+                variant="outline"
+                onClick={handleSkipMortgage}
+                disabled={isPending}
+              >
+                Skip for now
+              </Button>
             )}
-          </Button>
+            <Button
+              onClick={step === 6 ? handleComplete : handleNext}
+              disabled={!canProceed() || isPending}
+              className="gap-2"
+            >
+              {step === 6 ? (
+                <>
+                  {isPending ? 'Saving...' : 'Complete'}
+                  <Check className="h-4 w-4" />
+                </>
+              ) : step === 5 ? (
+                <>
+                  Continue
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

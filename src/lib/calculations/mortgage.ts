@@ -59,7 +59,7 @@ export interface MortgageMixRecommendation {
 }
 
 // LTV Limits by buyer category (Bank of Israel regulations)
-const LTV_LIMITS: Record<BuyerCategory, number> = {
+export const LTV_LIMITS: Record<BuyerCategory, number> = {
   first_time: 0.75,  // 75% max
   upgrader: 0.70,    // 70% max
   investor: 0.50,    // 50% max
