@@ -1510,6 +1510,39 @@ export type Database = {
         }
         Relationships: []
       }
+      homepage_featured_slots: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          entity_id: string
+          expires_at: string | null
+          featured_at: string
+          id: string
+          position: number
+          slot_type: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          entity_id: string
+          expires_at?: string | null
+          featured_at?: string
+          id?: string
+          position?: number
+          slot_type: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          entity_id?: string
+          expires_at?: string | null
+          featured_at?: string
+          id?: string
+          position?: number
+          slot_type?: string
+        }
+        Relationships: []
+      }
       inquiries: {
         Row: {
           agent_id: string
