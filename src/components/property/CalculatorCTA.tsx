@@ -9,8 +9,6 @@ interface CalculatorCTAProps {
 }
 
 export function CalculatorCTA({ propertyPrice }: CalculatorCTAProps) {
-  const priceParam = propertyPrice ? `?price=${propertyPrice}` : '';
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,13 +28,13 @@ export function CalculatorCTA({ propertyPrice }: CalculatorCTAProps) {
           
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button variant="outline" className="gap-2" asChild>
-              <Link to={`/tools${priceParam}`}>
+              <Link to={propertyPrice ? `/tools?tool=mortgage&price=${propertyPrice}` : '/tools?tool=mortgage'}>
                 <Calculator className="h-4 w-4" />
                 Mortgage Calculator
               </Link>
             </Button>
             <Button variant="outline" className="gap-2" asChild>
-              <Link to={`/tools${priceParam}`}>
+              <Link to={propertyPrice ? `/tools?tool=affordability&price=${propertyPrice}` : '/tools?tool=affordability'}>
                 <PiggyBank className="h-4 w-4" />
                 Can I Afford This?
               </Link>

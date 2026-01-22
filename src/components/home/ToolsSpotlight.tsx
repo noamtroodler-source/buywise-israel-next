@@ -5,27 +5,27 @@ import { Button } from '@/components/ui/button';
 
 const tools = [
   {
-    id: 'mortgage-calculator',
+    id: 'mortgage',
     icon: Calculator,
     title: 'Mortgage Calculator',
     description: 'Calculate monthly payments with Israeli bank rates and track types.',
-    link: '/tools/mortgage-calculator',
+    link: '/tools?tool=mortgage',
     color: 'bg-primary/10 text-primary',
   },
   {
-    id: 'total-cost-calculator',
+    id: 'totalcost',
     icon: PiggyBank,
     title: 'Total Cost Calculator',
     description: 'See the true cost of buying — taxes, fees, and closing costs included.',
-    link: '/tools/total-cost-calculator',
+    link: '/tools?tool=totalcost',
     color: 'bg-primary/10 text-primary',
   },
   {
-    id: 'rent-vs-buy',
+    id: 'rentvsbuy',
     icon: Home,
     title: 'Rent vs Buy',
     description: 'Compare the long-term costs of renting versus buying in Israel.',
-    link: '/tools/rent-vs-buy',
+    link: '/tools?tool=rentvsbuy',
     color: 'bg-primary/10 text-primary',
   },
 ];

@@ -21,7 +21,7 @@ export function ProjectNextSteps({ cityName, citySlug, projectPrice }: ProjectNe
       icon: Calculator,
       title: 'Run the Numbers',
       description: 'Mortgage calculator & cost breakdown',
-      to: projectPrice ? `/tools/mortgage-calculator?price=${projectPrice}` : '/tools/mortgage-calculator',
+      to: projectPrice ? `/tools?tool=mortgage&price=${projectPrice}` : '/tools?tool=mortgage',
     },
     {
       icon: BookOpen,
