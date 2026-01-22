@@ -46,6 +46,7 @@ export interface CreatePropertyData {
   subletting_allowed?: string;
   furnished_status?: string;
   pets_policy?: string;
+  agent_fee_required?: boolean;
 }
 
 export function useAgentProfile() {

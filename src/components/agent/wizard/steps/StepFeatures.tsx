@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, PawPrint, Users } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
@@ -205,7 +205,7 @@ export function StepFeatures() {
               <h3 className="font-semibold">Lease Details</h3>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Lease Term */}
               <div className="space-y-2">
                 <Label>Typical Lease Term</Label>
@@ -242,6 +242,23 @@ export function StepFeatures() {
                         {option.label}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Agent Fee */}
+              <div className="space-y-2">
+                <Label>Agent Fee</Label>
+                <Select
+                  value={data.agent_fee_required === undefined ? '' : data.agent_fee_required ? 'yes' : 'no'}
+                  onValueChange={(v) => updateData({ agent_fee_required: v === 'yes' })}
+                >
+                  <SelectTrigger className="w-full h-11 rounded-xl">
+                    <SelectValue placeholder="Does tenant pay agent fee?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes - Tenant pays</SelectItem>
+                    <SelectItem value="no">No agent fee</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

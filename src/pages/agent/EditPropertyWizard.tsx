@@ -134,6 +134,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         subletting_allowed: (property as any).subletting_allowed || undefined,
         furnished_status: (property as any).furnished_status || undefined,
         pets_policy: (property as any).pets_policy || undefined,
+        agent_fee_required: (property as any).agent_fee_required ?? undefined,
         images: property.images || [],
         description: property.description || '',
         highlights: [],
