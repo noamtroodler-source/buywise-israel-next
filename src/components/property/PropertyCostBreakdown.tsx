@@ -285,13 +285,27 @@ export function PropertyCostBreakdown({
             <CollapsibleContent className="space-y-2 text-sm pt-2">
               <div className="flex justify-between py-2 border-b border-border/50">
                 <div>
-                  <span className="text-muted-foreground">Purchase Tax</span>
-                  {effectiveTaxType === 'oleh' && (
-                    <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh</Badge>
-                  )}
-                  {effectiveTaxType === 'first_time' && (
-                    <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">First-Time</Badge>
-                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Purchase Tax</span>
+                        {effectiveTaxType === 'oleh' && (
+                          <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh</Badge>
+                        )}
+                        {effectiveTaxType === 'first_time' && (
+                          <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">First-Time</Badge>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-medium mb-1">Mas Rechisha (Purchase Tax)</p>
+                      <p className="text-xs">
+                        Calculated using 2025 tax brackets for {effectiveDerived.label} buyers. 
+                        Your {effectiveTaxRate.toFixed(2)}% rate reflects tiered brackets where lower portions are taxed at reduced rates.
+                        {taxSavings > 0 && ` Saving ~${formatPrice(taxSavings, 'ILS')} vs. investor rates.`}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {effectiveTaxRate.toFixed(2)}% effective
                   </p>
@@ -304,7 +318,11 @@ export function PropertyCostBreakdown({
                     <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Lawyer Fees</span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>{FEE_RANGES.lawyer.label} + 18% VAT. Varies by complexity.</p>
+                    <p className="font-medium mb-1">Legal Fees</p>
+                    <p className="text-xs">
+                      Your attorney handles contract review, due diligence, and closing. 
+                      {FEE_RANGES.lawyer.label} of price + 18% VAT. Often negotiable based on complexity.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
                 <span className="font-medium">{formatPriceRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high, 'ILS')}</span>
@@ -319,7 +337,11 @@ export function PropertyCostBreakdown({
                       </div>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>{FEE_RANGES.developerLawyer.label}. Required for new construction.</p>
+                      <p className="font-medium mb-1">Developer's Legal Fees</p>
+                      <p className="text-xs">
+                        New construction requires paying the developer's legal costs. 
+                        {FEE_RANGES.developerLawyer.label} of price. This is standard and non-negotiable.
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                   <span className="font-medium">{formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}</span>
@@ -331,7 +353,11 @@ export function PropertyCostBreakdown({
                     <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Agent Fees</span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>{FEE_RANGES.agent.label} + VAT. Negotiable.</p>
+                    <p className="font-medium mb-1">Real Estate Agent Commission</p>
+                    <p className="text-xs">
+                      Buyer's agent commission. {FEE_RANGES.agent.label} of price + 18% VAT. 
+                      Often negotiable, especially on higher-value properties.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
                 <span className="font-medium">{formatPriceRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high, 'ILS')}</span>
@@ -342,7 +368,12 @@ export function PropertyCostBreakdown({
                     <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Other Fees</span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Appraisal, mortgage origination & Tabu registration.</p>
+                    <p className="font-medium mb-1">Additional Closing Costs</p>
+                    <p className="text-xs">
+                      Includes: Property appraisal ({formatPrice(FEE_RANGES.appraisal.min, 'ILS')}–{formatPrice(FEE_RANGES.appraisal.max, 'ILS').replace('₪', '')}), 
+                      mortgage origination ({formatPrice(FEE_RANGES.mortgageOrigination.min, 'ILS')}–{formatPrice(FEE_RANGES.mortgageOrigination.max, 'ILS').replace('₪', '')}), 
+                      and Tabu registration ({formatPrice(FEE_RANGES.registration.min, 'ILS')}–{formatPrice(FEE_RANGES.registration.max, 'ILS').replace('₪', '')}).
+                    </p>
                   </TooltipContent>
                 </Tooltip>
                 <span className="font-medium">{formatPriceRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high, 'ILS')}</span>
@@ -353,6 +384,7 @@ export function PropertyCostBreakdown({
         </TooltipProvider>
 
         {/* Monthly Costs - Progressive disclosure */}
+        <TooltipProvider>
         <Collapsible open={monthlyOpen} onOpenChange={setMonthlyOpen}>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -384,10 +416,22 @@ export function PropertyCostBreakdown({
               <div className="py-2 border-b border-border/50">
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <Home className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-foreground">Mortgage</span>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2 cursor-help">
+                          <Home className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-foreground border-b border-dotted border-muted-foreground/50">Mortgage</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium mb-1">Monthly Payment Estimate</p>
+                        <p className="text-xs">
+                          Based on {mortgageEstimate.downPaymentPercent}% down payment ({formatPrice(mortgageEstimate.downPayment, 'ILS')}), 
+                          {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
+                          Adjust assumptions in the panel above.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
                     </p>
@@ -399,25 +443,60 @@ export function PropertyCostBreakdown({
               </div>
               
               <div className="flex justify-between py-2 border-b border-border/50">
-                <span className="text-muted-foreground">Arnona</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Arnona</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="font-medium mb-1">Municipal Property Tax</p>
+                    <p className="text-xs">
+                      {cityData 
+                        ? `Based on official 2025 ${city} rates (~₪${cityData.arnona_rate_sqm?.toFixed(0) || 70}/sqm annually). Actual varies by zone and property classification.`
+                        : 'Estimated based on typical Israeli municipal rates. Actual varies by city, zone, and property type.'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
                 <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Va'ad Bayit</span>
-                  {isVaadActual && (
-                    <Badge variant="secondary" className="text-xs">Actual</Badge>
-                  )}
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-help">
+                      <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Va'ad Bayit</span>
+                      {isVaadActual && (
+                        <Badge variant="secondary" className="text-xs">Actual</Badge>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="font-medium mb-1">Building Maintenance Fee</p>
+                    <p className="text-xs">
+                      {isVaadActual 
+                        ? 'Amount as listed by the seller. Covers shared maintenance, cleaning, elevator, building insurance.'
+                        : `Estimated based on typical ${city || 'building'} fees. Covers shared maintenance, cleaning, and building insurance. Actual varies by building.`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
                 <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border/50">
-                <span className="text-muted-foreground">Insurance</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Insurance</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="font-medium mb-1">Home Insurance</p>
+                    <p className="text-xs">
+                      Basic structure and contents insurance estimate. Actual cost depends on coverage level, building age, location, and provider.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
                 <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
               </div>
             </CollapsibleContent>
           </div>
         </Collapsible>
+        </TooltipProvider>
         
         <p className="text-xs text-muted-foreground">
           * Based on 2025 tax brackets{cityData ? ` and ${city} municipal rates` : ''}. Actual costs may vary.
