@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -9,6 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
+import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { 
+  LocationIcon, 
+  LOCATION_ICONS, 
+  MAX_SAVED_LOCATIONS,
+  suggestIconFromLabel,
+  getIconEmoji 
+} from '@/types/savedLocation';
 
 interface BuyerOnboardingProps {
   open: boolean;
@@ -17,7 +25,15 @@ interface BuyerOnboardingProps {
   existingProfile?: BuyerProfile | null;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6;
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+interface OnboardingLocation {
+  label: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  icon: LocationIcon;
+}
 
 const LOAN_TERMS = [15, 20, 25, 30];
 
@@ -35,6 +51,13 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   });
   const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
   const [downPaymentAmount, setDownPaymentAmount] = useState<number | null>(null);
+  
+  // Step 7: Core Locations state
+  const [onboardingLocations, setOnboardingLocations] = useState<OnboardingLocation[]>([]);
+  const [locationLabel, setLocationLabel] = useState('');
+  const [locationIcon, setLocationIcon] = useState<LocationIcon>('home');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [parsedAddress, setParsedAddress] = useState<ParsedAddress | null>(null);
   
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
@@ -74,8 +97,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       // Skip Aliyah year if not Oleh
       return answers.residency_status === 'oleh_hadash' ? 2 : 3;
     }
-    if (currentStep === 5) {
-      return 6; // Go to optional mortgage step
+    if (currentStep === 6) {
+      return 7; // Go to optional core locations step
     }
     return (currentStep + 1) as Step;
   };
@@ -84,15 +107,15 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
       return 1;
     }
-    if (currentStep === 6) {
-      return 5;
+    if (currentStep === 7) {
+      return 6;
     }
     return (currentStep - 1) as Step;
   };
 
   const handleNext = () => {
     const nextStep = getNextStep(step);
-    if (nextStep <= 6) {
+    if (nextStep <= 7) {
       setStep(nextStep);
     } else {
       handleComplete();
@@ -105,25 +128,37 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     }
   };
 
-  const handleSkipMortgage = () => {
-    handleComplete();
+  const handleSkipStep = () => {
+    if (step === 6) {
+      setStep(7); // Skip mortgage, go to locations
+    } else {
+      handleComplete(); // Skip locations, complete onboarding
+    }
   };
 
   const handleComplete = async () => {
-    // Build mortgage preferences if user filled them in
-    const mortgagePreferences = step === 6 ? {
+    // Build mortgage preferences if user filled them in on step 6
+    const mortgagePreferences = {
       down_payment_percent: downPaymentMode === 'percent' ? mortgagePrefs.down_payment_percent : null,
       down_payment_amount: downPaymentMode === 'amount' ? downPaymentAmount : null,
       term_years: mortgagePrefs.term_years,
       assumed_rate: 5.25,
       monthly_income: mortgagePrefs.monthly_income,
       income_type: mortgagePrefs.income_type,
-    } : undefined;
+    };
+
+    // Build saved locations array
+    const savedLocations = onboardingLocations.map(loc => ({
+      ...loc,
+      id: crypto.randomUUID(),
+      created_at: new Date().toISOString(),
+    }));
 
     const profileData = {
       ...answers,
       onboarding_completed: true,
-      ...(mortgagePreferences && { mortgage_preferences: mortgagePreferences }),
+      mortgage_preferences: mortgagePreferences,
+      ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
     };
 
     if (existingProfile) {
@@ -150,6 +185,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         return !!answers.buyer_entity;
       case 6:
         return true; // Optional step, always can proceed
+      case 7:
+        return true; // Optional step, always can proceed
       default:
         return false;
     }
@@ -166,12 +203,49 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     if (step === 4) return 3;
     if (step === 5) return 4;
     if (step === 6) return 5;
+    if (step === 7) return 6;
     return step;
   };
 
   const getTotalSteps = () => {
-    return answers.residency_status === 'oleh_hadash' ? 6 : 5;
+    return answers.residency_status === 'oleh_hadash' ? 7 : 6;
   };
+
+  // Step 7: Add location handlers
+  const handleAddLocation = () => {
+    if (!locationLabel.trim() || !parsedAddress) return;
+    
+    const newLocation: OnboardingLocation = {
+      label: locationLabel.trim(),
+      icon: locationIcon,
+      address: parsedAddress.fullAddress,
+      latitude: parsedAddress.latitude,
+      longitude: parsedAddress.longitude,
+    };
+    
+    setOnboardingLocations([...onboardingLocations, newLocation]);
+    // Reset form
+    setLocationLabel('');
+    setLocationIcon('home');
+    setLocationAddress('');
+    setParsedAddress(null);
+  };
+
+  const handleRemoveLocation = (index: number) => {
+    setOnboardingLocations(onboardingLocations.filter((_, i) => i !== index));
+  };
+
+  const handleAddressSelect = (address: ParsedAddress) => {
+    setParsedAddress(address);
+    setLocationAddress(address.fullAddress);
+  };
+
+  // Auto-suggest icon based on label
+  useEffect(() => {
+    if (locationLabel) {
+      setLocationIcon(suggestIconFromLabel(locationLabel));
+    }
+  }, [locationLabel]);
 
   const handleClose = () => {
     if (onClose) {
@@ -551,6 +625,124 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 </div>
               </motion.div>
             )}
+
+            {/* Step 7: Core Locations (Optional) */}
+            {step === 7 && (
+              <motion.div
+                key="step7"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-4"
+              >
+                <div>
+                  <h3 className="font-medium text-foreground flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Add places that matter to you
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    See travel times to these locations on every property
+                  </p>
+                </div>
+
+                {/* Add location form */}
+                {onboardingLocations.length < MAX_SAVED_LOCATIONS && (
+                  <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+                    {/* Label input */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Location Name</Label>
+                      <Input
+                        value={locationLabel}
+                        onChange={(e) => setLocationLabel(e.target.value)}
+                        placeholder="e.g., Mom's House, Office, Gym"
+                        maxLength={30}
+                      />
+                    </div>
+
+                    {/* Icon picker */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Icon</Label>
+                      <div className="flex gap-2">
+                        {LOCATION_ICONS.map((iconOption) => (
+                          <button
+                            key={iconOption.value}
+                            type="button"
+                            onClick={() => setLocationIcon(iconOption.value)}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-colors ${
+                              locationIcon === iconOption.value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background border border-border hover:border-primary/50'
+                            }`}
+                          >
+                            {iconOption.emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Address input */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Address</Label>
+                      <AddressAutocomplete
+                        value={locationAddress}
+                        onAddressSelect={handleAddressSelect}
+                        onInputChange={setLocationAddress}
+                        placeholder="Search for an address..."
+                      />
+                    </div>
+
+                    {/* Add button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddLocation}
+                      disabled={!locationLabel.trim() || !parsedAddress}
+                      className="w-full"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Add Location
+                    </Button>
+                  </div>
+                )}
+
+                {/* Added locations list */}
+                {onboardingLocations.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">
+                      Added locations ({onboardingLocations.length}/{MAX_SAVED_LOCATIONS})
+                    </Label>
+                    {onboardingLocations.map((loc, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 rounded-lg border border-border bg-background"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-lg">{getIconEmoji(loc.icon)}</span>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{loc.label}</p>
+                            <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveLocation(index)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Helper text */}
+                <p className="text-xs text-muted-foreground text-center">
+                  💡 You can always add more locations later in your profile settings
+                </p>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
@@ -565,29 +757,24 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
             Back
           </Button>
           <div className="flex gap-2">
-            {step === 6 && (
+            {(step === 6 || step === 7) && (
               <Button
                 variant="outline"
-                onClick={handleSkipMortgage}
+                onClick={handleSkipStep}
                 disabled={isPending}
               >
                 Skip for now
               </Button>
             )}
             <Button
-              onClick={step === 6 ? handleComplete : handleNext}
+              onClick={step === 7 ? handleComplete : handleNext}
               disabled={!canProceed() || isPending}
               className="gap-2"
             >
-              {step === 6 ? (
+              {step === 7 ? (
                 <>
                   {isPending ? 'Saving...' : 'Complete'}
                   <Check className="h-4 w-4" />
-                </>
-              ) : step === 5 ? (
-                <>
-                  Continue
-                  <ArrowRight className="h-4 w-4" />
                 </>
               ) : (
                 <>
