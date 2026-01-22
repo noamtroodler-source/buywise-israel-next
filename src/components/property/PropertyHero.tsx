@@ -103,7 +103,7 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
       >
         {/* Back Button */}
         <Button variant="ghost" size="sm" className="gap-2 -ml-2 mb-4" asChild>
-          <Link to={property.listing_status === 'for_rent' ? '/rent' : '/buy'}>
+          <Link to={property.listing_status === 'for_rent' ? '/listings?type=rent' : '/listings?type=buy'}>
             <ArrowLeft className="h-4 w-4" />
             {property.listing_status === 'for_rent' ? 'All Rentals' : 'All Properties'}
           </Link>
