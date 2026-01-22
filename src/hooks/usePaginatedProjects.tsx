@@ -50,7 +50,7 @@ export function usePaginatedProjects(
       if (error) throw error;
       return count ?? 0;
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - projects don't change frequently
   });
 
   // Fetch current page
@@ -72,7 +72,7 @@ export function usePaginatedProjects(
       if (error) throw error;
       return data as Project[];
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - projects don't change frequently
   });
 
   // Accumulate projects for infinite scroll

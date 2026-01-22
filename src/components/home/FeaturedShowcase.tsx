@@ -11,8 +11,14 @@ type Tab = 'sale' | 'rent';
 
 export function FeaturedShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('sale');
-  const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties();
-  const { data: rentalProperties, isLoading: loadingRent } = useFeaturedRentalProperties();
+  
+  // Only fetch data for the active tab (conditional fetching for performance)
+  const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties({ 
+    enabled: activeTab === 'sale' 
+  });
+  const { data: rentalProperties, isLoading: loadingRent } = useFeaturedRentalProperties({ 
+    enabled: activeTab === 'rent' 
+  });
 
   const properties = activeTab === 'sale' ? saleProperties : rentalProperties;
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
