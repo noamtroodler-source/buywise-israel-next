@@ -2186,6 +2186,7 @@ export type Database = {
           ac_type: string | null
           address: string
           admin_notes: string | null
+          agent_fee_required: boolean | null
           agent_id: string | null
           allows_pets: string | null
           bathrooms: number | null
@@ -2236,6 +2237,7 @@ export type Database = {
           ac_type?: string | null
           address: string
           admin_notes?: string | null
+          agent_fee_required?: boolean | null
           agent_id?: string | null
           allows_pets?: string | null
           bathrooms?: number | null
@@ -2286,6 +2288,7 @@ export type Database = {
           ac_type?: string | null
           address?: string
           admin_notes?: string | null
+          agent_fee_required?: boolean | null
           agent_id?: string | null
           allows_pets?: string | null
           bathrooms?: number | null

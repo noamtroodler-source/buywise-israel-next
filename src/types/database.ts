@@ -87,6 +87,7 @@ export interface Property {
   subletting_allowed: SublettingOption | null;
   furnished_status: FurnishedStatus | null;
   pets_policy: PetsPolicy | null;
+  agent_fee_required: boolean | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;

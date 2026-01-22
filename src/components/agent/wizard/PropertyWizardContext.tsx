@@ -37,6 +37,7 @@ export interface PropertyWizardData {
   subletting_allowed: SublettingOption | undefined;
   furnished_status: FurnishedStatus | undefined;
   pets_policy: PetsPolicy | undefined;
+  agent_fee_required: boolean | undefined;
   
   // Step 4: Photos
   images: string[];
@@ -90,6 +91,7 @@ export const defaultPropertyData: PropertyWizardData = {
   subletting_allowed: undefined,
   furnished_status: undefined,
   pets_policy: undefined,
+  agent_fee_required: undefined,
   images: [],
   description: '',
   highlights: [],
