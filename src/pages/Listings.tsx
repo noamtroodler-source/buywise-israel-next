@@ -153,6 +153,8 @@ export default function Listings() {
             showSoldToggle={!isRentals}
             isSoldView={isSoldView}
             onSoldToggle={handleSoldToggle}
+            previewCount={totalCount}
+            isCountLoading={isFetching}
           />
         </div>
 

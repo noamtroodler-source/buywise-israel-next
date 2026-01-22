@@ -9,8 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { PropertyFilters as PropertyFiltersType, PropertyType, PropertyCondition, SortOption } from '@/types/database';
 import { useCities } from '@/hooks/useCities';
-
-import { usePropertyCount } from '@/hooks/useProperties';
 import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
@@ -25,6 +23,8 @@ interface PropertyFiltersProps {
   showSoldToggle?: boolean;
   isSoldView?: boolean;
   onSoldToggle?: (showSold: boolean) => void;
+  previewCount?: number;
+  isCountLoading?: boolean;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -95,7 +95,7 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle }: PropertyFiltersProps) {
+export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
@@ -109,8 +109,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
   
-  // Dynamic count for Apply buttons - shows preview of matching results
-  const { data: previewCount, isFetching: countLoading } = usePropertyCount(filters);
+  // Use passed count from parent instead of separate query
+  const countLoading = isCountLoading;
   
   // Check if lot size filter should be shown (for house-type properties)
   const showLotSizeFilter = useMemo(() => {
