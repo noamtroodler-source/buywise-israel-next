@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 type Currency = 'ILS' | 'USD';
@@ -138,11 +138,11 @@ export function usePreferences() {
   return context;
 }
 
-// Formatting utilities
+// Formatting utilities - memoized for performance
 export function useFormatPrice() {
   const { currency, exchangeRate } = usePreferences();
 
-  return (amount: number, originalCurrency: string = 'ILS'): string => {
+  return useCallback((amount: number, originalCurrency: string = 'ILS'): string => {
     // Convert to ILS if needed
     let amountInILS = amount;
     if (originalCurrency === 'USD') {
@@ -162,20 +162,19 @@ export function useFormatPrice() {
       return formatUSD(amountInUSD);
     }
     return formatILS(amountInILS);
-  };
+  }, [currency, exchangeRate]);
 }
 
 export function useFormatArea() {
   const { areaUnit } = usePreferences();
-  const SQM_TO_SQFT = 10.764;
 
-  return (sqm: number): string => {
+  return useCallback((sqm: number): string => {
     if (areaUnit === 'sqft') {
       const sqft = Math.round(sqm * SQM_TO_SQFT);
       return `${sqft.toLocaleString()} ft²`;
     }
     return `${sqm.toLocaleString()} m²`;
-  };
+  }, [areaUnit]);
 }
 
 // Returns just the currency symbol for input prefixes
@@ -192,9 +191,8 @@ export function useAreaUnitLabel() {
 
 export function useFormatPricePerArea() {
   const { currency, exchangeRate, areaUnit } = usePreferences();
-  const SQM_TO_SQFT = 10.764;
 
-  return (pricePerSqm: number, originalCurrency: string = 'ILS'): string => {
+  return useCallback((pricePerSqm: number, originalCurrency: string = 'ILS'): string => {
     // Convert price to ILS if needed
     let priceInILS = pricePerSqm;
     if (originalCurrency === 'USD') {
@@ -220,5 +218,5 @@ export function useFormatPricePerArea() {
       return formatUSD(priceInUSD);
     }
     return formatILS(displayPrice);
-  };
+  }, [currency, exchangeRate, areaUnit]);
 }
