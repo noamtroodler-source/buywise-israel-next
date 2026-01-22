@@ -1,3 +1,5 @@
+import { Home, Briefcase, Heart, Star, Building2, LucideIcon } from 'lucide-react';
+
 export type LocationIcon = 'home' | 'briefcase' | 'heart' | 'star' | 'building';
 
 export interface SavedLocation {
@@ -10,18 +12,18 @@ export interface SavedLocation {
   created_at: string;
 }
 
-export const LOCATION_ICONS: { value: LocationIcon; label: string; emoji: string }[] = [
-  { value: 'home', label: 'Home', emoji: '🏠' },
-  { value: 'briefcase', label: 'Work', emoji: '💼' },
-  { value: 'heart', label: 'Family', emoji: '❤️' },
-  { value: 'star', label: 'Favorite', emoji: '⭐' },
-  { value: 'building', label: 'Place', emoji: '🏢' },
+export const LOCATION_ICONS: { value: LocationIcon; label: string; Icon: LucideIcon }[] = [
+  { value: 'home', label: 'Home', Icon: Home },
+  { value: 'briefcase', label: 'Work', Icon: Briefcase },
+  { value: 'heart', label: 'Family', Icon: Heart },
+  { value: 'star', label: 'Favorite', Icon: Star },
+  { value: 'building', label: 'Place', Icon: Building2 },
 ];
 
 export const MAX_SAVED_LOCATIONS = 5;
 
-export function getIconEmoji(icon: LocationIcon): string {
-  return LOCATION_ICONS.find(i => i.value === icon)?.emoji || '📍';
+export function getLocationIcon(icon: LocationIcon): LucideIcon {
+  return LOCATION_ICONS.find(i => i.value === icon)?.Icon || Building2;
 }
 
 export function suggestIconFromLabel(label: string): LocationIcon {

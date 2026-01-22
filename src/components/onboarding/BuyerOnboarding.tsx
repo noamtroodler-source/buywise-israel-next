@@ -15,7 +15,7 @@ import {
   LOCATION_ICONS, 
   MAX_SAVED_LOCATIONS,
   suggestIconFromLabel,
-  getIconEmoji 
+  getLocationIcon 
 } from '@/types/savedLocation';
 
 interface BuyerOnboardingProps {
@@ -663,20 +663,23 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     <div className="space-y-1.5">
                       <Label className="text-sm">Icon</Label>
                       <div className="flex gap-2">
-                        {LOCATION_ICONS.map((iconOption) => (
-                          <button
-                            key={iconOption.value}
-                            type="button"
-                            onClick={() => setLocationIcon(iconOption.value)}
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg transition-colors ${
-                              locationIcon === iconOption.value
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-background border border-border hover:border-primary/50'
-                            }`}
-                          >
-                            {iconOption.emoji}
-                          </button>
-                        ))}
+                        {LOCATION_ICONS.map((iconOption) => {
+                          const IconComponent = iconOption.Icon;
+                          return (
+                            <button
+                              key={iconOption.value}
+                              type="button"
+                              onClick={() => setLocationIcon(iconOption.value)}
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                                locationIcon === iconOption.value
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-background border border-border hover:border-primary/50'
+                              }`}
+                            >
+                              <IconComponent className="h-5 w-5" />
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -712,34 +715,40 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     <Label className="text-sm text-muted-foreground">
                       Added locations ({onboardingLocations.length}/{MAX_SAVED_LOCATIONS})
                     </Label>
-                    {onboardingLocations.map((loc, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 rounded-lg border border-border bg-background"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-lg">{getIconEmoji(loc.icon)}</span>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{loc.label}</p>
-                            <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveLocation(index)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                    {onboardingLocations.map((loc, index) => {
+                      const LocIcon = getLocationIcon(loc.icon);
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border bg-background"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <LocIcon className="h-4 w-4 text-primary" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm truncate">{loc.label}</p>
+                              <p className="text-xs text-muted-foreground truncate">{loc.address}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveLocation(index)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 {/* Helper text */}
-                <p className="text-xs text-muted-foreground text-center">
-                  💡 You can always add more locations later in your profile settings
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  You can always add more locations later in your profile settings
                 </p>
               </motion.div>
             )}

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { MapPin, Plus, Trash2, Loader2 } from 'lucide-react';
+import { MapPin, Plus, Trash2, Loader2, Lightbulb } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSavedLocations, useDeleteSavedLocation } from '@/hooks/useSavedLocations';
 import { AddCoreLocationDialog } from './AddCoreLocationDialog';
-import { getIconEmoji, MAX_SAVED_LOCATIONS } from '@/types/savedLocation';
+import { getLocationIcon, MAX_SAVED_LOCATIONS } from '@/types/savedLocation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,34 +74,37 @@ export function CoreLocationsCard() {
             </div>
           ) : (
             <div className="space-y-2">
-              {locations.map((location) => (
-                <div
-                  key={location.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/40 group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-lg flex-shrink-0">
-                      {getIconEmoji(location.icon)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {location.label}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {location.address}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                    onClick={() => setDeleteId(location.id)}
+              {locations.map((location) => {
+                const LocationIcon = getLocationIcon(location.icon);
+                return (
+                  <div
+                    key={location.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/40 group"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <LocationIcon className="h-4 w-4 text-primary" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {location.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {location.address}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      onClick={() => setDeleteId(location.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                );
+              })}
 
               {/* Capacity indicator */}
               <p className="text-xs text-muted-foreground pt-2">
@@ -111,8 +114,9 @@ export function CoreLocationsCard() {
           )}
 
           {/* Info text */}
-          <p className="text-xs text-muted-foreground mt-4 border-t pt-4">
-            💡 These locations will appear on every property page to show you travel times from places that matter.
+          <p className="text-xs text-muted-foreground mt-4 border-t pt-4 flex items-start gap-1.5">
+            <Lightbulb className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+            These locations will appear on every property page to show you travel times from places that matter.
           </p>
         </CardContent>
       </Card>
