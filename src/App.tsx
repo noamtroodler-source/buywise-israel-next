@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -140,6 +140,10 @@ const App = () => (
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/projects/:slug" element={<ProjectDetail />} />
                         <Route path="/auth" element={<Auth />} />
+                        
+                        {/* Route aliases - redirect old/intuitive URLs to /listings */}
+                        <Route path="/buy" element={<Navigate to="/listings?type=buy" replace />} />
+                        <Route path="/rent" element={<Navigate to="/listings?type=rent" replace />} />
                         
                         {/* Lazy loaded routes */}
                         <Route path="/get-started" element={<GetStarted />} />
