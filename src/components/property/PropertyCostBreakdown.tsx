@@ -4,13 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
-import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel, profileToDimensions } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { PersonalizationHeader } from './PersonalizationHeader';
 import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
+import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
+import { BuyerType } from '@/lib/calculations/purchaseTax';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -53,14 +55,20 @@ function calculateTaxFromBrackets(
   return Math.round(totalTax);
 }
 
-// Map buyer category to tax bracket buyer_type
-function mapCategoryToTaxType(category: 'first_time' | 'oleh' | 'additional' | 'non_resident'): string {
-  switch (category) {
-    case 'first_time': return 'first_time';
-    case 'oleh': return 'oleh';
-    case 'additional':
-    case 'non_resident': return 'investor';
-    default: return 'first_time';
+// Map BuyerType to tax bracket type
+function mapBuyerTypeToTaxType(buyerType: BuyerType): string {
+  switch (buyerType) {
+    case 'first_time':
+    case 'upgrader':
+      return 'first_time';
+    case 'oleh':
+      return 'oleh';
+    case 'investor':
+    case 'company':
+    case 'foreign':
+      return 'investor';
+    default:
+      return 'first_time';
   }
 }
 
@@ -76,13 +84,24 @@ export function PropertyCostBreakdown({
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
   
-  // Get buyer category from profile
+  // Profile override state for what-if testing
+  const [profileOverride, setProfileOverride] = useState<BuyerProfileDimensions | null>(null);
+  
+  // Get saved profile dimensions
+  const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
+  
+  // Use override if set, otherwise use saved profile
+  const effectiveProfileDimensions = profileOverride || savedProfileDimensions;
+  const effectiveDerived = useMemo(() => deriveEffectiveBuyerType(effectiveProfileDimensions), [effectiveProfileDimensions]);
+  
+  // Get buyer category from effective profile
   const buyerCategory = getBuyerTaxCategory(buyerProfile);
+  const effectiveTaxType = effectiveDerived.taxType;
   const hasProfile = !!buyerProfile?.onboarding_completed;
   
-  // Fetch tax brackets from database
-  const taxType = mapCategoryToTaxType(buyerCategory);
-  const { data: taxBrackets } = usePurchaseTaxBrackets(taxType);
+  // Fetch tax brackets from database using effective tax type
+  const taxBracketType = mapBuyerTypeToTaxType(effectiveTaxType);
+  const { data: taxBrackets } = usePurchaseTaxBrackets(taxBracketType);
   
   // Fetch city-specific data
   const citySlug = city?.toLowerCase().replace(/\s+/g, '-');
@@ -171,7 +190,8 @@ export function PropertyCostBreakdown({
     return 6055070 * 0.08 + (price - 6055070) * 0.10;
   }, [price]);
   
-  const taxSavings = buyerCategory !== 'additional' && buyerCategory !== 'non_resident' 
+  // Use effective tax type for savings calculation
+  const taxSavings = effectiveTaxType !== 'investor' && effectiveTaxType !== 'company' && effectiveTaxType !== 'foreign'
     ? investorTax - purchaseTax 
     : 0;
 
@@ -241,6 +261,8 @@ export function PropertyCostBreakdown({
             termYears={mortgageEstimate.termYears}
             propertyPrice={price}
             ltvLimit={ltvLimit}
+            savedProfileDimensions={savedProfileDimensions}
+            onProfileOverride={setProfileOverride}
           />
         )}
 
@@ -271,8 +293,11 @@ export function PropertyCostBreakdown({
               <div className="flex justify-between py-2 border-b border-border/50">
                 <div>
                   <span className="text-muted-foreground">Purchase Tax</span>
-                  {buyerCategory === 'oleh' && (
+                  {effectiveTaxType === 'oleh' && (
                     <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh</Badge>
+                  )}
+                  {effectiveTaxType === 'first_time' && (
+                    <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">First-Time</Badge>
                   )}
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {effectiveTaxRate.toFixed(2)}% effective
