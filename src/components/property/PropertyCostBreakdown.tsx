@@ -260,14 +260,14 @@ export function PropertyCostBreakdown({
         )}
 
 
-        {/* One-Time Costs - Progressive disclosure */}
+        {/* Upfront Costs - Progressive disclosure */}
         <TooltipProvider>
         <Collapsible open={oneTimeOpen} onOpenChange={setOneTimeOpen}>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-foreground">One-Time Costs</h4>
+                <h4 className="font-medium text-foreground">Upfront Costs</h4>
               </div>
               <div className="text-right">
                 <div className="font-bold text-primary">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</div>
