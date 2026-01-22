@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { useProperty } from '@/hooks/useProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
@@ -33,9 +33,12 @@ export default function PropertyDetail() {
   // Track property view in database (for agent analytics)
   usePropertyViewTracking(property?.id);
   
-  // Track this property view locally (for recently viewed)
+  // Track this property view locally (for recently viewed) - only once per property visit
+  const hasTrackedView = useRef<string | null>(null);
+  
   useEffect(() => {
-    if (id && property) {
+    if (id && property && hasTrackedView.current !== id) {
+      hasTrackedView.current = id;
       addToRecentlyViewed(id);
     }
   }, [id, property, addToRecentlyViewed]);
