@@ -6,6 +6,12 @@ export type AlertFrequency = 'instant' | 'daily' | 'weekly';
 export type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'size_desc' | 'rooms_desc';
 export type AppRole = 'admin' | 'agent' | 'developer' | 'user';
 
+// Lease reality types
+export type LeaseTermOption = '6_months' | '12_months' | '24_months' | 'flexible' | 'other';
+export type SublettingOption = 'allowed' | 'case_by_case' | 'not_allowed';
+export type FurnishedStatus = 'fully' | 'semi' | 'unfurnished';
+export type PetsPolicy = 'allowed' | 'case_by_case' | 'not_allowed';
+
 export interface Profile {
   id: string;
   email: string | null;
@@ -76,6 +82,11 @@ export interface Property {
   ac_type: 'none' | 'split' | 'central' | 'mini_central' | null;
   vaad_bayit_monthly: number | null;
   allows_pets: 'none' | 'cats' | 'dogs' | 'all' | null;
+  // Lease reality fields
+  lease_term: LeaseTermOption | null;
+  subletting_allowed: SublettingOption | null;
+  furnished_status: FurnishedStatus | null;
+  pets_policy: PetsPolicy | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;

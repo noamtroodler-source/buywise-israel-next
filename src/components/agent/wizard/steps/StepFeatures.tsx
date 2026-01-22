@@ -4,8 +4,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench, Sparkles, Building } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, PawPrint, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
 const conditions = [
   { value: 'new', label: 'New (from developer)' },
@@ -22,6 +23,34 @@ const acTypes = [
   { value: 'mini_central', label: 'Mini Central (מיני מרכזי)' },
 ];
 
+// Lease reality options
+const leaseTermOptions: { value: LeaseTermOption; label: string }[] = [
+  { value: '6_months', label: '6 Months' },
+  { value: '12_months', label: '12 Months (Standard)' },
+  { value: '24_months', label: '24 Months' },
+  { value: 'flexible', label: 'Flexible' },
+  { value: 'other', label: 'Other (specify in description)' },
+];
+
+const sublettingOptions: { value: SublettingOption; label: string }[] = [
+  { value: 'allowed', label: 'Subletting Allowed' },
+  { value: 'case_by_case', label: 'Case by Case' },
+  { value: 'not_allowed', label: 'No Subletting' },
+];
+
+const furnishedOptions: { value: FurnishedStatus; label: string }[] = [
+  { value: 'fully', label: 'Fully Furnished' },
+  { value: 'semi', label: 'Semi Furnished' },
+  { value: 'unfurnished', label: 'Unfurnished' },
+];
+
+const petsOptions: { value: PetsPolicy; label: string }[] = [
+  { value: 'allowed', label: 'Pets Allowed' },
+  { value: 'case_by_case', label: 'Case by Case' },
+  { value: 'not_allowed', label: 'No Pets' },
+];
+
+// Removed 'furnished' and 'pets_allowed' - now using structured dropdowns instead
 const commonFeatures = [
   { id: 'elevator', label: 'Elevator' },
   { id: 'balcony', label: 'Balcony' },
@@ -30,8 +59,6 @@ const commonFeatures = [
   { id: 'sukkah_balcony', label: 'Sukkah Balcony' },
   { id: 'shabbat_elevator', label: 'Shabbat Elevator' },
   { id: 'accessible', label: 'Accessible' },
-  { id: 'furnished', label: 'Furnished' },
-  { id: 'pets_allowed', label: 'Pets Allowed' },
   { id: 'renovated_kitchen', label: 'Renovated Kitchen' },
   { id: 'master_suite', label: 'Master Suite' },
   { id: 'garden', label: 'Private Garden' },
@@ -42,6 +69,7 @@ const commonFeatures = [
 
 export function StepFeatures() {
   const { data, updateData } = usePropertyWizard();
+  const isRental = data.listing_status === 'for_rent';
 
   const toggleFeature = (featureId: string) => {
     const newFeatures = data.features.includes(featureId)
@@ -167,8 +195,114 @@ export function StepFeatures() {
           </div>
         </div>
 
+        {/* Lease Details Section - Rental Only */}
+        {isRental && (
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="font-semibold">Lease Details</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Lease Term */}
+              <div className="space-y-2">
+                <Label>Typical Lease Term</Label>
+                <Select
+                  value={data.lease_term || ''}
+                  onValueChange={(v) => updateData({ lease_term: v as LeaseTermOption })}
+                >
+                  <SelectTrigger className="w-full h-11 rounded-xl">
+                    <SelectValue placeholder="Select lease term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leaseTermOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subletting */}
+              <div className="space-y-2">
+                <Label>Subletting</Label>
+                <Select
+                  value={data.subletting_allowed || ''}
+                  onValueChange={(v) => updateData({ subletting_allowed: v as SublettingOption })}
+                >
+                  <SelectTrigger className="w-full h-11 rounded-xl">
+                    <SelectValue placeholder="Select subletting policy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sublettingOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Property Terms Section - Both Rental and Sale */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Home className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="font-semibold">Property Terms</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Furnished Status */}
+            <div className="space-y-2">
+              <Label>Furnished Status</Label>
+              <Select
+                value={data.furnished_status || ''}
+                onValueChange={(v) => updateData({ furnished_status: v as FurnishedStatus })}
+              >
+                <SelectTrigger className="w-full h-11 rounded-xl">
+                  <SelectValue placeholder="Select furnished status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {furnishedOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Pets Policy */}
+            <div className="space-y-2">
+              <Label>Pets Policy</Label>
+              <Select
+                value={data.pets_policy || ''}
+                onValueChange={(v) => updateData({ pets_policy: v as PetsPolicy })}
+              >
+                <SelectTrigger className="w-full h-11 rounded-xl">
+                  <SelectValue placeholder="Select pets policy" />
+                </SelectTrigger>
+                <SelectContent>
+                  {petsOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
         {/* Feature Checkboxes */}
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4 border-t">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-4 w-4 text-primary" />

@@ -85,6 +85,11 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
+        // Lease reality fields
+        lease_term: data.lease_term,
+        subletting_allowed: data.subletting_allowed,
+        furnished_status: data.furnished_status,
+        pets_policy: data.pets_policy,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -119,6 +124,11 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
+        // Lease reality fields
+        lease_term: data.lease_term,
+        subletting_allowed: data.subletting_allowed,
+        furnished_status: data.furnished_status,
+        pets_policy: data.pets_policy,
         submitForReview: true,
       });
       

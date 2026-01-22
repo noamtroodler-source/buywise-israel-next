@@ -41,6 +41,11 @@ export interface CreatePropertyData {
   vaad_bayit_monthly?: number;
   verification_status?: VerificationStatus;
   submitted_at?: string;
+  // Lease reality fields
+  lease_term?: string;
+  subletting_allowed?: string;
+  furnished_status?: string;
+  pets_policy?: string;
 }
 
 export function useAgentProfile() {
