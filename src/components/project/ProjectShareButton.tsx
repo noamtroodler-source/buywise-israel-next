@@ -1,3 +1,4 @@
+import React from 'react';
 import { Share2, Link, MessageCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,12 +17,8 @@ interface ProjectShareButtonProps {
   size?: 'sm' | 'default' | 'icon';
 }
 
-export function ProjectShareButton({ 
-  projectSlug, 
-  projectName, 
-  className,
-  size = 'icon'
-}: ProjectShareButtonProps) {
+export const ProjectShareButton = React.forwardRef<HTMLButtonElement, ProjectShareButtonProps>(
+  function ProjectShareButton({ projectSlug, projectName, className, size = 'icon' }, ref) {
   const projectUrl = `${window.location.origin}/projects/${projectSlug}`;
   const shareText = `Check out this project: ${projectName}`;
 
@@ -55,34 +52,36 @@ export function ProjectShareButton({
     e.stopPropagation();
   };
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild onClick={handleTriggerClick}>
-        <Button
-          variant="ghost"
-          size={size}
-          className={cn(
-            "h-8 w-8 bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors",
-            className
-          )}
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={handleCopyLink}>
-          <Link className="h-4 w-4 mr-2" />
-          Copy Link
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleWhatsApp}>
-          <MessageCircle className="h-4 w-4 mr-2" />
-          WhatsApp
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleTelegram}>
-          <Send className="h-4 w-4 mr-2" />
-          Telegram
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={handleTriggerClick}>
+          <Button
+            ref={ref}
+            variant="ghost"
+            size={size}
+            className={cn(
+              "h-8 w-8 bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors",
+              className
+            )}
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onClick={handleCopyLink}>
+            <Link className="h-4 w-4 mr-2" />
+            Copy Link
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleWhatsApp}>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            WhatsApp
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleTelegram}>
+            <Send className="h-4 w-4 mr-2" />
+            Telegram
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+);

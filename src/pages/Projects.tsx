@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+
 import { Building, MapPin, Calendar, Loader2, Home, TrendingDown } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,24 +100,17 @@ export default function Projects() {
       {/* Page Header */}
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
         <div className="container py-8 md:py-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
+          <div className="animate-fade-in">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2"><span className="text-primary">New</span> Development Projects</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               New development projects in Israel — with timelines, pricing, and what to expect.
             </p>
-          </motion.div>
+          </div>
         </div>
       </div>
 
       <div className="container py-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
+        <div className="space-y-6">
 
           {/* Filters */}
           <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
@@ -149,13 +142,8 @@ export default function Projects() {
             <>
               <ListingsGrid isFetching={isFetching && !isLoading}>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.map((project, index) => (
-                    <motion.div
-                      key={project.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
+                  {projects.map((project) => (
+                    <div key={project.id} className="animate-fade-in">
                       <Link to={`/projects/${project.slug}`}>
                         <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
                         <div className="aspect-[16/10] overflow-hidden relative">
@@ -258,7 +246,7 @@ export default function Projects() {
                           </CardContent>
                         </Card>
                       </Link>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </ListingsGrid>
@@ -285,7 +273,7 @@ export default function Projects() {
               )}
             </>
           )}
-        </motion.div>
+        </div>
 
         {/* Back to Top Button */}
         <BackToTopButton />
