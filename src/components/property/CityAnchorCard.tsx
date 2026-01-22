@@ -88,7 +88,7 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
   const isFallback = travelMode !== 'drive' && distance && getTravelTime(distance, travelMode) === null;
   
   return (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/40">
+    <div className="bg-muted/30 border border-border/40 rounded-xl p-3 hover:bg-muted/50 transition-colors flex items-start gap-3">
       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
         <Icon className="h-4 w-4 text-primary" />
       </div>
@@ -110,17 +110,17 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
         </div>
         <p className="text-xs text-muted-foreground">{anchorTypeLabels[anchor.anchor_type]}</p>
         {travel ? (
-          <p className={`text-xs mt-1 flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-primary'}`}>
-            <travel.Icon className="h-3 w-3" />
-            <span className="font-medium">{travel.time} min</span>
-            <span>{travel.label}</span>
-          </p>
+          <div className="flex items-center gap-1.5 mt-2 text-sm">
+            <travel.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="font-medium text-foreground">{travel.time} min</span>
+            <span className="text-muted-foreground">{travel.label}</span>
+          </div>
         ) : !hasPropertyCoords ? (
-          <p className="text-xs mt-1 text-muted-foreground/70 italic">
+          <p className="text-sm mt-2 text-muted-foreground/70 italic">
             Travel time pending location
           </p>
         ) : (
-          <p className="text-xs mt-1 text-muted-foreground/70 italic">
+          <p className="text-sm mt-2 text-muted-foreground/70 italic">
             3+ hours away
           </p>
         )}
