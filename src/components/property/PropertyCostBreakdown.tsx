@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, TrendingUp, Building2, Home } from 'lucide-react';
+import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, Home, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
@@ -13,6 +13,7 @@ import { useMortgageEstimate } from '@/hooks/useMortgagePreferences';
 import { MortgageAssumptionsPanel } from './MortgageAssumptionsPanel';
 import { Link } from 'react-router-dom';
 import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
+import { cn } from '@/lib/utils';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -178,38 +179,33 @@ export function PropertyCostBreakdown({
     ? investorTax - purchaseTax 
     : 0;
 
-  // Profile prompt banner
+  // State for collapsible sections
+  const [oneTimeOpen, setOneTimeOpen] = useState(false);
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
+  
+  // Calculate % of purchase price for context
+  const oneTimePercentLow = ((totalOneTimeRange.low / price) * 100).toFixed(1);
+  const oneTimePercentHigh = ((totalOneTimeRange.high / price) * 100).toFixed(1);
+
+  // Profile prompt banner - now inline and compact
   const ProfilePrompt = () => (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
-      <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-      <div className="flex-1 space-y-1">
-        <p className="text-sm text-foreground">
-          {user ? (
-            <>Costs shown for <span className="font-medium">{getBuyerCategoryLabel(buyerCategory)}</span> (default)</>
-          ) : (
-            <>Assuming <span className="font-medium">First-Time Buyer</span> rates</>
-          )}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {user ? (
-            'Set your buyer profile for personalized calculations'
-          ) : (
-            'Sign up to get personalized tax calculations'
-          )}
-        </p>
-      </div>
+    <div className="flex items-center gap-2 p-2 px-3 rounded-lg bg-muted/50 text-sm">
+      <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+      <span className="text-muted-foreground">
+        {user ? (
+          <>Assuming <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span> rates</>
+        ) : (
+          <>Assuming <span className="font-medium text-foreground">First-Time Buyer</span> rates</>
+        )}
+      </span>
+      <span className="text-muted-foreground">·</span>
       {user ? (
-        <Link to="/profile">
-          <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs">
-            <Settings className="h-3.5 w-3.5" />
-            Personalize
-          </Button>
+        <Link to="/profile" className="text-primary hover:underline text-sm">
+          Personalize
         </Link>
       ) : (
-        <Link to="/auth?tab=signup">
-          <Button variant="ghost" size="sm" className="h-8 text-xs">
-            Sign Up
-          </Button>
+        <Link to="/auth?tab=signup" className="text-primary hover:underline text-sm">
+          Sign up
         </Link>
       )}
     </div>
@@ -261,189 +257,183 @@ export function PropertyCostBreakdown({
       </div>
       
       <div className="space-y-5">
-        {/* Show personalization prompt if no profile set */}
-        {!hasProfile && !isLoading && <ProfilePrompt />}
-        
-        {/* Buyer category indicator if profile exists */}
-        {hasProfile && (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2">
+        {/* Compact profile indicator - unified for all users */}
+        {!isLoading && (
+          hasProfile ? (
+            <div className="flex items-center gap-2 text-sm">
               <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-sm text-foreground">
-                Calculating for: <span className="font-medium">{getBuyerCategoryLabel(buyerCategory)}</span>
+              <span className="text-muted-foreground">
+                Calculating for: <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
               </span>
-            </div>
-            <Link to="/profile">
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
+              <Link to="/profile" className="text-primary hover:underline text-sm ml-1">
                 Change
-              </Button>
-            </Link>
-          </div>
+              </Link>
+            </div>
+          ) : (
+            <ProfilePrompt />
+          )
         )}
 
 
-        {/* One-Time Costs - Now with honest ranges */}
+        {/* One-Time Costs - Progressive disclosure */}
         <TooltipProvider>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" />
-            <h4 className="font-medium text-foreground">One-Time Costs</h4>
-            <Badge variant="outline" className="text-xs ml-auto">Ranges reflect negotiation</Badge>
-          </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <div>
-                <span className="text-muted-foreground">Purchase Tax (Mas Rechisha)</span>
-                {buyerCategory === 'oleh' && (
-                  <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh rate</Badge>
-                )}
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Effective rate: {effectiveTaxRate.toFixed(2)}%
-                </p>
+        <Collapsible open={oneTimeOpen} onOpenChange={setOneTimeOpen}>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">One-Time Costs</h4>
               </div>
-              <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
+              <div className="text-right">
+                <div className="font-bold text-primary">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</div>
+                <div className="text-xs text-muted-foreground">~{oneTimePercentLow}–{oneTimePercentHigh}% of price</div>
+              </div>
             </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Lawyer Fees ({FEE_RANGES.lawyer.label} + VAT)</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>Varies by transaction complexity and negotiation. Simple deals at lower end, complex deals higher.</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className="font-medium">{formatPriceRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high, 'ILS')}</span>
-            </div>
-            {isNewConstruction && (
+            
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+                <ChevronDown className={cn("h-3 w-3 transition-transform", oneTimeOpen && "rotate-180")} />
+                {oneTimeOpen ? 'Hide breakdown' : 'View breakdown'}
+              </button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-2 text-sm pt-2">
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div>
+                  <span className="text-muted-foreground">Purchase Tax</span>
+                  {buyerCategory === 'oleh' && (
+                    <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">Oleh</Badge>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {effectiveTaxRate.toFixed(2)}% effective
+                  </p>
+                </div>
+                <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
+              </div>
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2 cursor-help">
-                      <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Developer Lawyer Fee ({FEE_RANGES.developerLawyer.label})</span>
-                      <Badge variant="outline" className="text-xs">New Build</Badge>
-                    </div>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Lawyer Fees</span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Required for new construction. Covers contract review and registration with developer.</p>
+                    <p>{FEE_RANGES.lawyer.label} + 18% VAT. Varies by complexity.</p>
                   </TooltipContent>
                 </Tooltip>
-                <span className="font-medium">{formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}</span>
+                <span className="font-medium">{formatPriceRange(lawyerFeesRange.low + lawyerVatRange.low, lawyerFeesRange.high + lawyerVatRange.high, 'ILS')}</span>
               </div>
-            )}
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Agent Fees ({FEE_RANGES.agent.label} + VAT)</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>Negotiable. In competitive markets, may be lower or shared with seller.</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className="font-medium">{formatPriceRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="cursor-help">
-                    <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Mortgage & Registration Fees</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>Includes appraisal ({FEE_RANGES.appraisal.label}), origination ({FEE_RANGES.mortgageOrigination.label}), and Tabu registration ({FEE_RANGES.registration.label}).</p>
-                </TooltipContent>
-              </Tooltip>
-              <span className="font-medium">{formatPriceRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-2">
-              <span className="font-semibold">Total One-Time Range</span>
-              <span className="font-bold text-primary">{formatPriceRange(totalOneTimeRange.low, totalOneTimeRange.high, 'ILS')}</span>
-            </div>
+              {isNewConstruction && (
+                <div className="flex justify-between py-2 border-b border-border/50">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">Developer Lawyer</span>
+                        <Badge variant="outline" className="text-xs">New Build</Badge>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>{FEE_RANGES.developerLawyer.label}. Required for new construction.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="font-medium">{formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}</span>
+                </div>
+              )}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Agent Fees</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>{FEE_RANGES.agent.label} + VAT. Negotiable.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">{formatPriceRange(agentFeesRange.low + agentVatRange.low, agentFeesRange.high + agentVatRange.high, 'ILS')}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">Other Fees</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Appraisal, mortgage origination & Tabu registration.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">{formatPriceRange(mortgageFeesRange.low + registrationFeesRange.low, mortgageFeesRange.high + registrationFeesRange.high, 'ILS')}</span>
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
         </TooltipProvider>
 
-        {/* Monthly Costs with Mortgage */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-primary" />
-              <h4 className="font-medium text-foreground">Estimated Monthly</h4>
+        {/* Monthly Costs - Progressive disclosure */}
+        <Collapsible open={monthlyOpen} onOpenChange={setMonthlyOpen}>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">Estimated Monthly</h4>
+              </div>
+              <div className="flex items-center gap-3">
+                {city && cityData && (
+                  <span className="text-xs text-muted-foreground">{city} rates</span>
+                )}
+                <div className="text-right">
+                  <div className="font-bold text-primary">
+                    {formatPrice(mortgageEstimate.monthlyPaymentLow + totalMonthly, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh + totalMonthly, 'ILS').replace('₪', '')}/mo
+                  </div>
+                </div>
+              </div>
             </div>
+            
             <div className="flex items-center gap-2">
-              {city && cityData && (
-                <Badge variant="outline" className="text-xs">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  {city} rates
-                </Badge>
-              )}
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", monthlyOpen && "rotate-180")} />
+                  {monthlyOpen ? 'Hide breakdown' : 'View breakdown'}
+                </button>
+              </CollapsibleTrigger>
               <MortgageAssumptionsPanel 
                 propertyPrice={price} 
                 currency={currency}
               />
             </div>
-          </div>
-          <div className="space-y-2 text-sm">
-            {/* Mortgage Payment Row - Hero item */}
-            <div className="flex justify-between py-3 border-b border-border/50">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-foreground">Mortgage Payment</span>
+            
+            <CollapsibleContent className="space-y-2 text-sm pt-2">
+              {/* Mortgage Payment Row - Hero item */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Home className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-foreground">Mortgage</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatPrice(mortgageEstimate.loanAmount, 'ILS')} loan · {mortgageEstimate.termYears}yr · 4.5–6% rates
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="font-semibold text-primary">
+                <span className="font-medium">
                   {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
                 </span>
-                <p className="text-xs text-muted-foreground">
-                  {mortgageEstimate.downPaymentPercent}% down
-                </p>
               </div>
-            </div>
-            
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <div>
-                <span className="text-muted-foreground">Arnona (monthly)</span>
-                {sizeSqm && cityData?.arnona_rate_sqm && (
-                  <p className="text-xs text-muted-foreground">
-                    ₪{cityData.arnona_rate_sqm}/sqm/yr × {sizeSqm}sqm ÷ 12
-                  </p>
-                )}
+              
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <span className="text-muted-foreground">Arnona</span>
+                <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
               </div>
-              <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Va'ad Bayit</span>
-                {isVaadActual && (
-                  <Badge variant="secondary" className="text-xs">Actual</Badge>
-                )}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Va'ad Bayit</span>
+                  {isVaadActual && (
+                    <Badge variant="secondary" className="text-xs">Actual</Badge>
+                  )}
+                </div>
+                <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
               </div>
-              <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Home Insurance</span>
-              <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
-            </div>
-            
-            {/* Total Monthly with mortgage */}
-            <div className="flex justify-between py-3 bg-primary/5 px-3 rounded-xl mt-2 border border-primary/20">
-              <span className="font-semibold text-foreground">Total Monthly</span>
-              <div className="text-right">
-                <span className="font-bold text-primary">
-                  {formatPrice(mortgageEstimate.monthlyPaymentLow + totalMonthly, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh + totalMonthly, 'ILS').replace('₪', '')}
-                </span>
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <span className="text-muted-foreground">Insurance</span>
+                <span className="font-medium">{formatPrice(insurance, 'ILS')}</span>
               </div>
-            </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
         
         <p className="text-xs text-muted-foreground">
           * Based on 2025 tax brackets{cityData ? ` and ${city} municipal rates` : ''}. Actual costs may vary.
