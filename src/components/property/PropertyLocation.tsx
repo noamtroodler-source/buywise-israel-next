@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Footprints, Bus, Car, Compass } from 'lucide-react';
+import { MapPin, ExternalLink, Footprints, Bus, Car, Compass, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
@@ -7,6 +7,7 @@ import { CityAnchorCard } from './CityAnchorCard';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
 import { LocationSearchInput, type SearchedLocation } from './LocationSearchInput';
 import { SearchedLocationCard } from './SearchedLocationCard';
+import { useAutoGeocode } from '@/hooks/useAutoGeocode';
 
 interface PropertyLocationProps {
   address: string;
@@ -14,6 +15,8 @@ interface PropertyLocationProps {
   neighborhood?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  entityId?: string;
+  entityType?: 'property' | 'project';
 }
 
 type TravelMode = 'walk' | 'transit' | 'drive';
@@ -22,9 +25,28 @@ export function PropertyLocation({
   address, 
   city, 
   neighborhood,
-  latitude,
-  longitude,
+  latitude: initialLatitude,
+  longitude: initialLongitude,
+  entityId,
+  entityType = 'property',
 }: PropertyLocationProps) {
+  // Auto-geocode if coordinates are missing
+  const { 
+    latitude: geocodedLat, 
+    longitude: geocodedLng, 
+    isLoading: isGeocoding 
+  } = useAutoGeocode(
+    entityType,
+    entityId,
+    address,
+    city,
+    initialLatitude,
+    initialLongitude
+  );
+  
+  // Use geocoded coordinates if available, otherwise initial
+  const latitude = geocodedLat ?? initialLatitude;
+  const longitude = geocodedLng ?? initialLongitude;
   const [travelMode, setTravelMode] = useState<TravelMode>('walk');
   const [searchedLocations, setSearchedLocations] = useState<SearchedLocation[]>([]);
   
@@ -118,16 +140,21 @@ export function PropertyLocation({
             propertyTitle={address}
             nearbyPOIs={generateMapPOIs()}
           />
+        ) : isGeocoding ? (
+          <div className="h-[200px] bg-muted rounded-xl flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" />
+              <p className="text-sm">Finding map location...</p>
+            </div>
+          </div>
         ) : (
           <div className="h-[200px] bg-muted rounded-xl flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Map preview not available</p>
+              <p className="text-sm">Map location not available</p>
             </div>
           </div>
         )}
-
-        {/* Address & Map Links */}
         <div className="space-y-3">
           <div className="flex items-start gap-2">
             <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -146,34 +173,32 @@ export function PropertyLocation({
         </div>
 
         {/* Inline Location Search */}
-        {latitude && longitude && (
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-foreground">Search a location</h4>
-            <LocationSearchInput
-              onLocationSelect={handleLocationSelect}
-              propertyLat={latitude}
-              propertyLng={longitude}
-            />
-            
-            {searchedLocations.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-3">
-                {searchedLocations.map((location) => (
-                  <SearchedLocationCard
-                    key={location.id}
-                    location={location}
-                    propertyLat={latitude}
-                    propertyLng={longitude}
-                    travelMode={travelMode}
-                    onRemove={() => handleRemoveSearch(location.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-foreground">Search a location</h4>
+          <LocationSearchInput
+            onLocationSelect={handleLocationSelect}
+            propertyLat={latitude ?? 31.7683}
+            propertyLng={longitude ?? 35.2137}
+          />
+          
+          {searchedLocations.length > 0 && (
+            <div className="grid gap-2 sm:grid-cols-3">
+              {searchedLocations.map((location) => (
+                <SearchedLocationCard
+                  key={location.id}
+                  location={location}
+                  propertyLat={latitude}
+                  propertyLng={longitude}
+                  travelMode={travelMode}
+                  onRemove={() => handleRemoveSearch(location.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* City Anchors - The 3 curated reference points */}
-        {hasCityAnchors && latitude && longitude && (
+        {hasCityAnchors && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

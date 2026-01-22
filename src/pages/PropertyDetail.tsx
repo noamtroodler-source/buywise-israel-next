@@ -189,6 +189,8 @@ export default function PropertyDetail() {
                 neighborhood={property.neighborhood}
                 latitude={property.latitude}
                 longitude={property.longitude}
+                entityId={property.id}
+                entityType="property"
               />
             </motion.div>
 

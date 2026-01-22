@@ -6,8 +6,8 @@ type TravelMode = 'walk' | 'transit' | 'drive';
 
 interface CityAnchorCardProps {
   anchor: CityAnchor;
-  propertyLat: number;
-  propertyLng: number;
+  propertyLat?: number | null;
+  propertyLng?: number | null;
   travelMode: TravelMode;
 }
 
@@ -71,8 +71,11 @@ function getTravelTime(distanceKm: number, mode: TravelMode): { time: number; la
 export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }: CityAnchorCardProps) {
   const Icon = iconMap[anchor.icon || 'map-pin'] || MapPin;
   
-  // Calculate distance if we have anchor coordinates
-  const distance = anchor.latitude && anchor.longitude
+  // Check if we have property coordinates
+  const hasPropertyCoords = propertyLat != null && propertyLng != null;
+  
+  // Calculate distance if we have both property and anchor coordinates
+  const distance = hasPropertyCoords && anchor.latitude && anchor.longitude
     ? calculateDistance(propertyLat, propertyLng, anchor.latitude, anchor.longitude)
     : null;
   
@@ -106,13 +109,17 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
           )}
         </div>
         <p className="text-xs text-muted-foreground">{anchorTypeLabels[anchor.anchor_type]}</p>
-        {travel && (
+        {travel ? (
           <p className={`text-xs mt-1 flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-primary'}`}>
             <travel.Icon className="h-3 w-3" />
             <span className="font-medium">{travel.time} min</span>
             <span>{travel.label}</span>
           </p>
-        )}
+        ) : !hasPropertyCoords ? (
+          <p className="text-xs mt-1 text-muted-foreground/70 italic">
+            Travel time pending location
+          </p>
+        ) : null}
       </div>
     </div>
   );
