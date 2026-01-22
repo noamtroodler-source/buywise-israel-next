@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp, Search, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
+import { CityAnchorCard } from './CityAnchorCard';
+import { useCityAnchors } from '@/hooks/useCityAnchors';
 
 interface NearbyItem {
   name: string;
@@ -64,6 +66,9 @@ export function PropertyLocation({
   const [travelMode, setTravelMode] = useState<TravelMode>('walk');
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Fetch city anchors from database
+  const { data: cityAnchors, isLoading: anchorsLoading } = useCityAnchors(city);
+  
   const fullAddress = `${address}${neighborhood ? `, ${neighborhood}` : ''}, ${city}, Israel`;
   
   const openGoogleMaps = () => {
@@ -80,7 +85,16 @@ export function PropertyLocation({
     window.open(`https://waze.com/ul?${query}&navigate=yes`, '_blank');
   };
 
-  // Mock nearby essentials data - 6 categories, 3 items each
+  // Search This Area - opens Google Maps centered on property
+  const searchThisArea = () => {
+    if (latitude && longitude) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=&center=${latitude},${longitude}&zoom=16`, '_blank');
+    } else {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank');
+    }
+  };
+
+  // Mock nearby essentials data - 6 categories, 3 items each (for expanded view)
   const nearbyEssentials: NearbyCategory[] = [
     { 
       category: 'Synagogues', 
@@ -138,10 +152,27 @@ export function PropertyLocation({
     },
   ];
 
-  // Generate mock POI coordinates for map markers
+  // Generate map POIs including city anchors
   const generateMapPOIs = () => {
     if (!latitude || !longitude) return [];
     
+    // Add city anchors to map if they have coordinates
+    const anchorPOIs = (cityAnchors || [])
+      .filter(anchor => anchor.latitude && anchor.longitude)
+      .map(anchor => ({
+        category: anchor.anchor_type === 'orientation' ? 'Landmark' : 
+                  anchor.anchor_type === 'daily_life' ? 'Shopping' : 'Transport',
+        name: anchor.name,
+        lat: anchor.latitude!,
+        lng: anchor.longitude!,
+      }));
+    
+    // If we have city anchors with coordinates, use those
+    if (anchorPOIs.length > 0) {
+      return anchorPOIs;
+    }
+    
+    // Otherwise fall back to mock POIs
     const offsets = [
       { category: 'Synagogues', name: 'Great Synagogue', latOffset: 0.003, lngOffset: 0.002 },
       { category: 'Schools', name: 'Elementary School', latOffset: -0.004, lngOffset: 0.003 },
@@ -159,6 +190,8 @@ export function PropertyLocation({
     }));
   };
 
+  const hasCityAnchors = cityAnchors && cityAnchors.length > 0;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -167,7 +200,7 @@ export function PropertyLocation({
       </div>
       
       <div className="space-y-5">
-        {/* Mini Map */}
+        {/* Mini Map - Slightly taller for better orientation */}
         {latitude && longitude ? (
           <PropertyMiniMapWrapper
             latitude={latitude}
@@ -199,64 +232,121 @@ export function PropertyLocation({
               <ExternalLink className="h-4 w-4" />
               Waze
             </Button>
+            <Button variant="outline" size="sm" onClick={searchThisArea} className="gap-2">
+              <Search className="h-4 w-4" />
+              Search this area
+            </Button>
           </div>
         </div>
 
-        {/* Nearby Essentials */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-foreground">Nearby Essentials</h4>
-            <ToggleGroup 
-              type="single" 
-              value={travelMode} 
-              onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
-              size="sm"
-              className="bg-muted rounded-lg p-0.5"
-            >
-              <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
-                <Footprints className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
-                <Bus className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
-                <Car className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
+        {/* City Anchors - The 3 curated reference points */}
+        {hasCityAnchors && latitude && longitude && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Compass className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">City Reference Points</h4>
+              </div>
+              <ToggleGroup 
+                type="single" 
+                value={travelMode} 
+                onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
+                size="sm"
+                className="bg-muted rounded-lg p-0.5"
+              >
+                <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
+                  <Footprints className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
+                  <Bus className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
+                  <Car className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            
+            <div className="grid gap-2 sm:grid-cols-3">
+              {cityAnchors.map((anchor) => (
+                <CityAnchorCard
+                  key={anchor.id}
+                  anchor={anchor}
+                  propertyLat={latitude}
+                  propertyLng={longitude}
+                  travelMode={travelMode}
+                />
+              ))}
+            </div>
           </div>
-          
-          {/* Compact Summary - Closest item per category (6 items total) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {nearbyEssentials.map((category) => {
-              const CategoryIcon = category.icon;
-              const closestItem = category.items[0]; // First item is closest
-              const travel = getTravelDisplay(closestItem.distanceKm, travelMode);
-              
-              if (!travel) return null;
-              
-              const TravelIcon = travel.Icon;
-              const isFallback = travelMode !== 'drive' && formatTravelTime(closestItem.distanceKm, travelMode) === null;
-              
-              return (
-                <div 
-                  key={category.category} 
-                  className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50 border border-border/50"
-                >
-                  <CategoryIcon className="h-4 w-4 text-primary shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{closestItem.name}</p>
-                    <p className={`text-xs flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
-                      <TravelIcon className="h-3 w-3" />
-                      {travel.time} min {travel.label}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        )}
 
-          {/* Expanded View - All items per category */}
-          {isExpanded && (
+        {/* Nearby Essentials - Expandable additional places */}
+        <div className="space-y-4">
+          {/* Only show header if we don't have city anchors (legacy view) */}
+          {!hasCityAnchors && (
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-foreground">Nearby Essentials</h4>
+              <ToggleGroup 
+                type="single" 
+                value={travelMode} 
+                onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
+                size="sm"
+                className="bg-muted rounded-lg p-0.5"
+              >
+                <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
+                  <Footprints className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
+                  <Bus className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
+                  <Car className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          )}
+          
+          {/* Compact Summary - Closest item per category (shown when no city anchors OR when expanded) */}
+          {(!hasCityAnchors || isExpanded) && (
+            <>
+              {isExpanded && hasCityAnchors && (
+                <div className="pt-2 border-t border-border/50">
+                  <h4 className="font-medium text-foreground text-sm mb-3">Nearby Places</h4>
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {nearbyEssentials.map((category) => {
+                  const CategoryIcon = category.icon;
+                  const closestItem = category.items[0]; // First item is closest
+                  const travel = getTravelDisplay(closestItem.distanceKm, travelMode);
+                  
+                  if (!travel) return null;
+                  
+                  const TravelIcon = travel.Icon;
+                  const isFallback = travelMode !== 'drive' && formatTravelTime(closestItem.distanceKm, travelMode) === null;
+                  
+                  return (
+                    <div 
+                      key={category.category} 
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50 border border-border/50"
+                    >
+                      <CategoryIcon className="h-4 w-4 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">{closestItem.name}</p>
+                        <p className={`text-xs flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                          <TravelIcon className="h-3 w-3" />
+                          {travel.time} min {travel.label}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Expanded View - Full details per category */}
+          {isExpanded && !hasCityAnchors && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-border/50">
               {nearbyEssentials.map((category) => {
                 const CategoryIcon = category.icon;

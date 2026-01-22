@@ -857,6 +857,56 @@ export type Database = {
         }
         Relationships: []
       }
+      city_anchors: {
+        Row: {
+          anchor_type: string
+          city_id: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          name_he: string | null
+        }
+        Insert: {
+          anchor_type: string
+          city_id: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          name_he?: string | null
+        }
+        Update: {
+          anchor_type?: string
+          city_id?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          name_he?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_anchors_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       city_canonical_metrics: {
         Row: {
           arnona_monthly_avg: number | null
