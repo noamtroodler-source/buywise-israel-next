@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Train, GraduationCap, ShoppingBag, Building, Heart, Trees, Footprints, Bus, Car, ChevronDown, ChevronUp, Search, Compass } from 'lucide-react';
+import { MapPin, ExternalLink, Footprints, Bus, Car, Search, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
@@ -64,7 +64,6 @@ export function PropertyLocation({
   longitude,
 }: PropertyLocationProps) {
   const [travelMode, setTravelMode] = useState<TravelMode>('walk');
-  const [isExpanded, setIsExpanded] = useState(false);
   
   // Fetch city anchors from database
   const { data: cityAnchors, isLoading: anchorsLoading } = useCityAnchors(city);
@@ -94,65 +93,7 @@ export function PropertyLocation({
     }
   };
 
-  // Mock nearby essentials data - 6 categories, 3 items each (for expanded view)
-  const nearbyEssentials: NearbyCategory[] = [
-    { 
-      category: 'Synagogues', 
-      icon: Building, 
-      items: [
-        { name: 'Great Synagogue', distanceKm: 0.3 },
-        { name: 'Chabad House', distanceKm: 0.5 },
-        { name: 'Young Israel', distanceKm: 0.8 },
-      ]
-    },
-    { 
-      category: 'Schools', 
-      icon: GraduationCap, 
-      items: [
-        { name: 'Elementary School', distanceKm: 0.4 },
-        { name: 'High School', distanceKm: 1.2 },
-        { name: 'International School', distanceKm: 2.5 },
-      ]
-    },
-    { 
-      category: 'Shopping', 
-      icon: ShoppingBag, 
-      items: [
-        { name: 'AM:PM / Supermarket', distanceKm: 0.15 },
-        { name: 'City Mall', distanceKm: 1.8 },
-        { name: 'Pharmacy', distanceKm: 0.3 },
-      ]
-    },
-    { 
-      category: 'Transport', 
-      icon: Train, 
-      items: [
-        { name: 'Bus Stop', distanceKm: 0.1 },
-        { name: 'Train Station', distanceKm: 1.5 },
-        { name: 'Tel Aviv Center', distanceKm: 25 },
-      ]
-    },
-    { 
-      category: 'Healthcare', 
-      icon: Heart, 
-      items: [
-        { name: 'Kupat Cholim Clinic', distanceKm: 0.4 },
-        { name: 'Pharmacy', distanceKm: 0.2 },
-        { name: 'Hospital', distanceKm: 3.5 },
-      ]
-    },
-    { 
-      category: 'Parks & Recreation', 
-      icon: Trees, 
-      items: [
-        { name: 'City Park', distanceKm: 0.3 },
-        { name: 'Sports Center', distanceKm: 1.2 },
-        { name: 'Beach', distanceKm: 2.0 },
-      ]
-    },
-  ];
-
-  // Generate map POIs including city anchors
+  // Generate map POIs from city anchors
   const generateMapPOIs = () => {
     if (!latitude || !longitude) return [];
     
@@ -280,127 +221,6 @@ export function PropertyLocation({
           </div>
         )}
 
-        {/* Nearby Essentials - Expandable additional places */}
-        <div className="space-y-4">
-          {/* Only show header if we don't have city anchors (legacy view) */}
-          {!hasCityAnchors && (
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-foreground">Nearby Essentials</h4>
-              <ToggleGroup 
-                type="single" 
-                value={travelMode} 
-                onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
-                size="sm"
-                className="bg-muted rounded-lg p-0.5"
-              >
-                <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
-                  <Footprints className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
-                  <Bus className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
-                  <Car className="h-4 w-4" />
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-          )}
-          
-          {/* Compact Summary - Closest item per category (shown when no city anchors OR when expanded) */}
-          {(!hasCityAnchors || isExpanded) && (
-            <>
-              {isExpanded && hasCityAnchors && (
-                <div className="pt-2 border-t border-border/50">
-                  <h4 className="font-medium text-foreground text-sm mb-3">Nearby Places</h4>
-                </div>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {nearbyEssentials.map((category) => {
-                  const CategoryIcon = category.icon;
-                  const closestItem = category.items[0]; // First item is closest
-                  const travel = getTravelDisplay(closestItem.distanceKm, travelMode);
-                  
-                  if (!travel) return null;
-                  
-                  const TravelIcon = travel.Icon;
-                  const isFallback = travelMode !== 'drive' && formatTravelTime(closestItem.distanceKm, travelMode) === null;
-                  
-                  return (
-                    <div 
-                      key={category.category} 
-                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-muted/50 border border-border/50"
-                    >
-                      <CategoryIcon className="h-4 w-4 text-primary shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">{closestItem.name}</p>
-                        <p className={`text-xs flex items-center gap-1 ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
-                          <TravelIcon className="h-3 w-3" />
-                          {travel.time} min {travel.label}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {/* Expanded View - Full details per category */}
-          {isExpanded && !hasCityAnchors && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2 border-t border-border/50">
-              {nearbyEssentials.map((category) => {
-                const CategoryIcon = category.icon;
-                return (
-                  <div key={category.category} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CategoryIcon className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm text-foreground">{category.category}</span>
-                    </div>
-                    <ul className="space-y-1.5 pl-6">
-                      {category.items.map((item, i) => {
-                        const travel = getTravelDisplay(item.distanceKm, travelMode);
-                        if (!travel) return null;
-                        
-                        const TravelIcon = travel.Icon;
-                        const isFallback = travelMode !== 'drive' && formatTravelTime(item.distanceKm, travelMode) === null;
-                        
-                        return (
-                          <li key={i} className="flex items-center justify-between text-sm gap-2">
-                            <span className="truncate text-muted-foreground">{item.name}</span>
-                            <span className={`flex items-center gap-1 text-xs whitespace-nowrap ${isFallback ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
-                              <TravelIcon className="h-3 w-3" />
-                              {travel.time} min {travel.label}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Toggle Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full text-muted-foreground hover:text-foreground"
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-1.5" />
-                Show less
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-1.5" />
-                See all nearby places
-              </>
-            )}
-          </Button>
-        </div>
       </div>
     </div>
   );
