@@ -1,18 +1,17 @@
-import { useState, useEffect } from 'react';
-import { DollarSign, ChevronDown, Info, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, RotateCcw, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useMortgagePreferences, MortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType, LTV_LIMITS } from '@/lib/calculations/buyerProfile';
-import { BuyerProfileSelector, useBuyerProfileState } from '@/components/tools/shared/BuyerProfileSelector';
 
 const LOCAL_STORAGE_KEY = 'guest_buyer_profile';
 
@@ -23,14 +22,14 @@ interface PersonalizationHeaderProps {
   termYears: number;
   propertyPrice: number;
   ltvLimit: number;
-  // New props for profile override
   savedProfileDimensions?: BuyerProfileDimensions | null;
   onProfileOverride?: (profile: BuyerProfileDimensions | null) => void;
 }
 
 const TERM_OPTIONS = [15, 20, 25, 30];
+const currentYear = new Date().getFullYear();
+const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-// Load guest profile from localStorage
 function getGuestProfile(): BuyerProfileDimensions | null {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -40,7 +39,6 @@ function getGuestProfile(): BuyerProfileDimensions | null {
   }
 }
 
-// Save guest profile to localStorage
 function saveGuestProfile(profile: BuyerProfileDimensions): void {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(profile));
@@ -73,7 +71,6 @@ export function PersonalizationHeader({
     preferences.down_payment_amount !== null ? 'amount' : 'percent'
   );
   
-  // Local buyer profile state for what-if testing
   const defaultProfile: BuyerProfileDimensions = savedProfileDimensions || {
     residency_status: 'israeli_resident',
     is_first_property: true,
@@ -83,36 +80,31 @@ export function PersonalizationHeader({
   };
   
   const [localProfile, setLocalProfile] = useState<BuyerProfileDimensions>(() => {
-    // For guests, try to load from localStorage
     if (!user) {
       return getGuestProfile() || defaultProfile;
     }
     return savedProfileDimensions || defaultProfile;
   });
   
-  // Update local profile when saved profile changes
   useEffect(() => {
     if (savedProfileDimensions) {
       setLocalProfile(savedProfileDimensions);
     }
   }, [savedProfileDimensions]);
   
-  // Handle profile change - update parent immediately for live recalc
-  const handleProfileChange = (newProfile: BuyerProfileDimensions) => {
+  const handleProfileChange = (updates: Partial<BuyerProfileDimensions>) => {
+    const newProfile = { ...localProfile, ...updates };
     setLocalProfile(newProfile);
     onProfileOverride?.(newProfile);
     
-    // For guests, persist to localStorage
     if (!user) {
       saveGuestProfile(newProfile);
     }
   };
   
-  // Derive the current buyer type label from local profile
-  const derived = deriveEffectiveBuyerType(localProfile);
+  const derived = useMemo(() => deriveEffectiveBuyerType(localProfile), [localProfile]);
   const currentLabel = derived.shortLabel;
   
-  // Check if profile is modified from saved
   const isProfileModified = savedProfileDimensions && (
     localProfile.residency_status !== savedProfileDimensions.residency_status ||
     localProfile.is_first_property !== savedProfileDimensions.is_first_property ||
@@ -121,7 +113,6 @@ export function PersonalizationHeader({
     localProfile.aliyah_year !== savedProfileDimensions.aliyah_year
   );
   
-  // Local form state for mortgage
   const [localDownPaymentPercent, setLocalDownPaymentPercent] = useState<string>(
     preferences.down_payment_percent?.toString() || ''
   );
@@ -130,13 +121,11 @@ export function PersonalizationHeader({
   );
   const [localTermYears, setLocalTermYears] = useState<number>(preferences.term_years);
   
-  // Calculate min down payment based on effective LTV from profile
   const effectiveLtvInfo = LTV_LIMITS[derived.taxType];
   const effectiveLtv = effectiveLtvInfo?.maxLtv ?? ltvLimit;
   const minDownPaymentPercent = 100 - effectiveLtv;
   const minDownPaymentAmount = propertyPrice * (minDownPaymentPercent / 100);
   
-  // Handle save
   const handleSave = () => {
     const newPrefs: Partial<MortgagePreferences> = {
       term_years: localTermYears,
@@ -156,9 +145,8 @@ export function PersonalizationHeader({
     setIsEditing(false);
   };
   
-  // Handle reset for guests
   const handleReset = () => {
-    const resetProfile: BuyerProfileDimensions = {
+    const resetProfile: BuyerProfileDimensions = savedProfileDimensions || {
       residency_status: 'israeli_resident',
       is_first_property: true,
       buyer_entity: 'individual',
@@ -172,308 +160,327 @@ export function PersonalizationHeader({
     }
   };
 
-  // Guest view - now with inline editing
-  if (!user) {
-    return (
-      <Collapsible open={isEditing} onOpenChange={setIsEditing}>
-        <div className="flex items-center gap-2 p-2 px-3 rounded-lg bg-muted/50 text-sm">
-          <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-muted-foreground flex-1">
-            Calculating for{' '}
-            <span className="font-medium text-foreground">{currentLabel}</span>
-            <span className="mx-1">·</span>
-            <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
-            <span className="mx-1">·</span>
-            <span className="font-medium text-foreground">{termYears}yr</span>
-          </span>
-          <CollapsibleTrigger asChild>
-            <button className="inline-flex items-center gap-0.5 text-primary hover:underline text-sm">
-              Edit
-              <ChevronDown className={cn("h-3 w-3 transition-transform", isEditing && "rotate-180")} />
-            </button>
-          </CollapsibleTrigger>
-        </div>
-        
-        <CollapsibleContent>
-          <div className="mt-3 p-4 rounded-lg bg-muted/30 space-y-4">
-            {/* Buyer Profile Section */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Buyer Profile
-              </Label>
-              <BuyerProfileSelector
-                profile={localProfile}
-                onProfileChange={handleProfileChange}
-                savedProfile={null}
-                className="border-0 bg-transparent p-0"
-              />
-            </div>
-            
-            <Separator />
-            
-            {/* Down Payment */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Down Payment
-                </Label>
-                <div className="flex gap-0.5">
-                  <Button
-                    variant={inputMode === 'amount' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-5 text-[10px] px-1.5"
-                    onClick={() => setInputMode('amount')}
-                  >
-                    ₪
-                  </Button>
-                  <Button
-                    variant={inputMode === 'percent' ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="h-5 text-[10px] px-1.5"
-                    onClick={() => setInputMode('percent')}
-                  >
-                    %
-                  </Button>
-                </div>
-              </div>
-              
-              {inputMode === 'amount' ? (
-                <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
-                  <Input
-                    type="text"
-                    value={localDownPaymentAmount}
-                    onChange={(e) => setLocalDownPaymentAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-                    placeholder={Math.round(minDownPaymentAmount).toLocaleString()}
-                    className="h-8 pl-5 text-sm"
-                  />
-                </div>
-              ) : (
-                <div className="relative">
-                  <Input
-                    type="number"
-                    value={localDownPaymentPercent}
-                    onChange={(e) => setLocalDownPaymentPercent(e.target.value)}
-                    placeholder={minDownPaymentPercent.toString()}
-                    min={minDownPaymentPercent}
-                    max={100}
-                    className="h-8 pr-6 text-sm"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                </div>
-              )}
-              
-              <p className="text-[10px] text-muted-foreground">
-                Min {minDownPaymentPercent}% ({formatPrice(minDownPaymentAmount, 'ILS')}) for {effectiveLtv}% LTV
-              </p>
-            </div>
-            
-            {/* Loan Term */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Loan Term
-              </Label>
-              <Select
-                value={localTermYears.toString()}
-                onValueChange={(v) => setLocalTermYears(parseInt(v))}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TERM_OPTIONS.map((years) => (
-                    <SelectItem key={years} value={years.toString()}>
-                      {years} years
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Rate info */}
-            <p className="text-[10px] text-muted-foreground">
-              Rate range: 4.5–6.0% (typical Bank of Israel rates)
-            </p>
-            
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={handleReset}
-                  className="h-7 text-xs gap-1"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  Reset
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
-                  variant="ghost"
-                  onClick={() => setIsEditing(false)}
-                  className="h-7 text-xs"
-                >
-                  Close
-                </Button>
-                <Link to="/auth?tab=signup">
-                  <Button size="sm" className="h-7 text-xs">
-                    Sign Up to Save
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  }
+  // Get property status value for toggle
+  const propertyStatusValue = localProfile.is_upgrading 
+    ? 'upgrading' 
+    : localProfile.is_first_property 
+      ? 'first' 
+      : 'additional';
 
-  // Logged-in user view
-  return (
-    <Collapsible open={isEditing} onOpenChange={setIsEditing}>
-      <div className="flex items-center gap-2 text-sm">
-        <DollarSign className="h-4 w-4 text-primary shrink-0" />
-        <span className="text-muted-foreground">
-          Calculating for:{' '}
-          <span className="font-medium text-foreground">{isProfileModified ? currentLabel : buyerCategoryLabel}</span>
-          {isProfileModified && <span className="text-xs text-muted-foreground/70 ml-1">(modified)</span>}
-          <span className="mx-1 text-muted-foreground/60">·</span>
-          <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
-          <span className="mx-1 text-muted-foreground/60">·</span>
-          <span className="font-medium text-foreground">{termYears}yr</span>
-        </span>
-        
-        <CollapsibleTrigger asChild>
-          <button className="inline-flex items-center gap-0.5 text-primary hover:underline ml-1">
-            Edit
-            <ChevronDown className={cn("h-3 w-3 transition-transform", isEditing && "rotate-180")} />
-          </button>
-        </CollapsibleTrigger>
-      </div>
+  // Collapsed header bar
+  const headerContent = (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-muted-foreground">
+        Calculating for:{' '}
+        <span className="font-medium text-foreground">{isProfileModified ? currentLabel : (user ? buyerCategoryLabel : currentLabel)}</span>
+        {isProfileModified && <span className="text-xs text-muted-foreground/70 ml-1">(modified)</span>}
+        <span className="mx-1.5 text-muted-foreground/40">·</span>
+        <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
+        <span className="mx-1.5 text-muted-foreground/40">·</span>
+        <span className="font-medium text-foreground">{termYears}yr</span>
+      </span>
       
-      <CollapsibleContent>
-        <div className="mt-3 p-4 rounded-lg bg-muted/30 space-y-4">
-          {/* Buyer Profile Section - now inline */}
-          <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Buyer Profile
-            </Label>
-            <BuyerProfileSelector
-              profile={localProfile}
-              onProfileChange={handleProfileChange}
-              savedProfile={savedProfileDimensions}
-              className="border-0 bg-transparent p-0"
-            />
-          </div>
-          
-          <Separator />
-          
-          {/* Down Payment */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Down Payment
-              </Label>
-              <div className="flex gap-0.5">
-                <Button
-                  variant={inputMode === 'amount' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-5 text-[10px] px-1.5"
-                  onClick={() => setInputMode('amount')}
-                >
-                  ₪
-                </Button>
-                <Button
-                  variant={inputMode === 'percent' ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-5 text-[10px] px-1.5"
-                  onClick={() => setInputMode('percent')}
-                >
-                  %
-                </Button>
-              </div>
-            </div>
-            
-            {inputMode === 'amount' ? (
-              <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
-                <Input
-                  type="text"
-                  value={localDownPaymentAmount}
-                  onChange={(e) => setLocalDownPaymentAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-                  placeholder={Math.round(minDownPaymentAmount).toLocaleString()}
-                  className="h-8 pl-5 text-sm"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                <Input
-                  type="number"
-                  value={localDownPaymentPercent}
-                  onChange={(e) => setLocalDownPaymentPercent(e.target.value)}
-                  placeholder={minDownPaymentPercent.toString()}
-                  min={minDownPaymentPercent}
-                  max={100}
-                  className="h-8 pr-6 text-sm"
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-              </div>
-            )}
-            
-            <p className="text-[10px] text-muted-foreground">
-              Min {minDownPaymentPercent}% ({formatPrice(minDownPaymentAmount, 'ILS')}) for {effectiveLtv}% LTV
-            </p>
-          </div>
-          
-          {/* Loan Term */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Loan Term
-            </Label>
+      <CollapsibleTrigger asChild>
+        <button className="inline-flex items-center gap-0.5 text-primary hover:underline ml-1 text-sm">
+          {isEditing ? 'Close' : 'Edit'}
+          <ChevronDown className={cn("h-3 w-3 transition-transform", isEditing && "rotate-180")} />
+        </button>
+      </CollapsibleTrigger>
+    </div>
+  );
+
+  // Expanded panel content - shared between guest and logged-in
+  const panelContent = (
+    <div className="mt-3 p-4 rounded-xl border bg-card space-y-5">
+      {/* Tax Status - Segmented Toggle */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Tax Status
+        </Label>
+        <ToggleGroup
+          type="single"
+          value={localProfile.residency_status}
+          onValueChange={(v) => {
+            if (v) {
+              handleProfileChange({ 
+                residency_status: v as BuyerProfileDimensions['residency_status'],
+                aliyah_year: v === 'oleh_hadash' ? localProfile.aliyah_year : null,
+              });
+            }
+          }}
+          className="grid grid-cols-3 gap-1 p-1 bg-muted rounded-lg w-full"
+        >
+          <ToggleGroupItem 
+            value="israeli_resident" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            Resident
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="oleh_hadash" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            New Oleh
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="non_resident" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            Non-Resident
+          </ToggleGroupItem>
+        </ToggleGroup>
+        
+        {/* Aliyah Year - only for Oleh */}
+        {localProfile.residency_status === 'oleh_hadash' && (
+          <div className="flex items-center gap-2 mt-2">
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Aliyah Year:</Label>
             <Select
-              value={localTermYears.toString()}
-              onValueChange={(v) => setLocalTermYears(parseInt(v))}
+              value={localProfile.aliyah_year?.toString() || ''}
+              onValueChange={(v) => handleProfileChange({ aliyah_year: parseInt(v) })}
             >
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue />
+              <SelectTrigger className="h-7 text-xs flex-1">
+                <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
-                {TERM_OPTIONS.map((years) => (
-                  <SelectItem key={years} value={years.toString()}>
-                    {years} years
+                {aliyahYears.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
                   </SelectItem>
                 ))}
+                <SelectItem value={(currentYear - 10).toString()}>
+                  Before {currentYear - 9}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
-          {/* Rate info */}
-          <p className="text-[10px] text-muted-foreground">
-            Rate range: 4.5–6.0% (typical Bank of Israel rates)
-          </p>
-          
-          {/* Actions */}
-          <div className="flex items-center gap-2 pt-1">
-            <Button 
-              size="sm" 
-              onClick={handleSave}
-              disabled={isSaving}
-              className="h-7 text-xs"
+        )}
+      </div>
+      
+      {/* Property Status - Segmented Toggle */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Property Status
+        </Label>
+        <ToggleGroup
+          type="single"
+          value={propertyStatusValue}
+          onValueChange={(v) => {
+            if (v === 'first') {
+              handleProfileChange({ is_first_property: true, is_upgrading: false });
+            } else if (v === 'upgrading') {
+              handleProfileChange({ is_first_property: false, is_upgrading: true });
+            } else if (v === 'additional') {
+              handleProfileChange({ is_first_property: false, is_upgrading: false });
+            }
+          }}
+          className="grid grid-cols-3 gap-1 p-1 bg-muted rounded-lg w-full"
+        >
+          <ToggleGroupItem 
+            value="first" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            First Home
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="upgrading" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            Upgrading
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="additional" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+          >
+            Additional
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      
+      {/* Buying As - Only show if relevant (most users are individuals) */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Buying As
+        </Label>
+        <ToggleGroup
+          type="single"
+          value={localProfile.buyer_entity}
+          onValueChange={(v) => {
+            if (v) handleProfileChange({ buyer_entity: v as 'individual' | 'company' });
+          }}
+          className="flex gap-1 p-1 bg-muted rounded-lg w-fit"
+        >
+          <ToggleGroupItem 
+            value="individual" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-3 py-1.5"
+          >
+            Individual
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="company" 
+            className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-3 py-1.5"
+          >
+            Company
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      
+      {/* Divider */}
+      <div className="border-t" />
+      
+      {/* Financing Section - Two Column Layout */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Down Payment */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Down Payment
+            </Label>
+            <ToggleGroup
+              type="single"
+              value={inputMode}
+              onValueChange={(v) => v && setInputMode(v as 'percent' | 'amount')}
+              className="flex gap-0.5 p-0.5 bg-muted rounded"
             >
-              {isSaving ? 'Saving...' : 'Save to Profile'}
-            </Button>
-            <Button 
-              size="sm" 
-              variant="ghost"
-              onClick={() => setIsEditing(false)}
-              className="h-7 text-xs"
-            >
-              Cancel
-            </Button>
+              <ToggleGroupItem 
+                value="amount" 
+                className="text-[10px] h-5 px-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded"
+              >
+                ₪
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="percent" 
+                className="text-[10px] h-5 px-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded"
+              >
+                %
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
+          
+          {inputMode === 'amount' ? (
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₪</span>
+              <Input
+                type="text"
+                value={localDownPaymentAmount}
+                onChange={(e) => setLocalDownPaymentAmount(e.target.value.replace(/[^0-9,]/g, ''))}
+                placeholder={Math.round(minDownPaymentAmount).toLocaleString()}
+                className="h-8 pl-5 text-sm"
+              />
+            </div>
+          ) : (
+            <div className="relative">
+              <Input
+                type="number"
+                value={localDownPaymentPercent}
+                onChange={(e) => setLocalDownPaymentPercent(e.target.value)}
+                placeholder={minDownPaymentPercent.toString()}
+                min={minDownPaymentPercent}
+                max={100}
+                className="h-8 pr-6 text-sm"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+            </div>
+          )}
+          
+          <p className="text-[10px] text-muted-foreground">
+            Min {minDownPaymentPercent}% for {effectiveLtv}% LTV
+          </p>
         </div>
+        
+        {/* Loan Term - Segmented Toggle */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Loan Term
+          </Label>
+          <ToggleGroup
+            type="single"
+            value={localTermYears.toString()}
+            onValueChange={(v) => v && setLocalTermYears(parseInt(v))}
+            className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
+          >
+            {TERM_OPTIONS.map((years) => (
+              <ToggleGroupItem 
+                key={years}
+                value={years.toString()} 
+                className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md px-2 py-1.5"
+              >
+                {years}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <p className="text-[10px] text-muted-foreground">years</p>
+        </div>
+      </div>
+      
+      {/* Effective Category Summary */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+        <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+        <span>
+          Effective: <span className="font-medium text-foreground">{derived.label}</span>
+          <span className="mx-1.5">·</span>
+          Max LTV: {effectiveLtv}%
+        </span>
+      </div>
+      
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-1">
+        <Button 
+          size="sm" 
+          variant="ghost"
+          onClick={handleReset}
+          className="h-7 text-xs gap-1 text-muted-foreground"
+        >
+          <RotateCcw className="h-3 w-3" />
+          Reset
+        </Button>
+        
+        <div className="flex items-center gap-2">
+          {user ? (
+            <>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => setIsEditing(false)}
+                className="h-7 text-xs"
+              >
+                Close
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="h-7 text-xs"
+              >
+                {isSaving ? 'Saving...' : 'Save to Profile'}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                size="sm" 
+                variant="ghost"
+                onClick={() => setIsEditing(false)}
+                className="h-7 text-xs"
+              >
+                Close
+              </Button>
+              <Link to="/auth?tab=signup">
+                <Button size="sm" className="h-7 text-xs">
+                  Sign Up to Save
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <Collapsible open={isEditing} onOpenChange={setIsEditing}>
+      {headerContent}
+      <CollapsibleContent>
+        {panelContent}
       </CollapsibleContent>
     </Collapsible>
   );
