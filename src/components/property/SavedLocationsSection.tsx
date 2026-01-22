@@ -40,10 +40,10 @@ function getTravelTime(
   distanceKm: number,
   mode: TravelMode
 ): { time: number; Icon: LucideIcon; label: string } | null {
-  const speeds: Record<TravelMode, number> = {
-    walk: 5,      // 5 km/h walking
-    transit: 25,  // 25 km/h average including wait
-    drive: 40,    // 40 km/h average urban driving
+  const times = {
+    walk: distanceKm * 12,           // ~5 km/h walking speed
+    transit: distanceKm * 1.8 + 10,  // ~33 km/h avg (mix of bus/train) + 10 min wait
+    drive: distanceKm * 1.2 + 2,     // ~50 km/h avg + 2 min parking
   };
 
   const icons: Record<TravelMode, LucideIcon> = {
@@ -58,21 +58,15 @@ function getTravelTime(
     drive: 'drive',
   };
 
-  const timeMinutes = Math.round((distanceKm / speeds[mode]) * 60);
+  const time = Math.round(times[mode]);
 
-  // Max reasonable times for each mode
-  const maxTimes: Record<TravelMode, number> = {
-    walk: 60,     // Max 60 min walk
-    transit: 120, // Max 2 hours transit
-    drive: 180,   // Max 3 hours drive
-  };
-
-  if (timeMinutes > maxTimes[mode]) {
-    return null;
-  }
+  // Thresholds - return null if exceeds
+  if (mode === 'walk' && time > 60) return null;     // 60 min walk max
+  if (mode === 'transit' && time > 150) return null; // 2.5 hours transit max
+  if (mode === 'drive' && time > 180) return null;   // 3 hours drive max
 
   return {
-    time: timeMinutes,
+    time,
     Icon: icons[mode],
     label: labels[mode],
   };

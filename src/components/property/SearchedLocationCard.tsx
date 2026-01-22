@@ -1,5 +1,6 @@
 import { MapPin, Footprints, Bus, Car, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { SearchedLocation } from './LocationSearchInput';
 
 type TravelMode = 'walk' | 'transit' | 'drive';
@@ -28,20 +29,20 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 // Get travel time based on mode and distance
 function getTravelTime(distanceKm: number, mode: TravelMode) {
   const times = {
-    walk: distanceKm * 12, // ~5 km/h walking speed
-    transit: distanceKm * 3 + 5, // Bus with wait time
-    drive: distanceKm * 1.2 + 2, // Driving with parking
+    walk: distanceKm * 12,           // ~5 km/h walking speed
+    transit: distanceKm * 1.8 + 10,  // ~33 km/h avg (mix of bus/train) + 10 min wait
+    drive: distanceKm * 1.2 + 2,     // ~50 km/h avg + 2 min parking
   };
   
   const time = Math.round(times[mode]);
   
-  // Don't show walking for > 45 min
-  if (mode === 'walk' && time > 45) return null;
-  // Don't show transit for > 90 min
-  if (mode === 'transit' && time > 90) return null;
+  // Thresholds - return null if exceeds
+  if (mode === 'walk' && time > 60) return null;     // 60 min walk max
+  if (mode === 'transit' && time > 150) return null; // 2.5 hours transit max
+  if (mode === 'drive' && time > 180) return null;   // 3 hours drive max
   
   const icons = { walk: Footprints, transit: Bus, drive: Car };
-  const labels = { walk: 'walk', transit: 'by bus', drive: 'drive' };
+  const labels = { walk: 'walk', transit: 'transit', drive: 'drive' };
   
   return { time, Icon: icons[mode], label: labels[mode] };
 }
@@ -99,9 +100,20 @@ export function SearchedLocationCard({
               Travel time pending location
             </p>
           ) : distance ? (
-            <p className="text-xs mt-2 text-muted-foreground/70 italic">
-              3+ hours away • Check Maps
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-xs mt-2 text-muted-foreground/70 italic cursor-help underline decoration-dotted">
+                    3+ hours away
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px]">
+                  <p className="text-xs">
+                    This location exceeds our estimate limit. Check Google Maps for accurate directions.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : null}
         </div>
       </div>

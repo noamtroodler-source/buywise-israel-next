@@ -1,5 +1,5 @@
 import { Building, Train, Bus, Car, ShoppingBag, Trees, GraduationCap, Heart, Coffee, Waves, Plane, MapPin, Footprints, Info } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { CityAnchor } from '@/hooks/useCityAnchors';
 
 type TravelMode = 'walk' | 'transit' | 'drive';
@@ -50,17 +50,17 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 // Calculate travel time based on distance and mode
 function getTravelTime(distanceKm: number, mode: TravelMode): { time: number; label: string; Icon: React.ComponentType<{ className?: string }> } | null {
   const times = {
-    walk: distanceKm * 12, // ~5 km/h walking speed
-    transit: distanceKm * 3 + 5, // Transit with wait time
-    drive: distanceKm * 1.2 + 2, // Driving with parking
+    walk: distanceKm * 12,           // ~5 km/h walking speed
+    transit: distanceKm * 1.8 + 10,  // ~33 km/h avg (mix of bus/train) + 10 min wait
+    drive: distanceKm * 1.2 + 2,     // ~50 km/h avg + 2 min parking
   };
   
   const time = Math.round(times[mode]);
   
-  // Don't show walking for > 45 min (for city anchors, allow longer walks)
-  if (mode === 'walk' && time > 45) return null;
-  // Don't show transit for > 90 min
-  if (mode === 'transit' && time > 90) return null;
+  // Thresholds - return null if exceeds
+  if (mode === 'walk' && time > 60) return null;     // 60 min walk max
+  if (mode === 'transit' && time > 150) return null; // 2.5 hours transit max
+  if (mode === 'drive' && time > 180) return null;   // 3 hours drive max
   
   const icons = { walk: Footprints, transit: Bus, drive: Car };
   const labels = { walk: 'walk', transit: 'transit', drive: 'drive' };
@@ -120,9 +120,18 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
             Travel time pending location
           </p>
         ) : (
-          <p className="text-sm mt-2 text-muted-foreground/70 italic">
-            3+ hours away
-          </p>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <p className="text-sm mt-2 text-muted-foreground/70 italic cursor-help underline decoration-dotted">
+                3+ hours away
+              </p>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px]">
+              <p className="text-xs">
+                This location exceeds our estimate limit. Check Google Maps for accurate directions.
+              </p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </div>
