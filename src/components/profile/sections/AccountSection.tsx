@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { Settings, Pencil, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ProfileSection } from '../ProfileSection';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { format } from 'date-fns';
+
+export function AccountSection() {
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    fullName: profile?.full_name || '',
+    phone: profile?.phone || '',
+  });
+
+  const handleSave = () => {
+    updateProfile.mutate({
+      full_name: formData.fullName || null,
+      phone: formData.phone || null,
+    });
+    setIsEditing(false);
+  };
+
+  const isComplete = !!(profile?.full_name && profile?.phone);
+
+  if (isLoading) {
+    return (
+      <ProfileSection
+        title="Account Settings"
+        icon={<Settings className="h-5 w-5" />}
+        status="neutral"
+        defaultOpen={false}
+      >
+        <div className="flex justify-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </ProfileSection>
+    );
+  }
+
+  return (
+    <ProfileSection
+      title="Account Settings"
+      icon={<Settings className="h-5 w-5" />}
+      status={isComplete ? 'complete' : 'neutral'}
+      statusText={profile?.full_name || 'Not set'}
+      defaultOpen={false}
+    >
+      {isEditing ? (
+        <div className="space-y-4">
+          <div>
+            <Label className="text-xs">Full Name</Label>
+            <Input
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              placeholder="Your full name"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Phone Number</Label>
+            <Input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+972..."
+              className="mt-1"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={updateProfile.isPending} 
+              className="flex-1"
+            >
+              {updateProfile.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Full Name</p>
+              <p className="text-sm font-medium">{profile?.full_name || 'Not set'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Phone</p>
+              <p className="text-sm font-medium">{profile?.phone || 'Not set'}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-muted-foreground mb-1">Member Since</p>
+              <p className="text-sm font-medium">
+                {profile?.created_at 
+                  ? format(new Date(profile.created_at), 'MMMM yyyy') 
+                  : 'Unknown'}
+              </p>
+            </div>
+          </div>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              setFormData({
+                fullName: profile?.full_name || '',
+                phone: profile?.phone || '',
+              });
+              setIsEditing(true);
+            }}
+            className="w-full"
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Edit Account
+          </Button>
+        </div>
+      )}
+    </ProfileSection>
+  );
+}
