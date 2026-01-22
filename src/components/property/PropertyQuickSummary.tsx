@@ -159,7 +159,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
   // Format entry date display
   const getEntryDateDisplay = () => {
-    if (!property.entry_date) return 'Immediate';
+    if (!property.entry_date) return 'Immediate Entry';
     const date = new Date(property.entry_date);
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   };
