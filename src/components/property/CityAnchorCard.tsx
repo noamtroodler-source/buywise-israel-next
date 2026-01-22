@@ -81,11 +81,12 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
   
   // Get travel display (fallback to drive if selected mode doesn't work)
   let travel = distance ? getTravelTime(distance, travelMode) : null;
-  if (!travel && distance) {
-    travel = getTravelTime(distance, 'drive');
-  }
+  let usedFallback = false;
   
-  const isFallback = travelMode !== 'drive' && distance && getTravelTime(distance, travelMode) === null;
+  if (!travel && distance && travelMode !== 'drive') {
+    travel = getTravelTime(distance, 'drive');
+    usedFallback = true;
+  }
   
   return (
     <div className="bg-muted/30 border border-border/40 rounded-xl p-3 hover:bg-muted/50 transition-colors flex items-start gap-3">
@@ -110,10 +111,17 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
         </div>
         <p className="text-xs text-muted-foreground">{anchorTypeLabels[anchor.anchor_type]}</p>
         {travel ? (
-          <div className="flex items-center gap-1.5 mt-2 text-sm">
-            <travel.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="font-medium text-foreground">{travel.time} min</span>
-            <span className="text-muted-foreground">{travel.label}</span>
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center gap-1.5 text-sm">
+              <travel.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium text-foreground">{travel.time} min</span>
+              <span className="text-muted-foreground">{travel.label}</span>
+            </div>
+            {usedFallback && (
+              <p className="text-xs text-muted-foreground/70 italic">
+                ({travelMode === 'walk' ? 'walking' : 'transit'} 3+ hrs)
+              </p>
+            )}
           </div>
         ) : !hasPropertyCoords ? (
           <p className="text-sm mt-2 text-muted-foreground/70 italic">

@@ -88,11 +88,11 @@ function SavedLocationRow({
   
   // Try the selected mode first, then fall back
   let travelInfo = getTravelTime(distance, travelMode);
-  let actualMode = travelMode;
+  let usedFallback = false;
   
   if (!travelInfo && travelMode !== 'drive') {
     travelInfo = getTravelTime(distance, 'drive');
-    actualMode = 'drive';
+    usedFallback = true;
   }
 
   return (
@@ -118,16 +118,23 @@ function SavedLocationRow({
           <p className="text-xs text-muted-foreground mt-0.5">Saved</p>
           
           {travelInfo ? (
-            <div className="flex items-center gap-1.5 mt-2 text-sm">
-              <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium text-foreground">{travelInfo.time} min</span>
-              <span className="text-muted-foreground">{travelInfo.label}</span>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center gap-1.5 text-sm">
+                <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium text-foreground">{travelInfo.time} min</span>
+                <span className="text-muted-foreground">{travelInfo.label}</span>
+              </div>
+              {usedFallback && (
+                <p className="text-xs text-muted-foreground/70 italic">
+                  ({travelMode === 'walk' ? 'walking' : 'transit'} 3+ hrs)
+                </p>
+              )}
             </div>
           ) : (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="text-xs mt-2 text-muted-foreground/70 italic cursor-help">
+                  <p className="text-xs mt-2 text-muted-foreground/70 italic cursor-help underline decoration-dotted">
                     3+ hours away
                   </p>
                 </TooltipTrigger>
