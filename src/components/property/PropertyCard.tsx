@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,30 +38,29 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
-  // Calculate days on market
-  const daysOnMarket = property.created_at 
-    ? differenceInDays(new Date(), new Date(property.created_at)) 
-    : null;
-
-  // Check if property is new (listed within last 7 days)
-  const isNewListing = daysOnMarket !== null && daysOnMarket <= 7;
-
-  // Calculate price drop
-  const hasPriceDrop = property.original_price && property.original_price > property.price;
-  const priceDropPercent = hasPriceDrop 
-    ? Math.round(((property.original_price - property.price) / property.original_price) * 100)
-    : 0;
-
-  // Format days on market label
-  const getDaysOnMarketLabel = () => {
-    if (daysOnMarket === null) return null;
-    if (daysOnMarket === 0) return 'Listed today';
-    if (daysOnMarket === 1) return '1 day ago';
-    if (daysOnMarket > 90) return '90+ days';
-    return `${daysOnMarket} days ago`;
-  };
-
-  const daysLabel = getDaysOnMarketLabel();
+  // Memoize expensive calculations - only recompute when property data changes
+  const { daysOnMarket, isNewListing, daysLabel, hasPriceDrop, priceDropPercent } = useMemo(() => {
+    const days = property.created_at 
+      ? differenceInDays(new Date(), new Date(property.created_at)) 
+      : null;
+    
+    const isNew = days !== null && days <= 7;
+    
+    const hasDrop = property.original_price && property.original_price > property.price;
+    const dropPercent = hasDrop 
+      ? Math.round(((property.original_price! - property.price) / property.original_price!) * 100)
+      : 0;
+    
+    let label: string | null = null;
+    if (days !== null) {
+      if (days === 0) label = 'Listed today';
+      else if (days === 1) label = '1 day ago';
+      else if (days > 90) label = '90+ days';
+      else label = `${days} days ago`;
+    }
+    
+    return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, hasPriceDrop: hasDrop, priceDropPercent: dropPercent };
+  }, [property.created_at, property.original_price, property.price]);
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -123,7 +122,7 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
   const currentImage = imageError ? placeholderImage : (images[currentImageIndex] || placeholderImage);
 
   return (
-    <div className="animate-fade-in">
+    <>
       <Link to={`/property/${property.id}`}>
         <Card className={cn(
           "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
@@ -464,7 +463,7 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
           )}
         </Card>
       </Link>
-    </div>
+    </>
   );
 });
 
