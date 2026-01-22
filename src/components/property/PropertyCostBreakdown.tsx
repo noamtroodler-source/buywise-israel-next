@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar, Info, Settings, MapPin, Home, ChevronDown } from 'lucide-react';
+import { Calculator, DollarSign, Receipt, Calendar, Info, Home, ChevronDown, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -9,8 +9,8 @@ import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/h
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useAuth } from '@/hooks/useAuth';
-import { useMortgageEstimate } from '@/hooks/useMortgagePreferences';
-import { MortgageAssumptionsPanel } from './MortgageAssumptionsPanel';
+import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
+import { MortgageInlineEdit } from './MortgageInlineEdit';
 import { Link } from 'react-router-dom';
 import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
@@ -182,6 +182,10 @@ export function PropertyCostBreakdown({
   // State for collapsible sections
   const [oneTimeOpen, setOneTimeOpen] = useState(false);
   const [monthlyOpen, setMonthlyOpen] = useState(false);
+  const [isMortgageEditing, setIsMortgageEditing] = useState(false);
+  
+  // Get LTV limit for mortgage editing
+  const { ltvLimit } = useMortgagePreferences();
   
   // Calculate % of purchase price for context
   const oneTimePercentLow = ((totalOneTimeRange.low / price) * 100).toFixed(1);
@@ -384,34 +388,50 @@ export function PropertyCostBreakdown({
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  <ChevronDown className={cn("h-3 w-3 transition-transform", monthlyOpen && "rotate-180")} />
-                  {monthlyOpen ? 'Hide breakdown' : 'View breakdown'}
-                </button>
-              </CollapsibleTrigger>
-              <MortgageAssumptionsPanel 
-                propertyPrice={price} 
-                currency={currency}
-              />
-            </div>
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+                <ChevronDown className={cn("h-3 w-3 transition-transform", monthlyOpen && "rotate-180")} />
+                {monthlyOpen ? 'Hide breakdown' : 'View breakdown'}
+              </button>
+            </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-2 text-sm pt-2">
-              {/* Mortgage Payment Row - Hero item */}
-              <div className="flex justify-between py-2 border-b border-border/50">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">Mortgage</span>
+              {/* Mortgage Payment Row - Hero item with inline edit */}
+              <div className="py-2 border-b border-border/50">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Home className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-foreground">Mortgage</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
+                    </span>
+                    {!isMortgageEditing && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsMortgageEditing(true)}
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <span className="font-medium">
-                  {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
-                </span>
+                
+                {isMortgageEditing && (
+                  <MortgageInlineEdit
+                    propertyPrice={price}
+                    ltvLimit={ltvLimit}
+                    onClose={() => setIsMortgageEditing(false)}
+                  />
+                )}
               </div>
               
               <div className="flex justify-between py-2 border-b border-border/50">
