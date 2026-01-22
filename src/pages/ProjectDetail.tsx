@@ -145,7 +145,7 @@ export default function ProjectDetail() {
 
             {/* Right Column - Sticky Sidebar */}
             <div className="hidden lg:block">
-              <div className="sticky top-6">
+              <div className="sticky top-20">
                 <ProjectStickyCard 
                   project={project}
                   developer={project.developer}
