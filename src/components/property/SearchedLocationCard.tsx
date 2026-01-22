@@ -62,8 +62,11 @@ export function SearchedLocationCard({
   
   // Get travel time for selected mode, fall back to drive
   let travelInfo = distance ? getTravelTime(distance, travelMode) : null;
-  if (!travelInfo && distance) {
+  let usedFallback = false;
+  
+  if (!travelInfo && distance && travelMode !== 'drive') {
     travelInfo = getTravelTime(distance, 'drive');
+    usedFallback = true;
   }
 
   return (
@@ -90,10 +93,17 @@ export function SearchedLocationCard({
           <p className="text-xs text-muted-foreground mt-0.5">Your search</p>
           
           {travelInfo ? (
-            <div className="flex items-center gap-1.5 mt-2 text-sm">
-              <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium text-foreground">{travelInfo.time} min</span>
-              <span className="text-muted-foreground">{travelInfo.label}</span>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center gap-1.5 text-sm">
+                <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium text-foreground">{travelInfo.time} min</span>
+                <span className="text-muted-foreground">{travelInfo.label}</span>
+              </div>
+              {usedFallback && (
+                <p className="text-xs text-muted-foreground/70 italic">
+                  ({travelMode === 'walk' ? 'walking' : 'transit'} 3+ hrs)
+                </p>
+              )}
             </div>
           ) : !hasPropertyCoords ? (
             <p className="text-xs mt-2 text-muted-foreground/70 italic">
