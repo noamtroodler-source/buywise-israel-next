@@ -119,3 +119,16 @@ export const MORTGAGE_TERM_RANGES = {
   typical: 25, // Most common term
   long: 30,    // Maximum term
 } as const;
+
+/**
+ * Israeli VAT rate (2025)
+ */
+export const VAT_RATE = 0.18;
+
+/**
+ * Standard rental fee ranges for Israeli leases
+ */
+export const RENTAL_FEE_RANGES = {
+  securityDeposit: { min: 2, max: 3, label: '2–3 months' },
+  agentFee: { base: 1, vatRate: 0.18, label: '1 month + VAT' },
+} as const;

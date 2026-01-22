@@ -88,6 +88,8 @@ export interface Property {
   furnished_status: FurnishedStatus | null;
   pets_policy: PetsPolicy | null;
   agent_fee_required: boolean | null;
+  bank_guarantee_required: boolean | null;
+  checks_required: boolean | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;
