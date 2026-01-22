@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck } from 'lucide-react';
+import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -122,10 +123,22 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   const mortgageEstimate = useMortgageEstimate(property.price);
   const showMortgageEstimate = property.listing_status !== 'for_rent';
   
-  // Calculate days on market
+  // Calculate days on market and freshness tier
   const createdDate = new Date(property.created_at);
   const now = new Date();
   const daysOnMarket = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Freshness tier for enhanced display
+  type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
+  const freshnessTier: FreshnessTier = daysOnMarket <= 3 ? 'hot' : daysOnMarket <= 7 ? 'fresh' : daysOnMarket <= 30 ? 'standard' : 'stale';
+  const isRental = property.listing_status === 'for_rent';
+  
+  // Get freshness label
+  const getFreshnessLabel = () => {
+    if (daysOnMarket === 0) return isRental ? 'Available today' : 'Listed today';
+    if (daysOnMarket === 1) return isRental ? 'Available 1 day' : 'Listed 1 day';
+    return `${daysOnMarket} days on market`;
+  };
 
   const locationText = property.neighborhood 
     ? `${property.neighborhood}, ${property.city}`
@@ -446,19 +459,33 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           </div>
         )}
 
-        {/* Activity & Social Proof Bar - Always visible */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
-            <span className="font-semibold text-foreground">{daysOnMarket}</span>
-            <span>{daysOnMarket === 1 ? 'day' : 'days'} on market</span>
+        {/* Activity & Social Proof Bar - Days on Market now more prominent */}
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          {/* Days on Market - Enhanced prominence */}
+          <div className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+            freshnessTier === 'hot' 
+              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" 
+              : freshnessTier === 'fresh' 
+                ? "bg-primary/10 text-primary" 
+                : "bg-muted text-muted-foreground"
+          )}>
+            {freshnessTier === 'hot' ? (
+              <Flame className="h-4 w-4" />
+            ) : freshnessTier === 'fresh' ? (
+              <Zap className="h-4 w-4" />
+            ) : (
+              <Clock className="h-4 w-4" />
+            )}
+            <span className="font-medium">{getFreshnessLabel()}</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          
+          <div className="flex items-center gap-1.5 text-muted-foreground">
             <Eye className="h-4 w-4" />
             <span className="font-semibold text-foreground">{property.views_count || 0}</span>
             <span>views</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
             <Heart className="h-4 w-4" />
             <span className="font-semibold text-foreground">{savesCount}</span>
             <span>saves</span>

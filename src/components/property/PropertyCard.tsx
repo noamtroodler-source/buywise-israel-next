@@ -1,6 +1,6 @@
 import { useState, memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, Flame, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -38,29 +38,45 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
   const hasMultipleImages = images.length > 1;
   const placeholderImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
 
+  // Freshness tier for "Days on Market" prominence
+  type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
+  
   // Memoize expensive calculations - only recompute when property data changes
-  const { daysOnMarket, isNewListing, daysLabel, hasPriceDrop, priceDropPercent } = useMemo(() => {
+  const { daysOnMarket, isNewListing, daysLabel, freshnessTier, hasPriceDrop, priceDropPercent } = useMemo(() => {
     const days = property.created_at 
       ? differenceInDays(new Date(), new Date(property.created_at)) 
       : null;
     
     const isNew = days !== null && days <= 7;
     
+    // Determine freshness tier
+    let tier: FreshnessTier = 'standard';
+    if (days !== null) {
+      if (days <= 3) tier = 'hot';
+      else if (days <= 7) tier = 'fresh';
+      else if (days <= 30) tier = 'standard';
+      else tier = 'stale';
+    }
+    
     const hasDrop = property.original_price && property.original_price > property.price;
     const dropPercent = hasDrop 
       ? Math.round(((property.original_price! - property.price) / property.original_price!) * 100)
       : 0;
     
+    // Clearer labeling
     let label: string | null = null;
     if (days !== null) {
       if (days === 0) label = 'Listed today';
-      else if (days === 1) label = '1 day ago';
-      else if (days > 90) label = '90+ days';
-      else label = `${days} days ago`;
+      else if (days === 1) label = 'Listed 1 day';
+      else if (days > 90) label = '90+ days on market';
+      else label = `Listed ${days} days`;
     }
     
-    return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, hasPriceDrop: hasDrop, priceDropPercent: dropPercent };
+    return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, freshnessTier: tier, hasPriceDrop: hasDrop, priceDropPercent: dropPercent };
   }, [property.created_at, property.original_price, property.price]);
+
+  // Check if this is a rental (for more prominent freshness treatment)
+  const isRental = property.listing_status === 'for_rent';
 
   const handlePrevImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -221,8 +237,15 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                       );
                     }
                     
-                    
-                    if (isNewListing) {
+                    // Freshness badge - more prominent for hot/fresh listings (especially rentals)
+                    if (freshnessTier === 'hot') {
+                      badges.push(
+                        <Badge key="fresh" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                          <Flame className="h-3 w-3 mr-1" />
+                          {isRental ? 'Just Available' : 'Just Listed'}
+                        </Badge>
+                      );
+                    } else if (freshnessTier === 'fresh') {
                       badges.push(
                         <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
@@ -281,11 +304,17 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
+                {/* Days on Market - More prominent for rentals and fresh listings */}
                 {daysLabel && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 pt-0.5">
-                    <Clock className="h-3 w-3" />
-                    {daysLabel}
-                  </p>
+                  <div className={cn(
+                    "flex items-center gap-1 pt-1 text-xs",
+                    freshnessTier === 'hot' ? "text-amber-600 dark:text-amber-400 font-medium" :
+                    freshnessTier === 'fresh' ? "text-primary font-medium" :
+                    "text-muted-foreground"
+                  )}>
+                    {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                    <span>{daysLabel}</span>
+                  </div>
                 )}
               </div>
             </>
@@ -377,8 +406,15 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                       );
                     }
                     
-                    
-                    if (isNewListing) {
+                    // Freshness badge - more prominent for hot/fresh listings (especially rentals)
+                    if (freshnessTier === 'hot') {
+                      badges.push(
+                        <Badge key="fresh" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                          <Flame className="h-3 w-3 mr-1" />
+                          {isRental ? 'Just Available' : 'Just Listed'}
+                        </Badge>
+                      );
+                    } else if (freshnessTier === 'fresh') {
                       badges.push(
                         <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
@@ -459,7 +495,8 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                       <span className="text-xs">{formatArea(property.size_sqm)}</span>
                     </div>
                   )}
-                  {daysLabel && (
+                  {/* Days on Market - standalone for standard mode */}
+                  {daysLabel && freshnessTier !== 'hot' && freshnessTier !== 'fresh' && (
                     <div className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
                       <span className="text-xs">{daysLabel}</span>

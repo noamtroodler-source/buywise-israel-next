@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Mail, Clock, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { MessageCircle, Mail, Clock, TrendingDown, TrendingUp, Minus, Flame, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
@@ -193,17 +193,28 @@ export function StickyContactCard({
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick Facts</p>
               
               <div className="space-y-2.5">
+                {/* Days on Market - Now first and more prominent */}
+                {daysOnMarket !== undefined && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Time on market</span>
+                    <span className={`font-medium flex items-center gap-1.5 ${
+                      daysOnMarket <= 3 ? 'text-amber-600 dark:text-amber-400' : 
+                      daysOnMarket <= 7 ? 'text-primary' : ''
+                    }`}>
+                      {daysOnMarket <= 3 ? (
+                        <Flame className="h-3.5 w-3.5" />
+                      ) : daysOnMarket <= 7 ? (
+                        <Zap className="h-3.5 w-3.5" />
+                      ) : null}
+                      {daysOnMarket === 0 ? 'Just listed' : daysOnMarket === 1 ? '1 day' : `${daysOnMarket} days`}
+                    </span>
+                  </div>
+                )}
+                
                 {pricePerSqm && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Price per m²</span>
                     <span className="font-medium">{formatPricePerArea(pricePerSqm, currency)}</span>
-                  </div>
-                )}
-                
-                {daysOnMarket !== undefined && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Days on market</span>
-                    <span className="font-medium">{daysOnMarket === 0 ? 'Today' : daysOnMarket}</span>
                   </div>
                 )}
                 
