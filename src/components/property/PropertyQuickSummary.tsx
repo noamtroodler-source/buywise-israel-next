@@ -5,11 +5,11 @@ import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Cale
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { estimateMonthlyPaymentRange, BuyerCategory } from '@/lib/calculations/mortgage';
 import { formatMonthlyRange } from '@/lib/utils/formatRange';
 import { useSavesCount } from '@/hooks/useSavesCount';
-import { useBuyerProfile, getBuyerTaxType } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useAuth } from '@/hooks/useAuth';
+import { useMortgageEstimate } from '@/hooks/useMortgagePreferences';
 interface PropertyQuickSummaryProps {
   property: {
     id: string;
@@ -118,11 +118,9 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
   const pricePerSqm = property.size_sqm ? property.price / property.size_sqm : null;
   
-  // Get buyer category for personalized estimate - now returns honest range
-  const buyerCategory: BuyerCategory | undefined = buyerProfile ? getBuyerTaxType(buyerProfile) : undefined;
-  const mortgageRange = property.listing_status !== 'for_rent' 
-    ? estimateMonthlyPaymentRange(property.price, buyerCategory) 
-    : null;
+  // Get mortgage estimate using user's profile preferences (or defaults)
+  const mortgageEstimate = useMortgageEstimate(property.price);
+  const showMortgageEstimate = property.listing_status !== 'for_rent';
   
   // Calculate days on market
   const createdDate = new Date(property.created_at);
@@ -198,28 +196,33 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               )}
             </div>
             
-            {/* Estimated Monthly Payment Range - Honest range, not fake precision */}
-            {mortgageRange && (
+            {/* Estimated Monthly Payment Range - Uses profile preferences or standard defaults */}
+            {showMortgageEstimate && mortgageEstimate && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
-                      {buyerCategory && <User className="h-3 w-3 text-primary" />}
-                      {formatMonthlyRange(mortgageRange.low, mortgageRange.high, 'ILS')}
+                      {mortgageEstimate.hasCustomPreferences && <User className="h-3 w-3 text-primary" />}
+                      {formatMonthlyRange(mortgageEstimate.monthlyPaymentLow, mortgageEstimate.monthlyPaymentHigh, 'ILS')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <div className="space-y-1">
-                      {buyerCategory ? (
-                        <p className="font-medium">Based on your buyer profile</p>
+                      {mortgageEstimate.hasCustomPreferences ? (
+                        <p className="font-medium">Based on your mortgage preferences</p>
                       ) : (
                         <p className="font-medium">Estimated monthly range</p>
                       )}
                       <p className="text-xs">
-                        {mortgageRange.assumptions.ltvPercent}% financing, {mortgageRange.assumptions.rateRange} rates, {mortgageRange.assumptions.term}-year term
+                        {mortgageEstimate.downPaymentPercent}% down, 4.5–6.0% rates, {mortgageEstimate.termYears}-year term
                       </p>
                       <p className="text-xs text-muted-foreground pt-1 border-t border-border">
-                        {!user ? 'Sign in to personalize.' : !buyerCategory ? 'Complete your buyer profile to personalize.' : 'Actual rates depend on your bank and credit history.'}
+                        {!user 
+                          ? 'Sign in to personalize.' 
+                          : !mortgageEstimate.hasCustomPreferences 
+                            ? 'Set mortgage preferences in your profile.' 
+                            : 'Actual rates depend on your bank and credit history.'
+                        }
                       </p>
                     </div>
                   </TooltipContent>
