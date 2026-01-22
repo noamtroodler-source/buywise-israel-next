@@ -158,10 +158,12 @@ export default function Projects() {
                     >
                       <Link to={`/projects/${project.slug}`}>
                         <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
-                          <div className="aspect-[16/10] overflow-hidden relative">
+                        <div className="aspect-[16/10] overflow-hidden relative">
                             <img
                               src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
                               alt={project.name}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             

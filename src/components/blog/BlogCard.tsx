@@ -29,6 +29,8 @@ export function BlogCard({ post, index, isSaved, onToggleSave }: BlogCardProps) 
             <img
               src={post.cover_image || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}
               alt={post.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           </div>
