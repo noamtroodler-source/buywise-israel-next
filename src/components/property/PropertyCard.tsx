@@ -147,6 +147,8 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                 <img
                   src={currentImage}
                   alt={property.title}
+                  loading="lazy"
+                  decoding="async"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}
                   className={cn(
@@ -300,6 +302,8 @@ export function PropertyCard({ property, className, showCompareButton = false, s
                  <img
                    src={currentImage}
                    alt={property.title}
+                   loading="lazy"
+                   decoding="async"
                    draggable={false}
                    onDragStart={(e) => e.preventDefault()}
                    className={cn(

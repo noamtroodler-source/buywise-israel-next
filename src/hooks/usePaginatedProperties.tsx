@@ -49,7 +49,7 @@ export function usePaginatedProperties(
       if (error) throw error;
       return count ?? 0;
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
   // Fetch current page of properties
@@ -71,7 +71,7 @@ export function usePaginatedProperties(
       if (error) throw error;
       return data as Property[];
     },
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
   // Accumulate properties when loading more
