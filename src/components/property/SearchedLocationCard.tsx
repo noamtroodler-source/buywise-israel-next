@@ -6,8 +6,8 @@ type TravelMode = 'walk' | 'transit' | 'drive';
 
 interface SearchedLocationCardProps {
   location: SearchedLocation;
-  propertyLat: number;
-  propertyLng: number;
+  propertyLat?: number | null;
+  propertyLng?: number | null;
   travelMode: TravelMode;
   onRemove: () => void;
 }
@@ -53,11 +53,15 @@ export function SearchedLocationCard({
   travelMode,
   onRemove,
 }: SearchedLocationCardProps) {
-  const distance = calculateDistance(propertyLat, propertyLng, location.latitude, location.longitude);
+  const hasPropertyCoords = propertyLat != null && propertyLng != null;
+  
+  const distance = hasPropertyCoords
+    ? calculateDistance(propertyLat, propertyLng, location.latitude, location.longitude)
+    : null;
   
   // Get travel time for selected mode, fall back to drive
-  let travelInfo = getTravelTime(distance, travelMode);
-  if (!travelInfo) {
+  let travelInfo = distance ? getTravelTime(distance, travelMode) : null;
+  if (!travelInfo && distance) {
     travelInfo = getTravelTime(distance, 'drive');
   }
 
@@ -84,13 +88,17 @@ export function SearchedLocationCard({
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">Your search</p>
           
-          {travelInfo && (
+          {travelInfo ? (
             <div className="flex items-center gap-1.5 mt-2 text-sm">
               <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="font-medium text-foreground">{travelInfo.time} min</span>
               <span className="text-muted-foreground">{travelInfo.label}</span>
             </div>
-          )}
+          ) : !hasPropertyCoords ? (
+            <p className="text-xs mt-2 text-muted-foreground/70 italic">
+              Travel time pending location
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

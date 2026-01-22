@@ -107,6 +107,8 @@ export default function ProjectDetail() {
                 neighborhood={project.neighborhood || undefined}
                 latitude={project.latitude || undefined}
                 longitude={project.longitude || undefined}
+                entityId={project.id}
+                entityType="project"
               />
               
               {/* Next Steps - Merged CTAs */}
