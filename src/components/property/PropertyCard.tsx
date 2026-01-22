@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -28,7 +27,7 @@ interface PropertyCardProps {
   compareCategory?: 'buy' | 'rent';
 }
 
-export function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
+const PropertyCardComponent = memo(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -124,11 +123,7 @@ export function PropertyCard({ property, className, showCompareButton = false, s
   const currentImage = imageError ? placeholderImage : (images[currentImageIndex] || placeholderImage);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="animate-fade-in">
       <Link to={`/property/${property.id}`}>
         <Card className={cn(
           "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
@@ -469,6 +464,8 @@ export function PropertyCard({ property, className, showCompareButton = false, s
           )}
         </Card>
       </Link>
-    </motion.div>
+    </div>
   );
-}
+});
+
+export const PropertyCard = PropertyCardComponent;

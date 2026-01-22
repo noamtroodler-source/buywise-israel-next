@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -32,18 +31,14 @@ export function FeaturedShowcase() {
       <div className="container">
         {/* Header with Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <div className="animate-fade-in">
             <h2 className="text-2xl md:text-4xl font-bold text-foreground">
               Properties
             </h2>
             <p className="text-base text-muted-foreground mt-1">
               Hand-picked listings updated weekly
             </p>
-          </motion.div>
+          </div>
 
           {/* Tabs */}
           <div className="flex items-center gap-3">
@@ -90,16 +85,14 @@ export function FeaturedShowcase() {
         {/* Property Grid - 4-column layout */}
         {!isLoading && displayProperties.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {displayProperties.map((property, index) => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <PropertyCard property={property} showShareButton showCompareButton={false} maxBadges={1} />
-              </motion.div>
+            {displayProperties.map((property) => (
+              <PropertyCard 
+                key={property.id} 
+                property={property} 
+                showShareButton 
+                showCompareButton={false} 
+                maxBadges={1} 
+              />
             ))}
           </div>
         )}
