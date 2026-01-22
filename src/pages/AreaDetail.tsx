@@ -19,7 +19,7 @@ import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
 import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
-import { CityCalculatorTeaser } from '@/components/city/CityCalculatorTeaser';
+
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
@@ -303,14 +303,6 @@ export default function CityDetail() {
           )}
         </section>
 
-        {/* 7. Run the Numbers - Calculator Teaser */}
-        <section id="tools">
-          <CityCalculatorTeaser 
-            cityName={city.name} 
-            medianPrice={medianPrice}
-            grossYield={grossYield}
-          />
-        </section>
 
         {/* 8. Explore Listings CTA */}
         <section id="listings">
