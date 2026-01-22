@@ -98,6 +98,10 @@ export function SearchedLocationCard({
             <p className="text-xs mt-2 text-muted-foreground/70 italic">
               Travel time pending location
             </p>
+          ) : distance ? (
+            <p className="text-xs mt-2 text-muted-foreground/70 italic">
+              3+ hours away • Check Maps
+            </p>
           ) : null}
         </div>
       </div>

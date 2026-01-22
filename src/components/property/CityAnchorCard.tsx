@@ -119,7 +119,11 @@ export function CityAnchorCard({ anchor, propertyLat, propertyLng, travelMode }:
           <p className="text-xs mt-1 text-muted-foreground/70 italic">
             Travel time pending location
           </p>
-        ) : null}
+        ) : (
+          <p className="text-xs mt-1 text-muted-foreground/70 italic">
+            3+ hours away
+          </p>
+        )}
       </div>
     </div>
   );
