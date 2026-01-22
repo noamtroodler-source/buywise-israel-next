@@ -140,6 +140,10 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                 )}
                 <img
                   src={currentImage}
+                  srcSet={currentImage.includes('unsplash.com') 
+                    ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                    : undefined}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   alt={property.title}
                   loading="lazy"
                   decoding="async"
@@ -295,6 +299,10 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                 )}
                  <img
                    src={currentImage}
+                   srcSet={currentImage.includes('unsplash.com') 
+                     ? `${currentImage.replace('w=800', 'w=400')} 400w, ${currentImage.replace('w=800', 'w=600')} 600w, ${currentImage} 800w`
+                     : undefined}
+                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                    alt={property.title}
                    loading="lazy"
                    decoding="async"
