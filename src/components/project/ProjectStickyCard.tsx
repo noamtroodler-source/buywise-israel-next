@@ -1,5 +1,6 @@
-import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle, User, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle, User, TrendingUp, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,28 @@ interface ProjectStickyCardProps {
 export function ProjectStickyCard({ project, developer, representingAgent, selectedUnit, onContactClick }: ProjectStickyCardProps) {
   const formatPrice = useFormatPrice();
   const { mutate: trackInquiry } = useProjectInquiryTracking();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Scroll detection for collapsible behavior
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const shouldCollapse = !entry.isIntersecting;
+        setIsCollapsed(shouldCollapse);
+        if (!shouldCollapse) {
+          setIsExpanded(false);
+        }
+      },
+      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
+    );
+    
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
 
   const displayPrice = selectedUnit?.price || project.price_from;
 
@@ -54,7 +77,8 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     : '';
 
   // Track inquiry helpers
-  const handleWhatsAppClick = (source: 'developer' | 'agent') => {
+  const handleWhatsAppClick = (source: 'developer' | 'agent', e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (developer) {
       trackInquiry({
         projectId: project.id,
@@ -126,6 +150,18 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     'Fixed payment schedule',
     '1-year warranty on delivery',
   ];
+
+  // Get primary contact for mini mode
+  const primaryContact = representingAgent || developer;
+  const primaryPhone = representingAgent?.phone || developer?.phone;
+  const primaryWhatsappUrl = representingAgent ? agentWhatsappUrl : developerWhatsappUrl;
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  // Mini card when collapsed (and not manually expanded)
+  const showMiniMode = isCollapsed && !isExpanded && primaryContact;
 
   // Agent Contact Section
   const AgentContactSection = () => (
@@ -272,93 +308,165 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
-      <Card className="shadow-lg border-primary/10">
-        <CardContent className="p-5 space-y-4">
-          {/* Construction Progress Mini Display */}
-          {project.construction_progress_percent !== null && project.construction_progress_percent !== undefined && (
-            <>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <TrendingUp className="h-4 w-4" />
-                    Construction Progress
+    <div className="relative">
+      {/* Sentinel element for intersection observer */}
+      <div ref={cardRef} className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
+
+      <AnimatePresence mode="wait">
+        {showMiniMode ? (
+          <motion.div
+            key="mini"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card 
+              className="shadow-md border-border cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setIsExpanded(true)}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center gap-3">
+                  <Avatar className={`h-8 w-8 ${!representingAgent ? 'rounded-lg' : ''}`}>
+                    {representingAgent ? (
+                      <>
+                        <AvatarImage src={representingAgent.avatar_url || undefined} alt={representingAgent.name} className="object-cover" />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                          {getInitials(representingAgent.name)}
+                        </AvatarFallback>
+                      </>
+                    ) : developer ? (
+                      <>
+                        <AvatarImage src={developer.logo_url || undefined} alt={developer.name} className="object-contain" />
+                        <AvatarFallback className="rounded-lg bg-primary/10">
+                          <Building className="h-4 w-4 text-primary" />
+                        </AvatarFallback>
+                      </>
+                    ) : null}
+                  </Avatar>
+                  <span className="text-sm font-medium text-muted-foreground flex-1">
+                    {representingAgent ? 'Contact Agent' : 'Contact Developer'}
                   </span>
-                  <span className="font-semibold text-primary">{project.construction_progress_percent}%</span>
+                  {primaryPhone && primaryWhatsappUrl && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={(e) => handleWhatsAppClick(representingAgent ? 'agent' : 'developer', e)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${project.construction_progress_percent}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                  />
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: isCollapsed ? 0 : 0.2 }}
+          >
+            <Card className="shadow-lg border-primary/10">
+              <CardContent className="p-5 space-y-4">
+                {/* Construction Progress Mini Display */}
+                {project.construction_progress_percent !== null && project.construction_progress_percent !== undefined && (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <TrendingUp className="h-4 w-4" />
+                          Construction Progress
+                        </span>
+                        <span className="font-semibold text-primary">{project.construction_progress_percent}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-primary"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${project.construction_progress_percent}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
+                      </div>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
+                {/* Contact Section - Tabbed if both agent and developer exist */}
+                {representingAgent ? (
+                  <Tabs defaultValue="agent" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="agent" className="text-xs">Sales Agent</TabsTrigger>
+                      <TabsTrigger value="developer" className="text-xs">Developer</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="agent" className="mt-3">
+                      <AgentContactSection />
+                    </TabsContent>
+                    <TabsContent value="developer" className="mt-3">
+                      <DeveloperContactSection />
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <DeveloperContactSection />
+                )}
+
+                {/* Collapse button when manually expanded */}
+                {isCollapsed && isExpanded && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-muted-foreground"
+                    onClick={() => setIsExpanded(false)}
+                  >
+                    Collapse
+                  </Button>
+                )}
+
+                <Separator />
+
+                {/* Quick Facts */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Quick Facts</h4>
+                  <div className="space-y-2">
+                    {quickFacts.map((fact, index) => (
+                      <div key={index} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">{fact.label}</span>
+                        <span className="font-medium">{fact.value}</span>
+                      </div>
+                    ))}
+                    {monthsToCompletion !== null && monthsToCompletion > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Time to delivery</span>
+                        <span className="font-medium">~{monthsToCompletion} months</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <Separator />
-            </>
-          )}
 
-          {/* Contact Section - Tabbed if both agent and developer exist */}
-          {representingAgent ? (
-            <Tabs defaultValue="agent" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="agent" className="text-xs">Sales Agent</TabsTrigger>
-                <TabsTrigger value="developer" className="text-xs">Developer</TabsTrigger>
-              </TabsList>
-              <TabsContent value="agent" className="mt-3">
-                <AgentContactSection />
-              </TabsContent>
-              <TabsContent value="developer" className="mt-3">
-                <DeveloperContactSection />
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <DeveloperContactSection />
-          )}
+                <Separator />
 
-          <Separator />
-
-          {/* Quick Facts */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Quick Facts</h4>
-            <div className="space-y-2">
-              {quickFacts.map((fact, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{fact.label}</span>
-                  <span className="font-medium">{fact.value}</span>
+                {/* Buyer Protections */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Buyer Protections</h4>
+                  <div className="space-y-1.5">
+                    {buyerProtections.map((protection, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span>{protection}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-              {monthsToCompletion !== null && monthsToCompletion > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Time to delivery</span>
-                  <span className="font-medium">~{monthsToCompletion} months</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Buyer Protections */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Buyer Protections</h4>
-            <div className="space-y-1.5">
-              {buyerProtections.map((protection, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                  <span>{protection}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

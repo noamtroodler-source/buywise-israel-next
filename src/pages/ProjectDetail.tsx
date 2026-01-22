@@ -14,7 +14,7 @@ import {
   ProjectCostBreakdown,
   ProjectTimeline,
   ProjectDeveloperCard,
-  ProjectAgentCard,
+  
   ProjectStickyCard,
   ProjectMobileContactBar,
   SimilarProjects,
@@ -124,17 +124,7 @@ export default function ProjectDetail() {
               {/* FAQ Section */}
               <ProjectFAQ />
               
-              {/* Sales Agent Card - if assigned */}
-              {project.representing_agent && (
-                <div id="agent-section">
-                  <ProjectAgentCard 
-                    agent={project.representing_agent} 
-                    projectName={project.name}
-                    projectId={project.id}
-                    developerId={project.developer_id || undefined}
-                  />
-                </div>
-              )}
+              {/* Agent contact is now consolidated in ProjectStickyCard sidebar */}
               
               {project.developer && (
                 <div id="developer-section">
