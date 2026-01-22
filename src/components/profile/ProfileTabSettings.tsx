@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { BuyerProfileCard } from './BuyerProfileCard';
 import { MortgagePreferencesCard } from './MortgagePreferencesCard';
+import { CoreLocationsCard } from './CoreLocationsCard';
 
 export function ProfileTabSettings() {
   const { user } = useAuth();
@@ -126,6 +127,9 @@ export function ProfileTabSettings() {
 
       {/* Mortgage Preferences */}
       <MortgagePreferencesCard />
+
+      {/* Core Locations */}
+      <CoreLocationsCard />
     </div>
   );
 }

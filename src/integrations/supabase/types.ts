@@ -566,6 +566,7 @@ export type Database = {
           purchase_purpose: string
           rental_budget: number | null
           residency_status: string
+          saved_locations: Json | null
           updated_at: string
           upgrade_sale_date: string | null
           user_id: string
@@ -584,6 +585,7 @@ export type Database = {
           purchase_purpose?: string
           rental_budget?: number | null
           residency_status?: string
+          saved_locations?: Json | null
           updated_at?: string
           upgrade_sale_date?: string | null
           user_id: string
@@ -602,6 +604,7 @@ export type Database = {
           purchase_purpose?: string
           rental_budget?: number | null
           residency_status?: string
+          saved_locations?: Json | null
           updated_at?: string
           upgrade_sale_date?: string | null
           user_id?: string
