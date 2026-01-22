@@ -129,6 +129,11 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         is_immediate_entry: !property.entry_date,
         vaad_bayit_monthly: property.vaad_bayit_monthly || undefined,
         features: property.features || [],
+        // Lease reality fields
+        lease_term: (property as any).lease_term || undefined,
+        subletting_allowed: (property as any).subletting_allowed || undefined,
+        furnished_status: (property as any).furnished_status || undefined,
+        pets_policy: (property as any).pets_policy || undefined,
         images: property.images || [],
         description: property.description || '',
         highlights: [],
@@ -176,7 +181,12 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
         condition: data.condition as any,
-      });
+        // Lease reality fields
+        lease_term: data.lease_term,
+        subletting_allowed: data.subletting_allowed,
+        furnished_status: data.furnished_status,
+        pets_policy: data.pets_policy,
+      } as any);
       navigate('/agent/properties');
     } finally {
       setIsSubmitting(false);
@@ -213,7 +223,12 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
         condition: data.condition as any,
-      });
+        // Lease reality fields
+        lease_term: data.lease_term,
+        subletting_allowed: data.subletting_allowed,
+        furnished_status: data.furnished_status,
+        pets_policy: data.pets_policy,
+      } as any);
       
       // Then submit for review
       await submitForReview.mutateAsync(propertyId);

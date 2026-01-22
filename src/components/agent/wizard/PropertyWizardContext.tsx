@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { PropertyType, ListingStatus } from '@/types/database';
+import { PropertyType, ListingStatus, LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
 export interface PropertyWizardData {
   // Step 1: Basics
@@ -31,6 +31,12 @@ export interface PropertyWizardData {
   is_immediate_entry: boolean;
   vaad_bayit_monthly: number | undefined;
   features: string[];
+  
+  // Lease reality fields (Step 3)
+  lease_term: LeaseTermOption | undefined;
+  subletting_allowed: SublettingOption | undefined;
+  furnished_status: FurnishedStatus | undefined;
+  pets_policy: PetsPolicy | undefined;
   
   // Step 4: Photos
   images: string[];
@@ -79,6 +85,11 @@ export const defaultPropertyData: PropertyWizardData = {
   is_immediate_entry: true,
   vaad_bayit_monthly: undefined,
   features: [],
+  // Lease reality defaults
+  lease_term: undefined,
+  subletting_allowed: undefined,
+  furnished_status: undefined,
+  pets_policy: undefined,
   images: [],
   description: '',
   highlights: [],

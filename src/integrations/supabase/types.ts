@@ -2198,6 +2198,7 @@ export type Database = {
           entry_date: string | null
           features: string[] | null
           floor: number | null
+          furnished_status: string | null
           id: string
           images: string[] | null
           is_accessible: boolean | null
@@ -2206,12 +2207,14 @@ export type Database = {
           is_published: boolean | null
           last_renewed_at: string | null
           latitude: number | null
+          lease_term: string | null
           listing_status: Database["public"]["Enums"]["listing_status"]
           longitude: number | null
           lot_size_sqm: number | null
           neighborhood: string | null
           original_price: number | null
           parking: number | null
+          pets_policy: string | null
           price: number
           price_reduced_at: string | null
           property_type: Database["public"]["Enums"]["property_type"]
@@ -2219,6 +2222,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           size_sqm: number | null
+          subletting_allowed: string | null
           submitted_at: string | null
           title: string
           total_floors: number | null
@@ -2244,6 +2248,7 @@ export type Database = {
           entry_date?: string | null
           features?: string[] | null
           floor?: number | null
+          furnished_status?: string | null
           id?: string
           images?: string[] | null
           is_accessible?: boolean | null
@@ -2252,12 +2257,14 @@ export type Database = {
           is_published?: boolean | null
           last_renewed_at?: string | null
           latitude?: number | null
+          lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
+          pets_policy?: string | null
           price: number
           price_reduced_at?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
@@ -2265,6 +2272,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
+          subletting_allowed?: string | null
           submitted_at?: string | null
           title: string
           total_floors?: number | null
@@ -2290,6 +2298,7 @@ export type Database = {
           entry_date?: string | null
           features?: string[] | null
           floor?: number | null
+          furnished_status?: string | null
           id?: string
           images?: string[] | null
           is_accessible?: boolean | null
@@ -2298,12 +2307,14 @@ export type Database = {
           is_published?: boolean | null
           last_renewed_at?: string | null
           latitude?: number | null
+          lease_term?: string | null
           listing_status?: Database["public"]["Enums"]["listing_status"]
           longitude?: number | null
           lot_size_sqm?: number | null
           neighborhood?: string | null
           original_price?: number | null
           parking?: number | null
+          pets_policy?: string | null
           price?: number
           price_reduced_at?: string | null
           property_type?: Database["public"]["Enums"]["property_type"]
@@ -2311,6 +2322,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           size_sqm?: number | null
+          subletting_allowed?: string | null
           submitted_at?: string | null
           title?: string
           total_floors?: number | null
