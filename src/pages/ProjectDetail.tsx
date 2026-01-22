@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { useProjectViewTracking } from '@/hooks/useProjectViewTracking';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import {
   ProjectHero,
   ProjectFloorPlans,
@@ -101,15 +102,17 @@ export default function ProjectDetail() {
               {/* Construction Timeline */}
               <ProjectTimeline project={project} />
               
-              <PropertyLocation
-                address={project.address || ''}
-                city={project.city}
-                neighborhood={project.neighborhood || undefined}
-                latitude={project.latitude || undefined}
-                longitude={project.longitude || undefined}
-                entityId={project.id}
-                entityType="project"
-              />
+              <GoogleMapsProvider>
+                <PropertyLocation
+                  address={project.address || ''}
+                  city={project.city}
+                  neighborhood={project.neighborhood || undefined}
+                  latitude={project.latitude || undefined}
+                  longitude={project.longitude || undefined}
+                  entityId={project.id}
+                  entityType="project"
+                />
+              </GoogleMapsProvider>
               
               {/* Next Steps - Merged CTAs */}
               <ProjectNextSteps 
