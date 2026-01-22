@@ -145,6 +145,19 @@ const App = () => (
                         <Route path="/buy" element={<Navigate to="/listings?status=for_sale" replace />} />
                         <Route path="/rent" element={<Navigate to="/listings?status=for_rent" replace />} />
                         
+                        {/* Tool URL redirects for backwards compatibility */}
+                        <Route path="/tools/mortgage-calculator" element={<Navigate to="/tools?tool=mortgage" replace />} />
+                        <Route path="/tools/mortgage" element={<Navigate to="/tools?tool=mortgage" replace />} />
+                        <Route path="/tools/total-cost-calculator" element={<Navigate to="/tools?tool=totalcost" replace />} />
+                        <Route path="/tools/true-cost-calculator" element={<Navigate to="/tools?tool=totalcost" replace />} />
+                        <Route path="/tools/true-cost" element={<Navigate to="/tools?tool=totalcost" replace />} />
+                        <Route path="/tools/affordability-calculator" element={<Navigate to="/tools?tool=affordability" replace />} />
+                        <Route path="/tools/affordability" element={<Navigate to="/tools?tool=affordability" replace />} />
+                        <Route path="/tools/rent-vs-buy" element={<Navigate to="/tools?tool=rentvsbuy" replace />} />
+                        <Route path="/tools/renovation" element={<Navigate to="/tools?tool=renovation" replace />} />
+                        <Route path="/tools/purchase-tax-calculator" element={<Navigate to="/tools?tool=purchasetax" replace />} />
+                        <Route path="/tools/rental-yield-calculator" element={<Navigate to="/tools?tool=rentalyield" replace />} />
+                        
                         {/* Lazy loaded routes */}
                         <Route path="/get-started" element={<GetStarted />} />
                         <Route path="/compare" element={<Compare />} />

@@ -931,14 +931,14 @@ export function RenovationCostEstimator() {
           icon={<Calculator className="h-5 w-5" />}
           title="True Cost Calculator"
           description="Include renovation in your total purchase cost"
-          buttonLink="/tools/true-cost"
+          buttonLink="/tools?tool=totalcost"
           buttonText="Calculate Total Cost"
         />
         <CTACard
           icon={<TrendingUp className="h-5 w-5" />}
           title="Affordability Calculator"
           description="See how much you can borrow for purchase + renovation"
-          buttonLink="/tools/affordability"
+          buttonLink="/tools?tool=affordability"
           buttonText="Check Affordability"
         />
         <CTACard

@@ -36,10 +36,10 @@ export function SavedCalculationsCompact() {
 
   const getCalculatorLink = (type: string) => {
     switch (type) {
-      case 'mortgage': return '/tools/mortgage-calculator';
-      case 'affordability': return '/tools/affordability-calculator';
-      case 'purchase_tax': return '/tools/purchase-tax-calculator';
-      case 'rental_yield': return '/tools/rental-yield-calculator';
+      case 'mortgage': return '/tools?tool=mortgage';
+      case 'affordability': return '/tools?tool=affordability';
+      case 'purchase_tax': return '/tools?tool=purchasetax';
+      case 'rental_yield': return '/tools?tool=rentalyield';
       default: return '/tools';
     }
   };
