@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Calculator, DollarSign, Receipt, Calendar, Info, Home, ChevronDown, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calculator, Receipt, Calendar, Home, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -8,10 +7,8 @@ import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
-import { useAuth } from '@/hooks/useAuth';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
-import { MortgageInlineEdit } from './MortgageInlineEdit';
-import { Link } from 'react-router-dom';
+import { PersonalizationHeader } from './PersonalizationHeader';
 import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
 
@@ -76,7 +73,6 @@ export function PropertyCostBreakdown({
   isNewConstruction = false,
   vaadBayitMonthly
 }: PropertyCostBreakdownProps) {
-  const { user } = useAuth();
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
   
@@ -182,38 +178,13 @@ export function PropertyCostBreakdown({
   // State for collapsible sections
   const [oneTimeOpen, setOneTimeOpen] = useState(false);
   const [monthlyOpen, setMonthlyOpen] = useState(false);
-  const [isMortgageEditing, setIsMortgageEditing] = useState(false);
   
-  // Get LTV limit for mortgage editing
+  // Get LTV limit for personalization header
   const { ltvLimit } = useMortgagePreferences();
   
   // Calculate % of purchase price for context
   const oneTimePercentLow = ((totalOneTimeRange.low / price) * 100).toFixed(1);
   const oneTimePercentHigh = ((totalOneTimeRange.high / price) * 100).toFixed(1);
-
-  // Profile prompt banner - now inline and compact
-  const ProfilePrompt = () => (
-    <div className="flex items-center gap-2 p-2 px-3 rounded-lg bg-muted/50 text-sm">
-      <Info className="h-4 w-4 text-muted-foreground shrink-0" />
-      <span className="text-muted-foreground">
-        {user ? (
-          <>Assuming <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span> rates</>
-        ) : (
-          <>Assuming <span className="font-medium text-foreground">First-Time Buyer</span> rates</>
-        )}
-      </span>
-      <span className="text-muted-foreground">·</span>
-      {user ? (
-        <Link to="/profile" className="text-primary hover:underline text-sm">
-          Personalize
-        </Link>
-      ) : (
-        <Link to="/auth?tab=signup" className="text-primary hover:underline text-sm">
-          Sign up
-        </Link>
-      )}
-    </div>
-  );
 
   if (listingStatus === 'for_rent') {
     return (
@@ -261,21 +232,16 @@ export function PropertyCostBreakdown({
       </div>
       
       <div className="space-y-5">
-        {/* Compact profile indicator - unified for all users */}
+        {/* Unified personalization header - buyer type + mortgage assumptions */}
         {!isLoading && (
-          hasProfile ? (
-            <div className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-primary" />
-              <span className="text-muted-foreground">
-                Calculating for: <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
-              </span>
-              <Link to="/profile" className="text-primary hover:underline text-sm ml-1">
-                Change
-              </Link>
-            </div>
-          ) : (
-            <ProfilePrompt />
-          )
+          <PersonalizationHeader
+            buyerCategoryLabel={getBuyerCategoryLabel(buyerCategory)}
+            hasProfile={hasProfile}
+            downPaymentPercent={mortgageEstimate.downPaymentPercent}
+            termYears={mortgageEstimate.termYears}
+            propertyPrice={price}
+            ltvLimit={ltvLimit}
+          />
         )}
 
 
@@ -396,7 +362,7 @@ export function PropertyCostBreakdown({
             </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-2 text-sm pt-2">
-              {/* Mortgage Payment Row - Hero item with inline edit */}
+              {/* Mortgage Payment Row - Display only, edit happens at the top */}
               <div className="py-2 border-b border-border/50">
                 <div className="flex justify-between items-start">
                   <div>
@@ -408,30 +374,10 @@ export function PropertyCostBreakdown({
                       {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">
-                      {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
-                    </span>
-                    {!isMortgageEditing && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsMortgageEditing(true)}
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
+                  <span className="font-medium">
+                    {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
+                  </span>
                 </div>
-                
-                {isMortgageEditing && (
-                  <MortgageInlineEdit
-                    propertyPrice={price}
-                    ltvLimit={ltvLimit}
-                    onClose={() => setIsMortgageEditing(false)}
-                  />
-                )}
               </div>
               
               <div className="flex justify-between py-2 border-b border-border/50">
