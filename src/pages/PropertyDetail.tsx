@@ -169,13 +169,16 @@ export default function PropertyDetail() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="py-6 border-b border-border"
               >
-                <PropertyCostBreakdown 
+              <PropertyCostBreakdown 
                   price={property.price}
                   currency={property.currency || 'ILS'}
                   listingStatus={property.listing_status}
                   city={property.city}
                   sizeSqm={property.size_sqm}
                   vaadBayitMonthly={property.vaad_bayit_monthly}
+                  agentFeeRequired={property.agent_fee_required}
+                  bankGuaranteeRequired={property.bank_guarantee_required}
+                  checksRequired={property.checks_required}
                 />
               </motion.div>
             )}

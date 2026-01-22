@@ -9,7 +9,7 @@ import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { PersonalizationHeader } from './PersonalizationHeader';
-import { FEE_RANGES, formatPriceRange } from '@/lib/utils/formatRange';
+import { FEE_RANGES, RENTAL_FEE_RANGES, VAT_RATE, formatPriceRange } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
@@ -22,6 +22,10 @@ interface PropertyCostBreakdownProps {
   sizeSqm?: number;
   isNewConstruction?: boolean;
   vaadBayitMonthly?: number | null;
+  // Rental-specific props
+  agentFeeRequired?: boolean | null;
+  bankGuaranteeRequired?: boolean | null;
+  checksRequired?: boolean | null;
 }
 
 // Calculate tax using actual brackets from DB or fallback
@@ -79,7 +83,10 @@ export function PropertyCostBreakdown({
   city,
   sizeSqm,
   isNewConstruction = false,
-  vaadBayitMonthly
+  vaadBayitMonthly,
+  agentFeeRequired,
+  bankGuaranteeRequired,
+  checksRequired
 }: PropertyCostBreakdownProps) {
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
@@ -200,41 +207,210 @@ export function PropertyCostBreakdown({
   const oneTimePercentLow = ((totalOneTimeRange.low / price) * 100).toFixed(1);
   const oneTimePercentHigh = ((totalOneTimeRange.high / price) * 100).toFixed(1);
 
+  // Rental cost breakdown state
+  const [rentalUpfrontOpen, setRentalUpfrontOpen] = useState(false);
+  const [rentalMonthlyOpen, setRentalMonthlyOpen] = useState(false);
+  
+  // Rental upfront costs calculations
+  const rentalSecurityDepositRange = useMemo(() => ({
+    low: price * RENTAL_FEE_RANGES.securityDeposit.min,
+    high: price * RENTAL_FEE_RANGES.securityDeposit.max,
+  }), [price]);
+  
+  const rentalAgentFee = useMemo(() => {
+    if (!agentFeeRequired) return 0;
+    return price * RENTAL_FEE_RANGES.agentFee.base * (1 + VAT_RATE);
+  }, [price, agentFeeRequired]);
+  
+  const rentalTotalUpfrontRange = useMemo(() => ({
+    low: rentalSecurityDepositRange.low + price + (agentFeeRequired ? rentalAgentFee : 0),
+    high: rentalSecurityDepositRange.high + price + (agentFeeRequired ? rentalAgentFee : 0),
+  }), [rentalSecurityDepositRange, price, agentFeeRequired, rentalAgentFee]);
+  
+  const rentalTotalMonthly = price + arnona + vaadBayit;
+
   if (listingStatus === 'for_rent') {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
-        </div>
-        
+      <TooltipProvider>
         <div className="space-y-4">
-          <h4 className="font-medium text-foreground">Monthly Costs (Estimates)</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Rent</span>
-              <span className="font-medium">{formatPrice(price, currency)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Arnona</span>
-                {cityData && (
-                  <Badge variant="outline" className="text-xs">{city}</Badge>
-                )}
-              </div>
-              <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Va'ad Bayit</span>
-              <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-xl mt-3">
-              <span className="font-semibold">Total Monthly</span>
-              <span className="font-bold text-primary">{formatPrice(price + arnona + vaadBayit, currency)}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Calculator className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
           </div>
+          
+          {/* Upfront Costs Section */}
+          <Collapsible open={rentalUpfrontOpen} onOpenChange={setRentalUpfrontOpen}>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+                <h4 className="font-semibold flex items-center gap-2">
+                  Upfront Costs
+                </h4>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-foreground">
+                  {formatPriceRange(rentalTotalUpfrontRange.low, rentalTotalUpfrontRange.high, 'ILS')}
+                </span>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    View breakdown
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", rentalUpfrontOpen && "rotate-180")} />
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+            </div>
+            
+            <CollapsibleContent>
+              <div className="py-3 space-y-2 bg-muted/20 px-3 rounded-b-lg -mt-px">
+                {/* Security Deposit */}
+                <div className="flex justify-between py-1.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/50 cursor-help">
+                        Security Deposit ({RENTAL_FEE_RANGES.securityDeposit.label})
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-sm">A refundable deposit held by the landlord (typically 2-3 months' rent). Returned when you move out, minus any deductions for damages.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-sm font-medium">
+                    {formatPriceRange(rentalSecurityDepositRange.low, rentalSecurityDepositRange.high, 'ILS')}
+                  </span>
+                </div>
+                
+                {/* First Month's Rent */}
+                <div className="flex justify-between py-1.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/50 cursor-help">
+                        First Month's Rent
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-sm">The first month's rent is due upon signing, before you receive the keys.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-sm font-medium">{formatPrice(price, currency)}</span>
+                </div>
+                
+                {/* Agent Fee */}
+                {agentFeeRequired && (
+                  <div className="flex justify-between py-1.5">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/50 cursor-help">
+                          Agent Fee + VAT
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="text-sm">A one-time broker fee (1 month's rent + 18% VAT). This applies when an agent is involved in the rental process.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <span className="text-sm font-medium">{formatPrice(rentalAgentFee, 'ILS')}</span>
+                  </div>
+                )}
+                
+                {/* Status Badges */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50 mt-2">
+                  {/* Bank Guarantee Badge */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant={bankGuaranteeRequired ? "secondary" : "outline"} className="text-xs cursor-help">
+                        Bank Guarantee: {bankGuaranteeRequired === true ? 'Required' : bankGuaranteeRequired === false ? 'Not Required' : 'Check with agent'}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-sm">Some landlords require a bank-backed guarantee in addition to the security deposit. This is money held by the bank—not a fee you lose.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  {/* Post-dated Checks Badge */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant={checksRequired ? "secondary" : "outline"} className="text-xs cursor-help">
+                        Post-dated Checks: {checksRequired === true ? 'Yes' : checksRequired === false ? 'No' : 'Check with agent'}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-sm">Post-dated checks for future rent payments are common in Israel. You provide checks covering the full lease term upfront.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+          
+          {/* Monthly Costs Section */}
+          <Collapsible open={rentalMonthlyOpen} onOpenChange={setRentalMonthlyOpen}>
+            <div className="flex items-center justify-between py-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <h4 className="font-semibold flex items-center gap-2">
+                  Monthly Costs
+                  {cityData && (
+                    <Badge variant="outline" className="text-xs font-normal">{city} rates</Badge>
+                  )}
+                </h4>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-bold text-foreground">{formatPrice(rentalTotalMonthly, 'ILS')}/mo</span>
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    View breakdown
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", rentalMonthlyOpen && "rotate-180")} />
+                  </button>
+                </CollapsibleTrigger>
+              </div>
+            </div>
+            
+            <CollapsibleContent>
+              <div className="py-3 space-y-2 bg-muted/20 px-3 rounded-b-lg -mt-px">
+                {/* Rent */}
+                <div className="flex justify-between py-1.5">
+                  <span className="text-sm text-muted-foreground">Rent</span>
+                  <span className="text-sm font-medium">{formatPrice(price, currency)}</span>
+                </div>
+                
+                {/* Arnona */}
+                <div className="flex justify-between py-1.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/50 cursor-help">
+                        Arnona (est.)
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-sm">Municipal property tax paid to the local authority. Amount depends on apartment size and city zone. Estimate based on {city || 'city'} average rates.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-sm font-medium">{formatPrice(arnona, 'ILS')}</span>
+                </div>
+                
+                {/* Va'ad Bayit */}
+                <div className="flex justify-between py-1.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-sm text-muted-foreground border-b border-dotted border-muted-foreground/50 cursor-help">
+                        Va'ad Bayit {isVaadActual ? '' : '(est.)'}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="text-sm">Monthly building maintenance fee covering shared expenses like cleaning, elevator, and common utilities.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-sm font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+          
+          {/* Disclaimer */}
+          <p className="text-xs text-muted-foreground pt-2">
+            * Estimates based on {city || 'city'} rates. Actual costs may vary.
+          </p>
         </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
