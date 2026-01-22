@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.check-description]
 verify_jwt = false
+
+[functions.geocode-address]
+verify_jwt = false
+
+[functions.backfill-coordinates]
+verify_jwt = false

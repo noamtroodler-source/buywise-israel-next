@@ -10,7 +10,7 @@ interface AutoGeocodeResult {
 
 /**
  * Hook that auto-geocodes a property/project address if lat/lng are missing.
- * Uses Nominatim (OpenStreetMap) - no API key needed.
+ * Uses a backend edge function for reliable server-side geocoding.
  */
 export function useAutoGeocode(
   entityType: 'property' | 'project',
@@ -18,7 +18,8 @@ export function useAutoGeocode(
   address: string,
   city: string,
   existingLat?: number | null,
-  existingLng?: number | null
+  existingLng?: number | null,
+  neighborhood?: string
 ): AutoGeocodeResult {
   const [latitude, setLatitude] = useState<number | null>(existingLat ?? null);
   const [longitude, setLongitude] = useState<number | null>(existingLng ?? null);
@@ -43,58 +44,46 @@ export function useAutoGeocode(
       setError(null);
 
       try {
-        // Build a full address for geocoding
-        const fullAddress = `${address}, ${city}, Israel`;
-        
-        // Use Nominatim (OpenStreetMap) - free, no API key needed
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&countrycodes=il&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'BuyWiseIsrael/1.0 (contact@buywise.co.il)'
-            }
-          }
-        );
+        console.log(`[useAutoGeocode] Geocoding ${entityType} ${entityId}: ${address}, ${city}`);
 
-        if (!response.ok) {
-          throw new Error('Geocoding request failed');
+        // Call the backend geocoding function
+        const { data, error: fnError } = await supabase.functions.invoke('geocode-address', {
+          body: {
+            entityType,
+            entityId,
+            address,
+            city,
+            neighborhood
+          }
+        });
+
+        if (fnError) {
+          console.error('[useAutoGeocode] Function error:', fnError);
+          throw new Error(fnError.message || 'Geocoding service error');
         }
 
-        const results = await response.json();
-
-        if (results && results.length > 0) {
-          const lat = parseFloat(results[0].lat);
-          const lng = parseFloat(results[0].lon);
-
-          // Validate coordinates are in Israel (roughly)
-          if (lat >= 29 && lat <= 34 && lng >= 34 && lng <= 36) {
-            setLatitude(lat);
-            setLongitude(lng);
-
-            // Save to database for future use
-            const table = entityType === 'property' ? 'properties' : 'projects';
-            await supabase
-              .from(table)
-              .update({ latitude: lat, longitude: lng })
-              .eq('id', entityId);
-          } else {
-            setError('Geocoded location outside Israel bounds');
-          }
-        } else {
-          setError('No geocoding results found');
+        if (!data.success) {
+          console.error('[useAutoGeocode] Geocoding failed:', data.error);
+          throw new Error(data.error || 'Failed to geocode address');
         }
+
+        // Successfully geocoded
+        console.log(`[useAutoGeocode] Success: ${data.latitude}, ${data.longitude} (source: ${data.source})`);
+        setLatitude(data.latitude);
+        setLongitude(data.longitude);
+
       } catch (err) {
-        console.error('Auto-geocode error:', err);
+        console.error('[useAutoGeocode] Error:', err);
         setError(err instanceof Error ? err.message : 'Geocoding failed');
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Small delay to avoid hammering Nominatim on rapid navigation
-    const timeoutId = setTimeout(geocodeAddress, 500);
+    // Small delay to avoid rapid calls on navigation
+    const timeoutId = setTimeout(geocodeAddress, 300);
     return () => clearTimeout(timeoutId);
-  }, [entityId, address, city, existingLat, existingLng, entityType]);
+  }, [entityId, address, city, neighborhood, existingLat, existingLng, entityType]);
 
   return { latitude, longitude, isLoading, error };
 }
