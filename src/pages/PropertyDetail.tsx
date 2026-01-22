@@ -16,6 +16,7 @@ import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapsh
 
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { toast } from 'sonner';
@@ -186,15 +187,17 @@ export default function PropertyDetail() {
               transition={{ duration: 0.4, delay: 0.25 }}
               className="py-6 border-b border-border"
             >
-              <PropertyLocation 
-                address={property.address}
-                city={property.city}
-                neighborhood={property.neighborhood}
-                latitude={property.latitude}
-                longitude={property.longitude}
-                entityId={property.id}
-                entityType="property"
-              />
+              <GoogleMapsProvider>
+                <PropertyLocation 
+                  address={property.address}
+                  city={property.city}
+                  neighborhood={property.neighborhood}
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  entityId={property.id}
+                  entityType="property"
+                />
+              </GoogleMapsProvider>
             </motion.div>
 
             {/* Next Steps CTAs */}

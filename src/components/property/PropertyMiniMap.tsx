@@ -91,6 +91,7 @@ export function PropertyMiniMap({
   return (
     <div className="relative rounded-xl overflow-hidden border border-border h-[200px] sm:h-[240px]">
       <MapContainer
+        key={`${latitude}-${longitude}`}
         center={[latitude, longitude]}
         zoom={15}
         scrollWheelZoom={false}
