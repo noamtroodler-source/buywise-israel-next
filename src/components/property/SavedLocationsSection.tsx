@@ -102,45 +102,51 @@ function SavedLocationRow({
   }
 
   return (
-    <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <div className="bg-muted/30 border border-border/40 rounded-xl p-3 hover:bg-muted/50 transition-colors">
+      <div className="flex items-start gap-2.5">
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
           <IconComponent className="h-4 w-4 text-primary" />
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="font-medium text-sm truncate max-w-[120px]">
-                {location.label}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">{location.address}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-      
-      {travelInfo ? (
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <travelInfo.Icon className="h-3.5 w-3.5" />
-          <span className="font-medium text-foreground">{travelInfo.time} min</span>
-          <span className="text-xs">{travelInfo.label}</span>
+        
+        <div className="flex-1 min-w-0">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="font-medium text-foreground text-sm leading-tight truncate">
+                  {location.label}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-xs">{location.address}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <p className="text-xs text-muted-foreground mt-0.5">Saved</p>
+          
+          {travelInfo ? (
+            <div className="flex items-center gap-1.5 mt-2 text-sm">
+              <travelInfo.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium text-foreground">{travelInfo.time} min</span>
+              <span className="text-muted-foreground">{travelInfo.label}</span>
+            </div>
+          ) : (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-xs mt-2 text-muted-foreground/70 italic cursor-help">
+                    3+ hours away
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[180px]">
+                  <p className="text-xs">
+                    Over 3 hours from this property. Check Google Maps for directions.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-xs text-muted-foreground/70 italic cursor-help">
-              3+ hours away
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-[180px]">
-            <p className="text-xs">
-              Over 3 hours from this property. Check Google Maps for directions.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      )}
+      </div>
     </div>
   );
 }
@@ -158,20 +164,18 @@ export function SavedLocationsSection({
     return null;
   }
 
+  // Return grid items directly (no wrapper) to integrate into parent grid
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium text-foreground">Your Saved Locations</h4>
-      <div className="space-y-1.5">
-        {locations.map((location) => (
-          <SavedLocationRow
-            key={location.id}
-            location={location}
-            propertyLat={propertyLat}
-            propertyLng={propertyLng}
-            travelMode={travelMode}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      {locations.map((location) => (
+        <SavedLocationRow
+          key={location.id}
+          location={location}
+          propertyLat={propertyLat}
+          propertyLng={propertyLng}
+          travelMode={travelMode}
+        />
+      ))}
+    </>
   );
 }

@@ -173,17 +173,46 @@ export function PropertyLocation({
           </div>
         </div>
 
-        {/* Inline Location Search */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Search a location</h4>
+        {/* Search a location */}
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">Search a location</h4>
           <LocationSearchInput
             onLocationSelect={handleLocationSelect}
             propertyLat={latitude ?? 31.7683}
             propertyLng={longitude ?? 35.2137}
           />
-          
-          {searchedLocations.length > 0 && (
+        </div>
+
+        {/* Unified Travel Times Section */}
+        {(hasCityAnchors || latitude || searchedLocations.length > 0) && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Compass className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">Travel Times</h4>
+              </div>
+              <ToggleGroup 
+                type="single" 
+                value={travelMode} 
+                onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
+                size="sm"
+                className="bg-muted rounded-lg p-0.5"
+              >
+                <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
+                  <Footprints className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
+                  <Bus className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
+                  <Car className="h-4 w-4" />
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            {/* Unified grid: Searched + Saved + City Anchors */}
             <div className="grid gap-2 sm:grid-cols-3">
+              {/* Searched locations (with remove button) */}
               {searchedLocations.map((location) => (
                 <SearchedLocationCard
                   key={location.id}
@@ -194,52 +223,18 @@ export function PropertyLocation({
                   onRemove={() => handleRemoveSearch(location.id)}
                 />
               ))}
-            </div>
-          )}
-        </div>
-
-        {/* Travel Mode Toggle - Shared by saved locations and city anchors */}
-        {(hasCityAnchors || latitude) && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-primary" />
-              <h4 className="font-medium text-foreground">Travel Times</h4>
-            </div>
-            <ToggleGroup 
-              type="single" 
-              value={travelMode} 
-              onValueChange={(v) => v && setTravelMode(v as TravelMode)} 
-              size="sm"
-              className="bg-muted rounded-lg p-0.5"
-            >
-              <ToggleGroupItem value="walk" aria-label="Walking" className="data-[state=on]:bg-background">
-                <Footprints className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="transit" aria-label="Public Transit" className="data-[state=on]:bg-background">
-                <Bus className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="drive" aria-label="Driving" className="data-[state=on]:bg-background">
-                <Car className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* User's Saved Locations - Personalized travel times */}
-        {latitude && longitude && (
-          <SavedLocationsSection
-            propertyLat={latitude}
-            propertyLng={longitude}
-            travelMode={travelMode}
-          />
-        )}
-
-        {/* City Anchors - The 3 curated reference points */}
-        {hasCityAnchors && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-foreground">City Reference Points</h4>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {cityAnchors.map((anchor) => (
+              
+              {/* User's saved locations */}
+              {latitude && longitude && (
+                <SavedLocationsSection
+                  propertyLat={latitude}
+                  propertyLng={longitude}
+                  travelMode={travelMode}
+                />
+              )}
+              
+              {/* City reference points */}
+              {cityAnchors?.map((anchor) => (
                 <CityAnchorCard
                   key={anchor.id}
                   anchor={anchor}
