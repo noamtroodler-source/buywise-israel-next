@@ -142,8 +142,8 @@ const App = () => (
                         <Route path="/auth" element={<Auth />} />
                         
                         {/* Route aliases - redirect old/intuitive URLs to /listings */}
-                        <Route path="/buy" element={<Navigate to="/listings?type=buy" replace />} />
-                        <Route path="/rent" element={<Navigate to="/listings?type=rent" replace />} />
+                        <Route path="/buy" element={<Navigate to="/listings?status=for_sale" replace />} />
+                        <Route path="/rent" element={<Navigate to="/listings?status=for_rent" replace />} />
                         
                         {/* Lazy loaded routes */}
                         <Route path="/get-started" element={<GetStarted />} />
