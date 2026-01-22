@@ -1,21 +1,12 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Footprints, Bus, Car, Search, Compass } from 'lucide-react';
+import { MapPin, ExternalLink, Footprints, Bus, Car, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
 import { CityAnchorCard } from './CityAnchorCard';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
-
-interface NearbyItem {
-  name: string;
-  distanceKm: number;
-}
-
-interface NearbyCategory {
-  category: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items: NearbyItem[];
-}
+import { LocationSearchInput, type SearchedLocation } from './LocationSearchInput';
+import { SearchedLocationCard } from './SearchedLocationCard';
 
 interface PropertyLocationProps {
   address: string;
@@ -27,35 +18,6 @@ interface PropertyLocationProps {
 
 type TravelMode = 'walk' | 'transit' | 'drive';
 
-const formatTravelTime = (distanceKm: number, mode: TravelMode) => {
-  const times = {
-    walk: distanceKm * 12, // ~5 km/h walking speed
-    transit: distanceKm * 3 + 5, // Bus with wait time
-    drive: distanceKm * 1.2 + 2, // Driving with parking
-  };
-  
-  const time = Math.round(times[mode]);
-  
-  // Don't show walking for > 30 min
-  if (mode === 'walk' && time > 30) return null;
-  // Don't show transit for > 60 min
-  if (mode === 'transit' && time > 60) return null;
-  
-  const icons = { walk: Footprints, transit: Bus, drive: Car };
-  const labels = { walk: 'walk', transit: 'by bus', drive: 'drive' };
-  
-  return { time, Icon: icons[mode], label: labels[mode] };
-};
-
-// Get best travel display for an item
-const getTravelDisplay = (distanceKm: number, mode: TravelMode) => {
-  const travel = formatTravelTime(distanceKm, mode);
-  if (travel) return travel;
-  
-  // Fall back to driving for far distances
-  return formatTravelTime(distanceKm, 'drive');
-};
-
 export function PropertyLocation({ 
   address, 
   city, 
@@ -64,9 +26,24 @@ export function PropertyLocation({
   longitude,
 }: PropertyLocationProps) {
   const [travelMode, setTravelMode] = useState<TravelMode>('walk');
+  const [searchedLocations, setSearchedLocations] = useState<SearchedLocation[]>([]);
   
   // Fetch city anchors from database
   const { data: cityAnchors, isLoading: anchorsLoading } = useCityAnchors(city);
+  
+  // Handle adding a searched location
+  const handleLocationSelect = (location: SearchedLocation) => {
+    // Prevent duplicates
+    if (searchedLocations.some(l => l.name === location.name)) return;
+    // Max 5 searches
+    if (searchedLocations.length >= 5) return;
+    setSearchedLocations(prev => [...prev, location]);
+  };
+  
+  // Handle removing a searched location
+  const handleRemoveSearch = (id: string) => {
+    setSearchedLocations(prev => prev.filter(l => l.id !== id));
+  };
   
   const fullAddress = `${address}${neighborhood ? `, ${neighborhood}` : ''}, ${city}, Israel`;
   
@@ -84,14 +61,6 @@ export function PropertyLocation({
     window.open(`https://waze.com/ul?${query}&navigate=yes`, '_blank');
   };
 
-  // Search This Area - opens Google Maps centered on property
-  const searchThisArea = () => {
-    if (latitude && longitude) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=&center=${latitude},${longitude}&zoom=16`, '_blank');
-    } else {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank');
-    }
-  };
 
   // Generate map POIs from city anchors
   const generateMapPOIs = () => {
@@ -173,12 +142,35 @@ export function PropertyLocation({
               <ExternalLink className="h-4 w-4" />
               Waze
             </Button>
-            <Button variant="outline" size="sm" onClick={searchThisArea} className="gap-2">
-              <Search className="h-4 w-4" />
-              Search this area
-            </Button>
           </div>
         </div>
+
+        {/* Inline Location Search */}
+        {latitude && longitude && (
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-foreground">Search a location</h4>
+            <LocationSearchInput
+              onLocationSelect={handleLocationSelect}
+              propertyLat={latitude}
+              propertyLng={longitude}
+            />
+            
+            {searchedLocations.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {searchedLocations.map((location) => (
+                  <SearchedLocationCard
+                    key={location.id}
+                    location={location}
+                    propertyLat={latitude}
+                    propertyLng={longitude}
+                    travelMode={travelMode}
+                    onRemove={() => handleRemoveSearch(location.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* City Anchors - The 3 curated reference points */}
         {hasCityAnchors && latitude && longitude && (
