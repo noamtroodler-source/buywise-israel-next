@@ -2,10 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Search, MapPin, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
-import { useJsApiLoader } from '@react-google-maps/api';
-
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCuBVvXVZjdZLfOf-Fy_tAdKuPTnuHweHc';
-const libraries: ('places')[] = ['places'];
+import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 
 export interface SearchedLocation {
   id: string;
@@ -183,12 +180,10 @@ function NominatimLocationSearch({ onLocationSelect, propertyLat, propertyLng }:
 }
 
 export function LocationSearchInput(props: LocationSearchInputProps) {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries,
-  });
+  const { isLoaded, loadError } = useGoogleMaps();
 
-  if (isLoaded) {
+  // Use Google Places if loaded successfully, otherwise fall back to Nominatim
+  if (isLoaded && !loadError) {
     return <GoogleLocationSearch {...props} />;
   }
   
