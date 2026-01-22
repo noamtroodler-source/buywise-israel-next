@@ -128,7 +128,18 @@ function SavedLocationRow({
           <span className="text-xs">{travelInfo.label}</span>
         </div>
       ) : (
-        <span className="text-xs text-muted-foreground">Too far</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="text-xs text-muted-foreground/70 italic cursor-help">
+              3+ hours away
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-[180px]">
+            <p className="text-xs">
+              Over 3 hours from this property. Check Google Maps for directions.
+            </p>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
