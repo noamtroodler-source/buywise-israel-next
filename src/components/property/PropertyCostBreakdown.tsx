@@ -84,15 +84,9 @@ export function PropertyCostBreakdown({
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
   
-  // Profile override state for what-if testing
-  const [profileOverride, setProfileOverride] = useState<BuyerProfileDimensions | null>(null);
-  
-  // Get saved profile dimensions
+  // Get saved profile dimensions (buyer type comes from profile, not editable inline)
   const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
-  
-  // Use override if set, otherwise use saved profile
-  const effectiveProfileDimensions = profileOverride || savedProfileDimensions;
-  const effectiveDerived = useMemo(() => deriveEffectiveBuyerType(effectiveProfileDimensions), [effectiveProfileDimensions]);
+  const effectiveDerived = useMemo(() => deriveEffectiveBuyerType(savedProfileDimensions), [savedProfileDimensions]);
   
   // Get buyer category from effective profile
   const buyerCategory = getBuyerTaxCategory(buyerProfile);
@@ -262,7 +256,6 @@ export function PropertyCostBreakdown({
             propertyPrice={price}
             ltvLimit={ltvLimit}
             savedProfileDimensions={savedProfileDimensions}
-            onProfileOverride={setProfileOverride}
           />
         )}
 
