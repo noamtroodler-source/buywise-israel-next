@@ -10,7 +10,6 @@ import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { GoogleMapsProvider } from "@/components/maps/GoogleMapsProvider";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
 
@@ -123,12 +122,11 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <GoogleMapsProvider>
-        <PreferencesProvider>
-          <CompareProvider>
-            <TooltipProvider>
-              <ErrorBoundary>
-                <Toaster />
+      <PreferencesProvider>
+        <CompareProvider>
+          <TooltipProvider>
+            <ErrorBoundary>
+              <Toaster />
                 <Sonner />
                 <WhatsAppFallbackModal>
                   <BrowserRouter>
@@ -330,11 +328,10 @@ const App = () => (
                     </Suspense>
                   </BrowserRouter>
                 </WhatsAppFallbackModal>
-              </ErrorBoundary>
-            </TooltipProvider>
-          </CompareProvider>
-        </PreferencesProvider>
-      </GoogleMapsProvider>
+            </ErrorBoundary>
+          </TooltipProvider>
+        </CompareProvider>
+      </PreferencesProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

@@ -22,11 +22,13 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
+  const navigate = useNavigate();
+  
+  // These hooks already have internal `enabled: !!user` checks for performance
   const { data: profile } = useProfile();
   const { favoriteIds } = useFavorites();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
-  const navigate = useNavigate();
   
   const favoriteCount = favoriteIds?.length || 0;
   const isAgencyAdmin = !!myAgency;
