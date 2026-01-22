@@ -207,81 +207,83 @@ export function PersonalizationHeader({
       <Separator />
       
       {/* Mortgage Scenario - Editable */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           Mortgage Scenario
         </Label>
         
-        {/* Down Payment */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Down Payment</Label>
-          <ToggleGroup
-            type="single"
-            value={downPaymentMode === 'preset' ? selectedPreset.toString() : 'custom'}
-            onValueChange={handleDownPaymentChange}
-            className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
-          >
-            {DOWN_PAYMENT_PRESETS.map((percent) => (
-              <ToggleGroupItem 
-                key={percent}
-                value={percent.toString()} 
-                className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-2"
-              >
-                {percent}%
-              </ToggleGroupItem>
-            ))}
-            <ToggleGroupItem 
-              value="custom" 
-              className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-2"
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Down Payment */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Down Payment</Label>
+            <ToggleGroup
+              type="single"
+              value={downPaymentMode === 'preset' ? selectedPreset.toString() : 'custom'}
+              onValueChange={handleDownPaymentChange}
+              className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
             >
-              Custom
-            </ToggleGroupItem>
-          </ToggleGroup>
-          
-          {/* Custom input - only shown when "Custom" selected */}
-          {downPaymentMode === 'custom' && (
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₪</span>
-              <Input
-                type="text"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-                placeholder={(propertyPrice * 0.25).toLocaleString()}
-                className="h-9 pl-7 text-sm"
-              />
-            </div>
-          )}
-          
-          {/* Summary line */}
-          <p className="text-xs text-muted-foreground">
-            {downPaymentMode === 'preset' 
-              ? `= ${formatPrice(effectiveDownPayment.amount, 'ILS')} · Loan: ${formatPrice(loanAmount, 'ILS')}`
-              : effectiveDownPayment.amount > 0 
-                ? `= ${effectiveDownPayment.percent.toFixed(1)}% down · Loan: ${formatPrice(loanAmount, 'ILS')}`
-                : `Min ${minDownPaymentPercent}% for ${effectiveLtv}% max LTV`
-            }
-          </p>
-        </div>
-        
-        {/* Loan Term */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Loan Term</Label>
-          <ToggleGroup
-            type="single"
-            value={localTermYears.toString()}
-            onValueChange={(v) => v && setLocalTermYears(parseInt(v))}
-            className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
-          >
-            {TERM_OPTIONS.map((years) => (
+              {DOWN_PAYMENT_PRESETS.map((percent) => (
+                <ToggleGroupItem 
+                  key={percent}
+                  value={percent.toString()} 
+                  className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
+                >
+                  {percent}%
+                </ToggleGroupItem>
+              ))}
               <ToggleGroupItem 
-                key={years}
-                value={years.toString()} 
-                className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-2"
+                value="custom" 
+                className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
               >
-                {years}yr
+                Custom
               </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+            </ToggleGroup>
+            
+            {/* Custom input - only shown when "Custom" selected */}
+            {downPaymentMode === 'custom' && (
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₪</span>
+                <Input
+                  type="text"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9,]/g, ''))}
+                  placeholder={(propertyPrice * 0.25).toLocaleString()}
+                  className="h-9 pl-7 text-sm"
+                />
+              </div>
+            )}
+            
+            {/* Summary line */}
+            <p className="text-xs text-muted-foreground">
+              {downPaymentMode === 'preset' 
+                ? `= ${formatPrice(effectiveDownPayment.amount, 'ILS')} · Loan: ${formatPrice(loanAmount, 'ILS')}`
+                : effectiveDownPayment.amount > 0 
+                  ? `= ${effectiveDownPayment.percent.toFixed(1)}% down · Loan: ${formatPrice(loanAmount, 'ILS')}`
+                  : `Min ${minDownPaymentPercent}% for ${effectiveLtv}% max LTV`
+              }
+            </p>
+          </div>
+          
+          {/* Loan Term */}
+          <div className="space-y-1.5">
+            <Label className="text-sm font-medium">Loan Term</Label>
+            <ToggleGroup
+              type="single"
+              value={localTermYears.toString()}
+              onValueChange={(v) => v && setLocalTermYears(parseInt(v))}
+              className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
+            >
+              {TERM_OPTIONS.map((years) => (
+                <ToggleGroupItem 
+                  key={years}
+                  value={years.toString()} 
+                  className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
+                >
+                  {years}yr
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
         </div>
       </div>
       
