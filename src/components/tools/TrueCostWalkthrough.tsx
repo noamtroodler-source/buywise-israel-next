@@ -300,7 +300,7 @@ export function TrueCostWalkthrough() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="bg-primary/5 rounded-xl p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-1">Total One-Time Costs</p>
+            <p className="text-sm text-muted-foreground mb-1">Total Upfront Costs</p>
             <p className="text-3xl font-bold text-primary">{formatCurrency(costs.totalOneTime)}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {((costs.totalOneTime / propertyPrice) * 100).toFixed(1)}% of property price

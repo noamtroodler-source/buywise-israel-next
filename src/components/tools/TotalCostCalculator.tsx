@@ -320,7 +320,7 @@ export function TotalCostCalculator() {
           {/* Results */}
           <div className="space-y-4">
             <div className="p-4 rounded-lg bg-primary text-primary-foreground text-center">
-              <p className="text-sm opacity-90">Total One-Time Cost</p>
+              <p className="text-sm opacity-90">Total Upfront Cost</p>
               <p className="text-3xl font-bold">{formatCurrency(calculations.grandTotal)}</p>
               <p className="text-sm opacity-90">
                 +{calculations.percentageOfPrice.toFixed(1)}% above property price
@@ -339,7 +339,7 @@ export function TotalCostCalculator() {
             <div className="p-4 rounded-lg border space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                One-Time Costs (עלויות חד-פעמיות)
+                Upfront Costs (עלויות חד-פעמיות)
               </h4>
               
               <div className="space-y-2 text-sm">

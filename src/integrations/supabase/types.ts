@@ -2189,8 +2189,10 @@ export type Database = {
           agent_fee_required: boolean | null
           agent_id: string | null
           allows_pets: string | null
+          bank_guarantee_required: boolean | null
           bathrooms: number | null
           bedrooms: number | null
+          checks_required: boolean | null
           city: string
           condition: string | null
           created_at: string
@@ -2240,8 +2242,10 @@ export type Database = {
           agent_fee_required?: boolean | null
           agent_id?: string | null
           allows_pets?: string | null
+          bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          checks_required?: boolean | null
           city: string
           condition?: string | null
           created_at?: string
@@ -2291,8 +2295,10 @@ export type Database = {
           agent_fee_required?: boolean | null
           agent_id?: string | null
           allows_pets?: string | null
+          bank_guarantee_required?: boolean | null
           bathrooms?: number | null
           bedrooms?: number | null
+          checks_required?: boolean | null
           city?: string
           condition?: string | null
           created_at?: string

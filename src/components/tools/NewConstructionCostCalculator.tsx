@@ -352,7 +352,7 @@ export function NewConstructionCostCalculator() {
         <div className="p-4 rounded-lg border space-y-3">
           <h4 className="font-semibold flex items-center gap-2">
             <Receipt className="h-4 w-4" />
-            Total One-Time Costs
+            Total Upfront Costs
           </h4>
           
           <div className="space-y-2 text-sm">

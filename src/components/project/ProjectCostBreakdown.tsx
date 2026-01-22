@@ -202,11 +202,11 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
           </div>
         )}
 
-        {/* One-Time Costs */}
+        {/* Upfront Costs */}
         <div className="space-y-3">
           <h4 className="font-medium text-sm flex items-center gap-2">
             <Receipt className="h-4 w-4 text-primary" />
-            One-Time Costs
+            Upfront Costs
           </h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between py-2 border-b border-border/50">
