@@ -291,7 +291,11 @@ export function useProperty(id: string) {
   });
 }
 
-export function useFeaturedSaleProperties() {
+interface FeaturedPropertiesOptions {
+  enabled?: boolean;
+}
+
+export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
   return useQuery({
     queryKey: ['properties', 'featured', 'for_sale'],
     queryFn: async () => {
@@ -335,10 +339,11 @@ export function useFeaturedSaleProperties() {
       if (error) throw error;
       return data as Property[];
     },
+    enabled: options?.enabled !== false, // Default to true
   });
 }
 
-export function useFeaturedRentalProperties() {
+export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions) {
   return useQuery({
     queryKey: ['properties', 'featured', 'for_rent'],
     queryFn: async () => {
@@ -382,6 +387,7 @@ export function useFeaturedRentalProperties() {
       if (error) throw error;
       return data as Property[];
     },
+    enabled: options?.enabled !== false, // Default to true
   });
 }
 
