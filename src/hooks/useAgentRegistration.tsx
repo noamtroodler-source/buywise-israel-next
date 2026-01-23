@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 export interface AgentRegistrationData {
   name: string;
@@ -70,7 +71,7 @@ export function useAgentRegistration() {
       // Toast handled by the success dialog
     },
     onError: (error) => {
-      toast.error('Failed to register: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
     },
   });
 }

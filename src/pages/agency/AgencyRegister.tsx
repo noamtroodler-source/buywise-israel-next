@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AgencySubmittedDialog } from '@/components/agency/AgencySubmittedDialog';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 const steps = [
   { title: 'Agency Basics', description: 'Your agency details', icon: Building2 },
@@ -291,8 +292,8 @@ export default function AgencyRegister() {
         });
 
       setShowSuccessDialog(true);
-    } catch (error: any) {
-      toast.error('Failed to register agency: ' + error.message);
+    } catch (error: unknown) {
+      toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }

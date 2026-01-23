@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { SavedLocation, MAX_SAVED_LOCATIONS } from '@/types/savedLocation';
 import { Json } from '@/integrations/supabase/types';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 // Helper to safely parse saved locations from JSON
 function parseSavedLocations(data: Json | null | undefined): SavedLocation[] {
@@ -88,7 +89,7 @@ export function useAddSavedLocation() {
       toast.success('Location saved');
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to save location'));
     },
   });
 }

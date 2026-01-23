@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType, DerivedBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 export interface MortgagePreferencesJson {
   down_payment_percent: number | null;
@@ -101,7 +102,7 @@ export function useCreateBuyerProfile() {
       queryClient.invalidateQueries({ queryKey: ['buyer-profile'] });
     },
     onError: (error) => {
-      toast.error('Failed to save preferences: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to save preferences. Please try again.'));
     },
   });
 }
@@ -129,7 +130,7 @@ export function useUpdateBuyerProfile() {
       toast.success('Preferences updated');
     },
     onError: (error) => {
-      toast.error('Failed to update preferences: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to update preferences. Please try again.'));
     },
   });
 }

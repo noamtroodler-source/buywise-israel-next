@@ -6,6 +6,7 @@ import { useBuyerProfile, getBuyerTaxCategory, MortgagePreferencesJson } from '.
 import { getLtvLimit } from '@/lib/calculations/constants';
 import { useCalculatorConstants } from './useCalculatorConstants';
 import { toast } from 'sonner';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 const LOCAL_STORAGE_KEY = 'mortgage_preferences';
 const DEFAULT_TERM_YEARS = 25;
@@ -128,7 +129,7 @@ export function useMortgagePreferences() {
       toast.success('Mortgage preferences saved');
     },
     onError: (error) => {
-      toast.error('Failed to save preferences: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to save preferences. Please try again.'));
     },
   });
   
