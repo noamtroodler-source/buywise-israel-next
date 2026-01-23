@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { TrendingDown, Maximize, BadgePercent, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
+import { useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
 interface Insight {
   icon: React.ElementType;
@@ -16,6 +17,8 @@ interface CompareQuickInsightsProps {
 }
 
 export function CompareQuickInsights({ properties, formatPrice, formatArea }: CompareQuickInsightsProps) {
+  const areaUnitLabel = useAreaUnitLabel();
+  
   if (properties.length < 2) return null;
 
   const insights: Insight[] = [];
@@ -59,7 +62,7 @@ export function CompareQuickInsights({ properties, formatPrice, formatArea }: Co
     insights.push({
       icon: BadgePercent,
       label: 'Best Value',
-      value: `${formatPrice(pricePerSqm)}/m²`,
+      value: `${formatPrice(pricePerSqm)}/${areaUnitLabel}`,
       propertyTitle: bestValueProperty.title,
     });
   }

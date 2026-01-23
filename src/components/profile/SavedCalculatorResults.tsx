@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSavedCalculatorResults, useDeleteCalculatorResult, CalculatorType } from '@/hooks/useSavedCalculatorResults';
 import { formatDistanceToNow } from 'date-fns';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 const calculatorConfig: Record<CalculatorType, { label: string; icon: React.ReactNode; path: string; resultKey: string }> = {
   mortgage: {
@@ -39,25 +40,30 @@ const calculatorConfig: Record<CalculatorType, { label: string; icon: React.Reac
   },
 };
 
-function formatResult(type: CalculatorType, results: Record<string, unknown>): string {
-  const config = calculatorConfig[type];
-  const value = results[config.resultKey];
+function useFormatResult() {
+  const formatPrice = useFormatPrice();
   
-  if (value === undefined || value === null) return 'View results';
-  
-  if (typeof value === 'number') {
-    if (type === 'rentvsbuy') return `Break-even: Year ${value}`;
-    if (type === 'investment') return `Net yield: ${value.toFixed(1)}%`;
-    return `₪${value.toLocaleString()}`;
-  }
-  
-  return String(value);
+  return (type: CalculatorType, results: Record<string, unknown>): string => {
+    const config = calculatorConfig[type];
+    const value = results[config.resultKey];
+    
+    if (value === undefined || value === null) return 'View results';
+    
+    if (typeof value === 'number') {
+      if (type === 'rentvsbuy') return `Break-even: Year ${value}`;
+      if (type === 'investment') return `Net yield: ${value.toFixed(1)}%`;
+      return formatPrice(value, 'ILS');
+    }
+    
+    return String(value);
+  };
 }
 
 export function SavedCalculatorResults() {
   const navigate = useNavigate();
   const { data: savedResults = [], isLoading } = useSavedCalculatorResults();
   const deleteResult = useDeleteCalculatorResult();
+  const formatResult = useFormatResult();
 
   if (isLoading) {
     return (

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project } from '@/types/projects';
 import { FullscreenGallery } from '@/components/shared/FullscreenGallery';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 
 interface ProjectHeroProps {
   project: Project;
@@ -19,6 +20,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: 'start', containScroll: 'trimSnaps' });
+  const formatPrice = useFormatPrice();
 
   const images = project.images?.length 
     ? project.images 
@@ -79,10 +81,9 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
     parts.push('New Development');
     
     if (project.price_from) {
-      const currency = project.currency === 'USD' ? '$' : '₪';
       const priceText = project.price_to 
-        ? `From ${currency}${project.price_from.toLocaleString()}`
-        : `${currency}${project.price_from.toLocaleString()}`;
+        ? `From ${formatPrice(project.price_from, project.currency || 'ILS')}`
+        : formatPrice(project.price_from, project.currency || 'ILS');
       parts.push(priceText);
     }
     

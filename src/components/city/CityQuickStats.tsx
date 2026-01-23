@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { MarketData } from '@/types/projects';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 
 interface CityQuickStatsProps {
   marketData: MarketData[];
@@ -34,6 +35,11 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
   const hasVerifiedData = !!(dataSources && Object.keys(dataSources).length > 0);
   const [selectedRooms, setSelectedRooms] = useState<number>(3);
   
+  const formatPriceHook = useFormatPrice();
+  const currencySymbol = useCurrencySymbol();
+  const areaUnitLabel = useAreaUnitLabel();
+  const formatPricePerArea = useFormatPricePerArea();
+  
   const latestData = marketData[0];
   
   // Priority: Canonical > cityData > marketData
@@ -54,16 +60,15 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
 
   const formatPrice = (value: number | null) => {
     if (!value) return null;
-    return `₪${(value / 1000).toFixed(1)}K`;
+    return formatPriceHook(value, 'ILS');
   };
 
   const formatMedianPrice = (value: number | null) => {
     if (!value) return null;
-    if (value >= 1000000) return `₪${(value / 1000000).toFixed(2)}M`;
-    return `₪${(value / 1000).toFixed(0)}K`;
+    return formatPriceHook(value, 'ILS');
   };
 
-  const formatRentalPrice = (value: number) => `₪${value.toLocaleString()}`;
+  const formatRentalPrice = (value: number) => formatPriceHook(value, 'ILS');
 
   const getRentalPriceRange = () => {
     if (canonicalMetrics) {
@@ -109,7 +114,7 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
     const priceMax = cityData?.average_price_sqm_max;
     
     if (priceMin && priceMax) {
-      return `₪${(priceMin / 1000).toFixed(0)}K–${(priceMax / 1000).toFixed(0)}K/m²`;
+      return `${formatPriceHook(priceMin, 'ILS')}–${formatPriceHook(priceMax, 'ILS')}/${areaUnitLabel}`;
     }
     return null;
   };
@@ -136,7 +141,7 @@ export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSou
           ) : formatPrice(pricePerSqm) && (
             <div className="flex items-center gap-2">
               <span className="text-lg font-semibold text-foreground">
-                {formatPrice(pricePerSqm)}/m²
+                {formatPricePerArea(pricePerSqm, 'ILS')}
               </span>
               {priceVsNational !== null && (
                 <span className="text-sm text-muted-foreground">

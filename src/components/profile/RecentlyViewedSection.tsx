@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 
 export function RecentlyViewedSection() {
   const { recentProperties, isLoading, clearRecentlyViewed } = useRecentlyViewed();
   const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
 
   if (isLoading) {
     return (
@@ -113,7 +114,7 @@ export function RecentlyViewedSection() {
                     {formatPrice(property.price, property.currency || 'ILS')}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {property.bedrooms} rooms · {property.size_sqm}m²
+                    {property.bedrooms} rooms · {formatArea(property.size_sqm || 0)}
                   </p>
                 </div>
               </Link>

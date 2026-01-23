@@ -20,6 +20,7 @@ import { useCities } from '@/hooks/useCities';
 import { useCreateSearchAlert } from '@/hooks/useSearchAlerts';
 import { ListingType, AlertFrequency, PropertyFilters } from '@/types/database';
 import { matchCities } from '@/lib/utils/cityMatcher';
+import { useCurrencySymbol } from '@/contexts/PreferencesContext';
 
 interface CreateAlertFromProfileDialogProps {
   open: boolean;
@@ -64,6 +65,7 @@ function parsePriceInput(value: string): number | undefined {
 export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlertFromProfileDialogProps) {
   const { data: cities = [] } = useCities();
   const createAlert = useCreateSearchAlert();
+  const currencySymbol = useCurrencySymbol();
   
   // Form state
   const [listingType, setListingType] = useState<ListingType>('for_sale');
@@ -179,7 +181,7 @@ export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlert
     if (parsePriceInput(priceMin) || parsePriceInput(priceMax)) {
       const min = parsePriceInput(priceMin);
       const max = parsePriceInput(priceMax);
-      parts.push(`₪${min?.toLocaleString() || '0'} - ${max ? `₪${max.toLocaleString()}` : 'Any'}`);
+      parts.push(`${currencySymbol}${min?.toLocaleString() || '0'} - ${max ? `${currencySymbol}${max.toLocaleString()}` : 'Any'}`);
     }
     if (minRooms) {
       parts.push(`${minRooms}+ rooms`);
@@ -188,7 +190,7 @@ export function CreateAlertFromProfileDialog({ open, onOpenChange }: CreateAlert
       parts.push(`${selectedPropertyTypes.length} type${selectedPropertyTypes.length > 1 ? 's' : ''}`);
     }
     return parts;
-  }, [selectedCities, priceMin, priceMax, minRooms, selectedPropertyTypes]);
+  }, [selectedCities, priceMin, priceMax, minRooms, selectedPropertyTypes, currencySymbol]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
