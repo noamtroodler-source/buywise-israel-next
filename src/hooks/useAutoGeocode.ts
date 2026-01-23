@@ -44,7 +44,6 @@ export function useAutoGeocode(
       setError(null);
 
       try {
-        console.log(`[useAutoGeocode] Geocoding ${entityType} ${entityId}: ${address}, ${city}`);
 
         // Call the backend geocoding function
         const { data, error: fnError } = await supabase.functions.invoke('geocode-address', {
@@ -68,7 +67,6 @@ export function useAutoGeocode(
         }
 
         // Successfully geocoded
-        console.log(`[useAutoGeocode] Success: ${data.latitude}, ${data.longitude} (source: ${data.source})`);
         setLatitude(data.latitude);
         setLongitude(data.longitude);
 

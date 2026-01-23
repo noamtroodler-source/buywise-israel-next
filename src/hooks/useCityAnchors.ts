@@ -29,7 +29,6 @@ export function useCityAnchors(cityName: string | undefined) {
         .single();
       
       if (cityError || !cityData) {
-        console.log('City not found for anchors:', cityName);
         return [];
       }
 
