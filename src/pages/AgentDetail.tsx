@@ -16,7 +16,6 @@ import {
   BadgeCheck,
   MapPin,
   FileText,
-  Clock,
   ShieldCheck,
   ArrowLeft
 } from 'lucide-react';
@@ -39,13 +38,6 @@ export default function AgentDetail() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const getResponseTimeText = (hours: number | null) => {
-    if (!hours) return null;
-    if (hours <= 1) return "Typically responds within 1 hour";
-    if (hours <= 24) return `Typically responds within ${hours} hours`;
-    const days = Math.round(hours / 24);
-    return `Typically responds within ${days} day${days > 1 ? 's' : ''}`;
-  };
 
   const whatsappUrl = agent?.phone 
     ? buildWhatsAppUrl(agent.phone, `Hi ${agent?.name || ''}, I found your profile on BuyWise Israel and would like to connect.`)
@@ -195,13 +187,6 @@ export default function AgentDetail() {
                   </div>
                 )}
 
-                {/* Response Time */}
-                {agent.response_time_hours && (
-                  <div className="flex items-center gap-2 text-sm text-primary">
-                    <Clock className="h-4 w-4" />
-                    <span>{getResponseTimeText(agent.response_time_hours)}</span>
-                  </div>
-                )}
 
                 {/* Languages */}
                 {agent.languages && agent.languages.length > 0 && (

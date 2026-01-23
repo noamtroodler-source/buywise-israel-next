@@ -1,4 +1,4 @@
-import { MessageCircle, Mail, Phone, Building, Shield, Clock, CheckCircle, User, TrendingUp } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building, Shield, CheckCircle, User, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -229,12 +229,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
             Email
           </Button>
         </div>
-        {developer && (
-          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-            <Clock className="h-3 w-3" />
-            Usually responds within 24 hours
-          </p>
-        )}
       </div>
     </div>
   );

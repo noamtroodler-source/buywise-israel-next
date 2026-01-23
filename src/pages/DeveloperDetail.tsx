@@ -239,9 +239,6 @@ export default function DeveloperDetail() {
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Typically responds within 24-48 hours
-                </p>
               </CardContent>
             </Card>
           </div>

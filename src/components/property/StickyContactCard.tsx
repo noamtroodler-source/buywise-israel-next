@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Mail, Clock } from 'lucide-react';
+import { MessageCircle, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -139,12 +139,6 @@ export function StickyContactCard({
             Email
           </Button>
           
-          {agent && (
-            <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-              <Clock className="h-3 w-3" />
-              Usually responds within 2 hours
-            </p>
-          )}
 
           {!agent && (
             <Button 
