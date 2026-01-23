@@ -14,6 +14,7 @@ interface PropertyValueSnapshotProps {
   cityRentalMax?: number | null;
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
+  cityAvgVaadBayit?: number | null;
 }
 
 export function PropertyValueSnapshot({ 
@@ -28,6 +29,7 @@ export function PropertyValueSnapshot({
   cityRentalMax,
   vaadBayitMonthly,
   cityArnonaRate,
+  cityAvgVaadBayit,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
@@ -37,21 +39,7 @@ export function PropertyValueSnapshot({
   // Calculate metrics based on listing type
   const propertyPricePerSqm = sizeSqm ? Math.round(price / sizeSqm) : null;
   
-  // For rentals: calculate city average rent and comparison
-  const cityAvgRent = cityRentalMin && cityRentalMax 
-    ? Math.round((cityRentalMin + cityRentalMax) / 2) 
-    : null;
-  
-  const rentalComparisonPercent = cityAvgRent 
-    ? Math.round(((price - cityAvgRent) / cityAvgRent) * 100)
-    : null;
-  
-  // For purchases: calculate comparison to area average
-  const purchaseComparisonPercent = propertyPricePerSqm && averagePriceSqm 
-    ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
-    : null;
-
-  // Calculate total monthly commitment for rentals
+  // Calculate total monthly commitment for this property (rentals)
   const arnonaEstimate = useMemo(() => {
     if (!sizeSqm || !cityArnonaRate) return 0;
     return Math.round((cityArnonaRate * sizeSqm) / 12); // Monthly arnona
@@ -59,10 +47,47 @@ export function PropertyValueSnapshot({
 
   const vaadBayit = vaadBayitMonthly ?? 450; // Default ₪450 if not specified
   const totalMonthlyCommitment = price + arnonaEstimate + vaadBayit;
+  
+  // For rentals: calculate city average rent and comparison
+  const cityAvgRent = cityRentalMin && cityRentalMax 
+    ? Math.round((cityRentalMin + cityRentalMax) / 2) 
+    : null;
+  
+  // Estimate average apartment size by bedrooms for city arnona calculation
+  const avgSizeByBedrooms: Record<number, number> = {
+    2: 55,   // 2-room ~55 sqm
+    3: 75,   // 3-room ~75 sqm  
+    4: 100,  // 4-room ~100 sqm
+    5: 130,  // 5-room ~130 sqm
+  };
+  const avgApartmentSize = avgSizeByBedrooms[bedrooms || 3] || 75;
+
+  // City average arnona (monthly)
+  const cityAvgArnonaMonthly = cityArnonaRate 
+    ? Math.round((cityArnonaRate * avgApartmentSize) / 12) 
+    : 0;
+
+  // City average va'ad bayit (use actual or default)
+  const cityVaad = cityAvgVaadBayit ?? 450;
+
+  // City average TOTAL monthly (rent + arnona + va'ad)
+  const cityAvgTotalMonthly = cityAvgRent 
+    ? cityAvgRent + cityAvgArnonaMonthly + cityVaad 
+    : null;
+  
+  // Compare total monthly (property vs city average)
+  const rentalComparisonPercent = cityAvgTotalMonthly 
+    ? Math.round(((totalMonthlyCommitment - cityAvgTotalMonthly) / cityAvgTotalMonthly) * 100)
+    : null;
+  
+  // For purchases: calculate comparison to area average
+  const purchaseComparisonPercent = propertyPricePerSqm && averagePriceSqm 
+    ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
+    : null;
 
   // Rental-specific cards
   if (isRental) {
-    const hasCityAvg = !!cityAvgRent;
+    const hasCityAvg = !!cityAvgTotalMonthly;
     const hasComparison = rentalComparisonPercent !== null;
     // Always show Total Monthly card for rentals
     const cardCount = [true, hasCityAvg, hasComparison].filter(Boolean).length;
@@ -95,15 +120,18 @@ export function PropertyValueSnapshot({
             </p>
           </div>
 
-          {/* City Rental Average */}
-          {cityAvgRent && (
+          {/* City Average Total Monthly */}
+          {cityAvgTotalMonthly && (
             <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Home className="h-4 w-4" />
                 <span className="text-sm">{city} {bedrooms || 3}-Room Avg</span>
               </div>
               <p className="text-2xl font-bold text-foreground">
-                ₪{cityAvgRent.toLocaleString()}/mo
+                {formatPrice(cityAvgTotalMonthly, 'ILS')}/mo
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Rent + Arnona + Va'ad
               </p>
             </div>
           )}
