@@ -89,38 +89,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     }
   };
 
-  // Calculate months to completion
-  const monthsToCompletion = project.completion_date 
-    ? Math.max(0, Math.ceil((new Date(project.completion_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)))
-    : null;
-
-  const quickFacts = [
-    { 
-      label: 'Starting from', 
-      value: formatPrice(displayPrice || 0, project.currency || 'ILS') 
-    },
-    { 
-      label: 'Completion', 
-      value: project.completion_date 
-        ? new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-        : 'TBD'
-    },
-    { 
-      label: 'Units remaining', 
-      value: project.available_units 
-        ? `${project.available_units} of ${project.total_units || '—'}` 
-        : `${project.total_units || '—'} total`
-    },
-  ];
-
-  // Add construction progress to quick facts if available
-  if (project.construction_progress_percent !== null && project.construction_progress_percent !== undefined) {
-    quickFacts.push({
-      label: 'Construction',
-      value: `${project.construction_progress_percent}% complete`
-    });
-  }
-
   const buyerProtections = [
     'Bank guarantee (Law of Sale)',
     'Fixed payment schedule',
@@ -320,27 +288,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
           ) : (
             <DeveloperContactSection />
           )}
-
-          <Separator />
-
-          {/* Quick Facts */}
-          <div className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground">Quick Facts</h4>
-            <div className="space-y-2">
-              {quickFacts.map((fact, index) => (
-                <div key={index} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{fact.label}</span>
-                  <span className="font-medium">{fact.value}</span>
-                </div>
-              ))}
-              {monthsToCompletion !== null && monthsToCompletion > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Time to delivery</span>
-                  <span className="font-medium">~{monthsToCompletion} months</span>
-                </div>
-              )}
-            </div>
-          </div>
 
           <Separator />
 

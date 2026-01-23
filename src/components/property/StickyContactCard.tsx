@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Mail, Clock, TrendingDown, TrendingUp, Minus, Flame, Zap } from 'lucide-react';
+import { MessageCircle, Mail, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
@@ -25,11 +24,6 @@ interface StickyContactCardProps {
   propertyTitle: string;
   className?: string;
   onContactClick?: () => void;
-  // Quick facts data
-  pricePerSqm?: number;
-  daysOnMarket?: number;
-  cityAvgPricePerSqm?: number;
-  currency?: string;
 }
 
 export function StickyContactCard({ 
@@ -38,12 +32,7 @@ export function StickyContactCard({
   propertyTitle, 
   className = '', 
   onContactClick,
-  pricePerSqm,
-  daysOnMarket,
-  cityAvgPricePerSqm,
-  currency = 'ILS'
 }: StickyContactCardProps) {
-  const formatPricePerArea = useFormatPricePerArea();
   const { user } = useAuth();
 
   const getInitials = (name: string) => {
@@ -84,23 +73,6 @@ export function StickyContactCard({
       window.location.href = `mailto:${agent.email}?subject=${subject}`;
     }
   };
-
-  // Calculate comparison to city average
-  const getComparisonInfo = () => {
-    if (!pricePerSqm || !cityAvgPricePerSqm) return null;
-    const diff = ((pricePerSqm - cityAvgPricePerSqm) / cityAvgPricePerSqm) * 100;
-    const absDiff = Math.abs(diff);
-    
-    if (absDiff < 2) {
-      return { label: 'At market average', icon: Minus, className: 'text-muted-foreground' };
-    } else if (diff < 0) {
-      return { label: `${absDiff.toFixed(0)}% below avg`, icon: TrendingDown, className: 'text-primary' };
-    } else {
-      return { label: `${absDiff.toFixed(0)}% above avg`, icon: TrendingUp, className: 'text-muted-foreground' };
-    }
-  };
-
-  const comparison = getComparisonInfo();
 
   return (
     <motion.div
@@ -184,53 +156,6 @@ export function StickyContactCard({
             </Button>
           )}
         </CardContent>
-
-        {/* Quick Facts */}
-        {(pricePerSqm || daysOnMarket !== undefined || comparison) && (
-          <>
-            <Separator />
-            <div className="p-5 space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick Facts</p>
-              
-              <div className="space-y-2.5">
-                {/* Days on Market - Now first and more prominent */}
-                {daysOnMarket !== undefined && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Time on market</span>
-                    <span className={`font-medium flex items-center gap-1.5 ${
-                      daysOnMarket <= 3 ? 'text-amber-600 dark:text-amber-400' : 
-                      daysOnMarket <= 7 ? 'text-primary' : ''
-                    }`}>
-                      {daysOnMarket <= 3 ? (
-                        <Flame className="h-3.5 w-3.5" />
-                      ) : daysOnMarket <= 7 ? (
-                        <Zap className="h-3.5 w-3.5" />
-                      ) : null}
-                      {daysOnMarket === 0 ? 'Just listed' : daysOnMarket === 1 ? '1 day' : `${daysOnMarket} days`}
-                    </span>
-                  </div>
-                )}
-                
-                {pricePerSqm && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Price per m²</span>
-                    <span className="font-medium">{formatPricePerArea(pricePerSqm, currency)}</span>
-                  </div>
-                )}
-                
-                {comparison && (
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">vs City average</span>
-                    <span className={`font-medium flex items-center gap-1 ${comparison.className}`}>
-                      <comparison.icon className="h-3.5 w-3.5" />
-                      {comparison.label}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
       </Card>
     </motion.div>
   );

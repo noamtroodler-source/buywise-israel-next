@@ -221,10 +221,6 @@ export default function PropertyDetail() {
                 agent={property.agent}
                 propertyId={property.id}
                 propertyTitle={property.title}
-                pricePerSqm={pricePerSqm}
-                daysOnMarket={daysOnMarket}
-                cityAvgPricePerSqm={cityData?.average_price_sqm}
-                currency={property.currency || 'ILS'}
               />
             </div>
           </div>
