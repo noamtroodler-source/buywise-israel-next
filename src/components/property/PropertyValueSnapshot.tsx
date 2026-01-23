@@ -1,5 +1,6 @@
-import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar } from 'lucide-react';
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { useMemo } from 'react';
 
 interface PropertyValueSnapshotProps {
   price: number;
@@ -11,6 +12,8 @@ interface PropertyValueSnapshotProps {
   bedrooms?: number | null;
   cityRentalMin?: number | null;
   cityRentalMax?: number | null;
+  vaadBayitMonthly?: number | null;
+  cityArnonaRate?: number | null;
 }
 
 export function PropertyValueSnapshot({ 
@@ -23,6 +26,8 @@ export function PropertyValueSnapshot({
   bedrooms,
   cityRentalMin,
   cityRentalMax,
+  vaadBayitMonthly,
+  cityArnonaRate,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
@@ -46,15 +51,21 @@ export function PropertyValueSnapshot({
     ? Math.round(((propertyPricePerSqm - averagePriceSqm) / averagePriceSqm) * 100)
     : null;
 
+  // Calculate total monthly commitment for rentals
+  const arnonaEstimate = useMemo(() => {
+    if (!sizeSqm || !cityArnonaRate) return 0;
+    return Math.round((cityArnonaRate * sizeSqm) / 12); // Monthly arnona
+  }, [sizeSqm, cityArnonaRate]);
+
+  const vaadBayit = vaadBayitMonthly ?? 450; // Default ₪450 if not specified
+  const totalMonthlyCommitment = price + arnonaEstimate + vaadBayit;
+
   // Rental-specific cards
   if (isRental) {
-    const hasRentPerSqm = !!propertyPricePerSqm;
     const hasCityAvg = !!cityAvgRent;
     const hasComparison = rentalComparisonPercent !== null;
-    const cardCount = [hasRentPerSqm, hasCityAvg, hasComparison].filter(Boolean).length;
-    
-    // Don't render if no data available
-    if (cardCount === 0) return null;
+    // Always show Total Monthly card for rentals
+    const cardCount = [true, hasCityAvg, hasComparison].filter(Boolean).length;
     
     const gridCols = cardCount === 3 
       ? 'grid-cols-1 sm:grid-cols-3' 
@@ -70,18 +81,19 @@ export function PropertyValueSnapshot({
         </div>
         
         <div className={`grid ${gridCols} gap-4`}>
-          {/* Rent per m² */}
-          {propertyPricePerSqm && (
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <DollarSign className="h-4 w-4" />
-                <span className="text-sm">Rent per area</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatPricePerArea(propertyPricePerSqm, 'ILS')}/mo
-              </p>
+          {/* Total Monthly Commitment */}
+          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm">Total Monthly</span>
             </div>
-          )}
+            <p className="text-2xl font-bold text-foreground">
+              {formatPrice(totalMonthlyCommitment, 'ILS')}/mo
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Rent + Arnona + Va'ad
+            </p>
+          </div>
 
           {/* City Rental Average */}
           {cityAvgRent && (

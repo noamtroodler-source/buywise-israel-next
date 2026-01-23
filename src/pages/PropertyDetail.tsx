@@ -157,6 +157,8 @@ export default function PropertyDetail() {
                 bedrooms={property.bedrooms}
                 cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
                 cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+                vaadBayitMonthly={property.vaad_bayit_monthly}
+                cityArnonaRate={cityData?.arnona_rate_sqm}
               />
             </motion.div>
 
