@@ -12,8 +12,6 @@ interface PropertyNextStepsProps {
 }
 
 export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingStatus }: PropertyNextStepsProps) {
-  const priceParam = propertyPrice ? `?price=${propertyPrice}` : '';
-
   // Determine which guide to show based on listing type
   const guideStep = listingStatus === 'for_rent'
     ? {
@@ -37,13 +35,13 @@ export function PropertyNextSteps({ cityName, citySlug, propertyPrice, listingSt
       description: 'Price trends, neighborhoods & insights',
     },
     {
-      to: `/tools${priceParam}`,
+      to: propertyPrice ? `/tools?tool=mortgage&price=${propertyPrice}` : '/tools?tool=mortgage',
       icon: Calculator,
       title: 'Mortgage Calculator',
       description: 'Estimate your monthly payments',
     },
     {
-      to: `/tools${priceParam}`,
+      to: propertyPrice ? `/tools?tool=affordability&price=${propertyPrice}` : '/tools?tool=affordability',
       icon: PiggyBank,
       title: 'Affordability Check',
       description: 'See if this fits your budget',

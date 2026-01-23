@@ -25,10 +25,12 @@ export const TOOL_IDS = {
   MORTGAGE: 'mortgage',
   TOTAL_COST: 'totalcost',
   AFFORDABILITY: 'affordability',
+  INVESTMENT: 'investment',
   RENT_VS_BUY: 'rentvsbuy',
   RENOVATION: 'renovation',
-  PURCHASE_TAX: 'purchasetax',
-  RENTAL_YIELD: 'rentalyield',
+  NEIGHBORHOOD: 'neighborhood',
+  WORKSHOP: 'workshop',
+  DOCUMENTS: 'documents',
 } as const;
 
 // Generate tool URL with optional additional params

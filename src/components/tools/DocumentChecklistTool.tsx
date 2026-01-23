@@ -251,7 +251,7 @@ export function DocumentChecklistTool() {
       </div>
       <InsightCard insights={[getInsightText()]} />
       <div className="grid sm:grid-cols-3 gap-4">
-        <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=true-cost" />
+        <CTACard title="True Cost Calculator" description="Calculate all costs including professional fees" icon={<Calculator className="h-5 w-5" />} buttonText="Calculate Costs" buttonLink="/tools?tool=totalcost" />
         <CTACard title="Mortgage Calculator" description="Plan your financing strategy" icon={<Landmark className="h-5 w-5" />} buttonText="Plan Financing" buttonLink="/tools?tool=mortgage" />
         <CTACard title="Talking to Professionals" description="What to ask lawyers and agents" icon={<BookOpen className="h-5 w-5" />} buttonText="Read Guide" buttonLink="/guides/talking-to-professionals" />
       </div>

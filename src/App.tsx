@@ -55,7 +55,9 @@ const TalkingToProfessionalsGuide = lazy(() => import("./pages/guides/TalkingToP
 const MortgagesGuide = lazy(() => import("./pages/guides/MortgagesGuide"));
 const NewVsResaleGuide = lazy(() => import("./pages/guides/NewVsResaleGuide"));
 const RentVsBuyGuide = lazy(() => import("./pages/guides/RentVsBuyGuide"));
-
+const NewConstructionGuide = lazy(() => import("./pages/guides/NewConstructionGuide"));
+const OlehBuyerGuide = lazy(() => import("./pages/guides/OlehBuyerGuide"));
+const InvestmentPropertyGuide = lazy(() => import("./pages/guides/InvestmentPropertyGuide"));
 // Agent dashboard - lazy load
 const AgentRegisterWizard = lazy(() => import("./pages/agent/AgentRegisterWizard"));
 const AgentDashboard = lazy(() => import("./pages/agent/AgentDashboard"));
@@ -177,6 +179,9 @@ const App = () => (
                         <Route path="/guides/mortgages" element={<MortgagesGuide />} />
                         <Route path="/guides/new-vs-resale" element={<NewVsResaleGuide />} />
                         <Route path="/guides/rent-vs-buy" element={<RentVsBuyGuide />} />
+                        <Route path="/guides/new-construction" element={<NewConstructionGuide />} />
+                        <Route path="/guides/oleh-buyer" element={<OlehBuyerGuide />} />
+                        <Route path="/guides/investment-property" element={<InvestmentPropertyGuide />} />
                         <Route path="/developers" element={<Developers />} />
                         <Route path="/developers/:slug" element={<DeveloperDetail />} />
                         <Route path="/agents/:id" element={<AgentDetail />} />
