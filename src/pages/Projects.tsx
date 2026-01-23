@@ -101,7 +101,7 @@ export default function Projects() {
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
         <div className="container py-8 md:py-10 text-center">
           <div className="animate-fade-in">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2"><span className="text-primary">New</span> Development Projects</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">New Development Projects in <span className="text-primary">Israel</span></h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               New development projects in Israel — with timelines, pricing, and what to expect.
             </p>
