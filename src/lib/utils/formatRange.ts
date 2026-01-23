@@ -132,3 +132,21 @@ export const RENTAL_FEE_RANGES = {
   securityDeposit: { min: 2, max: 3, label: '2–3 months' },
   agentFee: { base: 1, vatRate: 0.18, label: '1 month + VAT' },
 } as const;
+
+/**
+ * Rental utilities estimate by apartment size (monthly)
+ */
+export const RENTAL_UTILITIES_ESTIMATE = {
+  small: { min: 250, max: 400 },   // < 60 sqm
+  medium: { min: 350, max: 550 },  // 60-100 sqm
+  large: { min: 450, max: 700 },   // > 100 sqm
+} as const;
+
+/**
+ * Helper to get utilities range based on apartment size
+ */
+export function getUtilitiesEstimate(sizeSqm: number | undefined): { min: number; max: number } {
+  if (!sizeSqm || sizeSqm < 60) return RENTAL_UTILITIES_ESTIMATE.small;
+  if (sizeSqm <= 100) return RENTAL_UTILITIES_ESTIMATE.medium;
+  return RENTAL_UTILITIES_ESTIMATE.large;
+}

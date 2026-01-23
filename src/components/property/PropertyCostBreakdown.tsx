@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Calculator, Receipt, Calendar, Home, ChevronDown } from 'lucide-react';
+import { Calculator, Receipt, Calendar, Home, ChevronDown, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -9,10 +9,11 @@ import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { PersonalizationHeader } from './PersonalizationHeader';
-import { FEE_RANGES, RENTAL_FEE_RANGES, VAT_RATE, formatPriceRange } from '@/lib/utils/formatRange';
+import { FEE_RANGES, RENTAL_FEE_RANGES, VAT_RATE, formatPriceRange, getUtilitiesEstimate } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
 import { BuyerProfileDimensions, deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
+import { calculateArnonaWithDiscount, type ArnonaEstimate } from '@/lib/calculations/arnona';
 
 interface PropertyCostBreakdownProps {
   price: number;
@@ -227,12 +228,44 @@ export function PropertyCostBreakdown({
     high: rentalSecurityDepositRange.high + price + (agentFeeRequired ? rentalAgentFee : 0),
   }), [rentalSecurityDepositRange, price, agentFeeRequired, rentalAgentFee]);
   
-  const rentalTotalMonthly = price + arnona + vaadBayit;
+  // Calculate arnona with Oleh discount for rentals
+  const rentalArnonaEstimate = useMemo((): ArnonaEstimate => {
+    const rate = cityData?.arnona_rate_sqm || 70; // fallback annual rate per sqm
+    const size = sizeSqm || 80; // fallback size
+    return calculateArnonaWithDiscount(
+      rate,
+      size,
+      buyerProfile ? {
+        residency_status: buyerProfile.residency_status as 'israeli_resident' | 'oleh_hadash' | 'non_resident' | undefined,
+        aliyah_year: buyerProfile.aliyah_year,
+        arnona_discount_categories: buyerProfile.arnona_discount_categories || [],
+      } : null
+    );
+  }, [cityData, sizeSqm, buyerProfile]);
+  
+  // Calculate utilities estimate based on property size
+  const utilitiesEstimate = useMemo(() => getUtilitiesEstimate(sizeSqm), [sizeSqm]);
+  
+  // Calculate monthly range (includes utilities range)
+  const rentalMonthlyRange = useMemo(() => ({
+    low: price + rentalArnonaEstimate.discountedMonthly + vaadBayit + utilitiesEstimate.min,
+    high: price + rentalArnonaEstimate.discountedMonthly + vaadBayit + utilitiesEstimate.max,
+  }), [price, rentalArnonaEstimate.discountedMonthly, vaadBayit, utilitiesEstimate]);
 
   // Calculate upfront cost as percentage of annual rent
   const annualRent = price * 12;
   const upfrontPercentLow = ((rentalTotalUpfrontRange.low / annualRent) * 100).toFixed(1);
   const upfrontPercentHigh = ((rentalTotalUpfrontRange.high / annualRent) * 100).toFixed(1);
+  
+  // Calculate first year total: upfront + (monthly × 12)
+  const firstYearTotalRange = useMemo(() => {
+    const monthlyAnnualLow = rentalMonthlyRange.low * 12;
+    const monthlyAnnualHigh = rentalMonthlyRange.high * 12;
+    return {
+      low: rentalTotalUpfrontRange.low + monthlyAnnualLow,
+      high: rentalTotalUpfrontRange.high + monthlyAnnualHigh,
+    };
+  }, [rentalTotalUpfrontRange, rentalMonthlyRange]);
 
   if (listingStatus === 'for_rent') {
     return (
@@ -374,7 +407,9 @@ export function PropertyCostBreakdown({
                     <span className="text-xs text-muted-foreground">{city} rates</span>
                   )}
                   <div className="text-right">
-                    <div className="font-bold text-primary">{formatPrice(rentalTotalMonthly, 'ILS')}/mo</div>
+                    <div className="font-bold text-primary">
+                      {formatPriceRange(rentalMonthlyRange.low, rentalMonthlyRange.high, 'ILS')}/mo
+                    </div>
                   </div>
                 </div>
               </div>
@@ -393,20 +428,37 @@ export function PropertyCostBreakdown({
                   <span className="font-medium">{formatPrice(price, currency)}</span>
                 </div>
                 
-                {/* Arnona */}
+                {/* Arnona - with Oleh discount support */}
                 <div className="flex justify-between py-2 border-b border-border/50">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-                        Arnona (est.)
-                      </span>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">
+                          Arnona {rentalArnonaEstimate.discountPercent > 0 ? '' : '(est.)'}
+                        </span>
+                        {rentalArnonaEstimate.discountPercent > 0 && (
+                          <Badge variant="secondary" className="text-xs bg-accent text-accent-foreground">
+                            {rentalArnonaEstimate.discountType}
+                          </Badge>
+                        )}
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="max-w-xs">
                       <p className="font-medium mb-1">Municipal Property Tax</p>
-                      <p className="text-xs">Municipal property tax paid to the local authority. Amount depends on apartment size and city zone. Estimate based on {city || 'city'} average rates.</p>
+                      {rentalArnonaEstimate.discountPercent > 0 ? (
+                        <div className="text-xs space-y-1">
+                          <p>Base rate: ₪{rentalArnonaEstimate.baseMonthly}/mo</p>
+                          <p className="text-primary">Discount: {rentalArnonaEstimate.discountPercent}% ({rentalArnonaEstimate.discountType})</p>
+                          {rentalArnonaEstimate.areaLimitApplied && (
+                            <p className="text-muted-foreground">Note: Discount applies to first {rentalArnonaEstimate.areaLimitSqm}m² only</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs">Estimate based on {city || 'city'} average rates. Amount depends on apartment size and city zone.</p>
+                      )}
                     </TooltipContent>
                   </Tooltip>
-                  <span className="font-medium">{formatPrice(arnona, 'ILS')}</span>
+                  <span className="font-medium">{formatPrice(rentalArnonaEstimate.discountedMonthly, 'ILS')}</span>
                 </div>
                 
                 {/* Va'ad Bayit */}
@@ -429,10 +481,54 @@ export function PropertyCostBreakdown({
                   </Tooltip>
                   <span className="font-medium">{formatPrice(vaadBayit, 'ILS')}</span>
                 </div>
+                
+                {/* Utilities Estimate */}
+                <div className="flex justify-between py-2 border-b border-border/50">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2 cursor-help">
+                        <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground border-b border-dotted border-muted-foreground/50">
+                          Utilities (est.)
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="font-medium mb-1">Electricity, Water & Gas</p>
+                      <p className="text-xs">Monthly utility bills. Actual costs vary by season, usage, and household size. Summer A/C and winter heating can significantly increase bills.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="font-medium text-muted-foreground">
+                    {formatPriceRange(utilitiesEstimate.min, utilitiesEstimate.max, 'ILS')}
+                  </span>
+                </div>
               </CollapsibleContent>
             </div>
           </Collapsible>
           </TooltipProvider>
+          
+          {/* First Year Total Summary */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">First Year Total</h4>
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-right cursor-help">
+                    <div className="font-bold text-lg text-primary">
+                      {formatPriceRange(firstYearTotalRange.low, firstYearTotalRange.high, 'ILS')}
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="font-medium mb-1">Total First Year Cost</p>
+                  <p className="text-xs">Upfront costs + 12 months of rent, arnona, va'ad bayit, and estimated utilities. Helps you plan your total budget for the first year of your lease.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
           
           <p className="text-xs text-muted-foreground">
             * Estimates based on {city || 'city'} rates. Actual costs may vary.
