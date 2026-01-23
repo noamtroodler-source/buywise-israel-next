@@ -9,6 +9,7 @@ import { LocationSearchInput, type SearchedLocation } from './LocationSearchInpu
 import { SearchedLocationCard } from './SearchedLocationCard';
 import { useAutoGeocode } from '@/hooks/useAutoGeocode';
 import { SavedLocationsSection } from './SavedLocationsSection';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
 
 interface PropertyLocationProps {
   address: string;
@@ -54,6 +55,9 @@ export function PropertyLocation({
   // Fetch city anchors from database
   const { data: cityAnchors, isLoading: anchorsLoading } = useCityAnchors(city);
   
+  // Fetch user's saved locations for map display
+  const { data: savedLocations } = useSavedLocations();
+  
   // Handle adding a searched location
   const handleLocationSelect = (location: SearchedLocation) => {
     // Prevent duplicates
@@ -85,9 +89,11 @@ export function PropertyLocation({
   };
 
 
-  // Generate map POIs from city anchors
+  // Generate map POIs from city anchors, saved locations, and searched locations
   const generateMapPOIs = () => {
     if (!latitude || !longitude) return [];
+    
+    const allPOIs: { category: string; name: string; lat: number; lng: number }[] = [];
     
     // Add city anchors to map if they have coordinates
     const anchorPOIs = (cityAnchors || [])
@@ -100,9 +106,32 @@ export function PropertyLocation({
         lng: anchor.longitude!,
       }));
     
-    // If we have city anchors with coordinates, use those
-    if (anchorPOIs.length > 0) {
-      return anchorPOIs;
+    // Add saved locations from user profile
+    const savedPOIs = (savedLocations || [])
+      .filter(loc => loc.latitude && loc.longitude)
+      .map(loc => ({
+        category: 'Saved',
+        name: loc.label,
+        lat: loc.latitude,
+        lng: loc.longitude,
+      }));
+    
+    // Add searched locations (temporary)
+    const searchedPOIs = searchedLocations
+      .filter(loc => loc.latitude && loc.longitude)
+      .map(loc => ({
+        category: 'Searched',
+        name: loc.name,
+        lat: loc.latitude,
+        lng: loc.longitude,
+      }));
+    
+    // Combine all POIs
+    allPOIs.push(...savedPOIs, ...searchedPOIs, ...anchorPOIs);
+    
+    // If we have any real POIs, return them
+    if (allPOIs.length > 0) {
+      return allPOIs;
     }
     
     // Otherwise fall back to mock POIs

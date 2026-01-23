@@ -27,6 +27,9 @@ const categoryColors: Record<string, string> = {
   'Transport': '#3b82f6',
   'Healthcare': '#ef4444',
   'Parks & Recreation': '#22c55e',
+  'Landmark': '#0ea5e9',
+  'Saved': '#a855f7',
+  'Searched': '#f59e0b',
 };
 
 const mapStyles = [
