@@ -441,7 +441,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
             <div className="p-4 space-y-5">
               {/* Header */}
               <div className="flex items-center justify-between">
@@ -469,7 +469,13 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <TooltipProvider delayDuration={400}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="cursor-help">
+                        <button 
+                          type="button" 
+                          className="cursor-help"
+                          tabIndex={-1}
+                          aria-label="Rooms info"
+                          onFocus={(e) => e.currentTarget.blur()}
+                        >
                           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       </TooltipTrigger>

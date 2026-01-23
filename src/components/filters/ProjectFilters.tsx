@@ -260,7 +260,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
           <TooltipProvider>
             <div className="p-4 space-y-5">
               {/* Header */}
@@ -286,7 +286,13 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   <TooltipProvider delayDuration={400}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button type="button" className="cursor-help">
+                        <button 
+                          type="button" 
+                          className="cursor-help"
+                          tabIndex={-1}
+                          aria-label="Rooms info"
+                          onFocus={(e) => e.currentTarget.blur()}
+                        >
                           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       </TooltipTrigger>
