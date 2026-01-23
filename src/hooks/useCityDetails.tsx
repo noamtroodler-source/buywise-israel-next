@@ -49,7 +49,9 @@ export function useCityDetails(citySlug: string) {
         .from('cities')
         .select('*')
         .eq('slug', citySlug)
-        .single();
+        .maybeSingle();
+      
+      if (!data) throw new Error('City not found');
 
       if (error) throw error;
       return data as CityDetails;

@@ -42,7 +42,9 @@ export function useCity(slug: string) {
         .from('cities')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
+      
+      if (!data) throw new Error('City not found');
 
       if (error) throw error;
       return data as City;

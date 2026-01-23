@@ -65,8 +65,8 @@ export function useProjectFavorites() {
       queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
       toast.success('Project saved to favorites');
     },
-    onError: () => {
-      toast.error('Failed to save project');
+    onError: (error) => {
+      toast.error('Failed to save project: ' + (error as Error).message);
     },
   });
 
@@ -87,8 +87,8 @@ export function useProjectFavorites() {
       queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
       toast.success('Project removed from favorites');
     },
-    onError: () => {
-      toast.error('Failed to remove project');
+    onError: (error) => {
+      toast.error('Failed to remove project: ' + (error as Error).message);
     },
   });
 

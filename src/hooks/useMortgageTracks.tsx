@@ -40,7 +40,9 @@ export function useMortgageTrack(trackType: string) {
         .from('mortgage_tracks')
         .select('*')
         .eq('track_type', trackType)
-        .single();
+        .maybeSingle();
+      
+      if (!data) throw new Error('Mortgage track not found');
 
       if (error) throw error;
       return data as MortgageTrack;

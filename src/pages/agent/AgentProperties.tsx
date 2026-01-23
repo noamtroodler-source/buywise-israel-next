@@ -117,17 +117,24 @@ export default function AgentProperties() {
   const handleBulkRenew = async () => {
     const selectedArray = Array.from(selectedIds);
     let successCount = 0;
+    let failedCount = 0;
     
     for (const id of selectedArray) {
       try {
         await renewProperty.mutateAsync(id);
         successCount++;
       } catch (error) {
+        failedCount++;
         console.error(`Failed to renew property ${id}:`, error);
       }
     }
     
-    toast.success(`Renewed ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    if (successCount > 0) {
+      toast.success(`Renewed ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    }
+    if (failedCount > 0) {
+      toast.error(`Failed to renew ${failedCount} listing${failedCount !== 1 ? 's' : ''}`);
+    }
     setSelectedIds(new Set());
   };
 
@@ -135,17 +142,24 @@ export default function AgentProperties() {
     setIsBulkDeleting(true);
     const selectedArray = Array.from(selectedIds);
     let successCount = 0;
+    let failedCount = 0;
     
     for (const id of selectedArray) {
       try {
         await deleteProperty.mutateAsync(id);
         successCount++;
       } catch (error) {
+        failedCount++;
         console.error(`Failed to delete property ${id}:`, error);
       }
     }
     
-    toast.success(`Deleted ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    if (successCount > 0) {
+      toast.success(`Deleted ${successCount} listing${successCount !== 1 ? 's' : ''}`);
+    }
+    if (failedCount > 0) {
+      toast.error(`Failed to delete ${failedCount} listing${failedCount !== 1 ? 's' : ''}`);
+    }
     setSelectedIds(new Set());
     setIsBulkDeleting(false);
   };
