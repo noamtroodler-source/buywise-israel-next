@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
 const statusConfig = {
@@ -101,12 +102,7 @@ export default function AgencyListings() {
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
 
-  const formatPrice = (price: number, currency: string = 'ILS') => {
-    if (currency === 'USD') {
-      return `$${(price / 1000).toFixed(0)}K`;
-    }
-    return `₪${(price / 1000000).toFixed(2)}M`;
-  };
+  const formatPrice = useFormatPrice();
 
   const getAgentName = (agentId: string) => {
     const agent = team.find(a => a.id === agentId);

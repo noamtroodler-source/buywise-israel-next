@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { FullscreenGallery } from '@/components/shared/FullscreenGallery';
+import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 
 interface PropertyHeroProps {
   property: {
@@ -33,6 +34,9 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
     containScroll: 'trimSnaps',
     dragFree: true
   });
+  
+  const formatPrice = useFormatPrice();
+  const formatArea = useFormatArea();
   
   const images = property.images?.length 
     ? property.images 
@@ -68,14 +72,13 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
     parts.push(statusLabel);
     
     if (property.price) {
-      const currency = property.currency === 'USD' ? '$' : '₪';
-      parts.push(`${currency}${property.price.toLocaleString()}`);
+      parts.push(formatPrice(property.price, property.currency || 'ILS'));
     }
     
     const details: string[] = [];
     if (property.bedrooms) details.push(`${property.bedrooms} beds`);
     if (property.bathrooms) details.push(`${property.bathrooms} baths`);
-    if (property.size_sqm) details.push(`${property.size_sqm} sqm`);
+    if (property.size_sqm) details.push(formatArea(property.size_sqm));
     
     if (details.length) {
       parts.push(`(${details.join(', ')})`);

@@ -13,7 +13,7 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useState } from 'react';
 
 export default function AgencyDetail() {
@@ -54,9 +54,10 @@ export default function AgencyDetail() {
     }
   };
 
+  const formatPriceHook = useFormatPrice();
   const formatPrice = (price: number | null) => {
     if (!price) return 'N/A';
-    return `₪${(price / 1000000).toFixed(1)}M`;
+    return formatPriceHook(price, 'ILS');
   };
 
   const getInitials = (name: string) => {

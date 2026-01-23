@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap } from 'lucide-react';
-import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { formatMonthlyRange } from '@/lib/utils/formatRange';
@@ -113,6 +113,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const formatPricePerArea = useFormatPricePerArea();
+  const areaUnitLabel = useAreaUnitLabel();
   const { data: savesCount = 0 } = useSavesCount(property.id);
   const { user } = useAuth();
   const { data: buyerProfile } = useBuyerProfile();
@@ -365,7 +366,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <p className="text-sm font-medium truncate">
                   {formatPricePerArea(pricePerSqm, property.currency || 'ILS')}
                 </p>
-                <p className="text-xs text-muted-foreground">Price/sqm</p>
+                <p className="text-xs text-muted-foreground">Price/{areaUnitLabel}</p>
               </div>
             </div>
           )}

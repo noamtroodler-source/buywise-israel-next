@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 interface CreateAlertDialogProps {
@@ -25,9 +26,9 @@ const FREQUENCY_OPTIONS: { value: AlertFrequency; label: string; icon: React.Rea
   { value: 'weekly', label: 'Weekly', icon: <Calendar className="h-5 w-5" /> },
 ];
 
-function formatFilterValue(key: string, value: any): string {
+function formatFilterValue(key: string, value: any, currencySymbol: string): string {
   if (key === 'min_price' || key === 'max_price') {
-    return `₪${value.toLocaleString()}`;
+    return `${currencySymbol}${value.toLocaleString()}`;
   }
   if (key === 'min_rooms' || key === 'max_rooms') {
     return `${value}+ rooms`;
@@ -49,6 +50,7 @@ function formatFilterValue(key: string, value: any): string {
 
 export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: CreateAlertDialogProps) {
   const { user } = useAuth();
+  const currencySymbol = useCurrencySymbol();
   const [frequency, setFrequency] = useState<AlertFrequency>('weekly');
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyWhatsapp, setNotifyWhatsapp] = useState(false);
@@ -162,7 +164,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
 
   const getFiltersSummary = () => {
     if (activeFilters.length === 0) return 'All listings';
-    return activeFilters.map(([key, value]) => formatFilterValue(key, value)).join(', ');
+    return activeFilters.map(([key, value]) => formatFilterValue(key, value, currencySymbol)).join(', ');
   };
 
   return (
@@ -189,7 +191,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
               <div className="flex flex-wrap gap-2">
                 {activeFilters.map(([key, value]) => (
                   <Badge key={key} variant="secondary" className="rounded-full">
-                    {formatFilterValue(key, value)}
+                    {formatFilterValue(key, value, currencySymbol)}
                   </Badge>
                 ))}
               </div>
