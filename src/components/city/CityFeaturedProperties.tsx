@@ -109,7 +109,6 @@ export function CityFeaturedProperties({ cityName, citySlug }: CityFeaturedPrope
                   <PropertyCard
                     property={property}
                     showCompareButton={true}
-                    showMonthlyEstimate={true}
                   />
                 </div>
               ))}

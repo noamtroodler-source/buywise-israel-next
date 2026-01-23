@@ -27,7 +27,7 @@ interface PropertyCardProps {
   compareCategory?: 'buy' | 'rent';
 }
 
-const PropertyCardComponent = memo(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = true, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
+const PropertyCardComponent = memo(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
