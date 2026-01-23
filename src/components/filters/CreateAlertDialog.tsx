@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 interface CreateAlertDialogProps {
   open: boolean;
@@ -149,8 +150,8 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
       setNotifyWhatsapp(false);
       setNotifySms(false);
       setPhone('');
-    } catch (error: any) {
-      toast.error('Failed to create alert: ' + error.message);
+    } catch (error: unknown) {
+      toast.error(getUserFriendlyError(error, 'Failed to create alert. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }

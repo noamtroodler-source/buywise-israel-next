@@ -20,7 +20,8 @@ import {
   ClipboardList,
   Home,
   MapPin,
-  BookOpen
+  BookOpen,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ function getEncouragementMessage(percent: number): string {
 }
 
 export function DocumentChecklistTool() {
-  const { data: groupedDocuments, isLoading, error } = useDocumentsByStage();
+  const { data: groupedDocuments, isLoading, error, refetch } = useDocumentsByStage();
   const { data: buyerProfile } = useBuyerProfile();
   const [transactionType, setTransactionType] = useState<TransactionType>('buy');
   const [buyerTypeFilter, setBuyerTypeFilter] = useState<BuyerTypeFilter>('all');
@@ -162,8 +163,18 @@ export function DocumentChecklistTool() {
 
   const getNextStep = () => { const sp = stats.stageProgress[stats.currentStage]; if (!sp) return 'Start your checklist'; const r = sp.total - sp.completed; return r === 0 ? 'Stage complete!' : `${r} doc${r === 1 ? '' : 's'} remaining`; };
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[400px]"><div className="animate-pulse text-muted-foreground">Loading checklist...</div></div>;
-  if (error) return <div className="flex items-center justify-center min-h-[400px]"><div className="text-destructive">Failed to load checklist.</div></div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+      <FileText className="h-12 w-12 text-muted-foreground" />
+      <p className="text-muted-foreground">Failed to load checklist</p>
+      <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
+    </div>
+  );
 
   const leftColumn = (
     <div className="space-y-6">

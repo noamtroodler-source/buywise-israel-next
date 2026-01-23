@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
+import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
 
 export type CalculatorType = 'mortgage' | 'affordability' | 'truecost' | 'rentvsbuy' | 'investment';
 
@@ -76,7 +77,7 @@ export function useSaveCalculatorResult() {
       toast.success('Calculator results saved!');
     },
     onError: (error) => {
-      toast.error('Failed to save results: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to save your results. Please try again.'));
     },
   });
 }
@@ -98,7 +99,7 @@ export function useDeleteCalculatorResult() {
       toast.success('Saved result deleted');
     },
     onError: (error) => {
-      toast.error('Failed to delete: ' + error.message);
+      toast.error(getUserFriendlyError(error, 'Failed to delete. Please try again.'));
     },
   });
 }
