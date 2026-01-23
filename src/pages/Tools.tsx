@@ -125,7 +125,7 @@ export default function Tools() {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                    Property Tools & <span className="text-primary">Calculators</span>
+                    Property Tools & Calculators
                   </h1>
                   <p className="text-muted-foreground">
                     Clarity-first tools for buying and renting in Israel — so you can move forward confident and prepared.
