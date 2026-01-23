@@ -176,6 +176,13 @@ export type Database = {
             referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agency_announcements_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agency_invites: {
@@ -226,6 +233,13 @@ export type Database = {
             referencedRelation: "agencies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "agency_invites_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agency_join_requests: {
@@ -268,6 +282,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_join_requests_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
             referencedColumns: ["id"]
           },
           {
@@ -316,6 +337,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agency_notifications_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
             referencedColumns: ["id"]
           },
         ]
@@ -458,6 +486,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agents_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2415,6 +2450,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "property_inquiries_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "property_inquiries_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
@@ -2864,7 +2906,72 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      agencies_public: {
+        Row: {
+          cities_covered: string[] | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          founded_year: number | null
+          id: string | null
+          is_accepting_agents: boolean | null
+          is_verified: boolean | null
+          logo_url: string | null
+          name: string | null
+          office_address: string | null
+          office_hours: string | null
+          phone: string | null
+          slug: string | null
+          social_links: Json | null
+          specializations: string[] | null
+          updated_at: string | null
+          verification_status: string | null
+          website: string | null
+        }
+        Insert: {
+          cities_covered?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string | null
+          is_accepting_agents?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          office_address?: string | null
+          office_hours?: string | null
+          phone?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          verification_status?: string | null
+          website?: string | null
+        }
+        Update: {
+          cities_covered?: string[] | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          founded_year?: number | null
+          id?: string | null
+          is_accepting_agents?: boolean | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          name?: string | null
+          office_address?: string | null
+          office_hours?: string | null
+          phone?: string | null
+          slug?: string | null
+          social_links?: Json | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          verification_status?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_agent_view_profile: {
@@ -2910,6 +3017,9 @@ export type Database = {
         | "cottage"
         | "land"
         | "commercial"
+        | "garden_apartment"
+        | "mini_penthouse"
+        | "duplex"
       verification_status:
         | "draft"
         | "pending_review"
@@ -3059,6 +3169,9 @@ export const Constants = {
         "cottage",
         "land",
         "commercial",
+        "garden_apartment",
+        "mini_penthouse",
+        "duplex",
       ],
       verification_status: [
         "draft",
