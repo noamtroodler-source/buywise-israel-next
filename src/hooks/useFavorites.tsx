@@ -70,8 +70,8 @@ export function useFavorites() {
       queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
       toast.success('Property saved to favorites');
     },
-    onError: () => {
-      toast.error('Failed to save property');
+    onError: (error) => {
+      toast.error('Failed to save property: ' + (error as Error).message);
     },
   });
 
@@ -92,8 +92,8 @@ export function useFavorites() {
       queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
       toast.success('Property removed from favorites');
     },
-    onError: () => {
-      toast.error('Failed to remove property');
+    onError: (error) => {
+      toast.error('Failed to remove property: ' + (error as Error).message);
     },
   });
 

@@ -38,8 +38,8 @@ export function useSavedArticles() {
       queryClient.invalidateQueries({ queryKey: ['blogPosts'] });
       toast.success('Article saved!');
     },
-    onError: () => {
-      toast.error('Failed to save article');
+    onError: (error) => {
+      toast.error('Failed to save article: ' + (error as Error).message);
     },
   });
 
@@ -60,8 +60,8 @@ export function useSavedArticles() {
       queryClient.invalidateQueries({ queryKey: ['blogPosts'] });
       toast.success('Article removed from saved');
     },
-    onError: () => {
-      toast.error('Failed to remove article');
+    onError: (error) => {
+      toast.error('Failed to remove article: ' + (error as Error).message);
     },
   });
 

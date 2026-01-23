@@ -42,7 +42,9 @@ export function useGlossaryTerm(hebrewTerm: string) {
         .from('glossary_terms')
         .select('*')
         .eq('hebrew_term', hebrewTerm)
-        .single();
+        .maybeSingle();
+      
+      if (!data) throw new Error('Term not found');
 
       if (error) throw error;
       return data as GlossaryTerm;

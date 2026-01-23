@@ -282,7 +282,9 @@ export function useProperty(id: string) {
           agent:agents(*)
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
+      
+      if (!data) throw new Error('Property not found');
 
       if (error) throw error;
       return data as Property;

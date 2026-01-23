@@ -46,7 +46,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           .select('value_numeric')
           .eq('constant_key', 'EXCHANGE_RATE_USD_ILS')
           .eq('is_current', true)
-          .single();
+          .maybeSingle();
 
         if (!error && data?.value_numeric) {
           setDefaultExchangeRate(Number(data.value_numeric));
