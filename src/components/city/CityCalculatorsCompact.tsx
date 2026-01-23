@@ -18,17 +18,17 @@ export function CityCalculatorsCompact({ cityName, averagePrice }: CityCalculato
     {
       icon: PiggyBank,
       title: 'True Cost',
-      href: '/tools?tool=true-cost',
+      href: '/tools?tool=totalcost',
     },
     {
       icon: TrendingUp,
       title: 'Rent vs Buy',
-      href: '/tools?tool=rent-vs-buy',
+      href: '/tools?tool=rentvsbuy',
     },
     {
       icon: Receipt,
-      title: 'Purchase Tax',
-      href: '/tools?tool=purchase-tax',
+      title: 'Affordability',
+      href: '/tools?tool=affordability',
     },
   ];
 

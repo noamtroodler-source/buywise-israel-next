@@ -364,7 +364,7 @@ export default function BuyingInIsraelGuide() {
             <div className="border-t border-border pt-8 mt-8">
               <h3 className="font-semibold text-foreground mb-4">Continue Learning</h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Link to="/guides/oleh-first-time" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
+                <Link to="/guides/oleh-buyer" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
                   <h4 className="font-medium text-foreground">Oleh First-Time Buyer Guide</h4>
                   <p className="text-sm text-muted-foreground mt-1">Special benefits and considerations for new immigrants</p>
                 </Link>
