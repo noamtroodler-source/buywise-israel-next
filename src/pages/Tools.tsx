@@ -128,7 +128,7 @@ export default function Tools() {
                     Property Tools & Calculators
                   </h1>
                   <p className="text-muted-foreground">
-                    Clarity-first tools for buying and renting in Israel — so you can move forward confident and prepared.
+                    Clarity-first tools for buying and renting in <span className="text-primary">Israel</span> — so you can move forward confident and prepared.
                   </p>
                 </motion.div>
               </div>
