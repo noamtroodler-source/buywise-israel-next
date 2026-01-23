@@ -24,6 +24,9 @@ const categoryColors: Record<string, string> = {
   'Transport': 'hsl(210, 80%, 55%)',
   'Healthcare': 'hsl(0, 80%, 55%)',
   'Parks & Recreation': 'hsl(142, 70%, 45%)',
+  'Landmark': 'hsl(199, 89%, 48%)',
+  'Saved': 'hsl(270, 95%, 60%)',
+  'Searched': 'hsl(38, 92%, 50%)',
 };
 
 export function PropertyMiniMap({ 
