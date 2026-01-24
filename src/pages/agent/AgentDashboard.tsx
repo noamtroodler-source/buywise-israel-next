@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper, Mail } from 'lucide-react';
@@ -12,11 +12,20 @@ import { useAgentProfile, useAgentProperties, AgentProperty } from '@/hooks/useA
 import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
+import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: leadStats } = useLeadStats();
+  const { trackDashboardView, trackAnalyticsView } = useAdvertiserTracking();
+
+  // Track dashboard view on mount
+  useEffect(() => {
+    if (agentProfile?.id) {
+      trackDashboardView(agentProfile.id, 'agent', 'dashboard');
+    }
+  }, [agentProfile?.id, trackDashboardView]);
   
   // Onboarding checklist dismiss state (persisted in localStorage)
   const [showOnboarding, setShowOnboarding] = useState(() => {

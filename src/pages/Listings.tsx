@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
+import { useSearchTracking } from '@/hooks/useSearchTracking';
+import { useEventTracking } from '@/hooks/useEventTracking';
 
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,11 +71,45 @@ export default function Listings() {
     loadMore 
   } = usePaginatedProperties(filters);
 
+  // Search tracking
+  const { trackSearchStart, trackSearch } = useSearchTracking();
+  const { trackEvent } = useEventTracking();
+  const hasTrackedInitialSearch = useRef(false);
+
+  // Track search start on mount
+  useEffect(() => {
+    if (!hasTrackedInitialSearch.current) {
+      trackSearchStart();
+      hasTrackedInitialSearch.current = true;
+    }
+  }, [trackSearchStart]);
+
+  // Track search results when data changes
+  useEffect(() => {
+    if (!isLoading && properties) {
+      trackSearch({
+        listingType: listingStatus === 'sold' ? 'for_sale' : listingStatus as 'for_sale' | 'for_rent',
+        filters: filters,
+        resultsCount: totalCount,
+        resultsShown: properties.length,
+        sortOption: filters.sort_by,
+        pageNumber: 1,
+      });
+    }
+  }, [isLoading, properties, filters, totalCount, listingStatus, trackSearch]);
+
 
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
     setFilters(updatedFilters);
+    
+    // Track filter application
+    trackEvent('filter', 'filter_apply', 'search', {
+      component: 'PropertyFilters',
+      properties: updatedFilters,
+    });
+    
     
     // Update URL params - use replace: true to preserve scroll position
     const params = new URLSearchParams();

@@ -39,6 +39,7 @@ import { UserBehaviorTab } from '@/components/admin/analytics/UserBehaviorTab';
 import { SearchIntelligenceTab } from '@/components/admin/analytics/SearchIntelligenceTab';
 import { ListingIntelligenceTab } from '@/components/admin/analytics/ListingIntelligenceTab';
 import { AdvertiserAnalyticsTab } from '@/components/admin/analytics/AdvertiserAnalyticsTab';
+import { DataHealthCard } from '@/components/admin/analytics/DataHealthCard';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -142,6 +143,7 @@ export default function AdminAnalytics() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
+          <DataHealthCard />
           <div className="grid gap-6 lg:grid-cols-2">
             <ConversionFunnel data={conversionData} isLoading={conversionLoading} />
             <GeographicAnalytics data={geoData} isLoading={geoLoading} />

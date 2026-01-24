@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Building, MapPin, Calendar, Loader2, Home, TrendingDown } from 'lucide-react';
@@ -17,6 +17,8 @@ import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
+import { useSearchTracking } from '@/hooks/useSearchTracking';
+import { useEventTracking } from '@/hooks/useEventTracking';
 
 export default function Projects() {
   const [filters, setFilters] = useState<ProjectFiltersType>({});
@@ -33,6 +35,41 @@ export default function Projects() {
     hasNextPage, 
     loadMore 
   } = usePaginatedProjects(filters);
+
+  // Search tracking
+  const { trackSearchStart, trackSearch, trackSearchResultClick } = useSearchTracking();
+  const { trackEvent, trackClick } = useEventTracking();
+  const hasTrackedInitialSearch = useRef(false);
+
+  // Track search start on mount
+  useEffect(() => {
+    if (!hasTrackedInitialSearch.current) {
+      trackSearchStart();
+      hasTrackedInitialSearch.current = true;
+    }
+  }, [trackSearchStart]);
+
+  // Track search results when data changes
+  useEffect(() => {
+    if (!isLoading && projects) {
+      trackSearch({
+        listingType: 'projects',
+        filters: {
+          city: filters.city,
+          min_price: filters.min_price,
+          max_price: filters.max_price,
+        },
+        resultsCount: totalCount,
+        resultsShown: projects.length,
+        pageNumber: 1,
+      });
+    }
+  }, [isLoading, projects, filters, totalCount, trackSearch]);
+
+  const handleProjectClick = (projectId: string) => {
+    trackSearchResultClick(projectId);
+    trackClick('project_card', 'ProjectCard', { project_id: projectId });
+  };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -144,7 +181,7 @@ export default function Projects() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {projects.map((project) => (
                     <div key={project.id} className="animate-fade-in">
-                      <Link to={`/projects/${project.slug}`}>
+                      <Link to={`/projects/${project.slug}`} onClick={() => handleProjectClick(project.id)}>
                         <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
                         <div className="aspect-[16/10] overflow-hidden relative">
                             <img

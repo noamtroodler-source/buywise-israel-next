@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
 import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
 import { DeveloperPerformanceInsights } from '@/components/developer/DeveloperPerformanceInsights';
+import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,8 +30,16 @@ const itemVariants = {
 export default function DeveloperDashboard() {
   const { data: developerProfile, isLoading: profileLoading } = useDeveloperProfile();
   const { data: projects = [], isLoading: projectsLoading } = useDeveloperProjects();
+  const { trackDashboardView } = useAdvertiserTracking();
 
   const isLoading = profileLoading || projectsLoading;
+
+  // Track dashboard view on mount
+  useEffect(() => {
+    if (developerProfile?.id) {
+      trackDashboardView(developerProfile.id, 'developer', 'dashboard');
+    }
+  }, [developerProfile?.id, trackDashboardView]);
 
   // Count by verification status
   const statusCounts = useMemo(() => ({
