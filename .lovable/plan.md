@@ -1,120 +1,117 @@
 
-# Standardize Favorite and Share Button Styling
+# Integrate Currency & Area Unit Preferences in Floor Plans & Units Section
 
 ## Problem
-The favorite (heart) and share buttons have inconsistent styling across different parts of the app:
+The "Floor Plans & Units" table on project pages currently displays all values in hardcoded Shekels (₪) and square meters (m²). When users change their preferences to USD or Square Feet, these values don't update:
 
-1. **Property FavoriteButton**: Uses Button's default `icon` size (h-10 w-10), no explicit size or rounded style
-2. **Property ShareButton**: Uses `h-8 w-8` with `rounded-full` (circular)
-3. **Project FavoriteButton**: Uses `h-8 w-8` with existing background
-4. **Project ShareButton**: Uses `h-8 w-8`
-
-The user wants the "box" style visible on rental cards (rounded rectangle, not circle) applied consistently everywhere.
+- **Size column**: Shows "75-80" with hardcoded "(m²)" header
+- **Price From column**: Uses `formatPrice` but always passes 'ILS'  
+- **Price per area column**: Shows "₪24,710" with hardcoded "₪/m²" header
 
 ## Solution
-Standardize all 4 button components to use:
-- **Size**: `h-8 w-8` 
-- **Border radius**: `rounded-md` (soft rectangle like the screenshot)
-- **Background**: `bg-background/80 hover:bg-background`
-- **Transition**: `transition-colors`
+Update `ProjectFloorPlans.tsx` to use the full suite of preference hooks so all values dynamically update when users toggle currency or area unit settings.
 
-## Files to Modify
+## Technical Changes
 
-### 1. `src/components/property/FavoriteButton.tsx`
-Update the Button className to use explicit sizing and rounded style:
+### File: `src/components/project/ProjectFloorPlans.tsx`
 
+**1. Add missing imports:**
 ```tsx
-<Button
-  variant="ghost"
-  size="icon"
-  className={cn(
-    "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors",
-    favorited ? "text-primary" : "text-muted-foreground hover:text-primary",
-    className
-  )}
-  onClick={handleClick}
-  disabled={isToggling}
->
+import { 
+  useFormatPrice, 
+  useFormatArea, 
+  useFormatPricePerArea, 
+  useAreaUnitLabel 
+} from '@/contexts/PreferencesContext';
 ```
 
-### 2. `src/components/property/ShareButton.tsx`
-Change from `rounded-full` to `rounded-md` and ensure consistent sizing:
-
+**2. Initialize hooks inside component:**
 ```tsx
-<Button
-  variant="ghost"
-  size="icon"
-  onPointerDown={(e) => e.stopPropagation()}
-  onClick={(e) => e.stopPropagation()}
-  className={cn(
-    "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors",
-    className
-  )}
->
+const formatPrice = useFormatPrice();
+const formatArea = useFormatArea();
+const formatPricePerArea = useFormatPricePerArea();
+const areaLabel = useAreaUnitLabel();
 ```
 
-Also simplify the size prop handling since we want consistent sizing everywhere.
+**3. Update table header (desktop):**
+- Change "Size (m²)" → Dynamic: `Size (${areaLabel === 'sqft' ? 'ft²' : 'm²'})`
+- Change "₪/m²" → Dynamic: `${currencySymbol}/${areaLabel === 'sqft' ? 'ft²' : 'm²'}`
 
-### 3. `src/components/project/ProjectFavoriteButton.tsx`
-Add `rounded-md` to className (already has correct sizing):
+**4. Update Size column cells:**
+- Current: `formatRange(group.sizeRange.min, group.sizeRange.max)` (raw numbers)
+- New: Format each bound with `formatArea()` to show "807-861 ft²" or "75-80 m²"
+- Need a new helper function to format size ranges with unit conversion
 
+**5. Update Price per sqm column:**
+- Current: `₪${group.pricePerSqm.toLocaleString()}`
+- New: `formatPricePerArea(group.pricePerSqm)` which handles currency + area unit
+
+**6. Update mobile card display:**
+- Same changes for the mobile card grid (size display and price/m² display)
+
+## Detailed Code Changes
+
+### New helper function for size range formatting:
 ```tsx
-className={cn(
-  "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors",
-  isFavorite 
-    ? "text-primary hover:text-primary/80" 
-    : "text-muted-foreground hover:text-primary",
-  className
-)}
+const formatSizeRange = (min: number, max: number) => {
+  if (min === Infinity || max === 0) return 'N/A';
+  // formatArea returns "807 ft²" or "75 m²" - need raw number version
+  const areaUnit = areaLabel;
+  const SQM_TO_SQFT = 10.764;
+  
+  if (areaUnit === 'sqft') {
+    const minFt = Math.round(min * SQM_TO_SQFT);
+    const maxFt = Math.round(max * SQM_TO_SQFT);
+    if (minFt === maxFt) return `${minFt}`;
+    return `${minFt}-${maxFt}`;
+  }
+  
+  if (min === max) return `${min}`;
+  return `${min}-${max}`;
+};
 ```
 
-Also change the favorited color from `text-destructive` (red) to `text-primary` (blue) to match brand color standards.
-
-### 4. `src/components/project/ProjectShareButton.tsx`
-Add `rounded-md` to className:
-
+### Table Header Updates:
 ```tsx
-className={cn(
-  "h-8 w-8 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors",
-  className
-)}
+<TableHead className="text-center">
+  Size ({areaLabel === 'sqft' ? 'ft²' : 'm²'})
+</TableHead>
+...
+<TableHead className="text-right">
+  {currencySymbol}/{areaLabel === 'sqft' ? 'ft²' : 'm²'}
+</TableHead>
 ```
 
-## Remove Override Classes in Parent Components
-After updating the base components, we can remove redundant className overrides in:
+### Cell Value Updates:
+```tsx
+// Size cell (was line 204)
+<TableCell className="text-center">
+  {formatSizeRange(group.sizeRange.min, group.sizeRange.max)}
+</TableCell>
 
-### 5. `src/components/home/ProjectsHighlight.tsx`
-Remove the `className="h-8 w-8 rounded-md bg-background/80 hover:bg-background"` override since it will now be the default.
-
-### 6. `src/components/home/ProjectCarousel.tsx`
-Same cleanup - remove redundant className overrides.
-
-### 7. `src/pages/Projects.tsx`
-No changes needed - base component styling will apply.
-
-### 8. `src/components/property/PropertyCard.tsx`
-No changes needed - PropertyCard already uses FavoriteButton and ShareButton which will now have consistent styling.
-
-## Visual Result
-
-**Before (inconsistent):**
-- Some buttons are circles (`rounded-full`)
-- Different sizes (h-10 vs h-8)
-- FavoriteButton for projects uses red when favorited
-
-**After (consistent):**
-```text
-┌─────────┐  ┌─────────┐
-│    ♡    │  │   ↗     │
-└─────────┘  └─────────┘
-   8x8px       8x8px
- rounded-md  rounded-md
+// Price per area cell (was line 210-212)
+<TableCell className="text-right text-muted-foreground">
+  {group.pricePerSqm > 0 ? formatPricePerArea(group.pricePerSqm) : 'N/A'}
+</TableCell>
 ```
 
-All buttons will have the same soft rectangular "box" appearance matching the screenshot from the rental page.
+### Mobile Card Updates:
+```tsx
+// Line 227 - Mobile card size display
+<p className="text-sm text-muted-foreground">
+  {group.bedrooms} Bed • {group.bathrooms} Bath • {formatSizeRange(group.sizeRange.min, group.sizeRange.max)} {areaLabel === 'sqft' ? 'ft²' : 'm²'}
+</p>
 
-## Color Standardization
-Per project memory on brand colors:
-- Favorited state: `text-primary` (blue) with `fill-current`
-- Unfavorited: `text-muted-foreground` with `hover:text-primary`
-- This applies to BOTH property and project favorites (removing the red `text-destructive` from projects)
+// Line 263-264 - Mobile price per area
+<div>
+  <span className="text-muted-foreground">{currencySymbol}/{areaLabel === 'sqft' ? 'ft²' : 'm²'}:</span>{' '}
+  <span>{group.pricePerSqm > 0 ? formatPricePerArea(group.pricePerSqm) : 'N/A'}</span>
+</div>
+```
+
+## Result
+
+After implementation:
+- **ILS + m²**: Size shows "75-80", header shows "₪/m²", value shows "₪24,710/m²"  
+- **USD + sqft**: Size shows "807-861", header shows "$/ft²", value shows "$214/ft²"
+- All values update instantly when user changes preferences in the header settings dropdown
