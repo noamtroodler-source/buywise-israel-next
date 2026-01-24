@@ -119,7 +119,7 @@ export default function Principles() {
         </section>
 
         {/* "We See You" Section */}
-        <section className="py-16 md:py-20">
+        <section className="py-10 md:py-12">
           <div className="container">
             <motion.div
               initial={{ opacity: 0 }}
