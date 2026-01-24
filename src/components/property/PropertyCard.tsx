@@ -1,4 +1,4 @@
-import { useState, memo, useMemo } from 'react';
+import { useState, memo, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, Flame, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { ShareButton } from './ShareButton';
 import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { differenceInDays } from 'date-fns';
+import { useEventTracking } from '@/hooks/useEventTracking';
 
 interface PropertyCardProps {
   property: Property;
@@ -33,6 +34,17 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const { trackClick } = useEventTracking();
+
+  // Track card click for analytics
+  const handleCardClick = useCallback(() => {
+    trackClick('property_card', 'PropertyCard', {
+      property_id: property.id,
+      property_city: property.city,
+      property_price: property.price,
+      listing_status: property.listing_status,
+    });
+  }, [trackClick, property.id, property.city, property.price, property.listing_status]);
 
   const images = property.images?.length ? property.images : [];
   const hasMultipleImages = images.length > 1;
@@ -139,7 +151,7 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
 
   return (
     <>
-      <Link to={`/property/${property.id}`}>
+      <Link to={`/property/${property.id}`} onClick={handleCardClick}>
         <Card className={cn(
           "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
           "border border-border/50 bg-white ring-1 ring-black/5 shadow-sm",
