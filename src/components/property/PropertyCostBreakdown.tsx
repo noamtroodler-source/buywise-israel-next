@@ -109,8 +109,9 @@ export function PropertyCostBreakdown({
   const citySlug = city?.toLowerCase().replace(/\s+/g, '-');
   const { data: cityData } = useCityDetails(citySlug || '');
   
-  // Get mortgage estimate
+  // Get mortgage estimate and preferences
   const mortgageEstimate = useMortgageEstimate(price);
+  const { includeMortgage, ltvLimit } = useMortgagePreferences();
   
   // Calculate purchase tax from DB brackets
   const purchaseTax = useMemo(() => {
@@ -142,11 +143,12 @@ export function PropertyCostBreakdown({
     high: Math.round(agentFeesRange.high * 0.18),
   };
   
-  // Fixed fees with ranges
-  const mortgageFeesRange = {
+  // Fixed fees with ranges - mortgage fees only when financing
+  const mortgageFeesRange = includeMortgage ? {
     low: FEE_RANGES.appraisal.min + FEE_RANGES.mortgageOrigination.min,
     high: FEE_RANGES.appraisal.max + FEE_RANGES.mortgageOrigination.max,
-  };
+  } : { low: 0, high: 0 };
+  
   const registrationFeesRange = {
     low: FEE_RANGES.registration.min,
     high: FEE_RANGES.registration.max,
@@ -183,7 +185,14 @@ export function PropertyCostBreakdown({
   const vaadBayit = vaadBayitMonthly ?? cityData?.average_vaad_bayit ?? 300;
   const isVaadActual = vaadBayitMonthly !== null && vaadBayitMonthly !== undefined;
   const insurance = 150;
-  const totalMonthly = arnona + vaadBayit + insurance;
+  
+  // Monthly ownership costs (without mortgage)
+  const monthlyOwnershipCosts = arnona + vaadBayit + insurance;
+  
+  // Total monthly depends on whether mortgage is included
+  const totalMonthly = includeMortgage 
+    ? monthlyOwnershipCosts + mortgageEstimate.monthlyPaymentMid 
+    : monthlyOwnershipCosts;
 
   // Calculate tax savings vs investor rate
   const investorTax = useMemo(() => {
@@ -200,9 +209,6 @@ export function PropertyCostBreakdown({
   // State for collapsible sections
   const [oneTimeOpen, setOneTimeOpen] = useState(false);
   const [monthlyOpen, setMonthlyOpen] = useState(false);
-  
-  // Get LTV limit for personalization header
-  const { ltvLimit } = useMortgagePreferences();
   
   // Calculate % of purchase price for context
   const oneTimePercentLow = ((totalOneTimeRange.low / price) * 100).toFixed(1);
@@ -690,7 +696,9 @@ export function PropertyCostBreakdown({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-foreground">Estimated Monthly</h4>
+                <h4 className="font-medium text-foreground">
+                  {includeMortgage ? 'Estimated Monthly' : 'Monthly Ownership Costs'}
+                </h4>
               </div>
               <div className="flex items-center gap-3">
                 {city && cityData && (
@@ -698,7 +706,10 @@ export function PropertyCostBreakdown({
                 )}
                 <div className="text-right">
                   <div className="font-bold text-primary">
-                    {formatPrice(mortgageEstimate.monthlyPaymentLow + totalMonthly, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh + totalMonthly, 'ILS').replace('₪', '')}/mo
+                    {includeMortgage 
+                      ? `${formatPrice(mortgageEstimate.monthlyPaymentLow + monthlyOwnershipCosts, 'ILS')}–${formatPrice(mortgageEstimate.monthlyPaymentHigh + monthlyOwnershipCosts, 'ILS').replace('₪', '')}/mo`
+                      : `${formatPrice(monthlyOwnershipCosts, 'ILS')}/mo`
+                    }
                   </div>
                 </div>
               </div>
@@ -712,35 +723,37 @@ export function PropertyCostBreakdown({
             </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-2 text-sm pt-2">
-              {/* Mortgage Payment Row - Display only, edit happens at the top */}
-              <div className="py-2 border-b border-border/50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2 cursor-help">
-                          <Home className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-foreground border-b border-dotted border-muted-foreground/50">Mortgage</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="font-medium mb-1">Monthly Payment Estimate</p>
-                        <p className="text-xs">
-                          Based on {mortgageEstimate.downPaymentPercent}% down payment ({formatPrice(mortgageEstimate.downPayment, 'ILS')}), 
-                          {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
-                          Adjust assumptions in the panel above.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
-                    </p>
+              {/* Mortgage Payment Row - Only show when mortgage is enabled */}
+              {includeMortgage && (
+                <div className="py-2 border-b border-border/50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-help">
+                            <Home className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-foreground border-b border-dotted border-muted-foreground/50">Mortgage</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="font-medium mb-1">Monthly Payment Estimate</p>
+                          <p className="text-xs">
+                            Based on {mortgageEstimate.downPaymentPercent}% down payment ({formatPrice(mortgageEstimate.downPayment, 'ILS')}), 
+                            {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
+                            Adjust assumptions in the panel above.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
+                      </p>
+                    </div>
+                    <span className="font-medium">
+                      {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
+                    </span>
                   </div>
-                  <span className="font-medium">
-                    {formatPrice(mortgageEstimate.monthlyPaymentLow, 'ILS')}–{formatPrice(mortgageEstimate.monthlyPaymentHigh, 'ILS').replace('₪', '')}
-                  </span>
                 </div>
-              </div>
+              )}
               
               <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>

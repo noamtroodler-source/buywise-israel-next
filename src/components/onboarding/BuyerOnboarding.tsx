@@ -43,6 +43,7 @@ const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: BuyerOnboardingProps) {
   const [step, setStep] = useState<Step>(1);
   const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>(() => getInitialAnswers(existingProfile));
+  const [financingMethod, setFinancingMethod] = useState<'mortgage' | 'cash'>('cash'); // Default to cash-first
   const [mortgagePrefs, setMortgagePrefs] = useState({
     down_payment_percent: 25,
     term_years: 25,
@@ -137,14 +138,17 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const handleComplete = async () => {
-    // Build mortgage preferences if user filled them in on step 6
+    // Build mortgage preferences based on financing method
     const mortgagePreferences = {
-      down_payment_percent: downPaymentMode === 'percent' ? mortgagePrefs.down_payment_percent : null,
-      down_payment_amount: downPaymentMode === 'amount' ? downPaymentAmount : null,
+      include_mortgage: financingMethod === 'mortgage',
+      down_payment_percent: financingMethod === 'mortgage' && downPaymentMode === 'percent' 
+        ? mortgagePrefs.down_payment_percent : null,
+      down_payment_amount: financingMethod === 'mortgage' && downPaymentMode === 'amount' 
+        ? downPaymentAmount : null,
       term_years: mortgagePrefs.term_years,
       assumed_rate: 5.25,
-      monthly_income: mortgagePrefs.monthly_income,
-      income_type: mortgagePrefs.income_type,
+      monthly_income: financingMethod === 'mortgage' ? mortgagePrefs.monthly_income : null,
+      income_type: financingMethod === 'mortgage' ? mortgagePrefs.income_type : null,
     };
 
     // Build saved locations array
@@ -507,7 +511,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
               </motion.div>
             )}
 
-            {/* Step 6: Mortgage Preferences (Optional) */}
+            {/* Step 6: Financing Method + Mortgage Preferences (Optional) */}
             {step === 6 && (
               <motion.div
                 key="step6"
@@ -517,112 +521,149 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 className="space-y-4"
               >
                 <div>
-                  <h3 className="font-medium text-foreground">Set your mortgage preferences</h3>
+                  <h3 className="font-medium text-foreground">How do you plan to pay?</h3>
                   <p className="text-sm text-muted-foreground">
-                    Optional — see personalized estimates on all properties
+                    This helps us show you the right cost estimates
                   </p>
                 </div>
 
-                {/* Down Payment */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Preferred Down Payment</Label>
-                    <div className="flex gap-1">
-                      <Toggle
-                        size="sm"
-                        pressed={downPaymentMode === 'percent'}
-                        onPressedChange={() => setDownPaymentMode('percent')}
-                        className="h-7 px-2 text-xs"
-                      >
-                        <Percent className="h-3 w-3 mr-1" />
-                        %
-                      </Toggle>
-                      <Toggle
-                        size="sm"
-                        pressed={downPaymentMode === 'amount'}
-                        onPressedChange={() => setDownPaymentMode('amount')}
-                        className="h-7 px-2 text-xs"
-                      >
-                        <Banknote className="h-3 w-3 mr-1" />
-                        ₪
-                      </Toggle>
-                    </div>
+                {/* Financing Method Selection */}
+                <RadioGroup
+                  value={financingMethod}
+                  onValueChange={(v) => setFinancingMethod(v as 'mortgage' | 'cash')}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <RadioGroupItem value="mortgage" id="financing-mortgage" />
+                    <Label htmlFor="financing-mortgage" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Percent className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Taking a Mortgage</p>
+                        <p className="text-sm text-muted-foreground">I'll finance part of the purchase</p>
+                      </div>
+                    </Label>
                   </div>
-                  {downPaymentMode === 'percent' ? (
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        value={mortgagePrefs.down_payment_percent}
-                        onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, down_payment_percent: Number(e.target.value) })}
-                        min={25}
-                        max={100}
-                        className="pr-8"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                      <Input
-                        type="number"
-                        value={downPaymentAmount ?? ''}
-                        onChange={(e) => setDownPaymentAmount(e.target.value ? Number(e.target.value) : null)}
-                        className="pl-8"
-                        placeholder="1,500,000"
-                      />
-                    </div>
-                  )}
-                </div>
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                    <RadioGroupItem value="cash" id="financing-cash" />
+                    <Label htmlFor="financing-cash" className="flex items-center gap-3 cursor-pointer flex-1">
+                      <Banknote className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Paying in Full / Cash</p>
+                        <p className="text-sm text-muted-foreground">I'm paying the full amount upfront</p>
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
 
-                {/* Loan Term */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Loan Term</Label>
-                  <Select
-                    value={String(mortgagePrefs.term_years)}
-                    onValueChange={(value) => setMortgagePrefs({ ...mortgagePrefs, term_years: Number(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LOAN_TERMS.map((term) => (
-                        <SelectItem key={term} value={String(term)}>
-                          {term} years
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Show mortgage details only when mortgage is selected */}
+                {financingMethod === 'mortgage' && (
+                  <div className="space-y-4 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground">
+                      Set your mortgage preferences for personalized estimates
+                    </p>
 
-                {/* Monthly Income */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm">Monthly Income (optional)</Label>
-                    <Select
-                      value={mortgagePrefs.income_type}
-                      onValueChange={(value: 'net' | 'gross') => setMortgagePrefs({ ...mortgagePrefs, income_type: value })}
-                    >
-                      <SelectTrigger className="w-20 h-7 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="net">Net</SelectItem>
-                        <SelectItem value="gross">Gross</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Down Payment */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Preferred Down Payment</Label>
+                        <div className="flex gap-1">
+                          <Toggle
+                            size="sm"
+                            pressed={downPaymentMode === 'percent'}
+                            onPressedChange={() => setDownPaymentMode('percent')}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Percent className="h-3 w-3 mr-1" />
+                            %
+                          </Toggle>
+                          <Toggle
+                            size="sm"
+                            pressed={downPaymentMode === 'amount'}
+                            onPressedChange={() => setDownPaymentMode('amount')}
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Banknote className="h-3 w-3 mr-1" />
+                            ₪
+                          </Toggle>
+                        </div>
+                      </div>
+                      {downPaymentMode === 'percent' ? (
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            value={mortgagePrefs.down_payment_percent}
+                            onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, down_payment_percent: Number(e.target.value) })}
+                            min={25}
+                            max={100}
+                            className="pr-8"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                          <Input
+                            type="number"
+                            value={downPaymentAmount ?? ''}
+                            onChange={(e) => setDownPaymentAmount(e.target.value ? Number(e.target.value) : null)}
+                            className="pl-8"
+                            placeholder="1,500,000"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Loan Term */}
+                    <div className="space-y-2">
+                      <Label className="text-sm">Loan Term</Label>
+                      <Select
+                        value={String(mortgagePrefs.term_years)}
+                        onValueChange={(value) => setMortgagePrefs({ ...mortgagePrefs, term_years: Number(value) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {LOAN_TERMS.map((term) => (
+                            <SelectItem key={term} value={String(term)}>
+                              {term} years
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Monthly Income */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Monthly Income (optional)</Label>
+                        <Select
+                          value={mortgagePrefs.income_type}
+                          onValueChange={(value: 'net' | 'gross') => setMortgagePrefs({ ...mortgagePrefs, income_type: value })}
+                        >
+                          <SelectTrigger className="w-20 h-7 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="net">Net</SelectItem>
+                            <SelectItem value="gross">Gross</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                        <Input
+                          type="number"
+                          value={mortgagePrefs.monthly_income ?? ''}
+                          onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: e.target.value ? Number(e.target.value) : null })}
+                          className="pl-8"
+                          placeholder="35,000"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                    <Input
-                      type="number"
-                      value={mortgagePrefs.monthly_income ?? ''}
-                      onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: e.target.value ? Number(e.target.value) : null })}
-                      className="pl-8"
-                      placeholder="35,000"
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
-                </div>
+                )}
               </motion.div>
             )}
 

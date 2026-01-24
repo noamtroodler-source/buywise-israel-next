@@ -15,6 +15,7 @@ const DEFAULT_RATE_MID = 5.25;
 const DEFAULT_RATE_HIGH = 6.0;
 
 export interface MortgagePreferences {
+  include_mortgage: boolean;  // true = mortgage, false = pay in full (cash)
   down_payment_percent: number | null;
   down_payment_amount: number | null;
   term_years: number;
@@ -36,6 +37,7 @@ export interface MortgageEstimate {
 }
 
 const DEFAULT_PREFERENCES: MortgagePreferences = {
+  include_mortgage: false, // Cash-first baseline
   down_payment_percent: null,
   down_payment_amount: null,
   term_years: DEFAULT_TERM_YEARS,
@@ -43,6 +45,32 @@ const DEFAULT_PREFERENCES: MortgagePreferences = {
   monthly_income: null,
   income_type: null,
 };
+
+/**
+ * Normalize legacy preferences that may not have include_mortgage field
+ * Per memory: if include_mortgage is undefined, derive from existing mortgage settings
+ */
+function normalizePreferences(raw: any): MortgagePreferences {
+  if (!raw) return DEFAULT_PREFERENCES;
+  
+  // If include_mortgage is defined, use as-is
+  if (raw.include_mortgage !== undefined) {
+    return { ...DEFAULT_PREFERENCES, ...raw };
+  }
+  
+  // Legacy data: derive include_mortgage from existing mortgage settings
+  const hasMortgageSettings = !!(
+    raw.down_payment_percent || 
+    raw.down_payment_amount || 
+    raw.monthly_income
+  );
+  
+  return {
+    ...DEFAULT_PREFERENCES,
+    ...raw,
+    include_mortgage: hasMortgageSettings, // Preserve existing user intent
+  };
+}
 
 /**
  * Calculate monthly mortgage payment using PMT formula
@@ -95,13 +123,13 @@ export function useMortgagePreferences() {
   // Local state for guest users
   const [localPrefs, setLocalPrefs] = useState<MortgagePreferences | null>(() => getLocalPreferences());
   
-  // Get preferences from profile or local storage
+  // Get preferences from profile or local storage, with normalization
   const preferences: MortgagePreferences = useMemo(() => {
     if (user && buyerProfile?.mortgage_preferences) {
-      // Type assertion since mortgage_preferences is JSONB
-      return buyerProfile.mortgage_preferences as MortgagePreferences;
+      // Normalize to handle legacy data without include_mortgage
+      return normalizePreferences(buyerProfile.mortgage_preferences);
     }
-    return localPrefs || DEFAULT_PREFERENCES;
+    return localPrefs ? normalizePreferences(localPrefs) : DEFAULT_PREFERENCES;
   }, [user, buyerProfile, localPrefs]);
   
   // Get buyer category and LTV limit
@@ -199,6 +227,7 @@ export function useMortgagePreferences() {
     buyerCategory,
     isLoggedIn: !!user,
     hasCustomPreferences: !!(preferences.down_payment_amount || preferences.down_payment_percent),
+    includeMortgage: preferences.include_mortgage,
     isSaving: saveMutation.isPending,
   };
 }
