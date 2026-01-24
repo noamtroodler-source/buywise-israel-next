@@ -1,285 +1,141 @@
 
-# Align Project Cost Breakdown with Buy/Rent Design Pattern
+# Enhance Project Cost Breakdown with "At Signing" Clarity
 
-## Overview
-Modernize the `ProjectCostBreakdown` component to match the visual language and UX patterns of `PropertyCostBreakdown`, while preserving project-specific features like the payment schedule and buyer protections.
+## Problem
+The current cost breakdown shows "Upfront Costs" as a lump sum (₪82k–115k fees), but doesn't connect this to the staged payment schedule. In new construction, buyers need to know what's actually due at **contract signing**:
 
-## Design Goals
+- **10% of purchase price** (e.g., ₪185,000)
+- **Plus fees** (Purchase Tax, Lawyer, Developer Lawyer, etc.)
 
-1. **Remove Card wrapper** - Use the same clean header style as property pages
-2. **Add PersonalizationHeader** - Enable inline editing of buyer type + mortgage assumptions  
-3. **Modernize unit type selector** - Replace dropdown with a more elegant ToggleGroup or inline selector
-4. **Implement honest ranges** - Replace fixed values with transparent ranges using existing utilities
-5. **Add progressive disclosure** - Use Collapsible components for upfront costs
-6. **Improve tooltips** - Use dotted underline triggers instead of HelpCircle icons
-7. **Preserve unique sections** - Keep Payment Schedule and Buyer Protections
+The current UX separates these into two disconnected sections, making it unclear what the buyer actually needs to bring to the table on Day 1.
 
-## Visual Comparison
+## Solution
+Restructure the upfront costs section to show:
+1. **"Due at Signing"** - Clear total combining the 10% payment + all upfront fees
+2. **"Remaining Payments"** - The staged 15% + 25% + 50% milestones
+3. Optional: A summary card at the top showing "To get started: ~₪200k–300k" (first payment + fees)
 
-**Before (Current):**
-```text
-┌─────────────────────────────────────┐
-│ 💰 Cost Breakdown           [Card]  │
-│─────────────────────────────────────│
-│ Select Unit Type                    │
-│ ┌─────────────────────────────┐     │
-│ │ 3-Room (from ₪1,800,000) ▼  │     │
-│ └─────────────────────────────┘     │
-│                                     │
-│ ┌─────────────────────────────┐     │
-│ │ Unit Price      ₪1,850,000  │     │
-│ └─────────────────────────────┘     │
-│                                     │
-│ [Profile Banner]                    │
-│                                     │
-│ 📄 Upfront Costs                    │
-│   Purchase Tax         ₪12,890      │
-│   Your Lawyer          ₪10,915      │
-│   Developer Lawyer     ₪32,745      │
-│   Registration         ₪500         │
-│                                     │
-│ 📅 Payment Schedule                 │
-│   [Timeline Cards]                  │
-│                                     │
-│ 🛡️ Buyer Protections                │
-│   ✓ Bank Guarantee                  │
-└─────────────────────────────────────┘
-```
+## Visual Design (Proposed)
 
-**After (Proposed):**
 ```text
 💰 Cost Breakdown
 
 Calculating for: First-Time Buyer · Paid in Full  [Edit ▾]
-┌ PersonalizationHeader panel (collapsed by default) ─────┐
-│ Buyer Type: First-Time Buyer    [Change in Profile →]   │
-│ Financing Method: [Include Mortgage toggle]              │
-│ (Mortgage settings if enabled)                           │
-│ [Reset] [Cancel] [Save]                                  │
-└──────────────────────────────────────────────────────────┘
 
-Unit Type: [ 3-Room ][ 4-Room ][ Penthouse ]  ← ToggleGroup
+Unit Type: [ 3-Room ][ 4-Room ][ Penthouse ]
            ₪1.85M · 3-Room Apartment
 
-📄 Upfront Costs                     ₪82k–115k
-   ~5.2–6.8% of price
-   ▾ View breakdown
+┌─────────────────────────────────────────────────────────────┐
+│ 📋 DUE AT CONTRACT SIGNING                                  │
+│                                                             │
+│   First Payment (10%)                      ₪185,000         │
+│   Purchase Tax (First-Time)                ₪12,890          │
+│   Your Lawyer (0.5–1% + VAT)               ₪10.9k–21.8k     │
+│   Developer Lawyer (1–2% + VAT)            ₪18.5k–37k       │
+│   Registration & Other                     ₪400–600         │
+│   ───────────────────────────────────────────────────       │
+│   Total to Get Started                     ₪227k–257k       │
+└─────────────────────────────────────────────────────────────┘
 
-   [Collapsible content with dotted-underline tooltips]
-   Purchase Tax (First-Time badge)    ₪12,890
-   Your Lawyer (0.5–1% + VAT)         ₪10.9k–21.8k
-   Developer Lawyer (New Build badge)  ₪18.5k–37k
-   Other Fees                          ₪1.9k–3.6k
-
-📅 Typical Payment Schedule (New Construction)
-   [Keep existing timeline cards - they work well]
+📅 Remaining Payment Schedule
+   ┌──────┐
+   │ 15%  │ Foundation Complete      ₪277,500
+   ├──────┤
+   │ 25%  │ Structure Complete       ₪462,500
+   ├──────┤
+   │ 50%  │ Key Delivery             ₪925,000
+   └──────┘
+   (If financing, mortgage typically covers this stage)
 
 🛡️ Buyer Protections
-   [Keep existing section - it works well]
+   ✓ Bank Guarantee  ✓ 1-Year Warranty  ✓ Staged Payments
 ```
 
 ## Technical Changes
 
 ### File: `src/components/project/ProjectCostBreakdown.tsx`
 
-#### 1. Update Imports
-Add imports for:
-- `PersonalizationHeader` from `@/components/property/PersonalizationHeader`
-- `Collapsible`, `CollapsibleContent`, `CollapsibleTrigger` from UI
-- `formatPriceRange`, `FEE_RANGES` from `@/lib/utils/formatRange`
-- `ToggleGroup`, `ToggleGroupItem` from UI
-- Additional hooks: `useMortgagePreferences`, `useMortgageEstimate`, `profileToDimensions`, `deriveEffectiveBuyerType`
-- `cn` utility for className merging
-
-#### 2. Remove Card Wrapper
-Replace the Card/CardHeader/CardContent structure with a simple div structure matching PropertyCostBreakdown:
+**1. Calculate "Due at Signing" Total**
+Combine the first payment (10%) with all upfront fees:
 ```tsx
-<div className="space-y-4">
-  <div className="flex items-center gap-2">
-    <Calculator className="h-5 w-5 text-primary" />
-    <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
-  </div>
-  ...
-</div>
-```
+const firstPaymentPercent = paymentSchedule[0].percent; // 10%
+const firstPaymentAmount = price * (firstPaymentPercent / 100);
 
-#### 3. Replace Select Dropdown with ToggleGroup
-Transform the unit type selector into a more elegant pill-style selector:
-```tsx
-<div className="space-y-2">
-  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-    Unit Type
-  </Label>
-  <ToggleGroup
-    type="single"
-    value={selectedType}
-    onValueChange={setSelectedType}
-    className="flex flex-wrap gap-2"
-  >
-    {unitOptions.map((option) => (
-      <ToggleGroupItem 
-        key={option.type}
-        value={option.type}
-        className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground px-4 py-2 rounded-full border"
-      >
-        {option.type}
-      </ToggleGroupItem>
-    ))}
-  </ToggleGroup>
-  <p className="text-sm text-muted-foreground">
-    {formatPrice(price, currency)} · {selectedOption?.type}
-  </p>
-</div>
-```
-
-#### 4. Add PersonalizationHeader
-Insert after the unit selector, before upfront costs:
-```tsx
-{!isLoading && (
-  <PersonalizationHeader
-    buyerCategoryLabel={getBuyerCategoryLabel(buyerCategory)}
-    hasProfile={hasProfile}
-    downPaymentPercent={mortgageEstimate.downPaymentPercent}
-    termYears={mortgageEstimate.termYears}
-    propertyPrice={price}
-    ltvLimit={ltvLimit}
-    savedProfileDimensions={savedProfileDimensions}
-  />
-)}
-```
-
-#### 5. Implement Honest Ranges for Fees
-Replace fixed calculations with range-based ones:
-```tsx
-// Lawyer fees: 0.5-1.0% + VAT
-const lawyerFeesRange = {
-  low: Math.round(price * FEE_RANGES.lawyer.min * (1 + VAT_RATE)),
-  high: Math.round(price * FEE_RANGES.lawyer.max * (1 + VAT_RATE)),
-};
-
-// Developer lawyer: 1-2% + VAT (new construction standard)
-const developerLawyerFeesRange = {
-  low: Math.round(price * FEE_RANGES.developerLawyer.min * (1 + VAT_RATE)),
-  high: Math.round(price * FEE_RANGES.developerLawyer.max * (1 + VAT_RATE)),
-};
-
-// Other fees (registration, mortgage if applicable)
-const otherFeesRange = includeMortgage ? {
-  low: FEE_RANGES.registration.min + FEE_RANGES.appraisal.min + FEE_RANGES.mortgageOrigination.min,
-  high: FEE_RANGES.registration.max + FEE_RANGES.appraisal.max + FEE_RANGES.mortgageOrigination.max,
-} : {
-  low: FEE_RANGES.registration.min,
-  high: FEE_RANGES.registration.max,
-};
-
-// Total upfront range
-const totalUpfrontRange = {
-  low: purchaseTax + lawyerFeesRange.low + developerLawyerFeesRange.low + otherFeesRange.low,
-  high: purchaseTax + lawyerFeesRange.high + developerLawyerFeesRange.high + otherFeesRange.high,
+// Due at signing = first payment + all upfront fees
+const dueAtSigningRange = {
+  low: firstPaymentAmount + totalUpfrontRange.low,
+  high: firstPaymentAmount + totalUpfrontRange.high,
 };
 ```
 
-#### 6. Add Collapsible for Upfront Costs
-Wrap the cost breakdown in a Collapsible with the same pattern as PropertyCostBreakdown:
-```tsx
-const [upfrontOpen, setUpfrontOpen] = useState(false);
-const upfrontPercentLow = ((totalUpfrontRange.low / price) * 100).toFixed(1);
-const upfrontPercentHigh = ((totalUpfrontRange.high / price) * 100).toFixed(1);
+**2. Restructure the Upfront Costs Section**
+- Rename from "Upfront Costs" to "Due at Contract Signing"
+- Add the First Payment (10%) as the first line item
+- Show a clear total that includes both the payment + fees
+- Keep the collapsible pattern but make the expanded view default for clarity
 
-<Collapsible open={upfrontOpen} onOpenChange={setUpfrontOpen}>
-  <div className="space-y-2">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Receipt className="h-4 w-4 text-primary" />
-        <h4 className="font-medium text-foreground">Upfront Costs</h4>
-      </div>
-      <div className="text-right">
-        <div className="font-bold text-primary">
-          {formatPriceRange(totalUpfrontRange.low, totalUpfrontRange.high, 'ILS')}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          ~{upfrontPercentLow}–{upfrontPercentHigh}% of price
-        </div>
-      </div>
+**3. Update Payment Schedule Section**
+- Rename to "Remaining Payment Schedule"
+- Remove the 10% milestone (it's now shown in "Due at Signing")
+- Add a note about when mortgage kicks in (typically at Key Delivery)
+
+**4. Add a Summary Banner (Optional)**
+At the top, show a quick summary:
+```tsx
+<div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm text-muted-foreground">To get started</p>
+      <p className="text-lg font-bold text-primary">
+        {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
+      </p>
     </div>
-    
-    <CollapsibleTrigger asChild>
-      <button className="flex items-center gap-1 text-xs text-primary hover:underline">
-        <ChevronDown className={cn("h-3 w-3 transition-transform", upfrontOpen && "rotate-180")} />
-        {upfrontOpen ? 'Hide breakdown' : 'View breakdown'}
-      </button>
-    </CollapsibleTrigger>
-    
-    <CollapsibleContent className="space-y-2 text-sm pt-2">
-      {/* Cost line items with dotted-underline tooltips */}
-    </CollapsibleContent>
+    <div className="text-right text-xs text-muted-foreground">
+      <p>10% down + fees</p>
+      <p>~{((dueAtSigningRange.low / price) * 100).toFixed(0)}–{((dueAtSigningRange.high / price) * 100).toFixed(0)}% of price</p>
+    </div>
   </div>
-</Collapsible>
+</div>
 ```
 
-#### 7. Update Tooltip Style
-Change from HelpCircle icons to dotted-underline triggers:
-```tsx
-// Before:
-<span className="flex items-center gap-1.5 text-muted-foreground cursor-help">
-  Purchase Tax (Mas Rechisha)
-  <HelpCircle className="h-3.5 w-3.5" />
-</span>
+**5. Handle Mortgage Scenario**
+When "Include Mortgage" is ON:
+- Add context that mortgage typically covers the 50% Key Delivery payment
+- Show mortgage monthly payment estimate in the Key Delivery milestone
+- Add mortgage-related fees (appraisal, origination) to upfront costs
 
-// After:
-<span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-  Purchase Tax
-</span>
-{effectiveTaxType === 'first_time' && (
-  <Badge variant="secondary" className="ml-2 text-xs bg-primary/10 text-primary">First-Time</Badge>
-)}
-```
+## Line Item Changes
 
-#### 8. Keep Payment Schedule and Buyer Protections
-These sections work well and are unique to project pages - just clean up minor styling to match:
-- Keep the circular percentage badges
-- Keep the checkmark list for protections
-- Ensure consistent spacing (use `space-y-5` between major sections)
+### Before:
+- Upfront Costs: ₪82k–115k (~5.2–6.8%)
+  - Purchase Tax
+  - Your Lawyer
+  - Developer Lawyer
+  - Other Fees
 
-## State Management Updates
+- Payment Schedule: 10% → 15% → 25% → 50%
 
-Add the following hooks and state:
-```tsx
-const { includeMortgage, ltvLimit } = useMortgagePreferences();
-const mortgageEstimate = useMortgageEstimate(price);
-const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
+### After:
+- **Due at Signing**: ₪227k–257k (~14–16%)
+  - First Payment (10%): ₪185,000
+  - Purchase Tax: ₪12,890
+  - Your Lawyer: ₪10.9k–21.8k
+  - Developer Lawyer: ₪18.5k–37k
+  - Registration: ₪400–600
 
-// State for unit selection (fix the current broken state pattern)
-const [selectedType, setSelectedType] = useState<string>('');
-
-// Initialize selected type when options load
-useEffect(() => {
-  if (unitOptions.length > 0 && !selectedType) {
-    setSelectedType(unitOptions[0].type);
-  }
-}, [unitOptions, selectedType]);
-
-// Collapsible state
-const [upfrontOpen, setUpfrontOpen] = useState(false);
-```
+- **Remaining Milestones**: 15% → 25% → 50%
+  - Foundation: ₪277,500
+  - Structure: ₪462,500  
+  - Key Delivery: ₪925,000 (mortgage kicks in here)
 
 ## Files to Modify
 
-1. **`src/components/project/ProjectCostBreakdown.tsx`** - Complete rewrite following the pattern above
+1. **`src/components/project/ProjectCostBreakdown.tsx`** - Complete restructure of sections
 
-## What's Preserved (Unique to Projects)
+## What This Achieves
 
-- Unit type selection (redesigned as ToggleGroup)
-- Payment schedule timeline with milestone cards
-- Buyer protections checklist
-- New construction-specific fees (developer lawyer)
-
-## What's Aligned with Buy/Rent
-
-- No Card wrapper - clean header style
-- PersonalizationHeader for inline mortgage/buyer type editing
-- Collapsible progressive disclosure for upfront costs
-- Honest ranges with formatPriceRange utility
-- Dotted-underline tooltip triggers
-- Consistent spacing and typography
-- Badge styling for buyer type indicators
+- **Clearer user expectation**: "I need ~₪250k to get started" vs. two separate numbers
+- **Aligns with reality**: New construction buyers pay 10% + fees at signing
+- **Honest ranges maintained**: All fee estimates remain as ranges
+- **Mortgage context**: When financing, clarifies that mortgage covers later stages
+- **Preserves buyer protections**: Section remains unchanged
