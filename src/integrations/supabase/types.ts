@@ -86,6 +86,66 @@ export type Database = {
         }
         Relationships: []
       }
+      advertiser_quality_snapshots: {
+        Row: {
+          actor_id: string
+          actor_type: string
+          avg_description_length: number | null
+          avg_photo_count: number | null
+          avg_response_time_hours: number | null
+          created_at: string
+          id: string
+          pct_with_description: number | null
+          pct_with_floor: number | null
+          pct_with_parking: number | null
+          pct_with_sqm: number | null
+          price_update_frequency: number | null
+          response_rate: number | null
+          snapshot_date: string
+          stale_listing_rate: number | null
+          total_listings: number | null
+          verification_rate: number | null
+        }
+        Insert: {
+          actor_id: string
+          actor_type: string
+          avg_description_length?: number | null
+          avg_photo_count?: number | null
+          avg_response_time_hours?: number | null
+          created_at?: string
+          id?: string
+          pct_with_description?: number | null
+          pct_with_floor?: number | null
+          pct_with_parking?: number | null
+          pct_with_sqm?: number | null
+          price_update_frequency?: number | null
+          response_rate?: number | null
+          snapshot_date: string
+          stale_listing_rate?: number | null
+          total_listings?: number | null
+          verification_rate?: number | null
+        }
+        Update: {
+          actor_id?: string
+          actor_type?: string
+          avg_description_length?: number | null
+          avg_photo_count?: number | null
+          avg_response_time_hours?: number | null
+          created_at?: string
+          id?: string
+          pct_with_description?: number | null
+          pct_with_floor?: number | null
+          pct_with_parking?: number | null
+          pct_with_sqm?: number | null
+          price_update_frequency?: number | null
+          response_rate?: number | null
+          snapshot_date?: string
+          stale_listing_rate?: number | null
+          total_listings?: number | null
+          verification_rate?: number | null
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           admin_user_id: string | null
@@ -1183,6 +1243,42 @@ export type Database = {
           },
         ]
       }
+      client_errors: {
+        Row: {
+          created_at: string
+          error_message: string
+          error_type: string
+          id: string
+          metadata: Json | null
+          page_path: string
+          session_id: string
+          stack_trace: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message: string
+          error_type: string
+          id?: string
+          metadata?: Json | null
+          page_path: string
+          session_id: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          page_path?: string
+          session_id?: string
+          stack_trace?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           category: string
@@ -1213,6 +1309,48 @@ export type Database = {
           name?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      content_engagement: {
+        Row: {
+          active_time_ms: number | null
+          completion_percent: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          id: string
+          next_action: string | null
+          next_action_target: string | null
+          scroll_depth_max: number | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          active_time_ms?: number | null
+          completion_percent?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          id?: string
+          next_action?: string | null
+          next_action_target?: string | null
+          scroll_depth_max?: number | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          active_time_ms?: number | null
+          completion_percent?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          next_action?: string | null
+          next_action_target?: string | null
+          scroll_depth_max?: number | null
+          session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1482,6 +1620,42 @@ export type Database = {
         }
         Relationships: []
       }
+      experiment_exposures: {
+        Row: {
+          component: string | null
+          converted: boolean | null
+          converted_at: string | null
+          experiment_name: string
+          exposed_at: string
+          id: string
+          session_id: string
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          component?: string | null
+          converted?: boolean | null
+          converted_at?: string | null
+          experiment_name: string
+          exposed_at?: string
+          id?: string
+          session_id: string
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          component?: string | null
+          converted?: boolean | null
+          converted_at?: string | null
+          experiment_name?: string
+          exposed_at?: string
+          id?: string
+          session_id?: string
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           category: string | null
@@ -1730,6 +1904,141 @@ export type Database = {
           },
         ]
       }
+      integration_health: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          integration_type: string
+          response_time_ms: number | null
+          session_id: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          integration_type: string
+          response_time_ms?: number | null
+          session_id: string
+          success: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          integration_type?: string
+          response_time_ms?: number | null
+          session_id?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
+      lead_response_events: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          developer_id: string | null
+          first_response_time_minutes: number | null
+          id: string
+          inquiry_id: string
+          inquiry_type: string
+          loss_reason: string | null
+          notes: string | null
+          outcome: string | null
+          responded_at: string | null
+          response_length: number | null
+          response_type: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          developer_id?: string | null
+          first_response_time_minutes?: number | null
+          id?: string
+          inquiry_id: string
+          inquiry_type: string
+          loss_reason?: string | null
+          notes?: string | null
+          outcome?: string | null
+          responded_at?: string | null
+          response_length?: number | null
+          response_type?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          developer_id?: string | null
+          first_response_time_minutes?: number | null
+          id?: string
+          inquiry_id?: string
+          inquiry_type?: string
+          loss_reason?: string | null
+          notes?: string | null
+          outcome?: string | null
+          responded_at?: string | null
+          response_length?: number | null
+          response_type?: string | null
+        }
+        Relationships: []
+      }
+      listing_impressions: {
+        Row: {
+          card_variant: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          filter_hash: string | null
+          id: string
+          page_number: number | null
+          position_in_results: number | null
+          promotion_type: string | null
+          search_id: string | null
+          session_id: string
+          sort_option: string | null
+          time_visible_ms: number | null
+          user_id: string | null
+          viewport_visible: boolean | null
+          was_promoted: boolean | null
+        }
+        Insert: {
+          card_variant?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          filter_hash?: string | null
+          id?: string
+          page_number?: number | null
+          position_in_results?: number | null
+          promotion_type?: string | null
+          search_id?: string | null
+          session_id: string
+          sort_option?: string | null
+          time_visible_ms?: number | null
+          user_id?: string | null
+          viewport_visible?: boolean | null
+          was_promoted?: boolean | null
+        }
+        Update: {
+          card_variant?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          filter_hash?: string | null
+          id?: string
+          page_number?: number | null
+          position_in_results?: number | null
+          promotion_type?: string | null
+          search_id?: string | null
+          session_id?: string
+          sort_option?: string | null
+          time_visible_ms?: number | null
+          user_id?: string | null
+          viewport_visible?: boolean | null
+          was_promoted?: boolean | null
+        }
+        Relationships: []
+      }
       listing_lifecycle: {
         Row: {
           agency_id: string | null
@@ -1829,6 +2138,159 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_micro_signals: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          session_id: string
+          signal_data: Json | null
+          signal_type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          session_id: string
+          signal_data?: Json | null
+          signal_type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          session_id?: string
+          signal_data?: Json | null
+          signal_type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      listing_price_history: {
+        Row: {
+          change_percent: number | null
+          change_reason: string | null
+          changed_at: string
+          changed_by_id: string | null
+          changed_by_type: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          index_adjustment_applied: boolean | null
+          new_price: number
+          old_price: number
+        }
+        Insert: {
+          change_percent?: number | null
+          change_reason?: string | null
+          changed_at?: string
+          changed_by_id?: string | null
+          changed_by_type?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          index_adjustment_applied?: boolean | null
+          new_price: number
+          old_price: number
+        }
+        Update: {
+          change_percent?: number | null
+          change_reason?: string | null
+          changed_at?: string
+          changed_by_id?: string | null
+          changed_by_type?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          index_adjustment_applied?: boolean | null
+          new_price?: number
+          old_price?: number
+        }
+        Relationships: []
+      }
+      listing_status_history: {
+        Row: {
+          changed_at: string
+          changed_by_id: string | null
+          changed_by_type: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          notes: string | null
+          reason: string | null
+          status_from: string
+          status_to: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by_id?: string | null
+          changed_by_type?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status_from: string
+          status_to: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by_id?: string | null
+          changed_by_type?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          status_from?: string
+          status_to?: string
+        }
+        Relationships: []
+      }
+      location_module_events: {
+        Row: {
+          anchor_type: string | null
+          created_at: string
+          custom_place_type: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          property_id: string
+          session_id: string
+          travel_mode: string | null
+          user_id: string | null
+        }
+        Insert: {
+          anchor_type?: string | null
+          created_at?: string
+          custom_place_type?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          property_id: string
+          session_id: string
+          travel_mode?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          anchor_type?: string | null
+          created_at?: string
+          custom_place_type?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          property_id?: string
+          session_id?: string
+          travel_mode?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       market_data: {
         Row: {
           average_price_sqm: number | null
@@ -1925,6 +2387,84 @@ export type Database = {
           risk_level?: string | null
           track_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      page_engagement: {
+        Row: {
+          active_time_ms: number | null
+          created_at: string
+          engaged: boolean | null
+          entity_id: string | null
+          entity_type: string | null
+          exit_type: string | null
+          id: string
+          interactions_count: number | null
+          page_path: string
+          scroll_depth_max: number | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          active_time_ms?: number | null
+          created_at?: string
+          engaged?: boolean | null
+          entity_id?: string | null
+          entity_type?: string | null
+          exit_type?: string | null
+          id?: string
+          interactions_count?: number | null
+          page_path: string
+          scroll_depth_max?: number | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          active_time_ms?: number | null
+          created_at?: string
+          engaged?: boolean | null
+          entity_id?: string | null
+          entity_type?: string | null
+          exit_type?: string | null
+          id?: string
+          interactions_count?: number | null
+          page_path?: string
+          scroll_depth_max?: number | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      performance_metrics: {
+        Row: {
+          cls: number | null
+          created_at: string
+          id: string
+          inp_ms: number | null
+          lcp_ms: number | null
+          page_path: string
+          route_load_time_ms: number | null
+          session_id: string
+        }
+        Insert: {
+          cls?: number | null
+          created_at?: string
+          id?: string
+          inp_ms?: number | null
+          lcp_ms?: number | null
+          page_path: string
+          route_load_time_ms?: number | null
+          session_id: string
+        }
+        Update: {
+          cls?: number | null
+          created_at?: string
+          id?: string
+          inp_ms?: number | null
+          lcp_ms?: number | null
+          page_path?: string
+          route_load_time_ms?: number | null
+          session_id?: string
         }
         Relationships: []
       }
@@ -2969,23 +3509,31 @@ export type Database = {
           clicked_result_ids: string[] | null
           created_at: string | null
           features_required: string[] | null
+          filter_change_count: number | null
+          first_click_position: number | null
           id: string
           inquired_result_ids: string[] | null
           listing_type: string | null
+          map_mode_used: boolean | null
           neighborhoods: string[] | null
           page_number: number | null
           price_max: number | null
           price_min: number | null
           property_types: string[] | null
+          refinements_count: number | null
           results_count: number | null
           results_shown: number | null
           saved_result_ids: string[] | null
+          saved_search: boolean | null
+          search_uuid: string | null
           session_id: string
           size_max: number | null
           size_min: number | null
           sort_option: string | null
           time_spent_ms: number | null
+          time_to_first_click_ms: number | null
           user_id: string | null
+          zero_results: boolean | null
         }
         Insert: {
           bedrooms_max?: number | null
@@ -2994,23 +3542,31 @@ export type Database = {
           clicked_result_ids?: string[] | null
           created_at?: string | null
           features_required?: string[] | null
+          filter_change_count?: number | null
+          first_click_position?: number | null
           id?: string
           inquired_result_ids?: string[] | null
           listing_type?: string | null
+          map_mode_used?: boolean | null
           neighborhoods?: string[] | null
           page_number?: number | null
           price_max?: number | null
           price_min?: number | null
           property_types?: string[] | null
+          refinements_count?: number | null
           results_count?: number | null
           results_shown?: number | null
           saved_result_ids?: string[] | null
+          saved_search?: boolean | null
+          search_uuid?: string | null
           session_id: string
           size_max?: number | null
           size_min?: number | null
           sort_option?: string | null
           time_spent_ms?: number | null
+          time_to_first_click_ms?: number | null
           user_id?: string | null
+          zero_results?: boolean | null
         }
         Update: {
           bedrooms_max?: number | null
@@ -3019,23 +3575,31 @@ export type Database = {
           clicked_result_ids?: string[] | null
           created_at?: string | null
           features_required?: string[] | null
+          filter_change_count?: number | null
+          first_click_position?: number | null
           id?: string
           inquired_result_ids?: string[] | null
           listing_type?: string | null
+          map_mode_used?: boolean | null
           neighborhoods?: string[] | null
           page_number?: number | null
           price_max?: number | null
           price_min?: number | null
           property_types?: string[] | null
+          refinements_count?: number | null
           results_count?: number | null
           results_shown?: number | null
           saved_result_ids?: string[] | null
+          saved_search?: boolean | null
+          search_uuid?: string | null
           session_id?: string
           size_max?: number | null
           size_min?: number | null
           sort_option?: string | null
           time_spent_ms?: number | null
+          time_to_first_click_ms?: number | null
           user_id?: string | null
+          zero_results?: boolean | null
         }
         Relationships: []
       }
@@ -3099,6 +3663,89 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_runs: {
+        Row: {
+          completed_at: string | null
+          completion_status: string | null
+          id: string
+          inputs_json: Json | null
+          next_action: string | null
+          outputs_summary_json: Json | null
+          related_listing_id: string | null
+          session_id: string
+          started_at: string
+          tool_name: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          completion_status?: string | null
+          id?: string
+          inputs_json?: Json | null
+          next_action?: string | null
+          outputs_summary_json?: Json | null
+          related_listing_id?: string | null
+          session_id: string
+          started_at?: string
+          tool_name: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          completion_status?: string | null
+          id?: string
+          inputs_json?: Json | null
+          next_action?: string | null
+          outputs_summary_json?: Json | null
+          related_listing_id?: string | null
+          session_id?: string
+          started_at?: string
+          tool_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      tool_step_events: {
+        Row: {
+          abandoned: boolean | null
+          entered_at: string
+          exited_at: string | null
+          id: string
+          inputs_at_step: Json | null
+          step_name: string
+          step_order: number
+          tool_run_id: string
+        }
+        Insert: {
+          abandoned?: boolean | null
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          inputs_at_step?: Json | null
+          step_name: string
+          step_order: number
+          tool_run_id: string
+        }
+        Update: {
+          abandoned?: boolean | null
+          entered_at?: string
+          exited_at?: string | null
+          id?: string
+          inputs_at_step?: Json | null
+          step_name?: string
+          step_order?: number
+          tool_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_step_events_tool_run_id_fkey"
+            columns: ["tool_run_id"]
+            isOneToOne: false
+            referencedRelation: "tool_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_events: {
         Row: {
           component: string | null
@@ -3159,6 +3806,36 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           viewport_width?: number | null
+        }
+        Relationships: []
+      }
+      user_milestones: {
+        Row: {
+          first_reached_at: string
+          id: string
+          metadata: Json | null
+          milestone: string
+          reach_count: number | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          first_reached_at?: string
+          id?: string
+          metadata?: Json | null
+          milestone: string
+          reach_count?: number | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          first_reached_at?: string
+          id?: string
+          metadata?: Json | null
+          milestone?: string
+          reach_count?: number | null
+          session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
