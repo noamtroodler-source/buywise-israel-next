@@ -249,30 +249,6 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </div>
       )}
 
-      {/* Summary Banner - Both Key Numbers */}
-      <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">At Signing</p>
-            <p className="text-lg font-bold text-primary">
-              {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              10% + fees
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Monthly</p>
-            <p className="text-lg font-bold text-primary">
-              {formatPriceRange(totalMonthlyRange.low, totalMonthlyRange.high, 'ILS')}/mo
-            </p>
-            <p className="text-xs text-muted-foreground">
-              After delivery
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Due at Signing Breakdown - Collapsible */}
       <TooltipProvider>
         <Collapsible open={upfrontOpen} onOpenChange={setUpfrontOpen}>
