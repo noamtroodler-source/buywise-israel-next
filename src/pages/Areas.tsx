@@ -417,7 +417,7 @@ export default function Areas() {
               Explore Areas
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Understand how different housing markets across Israel behave.
+              Understand how different housing markets across <span className="text-primary">Israel</span> behave.
             </p>
             
             {/* Search Input */}
