@@ -1,279 +1,427 @@
 
-# Add Monthly Costs Section to Project Cost Breakdown
+# Comprehensive Analytics & Behavior Tracking System
 
-## Overview
-Restructure the Project Cost Breakdown to have two clear sections:
-1. **"Due at Contract Signing"** - All upfront costs (10% payment + fees)
-2. **"Monthly Costs (After Key Delivery)"** - Ongoing costs that start once you move in
+## Current State Analysis
 
-This mirrors the Buy/Rent page pattern and gives buyers a complete picture of their financial commitment.
+Your platform already has foundational tracking in place:
 
-## Visual Design
+**What's Currently Tracked:**
+- Property views (with session ID, user ID, source, referrer)
+- Project views (with session ID, viewer ID)
+- Property inquiries (WhatsApp, call, email, form - with user details)
+- Project inquiries (with budget range, preferred unit type)
+- Favorites/saves (with category, ruled out reason)
+- Recently viewed properties/projects
+- Agent/developer last_active_at timestamps
+- Price changes (original_price, price_reduced_at)
+- Search alerts (filters saved by users)
+- Tool feedback (ratings and comments)
+- Admin audit log (actions taken by admins)
 
-```text
-💰 Cost Breakdown
+**Critical Gaps Identified:**
+1. No comprehensive user session/journey tracking
+2. No click-level event tracking (buttons, filters, navigation)
+3. No search behavior tracking (what users search for)
+4. No listing lifecycle metrics (time to sell/rent, days on market)
+5. No agent/developer dashboard activity tracking
+6. No A/B test or feature usage tracking
+7. No calculator/tool usage analytics
+8. No content engagement tracking (blog, guides)
+9. No geographic/device/referrer analytics aggregation
+10. No price drop velocity or market timing insights
 
-Calculating for: First-Time Buyer · Paid in Full  [Edit ▾]
+---
 
-Unit Type: [ 3-Room ][ 4-Room ][ Penthouse ]
-           ₪1.85M · 3-Room Apartment
+## Strategic Analytics Architecture
 
-┌─────────────────────────────────────────────────────────────┐
-│ 📋 DUE AT CONTRACT SIGNING           ₪227k–257k            │
-│    10% down + fees · ~14–16% of price                      │
-│    ▾ View breakdown                                        │
-│                                                             │
-│    [Collapsible details with dotted-underline tooltips]    │
-│    First Payment (10%)                    ₪185,000          │
-│    Purchase Tax                           ₪12,890           │
-│    Your Lawyer (0.5–1% + VAT)             ₪10.9k–21.8k     │
-│    Developer Lawyer (1–2% + VAT)          ₪18.5k–37k       │
-│    Registration & Other                   ₪400–600          │
-└─────────────────────────────────────────────────────────────┘
+### Phase 1: Event Tracking Infrastructure
 
-┌─────────────────────────────────────────────────────────────┐
-│ 🏠 MONTHLY COSTS (AFTER KEY DELIVERY)    ₪1.5k–3.5k/mo     │
-│    Starts when building is complete                         │
-│    ▾ View breakdown                                        │
-│                                                             │
-│    [Collapsible details with dotted-underline tooltips]    │
-│    Mortgage*                              ₪5.2k–7.8k/mo    │
-│    Arnona (Municipal Tax)                 ₪450–650/mo      │
-│    Va'ad Bayit (Maintenance)              ₪300–600/mo      │
-│    Home Insurance                         ₪100–200/mo      │
-│                                                             │
-│    * Only shown if "Include Mortgage" is ON                │
-│    (Mortgage typically disbursed at key delivery)           │
-└─────────────────────────────────────────────────────────────┘
+#### 1.1 Create Universal Events Table
+A flexible events table to capture ALL user interactions:
 
-🛡️ Buyer Protections
-   ✓ Bank Guarantee  ✓ 1-Year Warranty  ✓ Staged Payments
+```sql
+CREATE TABLE user_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Who
+  session_id TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  user_role TEXT, -- 'buyer', 'agent', 'developer', 'admin', 'anonymous'
+  
+  -- What
+  event_type TEXT NOT NULL, -- 'click', 'view', 'search', 'filter', 'scroll', 'submit'
+  event_name TEXT NOT NULL, -- 'property_card_click', 'whatsapp_button', 'filter_apply'
+  event_category TEXT NOT NULL, -- 'navigation', 'engagement', 'conversion', 'search'
+  
+  -- Where
+  page_path TEXT NOT NULL,
+  component TEXT, -- 'PropertyCard', 'SearchFilters', 'ContactForm'
+  
+  -- Context
+  properties JSONB DEFAULT '{}', -- Flexible event-specific data
+  
+  -- When
+  created_at TIMESTAMPTZ DEFAULT now(),
+  
+  -- Device/Environment
+  device_type TEXT, -- 'mobile', 'tablet', 'desktop'
+  viewport_width INTEGER,
+  user_agent TEXT,
+  referrer TEXT,
+  utm_source TEXT,
+  utm_medium TEXT,
+  utm_campaign TEXT
+);
+
+-- Indexes for common queries
+CREATE INDEX idx_user_events_session ON user_events(session_id);
+CREATE INDEX idx_user_events_user ON user_events(user_id);
+CREATE INDEX idx_user_events_type ON user_events(event_type, event_name);
+CREATE INDEX idx_user_events_created ON user_events(created_at);
+CREATE INDEX idx_user_events_page ON user_events(page_path);
 ```
 
-## Technical Changes
+#### 1.2 Create Search Analytics Table
+Track what users are searching for (invaluable for understanding demand):
 
-### File: `src/components/project/ProjectCostBreakdown.tsx`
+```sql
+CREATE TABLE search_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id TEXT NOT NULL,
+  user_id UUID,
+  
+  -- Search parameters
+  listing_type TEXT, -- 'for_sale', 'for_rent', 'project'
+  cities TEXT[], -- Array of cities searched
+  neighborhoods TEXT[],
+  property_types TEXT[],
+  price_min NUMERIC,
+  price_max NUMERIC,
+  bedrooms_min INTEGER,
+  bedrooms_max INTEGER,
+  size_min NUMERIC,
+  size_max NUMERIC,
+  features_required TEXT[],
+  
+  -- Results
+  results_count INTEGER,
+  results_shown INTEGER,
+  
+  -- Behavior
+  sort_option TEXT,
+  page_number INTEGER DEFAULT 1,
+  time_spent_ms INTEGER,
+  
+  -- Conversion
+  clicked_result_ids UUID[],
+  saved_result_ids UUID[],
+  inquired_result_ids UUID[],
+  
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
-#### 1. Add New Imports
-```tsx
-import { Home } from 'lucide-react';
-import { ARNONA_RATES } from '@/lib/calculations/purchaseCosts'; // or inline
+CREATE INDEX idx_search_cities ON search_analytics USING GIN(cities);
+CREATE INDEX idx_search_created ON search_analytics(created_at);
 ```
 
-#### 2. Add Monthly Cost Calculations
-Calculate estimated monthly costs based on unit size (estimate from price) and city context:
-```tsx
-// Estimate apartment size from price (rough: ₪25-35k per sqm in new construction)
-const estimatedSizeSqm = Math.round(price / 30000); // ~₪30k/sqm average
+#### 1.3 Create Listing Lifecycle Table
+Track the complete journey of every listing:
 
-// Monthly cost ranges
-const arnonaRange = {
-  low: Math.round(estimatedSizeSqm * 70 / 12),   // Lower rate cities
-  high: Math.round(estimatedSizeSqm * 120 / 12), // Tel Aviv level
-};
+```sql
+CREATE TABLE listing_lifecycle (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Reference
+  entity_type TEXT NOT NULL, -- 'property', 'project'
+  entity_id UUID NOT NULL,
+  
+  -- Listing details at time of event
+  city TEXT NOT NULL,
+  neighborhood TEXT,
+  property_type TEXT,
+  listing_type TEXT, -- 'for_sale', 'for_rent'
+  initial_price NUMERIC,
+  current_price NUMERIC,
+  bedrooms INTEGER,
+  size_sqm NUMERIC,
+  
+  -- Agent/Developer
+  agent_id UUID,
+  developer_id UUID,
+  agency_id UUID,
+  
+  -- Lifecycle timestamps
+  listed_at TIMESTAMPTZ NOT NULL,
+  first_inquiry_at TIMESTAMPTZ,
+  first_price_change_at TIMESTAMPTZ,
+  sold_rented_at TIMESTAMPTZ,
+  delisted_at TIMESTAMPTZ,
+  
+  -- Metrics
+  days_to_first_inquiry INTEGER,
+  days_to_first_price_change INTEGER,
+  days_on_market INTEGER,
+  total_views INTEGER DEFAULT 0,
+  total_saves INTEGER DEFAULT 0,
+  total_inquiries INTEGER DEFAULT 0,
+  total_price_changes INTEGER DEFAULT 0,
+  final_price NUMERIC,
+  price_change_percent NUMERIC,
+  
+  -- Outcome
+  outcome TEXT, -- 'sold', 'rented', 'delisted', 'expired', 'active'
+  
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  
+  UNIQUE(entity_type, entity_id)
+);
 
-const vaadBayitRange = {
-  low: 300,   // New buildings typically have higher fees
-  high: 600,  // Premium new construction
-};
-
-const insuranceRange = {
-  low: 100,
-  high: 200,
-};
-
-// Total monthly ownership (without mortgage)
-const monthlyOwnershipRange = {
-  low: arnonaRange.low + vaadBayitRange.low + insuranceRange.low,
-  high: arnonaRange.high + vaadBayitRange.high + insuranceRange.high,
-};
-
-// Total monthly (with mortgage if enabled)
-const totalMonthlyRange = includeMortgage ? {
-  low: monthlyOwnershipRange.low + mortgageEstimate.monthlyPaymentLow,
-  high: monthlyOwnershipRange.high + mortgageEstimate.monthlyPaymentHigh,
-} : monthlyOwnershipRange;
+CREATE INDEX idx_lifecycle_city ON listing_lifecycle(city);
+CREATE INDEX idx_lifecycle_outcome ON listing_lifecycle(outcome);
+CREATE INDEX idx_lifecycle_listed ON listing_lifecycle(listed_at);
 ```
 
-#### 3. Add Monthly Costs Collapsible Section
-After the "Due at Contract Signing" section, add:
-```tsx
-const [monthlyOpen, setMonthlyOpen] = useState(false);
+#### 1.4 Create Agent/Developer Activity Table
+Track how advertisers use the platform:
 
-{/* Monthly Costs Section */}
-<Collapsible open={monthlyOpen} onOpenChange={setMonthlyOpen}>
-  <div className="space-y-2">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Home className="h-4 w-4 text-primary" />
-        <h4 className="font-medium text-foreground">Monthly Costs</h4>
-        <Badge variant="outline" className="text-xs">After Key Delivery</Badge>
-      </div>
-      <div className="text-right">
-        <div className="font-bold text-primary">
-          {formatPriceRange(totalMonthlyRange.low, totalMonthlyRange.high, 'ILS')}/mo
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Starts when building completes
-        </div>
-      </div>
-    </div>
+```sql
+CREATE TABLE advertiser_activity (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Who
+  user_id UUID NOT NULL,
+  actor_type TEXT NOT NULL, -- 'agent', 'developer', 'agency_admin'
+  actor_id UUID NOT NULL,
+  
+  -- What
+  action_type TEXT NOT NULL, -- 'login', 'listing_create', 'listing_edit', 'inquiry_view', 'inquiry_respond', 'settings_update', 'analytics_view'
+  action_detail TEXT,
+  
+  -- Context
+  entity_type TEXT, -- 'property', 'project', 'inquiry', 'settings'
+  entity_id UUID,
+  
+  -- Data
+  metadata JSONB DEFAULT '{}',
+  
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_advertiser_actor ON advertiser_activity(actor_type, actor_id);
+CREATE INDEX idx_advertiser_action ON advertiser_activity(action_type);
+CREATE INDEX idx_advertiser_created ON advertiser_activity(created_at);
+```
+
+---
+
+### Phase 2: Frontend Tracking Implementation
+
+#### 2.1 Create Universal Event Tracker Hook
+A single hook to use throughout the app:
+
+```typescript
+// src/hooks/useEventTracking.tsx
+export function useEventTracking() {
+  const { user } = useAuth();
+  const location = useLocation();
+  
+  const trackEvent = useCallback(async (
+    eventType: string,
+    eventName: string,
+    category: string,
+    properties?: Record<string, any>
+  ) => {
+    const sessionId = getOrCreateSessionId();
+    const deviceInfo = getDeviceInfo();
+    const utmParams = getUTMParams();
     
-    <CollapsibleTrigger asChild>
-      <button className="flex items-center gap-1 text-xs text-primary hover:underline">
-        <ChevronDown className={cn("h-3 w-3 transition-transform", monthlyOpen && "rotate-180")} />
-        {monthlyOpen ? 'Hide breakdown' : 'View breakdown'}
-      </button>
-    </CollapsibleTrigger>
-    
-    <CollapsibleContent className="space-y-2 text-sm pt-2">
-      {/* Mortgage (if enabled) */}
-      {includeMortgage && (
-        <div className="py-2 border-b border-border/50">
-          <div className="flex justify-between items-start">
-            <div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="font-medium text-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-                    Mortgage
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p className="font-medium mb-1">Monthly Payment Estimate</p>
-                  <p className="text-xs">
-                    Based on {mortgageEstimate.downPaymentPercent}% down payment, 
-                    {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
-                    Mortgage is typically disbursed at key delivery stage in new construction.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-              <p className="text-xs text-muted-foreground">
-                {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
-              </p>
-            </div>
-            <span className="font-medium">
-              {formatPriceRange(mortgageEstimate.monthlyPaymentLow, mortgageEstimate.monthlyPaymentHigh, 'ILS')}/mo
-            </span>
-          </div>
-        </div>
-      )}
-      
-      {/* Arnona */}
-      <div className="flex justify-between py-2 border-b border-border/50">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-              Arnona
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <p className="font-medium mb-1">Municipal Property Tax</p>
-            <p className="text-xs">
-              Monthly tax paid to the city. Rate varies by city and property size. 
-              Estimate based on ~{estimatedSizeSqm} sqm at typical rates.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-        <span className="font-medium">
-          {formatPriceRange(arnonaRange.low, arnonaRange.high, 'ILS')}/mo
-        </span>
-      </div>
-      
-      {/* Va'ad Bayit */}
-      <div className="flex justify-between py-2 border-b border-border/50">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-              Va'ad Bayit
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <p className="font-medium mb-1">Building Maintenance Fee</p>
-            <p className="text-xs">
-              Monthly fee for building maintenance, cleaning, elevator, lobby, etc. 
-              New construction typically has higher fees due to premium amenities.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-        <span className="font-medium">
-          {formatPriceRange(vaadBayitRange.low, vaadBayitRange.high, 'ILS')}/mo
-        </span>
-      </div>
-      
-      {/* Insurance */}
-      <div className="flex justify-between py-2 border-b border-border/50">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-              Home Insurance
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <p className="font-medium mb-1">Structure & Contents Insurance</p>
-            <p className="text-xs">
-              Recommended coverage for your home and belongings. 
-              Required if you have a mortgage.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-        <span className="font-medium">
-          {formatPriceRange(insuranceRange.low, insuranceRange.high, 'ILS')}/mo
-        </span>
-      </div>
-    </CollapsibleContent>
-  </div>
-</Collapsible>
+    await supabase.from('user_events').insert({
+      session_id: sessionId,
+      user_id: user?.id || null,
+      user_role: getUserRole(user),
+      event_type: eventType,
+      event_name: eventName,
+      event_category: category,
+      page_path: location.pathname,
+      properties: properties || {},
+      ...deviceInfo,
+      ...utmParams,
+    });
+  }, [user, location]);
+  
+  return { trackEvent };
+}
 ```
 
-#### 4. Update the Summary Banner
-Restructure the top summary to show both at a glance:
-```tsx
-{/* Summary Banner - Both Key Numbers */}
-<div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-  <div className="grid grid-cols-2 gap-4">
-    <div>
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">At Signing</p>
-      <p className="text-lg font-bold text-primary">
-        {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        10% + fees
-      </p>
-    </div>
-    <div className="text-right">
-      <p className="text-xs text-muted-foreground uppercase tracking-wider">Monthly</p>
-      <p className="text-lg font-bold text-primary">
-        {formatPriceRange(totalMonthlyRange.low, totalMonthlyRange.high, 'ILS')}/mo
-      </p>
-      <p className="text-xs text-muted-foreground">
-        After delivery
-      </p>
-    </div>
-  </div>
-</div>
+#### 2.2 Events to Track by Category
+
+**Navigation Events:**
+- Page views (already done via route changes)
+- Tab switches
+- Accordion/collapsible opens
+- Modal opens/closes
+- Back button usage
+
+**Search & Filter Events:**
+- Search initiated
+- Filter applied (each filter type)
+- Filter cleared
+- Sort changed
+- Results scrolled
+- "Load more" / pagination
+
+**Engagement Events:**
+- Property/project card hover (>2 seconds)
+- Property/project card click
+- Image gallery navigation
+- Map interaction
+- Calculator usage (inputs, results)
+- Blog article read (scroll depth)
+- Share button clicks (platform)
+- Compare tool usage
+
+**Conversion Events:**
+- WhatsApp click (already tracked)
+- Call click (already tracked)
+- Email click (already tracked)
+- Form submit (already tracked)
+- Save/favorite (already tracked)
+- Search alert created
+- Account created
+
+**Agent/Developer Dashboard Events:**
+- Dashboard section views
+- Listing created/edited/deleted
+- Inquiry viewed
+- Inquiry responded
+- Analytics viewed
+- Settings changed
+
+---
+
+### Phase 3: Admin Analytics Dashboard Enhancements
+
+#### 3.1 New Analytics Tabs
+
+Add these new tabs to the Admin Analytics page:
+
+**"User Behavior" Tab:**
+- Session metrics (avg duration, pages per session, bounce rate)
+- Top pages by views
+- User flow visualization
+- Device/browser breakdown
+- Geographic heatmap
+- Time-of-day activity patterns
+
+**"Search Intelligence" Tab:**
+- Most searched cities (demand signal)
+- Most searched price ranges
+- Most requested features
+- Searches with zero results (unmet demand)
+- Search-to-save conversion rate
+- Search-to-inquiry conversion rate
+
+**"Listing Intelligence" Tab:**
+- Average days on market by city
+- Time to first inquiry by city/price
+- Price reduction patterns
+- Optimal listing price analysis
+- Seasonal trends
+- Agent performance by listing success
+
+**"Advertiser Analytics" Tab:**
+- Agent login frequency
+- Agent response times
+- Listings per agent (active vs total)
+- Inquiry response rates
+- Most active agents
+- Agent retention metrics
+
+---
+
+### Phase 4: Derived Metrics & Insights
+
+#### 4.1 Computed Metrics (Database Functions)
+
+```sql
+-- Calculate days on market
+CREATE OR REPLACE FUNCTION calculate_days_on_market()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.listing_status IN ('sold', 'rented') AND OLD.listing_status IN ('for_sale', 'for_rent') THEN
+    -- Update lifecycle table
+    UPDATE listing_lifecycle
+    SET 
+      sold_rented_at = now(),
+      days_on_market = EXTRACT(DAY FROM now() - listed_at),
+      outcome = NEW.listing_status,
+      final_price = NEW.price
+    WHERE entity_type = 'property' AND entity_id = NEW.id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-#### 5. Restructure Breakdown Section Titles
-Update the "Breakdown" section to be clearer:
-- Change "Breakdown" header to "Due at Contract Signing"
-- Keep all existing fee line items
+#### 4.2 Key Business Intelligence Queries
 
-## State Changes
+**Market Timing Insights:**
+- Average days to sell by city and price range
+- Price drop frequency before sale
+- Optimal listing day of week
+- Seasonal velocity patterns
 
-Add new state for the monthly section:
-```tsx
-const [monthlyOpen, setMonthlyOpen] = useState(false);
-```
+**Demand Signals:**
+- Most searched but least available cities
+- Price gaps (where searches > listings)
+- Feature popularity vs availability
+- User save patterns
 
-## What This Achieves
+**Agent/Developer Performance:**
+- Inquiry response time vs success rate
+- Listing quality score (views/inquiries ratio)
+- Retention and churn indicators
 
-- **Complete financial picture**: Buyers see both upfront AND ongoing costs
-- **New construction context**: "After Key Delivery" badge clarifies when monthly costs begin
-- **Mortgage clarity**: Shows mortgage payment only when financing is enabled, with tooltip explaining it's disbursed at key delivery
-- **Consistent UX**: Matches the Buy/Rent page collapsible breakdown pattern
-- **Honest ranges**: All monthly costs use ranges, not fake-precision single values
-- **Educational tooltips**: Each cost item has a dotted-underline tooltip explaining what it is
+---
 
-## Files to Modify
+## Implementation Summary
 
-1. **`src/components/project/ProjectCostBreakdown.tsx`** - Add monthly costs section with calculations and UI
+### Database Changes (4 new tables):
+1. `user_events` - Universal event tracking
+2. `search_analytics` - Search behavior tracking
+3. `listing_lifecycle` - Listing journey tracking
+4. `advertiser_activity` - Agent/developer dashboard tracking
+
+### New Hooks:
+1. `useEventTracking` - Universal event tracker
+2. `useSearchTracking` - Search-specific tracking
+3. `useListingLifecycle` - Admin listing intelligence
+4. `useAdvertiserAnalytics` - Agent/developer activity
+
+### New Admin Dashboard Components:
+1. `UserBehaviorTab` - Session and journey analytics
+2. `SearchIntelligenceTab` - Search demand insights
+3. `ListingIntelligenceTab` - Market timing and velocity
+4. `AdvertiserAnalyticsTab` - Agent/developer performance
+
+### Triggers & Functions:
+1. Property status change trigger → update lifecycle
+2. Price change trigger → track in lifecycle
+3. Inquiry creation trigger → update first_inquiry_at
+4. View tracking trigger → update total_views
+
+---
+
+## Strategic Value
+
+This system will enable you to:
+
+1. **Understand Demand**: What are users searching for but not finding?
+2. **Price Optimization**: How long do listings at different prices stay on market?
+3. **Agent Quality**: Which agents respond fastest and convert best?
+4. **Market Timing**: When is the best time to list? To reduce price?
+5. **Feature Prioritization**: What filters/features are most used?
+6. **Conversion Optimization**: Where in the funnel do users drop off?
+7. **Geographic Insights**: Which cities are hottest? Cooling off?
+8. **User Retention**: What brings users back? What keeps agents active?
+
+This is a comprehensive, first-party analytics system that gives you complete control over your data and insights - far more valuable than any third-party analytics tool for a real estate marketplace.
