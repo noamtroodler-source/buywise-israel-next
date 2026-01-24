@@ -104,7 +104,7 @@ const Contact = () => {
             className="max-w-3xl mx-auto text-center"
           >
             <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-              We'd Love to <span className="text-primary">Hear From You</span>
+              We'd Love to Hear From You
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               Whether you have a question about buying or renting, feedback on our tools, 
