@@ -41,6 +41,16 @@ import { ListingIntelligenceTab } from '@/components/admin/analytics/ListingInte
 import { AdvertiserAnalyticsTab } from '@/components/admin/analytics/AdvertiserAnalyticsTab';
 import { DataHealthCard } from '@/components/admin/analytics/DataHealthCard';
 import { CityAnalyticsTab } from '@/components/admin/analytics/CityAnalyticsTab';
+import { ImpressionsTab } from '@/components/admin/analytics/ImpressionsTab';
+import { EngagementDepthTab } from '@/components/admin/analytics/EngagementDepthTab';
+import { PriceIntelligenceTab } from '@/components/admin/analytics/PriceIntelligenceTab';
+import { ToolPerformanceTab } from '@/components/admin/analytics/ToolPerformanceTab';
+import { LocationModuleTab } from '@/components/admin/analytics/LocationModuleTab';
+import { LeadQualityTab } from '@/components/admin/analytics/LeadQualityTab';
+import { ContentPerformanceTab } from '@/components/admin/analytics/ContentPerformanceTab';
+import { FunnelHealthTab } from '@/components/admin/analytics/FunnelHealthTab';
+import { PerformanceMonitorTab } from '@/components/admin/analytics/PerformanceMonitorTab';
+import { ExperimentResultsTab } from '@/components/admin/analytics/ExperimentResultsTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -144,6 +154,16 @@ export default function AdminAnalytics() {
           <TabsTrigger value="cities" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Building className="h-3.5 w-3.5 mr-1.5" />Cities
           </TabsTrigger>
+          <TabsTrigger value="impressions" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Impressions</TabsTrigger>
+          <TabsTrigger value="engagement" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Engagement</TabsTrigger>
+          <TabsTrigger value="price-intel" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Price Intel</TabsTrigger>
+          <TabsTrigger value="tools" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Tools</TabsTrigger>
+          <TabsTrigger value="location" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Location</TabsTrigger>
+          <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Leads</TabsTrigger>
+          <TabsTrigger value="content" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Content</TabsTrigger>
+          <TabsTrigger value="funnel" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Funnel</TabsTrigger>
+          <TabsTrigger value="performance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Performance</TabsTrigger>
+          <TabsTrigger value="experiments" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Experiments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -198,6 +218,46 @@ export default function AdminAnalytics() {
 
         <TabsContent value="cities" className="space-y-6">
           <CityAnalyticsTab days={days} />
+        </TabsContent>
+
+        <TabsContent value="impressions" className="space-y-6">
+          <ImpressionsTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="engagement" className="space-y-6">
+          <EngagementDepthTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="price-intel" className="space-y-6">
+          <PriceIntelligenceTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="tools" className="space-y-6">
+          <ToolPerformanceTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="location" className="space-y-6">
+          <LocationModuleTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="leads" className="space-y-6">
+          <LeadQualityTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="content" className="space-y-6">
+          <ContentPerformanceTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="funnel" className="space-y-6">
+          <FunnelHealthTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <PerformanceMonitorTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="experiments" className="space-y-6">
+          <ExperimentResultsTab dateRange={days} />
         </TabsContent>
       </Tabs>
     </div>
