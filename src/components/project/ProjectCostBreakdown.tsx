@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Receipt, Shield, ChevronDown } from 'lucide-react';
+import { Calculator, Receipt, Shield, ChevronDown, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -120,6 +120,38 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   
   // State for collapsible sections
   const [upfrontOpen, setUpfrontOpen] = useState(false);
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
+  
+  // Estimate apartment size from price (rough: ₪25-35k per sqm in new construction)
+  const estimatedSizeSqm = Math.round(price / 30000);
+  
+  // Monthly cost ranges
+  const arnonaRange = {
+    low: Math.round(estimatedSizeSqm * 70 / 12),
+    high: Math.round(estimatedSizeSqm * 120 / 12),
+  };
+  
+  const vaadBayitRange = {
+    low: 300,
+    high: 600,
+  };
+  
+  const insuranceRange = {
+    low: 100,
+    high: 200,
+  };
+  
+  // Total monthly ownership (without mortgage)
+  const monthlyOwnershipRange = {
+    low: arnonaRange.low + vaadBayitRange.low + insuranceRange.low,
+    high: arnonaRange.high + vaadBayitRange.high + insuranceRange.high,
+  };
+  
+  // Total monthly (with mortgage if enabled)
+  const totalMonthlyRange = includeMortgage ? {
+    low: monthlyOwnershipRange.low + (mortgageEstimate.monthlyPaymentLow || 0),
+    high: monthlyOwnershipRange.high + (mortgageEstimate.monthlyPaymentHigh || 0),
+  } : monthlyOwnershipRange;
   
   // New construction specific costs - using honest ranges
   const lawyerFeesRange = {
@@ -217,18 +249,26 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </div>
       )}
 
-      {/* Due at Contract Signing - Summary Banner */}
+      {/* Summary Banner - Both Key Numbers */}
       <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-muted-foreground">Due at Contract Signing</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">At Signing</p>
             <p className="text-lg font-bold text-primary">
               {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
             </p>
+            <p className="text-xs text-muted-foreground">
+              10% + fees
+            </p>
           </div>
-          <div className="text-right text-xs text-muted-foreground">
-            <p>10% down + fees</p>
-            <p>~{dueAtSigningPercentLow}–{dueAtSigningPercentHigh}% of price</p>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Monthly</p>
+            <p className="text-lg font-bold text-primary">
+              {formatPriceRange(totalMonthlyRange.low, totalMonthlyRange.high, 'ILS')}/mo
+            </p>
+            <p className="text-xs text-muted-foreground">
+              After delivery
+            </p>
           </div>
         </div>
       </div>
@@ -240,8 +280,11 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-foreground">Breakdown</h4>
+                <h4 className="font-medium text-foreground">Due at Contract Signing</h4>
               </div>
+              <span className="text-sm font-medium text-primary">
+                {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
+              </span>
             </div>
             
             <CollapsibleTrigger asChild>
@@ -349,6 +392,125 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </Collapsible>
       </TooltipProvider>
 
+      {/* Monthly Costs Section */}
+      <TooltipProvider>
+        <Collapsible open={monthlyOpen} onOpenChange={setMonthlyOpen}>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Home className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">Monthly Costs</h4>
+                <Badge variant="outline" className="text-xs">After Key Delivery</Badge>
+              </div>
+              <span className="text-sm font-medium text-primary">
+                {formatPriceRange(totalMonthlyRange.low, totalMonthlyRange.high, 'ILS')}/mo
+              </span>
+            </div>
+            
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+                <ChevronDown className={cn("h-3 w-3 transition-transform", monthlyOpen && "rotate-180")} />
+                {monthlyOpen ? 'Hide breakdown' : 'View breakdown'}
+              </button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-2 text-sm pt-2">
+              {/* Mortgage (if enabled) */}
+              {includeMortgage && (
+                <div className="py-2 border-b border-border/50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="font-medium text-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                            Mortgage
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          <p className="font-medium mb-1">Monthly Payment Estimate</p>
+                          <p className="text-xs">
+                            Based on {mortgageEstimate.downPaymentPercent}% down payment, {mortgageEstimate.termYears}-year term, and typical rates of 4.5%–6.0%. 
+                            Mortgage is typically disbursed at key delivery stage in new construction.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-xs text-muted-foreground">
+                        {mortgageEstimate.downPaymentPercent}% down · {mortgageEstimate.termYears}yr
+                      </p>
+                    </div>
+                    <span className="font-medium">
+                      {formatPriceRange(mortgageEstimate.monthlyPaymentLow || 0, mortgageEstimate.monthlyPaymentHigh || 0, 'ILS')}/mo
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Arnona */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Arnona
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Municipal Property Tax</p>
+                    <p className="text-xs">
+                      Monthly tax paid to the city. Rate varies by city and property size. 
+                      Estimate based on ~{estimatedSizeSqm} sqm at typical rates.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(arnonaRange.low, arnonaRange.high, 'ILS')}/mo
+                </span>
+              </div>
+              
+              {/* Va'ad Bayit */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Va'ad Bayit
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Building Maintenance Fee</p>
+                    <p className="text-xs">
+                      Monthly fee for building maintenance, cleaning, elevator, lobby, etc. 
+                      New construction typically has higher fees due to premium amenities.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(vaadBayitRange.low, vaadBayitRange.high, 'ILS')}/mo
+                </span>
+              </div>
+              
+              {/* Insurance */}
+              <div className="flex justify-between py-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Home Insurance
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Structure & Contents Insurance</p>
+                    <p className="text-xs">
+                      Recommended coverage for your home and belongings. 
+                      Required if you have a mortgage.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(insuranceRange.low, insuranceRange.high, 'ILS')}/mo
+                </span>
+              </div>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+      </TooltipProvider>
 
       {/* Buyer Protections */}
       <div className="space-y-3 pt-2 border-t border-border/50">
