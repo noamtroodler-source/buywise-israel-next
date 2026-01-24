@@ -60,7 +60,7 @@ export const ProjectShareButton = React.forwardRef<HTMLButtonElement, ProjectSha
             variant="ghost"
             size={size}
             className={cn(
-              "h-8 w-8 bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors",
+              "h-8 w-8 rounded-md bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground transition-colors",
               className
             )}
           >

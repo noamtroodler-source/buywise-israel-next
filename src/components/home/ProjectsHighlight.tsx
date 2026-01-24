@@ -103,14 +103,10 @@ export function ProjectsHighlight() {
                   <ProjectShareButton
                     projectSlug={mainProject.slug}
                     projectName={mainProject.name}
-                    className="h-8 w-8 rounded-md"
                   />
                 </div>
                 {/* Favorite - always visible */}
-                <ProjectFavoriteButton
-                  projectId={mainProject.id}
-                  className="h-8 w-8 rounded-md bg-background/80 hover:bg-background"
-                />
+                <ProjectFavoriteButton projectId={mainProject.id} />
               </div>
               <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -161,14 +157,10 @@ export function ProjectsHighlight() {
                     <ProjectShareButton
                       projectSlug={project.slug}
                       projectName={project.name}
-                      className="h-8 w-8 rounded-md"
                     />
                   </div>
                   {/* Favorite - always visible */}
-                  <ProjectFavoriteButton
-                    projectId={project.id}
-                    className="h-8 w-8 rounded-md bg-background/80 hover:bg-background"
-                  />
+                  <ProjectFavoriteButton projectId={project.id} />
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-3">
                   <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">

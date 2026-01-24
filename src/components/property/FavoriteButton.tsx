@@ -36,7 +36,7 @@ export function FavoriteButton({ propertyId, propertyPrice, className, size = 'i
       variant="ghost"
       size={size}
       className={cn(
-        "bg-background/80 hover:bg-background transition-colors",
+        "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors",
         favorited ? "text-primary" : "text-muted-foreground hover:text-primary",
         className
       )}

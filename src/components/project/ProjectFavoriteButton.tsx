@@ -35,10 +35,10 @@ export function ProjectFavoriteButton({ projectId, className }: ProjectFavoriteB
       onClick={handleClick}
       disabled={isToggling}
       className={cn(
-        "h-8 w-8 bg-background/80 hover:bg-background transition-colors",
+        "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors",
         isFavorite 
-          ? "text-destructive hover:text-destructive/80" 
-          : "text-muted-foreground hover:text-destructive",
+          ? "text-primary hover:text-primary/80" 
+          : "text-muted-foreground hover:text-primary",
         className
       )}
     >
