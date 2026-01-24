@@ -97,10 +97,9 @@ export function useGeographicAnalytics(days: number = 30) {
           : 0;
       });
 
-      // Sort by views and take top cities
+      // Sort by views
       const sortedCities = Object.values(cityData)
-        .sort((a, b) => b.totalViews - a.totalViews)
-        .slice(0, 10);
+        .sort((a, b) => b.totalViews - a.totalViews);
 
       return {
         topCities: sortedCities,

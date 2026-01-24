@@ -35,7 +35,7 @@ export function GeographicAnalytics({ data, isLoading }: GeographicAnalyticsProp
     );
   }
 
-  const chartData = (data?.topCities || []).slice(0, 8).map(city => ({
+  const chartData = (data?.topCities || []).map(city => ({
     name: city.city.length > 12 ? city.city.slice(0, 12) + '...' : city.city,
     fullName: city.city,
     views: city.totalViews,
@@ -62,12 +62,13 @@ export function GeographicAnalytics({ data, isLoading }: GeographicAnalyticsProp
           </div>
         ) : (
           <>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart 
-                data={chartData} 
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
-              >
+            <div className="overflow-y-auto max-h-[400px]">
+              <ResponsiveContainer width="100%" height={Math.max(280, chartData.length * 35)}>
+                <BarChart 
+                  data={chartData} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
+                >
                 <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis 
                   dataKey="name" 
@@ -102,8 +103,9 @@ export function GeographicAnalytics({ data, isLoading }: GeographicAnalyticsProp
                     />
                   ))}
                 </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             
             {/* Top 3 cities summary */}
             <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/50">
