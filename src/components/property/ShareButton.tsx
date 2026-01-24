@@ -8,15 +8,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { buildWhatsAppShareUrl, openWhatsApp } from "@/lib/whatsapp";
+import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
   propertyId: string;
   propertyTitle: string;
   className?: string;
-  size?: "sm" | "default";
 }
 
-export function ShareButton({ propertyId, propertyTitle, className = "", size = "default" }: ShareButtonProps) {
+export function ShareButton({ propertyId, propertyTitle, className = "" }: ShareButtonProps) {
   const propertyUrl = `${window.location.origin}/property/${propertyId}`;
   const shareText = `Check out this property: ${propertyTitle}`;
 
@@ -44,9 +44,6 @@ export function ShareButton({ propertyId, propertyTitle, className = "", size = 
     window.open(telegramUrl, "_blank");
   };
 
-  const iconSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
-  const buttonSize = size === "sm" ? "h-7 w-7" : "h-8 w-8";
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -55,9 +52,12 @@ export function ShareButton({ propertyId, propertyTitle, className = "", size = 
           size="icon"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          className={`${buttonSize} rounded-full bg-background/80 backdrop-blur-sm hover:bg-background ${className}`}
+          className={cn(
+            "h-8 w-8 rounded-md bg-background/80 hover:bg-background transition-colors text-muted-foreground hover:text-foreground",
+            className
+          )}
         >
-          <Share2 className={iconSize} />
+          <Share2 className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>

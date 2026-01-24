@@ -271,7 +271,7 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
                 <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
                   {showShareButton && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <ShareButton propertyId={property.id} propertyTitle={property.title} size="sm" />
+                      <ShareButton propertyId={property.id} propertyTitle={property.title} />
                     </div>
                   )}
                   {showCompareButton && !showShareButton && compareCategory && (
