@@ -2,7 +2,12 @@ import { useMemo, useState } from 'react';
 import { Building2, Mail, Phone, FileImage, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { 
+  useFormatPrice, 
+  useFormatPricePerArea, 
+  useAreaUnitLabel,
+  useCurrencySymbol,
+} from '@/contexts/PreferencesContext';
 import { ProjectUnit, Developer } from '@/types/projects';
 import {
   Dialog,
@@ -18,6 +23,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+
+const SQM_TO_SQFT = 10.764;
 
 interface ProjectFloorPlansProps {
   units: ProjectUnit[];
@@ -38,10 +45,28 @@ interface UnitTypeGroup {
 
 export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) {
   const formatPrice = useFormatPrice();
+  const formatPricePerArea = useFormatPricePerArea();
+  const areaLabel = useAreaUnitLabel();
+  const currencySymbol = useCurrencySymbol();
   const [selectedFloorPlan, setSelectedFloorPlan] = useState<{
     url: string;
     type: string;
   } | null>(null);
+  
+  // Format size range with unit conversion
+  const formatSizeRange = (min: number, max: number) => {
+    if (min === Infinity || max === 0) return 'N/A';
+    if (areaLabel === 'sqft') {
+      const minFt = Math.round(min * SQM_TO_SQFT);
+      const maxFt = Math.round(max * SQM_TO_SQFT);
+      if (minFt === maxFt) return `${minFt.toLocaleString()}`;
+      return `${minFt.toLocaleString()}-${maxFt.toLocaleString()}`;
+    }
+    if (min === max) return `${min}`;
+    return `${min}-${max}`;
+  };
+
+  const areaUnitSymbol = areaLabel === 'sqft' ? 'ft²' : 'm²';
   
   // Group units by type with aggregated data
   const unitGroups = useMemo(() => {
@@ -173,11 +198,11 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
                   <TableHead className="text-center">Floor Plan</TableHead>
                   <TableHead className="text-center">Rooms</TableHead>
                   <TableHead className="text-center">Baths</TableHead>
-                  <TableHead className="text-center">Size (m²)</TableHead>
+                  <TableHead className="text-center">Size ({areaUnitSymbol})</TableHead>
                   <TableHead className="text-center">Floors</TableHead>
                   <TableHead className="text-center">Outdoor</TableHead>
                   <TableHead className="text-right">Price From</TableHead>
-                  <TableHead className="text-right">₪/m²</TableHead>
+                  <TableHead className="text-right">{currencySymbol}/{areaUnitSymbol}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -201,14 +226,14 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
                     </TableCell>
                     <TableCell className="text-center">{group.bedrooms}</TableCell>
                     <TableCell className="text-center">{group.bathrooms}</TableCell>
-                    <TableCell className="text-center">{formatRange(group.sizeRange.min, group.sizeRange.max)}</TableCell>
+                    <TableCell className="text-center">{formatSizeRange(group.sizeRange.min, group.sizeRange.max)}</TableCell>
                     <TableCell className="text-center">{formatRange(group.floorRange.min, group.floorRange.max)}</TableCell>
                     <TableCell className="text-center text-muted-foreground">{group.outdoor}</TableCell>
                     <TableCell className="text-right font-semibold text-primary">
                       {group.priceRange.min !== Infinity ? formatPrice(group.priceRange.min, 'ILS') : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}
+                      {group.pricePerSqm > 0 ? formatPricePerArea(group.pricePerSqm) : 'N/A'}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -224,7 +249,7 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
                   <div>
                     <h4 className="font-semibold">{group.type}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {group.bedrooms} Bed • {group.bathrooms} Bath • {formatRange(group.sizeRange.min, group.sizeRange.max)} m²
+                      {group.bedrooms} Bed • {group.bathrooms} Bath • {formatSizeRange(group.sizeRange.min, group.sizeRange.max)} {areaUnitSymbol}
                     </p>
                   </div>
                   {/* Floor Plan Button */}
@@ -260,8 +285,8 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">₪/m²:</span>{' '}
-                    <span>{group.pricePerSqm > 0 ? `₪${group.pricePerSqm.toLocaleString()}` : 'N/A'}</span>
+                    <span className="text-muted-foreground">{currencySymbol}/{areaUnitSymbol}:</span>{' '}
+                    <span>{group.pricePerSqm > 0 ? formatPricePerArea(group.pricePerSqm) : 'N/A'}</span>
                   </div>
                 </div>
               </div>
