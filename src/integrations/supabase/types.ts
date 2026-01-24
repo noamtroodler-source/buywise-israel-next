@@ -47,6 +47,45 @@ export type Database = {
         }
         Relationships: []
       }
+      advertiser_activity: {
+        Row: {
+          action_detail: string | null
+          action_type: string
+          actor_id: string
+          actor_type: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action_detail?: string | null
+          action_type: string
+          actor_id: string
+          actor_type: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action_detail?: string | null
+          action_type?: string
+          actor_id?: string
+          actor_type?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           admin_user_id: string | null
@@ -1691,6 +1730,105 @@ export type Database = {
           },
         ]
       }
+      listing_lifecycle: {
+        Row: {
+          agency_id: string | null
+          agent_id: string | null
+          bedrooms: number | null
+          city: string
+          current_price: number | null
+          days_on_market: number | null
+          days_to_first_inquiry: number | null
+          days_to_first_price_change: number | null
+          delisted_at: string | null
+          developer_id: string | null
+          entity_id: string
+          entity_type: string
+          final_price: number | null
+          first_inquiry_at: string | null
+          first_price_change_at: string | null
+          id: string
+          initial_price: number | null
+          listed_at: string
+          listing_type: string | null
+          neighborhood: string | null
+          outcome: string | null
+          price_change_percent: number | null
+          property_type: string | null
+          size_sqm: number | null
+          sold_rented_at: string | null
+          total_inquiries: number | null
+          total_price_changes: number | null
+          total_saves: number | null
+          total_views: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          agent_id?: string | null
+          bedrooms?: number | null
+          city: string
+          current_price?: number | null
+          days_on_market?: number | null
+          days_to_first_inquiry?: number | null
+          days_to_first_price_change?: number | null
+          delisted_at?: string | null
+          developer_id?: string | null
+          entity_id: string
+          entity_type: string
+          final_price?: number | null
+          first_inquiry_at?: string | null
+          first_price_change_at?: string | null
+          id?: string
+          initial_price?: number | null
+          listed_at: string
+          listing_type?: string | null
+          neighborhood?: string | null
+          outcome?: string | null
+          price_change_percent?: number | null
+          property_type?: string | null
+          size_sqm?: number | null
+          sold_rented_at?: string | null
+          total_inquiries?: number | null
+          total_price_changes?: number | null
+          total_saves?: number | null
+          total_views?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          agent_id?: string | null
+          bedrooms?: number | null
+          city?: string
+          current_price?: number | null
+          days_on_market?: number | null
+          days_to_first_inquiry?: number | null
+          days_to_first_price_change?: number | null
+          delisted_at?: string | null
+          developer_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          final_price?: number | null
+          first_inquiry_at?: string | null
+          first_price_change_at?: string | null
+          id?: string
+          initial_price?: number | null
+          listed_at?: string
+          listing_type?: string | null
+          neighborhood?: string | null
+          outcome?: string | null
+          price_change_percent?: number | null
+          property_type?: string | null
+          size_sqm?: number | null
+          sold_rented_at?: string | null
+          total_inquiries?: number | null
+          total_price_changes?: number | null
+          total_saves?: number | null
+          total_views?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       market_data: {
         Row: {
           average_price_sqm: number | null
@@ -2823,6 +2961,84 @@ export type Database = {
         }
         Relationships: []
       }
+      search_analytics: {
+        Row: {
+          bedrooms_max: number | null
+          bedrooms_min: number | null
+          cities: string[] | null
+          clicked_result_ids: string[] | null
+          created_at: string | null
+          features_required: string[] | null
+          id: string
+          inquired_result_ids: string[] | null
+          listing_type: string | null
+          neighborhoods: string[] | null
+          page_number: number | null
+          price_max: number | null
+          price_min: number | null
+          property_types: string[] | null
+          results_count: number | null
+          results_shown: number | null
+          saved_result_ids: string[] | null
+          session_id: string
+          size_max: number | null
+          size_min: number | null
+          sort_option: string | null
+          time_spent_ms: number | null
+          user_id: string | null
+        }
+        Insert: {
+          bedrooms_max?: number | null
+          bedrooms_min?: number | null
+          cities?: string[] | null
+          clicked_result_ids?: string[] | null
+          created_at?: string | null
+          features_required?: string[] | null
+          id?: string
+          inquired_result_ids?: string[] | null
+          listing_type?: string | null
+          neighborhoods?: string[] | null
+          page_number?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          property_types?: string[] | null
+          results_count?: number | null
+          results_shown?: number | null
+          saved_result_ids?: string[] | null
+          session_id: string
+          size_max?: number | null
+          size_min?: number | null
+          sort_option?: string | null
+          time_spent_ms?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          bedrooms_max?: number | null
+          bedrooms_min?: number | null
+          cities?: string[] | null
+          clicked_result_ids?: string[] | null
+          created_at?: string | null
+          features_required?: string[] | null
+          id?: string
+          inquired_result_ids?: string[] | null
+          listing_type?: string | null
+          neighborhoods?: string[] | null
+          page_number?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          property_types?: string[] | null
+          results_count?: number | null
+          results_shown?: number | null
+          saved_result_ids?: string[] | null
+          session_id?: string
+          size_max?: number | null
+          size_min?: number | null
+          sort_option?: string | null
+          time_spent_ms?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       site_announcements: {
         Row: {
           created_at: string | null
@@ -2880,6 +3096,69 @@ export type Database = {
           rating?: number
           tool_name?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          component: string | null
+          created_at: string | null
+          device_type: string | null
+          event_category: string
+          event_name: string
+          event_type: string
+          id: string
+          page_path: string
+          properties: Json | null
+          referrer: string | null
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+          user_role: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          viewport_width: number | null
+        }
+        Insert: {
+          component?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          event_category: string
+          event_name: string
+          event_type: string
+          id?: string
+          page_path: string
+          properties?: Json | null
+          referrer?: string | null
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          viewport_width?: number | null
+        }
+        Update: {
+          component?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          event_category?: string
+          event_name?: string
+          event_type?: string
+          id?: string
+          page_path?: string
+          properties?: Json | null
+          referrer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          viewport_width?: number | null
         }
         Relationships: []
       }

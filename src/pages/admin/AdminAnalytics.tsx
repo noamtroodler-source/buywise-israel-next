@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Eye, MessageSquare, TrendingUp, Users, 
-  Home, Calendar, BarChart3
+  Home, Calendar, BarChart3, Search, Activity, Building
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,6 +35,10 @@ import { GrowthMetrics } from '@/components/admin/GrowthMetrics';
 import { PriceAnalytics } from '@/components/admin/PriceAnalytics';
 import { InquiryPipeline } from '@/components/admin/InquiryPipeline';
 import { ViewsTrendChart } from '@/components/admin/ViewsTrendChart';
+import { UserBehaviorTab } from '@/components/admin/analytics/UserBehaviorTab';
+import { SearchIntelligenceTab } from '@/components/admin/analytics/SearchIntelligenceTab';
+import { ListingIntelligenceTab } from '@/components/admin/analytics/ListingIntelligenceTab';
+import { AdvertiserAnalyticsTab } from '@/components/admin/analytics/AdvertiserAnalyticsTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -116,8 +120,20 @@ export default function AdminAnalytics() {
 
       {/* Tabbed Analytics - Premium Styling */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1 rounded-xl">
+        <TabsList className="bg-muted/50 p-1 rounded-xl flex-wrap h-auto gap-1">
           <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Overview</TabsTrigger>
+          <TabsTrigger value="behavior" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Activity className="h-3.5 w-3.5 mr-1.5" />User Behavior
+          </TabsTrigger>
+          <TabsTrigger value="search" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Search className="h-3.5 w-3.5 mr-1.5" />Search Intel
+          </TabsTrigger>
+          <TabsTrigger value="listings" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Building className="h-3.5 w-3.5 mr-1.5" />Listing Intel
+          </TabsTrigger>
+          <TabsTrigger value="advertisers" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Users className="h-3.5 w-3.5 mr-1.5" />Advertisers
+          </TabsTrigger>
           <TabsTrigger value="inventory" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventory</TabsTrigger>
           <TabsTrigger value="agents" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Agents</TabsTrigger>
           <TabsTrigger value="inquiries" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inquiries</TabsTrigger>
@@ -131,6 +147,22 @@ export default function AdminAnalytics() {
             <GeographicAnalytics data={geoData} isLoading={geoLoading} />
           </div>
           <ViewsTrendChart data={viewsTrend} isLoading={viewsLoading} />
+        </TabsContent>
+
+        <TabsContent value="behavior" className="space-y-6">
+          <UserBehaviorTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="search" className="space-y-6">
+          <SearchIntelligenceTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="listings" className="space-y-6">
+          <ListingIntelligenceTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="advertisers" className="space-y-6">
+          <AdvertiserAnalyticsTab dateRange={days} />
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-6">
