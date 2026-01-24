@@ -1,15 +1,18 @@
-import { useMemo } from 'react';
-import { Calculator, Receipt, Calendar, Info, Settings, HelpCircle, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useMemo, useEffect } from 'react';
+import { Calculator, Receipt, Calendar, Shield, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Label } from '@/components/ui/label';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
-import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel, profileToDimensions } from '@/hooks/useBuyerProfile';
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
-import { useAuth } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
+import { PersonalizationHeader } from '@/components/property/PersonalizationHeader';
+import { FEE_RANGES, VAT_RATE, formatPriceRange } from '@/lib/utils/formatRange';
+import { cn } from '@/lib/utils';
+import { deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { ProjectUnit } from '@/types/projects';
 
 interface ProjectCostBreakdownProps {
@@ -63,9 +66,13 @@ function mapCategoryToTaxType(category: 'first_time' | 'oleh' | 'additional' | '
 }
 
 export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS' }: ProjectCostBreakdownProps) {
-  const { user } = useAuth();
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
+  const { includeMortgage, ltvLimit } = useMortgagePreferences();
+  
+  // Get saved profile dimensions
+  const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
+  const effectiveDerived = useMemo(() => deriveEffectiveBuyerType(savedProfileDimensions), [savedProfileDimensions]);
   
   // Build unit options for selector
   const unitOptions = useMemo<UnitOption[]>(() => {
@@ -85,14 +92,21 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
     return Object.values(groups).sort((a, b) => a.price - b.price);
   }, [units, formatPrice]);
 
-  const [selectedType, setSelectedType] = useMemo(() => {
-    const initial = unitOptions[0]?.type || '';
-    return [initial, (val: string) => val];
-  }, [unitOptions]);
+  // Fix state management for unit selection
+  const [selectedType, setSelectedType] = useState<string>('');
   
-  // Use state for selected unit type
+  // Initialize selected type when options load
+  useEffect(() => {
+    if (unitOptions.length > 0 && !selectedType) {
+      setSelectedType(unitOptions[0].type);
+    }
+  }, [unitOptions, selectedType]);
+  
   const selectedOption = unitOptions.find(o => o.type === selectedType) || unitOptions[0];
   const price = selectedOption?.price || defaultPrice;
+  
+  // Get mortgage estimate for the selected price
+  const mortgageEstimate = useMortgageEstimate(price);
   
   const buyerCategory = getBuyerTaxCategory(buyerProfile);
   const hasProfile = !!buyerProfile?.onboarding_completed;
@@ -104,14 +118,39 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
     return calculateTaxFromBrackets(price, taxBrackets);
   }, [price, taxBrackets]);
   
-  // New construction specific costs
-  const lawyerFees = price * 0.005;
-  const lawyerVat = lawyerFees * 0.18; // VAT 18% as of Jan 2025
-  const developerLawyerFees = price * 0.015;
-  const developerLawyerVat = developerLawyerFees * 0.18; // VAT 18% as of Jan 2025
-  const registrationFees = 500;
+  // State for collapsible sections
+  const [upfrontOpen, setUpfrontOpen] = useState(false);
   
-  const totalOneTime = purchaseTax + lawyerFees + lawyerVat + developerLawyerFees + developerLawyerVat + registrationFees;
+  // New construction specific costs - using honest ranges
+  const lawyerFeesRange = {
+    low: Math.round(price * FEE_RANGES.lawyer.min * (1 + VAT_RATE)),
+    high: Math.round(price * FEE_RANGES.lawyer.max * (1 + VAT_RATE)),
+  };
+  
+  // Developer lawyer: 1-2% + VAT (new construction standard)
+  const developerLawyerFeesRange = {
+    low: Math.round(price * FEE_RANGES.developerLawyer.min * (1 + VAT_RATE)),
+    high: Math.round(price * FEE_RANGES.developerLawyer.max * (1 + VAT_RATE)),
+  };
+  
+  // Other fees (registration, mortgage if applicable)
+  const otherFeesRange = includeMortgage ? {
+    low: FEE_RANGES.registration.min + FEE_RANGES.appraisal.min + FEE_RANGES.mortgageOrigination.min,
+    high: FEE_RANGES.registration.max + FEE_RANGES.appraisal.max + FEE_RANGES.mortgageOrigination.max,
+  } : {
+    low: FEE_RANGES.registration.min,
+    high: FEE_RANGES.registration.max,
+  };
+
+  // Total upfront range
+  const totalUpfrontRange = {
+    low: purchaseTax + lawyerFeesRange.low + developerLawyerFeesRange.low + otherFeesRange.low,
+    high: purchaseTax + lawyerFeesRange.high + developerLawyerFeesRange.high + otherFeesRange.high,
+  };
+  
+  // Calculate % of purchase price for context
+  const upfrontPercentLow = price > 0 ? ((totalUpfrontRange.low / price) * 100).toFixed(1) : '0';
+  const upfrontPercentHigh = price > 0 ? ((totalUpfrontRange.high / price) * 100).toFixed(1) : '0';
 
   // Payment schedule (typical for new construction)
   const paymentSchedule = [
@@ -122,179 +161,215 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   ];
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" />
-          Cost Breakdown
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {/* Unit Type Selector */}
-        {unitOptions.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Unit Type</label>
-            <Select 
-              value={selectedOption?.type || ''} 
-              onValueChange={(val) => {
-                // This is a controlled component workaround
-                const event = new CustomEvent('unitTypeChange', { detail: val });
-                window.dispatchEvent(event);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a unit type" />
-              </SelectTrigger>
-              <SelectContent>
-                {unitOptions.map((option) => (
-                  <SelectItem key={option.type} value={option.type}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <Calculator className="h-5 w-5 text-primary" />
+        <h3 className="text-lg font-semibold text-foreground">Cost Breakdown</h3>
+      </div>
+      
+      {/* PersonalizationHeader */}
+      {!isLoading && (
+        <PersonalizationHeader
+          buyerCategoryLabel={getBuyerCategoryLabel(buyerCategory)}
+          hasProfile={hasProfile}
+          downPaymentPercent={mortgageEstimate.downPaymentPercent}
+          termYears={mortgageEstimate.termYears}
+          propertyPrice={price}
+          ltvLimit={ltvLimit}
+          savedProfileDimensions={savedProfileDimensions}
+        />
+      )}
 
-        {/* Selected Unit Price */}
-        <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm text-muted-foreground">Unit Price</p>
-              <p className="text-2xl font-bold text-primary">{formatPrice(price, currency)}</p>
-            </div>
-            {selectedOption && (
-              <Badge variant="outline" className="font-normal">
-                {selectedOption.type}
-              </Badge>
-            )}
-          </div>
+      {/* Unit Type Selector - ToggleGroup style */}
+      {unitOptions.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Unit Type
+          </Label>
+          <ToggleGroup
+            type="single"
+            value={selectedType}
+            onValueChange={(val) => val && setSelectedType(val)}
+            className="flex flex-wrap gap-2"
+          >
+            {unitOptions.map((option) => (
+              <ToggleGroupItem 
+                key={option.type}
+                value={option.type}
+                className="px-4 py-2 rounded-full border data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary"
+              >
+                {option.type}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          
+          {/* Selected Unit Price Display */}
+          <p className="text-sm text-muted-foreground">
+            {formatPrice(price, currency)} · {selectedOption?.type}
+          </p>
         </div>
+      )}
 
-        {/* Profile Banner */}
-        {!hasProfile && !isLoading && (
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="flex-1 space-y-1">
-              <p className="text-sm">
-                {user ? (
-                  <>Costs shown for <span className="font-medium">{getBuyerCategoryLabel(buyerCategory)}</span> (default)</>
-                ) : (
-                  <>Assuming <span className="font-medium">First-Time Buyer</span> rates</>
-                )}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Set your buyer profile for personalized calculations
-              </p>
-            </div>
-            {user ? (
-              <Link to="/profile">
-                <Button variant="ghost" size="sm" className="gap-1.5 h-8 text-xs">
-                  <Settings className="h-3.5 w-3.5" />
-                  Personalize
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/auth?tab=signup">
-                <Button variant="ghost" size="sm" className="h-8 text-xs">Sign Up</Button>
-              </Link>
-            )}
-          </div>
-        )}
-
-        {/* Upfront Costs */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" />
-            Upfront Costs
-          </h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger className="flex items-center gap-1.5 text-muted-foreground cursor-help">
-                    Purchase Tax (Mas Rechisha)
-                    <HelpCircle className="h-3.5 w-3.5" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[250px]">
-                    <p>Progressive tax on property purchase. Rate depends on buyer status (first-time, oleh, investor).</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Your Lawyer (~0.5% + VAT)</span>
-              <span className="font-medium">{formatPrice(lawyerFees + lawyerVat, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger className="flex items-center gap-1.5 text-muted-foreground cursor-help">
-                    Developer Lawyer Fee (~1.5% + VAT)
-                    <HelpCircle className="h-3.5 w-3.5" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[250px]">
-                    <p>In new construction, buyers typically pay for the developer's legal costs. This is standard practice in Israel.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <span className="font-medium">{formatPrice(developerLawyerFees + developerLawyerVat, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border/50">
-              <span className="text-muted-foreground">Registration Fees</span>
-              <span className="font-medium">{formatPrice(registrationFees, 'ILS')}</span>
-            </div>
-            <div className="flex justify-between py-3 bg-muted/30 px-3 rounded-lg mt-2">
-              <span className="font-semibold">Total Additional Costs</span>
-              <span className="font-bold text-primary">{formatPrice(totalOneTime, 'ILS')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Schedule */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-primary" />
-            Typical Payment Schedule
-            <Badge variant="outline" className="text-xs font-normal">New Construction</Badge>
-          </h4>
+      {/* Upfront Costs - Collapsible with honest ranges */}
+      <TooltipProvider>
+        <Collapsible open={upfrontOpen} onOpenChange={setUpfrontOpen}>
           <div className="space-y-2">
-            {paymentSchedule.map((stage, index) => (
-              <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                  {stage.percent}%
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-primary" />
+                <h4 className="font-medium text-foreground">Upfront Costs</h4>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-primary">
+                  {formatPriceRange(totalUpfrontRange.low, totalUpfrontRange.high, 'ILS')}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{stage.stage}</p>
-                  <p className="text-xs text-muted-foreground">{formatPrice(stage.amount, 'ILS')}</p>
+                <div className="text-xs text-muted-foreground">
+                  ~{upfrontPercentLow}–{upfrontPercentHigh}% of price
                 </div>
               </div>
-            ))}
+            </div>
+            
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-1 text-xs text-primary hover:underline">
+                <ChevronDown className={cn("h-3 w-3 transition-transform", upfrontOpen && "rotate-180")} />
+                {upfrontOpen ? 'Hide breakdown' : 'View breakdown'}
+              </button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-2 text-sm pt-2">
+              {/* Purchase Tax */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                        Purchase Tax
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="font-medium mb-1">Mas Rechisha (Purchase Tax)</p>
+                      <p className="text-xs">Progressive tax on property purchase. Rate depends on buyer status (first-time, oleh, investor).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  {effectiveDerived.taxType === 'first_time' && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">First-Time</Badge>
+                  )}
+                  {effectiveDerived.taxType === 'oleh' && (
+                    <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">Oleh</Badge>
+                  )}
+                </div>
+                <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
+              </div>
+              
+              {/* Your Lawyer */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Your Lawyer (0.5–1% + VAT)
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Legal Representation</p>
+                    <p className="text-xs">Your personal lawyer to review contracts, conduct due diligence, and protect your interests. Rate varies by complexity.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(lawyerFeesRange.low, lawyerFeesRange.high, 'ILS')}
+                </span>
+              </div>
+              
+              {/* Developer Lawyer */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                        Developer Lawyer (1–2% + VAT)
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      <p className="font-medium mb-1">Developer's Legal Fees</p>
+                      <p className="text-xs">In new construction, buyers typically pay for the developer's legal costs. This is standard practice in Israel.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Badge variant="outline" className="text-xs">New Build</Badge>
+                </div>
+                <span className="font-medium">
+                  {formatPriceRange(developerLawyerFeesRange.low, developerLawyerFeesRange.high, 'ILS')}
+                </span>
+              </div>
+              
+              {/* Other Fees */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Other Fees {includeMortgage && '(incl. mortgage)'}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Additional Closing Costs</p>
+                    <p className="text-xs">
+                      Includes land registration (₪{FEE_RANGES.registration.min}–{FEE_RANGES.registration.max})
+                      {includeMortgage && `, mortgage appraisal (₪${FEE_RANGES.appraisal.min}–${FEE_RANGES.appraisal.max}), and bank origination fees`}.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(otherFeesRange.low, otherFeesRange.high, 'ILS')}
+                </span>
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
+      </TooltipProvider>
 
-        {/* Buyer Protections - Integrated */}
-        <div className="space-y-3 pt-2 border-t border-border/50">
-          <h4 className="font-medium text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            Buyer Protections
-          </h4>
+      {/* Payment Schedule */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-primary" />
+          <h4 className="font-medium text-foreground">Typical Payment Schedule</h4>
+          <Badge variant="outline" className="text-xs font-normal">New Construction</Badge>
+        </div>
+        <div className="space-y-2">
+          {paymentSchedule.map((stage, index) => (
+            <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                {stage.percent}%
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">{stage.stage}</p>
+                <p className="text-xs text-muted-foreground">{formatPrice(stage.amount, 'ILS')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Buyer Protections */}
+      <div className="space-y-3 pt-2 border-t border-border/50">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          <h4 className="font-medium text-foreground">Buyer Protections</h4>
+        </div>
+        <TooltipProvider>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="text-primary">✓</span>
               <span>
-                Bank Guarantee
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 inline ml-1 text-muted-foreground/60 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-sm">Israeli law requires developers to provide bank guarantees protecting your payments until the property is registered in your name.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50">
+                      Bank Guarantee
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="font-medium mb-1">Aravut Bankit</p>
+                    <p className="text-xs">Israeli law requires developers to provide bank guarantees protecting your payments until the property is registered in your name.</p>
+                  </TooltipContent>
+                </Tooltip>
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -304,26 +379,26 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
             <li className="flex items-start gap-2">
               <span className="text-primary">✓</span>
               <span>
-                Staged Payments
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 inline ml-1 text-muted-foreground/60 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="text-sm">Pay in milestones as construction progresses, typically 10/15/25/50% at key stages.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50">
+                      Staged Payments
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs">
+                    <p className="font-medium mb-1">Milestone-Based Payments</p>
+                    <p className="text-xs">Pay in milestones as construction progresses, typically 10/15/25/50% at key stages.</p>
+                  </TooltipContent>
+                </Tooltip>
               </span>
             </li>
           </ul>
-        </div>
+        </TooltipProvider>
+      </div>
 
-        <p className="text-xs text-muted-foreground">
-          * Based on 2026 tax brackets. Payment schedules vary by developer. Always verify with your lawyer.
-        </p>
-      </CardContent>
-    </Card>
+      <p className="text-xs text-muted-foreground">
+        * Based on 2026 tax brackets. Payment schedules vary by developer. Always verify with your lawyer.
+      </p>
+    </div>
   );
 }
