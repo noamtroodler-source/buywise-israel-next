@@ -1,624 +1,461 @@
 
-# Comprehensive Analytics Enhancement Plan
 
-## Executive Summary
+# Admin Dashboard Analytics Tabs & Component Integration Plan
 
-This plan addresses 15 categories of advanced analytics metrics you've requested. After a thorough audit, I've identified what's **already tracked**, what **partially exists**, and what needs to be **built from scratch**. The implementation is organized into 6 implementation phases with corresponding database migrations and frontend tracking hooks.
+## Overview
 
----
-
-## Current State Analysis
-
-### ✅ Already Tracked (Working)
-
-| Metric Category | Current Coverage |
-|-----------------|------------------|
-| Basic page views | `property_views` (216 records), `project_views` via triggers |
-| Search funnels | `search_analytics` with cities, price ranges, clicked/saved IDs |
-| Listing lifecycle summary | `listing_lifecycle` tracks initial/current price, DOM, inquiries |
-| Advertiser actions | `advertiser_activity` logs dashboard views, listing CRUD |
-| Tool feedback | `tool_feedback` captures ratings and comments |
-| Price drop alerts | `price_drop_notifications` with percent change |
-| User events | `user_events` tracks clicks, page views, UTM, device |
-
-### ⚠️ Partially Exists (Needs Enhancement)
-
-| Your Request | Current State | Gap |
-|--------------|---------------|-----|
-| Search journey | Has result clicks/saves | Missing: `position_in_results`, `filter_hash`, `zero_results`, `refinements_count`, `time_to_first_click_ms` |
-| Listing price history | Only tracks initial vs current | Missing: Full **history** of every price change |
-| Listing status history | Only tracks final outcome | Missing: Full **timeline** of status transitions |
-| Page engagement | Basic page views | Missing: `active_time_ms`, `scroll_depth_max`, `exit_type`, `engaged` flag |
-| Tool tracking | Only feedback | Missing: `inputs_json`, `outputs_summary`, `step_events`, `completion_status` |
-
-### ❌ Not Yet Tracked (New Build Required)
-
-| Your Request | Required |
-|--------------|----------|
-| Listing impressions | New table + frontend IntersectionObserver tracking |
-| Location module interactions | New table + hooks in PropertyLocation component |
-| Lead response quality | New table + agent/developer response tracking |
-| Advertiser inventory quality snapshots | New daily snapshot table + cron/scheduled job |
-| Listing micro-signals | New tracking for copy events, gallery engagement, floorplan views |
-| Content engagement | New table for blog/guide completion tracking |
-| Funnel milestones | New derived milestone tracking |
-| Experiments exposure | New table for A/B test assignment tracking |
-| Performance metrics | New table for Core Web Vitals, errors, integration health |
-| Market snapshots | New derived daily/weekly aggregation tables |
+This plan covers two major workstreams:
+1. **10 New Admin Dashboard Analytics Tabs** - Visualizing the data from the new tracking tables
+2. **Component Integration** - Wiring the tracking hooks into UI components to capture data
 
 ---
 
-## Implementation Plan
+## Part 1: Admin Dashboard - 10 New Analytics Tabs
 
-### Phase 1: Database Schema Expansion (12 new tables)
+### Current State
+The admin analytics page (`/admin/analytics`) has **11 existing tabs**:
+- Overview, User Behavior, Search Intel, Listing Intel, Advertisers, Inventory, Agents, Inquiries, Growth, Market, Cities
 
-Create the following new tables:
+### New Tabs to Add
 
+| # | Tab Name | Data Source Tables | Key Visualizations |
+|---|----------|-------------------|-------------------|
+| 1 | Impressions | `listing_impressions` | Impression-to-click ratio, position heatmap, promoted vs organic |
+| 2 | Engagement | `page_engagement` | Active time distribution, scroll depth, exit types, engaged rate |
+| 3 | Price Intel | `listing_price_history`, `listing_status_history` | Price change timeline, days to first drop, status Sankey |
+| 4 | Tool Performance | `tool_runs`, `tool_step_events` | Completion rates, step abandonment funnel, tool-to-action |
+| 5 | Location Module | `location_module_events` | Anchor clicks, travel modes, custom places, route engagement |
+| 6 | Lead Quality | `lead_response_events` | Response time distribution, outcomes, loss reasons, agent leaderboard |
+| 7 | Content | `content_engagement` | Article completion rates, content-to-action attribution |
+| 8 | Funnel Health | `user_milestones` | Milestone progression, drop-off visualization, cohort analysis |
+| 9 | Performance | `performance_metrics`, `client_errors`, `integration_health` | Core Web Vitals, error rates, integration status |
+| 10 | Experiments | `experiment_exposures` | Active experiments, variant comparison, conversion rates |
+
+### Implementation Details
+
+#### Tab 1: Impressions Tab (`ImpressionsTab.tsx`)
+
+**Data Hook**: `useImpressionAnalytics.tsx`
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│ NEW TABLES                                                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 1. listing_impressions (property + project visibility tracking)         │
-│ 2. page_engagement (active time, scroll depth, exit type)               │
-│ 3. listing_price_history (full price change audit trail)                │
-│ 4. listing_status_history (full status transition timeline)             │
-│ 5. tool_runs (calculator input/output tracking)                         │
-│ 6. tool_step_events (step-by-step abandonment tracking)                 │
-│ 7. location_module_events (anchor clicks, travel modes, custom places)  │
-│ 8. lead_response_events (response time, type, outcome, loss reason)     │
-│ 9. advertiser_quality_snapshots (daily inventory quality metrics)       │
-│ 10. listing_micro_signals (copy, gallery, floorplan, compare events)    │
-│ 11. content_engagement (blog/guide completion, scroll, next action)     │
-│ 12. user_milestones (funnel milestone tracking)                         │
-│ 13. experiment_exposures (A/B test variant assignment)                  │
-│ 14. performance_metrics (Core Web Vitals, errors, integration health)   │
-│ 15. user_preferences (non-PII buyer preferences)                        │
-└─────────────────────────────────────────────────────────────────────────┘
+Queries:
+- Total impressions by entity type
+- Click-through rate by position (1-10, 11-20, etc.)
+- Promoted vs organic impression comparison
+- Filter hash analysis (which filter combos get most views)
 ```
 
-**Enhanced existing tables:**
-- `search_analytics`: Add 8 new columns (search_id, zero_results, refinements_count, time_to_first_click_ms, first_click_position, filter_change_count, map_mode_used, saved_search)
+**Visualizations**:
+- **Position Performance Heatmap**: Shows CTR by result position (positions 1-5 get high engagement)
+- **Promoted vs Organic Bar Chart**: Compare impression counts and CTR
+- **Top Filter Combinations Table**: Which searches generate most impressions
 
-### Phase 2: Listing Impressions & Visibility Tracking
+---
 
-**New Table: `listing_impressions`**
+#### Tab 2: Engagement Tab (`EngagementDepthTab.tsx`)
+
+**Data Hook**: `useEngagementAnalytics.tsx`
 ```text
-- id (uuid)
-- entity_type ('property' | 'project')
-- entity_id (uuid)
-- search_id (uuid, nullable) → links to search_analytics
-- session_id (text)
-- user_id (uuid, nullable)
-- position_in_results (int)
-- page_number (int)
-- sort_option (text)
-- filter_hash (text) → MD5 of applied filters for grouping
-- viewport_visible (boolean)
-- time_visible_ms (int, nullable)
-- was_promoted (boolean)
-- promotion_type (text, nullable)
-- card_variant (text, nullable) → for A/B testing
-- created_at (timestamptz)
+Queries:
+- Average active time by page type (property, project, blog, tool)
+- Scroll depth distribution (0-25%, 25-50%, 50-75%, 75-100%)
+- Exit type breakdown (back, navigate, close, external)
+- Engaged session rate
 ```
 
-**Frontend Implementation:**
-- Create `useImpressionTracking` hook using IntersectionObserver
-- Track when cards enter/exit viewport with visibility duration
-- Integrate into `PropertyCard.tsx` and project cards on listing pages
-- Calculate `filter_hash` from current filter state
+**Visualizations**:
+- **Active Time by Page Type**: Horizontal bar chart
+- **Scroll Depth Distribution**: Pie chart with 4 segments
+- **Exit Type Breakdown**: Donut chart
+- **Engagement Rate Trend**: Line chart over time
 
-### Phase 3: Engagement & Behavioral Depth
+---
 
-**New Table: `page_engagement`**
+#### Tab 3: Price Intelligence Tab (`PriceIntelligenceTab.tsx`)
+
+**Data Hook**: `usePriceHistoryAnalytics.tsx`
 ```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- page_path (text)
-- entity_type (text, nullable) → 'property', 'project', 'blog', 'tool'
-- entity_id (uuid, nullable)
-- active_time_ms (int) → only counts when tab is visible
-- scroll_depth_max (int) → 0-100 percent
-- interactions_count (int) → clicks, hovers, form inputs
-- exit_type ('back' | 'navigate' | 'close' | 'external')
-- engaged (boolean) → derived: active_time > 10s OR scroll > 50% OR interactions > 2
-- created_at (timestamptz)
+Queries:
+- Price changes per city with average change percent
+- Days to first price drop distribution
+- Status transitions with counts (for_sale -> sold, for_rent -> rented)
+- Price reduction velocity by property type
 ```
 
-**Frontend Implementation:**
-- Create `usePageEngagement` hook with:
-  - `document.visibilitychange` listener for active time
-  - Scroll depth tracking (throttled)
-  - Interaction counter
-  - `beforeunload` / navigation detection for exit type
-- Integrate into property detail, project detail, blog, and tool pages
+**Visualizations**:
+- **Price Change Timeline**: Line chart showing avg price changes over time
+- **Days to First Price Drop**: Histogram distribution
+- **Status Flow Sankey**: Visual flow from initial to final status
+- **Price Reduction by City Table**: Sortable with avg drop %, count
 
-### Phase 4: Full Price & Status History
+---
 
-**New Table: `listing_price_history`**
+#### Tab 4: Tool Performance Tab (`ToolPerformanceTab.tsx`)
+
+**Data Hook**: `useToolAnalytics.tsx`
 ```text
-- id (uuid)
-- entity_type ('property' | 'project')
-- entity_id (uuid)
-- old_price (numeric)
-- new_price (numeric)
-- change_percent (numeric) → calculated
-- changed_at (timestamptz)
-- change_reason (text, nullable) → 'manual', 'renewal', 'market_adjustment', 'index_linked'
-- changed_by_type ('agent' | 'developer' | 'admin' | 'system')
-- changed_by_id (uuid, nullable)
-- index_adjustment_applied (boolean, default false) → for projects
+Queries:
+- Completion rates by tool
+- Step abandonment analysis
+- Tool-to-action conversion (tool use -> inquiry)
+- Input distribution (price ranges entered)
 ```
 
-**New Table: `listing_status_history`**
+**Visualizations**:
+- **Tool Completion Funnel**: Horizontal bar showing started vs completed per tool
+- **Step Abandonment Chart**: Which step has highest drop-off
+- **Tool Usage Ranking**: Bar chart of most used tools
+- **Next Action Distribution**: What users do after completing a tool
+
+---
+
+#### Tab 5: Location Module Tab (`LocationModuleTab.tsx`)
+
+**Data Hook**: `useLocationModuleAnalytics.tsx`
 ```text
-- id (uuid)
-- entity_type ('property' | 'project')
-- entity_id (uuid)
-- status_from (text)
-- status_to (text)
-- changed_at (timestamptz)
-- reason (text, nullable) → 'sold', 'rented', 'expired', 'withdrawn', 'duplicate', 'renewed'
-- changed_by_type ('agent' | 'developer' | 'admin' | 'system' | 'auto')
-- changed_by_id (uuid, nullable)
-- notes (text, nullable)
+Queries:
+- Event type breakdown (anchor_click, travel_mode_toggle, custom_place_add)
+- Most clicked anchor types
+- Travel mode preferences
+- Custom place categories
 ```
 
-**Database Triggers:**
-- `log_property_price_change()` → INSERT into listing_price_history on properties.price change
-- `log_property_status_change()` → INSERT into listing_status_history on properties.listing_status change
-- Same for projects table
+**Visualizations**:
+- **Event Type Breakdown**: Pie chart
+- **Anchor Type Performance**: Bar chart (orientation, daily, mobility)
+- **Travel Mode Usage**: Horizontal bar (walk, drive, transit)
+- **Custom Place Types**: Badge list with counts
 
-### Phase 5: Enhanced Search Intelligence
+---
 
-**Modify `search_analytics` table - Add columns:**
+#### Tab 6: Lead Quality Tab (`LeadQualityTab.tsx`)
+
+**Data Hook**: `useLeadQualityAnalytics.tsx`
 ```text
-+ search_id (uuid) → unique identifier for this search session
-+ zero_results (boolean)
-+ refinements_count (int) → how many filter changes before this search
-+ time_to_first_click_ms (int, nullable)
-+ first_click_position (int, nullable)
-+ filter_change_sequence (jsonb, nullable) → ordered list of filter changes
-+ map_mode_used (boolean)
-+ saved_search (boolean) → did user save this as an alert
+Queries:
+- Response time distribution (< 1hr, 1-4hr, 4-24hr, > 24hr)
+- Outcome breakdown (visit_scheduled, info_provided, closed_won, closed_lost)
+- Loss reason analysis
+- Agent response leaderboard
 ```
 
-**Frontend Implementation:**
-- Update `useSearchTracking` hook to:
-  - Generate persistent `search_id` per search session
-  - Track filter changes with sequence
-  - Calculate time to first click
-  - Track position of first clicked result
-  - Detect map mode usage
+**Visualizations**:
+- **Response Time Distribution**: Histogram
+- **Outcome Breakdown**: Donut chart
+- **Loss Reason Analysis**: Horizontal bar chart
+- **Agent Leaderboard Table**: Ranked by response time + conversion
 
-### Phase 6: Tool & Calculator Deep Tracking
+---
 
-**New Table: `tool_runs`**
+#### Tab 7: Content Performance Tab (`ContentPerformanceTab.tsx`)
+
+**Data Hook**: `useContentAnalytics.tsx`
 ```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- tool_name (text) → 'mortgage_calculator', 'purchase_tax', 'rent_vs_buy', etc.
-- started_at (timestamptz)
-- completed_at (timestamptz, nullable)
-- completion_status ('completed' | 'abandoned' | 'error')
-- inputs_json (jsonb) → bucketed/anonymized (price ranges, not exact values)
-- outputs_summary_json (jsonb) → key results
-- related_listing_id (uuid, nullable) → if launched from a property page
-- next_action (text, nullable) → 'save', 'inquiry', 'search', 'exit'
+Queries:
+- Content completion rates by type (blog, guide, glossary)
+- Average scroll depth and active time
+- Next action attribution (content -> search/tool/inquiry)
+- Top performing content pieces
 ```
 
-**New Table: `tool_step_events`**
+**Visualizations**:
+- **Completion Rate by Type**: Bar chart
+- **Content Attribution Sankey**: content -> next action flow
+- **Top Content Table**: Ranked by completion + engagement score
+
+---
+
+#### Tab 8: Funnel Health Tab (`FunnelHealthTab.tsx`)
+
+**Data Hook**: `useFunnelAnalytics.tsx`
 ```text
-- id (uuid)
-- tool_run_id (uuid) → FK to tool_runs
-- step_name (text)
-- step_order (int)
-- entered_at (timestamptz)
-- exited_at (timestamptz, nullable)
-- abandoned (boolean)
-- inputs_at_step (jsonb, nullable)
+Queries:
+- Milestone progression (% reaching each milestone)
+- Drop-off points between milestones
+- Milestone reach counts over time
+- User segment analysis
 ```
 
-**Frontend Implementation:**
-- Create `useToolTracking` hook
-- Integrate into all calculator components:
-  - MortgageCalculator
-  - PurchaseTaxCalculator
-  - RentVsBuyCalculator
-  - TrueCostCalculator
-  - RenovationCostEstimator
-  - NewConstructionCostCalculator
-  - RentalIncomeCalculator
+**Visualizations**:
+- **Milestone Funnel**: Vertical funnel visualization
+- **Drop-off Chart**: Bar chart showing where users fall off
+- **Milestone Trend**: Line chart of milestones reached over time
 
-### Phase 7: Location Module Tracking
+---
 
-**New Table: `location_module_events`**
+#### Tab 9: Performance Monitor Tab (`PerformanceMonitorTab.tsx`)
+
+**Data Hook**: `usePerformanceAnalytics.tsx`
 ```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- property_id (uuid)
-- event_type (text):
-  - 'module_open'
-  - 'anchor_click'
-  - 'nearby_place_expand'
-  - 'custom_place_add'
-  - 'travel_mode_toggle'
-  - 'route_click'
-  - 'search_area_click'
-- anchor_type (text, nullable) → 'orientation', 'daily', 'mobility'
-- travel_mode (text, nullable) → 'walk', 'drive', 'transit'
-- custom_place_type (text, nullable) → 'school', 'work', 'family', 'other'
-- metadata (jsonb, nullable)
-- created_at (timestamptz)
+Queries:
+- Core Web Vitals averages (LCP, CLS, INP)
+- Error rates by type
+- Route load times by page
+- Integration health status
 ```
 
-**Frontend Implementation:**
-- Create `useLocationModuleTracking` hook
-- Integrate into `PropertyLocation.tsx`:
-  - Track map interactions
-  - Track anchor/POI clicks
-  - Track travel mode changes
-  - Track custom location additions
+**Visualizations**:
+- **Core Web Vitals Cards**: Green/yellow/red thresholds
+- **Error Rate Trend**: Line chart
+- **Slowest Routes Table**: Top 10 by load time
+- **Integration Health Status**: Success rate badges (Google Maps, geocoding)
 
-### Phase 8: Lead Response Quality
+---
 
-**New Table: `lead_response_events`**
+#### Tab 10: Experiment Results Tab (`ExperimentResultsTab.tsx`)
+
+**Data Hook**: `useExperimentAnalytics.tsx`
 ```text
-- id (uuid)
-- inquiry_id (uuid) → FK to property_inquiries or project_inquiries
-- inquiry_type ('property' | 'project')
-- agent_id (uuid, nullable)
-- developer_id (uuid, nullable)
-- first_response_time_minutes (int, nullable)
-- response_type ('call' | 'whatsapp' | 'email' | 'sms')
-- response_length (int, nullable) → character count
-- outcome ('visit_scheduled' | 'info_provided' | 'closed_won' | 'closed_lost' | 'no_response')
-- loss_reason (text, nullable) → 'price', 'location', 'timing', 'competition', 'unqualified', 'other'
-- notes (text, nullable)
-- responded_at (timestamptz)
-- created_at (timestamptz)
+Queries:
+- Active experiments list
+- Variant exposure counts
+- Conversion rates by variant
+- Statistical significance indicators
 ```
 
-**Integration:**
-- Add tracking UI in agent/developer lead management
-- Calculate response time automatically from inquiry creation
+**Visualizations**:
+- **Active Experiments Table**: Name, variants, exposure counts
+- **Variant Comparison Chart**: Bar chart per experiment
+- **Conversion Rate Comparison**: With confidence intervals
 
-### Phase 9: Advertiser Quality Snapshots
+---
 
-**New Table: `advertiser_quality_snapshots`**
+### Dashboard Integration
+
+**File**: `src/pages/admin/AdminAnalytics.tsx`
+
+Add 10 new tab triggers and content panels:
 ```text
-- id (uuid)
-- snapshot_date (date)
-- actor_type ('agent' | 'developer' | 'agency')
-- actor_id (uuid)
-- total_listings (int)
-- avg_photo_count (numeric)
-- pct_with_sqm (numeric)
-- pct_with_floor (numeric)
-- pct_with_parking (numeric)
-- pct_with_description (numeric)
-- avg_description_length (int)
-- verification_rate (numeric)
-- stale_listing_rate (numeric) → listings not renewed in 30+ days
-- price_update_frequency (numeric) → avg days between price updates
-- response_rate (numeric)
-- avg_response_time_hours (numeric)
-- created_at (timestamptz)
+New tabs to add after "Cities":
+- Impressions, Engagement, Price Intel, Tool Perf, Location, Lead Quality, Content, Funnel, Performance, Experiments
 ```
 
-**Implementation:**
-- Create scheduled function (edge function or database function) to run daily
-- Aggregate from properties, projects, property_inquiries
+**Update DataHealthCard**: Add counts for all 15+ new tracking tables
 
-### Phase 10: Listing Micro-Signals
+---
 
-**New Table: `listing_micro_signals`**
+## Part 2: Component Integration - Wiring Tracking Hooks
+
+### Integration Priority Matrix
+
+| Priority | Component | Hook to Integrate | Events Tracked |
+|----------|-----------|------------------|----------------|
+| HIGH | PropertyCard.tsx | useImpressionTracking | Card impressions in viewport |
+| HIGH | Listings.tsx | useImpressionTracking | Grid-level impression observer |
+| HIGH | PropertyHero.tsx | useMicroSignalTracking | Gallery open/close, image views |
+| HIGH | PropertyLocation.tsx | useLocationModuleTracking | Anchor clicks, travel mode, custom places |
+| HIGH | MortgageCalculator.tsx | useToolTracking | Tool start, steps, completion |
+| MEDIUM | All 10 calculators | useToolTracking | Tool usage patterns |
+| MEDIUM | PropertyDetails page | usePageEngagement | Active time, scroll depth |
+| MEDIUM | Blog/Guide pages | useContentEngagement | Completion, next action |
+| LOW | FavoriteButton.tsx | useMicroSignalTracking | Save clicks |
+| LOW | ShareButton.tsx | useMicroSignalTracking | Share method tracking |
+
+### Detailed Component Changes
+
+#### 1. Listings.tsx - Impression Tracking
+
+**Current State**: Has `useSearchTracking` and `useEventTracking` but no impression tracking
+
+**Changes**:
+- Import `useImpressionTracking`
+- Create IntersectionObserver for property cards
+- Pass observer ref to ListingsGrid or individual cards
+- Track position, page number, filters for each visible card
+
 ```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- entity_type ('property' | 'project')
-- entity_id (uuid)
-- signal_type (text):
-  - 'copy_price'
-  - 'copy_phone'
-  - 'copy_address'
-  - 'image_view'
-  - 'gallery_open'
-  - 'gallery_time'
-  - 'floorplan_view'
-  - 'mortgage_calc_launch'
-  - 'cost_calc_launch'
-  - 'compare_add'
-  - 'compare_remove'
-- signal_data (jsonb, nullable):
-  - For gallery: { images_viewed: 5, time_in_gallery_ms: 12000 }
-  - For copy: { copied_value: 'phone' }
-- created_at (timestamptz)
-```
-
-**Frontend Implementation:**
-- Create `useMicroSignalTracking` hook
-- Integrate into:
-  - PropertyHero (gallery tracking)
-  - PropertyDetails (copy buttons)
-  - Calculator launch buttons on property pages
-  - Compare functionality
-
-### Phase 11: Content Engagement
-
-**New Table: `content_engagement`**
-```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- content_type ('blog_post' | 'guide' | 'glossary')
-- content_id (uuid)
-- completion_percent (int) → 0-100
-- scroll_depth_max (int)
-- active_time_ms (int)
-- next_action (text, nullable) → 'search', 'tool', 'inquiry', 'another_article', 'exit'
-- next_action_target (text, nullable) → specific page/tool navigated to
-- created_at (timestamptz)
-```
-
-**Frontend Implementation:**
-- Create `useContentEngagement` hook
-- Integrate into BlogPost, Guide components
-
-### Phase 12: Funnel Milestones & User Preferences
-
-**New Table: `user_milestones`**
-```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- milestone (text):
-  - 'used_filters'
-  - 'viewed_listing'
-  - 'saved_listing'
-  - 'ran_tool'
-  - 'started_inquiry'
-  - 'completed_inquiry'
-  - 'created_account'
-  - 'returned_7d'
-  - 'returned_30d'
-- first_reached_at (timestamptz)
-- reach_count (int, default 1)
-- metadata (jsonb, nullable)
-```
-
-**New Table: `user_preferences`**
-```text
-- id (uuid)
-- user_id (uuid) → FK to auth.users
-- buyer_type (text, nullable) → 'first_time', 'upgrader', 'investor', 'oleh'
-- timeline (text, nullable) → 'immediate', '3_months', '6_months', 'exploring'
-- citizenship (text, nullable) → 'israeli', 'oleh', 'foreign'
-- preferred_currency (text, default 'ILS')
-- must_have_features (text[], nullable)
-- deal_breakers (text[], nullable)
-- updated_at (timestamptz)
-```
-
-### Phase 13: Experiments & Performance
-
-**New Table: `experiment_exposures`**
-```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- experiment_name (text)
-- variant (text)
-- component (text, nullable)
-- exposed_at (timestamptz)
-- converted (boolean, default false)
-- converted_at (timestamptz, nullable)
-```
-
-**New Table: `performance_metrics`**
-```text
-- id (uuid)
-- session_id (text)
-- page_path (text)
-- route_load_time_ms (int, nullable)
-- lcp_ms (int, nullable) → Largest Contentful Paint
-- cls (numeric, nullable) → Cumulative Layout Shift
-- inp_ms (int, nullable) → Interaction to Next Paint
-- created_at (timestamptz)
-```
-
-**New Table: `client_errors`**
-```text
-- id (uuid)
-- session_id (text)
-- user_id (uuid, nullable)
-- error_type ('js_error' | 'map_failure' | 'search_failure' | 'api_error')
-- error_message (text)
-- stack_trace (text, nullable)
-- page_path (text)
-- metadata (jsonb, nullable)
-- created_at (timestamptz)
-```
-
-**New Table: `integration_health`**
-```text
-- id (uuid)
-- session_id (text)
-- integration_type ('google_maps' | 'geocoding' | 'supabase')
-- success (boolean)
-- response_time_ms (int, nullable)
-- error_message (text, nullable)
-- created_at (timestamptz)
+Integration approach:
+1. Create observer on mount with current search context
+2. Observe each PropertyCard element
+3. Batch flush impressions on scroll pause or navigation
 ```
 
 ---
 
-## Admin Dashboard Enhancements
+#### 2. PropertyHero.tsx - Gallery Micro-Signals
 
-### New Dashboard Tabs/Sections
+**Current State**: No tracking on gallery interactions
 
-1. **Impressions Tab** (New)
-   - Impression-to-click ratio by city
-   - Position performance heatmap
-   - Promoted vs organic comparison
+**Changes**:
+- Import `useMicroSignalTracking`
+- Track gallery open when `setIsGalleryOpen(true)` is called
+- Track image views on carousel navigation
+- Track gallery close when modal closes
 
-2. **Engagement Tab** (Enhanced)
-   - Average active time by page type
-   - Scroll depth distribution
-   - Exit type breakdown
-   - Engaged session rate
-
-3. **Price Intelligence Tab** (New)
-   - Price change timeline visualization
-   - Average days to first price drop
-   - Price reduction patterns by city
-   - Status transition Sankey diagram
-
-4. **Tool Performance Tab** (New)
-   - Completion rates by tool
-   - Step abandonment funnel
-   - Input distribution analysis
-   - Tool-to-action conversion
-
-5. **Location Module Tab** (New)
-   - Most clicked anchor types
-   - Travel mode preferences
-   - Custom place additions rate
-   - Route engagement metrics
-
-6. **Lead Quality Tab** (New)
-   - Response time distribution
-   - Outcome breakdown
-   - Loss reason analysis
-   - Agent response leaderboard
-
-7. **Content Performance Tab** (New)
-   - Article completion rates
-   - Content-to-action attribution
-   - Guide engagement scores
-
-8. **Funnel Health Tab** (New)
-   - Milestone progression chart
-   - Drop-off points visualization
-   - Cohort retention analysis
-
-9. **Performance Tab** (New)
-   - Core Web Vitals trends
-   - Error rate monitoring
-   - Integration health status
-
-10. **Experiment Results Tab** (New)
-    - Active experiments list
-    - Variant performance comparison
-    - Statistical significance indicators
-
----
-
-## File Changes Summary
-
-### New Files to Create
-
-**Hooks (8 new):**
 ```text
-src/hooks/useImpressionTracking.tsx
-src/hooks/usePageEngagement.tsx
-src/hooks/useToolTracking.tsx
-src/hooks/useLocationModuleTracking.tsx
-src/hooks/useMicroSignalTracking.tsx
-src/hooks/useContentEngagement.tsx
-src/hooks/useMilestoneTracking.tsx
-src/hooks/usePerformanceTracking.tsx
-```
-
-**Admin Analytics Components (10 new):**
-```text
-src/components/admin/analytics/ImpressionsTab.tsx
-src/components/admin/analytics/EngagementTab.tsx
-src/components/admin/analytics/PriceIntelligenceTab.tsx
-src/components/admin/analytics/ToolPerformanceTab.tsx
-src/components/admin/analytics/LocationModuleTab.tsx
-src/components/admin/analytics/LeadQualityTab.tsx
-src/components/admin/analytics/ContentPerformanceTab.tsx
-src/components/admin/analytics/FunnelHealthTab.tsx
-src/components/admin/analytics/PerformanceMonitorTab.tsx
-src/components/admin/analytics/ExperimentResultsTab.tsx
-```
-
-**Data Hooks (10 new):**
-```text
-src/hooks/useImpressionAnalytics.tsx
-src/hooks/useEngagementAnalytics.tsx
-src/hooks/usePriceHistoryAnalytics.tsx
-src/hooks/useToolAnalytics.tsx
-src/hooks/useLocationModuleAnalytics.tsx
-src/hooks/useLeadQualityAnalytics.tsx
-src/hooks/useContentAnalytics.tsx
-src/hooks/useFunnelAnalytics.tsx
-src/hooks/usePerformanceAnalytics.tsx
-src/hooks/useExperimentAnalytics.tsx
-```
-
-### Files to Modify
-
-**Existing Hooks:**
-```text
-src/hooks/useSearchTracking.tsx → Add search_id, zero_results, refinements tracking
-src/hooks/useEventTracking.tsx → Enhance with engagement metrics
-```
-
-**Components to Integrate Tracking:**
-```text
-src/components/property/PropertyCard.tsx → Add impression tracking
-src/components/property/PropertyHero.tsx → Add gallery micro-signals
-src/components/property/PropertyLocation.tsx → Add location module tracking
-src/pages/Listings.tsx → Add impression + enhanced search tracking
-src/pages/Projects.tsx → Add impression tracking
-src/pages/PropertyDetails.tsx → Add engagement + micro-signals
-src/components/tools/*.tsx → Add tool run tracking (7 calculators)
-```
-
-**Admin Dashboard:**
-```text
-src/pages/admin/AdminAnalytics.tsx → Add 10 new tabs
-src/components/admin/analytics/DataHealthCard.tsx → Monitor all new tables
+Add tracking calls:
+- handleImageClick() -> trackGalleryOpen()
+- scrollPrev/scrollNext() -> trackImageView(index)
+- FullscreenGallery onClose -> trackGalleryClose()
 ```
 
 ---
 
-## Database Migration Summary
+#### 3. PropertyLocation.tsx - Location Module Events
 
-**15 new tables** + **8 columns added to search_analytics** + **4 new triggers**
+**Current State**: No tracking on location interactions
 
-This is a substantial schema change that will be executed via database migrations with proper RLS policies for each table.
+**Changes**:
+- Import `useLocationModuleTracking`
+- Track travel mode toggle when `setTravelMode` changes
+- Track anchor card clicks
+- Track custom location additions
 
----
-
-## Priority Implementation Order
-
-1. **Week 1**: Listing Impressions + Page Engagement (immediate visibility into what users see)
-2. **Week 2**: Price/Status History triggers (automatic, runs in background)
-3. **Week 3**: Enhanced Search Intelligence (fills major gap in conversion tracking)
-4. **Week 4**: Tool Deep Tracking (understand calculator value)
-5. **Week 5**: Location Module + Micro-signals (engagement depth)
-6. **Week 6**: Lead Quality + Content Engagement
-7. **Week 7**: Milestones + Preferences + Experiments
-8. **Week 8**: Performance Monitoring + Dashboard Polish
+```text
+Events to track:
+- setTravelMode(mode) -> trackTravelModeToggle(mode)
+- CityAnchorCard onClick -> trackAnchorClick(anchorType)
+- LocationSearchInput onSelect -> trackCustomPlaceAdd(type)
+```
 
 ---
 
-## Expected Outcomes
+#### 4. MortgageCalculator.tsx (and other tools) - Tool Tracking
 
-After full implementation:
-- **Know what users see** (impressions) vs **what they click** (events)
-- **Full audit trail** of every price and status change
-- **Search intent signals** including why searches fail
-- **Tool effectiveness** measurement from input to action
-- **Location module ROI** - your confidence engine tracked
-- **Lead quality metrics** beyond just counts
-- **Content attribution** - which guides drive action
-- **Funnel health** with milestone progression
-- **A/B testing infrastructure** ready for experiments
-- **Performance monitoring** to catch silent killers
+**Current State**: No tool run tracking
+
+**Changes**:
+- Import `useToolTracking('mortgage_calculator')`
+- Track step changes when user moves between input sections
+- Track calculation on "Calculate" button click
+- Track completion with inputs/outputs when user finishes
+
+```text
+Integration points:
+- Component mount -> startToolRun() (automatic via hook)
+- Collapsible open/close -> trackStepChange('advanced_options')
+- Calculate button -> trackCalculation(inputs, outputs)
+- Save to profile -> completeToolRun('completed', inputs, outputs, 'save')
+```
+
+---
+
+#### 5. PropertyDetails Page - Page Engagement
+
+**File**: Need to identify the correct file (may be Property.tsx or similar)
+
+**Changes**:
+- Import `usePageEngagement('property', propertyId)`
+- Hook automatically tracks active time, scroll depth
+- No manual calls needed - hook handles everything
+
+---
+
+#### 6. Blog/Guide Components - Content Engagement
+
+**Changes**:
+- Import `useContentEngagement`
+- Pass content type and ID
+- Track completion on scroll to bottom
+- Track next action on link clicks
+
+---
+
+### Files Summary
+
+**New Files to Create (10 tabs + 10 hooks = 20 files)**:
+
+```text
+src/components/admin/analytics/
+├── ImpressionsTab.tsx
+├── EngagementDepthTab.tsx
+├── PriceIntelligenceTab.tsx
+├── ToolPerformanceTab.tsx
+├── LocationModuleTab.tsx
+├── LeadQualityTab.tsx
+├── ContentPerformanceTab.tsx
+├── FunnelHealthTab.tsx
+├── PerformanceMonitorTab.tsx
+└── ExperimentResultsTab.tsx
+
+src/hooks/
+├── useImpressionAnalytics.tsx
+├── useEngagementAnalytics.tsx
+├── usePriceHistoryAnalytics.tsx
+├── useToolAnalytics.tsx
+├── useLocationModuleAnalytics.tsx
+├── useLeadQualityAnalytics.tsx
+├── useContentAnalytics.tsx
+├── useFunnelAnalytics.tsx
+├── usePerformanceAnalytics.tsx
+└── useExperimentAnalytics.tsx
+```
+
+**Files to Modify**:
+
+```text
+src/pages/admin/AdminAnalytics.tsx          - Add 10 new tabs
+src/components/admin/analytics/DataHealthCard.tsx - Monitor new tables
+
+src/pages/Listings.tsx                      - Add impression tracking
+src/pages/Projects.tsx                      - Add impression tracking
+src/components/property/PropertyHero.tsx    - Add gallery micro-signals
+src/components/property/PropertyLocation.tsx - Add location module tracking
+src/components/property/FavoriteButton.tsx  - Add save tracking
+src/components/property/ShareButton.tsx     - Add share tracking
+
+src/components/tools/MortgageCalculator.tsx - Add tool tracking
+src/components/tools/PurchaseTaxCalculator.tsx
+src/components/tools/RentVsBuyCalculator.tsx
+src/components/tools/TrueCostCalculator.tsx
+src/components/tools/TotalCostCalculator.tsx
+src/components/tools/AffordabilityCalculator.tsx
+src/components/tools/InvestmentReturnCalculator.tsx
+src/components/tools/RentalIncomeCalculator.tsx
+src/components/tools/RenovationCostEstimator.tsx
+src/components/tools/NewConstructionCostCalculator.tsx
+```
+
+---
+
+## Implementation Order
+
+### Phase 1: Data Hooks (Foundation)
+Create all 10 analytics data hooks first - these query the new tables and provide data for tabs.
+
+### Phase 2: Admin Dashboard Tabs
+Build tabs one by one, starting with highest-value:
+1. Price Intelligence (market insights)
+2. Tool Performance (calculator value)
+3. Impressions (visibility metrics)
+4. Lead Quality (agent accountability)
+5. Engagement (user behavior depth)
+6. Location Module (confidence engine ROI)
+7. Funnel Health (conversion optimization)
+8. Content (guide attribution)
+9. Performance (reliability monitoring)
+10. Experiments (future-proofing)
+
+### Phase 3: Component Integration
+Wire tracking hooks into components, starting with highest-traffic:
+1. Listings.tsx + PropertyCard impressions
+2. PropertyHero gallery tracking
+3. MortgageCalculator (most used tool)
+4. PropertyLocation module
+5. Other calculators
+6. Blog/guide pages
+
+---
+
+## Expected Data Flow After Implementation
+
+```text
+User browses listings  -> listing_impressions (via useImpressionTracking)
+                       -> ImpressionsTab shows position performance
+
+User views property    -> page_engagement (via usePageEngagement)
+                       -> EngagementDepthTab shows scroll/time data
+
+User uses calculator   -> tool_runs + tool_step_events (via useToolTracking)
+                       -> ToolPerformanceTab shows completion funnel
+
+User explores location -> location_module_events (via useLocationModuleTracking)
+                       -> LocationModuleTab shows anchor engagement
+
+Agent responds to lead -> lead_response_events (manual or UI integration)
+                       -> LeadQualityTab shows response metrics
+
+Price changes          -> listing_price_history (via DB trigger)
+                       -> PriceIntelligenceTab shows market velocity
+```
+
+This creates a complete analytics loop from user action to admin insight.
