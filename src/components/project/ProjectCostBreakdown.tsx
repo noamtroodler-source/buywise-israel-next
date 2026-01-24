@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calculator, Receipt, Calendar, Shield, ChevronDown } from 'lucide-react';
+import { Calculator, Receipt, Shield, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -165,12 +165,6 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   const dueAtSigningPercentLow = price > 0 ? ((dueAtSigningRange.low / price) * 100).toFixed(0) : '0';
   const dueAtSigningPercentHigh = price > 0 ? ((dueAtSigningRange.high / price) * 100).toFixed(0) : '0';
 
-  // Remaining payment schedule (excludes the 10% at signing)
-  const remainingPaymentSchedule = [
-    { stage: 'Foundation Complete', percent: 15, amount: price * 0.15 },
-    { stage: 'Structure Complete', percent: 25, amount: price * 0.25 },
-    { stage: 'Key Delivery', percent: 50, amount: price * 0.50, mortgageNote: includeMortgage },
-  ];
 
   return (
     <div className="space-y-5">
@@ -355,37 +349,6 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </Collapsible>
       </TooltipProvider>
 
-      {/* Remaining Payment Schedule */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-primary" />
-          <h4 className="font-medium text-foreground">Remaining Payment Schedule</h4>
-          <Badge variant="outline" className="text-xs font-normal">New Construction</Badge>
-        </div>
-        <div className="space-y-2">
-          {remainingPaymentSchedule.map((stage, index) => (
-            <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                {stage.percent}%
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{stage.stage}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatPrice(stage.amount, 'ILS')}
-                  {stage.mortgageNote && (
-                    <span className="ml-2 text-primary">(Mortgage typically covers this)</span>
-                  )}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-        {includeMortgage && (
-          <p className="text-xs text-muted-foreground italic">
-            * Mortgage financing is typically disbursed at Key Delivery stage
-          </p>
-        )}
-      </div>
 
       {/* Buyer Protections */}
       <div className="space-y-3 pt-2 border-t border-border/50">
