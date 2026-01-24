@@ -40,6 +40,7 @@ import { SearchIntelligenceTab } from '@/components/admin/analytics/SearchIntell
 import { ListingIntelligenceTab } from '@/components/admin/analytics/ListingIntelligenceTab';
 import { AdvertiserAnalyticsTab } from '@/components/admin/analytics/AdvertiserAnalyticsTab';
 import { DataHealthCard } from '@/components/admin/analytics/DataHealthCard';
+import { CityAnalyticsTab } from '@/components/admin/analytics/CityAnalyticsTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -140,6 +141,9 @@ export default function AdminAnalytics() {
           <TabsTrigger value="inquiries" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inquiries</TabsTrigger>
           <TabsTrigger value="growth" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Growth</TabsTrigger>
           <TabsTrigger value="market" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Market</TabsTrigger>
+          <TabsTrigger value="cities" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Building className="h-3.5 w-3.5 mr-1.5" />Cities
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -190,6 +194,10 @@ export default function AdminAnalytics() {
 
         <TabsContent value="market" className="space-y-6">
           <PriceAnalytics data={priceData} isLoading={priceLoading} />
+        </TabsContent>
+
+        <TabsContent value="cities" className="space-y-6">
+          <CityAnalyticsTab days={days} />
         </TabsContent>
       </Tabs>
     </div>

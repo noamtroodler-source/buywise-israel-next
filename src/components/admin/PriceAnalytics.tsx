@@ -173,58 +173,62 @@ export function PriceAnalytics({ data, isLoading }: PriceAnalyticsProps) {
           <div className="mt-6 pt-4 border-t border-border/50">
             <p className="text-sm font-semibold mb-3 flex items-center gap-2 text-foreground">
               <Home className="h-4 w-4 text-primary" />
-              Average Price by City
+              Average Price by City ({data?.cityPrices?.length || 0} cities)
             </p>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart 
-                data={(data?.cityPrices || []).slice(0, 6)}
-                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
-              >
-                <XAxis 
-                  dataKey="city" 
-                  tick={{ fontSize: 10, fill: 'hsl(var(--foreground))' }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={0}
-                  angle={-45}
-                  textAnchor="end"
-                  height={50}
-                />
-                <YAxis 
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => formatPrice(value)}
-                  width={50}
-                />
-                <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const item = payload[0].payload;
-                      return (
-                        <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
-                          <p className="font-semibold text-foreground">{item.city}</p>
-                          <div className="text-muted-foreground space-y-0.5">
-                            <p>Avg: {formatPrice(item.avgPrice)}</p>
-                            <p>Per sqm: ₪{(item.avgPriceSqm / 1000).toFixed(1)}K</p>
-                            <p>{item.count} listings</p>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar dataKey="avgPrice" radius={[6, 6, 0, 0]}>
-                  {(data?.cityPrices || []).slice(0, 6).map((_, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[index % COLORS.length]}
+            <div className="overflow-x-auto">
+              <div style={{ minWidth: Math.max(400, (data?.cityPrices?.length || 0) * 60) }}>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart 
+                    data={data?.cityPrices || []}
+                    margin={{ top: 5, right: 10, left: 10, bottom: 70 }}
+                  >
+                    <XAxis 
+                      dataKey="city" 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--foreground))' }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval={0}
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
                     />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                    <YAxis 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => formatPrice(value)}
+                      width={50}
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const item = payload[0].payload;
+                          return (
+                            <div className="bg-background border border-border/50 rounded-xl shadow-lg p-2 text-sm">
+                              <p className="font-semibold text-foreground">{item.city}</p>
+                              <div className="text-muted-foreground space-y-0.5">
+                                <p>Avg: {formatPrice(item.avgPrice)}</p>
+                                <p>Per sqm: ₪{(item.avgPriceSqm / 1000).toFixed(1)}K</p>
+                                <p>{item.count} listings</p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="avgPrice" radius={[6, 6, 0, 0]}>
+                      {(data?.cityPrices || []).map((_, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

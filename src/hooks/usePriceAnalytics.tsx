@@ -72,8 +72,7 @@ export function usePriceAnalytics() {
             : 0,
           count: data.prices.length,
         }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
+        .sort((a, b) => b.count - a.count);
 
       // Price ranges (in ILS)
       const priceRangesConfig = [
