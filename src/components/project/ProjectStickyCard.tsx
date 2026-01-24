@@ -181,9 +181,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
               >
                 {developer.name}
               </Link>
-              {developer.is_verified && (
-                <Shield className="h-4 w-4 text-primary flex-shrink-0" />
-              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {developer.total_projects || 0} Projects
