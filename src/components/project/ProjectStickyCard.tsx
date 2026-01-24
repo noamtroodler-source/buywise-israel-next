@@ -241,29 +241,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     >
       <Card className="shadow-lg border-primary/10">
         <CardContent className="p-5 space-y-4">
-          {/* Construction Progress Mini Display */}
-          {project.construction_progress_percent !== null && project.construction_progress_percent !== undefined && (
-            <>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <TrendingUp className="h-4 w-4" />
-                    Construction Progress
-                  </span>
-                  <span className="font-semibold text-primary">{project.construction_progress_percent}%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-primary"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${project.construction_progress_percent}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                  />
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
 
           {/* Contact Section - Tabbed if both agent and developer exist */}
           {representingAgent ? (
