@@ -233,17 +233,13 @@ export function PersonalizationHeader({
         
         <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
           <div className="flex items-center gap-2">
-            {localIncludeMortgage ? (
-              <CreditCard className="h-4 w-4 text-primary" />
-            ) : (
-              <Banknote className="h-4 w-4 text-primary" />
-            )}
+            <CreditCard className="h-4 w-4 text-primary" />
             <div>
-              <p className="text-sm font-medium">
-                {localIncludeMortgage ? 'Taking a Mortgage' : 'Paid in Full'}
-              </p>
+              <p className="text-sm font-medium">Include Mortgage</p>
               <p className="text-xs text-muted-foreground">
-                {localIncludeMortgage ? 'Monthly payment estimates included' : 'Cash purchase - no mortgage fees'}
+                {localIncludeMortgage 
+                  ? 'Mortgage costs & monthly payments included' 
+                  : 'Toggle on to add mortgage estimates'}
               </p>
             </div>
           </div>
