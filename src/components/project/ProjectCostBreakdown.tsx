@@ -152,12 +152,24 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   const upfrontPercentLow = price > 0 ? ((totalUpfrontRange.low / price) * 100).toFixed(1) : '0';
   const upfrontPercentHigh = price > 0 ? ((totalUpfrontRange.high / price) * 100).toFixed(1) : '0';
 
-  // Payment schedule (typical for new construction)
-  const paymentSchedule = [
-    { stage: 'Contract Signing', percent: 10, amount: price * 0.10 },
+  // First payment at signing
+  const firstPaymentPercent = 10;
+  const firstPaymentAmount = price * (firstPaymentPercent / 100);
+  
+  // Due at signing = first payment + all upfront fees
+  const dueAtSigningRange = {
+    low: firstPaymentAmount + totalUpfrontRange.low,
+    high: firstPaymentAmount + totalUpfrontRange.high,
+  };
+  
+  const dueAtSigningPercentLow = price > 0 ? ((dueAtSigningRange.low / price) * 100).toFixed(0) : '0';
+  const dueAtSigningPercentHigh = price > 0 ? ((dueAtSigningRange.high / price) * 100).toFixed(0) : '0';
+
+  // Remaining payment schedule (excludes the 10% at signing)
+  const remainingPaymentSchedule = [
     { stage: 'Foundation Complete', percent: 15, amount: price * 0.15 },
     { stage: 'Structure Complete', percent: 25, amount: price * 0.25 },
-    { stage: 'Key Delivery', percent: 50, amount: price * 0.50 },
+    { stage: 'Key Delivery', percent: 50, amount: price * 0.50, mortgageNote: includeMortgage },
   ];
 
   return (
@@ -211,33 +223,50 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </div>
       )}
 
-      {/* Upfront Costs - Collapsible with honest ranges */}
+      {/* Due at Contract Signing - Summary Banner */}
+      <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Due at Contract Signing</p>
+            <p className="text-lg font-bold text-primary">
+              {formatPriceRange(dueAtSigningRange.low, dueAtSigningRange.high, 'ILS')}
+            </p>
+          </div>
+          <div className="text-right text-xs text-muted-foreground">
+            <p>10% down + fees</p>
+            <p>~{dueAtSigningPercentLow}–{dueAtSigningPercentHigh}% of price</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Due at Signing Breakdown - Collapsible */}
       <TooltipProvider>
         <Collapsible open={upfrontOpen} onOpenChange={setUpfrontOpen}>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-primary" />
-                <h4 className="font-medium text-foreground">Upfront Costs</h4>
-              </div>
-              <div className="text-right">
-                <div className="font-bold text-primary">
-                  {formatPriceRange(totalUpfrontRange.low, totalUpfrontRange.high, 'ILS')}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  ~{upfrontPercentLow}–{upfrontPercentHigh}% of price
-                </div>
+                <h4 className="font-medium text-foreground">Breakdown</h4>
               </div>
             </div>
             
             <CollapsibleTrigger asChild>
               <button className="flex items-center gap-1 text-xs text-primary hover:underline">
                 <ChevronDown className={cn("h-3 w-3 transition-transform", upfrontOpen && "rotate-180")} />
-                {upfrontOpen ? 'Hide breakdown' : 'View breakdown'}
+                {upfrontOpen ? 'Hide details' : 'View details'}
               </button>
             </CollapsibleTrigger>
             
             <CollapsibleContent className="space-y-2 text-sm pt-2">
+              {/* First Payment (10%) */}
+              <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">First Payment (10%)</span>
+                  <Badge variant="outline" className="text-xs">At Signing</Badge>
+                </div>
+                <span className="font-medium">{formatPrice(firstPaymentAmount, 'ILS')}</span>
+              </div>
+              
               {/* Purchase Tax */}
               <div className="flex justify-between py-2 border-b border-border/50">
                 <div className="flex items-center gap-2">
@@ -256,7 +285,7 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
                     <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">First-Time</Badge>
                   )}
                   {effectiveDerived.taxType === 'oleh' && (
-                    <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400">Oleh</Badge>
+                    <Badge variant="secondary" className="text-xs bg-accent/50 text-accent-foreground">Oleh</Badge>
                   )}
                 </div>
                 <span className="font-medium">{formatPrice(purchaseTax, 'ILS')}</span>
@@ -326,26 +355,36 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
         </Collapsible>
       </TooltipProvider>
 
-      {/* Payment Schedule */}
+      {/* Remaining Payment Schedule */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-primary" />
-          <h4 className="font-medium text-foreground">Typical Payment Schedule</h4>
+          <h4 className="font-medium text-foreground">Remaining Payment Schedule</h4>
           <Badge variant="outline" className="text-xs font-normal">New Construction</Badge>
         </div>
         <div className="space-y-2">
-          {paymentSchedule.map((stage, index) => (
+          {remainingPaymentSchedule.map((stage, index) => (
             <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                 {stage.percent}%
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{stage.stage}</p>
-                <p className="text-xs text-muted-foreground">{formatPrice(stage.amount, 'ILS')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPrice(stage.amount, 'ILS')}
+                  {stage.mortgageNote && (
+                    <span className="ml-2 text-primary">(Mortgage typically covers this)</span>
+                  )}
+                </p>
               </div>
             </div>
           ))}
         </div>
+        {includeMortgage && (
+          <p className="text-xs text-muted-foreground italic">
+            * Mortgage financing is typically disbursed at Key Delivery stage
+          </p>
+        )}
       </div>
 
       {/* Buyer Protections */}
