@@ -71,10 +71,10 @@ export default function Blog() {
             className="max-w-3xl mx-auto text-center space-y-4"
           >
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              <span className="text-primary">Learn</span> Before You Leap
+              Learn Before You Leap
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-              Guides, market context, and honest answers for buying property in Israel — written for international buyers.
+              Guides, market context, and honest answers for buying property in <span className="text-primary">Israel</span> — written for international buyers.
             </p>
           </motion.div>
         </div>
