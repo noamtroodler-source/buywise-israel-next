@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, RotateCcw, ExternalLink } from 'lucide-react';
+import { ChevronDown, RotateCcw, ExternalLink, Banknote, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useMortgagePreferences, MortgagePreferences } from '@/hooks/useMortgagePreferences';
@@ -41,9 +43,11 @@ export function PersonalizationHeader({
     preferences, 
     savePreferences, 
     isSaving,
+    includeMortgage,
   } = useMortgagePreferences();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [localIncludeMortgage, setLocalIncludeMortgage] = useState(includeMortgage);
   
   // Get derived buyer type from saved profile
   const derived = useMemo(() => {
@@ -88,7 +92,7 @@ export function PersonalizationHeader({
   
   const [localTermYears, setLocalTermYears] = useState<number>(preferences.term_years);
   
-  // Sync with saved preferences when they change
+  // Sync local state with preferences
   useEffect(() => {
     const currentPercent = preferences.down_payment_percent;
     if (currentPercent && DOWN_PAYMENT_PRESETS.includes(currentPercent)) {
@@ -99,6 +103,7 @@ export function PersonalizationHeader({
       setCustomAmount(preferences.down_payment_amount.toLocaleString());
     }
     setLocalTermYears(preferences.term_years);
+    setLocalIncludeMortgage(preferences.include_mortgage);
   }, [preferences]);
   
   // Calculate effective values for display
@@ -121,16 +126,23 @@ export function PersonalizationHeader({
   
   const handleSave = () => {
     const newPrefs: Partial<MortgagePreferences> = {
+      include_mortgage: localIncludeMortgage,
       term_years: localTermYears,
     };
     
-    if (downPaymentMode === 'preset') {
-      newPrefs.down_payment_percent = selectedPreset;
-      newPrefs.down_payment_amount = null;
+    if (localIncludeMortgage) {
+      if (downPaymentMode === 'preset') {
+        newPrefs.down_payment_percent = selectedPreset;
+        newPrefs.down_payment_amount = null;
+      } else {
+        const amount = parseFloat(customAmount.replace(/,/g, ''));
+        newPrefs.down_payment_amount = isNaN(amount) ? null : amount;
+        newPrefs.down_payment_percent = null;
+      }
     } else {
-      const amount = parseFloat(customAmount.replace(/,/g, ''));
-      newPrefs.down_payment_amount = isNaN(amount) ? null : amount;
+      // Cash purchase - clear mortgage-specific values
       newPrefs.down_payment_percent = null;
+      newPrefs.down_payment_amount = null;
     }
     
     savePreferences(newPrefs);
@@ -138,6 +150,7 @@ export function PersonalizationHeader({
   };
   
   const handleReset = () => {
+    setLocalIncludeMortgage(false); // Reset to cash-first default
     setDownPaymentMode('preset');
     setSelectedPreset(25);
     setCustomAmount('');
@@ -160,9 +173,15 @@ export function PersonalizationHeader({
         Calculating for:{' '}
         <span className="font-medium text-foreground">{user ? buyerCategoryLabel : derived.shortLabel}</span>
         <span className="mx-1.5 text-muted-foreground/40">·</span>
-        <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
-        <span className="mx-1.5 text-muted-foreground/40">·</span>
-        <span className="font-medium text-foreground">{termYears}yr</span>
+        {includeMortgage ? (
+          <>
+            <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
+            <span className="mx-1.5 text-muted-foreground/40">·</span>
+            <span className="font-medium text-foreground">{termYears}yr</span>
+          </>
+        ) : (
+          <span className="font-medium text-foreground">Paid in Full</span>
+        )}
       </span>
       
       <CollapsibleTrigger asChild>
@@ -206,86 +225,121 @@ export function PersonalizationHeader({
       
       <Separator />
       
-      {/* Mortgage Scenario - Editable */}
+      {/* Financing Method Toggle */}
       <div className="space-y-3">
         <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Mortgage Scenario
+          Financing Method
         </Label>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Down Payment */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium">Down Payment</Label>
-            <ToggleGroup
-              type="single"
-              value={downPaymentMode === 'preset' ? selectedPreset.toString() : 'custom'}
-              onValueChange={handleDownPaymentChange}
-              className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
-            >
-              {DOWN_PAYMENT_PRESETS.map((percent) => (
-                <ToggleGroupItem 
-                  key={percent}
-                  value={percent.toString()} 
-                  className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
-                >
-                  {percent}%
-                </ToggleGroupItem>
-              ))}
-              <ToggleGroupItem 
-                value="custom" 
-                className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
-              >
-                Custom
-              </ToggleGroupItem>
-            </ToggleGroup>
-            
-            {/* Custom input - only shown when "Custom" selected */}
-            {downPaymentMode === 'custom' && (
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₪</span>
-                <Input
-                  type="text"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-                  placeholder={(propertyPrice * 0.25).toLocaleString()}
-                  className="h-9 pl-7 text-sm"
-                />
-              </div>
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+          <div className="flex items-center gap-2">
+            {localIncludeMortgage ? (
+              <CreditCard className="h-4 w-4 text-primary" />
+            ) : (
+              <Banknote className="h-4 w-4 text-primary" />
             )}
-            
-            {/* Summary line */}
-            <p className="text-xs text-muted-foreground">
-              {downPaymentMode === 'preset' 
-                ? `= ${formatPrice(effectiveDownPayment.amount, 'ILS')} · Loan: ${formatPrice(loanAmount, 'ILS')}`
-                : effectiveDownPayment.amount > 0 
-                  ? `= ${effectiveDownPayment.percent.toFixed(1)}% down · Loan: ${formatPrice(loanAmount, 'ILS')}`
-                  : `Min ${minDownPaymentPercent}% for ${effectiveLtv}% max LTV`
-              }
-            </p>
+            <div>
+              <p className="text-sm font-medium">
+                {localIncludeMortgage ? 'Taking a Mortgage' : 'Paid in Full'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {localIncludeMortgage ? 'Monthly payment estimates included' : 'Cash purchase - no mortgage fees'}
+              </p>
+            </div>
           </div>
-          
-          {/* Loan Term */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium">Loan Term</Label>
-            <ToggleGroup
-              type="single"
-              value={localTermYears.toString()}
-              onValueChange={(v) => v && setLocalTermYears(parseInt(v))}
-              className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
-            >
-              {TERM_OPTIONS.map((years) => (
-                <ToggleGroupItem 
-                  key={years}
-                  value={years.toString()} 
-                  className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
-                >
-                  {years}yr
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+          <Switch
+            checked={localIncludeMortgage}
+            onCheckedChange={setLocalIncludeMortgage}
+          />
         </div>
       </div>
+      
+      {/* Mortgage Scenario - Only shown when mortgage enabled */}
+      {localIncludeMortgage && (
+        <>
+          <Separator />
+          
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Mortgage Scenario
+            </Label>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Down Payment */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Down Payment</Label>
+                <ToggleGroup
+                  type="single"
+                  value={downPaymentMode === 'preset' ? selectedPreset.toString() : 'custom'}
+                  onValueChange={handleDownPaymentChange}
+                  className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
+                >
+                  {DOWN_PAYMENT_PRESETS.map((percent) => (
+                    <ToggleGroupItem 
+                      key={percent}
+                      value={percent.toString()} 
+                      className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
+                    >
+                      {percent}%
+                    </ToggleGroupItem>
+                  ))}
+                  <ToggleGroupItem 
+                    value="custom" 
+                    className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
+                  >
+                    Custom
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                
+                {/* Custom input - only shown when "Custom" selected */}
+                {downPaymentMode === 'custom' && (
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₪</span>
+                    <Input
+                      type="text"
+                      value={customAmount}
+                      onChange={(e) => setCustomAmount(e.target.value.replace(/[^0-9,]/g, ''))}
+                      placeholder={(propertyPrice * 0.25).toLocaleString()}
+                      className="h-9 pl-7 text-sm"
+                    />
+                  </div>
+                )}
+                
+                {/* Summary line */}
+                <p className="text-xs text-muted-foreground">
+                  {downPaymentMode === 'preset' 
+                    ? `= ${formatPrice(effectiveDownPayment.amount, 'ILS')} · Loan: ${formatPrice(loanAmount, 'ILS')}`
+                    : effectiveDownPayment.amount > 0 
+                      ? `= ${effectiveDownPayment.percent.toFixed(1)}% down · Loan: ${formatPrice(loanAmount, 'ILS')}`
+                      : `Min ${minDownPaymentPercent}% for ${effectiveLtv}% max LTV`
+                  }
+                </p>
+              </div>
+              
+              {/* Loan Term */}
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Loan Term</Label>
+                <ToggleGroup
+                  type="single"
+                  value={localTermYears.toString()}
+                  onValueChange={(v) => v && setLocalTermYears(parseInt(v))}
+                  className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-lg w-full"
+                >
+                  {TERM_OPTIONS.map((years) => (
+                    <ToggleGroupItem 
+                      key={years}
+                      value={years.toString()} 
+                      className="text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md py-1.5"
+                    >
+                      {years}yr
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       
       {/* Actions */}
       <div className="flex items-center justify-between pt-2">

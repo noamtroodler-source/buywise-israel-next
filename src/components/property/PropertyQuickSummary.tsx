@@ -210,8 +210,8 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               )}
             </div>
             
-            {/* Estimated Monthly Payment Range - Uses profile preferences or standard defaults */}
-            {showMortgageEstimate && mortgageEstimate && (
+            {/* Estimated Monthly Payment Range - Only show when mortgage is enabled */}
+            {showMortgageEstimate && mortgageEstimate && mortgageEstimate.hasCustomPreferences !== false && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Tooltip>
                   <TooltipTrigger asChild>
