@@ -25,7 +25,7 @@ export function PlatformPromise() {
           </p>
           
           <Link 
-            to="/principles" 
+            to="/about" 
             className="inline-flex items-center gap-2 text-base text-primary hover:text-primary-hover transition-colors font-medium group"
           >
             How BuyWise works
