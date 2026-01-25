@@ -1,231 +1,421 @@
 
-# City-Specific Arnona & Utilities Estimate Implementation
 
-## Overview
+# Comprehensive Signed-In vs Guest User Experience Strategy
 
-This plan adds two features to the Project Cost Breakdown component:
-1. **City-Specific Arnona Estimates** - Use actual Herzliya rates from the database instead of generic ₪70-120/sqm
-2. **Utilities Estimate** - Add a new monthly cost line item (₪250-700/mo depending on size)
+## Executive Summary
 
----
+This plan establishes a clear differentiation between **logged-in users** (who get personalized, streamlined experiences) and **guests** (who get useful defaults with strategic upsell moments). The core philosophy:
 
-## Current State
-
-The `ProjectCostBreakdown` component currently:
-- Does NOT receive the project's city as a prop
-- Uses hardcoded generic Arnona rates: `estimatedSizeSqm * 70 / 12` to `estimatedSizeSqm * 120 / 12`
-- Has no utilities line item in monthly costs
+**For Guests**: "Show the value, but make them feel the friction of not being personalized"
+**For Signed-In Users**: "Everything knows who they are - calculations, maps, recommendations all just work"
 
 ---
 
-## Implementation
+## Current State Analysis
 
-### Step 1: Pass City to ProjectCostBreakdown
+### What Already Works Well
 
-**File:** `src/pages/ProjectDetail.tsx`
+| Feature | Guest Experience | Signed-In Experience |
+|---------|------------------|---------------------|
+| Cost Breakdowns | Cash-first baseline (localStorage) | Profile-based buyer type + mortgage prefs |
+| Favorites | Redirects to auth | Full save/alert functionality |
+| Location Module | No saved locations | Work/School/Family on map |
+| Personalized Recs | Blurred teaser + CTA | Tailored property suggestions |
+| Mortgage Settings | LocalStorage (device-only) | Synced to profile (cross-device) |
 
-Add `city` prop to the component:
+### Current Gaps
+
+1. **Cost Breakdown Defaults**: Non-logged-in users see generic "First-Time Buyer" rates with no context about why
+2. **No Progressive Value Reveal**: Users don't see what they're missing until they hit a hard gate (favorites)
+3. **Location Module**: Completely hidden value for guests - no "Add Work Location" teaser
+4. **Inline Personalization**: The PersonalizationHeader says "Set up your profile" but doesn't show the *difference* it would make
+5. **No "Sample Profile" Demo**: Guests can't see what a personalized experience looks like
+
+---
+
+## Strategic Framework: The Personalization Spectrum
 
 ```
-<ProjectCostBreakdown 
-  units={units}
-  defaultPrice={project.price_from || 0}
-  currency={project.currency || 'ILS'}
-  city={project.city}                    // ADD THIS
-/>
-```
-
----
-
-### Step 2: Update Component Interface
-
-**File:** `src/components/project/ProjectCostBreakdown.tsx`
-
-Update props interface to accept city:
-
-```typescript
-interface ProjectCostBreakdownProps {
-  units: ProjectUnit[];
-  defaultPrice?: number;
-  currency?: string;
-  city?: string;  // NEW - project's city name
-}
-```
-
----
-
-### Step 3: Fetch City-Specific Arnona Data
-
-**File:** `src/components/project/ProjectCostBreakdown.tsx`
-
-Add the `useCityDetails` hook to fetch Herzliya's actual Arnona rates:
-
-```typescript
-import { useCityDetails } from '@/hooks/useCityDetails';
-
-// Inside component:
-const citySlug = city?.toLowerCase().replace(/\s+/g, '-') || '';
-const { data: cityData } = useCityDetails(citySlug);
+┌───────────────────────────────────────────────────────────────────────────┐
+│                           USER JOURNEY                                     │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  GUEST (No Account)                    SIGNED-UP (With Profile)           │
+│  ┌─────────────────┐                   ┌─────────────────────────────┐    │
+│  │ • Cash baseline │                   │ • Buyer type locked in      │    │
+│  │ • Generic rates │  ───Sign Up───►   │ • Mortgage prefs synced     │    │
+│  │ • No saved locs │  ───Onboard───►   │ • Saved locations on map    │    │
+│  │ • localStorage  │                   │ • Cross-device persistence  │    │
+│  │ • "What-if" only│                   │ • "This is YOUR cost"       │    │
+│  └─────────────────┘                   └─────────────────────────────┘    │
+│                                                                           │
+│  FRICTION POINTS                       DELIGHT MOMENTS                    │
+│  • "Sign up to save"                   • "Personalized for Oleh Hadash"   │
+│  • Limited to 3 searches               • Price drop alerts on favorites  │
+│  • No commute times                    • "Based on your budget" filters   │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Step 4: Replace Generic Arnona Logic
+## Part 1: Cost Breakdown Strategy
 
-**Current code (lines 129-132):**
-```typescript
-const arnonaRange = {
-  low: Math.round(estimatedSizeSqm * 70 / 12),
-  high: Math.round(estimatedSizeSqm * 120 / 12),
-};
+### Current Defaults
+
+**Guests (No Account)**:
+- `include_mortgage: false` (Cash-First)
+- `buyer_type: first_time` (assumed)
+- No arnona discounts applied
+
+**Signed-In Users**:
+- Whatever they set in profile
+- Falls back to cash-first if no mortgage prefs set
+
+### Recommended Changes
+
+#### 1.1 Make Guest Baseline Explicit
+
+**Problem**: Guests see numbers but don't know what assumptions are baked in.
+
+**Solution**: Add a subtle "Assumptions" callout for guests:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ 📊 Cost Breakdown                                              │
+│                                                                │
+│ ┌──────────────────────────────────────────────────────────┐   │
+│ │ ℹ️ Showing estimates for: First-Time Buyer, Paying in Full │   │
+│ │    Your situation different? → Set up profile (free)      │   │
+│ └──────────────────────────────────────────────────────────┘   │
+│                                                                │
+│ Due at Signing: ₪185k–220k                                     │
+│ Monthly Costs:  ₪1,200–1,800/mo                                │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-**New code:**
-```typescript
-const arnonaRange = useMemo(() => {
-  // Use city-specific data if available
-  if (cityData?.arnona_rate_sqm) {
-    const annualArnona = cityData.arnona_rate_sqm * estimatedSizeSqm;
-    const monthly = Math.round(annualArnona / 12);
-    // Show ±15% range for municipal tier variation
-    return {
-      low: Math.round(monthly * 0.85),
-      high: Math.round(monthly * 1.15),
-    };
-  }
-  
-  // Fallback to generic estimates
-  return {
-    low: Math.round(estimatedSizeSqm * 70 / 12),
-    high: Math.round(estimatedSizeSqm * 120 / 12),
-  };
-}, [cityData, estimatedSizeSqm]);
+#### 1.2 Show "What You'd Save" Teaser
+
+For users who might be Oleh Hadash or upgraders, show the potential difference:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ 💡 Are you a new immigrant (Oleh Hadash)?                      │
+│    You could save ₪45,000+ in purchase tax                     │
+│    → Create profile to see your real costs                     │
+└────────────────────────────────────────────────────────────────┘
 ```
 
----
+#### 1.3 Signed-In: "This is YOUR Number" Confidence
 
-### Step 5: Add Utilities Estimate
+For logged-in users with complete profiles, emphasize certainty:
 
-**File:** `src/components/project/ProjectCostBreakdown.tsx`
-
-Import the existing utilities helper:
-```typescript
-import { getUtilitiesEstimate } from '@/lib/utils/formatRange';
 ```
-
-Add utilities calculation after insurance range:
-```typescript
-const utilitiesRange = useMemo(() => {
-  return getUtilitiesEstimate(estimatedSizeSqm);
-}, [estimatedSizeSqm]);
-```
-
-Update monthly totals to include utilities:
-```typescript
-// Total monthly ownership (without mortgage)
-const monthlyOwnershipRange = {
-  low: arnonaRange.low + vaadBayitRange.low + insuranceRange.low + utilitiesRange.min,
-  high: arnonaRange.high + vaadBayitRange.high + insuranceRange.high + utilitiesRange.max,
-};
-```
-
----
-
-### Step 6: Add Utilities UI Row
-
-**File:** `src/components/project/ProjectCostBreakdown.tsx`
-
-Add new row after Insurance in the monthly costs collapsible section (after line 485):
-
-```tsx
-{/* Utilities */}
-<div className="flex justify-between py-2">
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
-        Utilities (estimate)
-      </span>
-    </TooltipTrigger>
-    <TooltipContent side="left" className="max-w-xs">
-      <p className="font-medium mb-1">Monthly Utilities</p>
-      <p className="text-xs">
-        Electricity, water, gas, and internet. Varies by usage, 
-        season, and provider. Based on ~{estimatedSizeSqm} sqm apartment.
-      </p>
-    </TooltipContent>
-  </Tooltip>
-  <span className="font-medium">
-    {formatPriceRange(utilitiesRange.min, utilitiesRange.max, 'ILS')}/mo
-  </span>
-</div>
+┌────────────────────────────────────────────────────────────────┐
+│ ✓ Personalized for You                                         │
+│                                                                │
+│ Purchase Tax:     ₪0                                           │
+│ (Oleh Hadash exemption applied)                                │
+│                                                                │
+│ Monthly Mortgage: ₪8,200–9,400/mo                              │
+│ (Based on 30% down, 25-year term)                              │
+│                                                                │
+│ [Edit mortgage assumptions ▼]                                  │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Step 7: Update Arnona Tooltip with City Context
+## Part 2: Location Module Strategy
 
-Update the Arnona tooltip to show city-specific context when available:
+### Current State
 
-```tsx
-<TooltipContent side="left" className="max-w-xs">
-  <p className="font-medium mb-1">Municipal Property Tax (Arnona)</p>
-  <p className="text-xs">
-    {city ? (
-      <>
-        Estimate for {city} based on ~{estimatedSizeSqm} sqm. 
-        Actual rate depends on municipal zone and property classification.
-      </>
-    ) : (
-      <>
-        Monthly tax paid to the city. Rate varies by city and property size. 
-        Estimate based on ~{estimatedSizeSqm} sqm at typical rates.
-      </>
-    )}
-  </p>
-</TooltipContent>
+- **Guests**: See map, city anchors, can search custom locations
+- **Signed-In**: See saved Work/School/Family locations with commute times
+
+### Recommended Changes
+
+#### 2.1 Guest Location Teaser
+
+When a guest searches for a location (e.g., types in "Google Tel Aviv" for work):
+
 ```
+┌────────────────────────────────────────────────────────────────┐
+│ 📍 Google Tel Aviv - 35 min drive                              │
+│                                                                │
+│ ┌──────────────────────────────────────────────────────────┐   │
+│ │ Want to see this location on every property?              │   │
+│ │ Sign up to save "Work" location → See commutes instantly │   │
+│ └──────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────┘
+```
+
+#### 2.2 Show Empty State Value
+
+Even before guests search, show what they could have:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ Your Important Places                                          │
+│                                                                │
+│ ┌──────────────────────────────────────────────────────────┐   │
+│ │ 🏢 Work        Not set     │ 🏫 School      Not set      │   │
+│ │ 👨‍👩‍👧 Family      Not set     │                            │   │
+│ │                                                          │   │
+│ │ Add your key locations to see commute times on every     │   │
+│ │ property automatically. [Set up locations →]             │   │
+│ └──────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 3: Global Personalization Indicators
+
+### 3.1 Header Badge for Signed-In Users
+
+Show personalization status in the site header:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ [Logo]                              [Profile: Oleh Hadash ✓]   │
+│                                     [Budget: ₪2.5-3.5M]        │
+└────────────────────────────────────────────────────────────────┘
+```
+
+This reminds users that the entire site is personalized for them.
+
+### 3.2 Floating Context Bar on Listings
+
+On listings pages, show a subtle reminder:
+
+**For Guests**:
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 🔍 Browsing as: First-Time Buyer (assumed)  │  [Personalize →]          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+**For Signed-In**:
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│ ✓ Viewing as: Oleh Hadash  │  Budget: ₪2.5-3.5M  │  [Edit in Profile]   │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 4: Mortgage vs Cash Baseline Strategy
+
+### Philosophy
+
+**Current**: `include_mortgage: false` by default (Cash-First)
+**Recommended**: Keep cash-first for guests, but make mortgage more discoverable
+
+### Reasoning
+
+1. **Cash-first is cleaner**: Shows true "what you need to buy this property" without financing complexity
+2. **Most serious buyers need mortgage**: But don't assume it - let them opt in
+3. **Mortgage complexity is a signup trigger**: "Want accurate monthly payments? Complete your profile"
+
+### Implementation
+
+#### 4.1 Guest: Cash with Mortgage Preview
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ Upfront Costs (Cash Purchase): ₪2,150,000                      │
+│ Monthly Ownership: ₪1,800–2,400/mo                             │
+│                                                                │
+│ ┌──────────────────────────────────────────────────────────┐   │
+│ │ 💳 Planning to take a mortgage?                           │   │
+│ │ Add down payment + loan term to see monthly payments     │   │
+│ │ [Add Mortgage Estimate ▼]                                 │   │
+│ │                                                          │   │
+│ │ With 25% down, 25-year loan:                             │   │
+│ │ Monthly Payment: ~₪8,200–9,400/mo                        │   │
+│ │                                                          │   │
+│ │ [Save these settings →] (requires free account)          │   │
+│ └──────────────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────────────┘
+```
+
+#### 4.2 Signed-In: Respect Their Choice
+
+If user has explicitly set `include_mortgage: true`:
+- Show mortgage section expanded by default
+- Include monthly payment in the summary
+
+If user has `include_mortgage: false` (cash buyer):
+- Don't show mortgage at all
+- Label as "Paid in Full" clearly
+
+---
+
+## Part 5: Strategic Signup Triggers
+
+### Current Triggers
+
+| Trigger Point | Current Behavior |
+|---------------|------------------|
+| Favorite property | Hard gate → auth redirect |
+| Save search | Hard gate → auth redirect |
+| Mortgage settings | Soft prompt ("Sign up to save") |
+| Personalized recs | Blurred teaser |
+
+### Recommended Additional Triggers
+
+#### 5.1 "See Your Price" Trigger
+
+On property cards, show a teaser:
+
+```
+┌───────────────────────────┐
+│ [Property Image]          │
+│                           │
+│ ₪2,500,000                │
+│ 4 rooms • 110 sqm         │
+│                           │
+│ Your Cost: ~₪2.6M         │
+│ (First-Time Buyer)        │
+│ ┌───────────────────────┐ │
+│ │ Different? Set profile│ │
+│ └───────────────────────┘ │
+└───────────────────────────┘
+```
+
+#### 5.2 "Third Property Viewed" Nudge
+
+After viewing 3 properties, show:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ You're comparing properties! Want to save them for later?      │
+│ [Create Free Account] to save favorites and track price drops │
+└────────────────────────────────────────────────────────────────┘
+```
+
+#### 5.3 "Calculator Value" Trigger
+
+After using any calculator (mortgage, purchase tax, etc.):
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ Great calculation! Want to save this?                          │
+│ Sign up to save calculations and apply to properties you view │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 6: Profile Completion Gamification
+
+### Current
+
+Profile.tsx shows `ProfileCompletionRing` tracking completion.
+
+### Recommended Enhancement
+
+Show completion benefits explicitly:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│ Profile Completion: 60%                                        │
+│ [████████░░░░░░░░░░░░]                                        │
+│                                                                │
+│ ✓ Buyer type set                                               │
+│ ✓ Mortgage preferences saved                                   │
+│ ○ Add work location (+15%)                                     │
+│   → See commute times on all properties                        │
+│ ○ Set budget range (+10%)                                      │
+│   → Get "within budget" badges on listings                     │
+│ ○ Add school location (+15%)                                   │
+│   → Find family-friendly properties faster                     │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Priority
+
+### Phase 1: Quick Wins (1-2 days)
+
+1. Add "Showing estimates for: First-Time Buyer" banner for guests
+2. Add "Personalized for You" badge for signed-in users with profile
+3. Show "Different buyer type?" link in PersonalizationHeader
+
+### Phase 2: Value Teasers (3-5 days)
+
+1. Location module empty state for guests
+2. "Save this location" prompt after guest search
+3. Mortgage preview toggle for guests (without saving)
+
+### Phase 3: Strategic Nudges (1 week)
+
+1. Third-property-viewed signup prompt
+2. Calculator save prompt
+3. Profile completion gamification with specific benefits
+
+### Phase 4: Polish (ongoing)
+
+1. A/B test signup trigger placement
+2. Track conversion rates by trigger
+3. Refine copy based on user feedback
 
 ---
 
 ## Files to Modify
 
+### Cost Breakdown Enhancements
+
 | File | Changes |
 |------|---------|
-| `src/pages/ProjectDetail.tsx` | Add `city={project.city}` prop |
-| `src/components/project/ProjectCostBreakdown.tsx` | Add city prop, fetch city data, add utilities row |
+| `src/components/property/PropertyCostBreakdown.tsx` | Add guest vs signed-in messaging |
+| `src/components/project/ProjectCostBreakdown.tsx` | Add guest vs signed-in messaging |
+| `src/components/property/PersonalizationHeader.tsx` | Add "Personalized for [buyer type]" badge |
+
+### Location Module Enhancements
+
+| File | Changes |
+|------|---------|
+| `src/components/property/PropertyLocation.tsx` | Add empty state for saved locations |
+| `src/components/property/SavedLocationsSection.tsx` | Add guest teaser variant |
+| `src/components/property/LocationSearchInput.tsx` | Add "Save this location" prompt |
+
+### New Components
+
+| File | Purpose |
+|------|---------|
+| `src/components/shared/PersonalizationBanner.tsx` | Reusable guest/signed-in context bar |
+| `src/components/shared/SignupNudge.tsx` | Configurable signup prompt |
+| `src/components/profile/ProfileBenefitsChecklist.tsx` | Completion benefits display |
+
+### Signup Flow
+
+| File | Changes |
+|------|---------|
+| `src/hooks/usePropertyViewTracking.tsx` | Track view count for third-property nudge |
+| `src/components/tools/ToolLayout.tsx` | Add calculator save prompt |
 
 ---
 
-## Expected Result
+## Success Metrics
 
-**For Marina Towers Herzliya:**
-
-**Before (generic):**
-- Arnona: ₪350–600/mo (based on 70-120/sqm generic)
-- No utilities shown
-
-**After (city-specific):**
-- Arnona: ₪480–650/mo (based on Herzliya's ~110/sqm rate ±15%)
-- Utilities: ₪350–550/mo (based on ~80sqm medium apartment)
-
-**Monthly total increases** to reflect realistic ownership costs including utilities.
+| Metric | Target |
+|--------|--------|
+| Guest → Signup conversion | +15% |
+| Profile completion rate | +25% |
+| Return visitor rate (signed-in) | +20% |
+| Mortgage calculator → profile save | +30% |
+| Location saves per user | +1.5 average |
 
 ---
 
-## Data Flow
+## Summary
 
-```
-ProjectDetail.tsx
-   └── project.city = "Herzliya"
-          │
-          ▼
-ProjectCostBreakdown
-   └── useCityDetails("herzliya")
-          │
-          ▼
-   cities table
-   └── arnona_rate_sqm: 110 (or actual Herzliya rate)
-          │
-          ▼
-   Calculated: (110 × estimatedSqm) / 12 = monthly
-```
+The key insight is that **guests should feel the gap** between their generic experience and the personalized one, while **signed-in users should feel the delight** of everything just knowing who they are.
+
+Every cost breakdown, every map, every recommendation should subtly communicate: "This would be better if we knew you."
+
+And for signed-in users: "This is exactly right for YOU."
+
