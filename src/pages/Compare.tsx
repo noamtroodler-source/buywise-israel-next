@@ -1,6 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, TrendingUp, Home, MapPin, Clock } from 'lucide-react';
+import { 
+  Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, 
+  TrendingUp, Home, MapPin, Clock, FileText, PawPrint, Snowflake, 
+  DollarSign, ShieldCheck, CreditCard
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +23,14 @@ import {
   CompareWinnerSummary,
   type ComparisonRow,
 } from '@/components/compare';
+import {
+  formatAcTypeLabel,
+  formatLeaseTermLabel,
+  formatFurnishedLabel,
+  formatPetsLabel,
+  formatEntryDate,
+  formatDaysOnMarket,
+} from '@/lib/property-labels';
 
 interface RentalData {
   city: string;
@@ -36,7 +48,7 @@ interface MarketDataEntry {
 }
 
 export default function Compare() {
-  const { compareIds, removeFromCompare, clearCompare, maxItems } = useCompare();
+  const { compareIds, compareCategory, removeFromCompare, clearCompare, maxItems } = useCompare();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [investorView, setInvestorView] = useState(false);
@@ -46,6 +58,8 @@ export default function Compare() {
   const { favoriteIds, toggleFavorite } = useFavorites();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+
+  const isRental = compareCategory === 'rent';
 
   useEffect(() => {
     async function fetchProperties() {
@@ -87,8 +101,8 @@ export default function Compare() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Property Comparison',
-          text: `Compare ${properties.length} properties`,
+          title: isRental ? 'Rental Comparison' : 'Property Comparison',
+          text: `Compare ${properties.length} ${isRental ? 'rentals' : 'properties'}`,
           url: url,
         });
       } catch {
@@ -163,11 +177,11 @@ export default function Compare() {
     return labels[type] || type;
   };
 
-  // Comparison row definitions
+  // Core details rows - adapt label based on rental vs sale
   const coreDetailsRows: ComparisonRow[] = useMemo(() => [
     {
-      label: 'Price',
-      getValue: (p: Property) => formatPrice(p.price, p.currency || 'ILS'),
+      label: isRental ? 'Monthly Rent' : 'Price',
+      getValue: (p: Property) => formatPrice(p.price, p.currency || 'ILS') + (isRental ? '/mo' : ''),
       highlight: true,
       getBestPropertyId: (props: Property[]) => {
         if (props.length < 2) return null;
@@ -176,7 +190,7 @@ export default function Compare() {
       },
     },
     {
-      label: 'Price/m²',
+      label: isRental ? 'Rent/m²' : 'Price/m²',
       getValue: (p: Property) => p.size_sqm ? formatPrice(Math.round(p.price / p.size_sqm), p.currency || 'ILS') : '—',
       getBestPropertyId: (props: Property[]) => {
         const withSize = props.filter(p => p.size_sqm && p.size_sqm > 0);
@@ -225,7 +239,7 @@ export default function Compare() {
       label: 'Property Type',
       getValue: (p: Property) => getPropertyTypeLabel(p.property_type),
     },
-  ], [formatPrice, formatArea]);
+  ], [formatPrice, formatArea, isRental]);
 
   const locationRows: ComparisonRow[] = useMemo(() => [
     {
@@ -243,6 +257,7 @@ export default function Compare() {
     },
   ], []);
 
+  // Character rows with Israeli-specific fields
   const characterRows: ComparisonRow[] = useMemo(() => [
     {
       label: 'Condition',
@@ -254,19 +269,74 @@ export default function Compare() {
       icon: Calendar,
     },
     {
+      label: 'A/C Type',
+      getValue: (p: Property) => formatAcTypeLabel(p.ac_type),
+      icon: Snowflake,
+    },
+    {
       label: 'Parking',
       getValue: (p: Property) => p.parking ? `${p.parking} spots` : 'None',
       icon: Car,
     },
     {
-      label: 'Furnished',
-      getValue: (p: Property) => p.is_furnished ? 'Yes' : 'No',
-      icon: Sofa,
-    },
-    {
       label: 'Accessible',
       getValue: (p: Property) => p.is_accessible ? 'Yes' : 'No',
       icon: Accessibility,
+    },
+    {
+      label: isRental ? 'Available' : 'Entry Date',
+      getValue: (p: Property) => formatEntryDate(p.entry_date),
+      icon: Calendar,
+    },
+    {
+      label: "Va'ad Bayit",
+      getValue: (p: Property) => p.vaad_bayit_monthly 
+        ? formatPrice(p.vaad_bayit_monthly, 'ILS') + '/mo' 
+        : '—',
+      icon: Building,
+      tooltip: 'Monthly building maintenance fee',
+    },
+    {
+      label: 'Days Listed',
+      getValue: (p: Property) => formatDaysOnMarket(p.created_at),
+      icon: Clock,
+    },
+  ], [formatPrice, isRental]);
+
+  // Rental-specific lease terms section
+  const leaseTermsRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Lease Term',
+      getValue: (p: Property) => formatLeaseTermLabel(p.lease_term),
+      icon: FileText,
+    },
+    {
+      label: 'Furnished',
+      getValue: (p: Property) => formatFurnishedLabel(p.furnished_status),
+      icon: Sofa,
+    },
+    {
+      label: 'Pets Policy',
+      getValue: (p: Property) => formatPetsLabel(p.pets_policy),
+      icon: PawPrint,
+    },
+    {
+      label: 'Agent Fee',
+      getValue: (p: Property) => p.agent_fee_required ? 'Yes (tenant pays)' : 'No',
+      icon: DollarSign,
+      tooltip: 'Whether the tenant pays an agent fee (typically 1 month + VAT)',
+    },
+    {
+      label: 'Bank Guarantee',
+      getValue: (p: Property) => p.bank_guarantee_required ? 'Required' : 'No',
+      icon: ShieldCheck,
+      tooltip: 'Whether a bank guarantee is required as security deposit',
+    },
+    {
+      label: 'Checks Required',
+      getValue: (p: Property) => p.checks_required ? 'Yes' : 'No',
+      icon: CreditCard,
+      tooltip: 'Whether post-dated checks are required for rent payments',
     },
   ], []);
 
@@ -312,7 +382,7 @@ export default function Compare() {
   const winnerCounts = useMemo(() => {
     if (properties.length < 2) return [];
     
-    const allRows = [...coreDetailsRows, ...(investorView ? investorRows : [])];
+    const allRows = [...coreDetailsRows, ...(investorView && !isRental ? investorRows : [])];
     const counts: Record<string, { title: string; wins: number }> = {};
     
     properties.forEach(p => {
@@ -333,14 +403,14 @@ export default function Compare() {
       title: data.title,
       wins: data.wins,
     }));
-  }, [properties, coreDetailsRows, investorRows, investorView]);
+  }, [properties, coreDetailsRows, investorRows, investorView, isRental]);
 
   // Generate winner badges for cards
   const getWinnerBadge = (propertyId: string): string | null => {
     if (properties.length < 2) return null;
     
     const lowestPrice = properties.reduce((min, p) => p.price < min.price ? p : min);
-    if (lowestPrice.id === propertyId) return 'Lowest Price';
+    if (lowestPrice.id === propertyId) return isRental ? 'Lowest Rent' : 'Lowest Price';
     
     const withSize = properties.filter(p => p.size_sqm);
     if (withSize.length > 0) {
@@ -374,7 +444,7 @@ export default function Compare() {
   if (properties.length === 0) {
     return (
       <Layout>
-        <CompareEmptyState />
+        <CompareEmptyState category={compareCategory} />
       </Layout>
     );
   }
@@ -389,6 +459,7 @@ export default function Compare() {
         onInvestorViewChange={setInvestorView}
         onShare={handleShare}
         onClearAll={clearCompare}
+        category={compareCategory}
       />
 
       <div className="container py-8 space-y-8">
@@ -424,6 +495,7 @@ export default function Compare() {
           properties={properties}
           formatPrice={formatPrice}
           formatArea={formatArea}
+          isRental={isRental}
         />
 
         {/* Comparison Sections */}
@@ -449,7 +521,18 @@ export default function Compare() {
             properties={properties}
           />
 
-          {investorView && (
+          {/* Rental-specific Lease Terms section */}
+          {isRental && (
+            <CompareSection
+              title="Lease Terms"
+              icon={FileText}
+              rows={leaseTermsRows}
+              properties={properties}
+            />
+          )}
+
+          {/* Investment metrics - only for sales */}
+          {investorView && !isRental && (
             <CompareSection
               title="Investment Metrics"
               icon={TrendingUp}

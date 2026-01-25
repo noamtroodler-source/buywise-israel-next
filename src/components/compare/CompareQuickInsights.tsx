@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingDown, Maximize, BadgePercent, Sparkles } from 'lucide-react';
+import { TrendingDown, Maximize, BadgePercent, Sparkles, Calendar } from 'lucide-react';
 import { Property } from '@/types/database';
 import { useAreaUnitLabel } from '@/contexts/PreferencesContext';
 
@@ -14,23 +14,29 @@ interface CompareQuickInsightsProps {
   properties: Property[];
   formatPrice: (price: number, currency?: string) => string;
   formatArea: (sqm: number) => string;
+  isRental?: boolean;
 }
 
-export function CompareQuickInsights({ properties, formatPrice, formatArea }: CompareQuickInsightsProps) {
+export function CompareQuickInsights({ 
+  properties, 
+  formatPrice, 
+  formatArea,
+  isRental = false,
+}: CompareQuickInsightsProps) {
   const areaUnitLabel = useAreaUnitLabel();
   
   if (properties.length < 2) return null;
 
   const insights: Insight[] = [];
 
-  // Find lowest price
+  // Find lowest price/rent
   const lowestPriceProperty = properties.reduce((min, p) => 
     p.price < min.price ? p : min
   );
   insights.push({
     icon: TrendingDown,
-    label: 'Lowest Price',
-    value: formatPrice(lowestPriceProperty.price, lowestPriceProperty.currency || 'ILS'),
+    label: isRental ? 'Lowest Rent' : 'Lowest Price',
+    value: formatPrice(lowestPriceProperty.price, lowestPriceProperty.currency || 'ILS') + (isRental ? '/mo' : ''),
     propertyTitle: lowestPriceProperty.title,
   });
 
@@ -61,10 +67,47 @@ export function CompareQuickInsights({ properties, formatPrice, formatArea }: Co
     const pricePerSqm = Math.round(bestValueProperty.price / (bestValueProperty.size_sqm || 1));
     insights.push({
       icon: BadgePercent,
-      label: 'Best Value',
+      label: isRental ? 'Best Rent/sqm' : 'Best Value',
       value: `${formatPrice(pricePerSqm)}/${areaUnitLabel}`,
       propertyTitle: bestValueProperty.title,
     });
+  }
+
+  // For rentals: find soonest available
+  if (isRental) {
+    const propertiesWithEntryDate = properties.filter(p => p.entry_date);
+    if (propertiesWithEntryDate.length > 0) {
+      // Sort by entry date, treating 'immediate' as earliest
+      const soonestAvailable = propertiesWithEntryDate.reduce((soonest, p) => {
+        if (!soonest.entry_date) return p;
+        if (!p.entry_date) return soonest;
+        
+        // 'immediate' is always soonest
+        if (p.entry_date.toLowerCase() === 'immediate') return p;
+        if (soonest.entry_date.toLowerCase() === 'immediate') return soonest;
+        
+        try {
+          const pDate = new Date(p.entry_date);
+          const soonestDate = new Date(soonest.entry_date);
+          return pDate < soonestDate ? p : soonest;
+        } catch {
+          return soonest;
+        }
+      });
+
+      if (soonestAvailable.entry_date) {
+        const displayDate = soonestAvailable.entry_date.toLowerCase() === 'immediate'
+          ? 'Immediate'
+          : new Date(soonestAvailable.entry_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+        insights.push({
+          icon: Calendar,
+          label: 'Soonest Available',
+          value: displayDate,
+          propertyTitle: soonestAvailable.title,
+        });
+      }
+    }
   }
 
   return (
@@ -79,7 +122,7 @@ export function CompareQuickInsights({ properties, formatPrice, formatArea }: Co
         <span className="text-sm font-semibold text-primary">Quick Insights</span>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 gap-3 ${insights.length <= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
         {insights.map((insight, index) => (
           <div 
             key={index}
