@@ -1,26 +1,16 @@
 
-# Simplify Mortgage Forms: Add Commas + Remove Net/Gross
 
-## Problems to Fix
+# Add Currency Toggle to Monthly Income Field
 
-1. **Numbers don't have commas** - When typing "500000", it stays as "500000" instead of showing "500,000"
-2. **Net/Gross selector is overcomplicated** - There's a dropdown to choose between Net and Gross income, but you just want it to be "Net" only
+## Problem
+
+The "Net Monthly Income" field always shows ₪ (shekel) as the prefix, but users who select $ for their down payment should be able to enter their income in USD as well for consistency.
 
 ---
 
 ## Solution
 
-### 1. Replace Input with FormattedNumberInput
-
-The project already has a `FormattedNumberInput` component that automatically adds commas as you type. Replace the raw `<Input type="number">` elements with this component.
-
-**Where to fix:**
-- Down Payment Amount input (when in ₪ or $ mode)
-- Monthly Income input
-
-### 2. Remove Net/Gross Dropdown
-
-Remove the `<Select>` dropdown that lets users choose between Net and Gross. Simply hardcode the label to say "Net Monthly Income" and always save `income_type: 'net'`.
+Add a ₪ / $ toggle for the monthly income field, similar to how it works for the down payment amount. This will use a separate state variable for income currency to allow independent selection.
 
 ---
 
@@ -28,69 +18,116 @@ Remove the `<Select>` dropdown that lets users choose between Net and Gross. Sim
 
 | File | Changes |
 |------|---------|
-| `src/components/onboarding/BuyerOnboarding.tsx` | Use `FormattedNumberInput` for amount inputs, remove income_type selector |
-| `src/components/profile/MortgagePreferencesCard.tsx` | Same changes |
+| `src/components/onboarding/BuyerOnboarding.tsx` | Add income currency state + toggle for monthly income |
+| `src/components/profile/MortgagePreferencesCard.tsx` | Add income currency state + toggle for monthly income |
 
 ---
 
-## Technical Changes
+## Technical Implementation
 
-### BuyerOnboarding.tsx (Step 6)
+### BuyerOnboarding.tsx
 
-**Down Payment Amount - Replace lines 704-713:**
+**Add new state variable (near line 57):**
 ```tsx
-// Before
-<Input
-  type="number"
-  value={downPaymentAmount ?? ''}
-  onChange={(e) => setDownPaymentAmount(...)}
-  className="pl-8"
-  placeholder="1,500,000"
-/>
-
-// After
-<FormattedNumberInput
-  value={downPaymentAmount}
-  onChange={setDownPaymentAmount}
-  prefix={currencySymbol}
-  placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
-/>
+const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
+const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
 ```
 
-**Monthly Income - Replace lines 739-764:**
-```tsx
-// Before: Has Net/Gross dropdown
-<div className="flex items-center justify-between">
-  <Label className="text-sm">Monthly Income (optional)</Label>
-  <Select value={mortgagePrefs.income_type} ...>
-    <SelectItem value="net">Net</SelectItem>
-    <SelectItem value="gross">Gross</SelectItem>
-  </Select>
-</div>
-<Input type="number" ... />
+**Update Monthly Income section (lines 734-744):**
 
-// After: Simple label, formatted input
+Replace the simple label with a label + toggle row:
+
+```tsx
+{/* Monthly Income */}
 <div className="space-y-2">
-  <Label className="text-sm">Net Monthly Income (optional)</Label>
+  <div className="flex items-center justify-between">
+    <Label className="text-sm">Net Monthly Income (optional)</Label>
+    <div className="flex gap-1">
+      <Toggle
+        size="sm"
+        pressed={incomeCurrency === 'ILS'}
+        onPressedChange={() => setIncomeCurrency('ILS')}
+        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        ₪
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={incomeCurrency === 'USD'}
+        onPressedChange={() => setIncomeCurrency('USD')}
+        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        $
+      </Toggle>
+    </div>
+  </div>
   <FormattedNumberInput
     value={mortgagePrefs.monthly_income}
-    onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null })}
-    prefix="₪"
-    placeholder="35,000"
+    onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null, income_type: 'net' })}
+    prefix={incomeCurrencySymbol}
+    placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
   />
   <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
 </div>
 ```
 
-**Also update the default state and saved data:**
-```tsx
-// Hardcode income_type to 'net' in the initial state and save logic
-income_type: 'net' as const
-```
-
 ### MortgagePreferencesCard.tsx
 
-Same pattern - replace the Input with FormattedNumberInput and remove the Net/Gross selector for monthly income.
+**Add new state variable (near line 48):**
+```tsx
+const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
+const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
+```
+
+**Update Monthly Income section (lines 246-268):**
+
+Same pattern - add toggle row for ₪ / $:
+
+```tsx
+{/* Monthly Income */}
+<div className="space-y-2">
+  <div className="flex items-center justify-between">
+    <Label className="flex items-center gap-1">
+      Net Monthly Income
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs">
+            <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </Label>
+    <div className="flex gap-1">
+      <Toggle
+        size="sm"
+        pressed={incomeCurrency === 'ILS'}
+        onPressedChange={() => setIncomeCurrency('ILS')}
+        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        ₪
+      </Toggle>
+      <Toggle
+        size="sm"
+        pressed={incomeCurrency === 'USD'}
+        onPressedChange={() => setIncomeCurrency('USD')}
+        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+      >
+        $
+      </Toggle>
+    </div>
+  </div>
+  <FormattedNumberInput
+    value={formData.monthly_income}
+    onChange={(val) => setFormData({ ...formData, monthly_income: val ?? null, income_type: 'net' })}
+    prefix={incomeCurrencySymbol}
+    placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
+  />
+  <p className="text-xs text-muted-foreground">Optional - helps calculate your budget</p>
+</div>
+```
 
 ---
 
@@ -98,16 +135,16 @@ Same pattern - replace the Input with FormattedNumberInput and remove the Net/Gr
 
 | Before | After |
 |--------|-------|
-| `500000` (no commas) | `500,000` (with commas) |
-| "Monthly Income (optional)" with Net/Gross dropdown | "Net Monthly Income (optional)" (no dropdown) |
+| "Net Monthly Income (optional)" with hardcoded ₪ | "Net Monthly Income (optional)" with ₪ / $ toggles |
+| Always shows ₪ prefix | Dynamically shows ₪ or $ based on selection |
+| Placeholder: "35,000" | Placeholder: "35,000" (ILS) or "8,000" (USD) |
 
 ---
 
-## Summary of Changes
+## Summary
 
-1. **Import** `FormattedNumberInput` in both files
-2. **Replace** down payment amount `<Input type="number">` with `<FormattedNumberInput>`
-3. **Replace** monthly income `<Input type="number">` with `<FormattedNumberInput>`
-4. **Remove** the Net/Gross `<Select>` dropdown entirely
-5. **Update** label to "Net Monthly Income (optional)"
-6. **Hardcode** `income_type: 'net'` in state and save logic
+1. Add `incomeCurrency` state variable in both files
+2. Add ₪ / $ toggle buttons next to the monthly income label
+3. Update `FormattedNumberInput` prefix to use dynamic currency symbol
+4. Update placeholder to show appropriate example based on currency
+
