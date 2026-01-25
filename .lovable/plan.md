@@ -1,184 +1,171 @@
 
-
-# AI Format & Polish Feature for Blog Content Step
+# AI-Generated Cover Image Feature for Blog Wizard
 
 ## Overview
 
-Add an "AI Format & Polish" button to the blog wizard's content step that:
-1. Takes raw/unstructured text and converts it to well-formatted Markdown
-2. Adds proper headers (`## Heading`), bullet points, and paragraph breaks
-3. Fixes grammar, spelling, and clarity issues
-4. Provides a one-click "Apply" to replace the draft with the polished version
+Add the ability for Agents, Agencies, and Developers to generate an AI cover image based on their article's title and content. The feature will:
+1. Generate **one** AI image initially (to conserve credits and speed)
+2. Provide a **"Regenerate"** button if the user wants a different option
+3. Auto-upload the generated image to storage and set it as the cover
 
-This feature will be available to **all professional authors** (Agents, Agencies, Developers) on the same shared `StepContent.tsx` component.
+This uses the existing `generate-hero-image` edge function - no new backend code needed.
 
 ---
 
-## How It Works
+## User Experience Flow
 
 ```text
-User writes raw text:
-"I wanted to share some tips about buying your first home. First you need to get pre-approved for a mortgage. This helps you know your budget. Then you should find a good agent who knows the local market. They can help you find homes in your price range. Make sure to get a home inspection before closing. This protects you from hidden problems..."
-
-    ↓ Click "AI Format & Polish" ↓
-
-AI returns structured Markdown:
-"## Getting Started with Your First Home Purchase
-
-Buying your first home is an exciting milestone. Here's what you need to know to make the process smooth and successful.
-
-### Step 1: Get Pre-Approved for a Mortgage
-
-Before you start looking at homes, get pre-approved for a mortgage. This:
-- Helps you understand your budget
-- Shows sellers you're a serious buyer
-- Speeds up the closing process
-
-### Step 2: Find the Right Agent
-..."
-```
-
----
-
-## Implementation
-
-### 1. New Edge Function: `format-blog-content`
-
-Create a new edge function specifically for blog formatting with a tailored prompt:
-
-**File:** `supabase/functions/format-blog-content/index.ts`
-
-**Purpose:**
-- Accept raw article text
-- Return professionally formatted Markdown with:
-  - Clear section headers (`## ` and `### `)
-  - Bullet points for lists
-  - Proper paragraph breaks
-  - Grammar and clarity improvements
-  - Professional tone
-
-**AI Prompt Focus:**
-- Structure content with logical sections
-- Use headers to break up topics (but don't over-header)
-- Convert run-on lists to bullet points
-- Maintain the author's voice while improving clarity
-- Target reading level: accessible to general audience
-
----
-
-### 2. Update `StepContent.tsx`
-
-Add the AI formatting UI following the existing pattern from `StepDescription.tsx`:
-
-**New Imports:**
-- `useState` from React
-- `supabase` from integrations
-- `toast` from sonner
-- Icons: `Wand2`, `Loader2`, `CheckCircle2`, `AlertTriangle`, `Sparkles`
-
-**New State:**
-```tsx
-const [isFormatting, setIsFormatting] = useState(false);
-const [formattedContent, setFormattedContent] = useState<string | null>(null);
-const [showFormatted, setShowFormatted] = useState(false);
-```
-
-**New Handler:**
-```tsx
-const formatWithAI = async () => {
-  if (wordCount < 50) {
-    toast.error('Please write at least 50 words before formatting');
-    return;
-  }
-  
-  setIsFormatting(true);
-  setShowFormatted(true);
-  
-  try {
-    const { data: result, error } = await supabase.functions.invoke('format-blog-content', {
-      body: { content: data.content }
-    });
-    
-    if (error) throw error;
-    setFormattedContent(result.formattedContent);
-  } catch (error) {
-    toast.error('Failed to format content. Please try again.');
-    setShowFormatted(false);
-  } finally {
-    setIsFormatting(false);
-  }
-};
-
-const applyFormatted = () => {
-  if (formattedContent) {
-    updateData({ content: formattedContent });
-    setFormattedContent(null);
-    setShowFormatted(false);
-    toast.success('Formatted content applied!');
-  }
-};
-```
-
-**New UI Elements (below the textarea):**
-
-```text
+Step 3: Cover Image
 ┌─────────────────────────────────────────────────────────────┐
-│  [✨ AI Format & Polish]  <-- Button                        │
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │  Formatted Preview:                                   │  │
-│  │                                                       │  │
-│  │  ## Introduction                                      │  │
-│  │                                                       │  │
-│  │  Your opening paragraph here, now with better...     │  │
-│  │                                                       │  │
-│  │  ### Key Points                                       │  │
-│  │  - First bullet point                                 │  │
-│  │  - Second bullet point                                │  │
-│  │  ...                                                  │  │
-│  │                                                       │  │
-│  │  [Apply] [Dismiss]                                    │  │
-│  └───────────────────────────────────────────────────────┘  │
+│  Cover Image                                                 │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                                                     │    │
+│  │  [Currently empty or showing generated/uploaded]    │    │
+│  │                                                     │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  [✨ Generate AI Cover Image]  [📤 Upload Your Own] │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  If image is shown:                                          │
+│  [🔄 Regenerate]  [❌ Remove]                                │
+│                                                              │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │  💡 Pro Tip                                         │    │
+│  │  AI-generated images are created based on your      │    │
+│  │  article title and content. No attribution needed!  │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                              │
+│  Image Guidelines                                            │
+│  • Use high-quality images (minimum 1200px wide)            │
+│  • Avoid images with too much text                          │
+│  • Choose images relevant to your article topic             │
+│  • Ensure you have rights to use the image                  │
+│  • ✨ Or use AI-generated images - no licensing worries!    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 3. Edge Function Details
+## Implementation Details
 
-**File:** `supabase/functions/format-blog-content/index.ts`
+### File to Modify: `src/components/blog/wizard/StepCoverImage.tsx`
 
-**Request/Response:**
-```typescript
-// Request
-{ content: string }
-
-// Response
-{ 
-  formattedContent: string,
-  changes: string[]  // List of what was improved
-}
+#### New State Variables
+```tsx
+const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 ```
 
-**AI System Prompt:**
+#### New Handler: `generateAIImage`
+```tsx
+const generateAIImage = async () => {
+  if (!data.title) {
+    toast.error('Please add an article title first');
+    return;
+  }
+
+  setIsGeneratingAI(true);
+
+  try {
+    // Build prompt from article title and content excerpt
+    const contentPreview = data.content?.slice(0, 500) || '';
+    const prompt = `Create a professional, high-quality blog cover image for an article titled "${data.title}". ${contentPreview ? `The article is about: ${contentPreview.slice(0, 200)}...` : ''} Style: Modern, clean, professional real estate or lifestyle photography. Aspect ratio 16:9, ultra high resolution. No text overlays on the image.`;
+
+    const { data: result, error } = await supabase.functions.invoke('generate-hero-image', {
+      body: { prompt }
+    });
+
+    if (error) throw error;
+    if (result.error) throw new Error(result.error);
+
+    // The result contains a base64 image URL - upload it to storage
+    const base64Data = result.imageUrl;
+    
+    // Convert base64 to blob for upload
+    const response = await fetch(base64Data);
+    const blob = await response.blob();
+    
+    const fileName = `blog-ai-${Date.now()}.png`;
+    const filePath = `blog-covers/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('property-images')
+      .upload(filePath, blob, { contentType: 'image/png' });
+
+    if (uploadError) throw uploadError;
+
+    const { data: urlData } = supabase.storage
+      .from('property-images')
+      .getPublicUrl(filePath);
+
+    updateData({ coverImage: urlData.publicUrl });
+    toast.success('AI cover image generated!');
+  } catch (error) {
+    console.error('AI generation error:', error);
+    if (error instanceof Error && error.message.includes('Rate limit')) {
+      toast.error('Rate limit exceeded. Please try again in a moment.');
+    } else if (error instanceof Error && error.message.includes('Payment')) {
+      toast.error('AI credits exhausted. Please upload an image manually.');
+    } else {
+      toast.error('Failed to generate image. Please try again or upload manually.');
+    }
+  } finally {
+    setIsGeneratingAI(false);
+  }
+};
 ```
-You are a professional blog editor. Take the raw article text and format it into clean, professional Markdown:
 
-1. Add section headers (## for main sections, ### for subsections)
-2. Convert lists into bullet points (- ) or numbered lists (1. 2. 3.)
-3. Break up long paragraphs into digestible chunks
-4. Fix grammar, spelling, and punctuation errors
-5. Improve sentence clarity without changing the author's meaning
-6. Maintain the author's voice and expertise
+#### Updated UI Structure
 
-Do NOT:
-- Add content that wasn't in the original
-- Change factual claims or statistics
-- Over-format with too many headers
-- Remove important information
-
-Return the formatted Markdown content.
+**New imports:**
+```tsx
+import { Sparkles, RefreshCw } from 'lucide-react';
 ```
+
+**Replace the empty state upload area with two options:**
+
+1. AI Generate button (prominent, with sparkle icon)
+2. Manual upload button (secondary option)
+
+**When image exists, show:**
+- The image preview
+- Regenerate button (for AI)
+- Remove button
+- Upload different button
+
+#### Updated Image Guidelines Section
+Add a new tip about AI-generated images having no licensing concerns.
+
+---
+
+## Technical Notes
+
+### Prompt Engineering
+The prompt is constructed dynamically from:
+- **Title** (required) - e.g., "First-Time Buyer's Guide to Tel Aviv"
+- **Content excerpt** (first 200 chars) - provides context about the article topic
+
+Example generated prompt:
+```
+Create a professional, high-quality blog cover image for an article titled "First-Time Buyer's Guide to Tel Aviv". The article is about: Buying your first home in Tel Aviv can feel overwhelming, but with the right preparation and guidance, it's an achievable dream. This guide covers... Style: Modern, clean, professional real estate or lifestyle photography. Aspect ratio 16:9, ultra high resolution. No text overlays on the image.
+```
+
+### Base64 to Storage Upload
+The `generate-hero-image` function returns a base64-encoded image. We:
+1. Fetch it as a blob
+2. Upload to Supabase storage (`property-images/blog-covers/`)
+3. Get the public URL
+4. Set it as the cover image
+
+This ensures the image is permanently stored (base64 data URLs are too large for database storage).
+
+### Error Handling
+- **Rate limit (429)**: Show friendly message, suggest waiting
+- **Payment required (402)**: Suggest manual upload
+- **No title**: Prevent generation, show error
+- **General errors**: Fallback message with manual upload suggestion
 
 ---
 
@@ -186,35 +173,26 @@ Return the formatted Markdown content.
 
 | File | Action |
 |------|--------|
-| `supabase/functions/format-blog-content/index.ts` | Create new edge function |
-| `supabase/config.toml` | Add function config (auto-handled) |
-| `src/components/blog/wizard/StepContent.tsx` | Add AI formatting button and preview UI |
+| `src/components/blog/wizard/StepCoverImage.tsx` | Add AI generation button, handler, and updated UI |
+
+No edge function changes needed - we reuse the existing `generate-hero-image` function.
 
 ---
 
-## User Experience Flow
+## Cost & Performance
 
-1. Author writes raw content in the textarea
-2. Clicks "✨ AI Format & Polish" button
-3. Loading state shows "Formatting your article..."
-4. Preview panel appears below showing the formatted version
-5. Author can:
-   - **Apply** - Replaces their content with the formatted version
-   - **Dismiss** - Closes preview and keeps original
-6. If they edit content after applying, the preview clears
+- **1 image per generation** (not 3) - balances cost and user experience
+- **Regenerate available** - if user doesn't like the result
+- **~5-10 seconds** generation time (shown with loading state)
+- Uses `google/gemini-2.5-flash-image-preview` model (existing function)
 
 ---
 
-## Why a Separate Edge Function?
+## Visual Design
 
-The existing `check-description` function is tailored for **short property descriptions** (100-2000 chars). Blog articles are:
-- Much longer (500-5000+ words)
-- Need structural formatting, not just grammar fixes
-- Require Markdown output, not plain text
-- Have different quality expectations
-
-A dedicated `format-blog-content` function allows for:
-- Optimized prompts for article formatting
-- Different length limits
-- Markdown-specific output handling
-
+The UI will have:
+1. **Primary action**: "✨ Generate AI Cover" button (gradient/accent styling)
+2. **Secondary action**: "Upload Your Own" button (outline styling)
+3. **Pro tip callout**: Explains AI images have no licensing worries
+4. **Loading state**: Spinner with "Generating your cover image..." text
+5. **Success state**: Image preview with Regenerate and Remove buttons
