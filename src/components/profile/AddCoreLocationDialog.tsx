@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -61,12 +62,15 @@ function AddCoreLocationDialogContent({ onOpenChange }: { onOpenChange: (open: b
       },
       {
         onSuccess: () => {
-          // Reset form
+          // Show confirmation
+          toast.success(`"${label.trim()}" saved!`);
+          
+          // Reset form for next entry
           setLabel('');
           setAddress('');
           setParsedAddress(null);
           setSelectedIcon('building');
-          onOpenChange(false);
+          // Dialog stays open - don't call onOpenChange(false)
         },
       }
     );
@@ -171,10 +175,10 @@ function AddCoreLocationDialogContent({ onOpenChange }: { onOpenChange: (open: b
             className="flex-1"
           >
             {addLocation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Save Location
+            Add Location
           </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Done
           </Button>
         </div>
       </div>
