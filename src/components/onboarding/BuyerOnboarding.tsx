@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
@@ -701,16 +702,12 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                         </div>
                       ) : (
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
-                          <Input
-                            type="number"
-                            value={downPaymentAmount ?? ''}
-                            onChange={(e) => setDownPaymentAmount(e.target.value ? Number(e.target.value) : null)}
-                            className="pl-8"
-                            placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
-                          />
-                        </div>
+                        <FormattedNumberInput
+                          value={downPaymentAmount}
+                          onChange={setDownPaymentAmount}
+                          prefix={currencySymbol}
+                          placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
+                        />
                       )}
                     </div>
 
@@ -736,31 +733,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
 
                     {/* Monthly Income */}
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-sm">Monthly Income (optional)</Label>
-                        <Select
-                          value={mortgagePrefs.income_type}
-                          onValueChange={(value: 'net' | 'gross') => setMortgagePrefs({ ...mortgagePrefs, income_type: value })}
-                        >
-                          <SelectTrigger className="w-20 h-7 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="net">Net</SelectItem>
-                            <SelectItem value="gross">Gross</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                        <Input
-                          type="number"
-                          value={mortgagePrefs.monthly_income ?? ''}
-                          onChange={(e) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: e.target.value ? Number(e.target.value) : null })}
-                          className="pl-8"
-                          placeholder="35,000"
-                        />
-                      </div>
+                      <Label className="text-sm">Net Monthly Income (optional)</Label>
+                      <FormattedNumberInput
+                        value={mortgagePrefs.monthly_income}
+                        onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null, income_type: 'net' })}
+                        prefix="₪"
+                        placeholder="35,000"
+                      />
                       <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
                     </div>
                   </div>
