@@ -4,7 +4,7 @@ import { AuthorType } from '@/hooks/useProfessionalBlog';
 export interface BlogWizardData {
   // Step 1: Basics
   title: string;
-  categoryId: string;
+  categoryIds: string[];
   city: string;
   audiences: string[];
   
@@ -35,7 +35,7 @@ interface BlogWizardContextType {
 
 const defaultBlogData: BlogWizardData = {
   title: '',
-  categoryId: '',
+  categoryIds: [],
   city: '',
   audiences: [],
   content: '',
@@ -91,7 +91,7 @@ export function BlogWizardProvider({
   const canGoNext = (() => {
     switch (currentStep) {
       case 1: // Basics
-        return data.title.trim().length > 0 && data.categoryId.length > 0;
+        return data.title.trim().length > 0 && (data.categoryIds?.length || 0) > 0;
       case 2: // Content
         return data.content.trim().length >= 100; // Min 100 chars
       case 3: // Cover Image (optional but encouraged)

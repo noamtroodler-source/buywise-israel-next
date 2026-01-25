@@ -11,7 +11,7 @@ export function StepReview() {
   const { data } = useBlogWizard();
   const { data: categories = [] } = useBlogCategories();
 
-  const category = categories.find(c => c.id === data.categoryId);
+  const selectedCategories = categories.filter(c => data.categoryIds?.includes(c.id));
   const wordCount = data.content.trim().split(/\s+/).filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
   
@@ -67,12 +67,12 @@ export function StepReview() {
           <div className="p-6">
             {/* Meta Info */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              {category && (
-                <Badge variant="secondary" className="rounded-full">
+              {selectedCategories.map(cat => (
+                <Badge key={cat.id} variant="secondary" className="rounded-full">
                   <Tag className="h-3 w-3 mr-1" />
-                  {category.name}
+                  {cat.name}
                 </Badge>
-              )}
+              ))}
               <Badge variant="outline" className="rounded-full">
                 <Clock className="h-3 w-3 mr-1" />
                 {readingTime} min read
@@ -121,7 +121,7 @@ export function StepReview() {
         <h4 className="font-medium mb-3">Pre-Submit Checklist</h4>
         <ul className="space-y-2 text-sm">
           <CheckItem checked={data.title.length > 10} label="Clear, descriptive title" />
-          <CheckItem checked={!!data.categoryId} label="Category selected" />
+          <CheckItem checked={(data.categoryIds?.length || 0) > 0} label="At least one category selected" />
           <CheckItem checked={data.content.length >= 500} label="Article has substantial content (500+ chars)" />
           <CheckItem checked={!!data.coverImage} label="Cover image added" optional />
           <CheckItem checked={!!data.excerpt} label="Summary/excerpt provided" optional />

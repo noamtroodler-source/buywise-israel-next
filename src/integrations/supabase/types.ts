@@ -627,6 +627,7 @@ export type Database = {
           author_profile_id: string | null
           author_type: string | null
           category_id: string | null
+          category_ids: string[] | null
           city: string | null
           content: string
           cover_image: string | null
@@ -652,6 +653,7 @@ export type Database = {
           author_profile_id?: string | null
           author_type?: string | null
           category_id?: string | null
+          category_ids?: string[] | null
           city?: string | null
           content: string
           cover_image?: string | null
@@ -677,6 +679,7 @@ export type Database = {
           author_profile_id?: string | null
           author_type?: string | null
           category_id?: string | null
+          category_ids?: string[] | null
           city?: string | null
           content?: string
           cover_image?: string | null

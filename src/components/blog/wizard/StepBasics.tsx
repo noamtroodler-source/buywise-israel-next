@@ -13,7 +13,7 @@ import { useBlogCategories } from '@/hooks/useProfessionalBlog';
 import { AUDIENCE_OPTIONS } from '@/types/content';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
+import { cn } from '@/lib/utils';
 export function StepBasics() {
   const { data, updateData } = useBlogWizard();
   const { data: categories = [] } = useBlogCategories();
@@ -40,6 +40,15 @@ export function StepBasics() {
     }
   };
 
+  const handleCategoryToggle = (categoryId: string) => {
+    const current = data.categoryIds || [];
+    if (current.includes(categoryId)) {
+      updateData({ categoryIds: current.filter(c => c !== categoryId) });
+    } else if (current.length < 3) {
+      updateData({ categoryIds: [...current, categoryId] });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -56,23 +65,33 @@ export function StepBasics() {
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="category">Category *</Label>
-        <Select
-          value={data.categoryId}
-          onValueChange={(value) => updateData({ categoryId: value })}
-        >
-          <SelectTrigger id="category">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="space-y-3">
+        <Label>Categories * <span className="text-muted-foreground font-normal">(select up to 3)</span></Label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {categories.map((cat) => {
+            const isSelected = data.categoryIds?.includes(cat.id);
+            const isDisabled = !isSelected && (data.categoryIds?.length || 0) >= 3;
+            return (
+              <div key={cat.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`category-${cat.id}`}
+                  checked={isSelected}
+                  onCheckedChange={() => handleCategoryToggle(cat.id)}
+                  disabled={isDisabled}
+                />
+                <label
+                  htmlFor={`category-${cat.id}`}
+                  className={cn("text-sm cursor-pointer", isDisabled && "text-muted-foreground")}
+                >
+                  {cat.name}
+                </label>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {data.categoryIds?.length || 0} of 3 selected
+        </p>
       </div>
 
       <div className="space-y-3">
