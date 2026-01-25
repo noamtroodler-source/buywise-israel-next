@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Calculator, Wallet, Scale, TrendingUp, Receipt, Compass, 
+  Calculator, Wallet, Scale, TrendingUp, Receipt, 
   MapPinned, Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { ToolPlaceholder } from '@/components/tools/ToolPlaceholder';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
 import { TrueCostCalculator } from '@/components/tools/TrueCostCalculator';
@@ -33,7 +32,6 @@ const tools: Tool[] = [
   { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare renting versus buying in Israel — and when ownership makes sense.', icon: Scale, category: 'calculator' },
   { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs in Israel — beyond how a property looks.', icon: Hammer, category: 'calculator' },
   { id: 'neighborhood', label: 'Where Should I Buy?', description: 'Take a quick quiz to discover which Israeli cities match your lifestyle, budget, and priorities.', icon: MapPinned, category: 'discovery' },
-  { id: 'workshop', label: 'Find Your Place Workshop', description: 'Clarify what truly matters — so you search with confidence, not overwhelm.', icon: Compass, category: 'discovery' },
   { id: 'documents', label: 'Document Checklist', description: "Stay organized through the Israeli buying process — and know what's needed at every step.", icon: ClipboardList, category: 'discovery' },
 ];
 
@@ -45,7 +43,6 @@ const toolComponents: Record<string, React.ComponentType> = {
   rentvsbuy: RentVsBuyCalculator,
   renovation: RenovationCostEstimator,
   neighborhood: NeighborhoodMatch,
-  workshop: () => <ToolPlaceholder toolName="Find Your Place Workshop" />,
   documents: DocumentChecklistTool,
 };
 

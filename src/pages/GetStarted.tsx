@@ -98,10 +98,10 @@ const roles: RoleOption[] = [
 ];
 
 const stats = [
-  { icon: Home, label: 'Active Listings', value: '2,500+' },
-  { icon: Users, label: 'Happy Buyers', value: '10,000+' },
-  { icon: Shield, label: 'Verified Agents', value: '500+' },
-  { icon: Star, label: 'Average Rating', value: '4.8/5' },
+  { icon: Home, label: 'Properties', value: 'Growing Network' },
+  { icon: Users, label: 'Community', value: 'International Focus' },
+  { icon: Shield, label: 'Agents', value: 'Verified Professionals' },
+  { icon: Star, label: 'Tools', value: 'Israel-Specific' },
 ];
 
 export default function GetStarted() {

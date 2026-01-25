@@ -13,7 +13,7 @@ import { Layout } from "@/components/layout/Layout";
 import { buildWhatsAppUrl, openWhatsApp as openWhatsAppHelper } from "@/lib/whatsapp";
 import { z } from "zod";
 
-const WHATSAPP_NUMBER = "972501234567"; // Replace with actual number
+const WHATSAPP_NUMBER = "14155238886";
 const EMAIL_ADDRESS = "hello@buywiseisrael.com";
 
 // Validation schema

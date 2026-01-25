@@ -16,7 +16,7 @@ export function Footer() {
               <span className="text-xl font-bold text-primary">Israel</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Your trusted partner for finding the perfect property in Israel.
+              Helping international buyers navigate Israeli real estate with clarity and confidence.
             </p>
           </div>
 
