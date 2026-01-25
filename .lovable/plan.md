@@ -1,146 +1,175 @@
 
-# Fix Favorites Count & Reactivity
 
-## Problem Summary
-The favorites count badge in the header doesn't update correctly when you:
-1. Add a property to favorites (count stays at old value)
-2. Remove a property from favorites (count doesn't decrease)
-3. The badge can show "1" even when no properties are actually saved
+# Add Personalization Intro Step to Buyer Onboarding
 
-## Root Cause
-Each component that calls `useFavorites()` creates its own local state for guest favorites. When one component updates sessionStorage, other components (like the header) still hold stale data. There's no shared state mechanism for guests.
+## Overview
+Add a welcoming introduction step ("Step 0") before the personalization wizard begins. This sets the tone, explains the value of providing information, and makes users feel excited rather than interrogated.
 
-## Solution: Shared State via React Context
+## User Experience Goal
 
-Create a shared favorites context that all components read from, ensuring updates propagate everywhere instantly.
+Transform the feeling from:
+> "Oh no, why do they want all this stuff from me?"
+
+To:
+> "This will help me get exactly what I need!"
 
 ---
 
-## Implementation Plan
+## Design
 
-### 1. Create FavoritesContext (New File)
-**File:** `src/contexts/FavoritesContext.tsx`
-
-Create a React Context that wraps the application and provides:
-- A single source of truth for `guestFavorites` state
-- Synced with sessionStorage on changes
-- Triggers re-renders across all consuming components
+### Intro Card Layout
 
 ```text
-FavoritesProvider
-├── guestFavorites (state)
-├── setGuestFavorites (setter)
-├── refreshFromStorage (manual refresh utility)
-└── Children consume via useFavoritesContext()
+┌──────────────────────────────────────────────────────┐
+│                                                      │
+│        [Sparkles Icon in Primary Blue]              │
+│                                                      │
+│     Your personalized buying experience             │
+│              starts here                            │
+│                                                      │
+│  The more we know about you, the more we can        │
+│  tailor your experience — from accurate cost        │
+│  estimates to tax savings you might be eligible     │
+│  for.                                                │
+│                                                      │
+│  ┌────────────────────────────────────────────────┐ │
+│  │ ✓  See costs personalized to your situation   │ │
+│  │ ✓  Discover tax benefits you qualify for      │ │
+│  │ ✓  Get accurate mortgage calculations         │ │
+│  └────────────────────────────────────────────────┘ │
+│                                                      │
+│  Takes about 2 minutes                              │
+│                                                      │
+│                              [Get Started →]        │
+│                                                      │
+└──────────────────────────────────────────────────────┘
 ```
 
-### 2. Refactor useFavorites Hook
-**File:** `src/hooks/useFavorites.tsx`
-
-**Changes:**
-- Remove local `guestFavorites` useState
-- Consume `guestFavorites` and `setGuestFavorites` from FavoritesContext
-- When adding/removing guest favorites, update via context setter (not local state)
-- This ensures all hook instances share the same state
-
-**Key Code Changes:**
-- Line 21: Replace `useState` with context consumption
-- Line 24-28: Remove the `useEffect` that loads from sessionStorage (context handles this)
-- Lines 105-109, 149-152: Use context's `setGuestFavorites` instead of local setter
-
-### 3. Wrap App with FavoritesProvider
-**File:** `src/App.tsx`
-
-Add `<FavoritesProvider>` around the application tree, similar to how `CompareProvider` and `AuthProvider` are set up.
-
-### 4. Apply Same Fix to Project Favorites (Optional but Recommended)
-**File:** `src/hooks/useProjectFavorites.tsx`
-
-If the user wants a combined count (properties + projects) in the header, apply the same context pattern to project favorites.
+### Content Strategy
+- **Headline**: Warm and inviting, not corporate
+- **Body**: Short, benefit-focused (2-3 sentences max)
+- **Benefits List**: 3 quick checkmarks showing what they'll gain
+- **Time Estimate**: "Takes about 2 minutes" to reduce friction
+- **Single CTA**: "Get Started" button to proceed
 
 ---
 
-## Technical Details
+## Technical Implementation
 
-### FavoritesContext Implementation
+### File: `src/components/onboarding/BuyerOnboarding.tsx`
 
-```text
-// Pseudocode structure
-const FavoritesContext = createContext()
+**1. Add "intro" as Step 0**
 
-export function FavoritesProvider({ children }) {
-  // Initialize from sessionStorage on mount
-  const [guestFavorites, setGuestFavorites] = useState(() => 
-    safeSessionGet(GUEST_FAVORITES_KEY, [])
-  )
-  
-  // Sync to sessionStorage whenever state changes
-  useEffect(() => {
-    if (guestFavorites.length > 0) {
-      safeSessionSet(GUEST_FAVORITES_KEY, guestFavorites)
-    } else {
-      // Clear storage when empty to prevent stale "1" counts
-      safeSessionRemove(GUEST_FAVORITES_KEY)
-    }
-  }, [guestFavorites])
-  
-  return (
-    <FavoritesContext.Provider value={{ guestFavorites, setGuestFavorites }}>
-      {children}
-    </FavoritesContext.Provider>
-  )
-}
+Update the Step type to include an intro step:
+```typescript
+type Step = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 ```
 
-### Updated useFavorites Flow
+**2. Initialize at 'intro' step**
+```typescript
+const [step, setStep] = useState<Step>('intro');
+```
 
-```text
-Before (Broken):
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Header     │    │ PropertyCard│    │ FavoritePage│
-│ useFavorites│    │ useFavorites│    │ useFavorites│
-│ [state: 0]  │    │ [state: 1]  │    │ [state: 1]  │
-└─────────────┘    └─────────────┘    └─────────────┘
-       ↑ No sync between instances
+**3. Add navigation logic**
 
-After (Fixed):
-┌────────────────────────────────────────────────────┐
-│            FavoritesProvider (Context)             │
-│                [guestFavorites: []]                │
-├────────────────────────────────────────────────────┤
-│ ┌───────────┐  ┌─────────────┐  ┌───────────────┐ │
-│ │  Header   │  │ PropertyCard│  │ FavoritesPage │ │
-│ │  reads 0  │  │  reads 0    │  │   reads 0     │ │
-│ └───────────┘  └─────────────┘  └───────────────┘ │
-└────────────────────────────────────────────────────┘
-       ↑ All read from same shared state
+Update `getNextStep`:
+- From `'intro'` → go to step `1`
+
+Update `handleBack`:
+- From step `1` → go to `'intro'`
+
+**4. Update step numbering display**
+
+The intro step doesn't count in "Step X of Y" — it's a welcome screen, not a question. When on intro, show nothing or a different header like "Welcome".
+
+**5. Add intro step render block**
+
+Add a new motion.div block for step `'intro'` within the AnimatePresence:
+
+```tsx
+{step === 'intro' && (
+  <motion.div
+    key="intro"
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: -20 }}
+    className="space-y-6 text-center py-4"
+  >
+    <div className="flex justify-center">
+      <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+        <Sparkles className="h-7 w-7 text-primary" />
+      </div>
+    </div>
+    
+    <div className="space-y-2">
+      <h3 className="text-xl font-semibold text-foreground">
+        Your personalized buying experience starts here
+      </h3>
+      <p className="text-muted-foreground">
+        The more we know about you, the more we can tailor your experience — 
+        from accurate cost estimates to tax savings you might qualify for.
+      </p>
+    </div>
+    
+    <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
+      <div className="flex items-center gap-2 text-sm">
+        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+        <span>See costs personalized to your situation</span>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+        <span>Discover tax benefits you qualify for</span>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+        <span>Get accurate mortgage calculations</span>
+      </div>
+    </div>
+    
+    <p className="text-xs text-muted-foreground">Takes about 2 minutes</p>
+  </motion.div>
+)}
+```
+
+**6. Update navigation buttons**
+
+For the intro step:
+- No "Back" button (it's the first screen)
+- Button says "Get Started" instead of "Continue"
+
+**7. Update DialogHeader for intro**
+
+When on intro step, hide the "Step X of Y" text or show a different header:
+```tsx
+<DialogDescription>
+  {step === 'intro' 
+    ? null  // Or show nothing for intro
+    : `Step ${getStepNumber()} of ${getTotalSteps()} — This helps us show you accurate cost estimates`
+  }
+</DialogDescription>
+```
+
+**8. Add Sparkles icon import**
+```typescript
+import { ..., Sparkles } from 'lucide-react';
 ```
 
 ---
 
-## Files to Create/Modify
+## Summary of Changes
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/contexts/FavoritesContext.tsx` | Create | Shared state context for guest favorites |
-| `src/hooks/useFavorites.tsx` | Modify | Use context instead of local state |
-| `src/App.tsx` | Modify | Wrap app with FavoritesProvider |
+| File | Change |
+|------|--------|
+| `src/components/onboarding/BuyerOnboarding.tsx` | Add 'intro' step type, render intro card, update navigation logic, import Sparkles icon |
 
 ---
 
-## Expected Behavior After Fix
+## Result
 
-1. **Add favorite**: Badge count increases immediately everywhere
-2. **Remove favorite**: Badge count decreases immediately everywhere
-3. **Empty favorites**: Badge disappears completely (no stale "1")
-4. **Page refresh**: Count persists correctly from sessionStorage
-5. **Close browser**: Session clears (expected sessionStorage behavior)
+Users will see a warm, welcoming intro screen that:
+1. Explains why we're asking questions (benefit-focused)
+2. Lists 3 specific benefits they'll get
+3. Sets expectations with a time estimate
+4. Uses the brand's primary blue color palette
+5. Feels inviting, not invasive
 
----
-
-## Edge Cases Handled
-
-- **User logs in**: Context clears guest state, switches to DB-backed favorites
-- **User logs out**: Guest state becomes active again
-- **Empty array cleanup**: Removes sessionStorage key when empty to prevent phantom counts
-- **Multiple tabs**: Each tab has its own session (expected browser behavior)
