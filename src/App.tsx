@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CompareProvider } from "@/contexts/CompareContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
@@ -130,8 +131,9 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <PreferencesProvider>
-        <CompareProvider>
+      <FavoritesProvider>
+        <PreferencesProvider>
+          <CompareProvider>
           <TooltipProvider>
             <ErrorBoundary>
               <Toaster />
@@ -397,7 +399,8 @@ const App = () => (
           </TooltipProvider>
         </CompareProvider>
       </PreferencesProvider>
-    </AuthProvider>
+    </FavoritesProvider>
+  </AuthProvider>
   </QueryClientProvider>
 );
 
