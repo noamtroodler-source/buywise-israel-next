@@ -4,12 +4,13 @@ import {
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight
+  Wrench, ChevronRight, PenLine
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { usePendingReviewCount } from '@/hooks/useListingReview';
+import { usePendingBlogCount } from '@/hooks/useBlogReview';
 import { AdminNavSection, AdminNavItem } from '@/components/admin/AdminNavSection';
 import { usePlatformStats } from '@/hooks/useAdminAnalytics';
 import { AlertsBadge } from '@/components/admin/AdminAlertsPanel';
@@ -18,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 export function AdminLayout() {
   const location = useLocation();
   const { data: pendingCount } = usePendingReviewCount();
+  const { data: pendingBlogCount } = usePendingBlogCount();
   const { data: stats } = usePlatformStats();
 
   // Calculate totals for section badges
@@ -26,7 +28,8 @@ export function AdminLayout() {
     (stats?.pendingAgents || 0) + 
     (stats?.pendingAgencies || 0) + 
     (stats?.pendingDevelopers || 0) + 
-    (stats?.pendingProjects || 0);
+    (stats?.pendingProjects || 0) +
+    (pendingBlogCount || 0);
 
   const overviewItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,6 +48,7 @@ export function AdminLayout() {
     { href: '/admin/agencies', label: 'Agencies', icon: Building, badge: stats?.pendingAgencies || 0 },
     { href: '/admin/developers', label: 'Developers', icon: Building, badge: stats?.pendingDevelopers || 0 },
     { href: '/admin/projects', label: 'Projects', icon: Building, badge: stats?.pendingProjects || 0 },
+    { href: '/admin/blog-review', label: 'Blog Posts', icon: PenLine, badge: pendingBlogCount || 0 },
   ];
 
   const contentItems = [
