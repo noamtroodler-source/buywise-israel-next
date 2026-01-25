@@ -22,17 +22,32 @@ export function StepReview() {
   // Simple markdown to HTML conversion
   const renderContent = (content: string) => {
     let html = content
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-6 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
+      // Headers
+      .replace(/^### (.*$)/gm, '</p><h3 class="text-lg font-semibold mt-6 mb-2">$1</h3><p class="mb-4">')
+      .replace(/^## (.*$)/gm, '</p><h2 class="text-xl font-bold mt-8 mb-3">$1</h2><p class="mb-4">')
+      .replace(/^# (.*$)/gm, '</p><h1 class="text-2xl font-bold mt-8 mb-4">$1</h1><p class="mb-4">')
+      // Bold and italic
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^- (.*$)/gm, '<li class="ml-4">• $1</li>')
-      .replace(/^\d+\. (.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
+      // Lists - no explicit bullet character, let CSS handle it
+      .replace(/^- (.*$)/gm, '<li>$1</li>')
+      .replace(/^\d+\. (.*$)/gm, '<li class="list-decimal">$1</li>')
+      // Paragraphs
       .replace(/\n\n/g, '</p><p class="mb-4">')
       .replace(/\n/g, '<br/>');
+
+    // Wrap consecutive <li> elements in <ul>
+    html = html.replace(/(<li[^>]*>.*?<\/li>(<br\/>)?)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
+    
+    // Clean up stray <br/> inside lists
+    html = html.replace(/<ul([^>]*)>(.*?)<\/ul>/g, (match, attrs, inner) => {
+      return `<ul${attrs}>${inner.replace(/<br\/>/g, '')}</ul>`;
+    });
     
     html = `<p class="mb-4">${html}</p>`;
+    // Clean up empty paragraphs
+    html = html.replace(/<p class="mb-4"><\/p>/g, '');
+    
     return DOMPurify.sanitize(html);
   };
 
