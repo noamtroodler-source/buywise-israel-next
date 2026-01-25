@@ -1,49 +1,114 @@
 
-# Allow Guest Users to Access Favorites Page
+# Improve Price Alert Error Message for Guest Users
 
 ## The Problem
 
-Currently, when a guest user clicks the favorites heart icon in the header, they're redirected to the sign-in page (`/auth?redirect=/favorites`) instead of seeing their saved properties.
+When a guest user (not signed up) clicks "Price alerts off" on a saved property, they see a generic error:
 
-This happens because the `/favorites` route is wrapped with `ProtectedRoute` in `src/App.tsx` (lines 202-206), which blocks all non-authenticated users.
+> "Failed to update alert settings"
+
+This doesn't explain **why** it failed or **what to do** about it.
+
+---
 
 ## The Solution
 
-Remove the `ProtectedRoute` wrapper from the `/favorites` route. The Favorites page already has built-in logic to handle guest users gracefully, including:
+Update the error handling in `usePriceDropAlerts` to detect when the user is a guest and show a helpful, actionable message that encourages signup.
 
-- A `GuestSignupNudge` banner that encourages sign-up
-- Session storage-based favorites display
-- Clear messaging about browser-only saves
+### New Message for Guests
+> "Sign up to enable price alerts and get notified when prices drop!"
+
+This message:
+- Explains what they need to do (sign up)
+- Highlights the benefit (get notified of price drops)
+- Is friendly and non-technical
+
+---
 
 ## Implementation
 
-### File: `src/App.tsx`
+### File: `src/hooks/usePriceDropAlerts.tsx`
 
-**Before:**
-```tsx
-<Route path="/favorites" element={
-  <ProtectedRoute>
-    <Favorites />
-  </ProtectedRoute>
-} />
+Update the `togglePriceAlert` mutation to differentiate between guest errors and actual failures:
+
+**Before (lines 119-138):**
+```typescript
+const togglePriceAlert = useMutation({
+  mutationFn: async ({ propertyId, enabled }: { propertyId: string; enabled: boolean }) => {
+    if (!user) throw new Error('Must be logged in');
+    
+    const { error } = await supabase
+      .from('favorites')
+      .update({ price_alert_enabled: enabled })
+      .eq('user_id', user.id)
+      .eq('property_id', propertyId);
+
+    if (error) throw error;
+  },
+  onSuccess: (_, { enabled }) => {
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    toast.success(enabled ? 'Price alerts enabled' : 'Price alerts disabled');
+  },
+  onError: () => {
+    toast.error('Failed to update alert settings');
+  },
+});
 ```
 
 **After:**
-```tsx
-<Route path="/favorites" element={<Favorites />} />
+```typescript
+const togglePriceAlert = useMutation({
+  mutationFn: async ({ propertyId, enabled }: { propertyId: string; enabled: boolean }) => {
+    if (!user) throw new Error('GUEST_USER');
+    
+    const { error } = await supabase
+      .from('favorites')
+      .update({ price_alert_enabled: enabled })
+      .eq('user_id', user.id)
+      .eq('property_id', propertyId);
+
+    if (error) throw error;
+  },
+  onSuccess: (_, { enabled }) => {
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    toast.success(enabled ? 'Price alerts enabled' : 'Price alerts disabled');
+  },
+  onError: (error) => {
+    if (error.message === 'GUEST_USER') {
+      toast.error('Sign up to enable price alerts and get notified when prices drop!', {
+        action: {
+          label: 'Sign Up',
+          onClick: () => window.location.href = '/auth?tab=signup',
+        },
+      });
+    } else {
+      toast.error('Failed to update alert settings');
+    }
+  },
+});
 ```
 
-## Why This Works
+---
 
-The Favorites page (`src/pages/Favorites.tsx`) already contains:
+## Key Changes
 
-1. **Guest detection**: Checks if `user` exists
-2. **Guest favorites support**: Uses `useFavorites` hook which loads from `sessionStorage` for guests
-3. **Signup nudge**: Shows a banner encouraging guests to create an account:
-   > "These properties are saved to this browser only. Create a free account to keep them forever and get price drop alerts."
+| Aspect | Before | After |
+|--------|--------|-------|
+| Error type | Generic "Must be logged in" | Specific "GUEST_USER" marker |
+| Error message | "Failed to update alert settings" | "Sign up to enable price alerts..." |
+| Action | None | "Sign Up" button in toast |
 
-## Result
+---
 
-- Guests can now click the heart icon and see their saved properties immediately
-- They'll see a friendly banner explaining the benefits of signing up
-- No code changes needed to the Favorites page itself — it's already guest-ready
+## User Experience
+
+### Guest clicks "Price alerts off"
+
+**Before:**
+- Toast: "Failed to update alert settings" (confusing)
+
+**After:**
+- Toast: "Sign up to enable price alerts and get notified when prices drop!"
+- Action button: "Sign Up" → navigates to `/auth?tab=signup`
+
+This aligns with the gradual engagement strategy — guests can see the feature exists, understand its value, and have a clear path to unlock it.
