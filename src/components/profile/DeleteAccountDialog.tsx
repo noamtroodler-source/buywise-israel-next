@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,13 +68,13 @@ export function DeleteAccountDialog({ hasProfessionalRole = false }: DeleteAccou
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <button className="text-xs text-muted-foreground hover:text-destructive transition-colors mt-4 w-full text-center">
+        <button className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-4 w-full text-center">
           Delete my account
         </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-destructive">Delete Account</AlertDialogTitle>
+          <AlertDialogTitle>Delete Account</AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>
               This action is <strong>permanent and irreversible</strong>. All your data will be deleted, including:
@@ -87,9 +87,12 @@ export function DeleteAccountDialog({ hasProfessionalRole = false }: DeleteAccou
               <li>All preferences and activity history</li>
             </ul>
             {hasProfessionalRole && (
-              <p className="text-amber-600 font-medium text-sm">
-                ⚠️ You have a professional account. Please ensure you've transferred or closed any active listings before proceeding.
-              </p>
+              <div className="flex items-start gap-2 bg-primary/10 text-primary border border-primary/20 p-3 rounded-md text-sm">
+                <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                <p className="font-medium">
+                  You have a professional account. Please ensure you've transferred or closed any active listings before proceeding.
+                </p>
+              </div>
             )}
             <div className="pt-2">
               <Label htmlFor="confirm-delete" className="text-foreground font-medium">
@@ -111,7 +114,7 @@ export function DeleteAccountDialog({ hasProfessionalRole = false }: DeleteAccou
           <AlertDialogAction
             onClick={handleDelete}
             disabled={!isConfirmed || isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isDeleting ? (
               <>
