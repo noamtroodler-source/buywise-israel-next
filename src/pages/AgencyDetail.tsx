@@ -285,12 +285,6 @@ export default function AgencyDetail() {
                 {stats?.pastListingsCount ?? 0}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="articles" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Articles
-              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                0
-              </span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-6">
@@ -339,16 +333,6 @@ export default function AgencyDetail() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="articles" className="space-y-6">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground">Articles from this agency's agents will appear here.</p>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>

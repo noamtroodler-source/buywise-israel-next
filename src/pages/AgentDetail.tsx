@@ -301,12 +301,6 @@ export default function AgentDetail() {
                 {stats?.pastListingsCount ?? 0}
               </span>
             </TabsTrigger>
-            <TabsTrigger value="articles" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Articles
-              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
-                0
-              </span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
@@ -353,16 +347,6 @@ export default function AgentDetail() {
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="articles">
-            <Card>
-              <CardContent className="p-8 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground">Articles coming soon.</p>
-                <p className="text-xs text-muted-foreground mt-1">This feature will be available in a future update.</p>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
