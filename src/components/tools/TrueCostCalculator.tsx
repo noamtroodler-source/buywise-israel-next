@@ -37,6 +37,7 @@ import {
   InsightCard,
   BuyerTypeInfoBanner,
   SourceAttribution,
+  ExampleValuesHint,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -425,6 +426,7 @@ export function TrueCostCalculator() {
   // Left column - inputs (Multiple Cards matching Mortgage Calculator)
   const leftColumn = (
     <div className="space-y-4">
+      <ExampleValuesHint />
       {/* Property Details Card */}
       <Card>
         <CardContent className="p-5 space-y-5">

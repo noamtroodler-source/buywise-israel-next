@@ -53,6 +53,7 @@ import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { formatCurrencyRange } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
+import { ExampleValuesHint } from './shared/ExampleValuesHint';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
@@ -324,6 +325,7 @@ function AffordabilityCalculatorContent() {
         infoBanner={<BuyerTypeInfoBanner selectedType={selectedBuyerType} onTypeChange={setSelectedBuyerType} extended />}
         leftColumn={
           <div className="space-y-4">
+            <ExampleValuesHint />
             <Card>
               <CardHeader className="pb-4"><CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4 text-primary" />Income Details</CardTitle></CardHeader>
               <CardContent className="space-y-5">
