@@ -1,114 +1,105 @@
 
-# Improve Price Alert Error Message for Guest Users
+# Add Instant Removal Animation for Favorites
 
 ## The Problem
 
-When a guest user (not signed up) clicks "Price alerts off" on a saved property, they see a generic error:
-
-> "Failed to update alert settings"
-
-This doesn't explain **why** it failed or **what to do** about it.
-
----
+When you click the heart icon on a property card in the Favorites page, the property is removed from your favorites, but the card doesn't disappear immediately. There's a delay while the query refetches from the server.
 
 ## The Solution
 
-Update the error handling in `usePriceDropAlerts` to detect when the user is a guest and show a helpful, actionable message that encourages signup.
-
-### New Message for Guests
-> "Sign up to enable price alerts and get notified when prices drop!"
-
-This message:
-- Explains what they need to do (sign up)
-- Highlights the benefit (get notified of price drops)
-- Is friendly and non-technical
+Add **optimistic updates** so the card disappears instantly when you click the heart, without waiting for the server response. If the server request fails, the card will reappear with an error message.
 
 ---
 
 ## Implementation
 
-### File: `src/hooks/usePriceDropAlerts.tsx`
+### File: `src/hooks/useFavorites.tsx`
 
-Update the `togglePriceAlert` mutation to differentiate between guest errors and actual failures:
+Update the `removeFavorite` mutation to use optimistic updates:
 
-**Before (lines 119-138):**
+**Changes:**
+
+1. Add `onMutate` to immediately remove the property from the cached favorites list
+2. Add `onError` rollback to restore the property if the deletion fails
+3. Add `onSettled` to ensure the cache is synced after the mutation completes
+
 ```typescript
-const togglePriceAlert = useMutation({
-  mutationFn: async ({ propertyId, enabled }: { propertyId: string; enabled: boolean }) => {
-    if (!user) throw new Error('Must be logged in');
+const removeFavorite = useMutation({
+  mutationFn: async (propertyId: string) => {
+    // ... existing deletion logic
+  },
+  onMutate: async (propertyId) => {
+    // Cancel any in-flight queries
+    await queryClient.cancelQueries({ queryKey: ['favorites', user?.id] });
+    await queryClient.cancelQueries({ queryKey: ['favoriteIds', user?.id] });
     
-    const { error } = await supabase
-      .from('favorites')
-      .update({ price_alert_enabled: enabled })
-      .eq('user_id', user.id)
-      .eq('property_id', propertyId);
-
-    if (error) throw error;
-  },
-  onSuccess: (_, { enabled }) => {
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    toast.success(enabled ? 'Price alerts enabled' : 'Price alerts disabled');
-  },
-  onError: () => {
-    toast.error('Failed to update alert settings');
-  },
-});
-```
-
-**After:**
-```typescript
-const togglePriceAlert = useMutation({
-  mutationFn: async ({ propertyId, enabled }: { propertyId: string; enabled: boolean }) => {
-    if (!user) throw new Error('GUEST_USER');
+    // Snapshot current state for rollback
+    const previousFavorites = queryClient.getQueryData(['favorites', user?.id]);
+    const previousIds = queryClient.getQueryData(['favoriteIds', user?.id]);
     
-    const { error } = await supabase
-      .from('favorites')
-      .update({ price_alert_enabled: enabled })
-      .eq('user_id', user.id)
-      .eq('property_id', propertyId);
-
-    if (error) throw error;
+    // Optimistically remove from cache
+    queryClient.setQueryData(['favorites', user?.id], (old: any[]) => 
+      old?.filter(f => f.property_id !== propertyId) || []
+    );
+    queryClient.setQueryData(['favoriteIds', user?.id], (old: string[]) =>
+      old?.filter(id => id !== propertyId) || []
+    );
+    
+    return { previousFavorites, previousIds };
   },
-  onSuccess: (_, { enabled }) => {
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    toast.success(enabled ? 'Price alerts enabled' : 'Price alerts disabled');
-  },
-  onError: (error) => {
-    if (error.message === 'GUEST_USER') {
-      toast.error('Sign up to enable price alerts and get notified when prices drop!', {
-        action: {
-          label: 'Sign Up',
-          onClick: () => window.location.href = '/auth?tab=signup',
-        },
-      });
-    } else {
-      toast.error('Failed to update alert settings');
+  onError: (error, propertyId, context) => {
+    // Rollback on error
+    if (context?.previousFavorites) {
+      queryClient.setQueryData(['favorites', user?.id], context.previousFavorites);
     }
+    if (context?.previousIds) {
+      queryClient.setQueryData(['favoriteIds', user?.id], context.previousIds);
+    }
+    toast.error('Failed to remove property');
+  },
+  onSuccess: () => {
+    toast.success('Property removed from favorites');
+  },
+  onSettled: () => {
+    // Refetch to ensure sync with server
+    queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
   },
 });
 ```
 
 ---
 
-## Key Changes
+## How It Works
 
-| Aspect | Before | After |
-|--------|--------|-------|
-| Error type | Generic "Must be logged in" | Specific "GUEST_USER" marker |
-| Error message | "Failed to update alert settings" | "Sign up to enable price alerts..." |
-| Action | None | "Sign Up" button in toast |
+| Step | Before | After |
+|------|--------|-------|
+| Click heart | Wait for server response | Card disappears instantly |
+| Server confirms | Card finally disappears | Cache syncs silently |
+| Server fails | Error toast, card still visible | Error toast, card reappears |
 
 ---
 
 ## User Experience
 
-### Guest clicks "Price alerts off"
+### Before
+1. Click heart on property card
+2. Wait 200-500ms while request completes
+3. Card disappears
 
-**Before:**
-- Toast: "Failed to update alert settings" (confusing)
+### After
+1. Click heart on property card
+2. Card disappears instantly (optimistic update)
+3. Server syncs in background
+4. If error, card reappears with error message
 
-**After:**
-- Toast: "Sign up to enable price alerts and get notified when prices drop!"
-- Action button: "Sign Up" → navigates to `/auth?tab=signup`
+This creates a snappy, responsive feel that matches modern app expectations.
 
-This aligns with the gradual engagement strategy — guests can see the feature exists, understand its value, and have a clear path to unlock it.
+---
+
+## Technical Details
+
+- Uses React Query's built-in optimistic update pattern
+- Maintains data integrity with rollback on error
+- Works for both logged-in users (database) and guests (sessionStorage)
+- No changes needed to the UI components — the `PropertyCard` and `FavoriteButton` will automatically reflect the optimistic state
