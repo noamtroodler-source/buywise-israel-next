@@ -39,7 +39,6 @@ export function SavedCalculationsCompact() {
       case 'mortgage': return '/tools?tool=mortgage';
       case 'affordability': return '/tools?tool=affordability';
       case 'purchase_tax': return '/tools?tool=purchasetax';
-      case 'rental_yield': return '/tools?tool=rentalyield';
       default: return '/tools';
     }
   };

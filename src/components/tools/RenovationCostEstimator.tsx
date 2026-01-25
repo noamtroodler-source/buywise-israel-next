@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp, BookOpen } from 'lucide-react';
+import { Hammer, ChefHat, Bath, PaintBucket, Zap, Droplets, Wind, Square, Shield, Home, AlertTriangle, Calendar, HelpCircle, Check, ChevronDown, Calculator, FileText, TrendingUp, BookOpen, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -224,6 +226,30 @@ export function RenovationCostEstimator() {
   // Collapsible states
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(true);
   const [isTipsOpen, setIsTipsOpen] = useState(false);
+
+  // Reset handler
+  const handleReset = () => {
+    setPropertySize(80);
+    setBuildingYear(1995);
+    setPropertyType('apartment');
+    setBathroomCount(2);
+    setSelectedCategories(['painting', 'flooring']);
+    setQualityLevel('standard');
+    setIncludePermits(true);
+    setIncludeContingency(true);
+    setContingencyPercent(15);
+    setIncludeTempHousing(false);
+    setIncludeArchitect(false);
+    toast.success('Estimator reset');
+  };
+
+  // Header actions
+  const headerActions = (
+    <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+      <RotateCcw className="h-4 w-4" />
+      <span className="hidden sm:inline">Reset</span>
+    </Button>
+  );
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -960,7 +986,7 @@ export function RenovationCostEstimator() {
       title="Renovation Cost Estimator"
       subtitle="Estimate renovation costs for Israeli properties — clearly and realistically."
       icon={<Hammer className="h-6 w-6" />}
-      
+      headerActions={headerActions}
       infoBanner={
         <InfoBanner variant="info">
           Prices based on CBS construction cost index and contractor market research (Q4 2024). Actual costs vary by location, contractor, and specific requirements.

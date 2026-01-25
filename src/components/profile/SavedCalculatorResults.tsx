@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calculator, Trash2, ExternalLink, Home, TrendingUp, DollarSign, Scale, PiggyBank } from 'lucide-react';
+import { Calculator, Trash2, ExternalLink, Home, TrendingUp, DollarSign, Scale, PiggyBank, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useSavedCalculatorResults, useDeleteCalculatorResult, CalculatorType } from '@/hooks/useSavedCalculatorResults';
@@ -37,6 +37,12 @@ const calculatorConfig: Record<CalculatorType, { label: string; icon: React.Reac
     icon: <TrendingUp className="h-4 w-4" />,
     path: '/tools?tool=investment',
     resultKey: 'netYield',
+  },
+  purchase_tax: {
+    label: 'Purchase Tax Calculator',
+    icon: <Receipt className="h-4 w-4" />,
+    path: '/tools?tool=purchasetax',
+    resultKey: 'tax_amount',
   },
 };
 

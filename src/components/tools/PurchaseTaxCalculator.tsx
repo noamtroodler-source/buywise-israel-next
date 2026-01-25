@@ -5,7 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { Receipt, Calendar, TrendingDown, Check, Calculator, Wallet, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Receipt, Calendar, TrendingDown, Check, Calculator, Wallet, BookOpen, RotateCcw, Save } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { 
   calculatePurchaseTax, 
   compareTaxByBuyerType,
@@ -23,15 +27,52 @@ import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ToolFeedback } from './shared/ToolFeedback';
 
+const STORAGE_KEY = 'purchase-tax-calculator-inputs';
+
+const DEFAULTS = {
+  propertyPrice: 2500000,
+  buyerType: 'first_time' as BuyerType,
+  aliyahYear: undefined as number | undefined,
+  purchaseDate: new Date(),
+};
+
 export function PurchaseTaxCalculator() {
+  const { user } = useAuth();
   const formatCurrency = useFormatPrice();
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
+  const saveResult = useSaveCalculatorResult();
   
-  const [propertyPrice, setPropertyPrice] = useState(2500000);
-  const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
-  const [aliyahYear, setAliyahYear] = useState<number | undefined>(undefined);
-  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
+  const [propertyPrice, setPropertyPrice] = useState(DEFAULTS.propertyPrice);
+  const [buyerType, setBuyerType] = useState<BuyerType>(DEFAULTS.buyerType);
+  const [aliyahYear, setAliyahYear] = useState<number | undefined>(DEFAULTS.aliyahYear);
+  const [purchaseDate, setPurchaseDate] = useState<Date>(DEFAULTS.purchaseDate);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.propertyPrice) setPropertyPrice(parsed.propertyPrice);
+        if (parsed.buyerType) setBuyerType(parsed.buyerType);
+        if (parsed.aliyahYear) setAliyahYear(parsed.aliyahYear);
+        if (parsed.purchaseDate) setPurchaseDate(new Date(parsed.purchaseDate));
+      } catch (e) {
+        console.error('Failed to parse saved inputs', e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      propertyPrice,
+      buyerType,
+      aliyahYear,
+      purchaseDate: purchaseDate.toISOString(),
+    }));
+  }, [propertyPrice, buyerType, aliyahYear, purchaseDate]);
 
   // Set buyer type from profile on load
   useEffect(() => {
@@ -127,6 +168,52 @@ export function PurchaseTaxCalculator() {
     };
     setBuyerType(mapping[category] || 'first_time');
   };
+
+  // Reset handler
+  const handleReset = () => {
+    setPropertyPrice(DEFAULTS.propertyPrice);
+    setBuyerType(DEFAULTS.buyerType);
+    setAliyahYear(DEFAULTS.aliyahYear);
+    setPurchaseDate(DEFAULTS.purchaseDate);
+    localStorage.removeItem(STORAGE_KEY);
+    toast.success('Calculator reset');
+  };
+
+  // Save handler
+  const handleSave = async () => {
+    if (!user) {
+      toast.info('Sign in to save your calculations');
+      return;
+    }
+    saveResult.mutate({
+      calculatorType: 'purchase_tax',
+      inputs: {
+        propertyPrice,
+        buyerType,
+        aliyahYear,
+        purchaseDate: purchaseDate.toISOString(),
+      },
+      results: {
+        tax_amount: taxResult.totalTax,
+        effective_rate: taxResult.effectiveRate,
+        savings_vs_investor: taxResult.savings?.vsInvestor || 0,
+      },
+    });
+  };
+
+  // Header actions
+  const headerActions = (
+    <>
+      <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+        <RotateCcw className="h-4 w-4" />
+        <span className="hidden sm:inline">Reset</span>
+      </Button>
+      <Button variant="ghost" size="sm" onClick={handleSave} disabled={saveResult.isPending} className="gap-2">
+        <Save className="h-4 w-4" />
+        <span className="hidden sm:inline">Save</span>
+      </Button>
+    </>
+  );
 
   const leftColumn = (
     <div className="space-y-6">
@@ -395,6 +482,7 @@ export function PurchaseTaxCalculator() {
       title="Purchase Tax Calculator"
       subtitle="Calculate your מס רכישה based on 2024 rates with visual bracket breakdown"
       icon={<Receipt className="h-6 w-6" />}
+      headerActions={headerActions}
       infoBanner={
         <BuyerTypeInfoBanner
           selectedType={buyerType as BuyerCategory}
