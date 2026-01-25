@@ -30,7 +30,7 @@ import { ToolFeedback } from './shared/ToolFeedback';
 const STORAGE_KEY = 'purchase-tax-calculator-inputs';
 
 const DEFAULTS = {
-  propertyPrice: 2500000,
+  propertyPrice: 2750000,
   buyerType: 'first_time' as BuyerType,
   aliyahYear: undefined as number | undefined,
   purchaseDate: new Date(),

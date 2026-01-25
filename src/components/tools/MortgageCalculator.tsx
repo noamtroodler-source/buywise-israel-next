@@ -42,11 +42,11 @@ const BUYER_TYPE_OPTIONS: {
 const LOAN_TERMS = [10, 15, 20, 25, 30];
 
 const DEFAULTS = {
-  propertyPrice: 3000000,
+  propertyPrice: 2750000,
   downPaymentPercent: 25,
   buyerType: 'first_time' as BuyerType,
   loanTermYears: 25,
-  interestRate: 5.0,
+  interestRate: 5.25,
 };
 
 const STORAGE_KEY = 'mortgage-calculator-saved';
