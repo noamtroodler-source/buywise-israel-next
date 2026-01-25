@@ -624,6 +624,8 @@ export type Database = {
         Row: {
           audiences: string[] | null
           author_id: string | null
+          author_profile_id: string | null
+          author_type: string | null
           category_id: string | null
           city: string | null
           content: string
@@ -634,14 +636,21 @@ export type Database = {
           is_published: boolean | null
           published_at: string | null
           reading_time_minutes: number | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           slug: string
+          submitted_at: string | null
           title: string
           updated_at: string
+          verification_status: string | null
           views_count: number | null
         }
         Insert: {
           audiences?: string[] | null
           author_id?: string | null
+          author_profile_id?: string | null
+          author_type?: string | null
           category_id?: string | null
           city?: string | null
           content: string
@@ -652,14 +661,21 @@ export type Database = {
           is_published?: boolean | null
           published_at?: string | null
           reading_time_minutes?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           slug: string
+          submitted_at?: string | null
           title: string
           updated_at?: string
+          verification_status?: string | null
           views_count?: number | null
         }
         Update: {
           audiences?: string[] | null
           author_id?: string | null
+          author_profile_id?: string | null
+          author_type?: string | null
           category_id?: string | null
           city?: string | null
           content?: string
@@ -670,9 +686,14 @@ export type Database = {
           is_published?: boolean | null
           published_at?: string | null
           reading_time_minutes?: number | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           slug?: string
+          submitted_at?: string | null
           title?: string
           updated_at?: string
+          verification_status?: string | null
           views_count?: number | null
         }
         Relationships: [

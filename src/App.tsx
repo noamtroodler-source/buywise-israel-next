@@ -67,6 +67,8 @@ const AgentAnalytics = lazy(() => import("./pages/agent/AgentAnalytics"));
 const AgentSettings = lazy(() => import("./pages/agent/AgentSettings"));
 const AgentLeads = lazy(() => import("./pages/agent/AgentLeads"));
 const EditPropertyWizard = lazy(() => import("./pages/agent/EditPropertyWizard"));
+const AgentBlog = lazy(() => import("./pages/agent/AgentBlog"));
+const AgentBlogWizard = lazy(() => import("./pages/agent/AgentBlogWizard"));
 
 // Agency dashboard - lazy load
 const AgencyRegister = lazy(() => import("./pages/agency/AgencyRegister"));
@@ -84,6 +86,8 @@ const DeveloperSettings = lazy(() => import("./pages/developer/DeveloperSettings
 const DeveloperLeads = lazy(() => import("./pages/developer/DeveloperLeads"));
 const NewProjectWizard = lazy(() => import("./pages/developer/NewProjectWizard"));
 const EditProjectWizard = lazy(() => import("./pages/developer/EditProjectWizard"));
+const DeveloperBlog = lazy(() => import("./pages/developer/DeveloperBlog"));
+const DeveloperBlogWizard = lazy(() => import("./pages/developer/DeveloperBlogWizard"));
 
 // Admin - lazy load (rarely visited by regular users)
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -242,6 +246,21 @@ const App = () => (
                             <EditPropertyWizard />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agent/blog" element={
+                          <ProtectedRoute requiredRole="agent">
+                            <AgentBlog />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agent/blog/new" element={
+                          <ProtectedRoute requiredRole="agent">
+                            <AgentBlogWizard />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agent/blog/:id/edit" element={
+                          <ProtectedRoute requiredRole="agent">
+                            <AgentBlogWizard />
+                          </ProtectedRoute>
+                        } />
                         
                         {/* Agency routes */}
                         <Route path="/agency/register" element={
@@ -304,6 +323,21 @@ const App = () => (
                         <Route path="/developer/leads" element={
                           <ProtectedRoute requiredRole="developer">
                             <DeveloperLeads />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/developer/blog" element={
+                          <ProtectedRoute requiredRole="developer">
+                            <DeveloperBlog />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/developer/blog/new" element={
+                          <ProtectedRoute requiredRole="developer">
+                            <DeveloperBlogWizard />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/developer/blog/:id/edit" element={
+                          <ProtectedRoute requiredRole="developer">
+                            <DeveloperBlogWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/developer/settings" element={
