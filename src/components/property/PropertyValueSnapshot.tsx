@@ -173,18 +173,15 @@ export function PropertyValueSnapshot({
   }
 
   // Purchase properties (for_sale, sold)
-  const hasPropertyPrice = !!propertyPricePerSqm;
-  const hasAreaAverage = !!averagePriceSqm;
-  const hasComparison = purchaseComparisonPercent !== null;
+  // Combined card: show price vs market if we have both property price AND city average
+  const hasPriceVsMarket = !!propertyPricePerSqm && !!averagePriceSqm;
   const hasTrend = priceChange !== null && priceChange !== undefined;
-  const cardCount = [hasPropertyPrice, hasAreaAverage, hasComparison, hasTrend].filter(Boolean).length;
   
-  // Don't render if no data
-  if (cardCount === 0) return null;
+  // Don't render if no data at all
+  if (!hasPriceVsMarket && !hasTrend) return null;
   
-  const gridCols = cardCount === 3 
-    ? 'grid-cols-1 sm:grid-cols-3' 
-    : 'grid-cols-1 sm:grid-cols-2';
+  // Always 2-column layout for purchases
+  const gridCols = 'grid-cols-1 sm:grid-cols-2';
 
   return (
     <div className="space-y-4">
@@ -194,61 +191,44 @@ export function PropertyValueSnapshot({
       </div>
       
       <div className={`grid ${gridCols} gap-4`}>
-        {/* Price per m² */}
-        {propertyPricePerSqm && (
+        {/* Combined: Price vs. Market */}
+        {hasPriceVsMarket && propertyPricePerSqm && averagePriceSqm && (
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <DollarSign className="h-4 w-4" />
-              <span className="text-sm">Price per area</span>
+              <span className="text-sm">Price vs. Market</span>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {formatPricePerArea(propertyPricePerSqm, 'ILS')}
             </p>
-          </div>
-        )}
-
-        {/* Area Benchmark */}
-        {averagePriceSqm && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Home className="h-4 w-4" />
-              <span className="text-sm">{city} Average</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {formatPricePerArea(averagePriceSqm, 'ILS')}
+            <p className="text-sm text-muted-foreground mt-1">
+              {city} avg: {formatPricePerArea(averagePriceSqm, 'ILS')}
             </p>
-          </div>
-        )}
-
-        {/* Comparison */}
-        {purchaseComparisonPercent !== null && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              {purchaseComparisonPercent > 0 ? (
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              ) : purchaseComparisonPercent < 0 ? (
-                <TrendingDown className="h-4 w-4 text-primary" />
-              ) : (
-                <Minus className="h-4 w-4" />
-              )}
-              <span className="text-sm">vs Area Average</span>
-            </div>
-            <p className={`text-2xl font-bold ${
-              purchaseComparisonPercent > 0 
-                ? 'text-muted-foreground' 
-                : purchaseComparisonPercent < 0 
-                  ? 'text-primary' 
-                  : 'text-foreground'
-            }`}>
-              {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {purchaseComparisonPercent > 0 
-                ? 'Above area average' 
-                : purchaseComparisonPercent < 0 
-                  ? 'Below area average' 
-                  : 'At area average'}
-            </p>
+            {purchaseComparisonPercent !== null && (
+              <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                purchaseComparisonPercent > 0 
+                  ? 'bg-muted text-muted-foreground' 
+                  : purchaseComparisonPercent < 0 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'bg-muted text-muted-foreground'
+              }`}>
+                {purchaseComparisonPercent > 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : purchaseComparisonPercent < 0 ? (
+                  <TrendingDown className="h-3 w-3" />
+                ) : (
+                  <Minus className="h-3 w-3" />
+                )}
+                <span>
+                  {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}% 
+                  {purchaseComparisonPercent > 0 
+                    ? ' above avg' 
+                    : purchaseComparisonPercent < 0 
+                      ? ' below avg' 
+                      : ' at avg'}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
