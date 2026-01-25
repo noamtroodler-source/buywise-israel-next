@@ -255,11 +255,14 @@ function GoogleAddressAutocomplete({
           onKeyDown={handleKeyDown}
           disabled={!ready}
           placeholder={placeholder}
-          autoComplete="off"
+          autoComplete="new-password"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
           data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
             hasValidSelection && 'border-primary/50 bg-primary/5',
@@ -480,11 +483,14 @@ function NominatimAddressAutocomplete({
             if (suggestions.length > 0) setIsOpen(true);
           }}
           placeholder={placeholder}
-          autoComplete="off"
+          autoComplete="new-password"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
           data-form-type="other"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          name="notASearchField"
           className={cn(
             'h-11 rounded-xl pr-10',
             hasValidSelection && 'border-primary/50 bg-primary/5',
