@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  UserCheck, Clock, Ban, RefreshCw, 
+  UserCheck, Clock, Ban, RefreshCw, Trash2,
   Mail, Phone, Globe, Building2, Calendar 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal';
 import { 
   useAdminDevelopers, 
   useDeveloperStats, 
@@ -28,6 +29,7 @@ import {
   useReinstateDeveloper,
   DeveloperStatus 
 } from '@/hooks/useAdminDevelopers';
+import { useDeleteDeveloper } from '@/hooks/useAdminUsers';
 import { format } from 'date-fns';
 
 const statusConfig: Record<DeveloperStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
@@ -44,6 +46,12 @@ export default function AdminDevelopers() {
     developerId: string;
     developerName: string;
   } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    developerId: string;
+    userId: string | null;
+    developerName: string;
+  } | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useDeveloperStats();
   const { data: developers, isLoading: developersLoading } = useAdminDevelopers(
@@ -53,6 +61,7 @@ export default function AdminDevelopers() {
   const approveDeveloper = useApproveDeveloper();
   const suspendDeveloper = useSuspendDeveloper();
   const reinstateDeveloper = useReinstateDeveloper();
+  const deleteDeveloper = useDeleteDeveloper();
 
   const handleAction = () => {
     if (!confirmDialog) return;
@@ -70,6 +79,15 @@ export default function AdminDevelopers() {
         break;
     }
     setConfirmDialog(null);
+  };
+
+  const handleDelete = () => {
+    if (!deleteDialog) return;
+    deleteDeveloper.mutate({ 
+      developerId: deleteDialog.developerId, 
+      userId: deleteDialog.userId 
+    });
+    setDeleteDialog(null);
   };
 
   const actionLabels = {
@@ -282,6 +300,20 @@ export default function AdminDevelopers() {
                                 Reinstate
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteDialog({
+                                open: true,
+                                developerId: developer.id,
+                                userId: developer.user_id,
+                                developerName: developer.name,
+                              })}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -322,6 +354,16 @@ export default function AdminDevelopers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        open={deleteDialog?.open || false}
+        onOpenChange={(open) => !open && setDeleteDialog(null)}
+        entityName={deleteDialog?.developerName || ''}
+        entityType="developer"
+        onConfirm={handleDelete}
+        isLoading={deleteDeveloper.isPending}
+      />
     </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  UserCheck, Clock, Ban, RefreshCw, 
+  UserCheck, Clock, Ban, RefreshCw, Trash2,
   Mail, Phone, Building2, Award, Calendar 
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal';
 import { 
   useAdminAgents, 
   useAgentStats, 
@@ -28,6 +29,7 @@ import {
   useReinstateAgent,
   AgentStatus 
 } from '@/hooks/useAdminAgents';
+import { useDeleteAgent } from '@/hooks/useAdminUsers';
 import { format } from 'date-fns';
 
 const statusConfig: Record<AgentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
@@ -44,6 +46,12 @@ export default function AdminAgents() {
     agentId: string;
     agentName: string;
   } | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    agentId: string;
+    userId: string | null;
+    agentName: string;
+  } | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useAgentStats();
   const { data: agents, isLoading: agentsLoading } = useAdminAgents(
@@ -53,6 +61,7 @@ export default function AdminAgents() {
   const approveAgent = useApproveAgent();
   const suspendAgent = useSuspendAgent();
   const reinstateAgent = useReinstateAgent();
+  const deleteAgent = useDeleteAgent();
 
   const handleAction = () => {
     if (!confirmDialog) return;
@@ -70,6 +79,15 @@ export default function AdminAgents() {
         break;
     }
     setConfirmDialog(null);
+  };
+
+  const handleDelete = () => {
+    if (!deleteDialog) return;
+    deleteAgent.mutate({ 
+      agentId: deleteDialog.agentId, 
+      userId: deleteDialog.userId 
+    });
+    setDeleteDialog(null);
   };
 
   const actionLabels = {
@@ -285,6 +303,20 @@ export default function AdminAgents() {
                                 Reinstate
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteDialog({
+                                open: true,
+                                agentId: agent.id,
+                                userId: agent.user_id,
+                                agentName: agent.name,
+                              })}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -325,6 +357,16 @@ export default function AdminAgents() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        open={deleteDialog?.open || false}
+        onOpenChange={(open) => !open && setDeleteDialog(null)}
+        entityName={deleteDialog?.agentName || ''}
+        entityType="agent"
+        onConfirm={handleDelete}
+        isLoading={deleteAgent.isPending}
+      />
     </motion.div>
   );
 }
