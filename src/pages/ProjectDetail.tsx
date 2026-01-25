@@ -97,6 +97,7 @@ export default function ProjectDetail() {
                 units={units}
                 defaultPrice={project.price_from || 0}
                 currency={project.currency || 'ILS'}
+                city={project.city}
               />
               
               {/* Construction Timeline */}

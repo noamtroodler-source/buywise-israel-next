@@ -10,15 +10,17 @@ import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel, profileToD
 import { usePurchaseTaxBrackets } from '@/hooks/usePurchaseTaxBrackets';
 import { useMortgageEstimate, useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { PersonalizationHeader } from '@/components/property/PersonalizationHeader';
-import { FEE_RANGES, VAT_RATE, formatPriceRange } from '@/lib/utils/formatRange';
+import { FEE_RANGES, VAT_RATE, formatPriceRange, getUtilitiesEstimate } from '@/lib/utils/formatRange';
 import { cn } from '@/lib/utils';
 import { deriveEffectiveBuyerType } from '@/lib/calculations/buyerProfile';
 import { ProjectUnit } from '@/types/projects';
+import { useCityDetails } from '@/hooks/useCityDetails';
 
 interface ProjectCostBreakdownProps {
   units: ProjectUnit[];
   defaultPrice?: number;
   currency?: string;
+  city?: string;
 }
 
 interface UnitOption {
@@ -65,10 +67,14 @@ function mapCategoryToTaxType(category: 'first_time' | 'oleh' | 'additional' | '
   }
 }
 
-export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS' }: ProjectCostBreakdownProps) {
+export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS', city }: ProjectCostBreakdownProps) {
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
   const { includeMortgage, ltvLimit } = useMortgagePreferences();
+  
+  // Fetch city-specific data for Arnona rates
+  const citySlug = city?.toLowerCase().replace(/\s+/g, '-') || '';
+  const { data: cityData } = useCityDetails(citySlug);
   
   // Get saved profile dimensions
   const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
@@ -125,11 +131,25 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
   // Estimate apartment size from price (rough: ₪25-35k per sqm in new construction)
   const estimatedSizeSqm = Math.round(price / 30000);
   
-  // Monthly cost ranges
-  const arnonaRange = {
-    low: Math.round(estimatedSizeSqm * 70 / 12),
-    high: Math.round(estimatedSizeSqm * 120 / 12),
-  };
+  // Monthly cost ranges - use city-specific Arnona if available
+  const arnonaRange = useMemo(() => {
+    // Use city-specific data if available
+    if (cityData?.arnona_rate_sqm) {
+      const annualArnona = cityData.arnona_rate_sqm * estimatedSizeSqm;
+      const monthly = Math.round(annualArnona / 12);
+      // Show ±15% range for municipal tier variation
+      return {
+        low: Math.round(monthly * 0.85),
+        high: Math.round(monthly * 1.15),
+      };
+    }
+    
+    // Fallback to generic estimates
+    return {
+      low: Math.round(estimatedSizeSqm * 70 / 12),
+      high: Math.round(estimatedSizeSqm * 120 / 12),
+    };
+  }, [cityData, estimatedSizeSqm]);
   
   const vaadBayitRange = {
     low: 300,
@@ -141,10 +161,15 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
     high: 200,
   };
   
+  // Utilities estimate based on apartment size
+  const utilitiesRange = useMemo(() => {
+    return getUtilitiesEstimate(estimatedSizeSqm);
+  }, [estimatedSizeSqm]);
+  
   // Total monthly ownership (without mortgage)
   const monthlyOwnershipRange = {
-    low: arnonaRange.low + vaadBayitRange.low + insuranceRange.low,
-    high: arnonaRange.high + vaadBayitRange.high + insuranceRange.high,
+    low: arnonaRange.low + vaadBayitRange.low + insuranceRange.low + utilitiesRange.min,
+    high: arnonaRange.high + vaadBayitRange.high + insuranceRange.high + utilitiesRange.max,
   };
   
   // Total monthly (with mortgage if enabled)
@@ -432,8 +457,17 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
                   <TooltipContent side="left" className="max-w-xs">
                     <p className="font-medium mb-1">Municipal Property Tax</p>
                     <p className="text-xs">
-                      Monthly tax paid to the city. Rate varies by city and property size. 
-                      Estimate based on ~{estimatedSizeSqm} sqm at typical rates.
+                      {city ? (
+                        <>
+                          Estimate for {city} based on ~{estimatedSizeSqm} sqm. 
+                          Actual rate depends on municipal zone and property classification.
+                        </>
+                      ) : (
+                        <>
+                          Monthly tax paid to the city. Rate varies by city and property size. 
+                          Estimate based on ~{estimatedSizeSqm} sqm at typical rates.
+                        </>
+                      )}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -464,7 +498,7 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
               </div>
               
               {/* Insurance */}
-              <div className="flex justify-between py-2">
+              <div className="flex justify-between py-2 border-b border-border/50">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
@@ -481,6 +515,27 @@ export function ProjectCostBreakdown({ units, defaultPrice = 0, currency = 'ILS'
                 </Tooltip>
                 <span className="font-medium">
                   {formatPriceRange(insuranceRange.low, insuranceRange.high, 'ILS')}/mo
+                </span>
+              </div>
+              
+              {/* Utilities */}
+              <div className="flex justify-between py-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                      Utilities (estimate)
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="font-medium mb-1">Monthly Utilities</p>
+                    <p className="text-xs">
+                      Electricity, water, gas, and internet. Varies by usage, 
+                      season, and provider. Based on ~{estimatedSizeSqm} sqm apartment.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="font-medium">
+                  {formatPriceRange(utilitiesRange.min, utilitiesRange.max, 'ILS')}/mo
                 </span>
               </div>
             </CollapsibleContent>
