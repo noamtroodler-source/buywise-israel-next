@@ -56,6 +56,8 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   const [downPaymentAmount, setDownPaymentAmount] = useState<number | null>(null);
   const [amountCurrency, setAmountCurrency] = useState<'ILS' | 'USD'>('ILS');
   const currencySymbol = amountCurrency === 'USD' ? '$' : '₪';
+  const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
   
   // Step 7: Core Locations state
   const [onboardingLocations, setOnboardingLocations] = useState<OnboardingLocation[]>([]);
@@ -733,12 +735,32 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
 
                     {/* Monthly Income */}
                     <div className="space-y-2">
-                      <Label className="text-sm">Net Monthly Income (optional)</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm">Net Monthly Income (optional)</Label>
+                        <div className="flex gap-1">
+                          <Toggle
+                            size="sm"
+                            pressed={incomeCurrency === 'ILS'}
+                            onPressedChange={() => setIncomeCurrency('ILS')}
+                            className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                          >
+                            ₪
+                          </Toggle>
+                          <Toggle
+                            size="sm"
+                            pressed={incomeCurrency === 'USD'}
+                            onPressedChange={() => setIncomeCurrency('USD')}
+                            className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                          >
+                            $
+                          </Toggle>
+                        </div>
+                      </div>
                       <FormattedNumberInput
                         value={mortgagePrefs.monthly_income}
                         onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null, income_type: 'net' })}
-                        prefix="₪"
-                        placeholder="35,000"
+                        prefix={incomeCurrencySymbol}
+                        placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
                       />
                       <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
                     </div>
