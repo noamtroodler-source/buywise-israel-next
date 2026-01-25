@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Calculator, ArrowRight } from 'lucide-react';
+import { Trophy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Property } from '@/types/database';
 
@@ -78,8 +78,8 @@ export function CompareWinnerSummary({ properties, winnerCounts }: CompareWinner
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <Button asChild variant="outline" className="flex-1">
           <Link to="/tools?tool=totalcost">
-            <Calculator className="h-4 w-4 mr-2" />
             Calculate True Costs
+            <ArrowRight className="h-4 w-4 ml-2" />
           </Link>
         </Button>
         <Button asChild variant="outline" className="flex-1">
