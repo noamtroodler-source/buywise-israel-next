@@ -1,114 +1,163 @@
 
-# Fix Mortgage Preferences Form Issues
+# Fix Google Maps API Integration Across All Pages
 
-## Problems to Solve
+## Problem Summary
 
-1. **Yellow toggle color** - The pressed toggle button shows a yellow background (the accent color) instead of blue
-2. **Double percent sign** - Toggle shows both a Percent icon and "%" text, resulting in "% %"
-3. **USD/Shekel option** - Users cannot choose to enter amounts in USD; it's hardcoded to shekels
+The Google Maps API **is working**, but several pages are missing the required `GoogleMapsProvider` wrapper. This causes the `AddressAutocomplete` component to fall back to **Nominatim (OpenStreetMap)** instead of using **Google Places**, resulting in inconsistent or lower-quality search results in certain areas.
 
----
-
-## Solution Approach
-
-### 1. Fix Toggle Color (Yellow to Blue)
-
-The Toggle component uses `data-[state=on]:bg-accent` by default, which is yellow. Override this in the forms to use `data-[state=on]:bg-primary data-[state=on]:text-primary-foreground` for blue styling.
-
-**Affected files:**
-- `src/components/onboarding/BuyerOnboarding.tsx`
-- `src/components/profile/MortgagePreferencesCard.tsx`
-
-### 2. Remove Double Percent Sign
-
-Currently the toggle renders:
-```tsx
-<Percent className="h-3 w-3 mr-1" />
-%
-```
-
-Fix by removing the icon and keeping only the single `%` text:
-```tsx
-%
-```
-
-### 3. Add Currency Selection for Amount Mode
-
-When user switches to "Amount" mode for down payment, show a currency selector (₪/$ toggle) that uses the existing `useCurrencySymbol()` hook. This adds a third toggle option for currency when in amount mode.
-
-**Implementation:**
-- Add currency state that defaults to the global preference
-- Show currency symbol dynamically in input prefix
-- Store amounts in ILS internally (convert if entered in USD)
+Additionally, there's a React warning about refs that needs to be fixed.
 
 ---
 
-## Files to Modify
+## Root Cause
 
-| File | Changes |
-|------|---------|
-| `src/components/onboarding/BuyerOnboarding.tsx` | Fix toggle styling, remove double %, add currency option |
-| `src/components/profile/MortgagePreferencesCard.tsx` | Same fixes as above |
+The `AddressAutocomplete` component checks for Google Maps availability:
+
+```typescript
+export function AddressAutocomplete(props: AddressAutocompleteProps) {
+  const { isLoaded, loadError } = useGoogleMaps();
+  
+  if (isLoaded && !loadError) {
+    return <GoogleAddressAutocomplete {...props} />;  // Uses Google Places
+  }
+  
+  return <NominatimAddressAutocomplete {...props} />;  // Fallback
+}
+```
+
+When rendered **outside** a `GoogleMapsProvider`, `isLoaded` is always `false`, so it always uses the Nominatim fallback.
+
+---
+
+## Current Status
+
+| Location | Has GoogleMapsProvider? | Result |
+|----------|------------------------|--------|
+| PropertyDetail page | Yes | Google Places works |
+| ProjectDetail page | Yes | Google Places works |
+| AddCoreLocationDialog | Yes | Google Places works |
+| **BuyerOnboarding** | **No** | Uses Nominatim fallback |
+| **NewProperty page** | **No** | Uses Nominatim fallback |
+| **EditProperty page** | **No** | Uses Nominatim fallback |
+| **StepBasics (Agent Wizard)** | **No** | Uses Nominatim fallback |
+| **StepBasics (Developer Wizard)** | **No** | Uses Nominatim fallback |
+| **AgencySettings** | **No** | Uses Nominatim fallback |
+| **DeveloperSettings** | **No** | Uses Nominatim fallback |
+
+---
+
+## Solution
+
+### Phase 1: Wrap Missing Pages with GoogleMapsProvider
+
+Add the `GoogleMapsProvider` wrapper to all pages/components that use `AddressAutocomplete`:
+
+**Files to modify:**
+
+| File | Change |
+|------|--------|
+| `src/components/onboarding/BuyerOnboarding.tsx` | Wrap the Dialog content with `GoogleMapsProvider` |
+| `src/pages/agent/NewProperty.tsx` | Wrap the page content with `GoogleMapsProvider` |
+| `src/pages/agent/EditProperty.tsx` | Wrap the page content with `GoogleMapsProvider` |
+| `src/components/agent/wizard/steps/StepBasics.tsx` | Wrap the step content with `GoogleMapsProvider` |
+| `src/components/developer/wizard/steps/StepBasics.tsx` | Wrap the step content with `GoogleMapsProvider` |
+| `src/pages/agency/AgencySettings.tsx` | Wrap the settings form with `GoogleMapsProvider` |
+| `src/pages/developer/DeveloperSettings.tsx` | Wrap the settings form with `GoogleMapsProvider` |
+
+### Phase 2: Fix React Ref Warning
+
+The console shows: "Function components cannot be given refs. Attempts to access this ref will fail."
+
+**File to modify:**
+
+| File | Change |
+|------|--------|
+| `src/components/agent/wizard/AddressAutocomplete.tsx` | Convert `GoogleAddressAutocomplete` and `NominatimAddressAutocomplete` to use `React.forwardRef` |
 
 ---
 
 ## Technical Implementation
 
-### Toggle Button Updates
+### Example: Wrapping BuyerOnboarding
 
 ```tsx
-// Before
-<Toggle
-  size="sm"
-  pressed={downPaymentMode === 'percent'}
-  onPressedChange={() => setDownPaymentMode('percent')}
-  className="h-7 px-2 text-xs"
->
-  <Percent className="h-3 w-3 mr-1" />
-  %
-</Toggle>
+// src/components/onboarding/BuyerOnboarding.tsx
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
-// After
-<Toggle
-  size="sm"
-  pressed={downPaymentMode === 'percent'}
-  onPressedChange={() => setDownPaymentMode('percent')}
-  className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
->
-  %
-</Toggle>
+// In the Dialog content, wrap the location step:
+<Dialog open={isOpen} onOpenChange={setIsOpen}>
+  <GoogleMapsProvider>
+    <DialogContent>
+      {/* ... existing content ... */}
+    </DialogContent>
+  </GoogleMapsProvider>
+</Dialog>
 ```
 
-### Amount Input with Currency Toggle
+### Example: Wrapping NewProperty Page
 
 ```tsx
-// Add currency state
-const [amountCurrency, setAmountCurrency] = useState<'ILS' | 'USD'>('ILS');
-const currencySymbol = amountCurrency === 'USD' ? '$' : '₪';
+// src/pages/agent/NewProperty.tsx
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
-// Render toggle group for percent/amount with currency options
-<div className="flex gap-1">
-  <Toggle pressed={downPaymentMode === 'percent'} ...>
-    %
-  </Toggle>
-  <Toggle pressed={downPaymentMode === 'amount' && amountCurrency === 'ILS'} ...>
-    ₪
-  </Toggle>
-  <Toggle pressed={downPaymentMode === 'amount' && amountCurrency === 'USD'} ...>
-    $
-  </Toggle>
-</div>
+export default function NewProperty() {
+  return (
+    <Layout>
+      <GoogleMapsProvider>
+        {/* ... existing page content ... */}
+      </GoogleMapsProvider>
+    </Layout>
+  );
+}
+```
 
-// Input prefix updates dynamically
-<span className="...">{currencySymbol}</span>
+### Example: Fixing forwardRef
+
+```tsx
+// Convert function component to forwardRef
+const NominatimAddressAutocomplete = React.forwardRef<HTMLInputElement, AddressAutocompleteProps>(
+  (props, ref) => {
+    // ... existing implementation ...
+    return (
+      <div ref={containerRef} className="relative">
+        <Input ref={ref} ... />
+      </div>
+    );
+  }
+);
+NominatimAddressAutocomplete.displayName = 'NominatimAddressAutocomplete';
+
+// Same for GoogleAddressAutocomplete
 ```
 
 ---
 
-## User Experience
+## Files to Modify
 
-After the fix:
-- Toggle buttons will have a **blue background** when selected (matching brand primary color)
-- The percent toggle will show only a single **%** symbol
-- Users can choose between **%**, **₪**, or **$** for entering down payment
-- Input prefix will update to show the correct currency symbol
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/onboarding/BuyerOnboarding.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/pages/agent/NewProperty.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/pages/agent/EditProperty.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/components/agent/wizard/steps/StepBasics.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/components/developer/wizard/steps/StepBasics.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/pages/agency/AgencySettings.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/pages/developer/DeveloperSettings.tsx` | Modify | Add GoogleMapsProvider wrapper |
+| `src/components/agent/wizard/AddressAutocomplete.tsx` | Modify | Add forwardRef to fix React warning |
+
+---
+
+## Expected Results
+
+After implementation:
+
+1. **Google Places search** will work consistently across all forms (onboarding, property creation, settings)
+2. **Better search quality** - Google Places provides more accurate Israeli address results than Nominatim
+3. **No more console warnings** about refs
+4. **Consistent UX** - Users will get the same search experience everywhere, not a mixed experience
+
+---
+
+## Why This Happened
+
+The `GoogleMapsProvider` was intentionally lazy-loaded to optimize performance (documented in memory: `performance/google-maps-lazy-loading`). However, when new pages were added that use `AddressAutocomplete`, the provider wrapper was not included, causing the fallback behavior.
