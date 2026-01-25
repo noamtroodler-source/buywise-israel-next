@@ -26,6 +26,7 @@ import { ToolDisclaimer } from './shared/ToolDisclaimer';
 import { InsightCard } from './shared/InsightCard';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ToolFeedback } from './shared/ToolFeedback';
+import { ExampleValuesHint } from './shared/ExampleValuesHint';
 
 const STORAGE_KEY = 'purchase-tax-calculator-inputs';
 
@@ -217,6 +218,7 @@ export function PurchaseTaxCalculator() {
 
   const leftColumn = (
     <div className="space-y-6">
+      <ExampleValuesHint />
       {/* Property Price */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">Property Price</Label>

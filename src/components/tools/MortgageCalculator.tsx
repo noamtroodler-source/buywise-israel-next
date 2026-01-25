@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint } from './shared';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
@@ -356,6 +356,7 @@ function MortgageCalculatorContent() {
   // Left Column - Inputs
   const leftColumn = (
     <div className="space-y-4">
+      <ExampleValuesHint />
       {/* Property Details Card */}
       <Card>
         <CardContent className="p-5 space-y-5">

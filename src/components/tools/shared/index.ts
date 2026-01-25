@@ -14,4 +14,5 @@ export { SaveResultsPrompt } from './SaveResultsPrompt';
 export { BuyerTypeInfoBanner, BuyerProfileSelector, useBuyerProfileState, categoryToDimensions, dimensionsToCategory, type BuyerCategory } from './BuyerTypeInfoBanner';
 export { ResultRange, formatCurrencyRange, formatPercentageRange } from './ResultRange';
 export { SourceAttribution } from './SourceAttribution';
+export { ExampleValuesHint } from './ExampleValuesHint';
 export type { ToolSourceConfig } from './SourceAttribution';

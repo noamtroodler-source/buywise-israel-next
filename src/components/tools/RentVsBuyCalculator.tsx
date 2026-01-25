@@ -44,6 +44,7 @@ import {
   InsightCard,
   BuyerTypeInfoBanner,
   SourceAttribution,
+  ExampleValuesHint,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 import { BookOpen } from 'lucide-react';
@@ -591,6 +592,7 @@ export function RentVsBuyCalculator() {
   // Left column - Inputs
   const leftColumn = (
     <div className="space-y-6">
+      <ExampleValuesHint />
       {/* Property & Location */}
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
