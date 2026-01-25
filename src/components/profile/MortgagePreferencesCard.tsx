@@ -43,6 +43,8 @@ export function MortgagePreferencesCard() {
     preferences.down_payment_amount ? 'amount' : 'percent'
   );
   const [amountCurrency, setAmountCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
   const [formData, setFormData] = useState({
     down_payment_percent: preferences.down_payment_percent ?? 25,
     down_payment_amount: preferences.down_payment_amount ?? null,
@@ -245,24 +247,44 @@ export function MortgagePreferencesCard() {
 
             {/* Monthly Income */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                Net Monthly Income
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1">
+                  Net Monthly Income
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Label>
+                <div className="flex gap-1">
+                  <Toggle
+                    size="sm"
+                    pressed={incomeCurrency === 'ILS'}
+                    onPressedChange={() => setIncomeCurrency('ILS')}
+                    className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  >
+                    ₪
+                  </Toggle>
+                  <Toggle
+                    size="sm"
+                    pressed={incomeCurrency === 'USD'}
+                    onPressedChange={() => setIncomeCurrency('USD')}
+                    className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  >
+                    $
+                  </Toggle>
+                </div>
+              </div>
               <FormattedNumberInput
                 value={formData.monthly_income}
                 onChange={(val) => setFormData({ ...formData, monthly_income: val ?? null, income_type: 'net' })}
-                prefix="₪"
-                placeholder="35,000"
+                prefix={incomeCurrencySymbol}
+                placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
               />
               <p className="text-xs text-muted-foreground">Optional - helps calculate your budget</p>
             </div>
