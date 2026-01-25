@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  FileText, Megaphone, Mail
+  FileText, Megaphone, Mail, PenLine
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +28,8 @@ import {
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
 import { useAgencyAnnouncements } from '@/hooks/useAgencyAnnouncements';
+import { useMyBlogPosts, useSubmitForReview, useDeleteBlogPost } from '@/hooks/useProfessionalBlog';
+import { BlogArticleTable } from '@/components/blog/BlogArticleTable';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { RemoveAgentDialog } from '@/components/agency/RemoveAgentDialog';
@@ -44,6 +46,9 @@ export default function AgencyDashboard() {
   const { data: invites = [] } = useAgencyInvites(agency?.id);
   const { data: stats } = useAgencyStats(agency?.id);
   const { data: announcements = [] } = useAgencyAnnouncements(agency?.id);
+  const { data: blogPosts = [], isLoading: postsLoading } = useMyBlogPosts('agency', agency?.id);
+  const submitForReview = useSubmitForReview();
+  const deleteBlogPost = useDeleteBlogPost();
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
   const updateAgentStatus = useUpdateAgentStatus();
@@ -134,6 +139,12 @@ export default function AgencyDashboard() {
                   <Link to="/agency/listings">
                     <FileText className="h-4 w-4 mr-2" />
                     Listings
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/blog/new">
+                    <PenLine className="h-4 w-4 mr-2" />
+                    Blog
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
@@ -247,6 +258,13 @@ export default function AgencyDashboard() {
                 Announcements
                 {announcements.filter(a => a.is_pinned).length > 0 && (
                   <Badge variant="secondary">{announcements.filter(a => a.is_pinned).length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="blog" className="gap-2 rounded-lg">
+                <PenLine className="h-4 w-4" />
+                Blog
+                {blogPosts.length > 0 && (
+                  <Badge variant="secondary">{blogPosts.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -511,6 +529,31 @@ export default function AgencyDashboard() {
 
             <TabsContent value="announcements" className="space-y-4 mt-4">
               <AgencyAnnouncements agencyId={agency.id} />
+            </TabsContent>
+
+            <TabsContent value="blog" className="space-y-4 mt-4">
+              <Card className="rounded-2xl border-primary/10">
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
+                  <CardTitle>Agency Articles</CardTitle>
+                  <Button asChild className="rounded-xl">
+                    <Link to="/agency/blog/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Write Article
+                    </Link>
+                  </Button>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <BlogArticleTable 
+                    posts={blogPosts} 
+                    isLoading={postsLoading}
+                    editBasePath="/agency/blog"
+                    onSubmitForReview={(postId) => submitForReview.mutate(postId)}
+                    onDelete={(postId) => deleteBlogPost.mutate(postId)}
+                    isSubmitting={submitForReview.isPending}
+                    isDeleting={deleteBlogPost.isPending}
+                  />
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </motion.div>

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper, Mail } from 'lucide-react';
+import { Building2, Plus, Eye, Home, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, Users, RefreshCw, ShieldCheck, ShieldAlert, ArrowLeft, X, PartyPopper, Mail, PenLine } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -140,6 +140,7 @@ export default function AgentDashboard() {
     { title: 'Manage Properties', desc: 'View, edit, or delete your listings', icon: Home, href: '/agent/properties' },
     { title: 'Leads', desc: 'Manage buyer inquiries', icon: Users, href: '/agent/leads', badge: leadStats?.new },
     { title: 'Add New Property', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
+    { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
   ];
 
   return (
@@ -189,6 +190,12 @@ export default function AgentDashboard() {
                   <Link to="/agent/properties/new">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Property
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/agent/blog/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Blog
                   </Link>
                 </Button>
               </div>

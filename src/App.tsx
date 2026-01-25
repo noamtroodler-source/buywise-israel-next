@@ -76,6 +76,7 @@ const AgencyDashboard = lazy(() => import("./pages/agency/AgencyDashboard"));
 const AgencyAnalytics = lazy(() => import("./pages/agency/AgencyAnalytics"));
 const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
+const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));
@@ -286,6 +287,16 @@ const App = () => (
                         <Route path="/agency/listings" element={
                           <ProtectedRoute>
                             <AgencyListingsPage />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/blog/new" element={
+                          <ProtectedRoute>
+                            <AgencyBlogWizard />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/blog/:id/edit" element={
+                          <ProtectedRoute>
+                            <AgencyBlogWizard />
                           </ProtectedRoute>
                         } />
                         
