@@ -1,88 +1,146 @@
 
+# Fix Favorites Count & Reactivity
 
-# On-Brand Delete Account Dialog
+## Problem Summary
+The favorites count badge in the header doesn't update correctly when you:
+1. Add a property to favorites (count stays at old value)
+2. Remove a property from favorites (count doesn't decrease)
+3. The badge can show "1" even when no properties are actually saved
 
-## Current Issues
+## Root Cause
+Each component that calls `useFavorites()` creates its own local state for guest favorites. When one component updates sessionStorage, other components (like the header) still hold stale data. There's no shared state mechanism for guests.
 
-The Delete Account dialog uses semantic colors that violate the brand guidelines:
+## Solution: Shared State via React Context
 
-| Element | Current | Problem |
-|---------|---------|---------|
-| Title | `text-destructive` (red) | Semantic color forbidden |
-| Professional warning | `text-amber-600` + yellow emoji | Amber/yellow forbidden |
-| Delete button | `bg-destructive` (red) | Semantic color for action |
-| Trigger hover | `hover:text-destructive` | Red hover state |
+Create a shared favorites context that all components read from, ensuring updates propagate everywhere instantly.
 
-## Brand-Compliant Solution
+---
 
-Replace all semantic colors with the platform's **professional blue + neutrals** palette:
+## Implementation Plan
 
-### Visual Changes
+### 1. Create FavoritesContext (New File)
+**File:** `src/contexts/FavoritesContext.tsx`
 
-**Title**: Use neutral foreground text instead of red
-- Change from `text-destructive` to standard `text-foreground`
-- Keep the serious tone through content, not color
-
-**Professional Account Warning**: Use primary blue tint
-- Replace `text-amber-600` with `text-primary`
-- Replace yellow emoji with a Lucide icon (`AlertCircle` or `Info`)
-- Add subtle blue background: `bg-primary/10 p-3 rounded-md`
-
-**Delete Button**: Use primary blue (still serious, but on-brand)
-- Replace `bg-destructive` with `bg-primary hover:bg-primary/90`
-- The typed confirmation "DELETE" provides sufficient safety gate
-
-**Trigger Link**: Neutral hover state
-- Replace `hover:text-destructive` with `hover:text-foreground`
-
-### Updated Design Mockup
+Create a React Context that wraps the application and provides:
+- A single source of truth for `guestFavorites` state
+- Synced with sessionStorage on changes
+- Triggers re-renders across all consuming components
 
 ```text
-┌────────────────────────────────────────────────┐
-│  Delete Account                                │  ← Standard foreground (not red)
-│                                                │
-│  This action is permanent and irreversible...  │
-│                                                │
-│  • Your profile and account settings           │
-│  • Saved properties and favorites              │
-│  • Search alerts and notifications             │
-│  • Property inquiries you've made              │
-│  • All preferences and activity history        │
-│                                                │
-│  ┌──────────────────────────────────────────┐  │
-│  │ ℹ You have a professional account...    │  │  ← Blue tint box (not amber)
-│  └──────────────────────────────────────────┘  │
-│                                                │
-│  Type DELETE to confirm                        │
-│  [____________________]                        │
-│                                                │
-│            [Cancel]  [Delete Account]          │  ← Blue button (not red)
-└────────────────────────────────────────────────┘
+FavoritesProvider
+├── guestFavorites (state)
+├── setGuestFavorites (setter)
+├── refreshFromStorage (manual refresh utility)
+└── Children consume via useFavoritesContext()
 ```
 
-## Technical Changes
+### 2. Refactor useFavorites Hook
+**File:** `src/hooks/useFavorites.tsx`
 
-**File: `src/components/profile/DeleteAccountDialog.tsx`**
+**Changes:**
+- Remove local `guestFavorites` useState
+- Consume `guestFavorites` and `setGuestFavorites` from FavoritesContext
+- When adding/removing guest favorites, update via context setter (not local state)
+- This ensures all hook instances share the same state
 
-1. **Import Lucide icon** for professional warning
-   - Add `import { Loader2, Info } from 'lucide-react'`
+**Key Code Changes:**
+- Line 21: Replace `useState` with context consumption
+- Line 24-28: Remove the `useEffect` that loads from sessionStorage (context handles this)
+- Lines 105-109, 149-152: Use context's `setGuestFavorites` instead of local setter
 
-2. **Update title styling** (line 77)
-   - Remove `className="text-destructive"` or change to neutral
+### 3. Wrap App with FavoritesProvider
+**File:** `src/App.tsx`
 
-3. **Update professional warning** (lines 89-92)
-   - Replace amber styling with blue tint box
-   - Replace emoji with `<Info />` icon
-   - Apply `bg-primary/10 text-primary border border-primary/20 p-3 rounded-md`
+Add `<FavoritesProvider>` around the application tree, similar to how `CompareProvider` and `AuthProvider` are set up.
 
-4. **Update delete button** (lines 111-124)
-   - Replace `bg-destructive text-destructive-foreground hover:bg-destructive/90`
-   - With `bg-primary text-primary-foreground hover:bg-primary/90`
+### 4. Apply Same Fix to Project Favorites (Optional but Recommended)
+**File:** `src/hooks/useProjectFavorites.tsx`
 
-5. **Update trigger link** (line 71)
-   - Replace `hover:text-destructive` with `hover:text-foreground`
+If the user wants a combined count (properties + projects) in the header, apply the same context pattern to project favorites.
 
-## Result
+---
 
-A professional, on-brand dialog that maintains the serious tone through clear messaging and confirmation requirements, without using forbidden semantic colors.
+## Technical Details
 
+### FavoritesContext Implementation
+
+```text
+// Pseudocode structure
+const FavoritesContext = createContext()
+
+export function FavoritesProvider({ children }) {
+  // Initialize from sessionStorage on mount
+  const [guestFavorites, setGuestFavorites] = useState(() => 
+    safeSessionGet(GUEST_FAVORITES_KEY, [])
+  )
+  
+  // Sync to sessionStorage whenever state changes
+  useEffect(() => {
+    if (guestFavorites.length > 0) {
+      safeSessionSet(GUEST_FAVORITES_KEY, guestFavorites)
+    } else {
+      // Clear storage when empty to prevent stale "1" counts
+      safeSessionRemove(GUEST_FAVORITES_KEY)
+    }
+  }, [guestFavorites])
+  
+  return (
+    <FavoritesContext.Provider value={{ guestFavorites, setGuestFavorites }}>
+      {children}
+    </FavoritesContext.Provider>
+  )
+}
+```
+
+### Updated useFavorites Flow
+
+```text
+Before (Broken):
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Header     │    │ PropertyCard│    │ FavoritePage│
+│ useFavorites│    │ useFavorites│    │ useFavorites│
+│ [state: 0]  │    │ [state: 1]  │    │ [state: 1]  │
+└─────────────┘    └─────────────┘    └─────────────┘
+       ↑ No sync between instances
+
+After (Fixed):
+┌────────────────────────────────────────────────────┐
+│            FavoritesProvider (Context)             │
+│                [guestFavorites: []]                │
+├────────────────────────────────────────────────────┤
+│ ┌───────────┐  ┌─────────────┐  ┌───────────────┐ │
+│ │  Header   │  │ PropertyCard│  │ FavoritesPage │ │
+│ │  reads 0  │  │  reads 0    │  │   reads 0     │ │
+│ └───────────┘  └─────────────┘  └───────────────┘ │
+└────────────────────────────────────────────────────┘
+       ↑ All read from same shared state
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/contexts/FavoritesContext.tsx` | Create | Shared state context for guest favorites |
+| `src/hooks/useFavorites.tsx` | Modify | Use context instead of local state |
+| `src/App.tsx` | Modify | Wrap app with FavoritesProvider |
+
+---
+
+## Expected Behavior After Fix
+
+1. **Add favorite**: Badge count increases immediately everywhere
+2. **Remove favorite**: Badge count decreases immediately everywhere
+3. **Empty favorites**: Badge disappears completely (no stale "1")
+4. **Page refresh**: Count persists correctly from sessionStorage
+5. **Close browser**: Session clears (expected sessionStorage behavior)
+
+---
+
+## Edge Cases Handled
+
+- **User logs in**: Context clears guest state, switches to DB-backed favorites
+- **User logs out**: Guest state becomes active again
+- **Empty array cleanup**: Removes sessionStorage key when empty to prevent phantom counts
+- **Multiple tabs**: Each tab has its own session (expected browser behavior)
