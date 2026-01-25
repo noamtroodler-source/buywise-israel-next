@@ -365,7 +365,7 @@ export default function Favorites() {
                                       e.stopPropagation();
                                       removeProjectFavorite(project.id);
                                     }}
-                                    className="h-8 w-8 bg-background/80 hover:bg-background text-destructive hover:text-destructive"
+                                    className="h-8 w-8 bg-background/80 hover:bg-background text-primary hover:text-primary/80"
                                   >
                                     <Heart className="h-4 w-4 fill-current" />
                                   </Button>
