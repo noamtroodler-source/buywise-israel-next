@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Home, Edit3, DollarSign, Calendar, TrendingUp, Info, Percent, Banknote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,6 +9,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Loader2 } from 'lucide-react';
 import { useMortgagePreferences } from '@/hooks/useMortgagePreferences';
 import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
+import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { cn } from '@/lib/utils';
 
 const LOAN_TERMS = [15, 20, 25, 30];
@@ -200,27 +200,23 @@ export function MortgagePreferencesCard() {
               </div>
               {downPaymentMode === 'percent' ? (
                 <div className="relative">
-                  <Input
+                  <input
                     type="number"
                     value={formData.down_payment_percent ?? ''}
                     onChange={(e) => setFormData({ ...formData, down_payment_percent: Number(e.target.value) })}
                     min={Math.round((1 - ltvLimit) * 100)}
                     max={100}
-                    className="pr-8"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-8"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
                 </div>
               ) : (
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
-                  <Input
-                    type="number"
-                    value={formData.down_payment_amount ?? ''}
-                    onChange={(e) => setFormData({ ...formData, down_payment_amount: Number(e.target.value) })}
-                    className="pl-8"
-                    placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
-                  />
-                </div>
+                <FormattedNumberInput
+                  value={formData.down_payment_amount}
+                  onChange={(val) => setFormData({ ...formData, down_payment_amount: val ?? null })}
+                  prefix={currencySymbol}
+                  placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
+                />
               )}
               <p className="text-xs text-muted-foreground">
                 Min {Math.round((1 - ltvLimit) * 100)}% required ({buyerCategory})
@@ -249,43 +245,25 @@ export function MortgagePreferencesCard() {
 
             {/* Monthly Income */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1">
-                  Monthly Income
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
-                <Select
-                  value={formData.income_type}
-                  onValueChange={(value: 'net' | 'gross') => setFormData({ ...formData, income_type: value })}
-                >
-                  <SelectTrigger className="w-24 h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="net">Net</SelectItem>
-                    <SelectItem value="gross">Gross</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
-                <Input
-                  type="number"
-                  value={formData.monthly_income ?? ''}
-                  onChange={(e) => setFormData({ ...formData, monthly_income: e.target.value ? Number(e.target.value) : null })}
-                  className="pl-8"
-                  placeholder="35,000"
-                />
-              </div>
+              <Label className="flex items-center gap-1">
+                Net Monthly Income
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
+              <FormattedNumberInput
+                value={formData.monthly_income}
+                onChange={(val) => setFormData({ ...formData, monthly_income: val ?? null, income_type: 'net' })}
+                prefix="₪"
+                placeholder="35,000"
+              />
               <p className="text-xs text-muted-foreground">Optional - helps calculate your budget</p>
             </div>
 
