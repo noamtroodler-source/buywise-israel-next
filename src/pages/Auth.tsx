@@ -66,6 +66,15 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Sync activeTab with URL parameter changes (for header button clicks)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const newTab = tabParam === 'signup' ? 'signup' : 'signin';
+    if (newTab !== activeTab) {
+      setActiveTab(newTab);
+    }
+  }, [searchParams]);
   const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
   
