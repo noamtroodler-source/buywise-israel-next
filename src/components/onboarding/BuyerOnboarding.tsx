@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -25,7 +25,7 @@ interface BuyerOnboardingProps {
   existingProfile?: BuyerProfile | null;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type Step = 'intro' | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface OnboardingLocation {
   label: string;
@@ -41,7 +41,7 @@ const currentYear = new Date().getFullYear();
 const aliyahYears = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
 export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: BuyerOnboardingProps) {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>('intro');
   const [answers, setAnswers] = useState<Partial<BuyerProfileInsert>>(() => getInitialAnswers(existingProfile));
   const [financingMethod, setFinancingMethod] = useState<'mortgage' | 'cash'>('cash'); // Default to cash-first
   const [mortgagePrefs, setMortgagePrefs] = useState({
@@ -67,7 +67,7 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   useEffect(() => {
     if (open) {
       setAnswers(getInitialAnswers(existingProfile));
-      setStep(1);
+      setStep('intro');
     }
   }, [open, existingProfile]);
 
@@ -94,6 +94,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
 
   // Calculate which steps to show based on answers
   const getNextStep = (currentStep: Step): Step => {
+    if (currentStep === 'intro') return 1;
     if (currentStep === 1) {
       // Skip Aliyah year if not Oleh
       return answers.residency_status === 'oleh_hadash' ? 2 : 3;
@@ -105,18 +106,22 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const getPrevStep = (currentStep: Step): Step => {
+    if (currentStep === 1) return 'intro';
     if (currentStep === 3 && answers.residency_status !== 'oleh_hadash') {
       return 1;
     }
     if (currentStep === 7) {
       return 6;
     }
-    return (currentStep - 1) as Step;
+    if (typeof currentStep === 'number') {
+      return (currentStep - 1) as Step;
+    }
+    return 'intro';
   };
 
   const handleNext = () => {
     const nextStep = getNextStep(step);
-    if (nextStep <= 7) {
+    if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 7)) {
       setStep(nextStep);
     } else {
       handleComplete();
@@ -124,7 +129,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step !== 'intro') {
       setStep(getPrevStep(step));
     }
   };
@@ -177,6 +182,8 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
 
   const canProceed = () => {
     switch (step) {
+      case 'intro':
+        return true; // Always can proceed from intro
       case 1:
         return !!answers.residency_status;
       case 2:
@@ -280,13 +287,59 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
       <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-xl">Let's personalize your experience</DialogTitle>
-          <DialogDescription>
-            Step {getStepNumber()} of {getTotalSteps()} — This helps us show you accurate cost estimates
-          </DialogDescription>
+          {step !== 'intro' && (
+            <DialogDescription>
+              Step {getStepNumber()} of {getTotalSteps()} — This helps us show you accurate cost estimates
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <div className="mt-4">
           <AnimatePresence mode="wait">
+            {/* Intro Step: Welcome & Benefits */}
+            {step === 'intro' && (
+              <motion.div
+                key="intro"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6 text-center py-4"
+              >
+                <div className="flex justify-center">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="h-7 w-7 text-primary" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Your personalized buying experience starts here
+                  </h3>
+                  <p className="text-muted-foreground">
+                    The more we know about you, the more we can tailor your experience — 
+                    from accurate cost estimates to tax savings you might qualify for.
+                  </p>
+                </div>
+                
+                <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>See costs personalized to your situation</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>Discover tax benefits you qualify for</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span>Get accurate mortgage calculations</span>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground">Takes about 2 minutes</p>
+              </motion.div>
+            )}
+
             {/* Step 1: Residency Status */}
             {step === 1 && (
               <motion.div
@@ -797,15 +850,18 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         </div>
 
         <div className="flex justify-between mt-6">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            disabled={step === 1}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
+          {step === 'intro' ? (
+            <div /> // Empty div for spacing
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          )}
           <div className="flex gap-2">
             {(step === 6 || step === 7) && (
               <Button
@@ -825,6 +881,11 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 <>
                   {isPending ? 'Saving...' : 'Complete'}
                   <Check className="h-4 w-4" />
+                </>
+              ) : step === 'intro' ? (
+                <>
+                  Get Started
+                  <ArrowRight className="h-4 w-4" />
                 </>
               ) : (
                 <>
