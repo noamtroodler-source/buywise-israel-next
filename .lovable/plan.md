@@ -1,132 +1,220 @@
 
 
-# Implement Multi-Category Selection (Max 3) for Blog Wizard
+# AI Format & Polish Feature for Blog Content Step
 
 ## Overview
 
-Change the blog category selection from a single dropdown to a checkbox-based multi-select allowing 1-3 categories. This matches the existing Target Audience pattern already in the wizard.
+Add an "AI Format & Polish" button to the blog wizard's content step that:
+1. Takes raw/unstructured text and converts it to well-formatted Markdown
+2. Adds proper headers (`## Heading`), bullet points, and paragraph breaks
+3. Fixes grammar, spelling, and clarity issues
+4. Provides a one-click "Apply" to replace the draft with the polished version
+
+This feature will be available to **all professional authors** (Agents, Agencies, Developers) on the same shared `StepContent.tsx` component.
 
 ---
 
-## Database Change
+## How It Works
 
-Add a new column to store multiple category IDs:
+```text
+User writes raw text:
+"I wanted to share some tips about buying your first home. First you need to get pre-approved for a mortgage. This helps you know your budget. Then you should find a good agent who knows the local market. They can help you find homes in your price range. Make sure to get a home inspection before closing. This protects you from hidden problems..."
 
-```sql
-ALTER TABLE blog_posts 
-ADD COLUMN category_ids uuid[] DEFAULT '{}';
+    ↓ Click "AI Format & Polish" ↓
+
+AI returns structured Markdown:
+"## Getting Started with Your First Home Purchase
+
+Buying your first home is an exciting milestone. Here's what you need to know to make the process smooth and successful.
+
+### Step 1: Get Pre-Approved for a Mortgage
+
+Before you start looking at homes, get pre-approved for a mortgage. This:
+- Helps you understand your budget
+- Shows sellers you're a serious buyer
+- Speeds up the closing process
+
+### Step 2: Find the Right Agent
+..."
 ```
 
-The existing `category_id` column is kept for backward compatibility with existing posts.
+---
+
+## Implementation
+
+### 1. New Edge Function: `format-blog-content`
+
+Create a new edge function specifically for blog formatting with a tailored prompt:
+
+**File:** `supabase/functions/format-blog-content/index.ts`
+
+**Purpose:**
+- Accept raw article text
+- Return professionally formatted Markdown with:
+  - Clear section headers (`## ` and `### `)
+  - Bullet points for lists
+  - Proper paragraph breaks
+  - Grammar and clarity improvements
+  - Professional tone
+
+**AI Prompt Focus:**
+- Structure content with logical sections
+- Use headers to break up topics (but don't over-header)
+- Convert run-on lists to bullet points
+- Maintain the author's voice while improving clarity
+- Target reading level: accessible to general audience
 
 ---
 
-## Files to Modify
+### 2. Update `StepContent.tsx`
 
-### 1. `src/components/blog/wizard/BlogWizardContext.tsx`
+Add the AI formatting UI following the existing pattern from `StepDescription.tsx`:
 
-**Changes:**
-- Line 7: Change `categoryId: string` → `categoryIds: string[]`
-- Line 38: Update default from `categoryId: ''` → `categoryIds: []`
-- Line 94: Update validation from `data.categoryId.length > 0` → `(data.categoryIds?.length || 0) > 0`
+**New Imports:**
+- `useState` from React
+- `supabase` from integrations
+- `toast` from sonner
+- Icons: `Wand2`, `Loader2`, `CheckCircle2`, `AlertTriangle`, `Sparkles`
 
----
-
-### 2. `src/components/blog/wizard/StepBasics.tsx`
-
-**Replace the Select dropdown (lines 59-76) with a checkbox grid:**
-
+**New State:**
 ```tsx
-<div className="space-y-3">
-  <Label>Categories * <span className="text-muted-foreground font-normal">(select up to 3)</span></Label>
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-    {categories.map((cat) => {
-      const isSelected = data.categoryIds?.includes(cat.id);
-      const isDisabled = !isSelected && (data.categoryIds?.length || 0) >= 3;
-      return (
-        <div key={cat.id} className="flex items-center space-x-2">
-          <Checkbox
-            id={`category-${cat.id}`}
-            checked={isSelected}
-            onCheckedChange={() => handleCategoryToggle(cat.id)}
-            disabled={isDisabled}
-          />
-          <label
-            htmlFor={`category-${cat.id}`}
-            className={cn("text-sm cursor-pointer", isDisabled && "text-muted-foreground")}
-          >
-            {cat.name}
-          </label>
-        </div>
-      );
-    })}
-  </div>
-  <p className="text-xs text-muted-foreground">
-    {data.categoryIds?.length || 0} of 3 selected
-  </p>
-</div>
+const [isFormatting, setIsFormatting] = useState(false);
+const [formattedContent, setFormattedContent] = useState<string | null>(null);
+const [showFormatted, setShowFormatted] = useState(false);
 ```
 
-**Add handler function:**
+**New Handler:**
 ```tsx
-const handleCategoryToggle = (categoryId: string) => {
-  const current = data.categoryIds || [];
-  if (current.includes(categoryId)) {
-    updateData({ categoryIds: current.filter(c => c !== categoryId) });
-  } else if (current.length < 3) {
-    updateData({ categoryIds: [...current, categoryId] });
+const formatWithAI = async () => {
+  if (wordCount < 50) {
+    toast.error('Please write at least 50 words before formatting');
+    return;
+  }
+  
+  setIsFormatting(true);
+  setShowFormatted(true);
+  
+  try {
+    const { data: result, error } = await supabase.functions.invoke('format-blog-content', {
+      body: { content: data.content }
+    });
+    
+    if (error) throw error;
+    setFormattedContent(result.formattedContent);
+  } catch (error) {
+    toast.error('Failed to format content. Please try again.');
+    setShowFormatted(false);
+  } finally {
+    setIsFormatting(false);
+  }
+};
+
+const applyFormatted = () => {
+  if (formattedContent) {
+    updateData({ content: formattedContent });
+    setFormattedContent(null);
+    setShowFormatted(false);
+    toast.success('Formatted content applied!');
   }
 };
 ```
 
-**Add import for `cn` utility**
-
----
-
-### 3. `src/hooks/useProfessionalBlog.tsx`
-
-**Update interfaces:**
-- `CreateBlogPostData`: Add `category_ids?: string[]`
-- `UpdateBlogPostData`: Add `category_ids?: string[]`
-
-**Update `useCreateBlogPost` mutation (line 132):**
-- Add: `category_ids: data.category_ids || [],`
-
-**Update `useUpdateBlogPost` mutation:**
-- Handle `category_ids` in the updates object
-
----
-
-## Visual Result
-
-The category selection will look like:
+**New UI Elements (below the textarea):**
 
 ```text
-Categories * (select up to 3)
 ┌─────────────────────────────────────────────────────────────┐
-│ [✓] Market Analysis    [✓] Buyer's Guide    [ ] News       │
-│ [ ] Legal Tips         [ ] Investment       [disabled]...  │
+│  [✨ AI Format & Polish]  <-- Button                        │
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  Formatted Preview:                                   │  │
+│  │                                                       │  │
+│  │  ## Introduction                                      │  │
+│  │                                                       │  │
+│  │  Your opening paragraph here, now with better...     │  │
+│  │                                                       │  │
+│  │  ### Key Points                                       │  │
+│  │  - First bullet point                                 │  │
+│  │  - Second bullet point                                │  │
+│  │  ...                                                  │  │
+│  │                                                       │  │
+│  │  [Apply] [Dismiss]                                    │  │
+│  └───────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
-2 of 3 selected
 ```
 
-When 3 categories are selected, remaining unchecked options become disabled (grayed out).
+---
+
+### 3. Edge Function Details
+
+**File:** `supabase/functions/format-blog-content/index.ts`
+
+**Request/Response:**
+```typescript
+// Request
+{ content: string }
+
+// Response
+{ 
+  formattedContent: string,
+  changes: string[]  // List of what was improved
+}
+```
+
+**AI System Prompt:**
+```
+You are a professional blog editor. Take the raw article text and format it into clean, professional Markdown:
+
+1. Add section headers (## for main sections, ### for subsections)
+2. Convert lists into bullet points (- ) or numbered lists (1. 2. 3.)
+3. Break up long paragraphs into digestible chunks
+4. Fix grammar, spelling, and punctuation errors
+5. Improve sentence clarity without changing the author's meaning
+6. Maintain the author's voice and expertise
+
+Do NOT:
+- Add content that wasn't in the original
+- Change factual claims or statistics
+- Over-format with too many headers
+- Remove important information
+
+Return the formatted Markdown content.
+```
 
 ---
 
-## Implementation Order
+## File Changes Summary
 
-1. **Database**: Run migration to add `category_ids` column
-2. **Context**: Update `BlogWizardContext.tsx` data structure and validation
-3. **UI**: Update `StepBasics.tsx` with checkbox grid
-4. **Hooks**: Update `useProfessionalBlog.tsx` to handle array
+| File | Action |
+|------|--------|
+| `supabase/functions/format-blog-content/index.ts` | Create new edge function |
+| `supabase/config.toml` | Add function config (auto-handled) |
+| `src/components/blog/wizard/StepContent.tsx` | Add AI formatting button and preview UI |
 
 ---
 
-## Backward Compatibility
+## User Experience Flow
 
-- Existing posts keep their `category_id` value
-- When editing old posts, the wizard will work with `categoryIds`
-- Both `category_id` (legacy) and `category_ids` (new) columns will exist
-- Display components can fall back: show `category_ids` if present, else `category_id`
+1. Author writes raw content in the textarea
+2. Clicks "✨ AI Format & Polish" button
+3. Loading state shows "Formatting your article..."
+4. Preview panel appears below showing the formatted version
+5. Author can:
+   - **Apply** - Replaces their content with the formatted version
+   - **Dismiss** - Closes preview and keeps original
+6. If they edit content after applying, the preview clears
+
+---
+
+## Why a Separate Edge Function?
+
+The existing `check-description` function is tailored for **short property descriptions** (100-2000 chars). Blog articles are:
+- Much longer (500-5000+ words)
+- Need structural formatting, not just grammar fixes
+- Require Markdown output, not plain text
+- Have different quality expectations
+
+A dedicated `format-blog-content` function allows for:
+- Optimized prompts for article formatting
+- Different length limits
+- Markdown-specific output handling
 
