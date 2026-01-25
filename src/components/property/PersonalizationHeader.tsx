@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, RotateCcw, ExternalLink, Banknote, CreditCard } from 'lucide-react';
+import { ChevronDown, RotateCcw, ExternalLink, CreditCard, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,8 @@ interface PersonalizationHeaderProps {
   propertyPrice: number;
   ltvLimit: number;
   savedProfileDimensions?: BuyerProfileDimensions | null;
+  /** Show compact collapsed state without full edit panel */
+  compact?: boolean;
 }
 
 const TERM_OPTIONS = [15, 20, 25, 30];
@@ -36,6 +38,7 @@ export function PersonalizationHeader({
   propertyPrice,
   ltvLimit,
   savedProfileDimensions,
+  compact = false,
 }: PersonalizationHeaderProps) {
   const { user } = useAuth();
   const formatPrice = useFormatPrice();
@@ -166,30 +169,64 @@ export function PersonalizationHeader({
     }
   };
 
-  // Collapsed header bar
-  const headerContent = (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-muted-foreground">
-        Calculating for:{' '}
-        <span className="font-medium text-foreground">{user ? buyerCategoryLabel : derived.shortLabel}</span>
-        <span className="mx-1.5 text-muted-foreground/40">·</span>
-        {includeMortgage ? (
-          <>
-            <span className="font-medium text-foreground">{downPaymentPercent}% down</span>
-            <span className="mx-1.5 text-muted-foreground/40">·</span>
-            <span className="font-medium text-foreground">{termYears}yr</span>
-          </>
-        ) : (
-          <span className="font-medium text-foreground">Paid in Full</span>
-        )}
-      </span>
-      
+  // Determine display label
+  const displayLabel = user ? buyerCategoryLabel : derived.shortLabel;
+  const financingLabel = includeMortgage 
+    ? `${downPaymentPercent}% down · ${termYears}yr`
+    : 'Paid in Full';
+
+  // Collapsed header bar - different styles for guest vs signed-in
+  const headerContent = user && hasProfile ? (
+    // Signed-in user with profile - confidence messaging
+    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20">
+      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+      <div className="flex-1 flex items-center gap-2 flex-wrap text-sm">
+        <span className="font-medium text-foreground">Personalized for You</span>
+        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+          {displayLabel}
+        </Badge>
+        <span className="text-muted-foreground/50">·</span>
+        <span className="text-muted-foreground">{financingLabel}</span>
+      </div>
       <CollapsibleTrigger asChild>
-        <button className="inline-flex items-center gap-0.5 text-primary hover:underline ml-1 text-sm">
+        <button className="inline-flex items-center gap-0.5 text-primary hover:underline text-sm shrink-0">
           {isEditing ? 'Close' : 'Edit'}
           <ChevronDown className={cn("h-3 w-3 transition-transform", isEditing && "rotate-180")} />
         </button>
       </CollapsibleTrigger>
+    </div>
+  ) : (
+    // Guest or incomplete profile - assumptions messaging
+    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+      <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap text-sm">
+          <span className="text-muted-foreground">
+            Showing estimates for:{' '}
+            <span className="font-medium text-foreground">{displayLabel}</span>
+            <span className="mx-1.5 text-muted-foreground/40">·</span>
+            <span className="font-medium text-foreground">{financingLabel}</span>
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Your situation different?{' '}
+          {user ? (
+            <Link to="/profile?tab=settings" className="text-primary hover:underline">
+              Complete your profile
+            </Link>
+          ) : (
+            <Link to="/auth?tab=signup" className="text-primary hover:underline">
+              Set up profile (free)
+            </Link>
+          )}
+          <span className="mx-1.5 text-muted-foreground/40">·</span>
+          <CollapsibleTrigger asChild>
+            <button className="text-primary hover:underline">
+              {isEditing ? 'Close' : 'Adjust assumptions'}
+            </button>
+          </CollapsibleTrigger>
+        </p>
+      </div>
     </div>
   );
 
