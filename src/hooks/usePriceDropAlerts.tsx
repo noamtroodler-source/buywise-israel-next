@@ -118,7 +118,7 @@ export function usePriceDropAlerts() {
   // Toggle price alert for a favorite
   const togglePriceAlert = useMutation({
     mutationFn: async ({ propertyId, enabled }: { propertyId: string; enabled: boolean }) => {
-      if (!user) throw new Error('Must be logged in');
+      if (!user) throw new Error('GUEST_USER');
       
       const { error } = await supabase
         .from('favorites')
@@ -132,8 +132,17 @@ export function usePriceDropAlerts() {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       toast.success(enabled ? 'Price alerts enabled' : 'Price alerts disabled');
     },
-    onError: () => {
-      toast.error('Failed to update alert settings');
+    onError: (error) => {
+      if (error.message === 'GUEST_USER') {
+        toast.error('Sign up to enable price alerts and get notified when prices drop!', {
+          action: {
+            label: 'Sign Up',
+            onClick: () => window.location.href = '/auth?tab=signup',
+          },
+        });
+      } else {
+        toast.error('Failed to update alert settings');
+      }
     },
   });
 
