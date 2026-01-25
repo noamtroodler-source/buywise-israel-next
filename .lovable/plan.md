@@ -1,336 +1,222 @@
 
-# Professional Blog Feature for Agents, Agencies & Developers
+# Add Blog Buttons to All Professional Dashboards
 
 ## Overview
 
-This feature enables verified agents, agencies, and developers to create and publish blog content through their respective dashboard portals. Posts require admin approval before going live, maintaining content quality while empowering professionals to share expertise and build credibility.
+The blog feature infrastructure (pages, hooks, routes) was created, but the **dashboard integration was missed** — the buttons to access the blog feature were never added. This plan adds:
+
+1. **"Add Blog" button** next to existing action buttons in all three portals
+2. **Blog quick action cards** in the dashboard grids
+3. **Agency Blog tab** for agency-level blog management
 
 ---
 
-## Current State Analysis
+## Changes by Portal
 
-The platform already has:
-- A fully functional blog system with `blog_posts` table
-- An `author_id` field that references `auth.users(id)`
-- Existing RLS policies allowing authors to create and manage their own posts
-- Admin moderation via the Admin Blog page
-- Display infrastructure (Blog page, BlogCard, BlogPost detail)
+### 1. Developer Portal (`DeveloperDashboard.tsx`)
 
-What's needed:
-- Professional-focused blog management UI in each dashboard
-- Verification status fields for professional content
-- Author attribution display on published posts
-- New RLS policies for professional verification requirements
+**Header Action Row (line ~133)**
+Add "Add Blog" button right next to "Add Project":
 
----
-
-## Database Schema Changes
-
-### New Fields on `blog_posts` Table
-
-```text
-+------------------------+---------------------------+----------------------------------------+
-| Field                  | Type                      | Purpose                                |
-+------------------------+---------------------------+----------------------------------------+
-| author_type            | TEXT                      | 'agent', 'agency', 'developer', 'admin'|
-| author_profile_id      | UUID                      | References agent/agency/developer ID   |
-| verification_status    | TEXT                      | 'draft', 'pending_review', 'approved', |
-|                        |                           | 'changes_requested', 'rejected'        |
-| submitted_at           | TIMESTAMP                 | When submitted for review              |
-| reviewed_at            | TIMESTAMP                 | When admin reviewed                    |
-| reviewed_by            | UUID                      | Admin who reviewed                     |
-| rejection_reason       | TEXT                      | Feedback for rejected posts            |
-+------------------------+---------------------------+----------------------------------------+
+```
+Before: [Leads] [Settings] [Analytics] [Add Project]
+After:  [Leads] [Settings] [Analytics] [Add Project] [Add Blog]
 ```
 
-### RLS Policy Updates
-
-- Only verified professionals can submit posts for review
-- Draft posts are always savable (regardless of verification)
-- Posts must be `is_published = true` AND `verification_status = 'approved'` to display publicly
-
----
-
-## Implementation by Portal
-
-### Agent Portal (`/agent`)
-
-**New Page: `/agent/blog`** — "My Articles"
-
-Features:
-- List of agent's blog posts with status badges
-- "Write Article" button → article wizard
-- Status tabs: All | Drafts | Pending Review | Published
-- View counts and saves for published posts
-
-**New Page: `/agent/blog/new`** — Article Wizard
-
-Multi-step wizard matching property wizard patterns:
-1. **Basics** — Title, category, target audience, city (optional)
-2. **Content** — Rich text editor for main content, excerpt
-3. **Cover Image** — Image upload (reuse SortableImageUpload)
-4. **Preview & Submit** — Review before save/submit
-
-Dashboard Integration:
-- Add "Blog" quick action card on Agent Dashboard
-- Add "Blog" button in header action row
-- Badge showing pending article count
-
-### Agency Portal (`/agency`)
-
-**New Tab: "Blog"** in Agency Dashboard tabs
-
-Features:
-- Aggregate view of all team member articles
-- Filter by agent, status
-- Agency-authored articles (where agency is the author)
-- "Write Article" for agency-level content
-
-The agency can:
-- Create articles attributed to the agency brand
-- See team articles in read-only mode
-
-### Developer Portal (`/developer`)
-
-**New Page: `/developer/blog`** — "Development Insights"
-
-Similar structure to Agent Blog:
-- List of developer's blog posts
-- "Write Article" wizard
-- Focus on project updates, market insights, development news
-
-Dashboard Integration:
-- Add "Blog" quick action card
-- Badge showing article stats
+**Quick Actions Grid (line ~297)**
+Change from 3 columns to 4 columns and add a "Write Blog" card:
+- Icon: `PenLine` (from lucide-react)
+- Title: "Write Blog"
+- Description: "Share development insights"
+- Links to: `/developer/blog/new`
 
 ---
 
-## Article Wizard Design
+### 2. Agent Portal (`AgentDashboard.tsx`)
 
-Following existing wizard patterns (PropertyWizard, ProjectWizard):
+**Header Action Row (line ~175)**
+Add "Add Blog" button next to "Add Property":
 
-```text
-+------------------------------------------------------------------+
-|  ← Back to Blog                              Save Draft | Submit |
-+------------------------------------------------------------------+
-|                                                                  |
-|  Step 1 of 4 — Basics                                           |
-|  ○───●───○───○                                                  |
-|                                                                  |
-|  +----------------------------------------------------------+   |
-|  |  Title *                                                  |   |
-|  |  [ Your article title                                   ] |   |
-|  +----------------------------------------------------------+   |
-|                                                                  |
-|  +----------------------------------------------------------+   |
-|  |  Category *                           Target Audience     |   |
-|  |  [ Select category ▼ ]               [ ] Families         |   |
-|  |                                       [ ] Investors        |   |
-|  |                                       [ ] Olim             |   |
-|  +----------------------------------------------------------+   |
-|                                                                  |
-|  +----------------------------------------------------------+   |
-|  |  Related City (optional)                                  |   |
-|  |  [ Select city ▼ ]                                       |   |
-|  +----------------------------------------------------------+   |
-|                                                                  |
-|                                           [ Previous ] [ Next ] |
-+------------------------------------------------------------------+
+```
+Before: [Settings] [Analytics] [Add Property]
+After:  [Settings] [Analytics] [Add Property] [Add Blog]
 ```
 
-Content Step will use a rich text editor component for formatting.
+**Quick Actions Array (line ~139)**
+Add a blog quick action card to the existing `quickActions` array:
+
+| Title | Description | Icon | Link |
+|-------|-------------|------|------|
+| Write Blog | Share your market insights | PenLine | /agent/blog/new |
 
 ---
 
-## Verification Flow
+### 3. Agency Portal (`AgencyDashboard.tsx`)
 
-```text
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│                 │      │                  │      │                 │
-│   Draft         │─────▶│  Pending Review  │─────▶│   Approved      │
-│   (saveable)    │      │  (awaiting admin)│      │   (published)   │
-│                 │      │                  │      │                 │
-└─────────────────┘      └────────┬─────────┘      └─────────────────┘
-                                  │
-                                  │ Admin requests changes
-                                  ▼
-                         ┌──────────────────┐
-                         │                  │
-                         │ Changes Requested│
-                         │ (with feedback)  │
-                         │                  │
-                         └──────────────────┘
+**Header Action Row (line ~131)**
+Add "Blog" button in the action buttons:
+
+```
+Before: [Listings] [Analytics] [Settings] [View Public Page]
+After:  [Listings] [Blog] [Analytics] [Settings] [View Public Page]
 ```
 
-**Submission Requirements:**
-- Professional must be verified (status = 'active')
-- Title, content, category are required
-- Cover image encouraged but optional
+**New Blog Tab in TabsList (line ~231)**
+Add a "Blog" tab alongside Team, Invites, and Announcements:
+
+| Tab | Icon | Badge |
+|-----|------|-------|
+| Blog | PenLine | (article count) |
+
+**Blog Tab Content**
+- Display agency's blog posts using `BlogArticleTable` component
+- "Write Article" button to create agency-level content
+- Links to `/agency/blog/new` for the wizard
 
 ---
 
-## Admin Integration
+## New Routes Required
 
-### Enhanced Admin Blog Page
+Add these routes to `App.tsx`:
 
-Add features:
-- Filter by author type (Agent, Agency, Developer, Admin)
-- Filter by verification status
-- Approve/Reject actions with feedback modal
-- Author attribution display (name + profile link)
-
-Status badge colors (following brand standards — blue tints only):
-- Draft: `bg-muted text-muted-foreground`
-- Pending Review: `bg-primary/10 text-primary`
-- Changes Requested: `bg-primary/10 text-primary`
-- Approved: `bg-primary/10 text-primary`
+| Route | Component | Purpose |
+|-------|-----------|---------|
+| `/agency/blog` | AgencyBlog | Agency blog list page (standalone, if needed) |
+| `/agency/blog/new` | AgencyBlogWizard | Create agency blog post |
+| `/agency/blog/:id/edit` | AgencyBlogWizard | Edit agency blog post |
 
 ---
 
-## Public Blog Display Updates
+## New Files to Create
 
-### Blog Card Updates
+### 1. `src/pages/agency/AgencyBlogWizard.tsx`
+Wizard for creating/editing agency blog posts. Reuses the same step components as agent/developer wizards, with `author_type: 'agency'`.
 
-Show author attribution:
-```text
-+------------------------------------------------+
-|  [Cover Image]                                 |
-|                                                |
-|  Market Insights        5 min read             |
-|                                                |
-|  Why Raanana is Perfect for Families           |
-|  The suburbs north of Tel Aviv offer...        |
-|                                                |
-|  By Sarah Cohen, RE/MAX Israel                 |  ← NEW
-|  ────────────────────────────────────          |
-|  Read article →                    [Bookmark]  |
-+------------------------------------------------+
+### 2. Update `src/pages/agency/AgencyDashboard.tsx`
+Add the Blog tab content inline (no separate page needed for the list view since it's embedded in the dashboard tabs).
+
+---
+
+## Implementation Details
+
+### Button Styling (matching existing patterns)
+```tsx
+<Button variant="outline" asChild className="rounded-xl">
+  <Link to="/developer/blog">
+    <PenLine className="h-4 w-4 mr-2" />
+    Blog
+  </Link>
+</Button>
+
+<Button asChild className="rounded-xl shadow-md">
+  <Link to="/developer/blog/new">
+    <Plus className="h-4 w-4 mr-2" />
+    Add Blog
+  </Link>
+</Button>
 ```
 
-### BlogPost Detail
+### Quick Action Card (Developer)
+```tsx
+<Link to="/developer/blog" className="group">
+  <Card className="rounded-2xl border-border/50 hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full">
+    <CardContent className="flex items-center gap-4 p-6">
+      <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+        <PenLine className="h-7 w-7 text-primary" />
+      </div>
+      <div>
+        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Write Blog</h3>
+        <p className="text-sm text-muted-foreground">Share development insights</p>
+      </div>
+    </CardContent>
+  </Card>
+</Link>
+```
 
-Add author card in sidebar:
-- Avatar/logo
-- Name and title
-- Link to agent/agency/developer profile
-- "View all articles by this author"
+### Agency Blog Tab Content
+```tsx
+<TabsTrigger value="blog" className="gap-2 rounded-lg">
+  <PenLine className="h-4 w-4" />
+  Blog
+</TabsTrigger>
 
----
-
-## File Structure
-
-New files to create:
-
-```text
-src/
-├── pages/
-│   ├── agent/
-│   │   ├── AgentBlog.tsx              # List view
-│   │   └── AgentBlogWizard.tsx        # Create/edit wizard
-│   ├── agency/
-│   │   └── (modify AgencyDashboard.tsx to add Blog tab)
-│   └── developer/
-│       ├── DeveloperBlog.tsx          # List view
-│       └── DeveloperBlogWizard.tsx    # Create/edit wizard
-│
-├── components/
-│   ├── blog/
-│   │   ├── BlogAuthorCard.tsx         # Author attribution card
-│   │   └── BlogArticleTable.tsx       # Reusable article list table
-│   ├── agent/
-│   │   └── wizard/
-│   │       └── blog/                  # Blog wizard steps
-│   │           ├── BlogWizardContext.tsx
-│   │           ├── StepBasics.tsx
-│   │           ├── StepContent.tsx
-│   │           ├── StepCoverImage.tsx
-│   │           └── StepReview.tsx
-│   └── shared/
-│       └── RichTextEditor.tsx         # Content editor component
-│
-└── hooks/
-    └── useProfessionalBlog.tsx        # CRUD operations for professional blog
+<TabsContent value="blog" className="space-y-4 mt-4">
+  <Card className="rounded-2xl border-primary/10">
+    <CardHeader className="flex flex-row items-center justify-between">
+      <CardTitle>Agency Articles</CardTitle>
+      <Button asChild className="rounded-xl">
+        <Link to="/agency/blog/new">
+          <Plus className="h-4 w-4 mr-2" />
+          Write Article
+        </Link>
+      </Button>
+    </CardHeader>
+    <CardContent>
+      <BlogArticleTable 
+        posts={agencyPosts} 
+        isLoading={postsLoading}
+        basePath="/agency/blog"
+        emptyMessage="Share your agency's expertise"
+      />
+    </CardContent>
+  </Card>
+</TabsContent>
 ```
 
 ---
 
-## Routes to Add
+## Files to Modify
 
-| Route                          | Component              | Access               |
-|--------------------------------|------------------------|----------------------|
-| `/agent/blog`                  | AgentBlog              | Agent role required  |
-| `/agent/blog/new`              | AgentBlogWizard        | Agent role required  |
-| `/agent/blog/:id/edit`         | AgentBlogWizard        | Agent (own posts)    |
-| `/developer/blog`              | DeveloperBlog          | Developer role req.  |
-| `/developer/blog/new`          | DeveloperBlogWizard    | Developer role req.  |
-| `/developer/blog/:id/edit`     | DeveloperBlogWizard    | Developer (own)      |
+| File | Changes |
+|------|---------|
+| `src/pages/developer/DeveloperDashboard.tsx` | Add Blog button in header, add Blog quick action card |
+| `src/pages/agent/AgentDashboard.tsx` | Add Blog button in header, add Blog to quickActions array |
+| `src/pages/agency/AgencyDashboard.tsx` | Add Blog button in header, add Blog tab with content |
+| `src/App.tsx` | Add agency blog routes |
 
-Agency blog will be a tab within the existing Agency Dashboard.
+## New Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/pages/agency/AgencyBlogWizard.tsx` | Blog wizard for agencies |
 
 ---
 
-## Technical Details
+## Visual Summary
 
-### Database Migration
-
-```sql
--- Add professional blog fields to blog_posts
-ALTER TABLE public.blog_posts
-ADD COLUMN author_type TEXT CHECK (author_type IN ('agent', 'agency', 'developer', 'admin')),
-ADD COLUMN author_profile_id UUID,
-ADD COLUMN verification_status TEXT DEFAULT 'draft' 
-  CHECK (verification_status IN ('draft', 'pending_review', 'approved', 'changes_requested', 'rejected')),
-ADD COLUMN submitted_at TIMESTAMP WITH TIME ZONE,
-ADD COLUMN reviewed_at TIMESTAMP WITH TIME ZONE,
-ADD COLUMN reviewed_by UUID REFERENCES auth.users(id),
-ADD COLUMN rejection_reason TEXT;
-
--- Update RLS policies for professional authors
-CREATE POLICY "Verified agents can submit posts for review"
-ON public.blog_posts FOR UPDATE
-USING (
-  author_id = auth.uid() 
-  AND EXISTS (
-    SELECT 1 FROM public.agents 
-    WHERE user_id = auth.uid() 
-    AND status = 'active'
-  )
-);
+### Developer Dashboard Header (After)
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  [←] [Icon] Welcome, Developer Name                                     │
+│             Manage your development projects...                         │
+│                                                                         │
+│           [Leads] [Settings] [Analytics] [Add Project] [Add Blog]       │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Key Hook: `useProfessionalBlog`
+### Developer Quick Actions (After)
+```
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│ Manage Projects  │ │ View Analytics   │ │ Add New Project  │ │ Write Blog       │
+│ View, edit...    │ │ Track performance│ │ Create a new...  │ │ Share insights   │
+└──────────────────┘ └──────────────────┘ └──────────────────┘ └──────────────────┘
+```
 
-```typescript
-// Provides:
-- useMyBlogPosts(authorType, profileId)
-- useCreateBlogPost()
-- useUpdateBlogPost()
-- useSubmitForReview(postId)
-- useBlogPostDraft(postId) // For editing
+### Agency Dashboard Tabs (After)
+```
+┌──────────────────────────────────────────────────────────┐
+│ [Team 5] [Invites 2] [Announcements 1] [Blog]           │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## Implementation Order
 
-1. **Database Migration** — Add new columns and RLS policies
-2. **Hook Layer** — Create `useProfessionalBlog` for CRUD operations
-3. **Shared Components** — RichTextEditor, BlogArticleTable, BlogAuthorCard
-4. **Agent Blog Pages** — AgentBlog list + AgentBlogWizard
-5. **Developer Blog Pages** — DeveloperBlog list + DeveloperBlogWizard
-6. **Agency Blog Tab** — Add to AgencyDashboard
-7. **Admin Enhancements** — Author filters, approval workflow
-8. **Public Display** — Author attribution on BlogCard and BlogPost
-9. **Dashboard Integration** — Quick actions and badges
+1. Update `DeveloperDashboard.tsx` — Add header button + quick action card
+2. Update `AgentDashboard.tsx` — Add header button + quick action
+3. Create `AgencyBlogWizard.tsx` — Blog wizard for agencies
+4. Update `AgencyDashboard.tsx` — Add header button + Blog tab
+5. Update `App.tsx` — Add agency blog routes
 
----
-
-## Security Considerations
-
-- Only verified professionals can submit for review (draft saving always allowed)
-- Posts require `is_published = true` AND `verification_status = 'approved'` to appear publicly
-- Authors can only edit their own posts
-- Admins have full control over all posts
-- Content is sanitized with DOMPurify before display (already in place)
-
-This implementation follows existing patterns (property/project wizards, verification workflows) and maintains the clean, professional BuyWise Israel aesthetic while empowering professionals to build credibility through content.
+This completes the blog feature integration across all three professional portals.
