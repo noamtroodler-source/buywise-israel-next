@@ -48,6 +48,7 @@ export default function AgencyListings() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [agentFilter, setAgentFilter] = useState<string>('all');
   const [cityFilter, setCityFilter] = useState<string>('all');
+  const formatPrice = useFormatPrice();
 
   if (agencyLoading || listingsLoading) {
     return (
@@ -101,8 +102,6 @@ export default function AgencyListings() {
     pending: listings.filter(l => l.verification_status === 'pending_review').length,
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
-
-  const formatPrice = useFormatPrice();
 
   const getAgentName = (agentId: string) => {
     const agent = team.find(a => a.id === agentId);
