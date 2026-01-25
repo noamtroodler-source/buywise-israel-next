@@ -119,6 +119,18 @@ export function Header() {
         <div className="flex items-center gap-2">
           {/* Preferences Button */}
           <PreferencesDialog />
+          {/* Favorites Icon - visible to all users */}
+          <Button variant="ghost" size="icon" className="relative rounded-full hidden md:flex" asChild>
+            <Link to="/favorites">
+              <Heart className={favoriteCount > 0 ? "h-5 w-5 fill-primary text-primary" : "h-5 w-5"} />
+              {favoriteCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-[10px]">
+                  {favoriteCount}
+                </Badge>
+              )}
+            </Link>
+          </Button>
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -215,7 +227,7 @@ export function Header() {
         <div className="md:hidden border-t border-border bg-background">
           <nav className="container py-4 flex flex-col gap-2">
             {/* User Section (when logged in) */}
-            {user && (
+            {user ? (
               <>
                 <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg mb-2">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -295,10 +307,37 @@ export function Header() {
                 )}
                 <hr className="my-2 border-border" />
               </>
+            ) : (
+              /* Guest Favorites Section */
+              <>
+                <div className="px-4 py-3 bg-muted/50 rounded-lg mb-2">
+                  <Link 
+                    to="/favorites" 
+                    className="flex items-center justify-between"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Heart className={favoriteCount > 0 ? "h-5 w-5 text-primary fill-primary" : "h-5 w-5 text-primary"} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-foreground">Saved Properties</p>
+                        <p className="text-xs text-muted-foreground">Saved to this browser</p>
+                      </div>
+                    </div>
+                    {favoriteCount > 0 && (
+                      <Badge variant="secondary" className="rounded-full text-xs">
+                        {favoriteCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </div>
+                <hr className="my-2 border-border" />
+              </>
             )}
             
             <Link 
-              to="/listings?status=for_sale" 
+              to="/listings?status=for_sale"
               className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
               onClick={() => setMobileMenuOpen(false)}
             >
