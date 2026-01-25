@@ -169,8 +169,8 @@ export function PersonalizationHeader({
     }
   };
 
-  // Determine display label
-  const displayLabel = user ? buyerCategoryLabel : derived.shortLabel;
+  // Determine display label - use full label for guests to show "First-Time Buyer" not just "First-Time"
+  const displayLabel = user ? buyerCategoryLabel : derived.label;
   const financingLabel = includeMortgage 
     ? `${downPaymentPercent}% down · ${termYears}yr`
     : 'Paid in Full';
@@ -208,6 +208,12 @@ export function PersonalizationHeader({
             <span className="font-medium text-foreground">{financingLabel}</span>
           </span>
         </div>
+        {/* Benefit context for first-time buyers */}
+        {derived.taxType === 'first_time' && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Zero purchase tax up to ₪1.98M · Lower rates above
+          </p>
+        )}
         <p className="text-xs text-muted-foreground mt-1">
           Your situation different?{' '}
           {user ? (
