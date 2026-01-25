@@ -14,6 +14,7 @@ export interface ProfessionalBlogPost {
   content: string;
   cover_image: string | null;
   category_id: string | null;
+  category_ids: string[] | null;
   author_id: string | null;
   author_type: AuthorType | null;
   author_profile_id: string | null;
@@ -44,6 +45,7 @@ export interface CreateBlogPostData {
   content: string;
   cover_image?: string;
   category_id?: string;
+  category_ids?: string[];
   city?: string;
   audiences?: string[];
   author_type: AuthorType;
@@ -57,6 +59,7 @@ export interface UpdateBlogPostData {
   content?: string;
   cover_image?: string;
   category_id?: string;
+  category_ids?: string[];
   city?: string;
   audiences?: string[];
 }
@@ -135,7 +138,8 @@ export function useCreateBlogPost() {
           excerpt: data.excerpt || null,
           content: data.content,
           cover_image: data.cover_image || null,
-          category_id: data.category_id || null,
+          category_id: data.category_ids?.[0] || data.category_id || null,
+          category_ids: data.category_ids || [],
           city: data.city || null,
           audiences: data.audiences || null,
           author_id: user.id,
