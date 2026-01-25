@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { useBlogWizard } from './BlogWizardContext';
 import { useBlogCategories } from '@/hooks/useProfessionalBlog';
 import { AUDIENCE_OPTIONS } from '@/types/content';
-import DOMPurify from 'dompurify';
+import { markdownToHtml } from '@/utils/markdownToHtml';
 
 export function StepReview() {
   const { data } = useBlogWizard();
@@ -19,37 +19,6 @@ export function StepReview() {
     a => data.audiences?.includes(a.value)
   );
 
-  // Simple markdown to HTML conversion
-  const renderContent = (content: string) => {
-    let html = content
-      // Headers
-      .replace(/^### (.*$)/gm, '</p><h3 class="text-lg font-semibold mt-6 mb-2">$1</h3><p class="mb-4">')
-      .replace(/^## (.*$)/gm, '</p><h2 class="text-xl font-bold mt-8 mb-3">$1</h2><p class="mb-4">')
-      .replace(/^# (.*$)/gm, '</p><h1 class="text-2xl font-bold mt-8 mb-4">$1</h1><p class="mb-4">')
-      // Bold and italic
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Lists - no explicit bullet character, let CSS handle it
-      .replace(/^- (.*$)/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.*$)/gm, '<li class="list-decimal">$1</li>')
-      // Paragraphs
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/\n/g, '<br/>');
-
-    // Wrap consecutive <li> elements in <ul>
-    html = html.replace(/(<li[^>]*>.*?<\/li>(<br\/>)?)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
-    
-    // Clean up stray <br/> inside lists
-    html = html.replace(/<ul([^>]*)>(.*?)<\/ul>/g, (match, attrs, inner) => {
-      return `<ul${attrs}>${inner.replace(/<br\/>/g, '')}</ul>`;
-    });
-    
-    html = `<p class="mb-4">${html}</p>`;
-    // Clean up empty paragraphs
-    html = html.replace(/<p class="mb-4"><\/p>/g, '');
-    
-    return DOMPurify.sanitize(html);
-  };
 
   return (
     <div className="space-y-6">
@@ -125,7 +94,7 @@ export function StepReview() {
             {/* Content Preview */}
             <div 
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: renderContent(data.content) }}
+              dangerouslySetInnerHTML={{ __html: markdownToHtml(data.content) }}
             />
           </div>
         </CardContent>

@@ -1,7 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Eye, Clock, Bookmark, Share2, ChevronRight, Loader2, Calculator } from 'lucide-react';
-import DOMPurify from 'dompurify';
 import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { useBlogPost, useRelatedPosts } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { toast } from 'sonner';
+import { markdownToHtml, addHeadingIds, extractHeadings } from '@/utils/markdownToHtml';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,30 +18,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-
-// Extract headings from HTML content for table of contents
-function extractHeadings(html: string): { id: string; text: string; level: number }[] {
-  const headingRegex = /<h([2-3])[^>]*>([^<]+)<\/h[2-3]>/gi;
-  const headings: { id: string; text: string; level: number }[] = [];
-  let match;
-  
-  while ((match = headingRegex.exec(html)) !== null) {
-    const level = parseInt(match[1]);
-    const text = match[2].trim();
-    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    headings.push({ id, text, level });
-  }
-  
-  return headings;
-}
-
-// Add IDs to headings in content for anchor links
-function addHeadingIds(html: string): string {
-  return html.replace(/<h([2-3])([^>]*)>([^<]+)<\/h[2-3]>/gi, (match, level, attrs, text) => {
-    const id = text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    return `<h${level}${attrs} id="${id}">${text}</h${level}>`;
-  });
-}
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -84,12 +60,10 @@ export default function BlogPost() {
     );
   }
 
-  const headings = extractHeadings(post.content);
-  const contentWithIds = addHeadingIds(post.content);
-  // Sanitize HTML content to prevent XSS attacks
-  const sanitizedContent = DOMPurify.sanitize(contentWithIds, {
-    ADD_ATTR: ['id'], // Allow id attributes for anchor links
-  });
+  // Convert markdown to HTML, add heading IDs, and extract for TOC
+  const htmlContent = markdownToHtml(post.content);
+  const contentWithIds = addHeadingIds(htmlContent);
+  const headings = extractHeadings(contentWithIds);
   const isSaved = isArticleSaved(post.id);
 
   return (
@@ -248,7 +222,7 @@ export default function BlogPost() {
                   prose-strong:text-foreground
                   prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground
                   prose-img:rounded-xl"
-                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                dangerouslySetInnerHTML={{ __html: contentWithIds }}
               />
             </motion.div>
 

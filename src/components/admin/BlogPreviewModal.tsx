@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Clock, Eye, MapPin, User } from 'lucide-react';
 import { BlogPostForReview } from '@/hooks/useBlogReview';
-import DOMPurify from 'dompurify';
+import { markdownToHtml } from '@/utils/markdownToHtml';
 import { format } from 'date-fns';
 
 interface BlogPreviewModalProps {
@@ -15,42 +15,14 @@ interface BlogPreviewModalProps {
 }
 
 export function BlogPreviewModal({ post, open, onClose }: BlogPreviewModalProps) {
-  const renderContent = (content: string) => {
-    let html = content
-      // Headers
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-semibold mt-6 mb-2">$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
-      // Bold and italic
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Lists
-      .replace(/^- (.*$)/gm, '<li>$1</li>')
-      .replace(/^\d+\. (.*$)/gm, '<li class="list-decimal">$1</li>')
-      // Paragraphs
-      .replace(/\n\n/g, '</p><p class="mb-4">')
-      .replace(/\n/g, '<br/>');
-
-    // Wrap consecutive <li> elements in <ul>
-    html = html.replace(/(<li[^>]*>.*?<\/li>(<br\/>)?)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
-    html = html.replace(/<ul([^>]*)>(.*?)<\/ul>/g, (match, attrs, inner) => {
-      return `<ul${attrs}>${inner.replace(/<br\/>/g, '')}</ul>`;
-    });
-
-    html = `<p class="mb-4">${html}</p>`;
-    html = html.replace(/<p class="mb-4"><\/p>/g, '');
-
-    return DOMPurify.sanitize(html);
-  };
-
   const getAuthorTypeBadge = (type: string | null) => {
     switch (type) {
       case 'agent':
-        return <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Agent</Badge>;
+        return <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5">Agent</Badge>;
       case 'agency':
-        return <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50">Agency</Badge>;
+        return <Badge variant="outline" className="text-secondary-foreground border-secondary bg-secondary">Agency</Badge>;
       case 'developer':
-        return <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Developer</Badge>;
+        return <Badge variant="outline" className="text-accent-foreground border-accent bg-accent">Developer</Badge>;
       default:
         return null;
     }
@@ -149,7 +121,7 @@ export function BlogPreviewModal({ post, open, onClose }: BlogPreviewModalProps)
               {/* Content */}
               <div 
                 className="prose prose-sm md:prose-base max-w-none"
-                dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }}
               />
               
               {/* Audiences */}
