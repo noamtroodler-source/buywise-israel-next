@@ -1,128 +1,88 @@
 
-# Subtle Account Deletion Feature
 
-## Overview
-Add a subtle but accessible way for users to permanently delete their account from the My Profile page, following best practices for destructive actions.
+# On-Brand Delete Account Dialog
 
-## User Experience Design
+## Current Issues
 
-### Placement (Subtle but Accessible)
-- Add a small text link at the **bottom of the Account Settings section**, below the "Edit Account" button
-- Use muted styling: `text-xs text-muted-foreground hover:text-destructive`
-- Label: "Delete my account" (understated, not alarming)
+The Delete Account dialog uses semantic colors that violate the brand guidelines:
 
-### Confirmation Flow (Multi-Step)
-1. **First Click**: Opens an AlertDialog with clear warnings
-2. **Confirmation Text**: User must type "DELETE" to enable the final button
-3. **Final Action**: Red destructive button to confirm
+| Element | Current | Problem |
+|---------|---------|---------|
+| Title | `text-destructive` (red) | Semantic color forbidden |
+| Professional warning | `text-amber-600` + yellow emoji | Amber/yellow forbidden |
+| Delete button | `bg-destructive` (red) | Semantic color for action |
+| Trigger hover | `hover:text-destructive` | Red hover state |
 
-### Warning Content
-- Clear explanation of what will be deleted
-- Mention that this action is **permanent and irreversible**
-- List affected data: profile, saved properties, alerts, preferences
+## Brand-Compliant Solution
 
----
+Replace all semantic colors with the platform's **professional blue + neutrals** palette:
 
-## Technical Implementation
+### Visual Changes
 
-### 1. Edge Function: `delete-account`
-**Purpose**: Securely delete user account server-side with proper auth validation
+**Title**: Use neutral foreground text instead of red
+- Change from `text-destructive` to standard `text-foreground`
+- Keep the serious tone through content, not color
 
-**Location**: `supabase/functions/delete-account/index.ts`
+**Professional Account Warning**: Use primary blue tint
+- Replace `text-amber-600` with `text-primary`
+- Replace yellow emoji with a Lucide icon (`AlertCircle` or `Info`)
+- Add subtle blue background: `bg-primary/10 p-3 rounded-md`
 
-**Security Measures**:
-- Validate JWT token using `getClaims()`
-- Verify the user is deleting their OWN account (not someone else's)
-- Use service role key for admin-level deletion
-- Log deletion for audit purposes
+**Delete Button**: Use primary blue (still serious, but on-brand)
+- Replace `bg-destructive` with `bg-primary hover:bg-primary/90`
+- The typed confirmation "DELETE" provides sufficient safety gate
 
-**Deletion Order** (to respect foreign key constraints):
+**Trigger Link**: Neutral hover state
+- Replace `hover:text-destructive` with `hover:text-foreground`
+
+### Updated Design Mockup
+
 ```text
-1. favorites (user's saved properties)
-2. search_alerts (user's alerts)
-3. inquiries (user's property inquiries)
-4. property_views (user's view history)
-5. user_roles (role assignments)
-6. profiles (user profile data)
-7. auth.users (the actual auth record - via admin API)
+┌────────────────────────────────────────────────┐
+│  Delete Account                                │  ← Standard foreground (not red)
+│                                                │
+│  This action is permanent and irreversible...  │
+│                                                │
+│  • Your profile and account settings           │
+│  • Saved properties and favorites              │
+│  • Search alerts and notifications             │
+│  • Property inquiries you've made              │
+│  • All preferences and activity history        │
+│                                                │
+│  ┌──────────────────────────────────────────┐  │
+│  │ ℹ You have a professional account...    │  │  ← Blue tint box (not amber)
+│  └──────────────────────────────────────────┘  │
+│                                                │
+│  Type DELETE to confirm                        │
+│  [____________________]                        │
+│                                                │
+│            [Cancel]  [Delete Account]          │  ← Blue button (not red)
+└────────────────────────────────────────────────┘
 ```
 
-**Response**: Success confirmation or error with user-friendly message
+## Technical Changes
 
-### 2. Frontend: `DeleteAccountDialog` Component
-**Location**: `src/components/profile/DeleteAccountDialog.tsx`
+**File: `src/components/profile/DeleteAccountDialog.tsx`**
 
-**Features**:
-- AlertDialog with proper accessibility
-- Text input requiring "DELETE" to proceed
-- Loading state during deletion
-- Error handling with toast notifications
+1. **Import Lucide icon** for professional warning
+   - Add `import { Loader2, Info } from 'lucide-react'`
 
-### 3. Update: `AccountSection.tsx`
-**Changes**:
-- Import and render `DeleteAccountDialog`
-- Add subtle trigger link at bottom of section
-- Pass necessary handlers (sign out after deletion)
+2. **Update title styling** (line 77)
+   - Remove `className="text-destructive"` or change to neutral
 
-### 4. Update: `useAuth.tsx`
-**Changes**:
-- Add `deleteAccount` method that:
-  - Calls the edge function
-  - Signs out the user on success
-  - Returns success/error status
+3. **Update professional warning** (lines 89-92)
+   - Replace amber styling with blue tint box
+   - Replace emoji with `<Info />` icon
+   - Apply `bg-primary/10 text-primary border border-primary/20 p-3 rounded-md`
 
----
+4. **Update delete button** (lines 111-124)
+   - Replace `bg-destructive text-destructive-foreground hover:bg-destructive/90`
+   - With `bg-primary text-primary-foreground hover:bg-primary/90`
 
-## Data Cascade
+5. **Update trigger link** (line 71)
+   - Replace `hover:text-destructive` with `hover:text-foreground`
 
-Tables with user references that need cleanup:
+## Result
 
-| Table | Column | Action |
-|-------|--------|--------|
-| `profiles` | `id` | Delete row |
-| `user_roles` | `user_id` | Delete rows |
-| `favorites` | `user_id` | Delete rows |
-| `search_alerts` | `user_id` | Delete rows |
-| `inquiries` | `user_id` | Delete rows |
-| `property_views` | `user_id` | Delete rows |
-| `project_views` | `user_id` | Delete rows |
-| `price_drop_notifications` | `user_id` | Delete rows |
+A professional, on-brand dialog that maintains the serious tone through clear messaging and confirmation requirements, without using forbidden semantic colors.
 
-**Note**: Professional accounts (agents, developers) should show a different message explaining they need to contact support, as their accounts have additional dependencies.
-
----
-
-## Edge Cases
-
-### Professional Accounts
-- If user has agent/developer role, show a warning that they should:
-  - Transfer or close their professional listings first
-  - Contact support for account closure
-- This prevents orphaned listings
-
-### Pending Operations
-- Check for active inquiries that need follow-up
-- Warn users about any saved data they'll lose
-
----
-
-## Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `supabase/functions/delete-account/index.ts` | **Create** - Edge function |
-| `src/components/profile/DeleteAccountDialog.tsx` | **Create** - Confirmation dialog |
-| `src/hooks/useAuth.tsx` | **Modify** - Add deleteAccount method |
-| `src/components/profile/sections/AccountSection.tsx` | **Modify** - Add delete trigger |
-| `supabase/config.toml` | **Modify** - Add function config |
-
----
-
-## Security Checklist
-
-- Server-side JWT validation (not client-side checks)
-- User can only delete their own account
-- Service role used only for admin deletion API
-- Audit logging of deletion events
-- Rate limiting on the endpoint
-- Proper CORS headers
