@@ -2,6 +2,11 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DeleteAccountResult {
+  error: boolean;
+  message?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -9,6 +14,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<DeleteAccountResult>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,8 +77,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const deleteAccount = async (): Promise<DeleteAccountResult> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        return { error: true, message: 'You must be logged in to delete your account.' };
+      }
+
+      const response = await supabase.functions.invoke('delete-account', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        const errorData = response.error;
+        return { 
+          error: true, 
+          message: typeof errorData === 'object' && errorData.message 
+            ? errorData.message 
+            : 'Failed to delete account. Please try again.'
+        };
+      }
+
+      // Sign out after successful deletion
+      await supabase.auth.signOut();
+      
+      return { error: false };
+    } catch (err) {
+      console.error('Delete account error:', err);
+      return { error: true, message: 'An unexpected error occurred.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

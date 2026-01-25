@@ -5,12 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProfileSection } from '../ProfileSection';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { useUserRole } from '@/hooks/useUserRole';
+import { DeleteAccountDialog } from '../DeleteAccountDialog';
 import { format } from 'date-fns';
 
 export function AccountSection() {
   const { data: profile, isLoading } = useProfile();
+  const { isAgent, isDeveloper } = useUserRole();
   const updateProfile = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
+  
+  const hasProfessionalRole = isAgent || isDeveloper;
   
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -121,6 +126,8 @@ export function AccountSection() {
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
             Edit Account
           </Button>
+
+          <DeleteAccountDialog hasProfessionalRole={hasProfessionalRole} />
         </div>
       )}
     </ProfileSection>
