@@ -461,7 +461,7 @@ function MortgageCalculatorContent() {
               <InfoTooltip content="Israeli mortgages typically range from 15-30 years. Longer terms mean lower payments but significantly more interest. Most buyers choose 20-25 years." />
             </div>
             <Select value={loanTermYears.toString()} onValueChange={(v) => setLoanTermYears(Number(v))}>
-              <SelectTrigger className="h-11 text-lg">
+              <SelectTrigger className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
