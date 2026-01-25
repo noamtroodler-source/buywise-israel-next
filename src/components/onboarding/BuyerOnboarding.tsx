@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { useCreateBuyerProfile, useUpdateBuyerProfile, BuyerProfileInsert, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { 
   LocationIcon, 
   LOCATION_ICONS, 
@@ -285,8 +286,9 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
-      <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+    <GoogleMapsProvider>
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+        <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-xl">Let's personalize your experience</DialogTitle>
           {step !== 'intro' && (
@@ -944,5 +946,6 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
         </div>
       </DialogContent>
     </Dialog>
+    </GoogleMapsProvider>
   );
 }

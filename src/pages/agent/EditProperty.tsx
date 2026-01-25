@@ -17,6 +17,7 @@ import { useProperty } from '@/hooks/useProperties';
 import { useUpdateProperty, useSubmitForReview, VerificationStatus, useAgentProfile } from '@/hooks/useAgentProperties';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -214,8 +215,9 @@ export default function EditProperty() {
   const isPending = verificationStatus === 'pending_review';
 
   return (
-    <Layout>
-      <div className="container py-8 max-w-3xl">
+    <GoogleMapsProvider>
+      <Layout>
+        <div className="container py-8 max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -627,6 +629,7 @@ export default function EditProperty() {
           </Card>
         </motion.div>
       </div>
-    </Layout>
+      </Layout>
+    </GoogleMapsProvider>
   );
 }
