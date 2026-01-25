@@ -1,237 +1,72 @@
 
-# Admin Account Management System
+# Fix Password Toggle (Eye Icon) Not Working
 
-## Overview
+## Problem
 
-This plan implements comprehensive account management capabilities for admins to delete, temporarily ban, and manage all user types (users, agents, agencies, developers) from the admin dashboard.
+The eye icon button to show/hide the password in the `PasswordStrengthInput` component is visible but not responding to clicks. This affects the main Auth page and potentially any other places using password inputs.
 
-## Current State Analysis
+---
 
-| Entity | Current Actions | Missing Actions |
-|--------|----------------|-----------------|
-| **Agents** | Approve, Suspend, Reinstate | Delete |
-| **Agencies** | Verify, Suspend, Delete | - |
-| **Developers** | Approve, Suspend, Reinstate | Delete |
-| **Users** | View only | Ban, Unban, Delete |
+## Root Cause Analysis
 
-## Implementation Plan
+Looking at the current implementation in `src/components/auth/PasswordStrengthInput.tsx`:
 
-### Phase 1: Database Schema Updates
-
-Add status tracking to the `profiles` table for user bans:
-
-```sql
--- Add ban tracking to profiles
-ALTER TABLE public.profiles 
-ADD COLUMN IF NOT EXISTS is_banned boolean DEFAULT false,
-ADD COLUMN IF NOT EXISTS banned_at timestamptz,
-ADD COLUMN IF NOT EXISTS banned_until timestamptz,
-ADD COLUMN IF NOT EXISTS ban_reason text,
-ADD COLUMN IF NOT EXISTS banned_by uuid REFERENCES auth.users(id);
-
--- Create index for efficient queries
-CREATE INDEX IF NOT EXISTS idx_profiles_is_banned ON public.profiles(is_banned) WHERE is_banned = true;
+```tsx
+<button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+  tabIndex={-1}
+  aria-label={showPassword ? 'Hide password' : 'Show password'}
+>
 ```
 
----
-
-### Phase 2: Edge Function for Admin-Initiated Account Management
-
-Create a new edge function `admin-manage-account` that handles:
-- **Delete user**: Cascades through all related tables, removes auth record
-- **Ban user**: Sets temporary or permanent ban with expiration
-- **Unban user**: Removes ban status
-
-**File:** `supabase/functions/admin-manage-account/index.ts`
-
-Key logic:
-1. Verify admin role using JWT claims
-2. Accept `action` (delete/ban/unban), `userId`, and optional `banDuration`
-3. For deletions: Handle professional account cleanup (agents, developers, agencies)
-4. For bans: Update profile with ban status and optional expiry
-5. Return success/error with details
+**Potential issues:**
+1. Missing `z-index` - the button might be behind an invisible overlay
+2. Missing `pointer-events` - ensuring clicks are captured
+3. The button might need explicit sizing/padding to expand the clickable area
 
 ---
 
-### Phase 3: Admin Hooks
+## Solution
 
-**File:** `src/hooks/useAdminUsers.tsx`
+Update the `PasswordStrengthInput` component with these fixes:
 
-Create hooks for admin user management:
+### 1. Add z-index and pointer-events to the button
 
-```typescript
-// useAdminUsers - Fetch users with ban status
-export function useAdminUsers(filter?: 'all' | 'banned' | 'active')
-
-// useBanUser - Temporarily ban a user
-export function useBanUser()
-
-// useUnbanUser - Remove ban from user  
-export function useUnbanUser()
-
-// useDeleteUser - Permanently delete user account
-export function useDeleteUser()
-
-// useDeleteAgent - Delete agent profile and user
-export function useDeleteAgent()
-
-// useDeleteDeveloper - Delete developer profile and user
-export function useDeleteDeveloper()
+```tsx
+<button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+  tabIndex={-1}
+  aria-label={showPassword ? 'Hide password' : 'Show password'}
+>
 ```
 
----
-
-### Phase 4: Admin Users Page Enhancement
-
-**File:** `src/pages/admin/AdminUsers.tsx`
-
-Transform from read-only table to full management interface:
-
-**UI Changes:**
-1. Add stats cards: Total Users, Active, Banned
-2. Add filter tabs: All, Active, Banned
-3. Add action buttons per user row:
-   - **Ban** (with duration picker: 1 day, 1 week, 1 month, permanent)
-   - **Unban** (for banned users)
-   - **Delete** (with confirmation dialog)
-4. Show ban status badge + expiry date for banned users
-5. Confirmation dialogs for destructive actions
-
-**Visual Layout:**
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  Users Management                                                │
-│  ───────────────                                                 │
-│                                                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐                         │
-│  │ Total    │ │ Active   │ │ Banned   │                         │
-│  │   247    │ │   243    │ │    4     │                         │
-│  └──────────┘ └──────────┘ └──────────┘                         │
-│                                                                  │
-│  [All] [Active] [Banned]                                         │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │ User          │ Email       │ Roles    │ Status │ Actions  │ │
-│  ├───────────────┼─────────────┼──────────┼────────┼──────────┤ │
-│  │ John Doe      │ john@...    │ user     │ Active │ [Ban][×] │ │
-│  │ Jane Smith    │ jane@...    │ agent    │ Banned │ [Unban]  │ │
-│  │               │             │          │ 3d left│          │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
+**Changes:**
+- Added `z-10` to ensure the button is above any overlaying elements
+- Added `p-1` padding to increase the clickable area
+- Added `focus:outline-none` for cleaner focus states (already has aria-label for accessibility)
 
 ---
 
-### Phase 5: Add Delete Actions to Professional Pages
+## Files to Modify
 
-**Files to update:**
-- `src/pages/admin/AdminAgents.tsx` - Add Delete button
-- `src/pages/admin/AdminDevelopers.tsx` - Add Delete button
-- `src/hooks/useAdminAgents.tsx` - Add `useDeleteAgent` hook
-- `src/hooks/useAdminDevelopers.tsx` - Add `useDeleteDeveloper` hook
-
-**Delete flow for professionals:**
-1. Show warning about cascade effects (listings, projects, leads)
-2. Require confirmation dialog with entity name
-3. Delete professional profile first (agents/developers table)
-4. Delete associated auth user via edge function
+| File | Change |
+|------|--------|
+| `src/components/auth/PasswordStrengthInput.tsx` | Add z-index, padding, and focus styles to the toggle button |
 
 ---
 
-### Phase 6: Ban Duration Modal Component
+## Verification
 
-**File:** `src/components/admin/BanDurationModal.tsx`
+After the fix:
+1. The password toggle should work on `/auth?tab=signup`
+2. The password toggle should work on `/auth` (sign in)
+3. All professional signup flows will automatically benefit since they redirect to the Auth page
 
-A reusable modal for selecting ban duration:
-- Preset options: 1 day, 1 week, 1 month, Permanent
-- Optional reason field
-- Shows clear messaging about consequences
-
----
-
-## Technical Details
-
-### Edge Function: admin-manage-account
-
-```typescript
-// Accepts POST with body:
-{
-  action: 'delete' | 'ban' | 'unban',
-  userId: string,
-  banDuration?: '1d' | '1w' | '1m' | 'permanent',
-  reason?: string
-}
-
-// Admin verification via has_role() or checking user_roles table
-// Returns: { success: boolean, message: string }
-```
-
-### Deletion Order (respecting FK constraints)
-
-For full user deletion:
-1. `price_drop_notifications`
-2. `favorites`
-3. `search_alerts`
-4. `inquiries` (user_id)
-5. `property_views`
-6. `project_views`
-7. `buyer_profiles`
-8. `agents` (if exists)
-9. `developers` (if exists)
-10. `user_roles`
-11. `profiles`
-12. `auth.users`
-
----
-
-## Files to Create/Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/admin-manage-account/index.ts` | **Create** | Edge function for admin actions |
-| `src/hooks/useAdminUsers.tsx` | **Create** | Hooks for user ban/delete |
-| `src/components/admin/BanDurationModal.tsx` | **Create** | Ban duration picker UI |
-| `src/pages/admin/AdminUsers.tsx` | **Modify** | Add full management UI |
-| `src/pages/admin/AdminAgents.tsx` | **Modify** | Add delete action |
-| `src/pages/admin/AdminDevelopers.tsx` | **Modify** | Add delete action |
-| `src/hooks/useAdminAgents.tsx` | **Modify** | Add useDeleteAgent |
-| `src/hooks/useAdminDevelopers.tsx` | **Modify** | Add useDeleteDeveloper |
-
----
-
-## Database Migration
-
-```sql
--- Add ban fields to profiles table
-ALTER TABLE public.profiles 
-ADD COLUMN IF NOT EXISTS is_banned boolean DEFAULT false,
-ADD COLUMN IF NOT EXISTS banned_at timestamptz,
-ADD COLUMN IF NOT EXISTS banned_until timestamptz,
-ADD COLUMN IF NOT EXISTS ban_reason text,
-ADD COLUMN IF NOT EXISTS banned_by uuid REFERENCES auth.users(id);
-
-CREATE INDEX IF NOT EXISTS idx_profiles_is_banned 
-ON public.profiles(is_banned) WHERE is_banned = true;
-```
-
----
-
-## Security Considerations
-
-1. **Admin verification**: Edge function validates caller is admin via `has_role()`
-2. **Self-protection**: Prevent admin from deleting/banning themselves
-3. **Audit trail**: Log who banned/deleted and when
-4. **Cascade safety**: Professional accounts check for active content before deletion
-5. **RLS policies**: Ensure ban status is only modifiable by admins
-
----
-
-## Summary
-
-This implementation provides:
-- Full user lifecycle management for admins
-- Temporary and permanent ban capabilities
-- Safe deletion with cascade handling
-- Consistent UI patterns across all admin pages
-- Proper confirmation dialogs for destructive actions
-- Audit tracking for admin actions
+No other files need changes since:
+- Agent, Agency, and Developer registration forms don't have password fields
+- They redirect unauthenticated users to `/auth` with the proper role context
+- The fix in the shared `PasswordStrengthInput` component will apply everywhere it's used
