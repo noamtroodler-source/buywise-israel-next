@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Sparkles } from 'lucide-react';
+import { Home, Plane, Building2, User, ArrowRight, ArrowLeft, Check, ArrowUpDown, TrendingUp, Percent, Calendar, DollarSign, Banknote, MapPin, X, Receipt, Wallet, Target, Clock, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -303,40 +303,72 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 text-center py-4"
+                className="space-y-6 py-2"
               >
+                {/* Badge with pulse dot - thank you message */}
                 <div className="flex justify-center">
-                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-7 w-7 text-primary" />
+                  <span className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-medium px-3 py-1.5 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                    </span>
+                    Thanks for signing up! Let's personalize your experience
+                  </span>
+                </div>
+
+                {/* Icon */}
+                <div className="flex justify-center">
+                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Target className="h-8 w-8 text-primary" />
                   </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold text-foreground">
-                    Your personalized buying experience starts here
+
+                {/* Headline with Israel highlight */}
+                <div className="text-center space-y-2">
+                  <h3 className="text-2xl font-bold text-foreground">
+                    Buying in <span className="text-primary">Israel</span>, Made Personal
                   </h3>
-                  <p className="text-muted-foreground">
-                    The more we know about you, the more we can tailor your experience — 
-                    from accurate cost estimates to tax savings you might qualify for.
+                  <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+                    Answer a few quick questions and we'll customize everything — from tax calculations to property insights — to match your exact situation.
                   </p>
                 </div>
-                
-                <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>See costs personalized to your situation</span>
+
+                {/* Value Pillars Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 rounded-xl bg-muted/50 border border-border/50">
+                    <div className="w-10 h-10 mx-auto rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                      <Receipt className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Accurate Costs</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">For YOUR buyer type</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>Discover tax benefits you qualify for</span>
+                  <div className="text-center p-3 rounded-xl bg-muted/50 border border-border/50">
+                    <div className="w-10 h-10 mx-auto rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                      <Wallet className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Hidden Savings</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Tax breaks you qualify for</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span>Get accurate mortgage calculations</span>
+                  <div className="text-center p-3 rounded-xl bg-muted/50 border border-border/50">
+                    <div className="w-10 h-10 mx-auto rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                      <Target className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">Smart Matches</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Insights tailored to you</p>
                   </div>
                 </div>
-                
-                <p className="text-xs text-muted-foreground">Takes about 2 minutes</p>
+
+                {/* Trust footer */}
+                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    Just 2 minutes
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5" />
+                    Your info stays private
+                  </span>
+                </div>
               </motion.div>
             )}
 
@@ -884,7 +916,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                 </>
               ) : step === 'intro' ? (
                 <>
-                  Get Started
+                  Let's Go
                   <ArrowRight className="h-4 w-4" />
                 </>
               ) : (
