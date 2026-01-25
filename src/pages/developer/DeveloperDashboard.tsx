@@ -113,12 +113,6 @@ export default function DeveloperDashboard() {
             <div className="flex flex-wrap items-center gap-3">
               <DeveloperNotificationBell />
               <Button variant="outline" asChild className="rounded-xl">
-                <Link to="/developer/leads">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Leads
-                </Link>
-              </Button>
-              <Button variant="outline" asChild className="rounded-xl">
                 <Link to="/developer/settings">
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
