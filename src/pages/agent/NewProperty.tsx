@@ -14,6 +14,7 @@ import { ImageUpload } from '@/components/agent/ImageUpload';
 import { useCreateProperty, CreatePropertyData } from '@/hooks/useAgentProperties';
 import { PropertyType, ListingStatus } from '@/types/database';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -97,8 +98,9 @@ export default function NewProperty() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen relative">
+    <GoogleMapsProvider>
+      <Layout>
+        <div className="min-h-screen relative">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background -z-10" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl -z-10" />
@@ -539,6 +541,7 @@ export default function NewProperty() {
           </motion.div>
         </div>
       </div>
-    </Layout>
+      </Layout>
+    </GoogleMapsProvider>
   );
 }

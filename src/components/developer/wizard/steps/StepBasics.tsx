@@ -6,6 +6,7 @@ import { useCities } from '@/hooks/useCities';
 import { AddressAutocomplete, ParsedAddress } from '@/components/agent/wizard/AddressAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { AlertCircle, MapPin } from 'lucide-react';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const statusOptions: { value: ProjectStatus; label: string }[] = [
   { value: 'planning', label: 'Planning' },
@@ -46,6 +47,7 @@ export function StepBasics() {
   const hasMissingStreetNumber = hasValidLocation && !/\d+/.test(data.address || '');
 
   return (
+    <GoogleMapsProvider>
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-4">Project Basics</h2>
@@ -165,5 +167,6 @@ export function StepBasics() {
         </div>
       </div>
     </div>
+    </GoogleMapsProvider>
   );
 }

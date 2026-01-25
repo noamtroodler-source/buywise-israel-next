@@ -15,6 +15,7 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -238,8 +239,9 @@ export default function DeveloperSettings() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen">
+    <GoogleMapsProvider>
+      <Layout>
+        <div className="min-h-screen">
         {/* Hidden file input */}
         <input
           ref={fileInputRef}
@@ -704,6 +706,7 @@ export default function DeveloperSettings() {
           </div>
         </div>
       </div>
-    </Layout>
+      </Layout>
+    </GoogleMapsProvider>
   );
 }

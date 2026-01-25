@@ -7,6 +7,7 @@ import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck } from 'lucide-react
 import { AddressAutocomplete, ParsedAddress } from '../AddressAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { useCities } from '@/hooks/useCities';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'apartment', label: 'Apartment' },
@@ -53,6 +54,7 @@ export function StepBasics() {
   const hasMissingStreetNumber = hasValidLocation && !/\d+/.test(data.address);
 
   return (
+    <GoogleMapsProvider>
     <div className="space-y-8">
       {/* Quality Standards Banner */}
       <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-muted/30 border border-primary/20">
@@ -260,5 +262,6 @@ export function StepBasics() {
         </div>
       </div>
     </div>
+    </GoogleMapsProvider>
   );
 }

@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const allCities = [
   'Tel Aviv', 'Jerusalem', 'Haifa', 'Ra\'anana', 'Herzliya', 
@@ -239,8 +240,9 @@ export default function AgencySettings() {
   }
 
   return (
-    <Layout>
-      <div className="min-h-screen relative">
+    <GoogleMapsProvider>
+      <Layout>
+        <div className="min-h-screen relative">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background -z-10" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl -z-10" />
@@ -790,6 +792,7 @@ export default function AgencySettings() {
           </motion.div>
         </div>
       </div>
-    </Layout>
+      </Layout>
+    </GoogleMapsProvider>
   );
 }
