@@ -76,7 +76,7 @@ export function CompareWinnerSummary({ properties, winnerCounts }: CompareWinner
 
       {/* CTA */}
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <Button asChild variant="default" className="flex-1">
+        <Button asChild variant="outline" className="flex-1">
           <Link to="/tools?tool=totalcost">
             <Calculator className="h-4 w-4 mr-2" />
             Calculate True Costs
