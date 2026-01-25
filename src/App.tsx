@@ -158,7 +158,7 @@ const App = () => (
                         <Route path="/tools/rent-vs-buy" element={<Navigate to="/tools?tool=rentvsbuy" replace />} />
                         <Route path="/tools/renovation" element={<Navigate to="/tools?tool=renovation" replace />} />
                         <Route path="/tools/purchase-tax-calculator" element={<Navigate to="/tools?tool=purchasetax" replace />} />
-                        <Route path="/tools/rental-yield-calculator" element={<Navigate to="/tools?tool=rentalyield" replace />} />
+                        
                         
                         {/* Lazy loaded routes */}
                         <Route path="/get-started" element={<GetStarted />} />
