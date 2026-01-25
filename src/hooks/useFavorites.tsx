@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property } from '@/types/database';
-import { useState, useEffect, useCallback } from 'react';
-import { safeSessionGet, safeSessionSet, safeSessionRemove } from '@/utils/sessionStorage';
+import { useCallback } from 'react';
+import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
+import { useFavoritesContext } from '@/contexts/FavoritesContext';
 
 const GUEST_FAVORITES_KEY = 'buywise_guest_favorites';
 
@@ -17,15 +18,8 @@ export function useFavorites() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Guest favorites state (sessionStorage)
-  const [guestFavorites, setGuestFavorites] = useState<GuestFavorite[]>([]);
-  
-  // Load guest favorites on mount
-  useEffect(() => {
-    if (!user) {
-      setGuestFavorites(safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []));
-    }
-  }, [user]);
+  // Use shared context for guest favorites
+  const { guestFavorites, setGuestFavorites } = useFavoritesContext();
 
   const { data: favorites = [], isLoading } = useQuery({
     queryKey: ['favorites', user?.id],
@@ -69,7 +63,7 @@ export function useFavorites() {
     enabled: !!user,
   });
 
-  // Guest property IDs
+  // Guest property IDs derived from context
   const guestFavoriteIds = guestFavorites.map(f => f.property_id);
   
   // Fetch guest property details
@@ -101,12 +95,11 @@ export function useFavorites() {
   const addFavorite = useMutation({
     mutationFn: async ({ propertyId, currentPrice }: { propertyId: string; currentPrice?: number }) => {
       if (!user) {
-        // Guest: use sessionStorage
-        const current = safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []);
-        const filtered = current.filter(f => f.property_id !== propertyId);
-        const updated = [{ property_id: propertyId, price: currentPrice }, ...filtered];
-        safeSessionSet(GUEST_FAVORITES_KEY, updated);
-        setGuestFavorites(updated);
+        // Guest: update context (which syncs to sessionStorage)
+        setGuestFavorites(current => {
+          const filtered = current.filter(f => f.property_id !== propertyId);
+          return [{ property_id: propertyId, price: currentPrice }, ...filtered];
+        });
         return;
       }
       
@@ -145,11 +138,8 @@ export function useFavorites() {
   const removeFavorite = useMutation({
     mutationFn: async (propertyId: string) => {
       if (!user) {
-        // Guest: use sessionStorage
-        const current = safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []);
-        const updated = current.filter(f => f.property_id !== propertyId);
-        safeSessionSet(GUEST_FAVORITES_KEY, updated);
-        setGuestFavorites(updated);
+        // Guest: update context (which syncs to sessionStorage)
+        setGuestFavorites(current => current.filter(f => f.property_id !== propertyId));
         return;
       }
       
@@ -162,7 +152,7 @@ export function useFavorites() {
       if (error) throw error;
     },
     onMutate: async (propertyId) => {
-      if (!user) return; // Guest updates are synchronous
+      if (!user) return; // Guest updates are synchronous via context
       
       // Cancel any in-flight queries
       await queryClient.cancelQueries({ queryKey: ['favorites', user.id] });

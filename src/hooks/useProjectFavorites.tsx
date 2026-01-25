@@ -2,24 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback } from 'react';
-import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
-
-const GUEST_PROJECT_FAVORITES_KEY = 'buywise_guest_project_favorites';
+import { useCallback } from 'react';
+import { useFavoritesContext } from '@/contexts/FavoritesContext';
 
 export function useProjectFavorites() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Guest favorites state (sessionStorage)
-  const [guestFavoriteIds, setGuestFavoriteIds] = useState<string[]>([]);
-  
-  // Load guest favorites on mount
-  useEffect(() => {
-    if (!user) {
-      setGuestFavoriteIds(safeSessionGet<string[]>(GUEST_PROJECT_FAVORITES_KEY, []));
-    }
-  }, [user]);
+  // Use shared context for guest project favorites
+  const { guestProjectFavoriteIds, setGuestProjectFavoriteIds } = useFavoritesContext();
 
   const { data: projectFavorites = [], isLoading } = useQuery({
     queryKey: ['projectFavorites', user?.id],
@@ -63,38 +54,37 @@ export function useProjectFavorites() {
 
   // Fetch guest project details
   const { data: guestProjects = [] } = useQuery({
-    queryKey: ['guest-project-favorites-data', guestFavoriteIds],
+    queryKey: ['guest-project-favorites-data', guestProjectFavoriteIds],
     queryFn: async () => {
-      if (guestFavoriteIds.length === 0) return [];
+      if (guestProjectFavoriteIds.length === 0) return [];
       
       const { data, error } = await supabase
         .from('projects')
         .select('*, developer:developer_id (*)')
-        .in('id', guestFavoriteIds);
+        .in('id', guestProjectFavoriteIds);
 
       if (error) throw error;
       
-      // Sort by the order in guestFavoriteIds
+      // Sort by the order in guestProjectFavoriteIds
       const projectMap = new Map(data?.map(p => [p.id, p]) || []);
-      return guestFavoriteIds
+      return guestProjectFavoriteIds
         .map(id => projectMap.get(id))
         .filter(Boolean);
     },
-    enabled: !user && guestFavoriteIds.length > 0,
+    enabled: !user && guestProjectFavoriteIds.length > 0,
   });
 
   // Combined favorite IDs
-  const projectFavoriteIds = user ? dbProjectFavoriteIds : guestFavoriteIds;
+  const projectFavoriteIds = user ? dbProjectFavoriteIds : guestProjectFavoriteIds;
 
   const addProjectFavorite = useMutation({
     mutationFn: async (projectId: string) => {
       if (!user) {
-        // Guest: use sessionStorage
-        const current = safeSessionGet<string[]>(GUEST_PROJECT_FAVORITES_KEY, []);
-        const filtered = current.filter(id => id !== projectId);
-        const updated = [projectId, ...filtered];
-        safeSessionSet(GUEST_PROJECT_FAVORITES_KEY, updated);
-        setGuestFavoriteIds(updated);
+        // Guest: update context (which syncs to sessionStorage)
+        setGuestProjectFavoriteIds(current => {
+          const filtered = current.filter(id => id !== projectId);
+          return [projectId, ...filtered];
+        });
         return;
       }
       
@@ -131,11 +121,8 @@ export function useProjectFavorites() {
   const removeProjectFavorite = useMutation({
     mutationFn: async (projectId: string) => {
       if (!user) {
-        // Guest: use sessionStorage
-        const current = safeSessionGet<string[]>(GUEST_PROJECT_FAVORITES_KEY, []);
-        const updated = current.filter(id => id !== projectId);
-        safeSessionSet(GUEST_PROJECT_FAVORITES_KEY, updated);
-        setGuestFavoriteIds(updated);
+        // Guest: update context (which syncs to sessionStorage)
+        setGuestProjectFavoriteIds(current => current.filter(id => id !== projectId));
         return;
       }
       
