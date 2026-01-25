@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff, Building } from 'lucide-react';
+import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff, Building, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -15,6 +15,8 @@ import { usePriceDropAlerts } from '@/hooks/usePriceDropAlerts';
 import { CompareButton } from '@/components/property/CompareButton';
 import { CompareBar } from '@/components/property/CompareBar';
 import { useCompare } from '@/contexts/CompareContext';
+import { useAuth } from '@/hooks/useAuth';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
@@ -23,6 +25,7 @@ export default function Favorites() {
   const { projectFavorites, isLoading: isLoadingProjects, removeProjectFavorite } = useProjectFavorites();
   const { togglePriceAlert, isTogglingAlert } = usePriceDropAlerts();
   const { compareCategory } = useCompare();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'buy' | 'rent' | 'projects'>('buy');
 
   // Separate properties by listing status
@@ -162,6 +165,16 @@ export default function Favorites() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
+            {/* Guest Signup Banner */}
+            {!user && totalFavorites > 0 && (
+              <GuestSignupNudge
+                icon={Bookmark}
+                message="These properties are saved to this browser only. Create a free account to keep them forever and get price drop alerts."
+                ctaText="Create account"
+                variant="banner"
+              />
+            )}
+
             {/* Stats Bar */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
