@@ -52,6 +52,8 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   });
   const [downPaymentMode, setDownPaymentMode] = useState<'percent' | 'amount'>('percent');
   const [downPaymentAmount, setDownPaymentAmount] = useState<number | null>(null);
+  const [amountCurrency, setAmountCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const currencySymbol = amountCurrency === 'USD' ? '$' : '₪';
   
   // Step 7: Core Locations state
   const [onboardingLocations, setOnboardingLocations] = useState<OnboardingLocation[]>([]);
@@ -656,19 +658,31 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                             size="sm"
                             pressed={downPaymentMode === 'percent'}
                             onPressedChange={() => setDownPaymentMode('percent')}
-                            className="h-7 px-2 text-xs"
+                            className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                           >
-                            <Percent className="h-3 w-3 mr-1" />
                             %
                           </Toggle>
                           <Toggle
                             size="sm"
-                            pressed={downPaymentMode === 'amount'}
-                            onPressedChange={() => setDownPaymentMode('amount')}
-                            className="h-7 px-2 text-xs"
+                            pressed={downPaymentMode === 'amount' && amountCurrency === 'ILS'}
+                            onPressedChange={() => {
+                              setDownPaymentMode('amount');
+                              setAmountCurrency('ILS');
+                            }}
+                            className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                           >
-                            <Banknote className="h-3 w-3 mr-1" />
                             ₪
+                          </Toggle>
+                          <Toggle
+                            size="sm"
+                            pressed={downPaymentMode === 'amount' && amountCurrency === 'USD'}
+                            onPressedChange={() => {
+                              setDownPaymentMode('amount');
+                              setAmountCurrency('USD');
+                            }}
+                            className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                          >
+                            $
                           </Toggle>
                         </div>
                       </div>
@@ -686,13 +700,13 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                         </div>
                       ) : (
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">₪</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol}</span>
                           <Input
                             type="number"
                             value={downPaymentAmount ?? ''}
                             onChange={(e) => setDownPaymentAmount(e.target.value ? Number(e.target.value) : null)}
                             className="pl-8"
-                            placeholder="1,500,000"
+                            placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
                           />
                         </div>
                       )}
