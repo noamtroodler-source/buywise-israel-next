@@ -1,166 +1,140 @@
 
-# Admin Blog Review System
+# Fix Blog Content Rendering Consistency
 
-## Overview
+## Problem Identified
 
-Implement a complete blog review workflow for admins, following the same patterns used for Listings and Projects. This allows admins to:
-1. **Preview** blog posts submitted by agents, agencies, and developers
-2. **Approve** - Publish the article to the public blog
-3. **Request Changes** - Send feedback and return to author for revisions
-4. **Reject** - Decline the article with a reason
+The public blog page (`BlogPost.tsx`) does NOT have a markdown-to-HTML converter. It expects the content to already be HTML, but the blog wizard stores content as **markdown**.
 
-The system will integrate into the existing admin sidebar under the **Review Queue** section with a pending badge.
+| Component | Has `renderContent()` | Result |
+|-----------|----------------------|--------|
+| Wizard Preview (StepReview) | Yes | Looks great |
+| Admin Preview (BlogPreviewModal) | Yes | Looks great |
+| Public Blog (BlogPost) | **NO** | Raw markdown shows |
 
----
-
-## Architecture
-
-```text
-Admin Dashboard → Review Queue
-│
-├── Listings (existing)
-├── Agents (existing)
-├── Agencies (existing)
-├── Developers (existing)
-├── Projects (existing)
-└── Blog Posts (NEW) ← Pending badge showing count
-```
+This is why `## 1. Understand That the Process Is Different` appears as literal text instead of a formatted heading.
 
 ---
 
-## Implementation Details
+## Solution
 
-### 1. New Hook: `useBlogReview.tsx`
+Add the same `renderContent()` markdown-to-HTML converter that the wizard and admin preview use to the public `BlogPost.tsx`.
 
-Create a dedicated hook following the `useListingReview.tsx` pattern:
+We'll create a **shared utility function** to ensure consistency across all three renderers and prevent future divergence.
 
-**Exports:**
-- `BlogPostForReview` - Interface for review data
-- `useBlogPostsForReview(status?)` - Fetch posts by verification status
-- `usePendingBlogCount()` - Count for sidebar badge
-- `useBlogReviewStats()` - Stats for all statuses
-- `useApproveBlogPost()` - Approve and publish
-- `useRequestBlogChanges()` - Request changes with feedback
-- `useRejectBlogPost()` - Reject with reason
+---
 
-**Data Structure:**
+## Implementation
+
+### 1. Create Shared Utility: `src/utils/markdownToHtml.ts`
+
+Create a centralized markdown-to-HTML converter that all blog renderers will use:
+
 ```typescript
-interface BlogPostForReview {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  content: string;
-  cover_image: string | null;
-  category_ids: string[] | null;
-  city: string | null;
-  audiences: string[] | null;
-  reading_time_minutes: number | null;
-  views_count: number | null;
-  verification_status: BlogVerificationStatus;
-  rejection_reason: string | null;
-  submitted_at: string | null;
-  reviewed_at: string | null;
-  created_at: string;
-  is_published: boolean;
-  author: {
-    id: string;
-    type: AuthorType;
-    profile_id: string;
-    name: string;
-    email: string;
-    avatar: string | null;
-    // Agency/company name if applicable
-    organization_name: string | null;
-  } | null;
-  categories: { id: string; name: string; slug: string }[] | null;
+import DOMPurify from 'dompurify';
+
+/**
+ * Converts markdown content to sanitized HTML
+ * Used by: BlogPost.tsx, StepReview.tsx, BlogPreviewModal.tsx
+ */
+export function markdownToHtml(content: string): string {
+  let html = content
+    // Headers
+    .replace(/^### (.*$)/gm, '</p><h3 class="text-lg font-semibold mt-6 mb-2">$1</h3><p class="mb-4">')
+    .replace(/^## (.*$)/gm, '</p><h2 class="text-xl font-bold mt-8 mb-3">$1</h2><p class="mb-4">')
+    .replace(/^# (.*$)/gm, '</p><h1 class="text-2xl font-bold mt-8 mb-4">$1</h1><p class="mb-4">')
+    // Bold and italic
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Lists - no explicit bullet character, let CSS handle it
+    .replace(/^- (.*$)/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.*$)/gm, '<li class="list-decimal">$1</li>')
+    // Paragraphs
+    .replace(/\n\n/g, '</p><p class="mb-4">')
+    .replace(/\n/g, '<br/>');
+
+  // Wrap consecutive <li> elements in <ul>
+  html = html.replace(/(<li[^>]*>.*?<\/li>(<br\/>)?)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
+  
+  // Clean up stray <br/> inside lists
+  html = html.replace(/<ul([^>]*)>(.*?)<\/ul>/g, (match, attrs, inner) => {
+    return `<ul${attrs}>${inner.replace(/<br\/>/g, '')}</ul>`;
+  });
+  
+  html = `<p class="mb-4">${html}</p>`;
+  // Clean up empty paragraphs
+  html = html.replace(/<p class="mb-4"><\/p>/g, '');
+  
+  return DOMPurify.sanitize(html, { ADD_ATTR: ['id'] });
+}
+
+/**
+ * Adds IDs to headings for anchor links (table of contents)
+ */
+export function addHeadingIds(html: string): string {
+  return html.replace(/<h([2-3])([^>]*)>([^<]+)<\/h[2-3]>/gi, (match, level, attrs, text) => {
+    const id = text.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return `<h${level}${attrs} id="${id}">${text}</h${level}>`;
+  });
+}
+
+/**
+ * Extracts headings from HTML for table of contents
+ */
+export function extractHeadings(html: string): { id: string; text: string; level: number }[] {
+  const headingRegex = /<h([2-3])[^>]*>([^<]+)<\/h[2-3]>/gi;
+  const headings: { id: string; text: string; level: number }[] = [];
+  let match;
+  
+  while ((match = headingRegex.exec(html)) !== null) {
+    const level = parseInt(match[1]);
+    const text = match[2].trim();
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    headings.push({ id, text, level });
+  }
+  
+  return headings;
 }
 ```
 
 ---
 
-### 2. New Component: `BlogReviewCard.tsx`
+### 2. Update BlogPost.tsx
 
-Create a review card component following `ListingReviewCard.tsx` pattern:
+**Key change:** Use `markdownToHtml()` to convert raw markdown before extracting headings and rendering:
 
-**Features:**
-- **Header**: Cover image thumbnail, title, status badge, submission time
-- **Metadata**: Categories, city, reading time, word count
-- **Author Info**: Avatar, name, type (Agent/Agency/Developer), organization
-- **Expandable Content**: Full article preview with rendered markdown
-- **Previous Feedback**: Show rejection_reason if status is `changes_requested`
-- **Actions**: Approve, Request Changes, Reject, Preview (opens full modal)
+```typescript
+import { markdownToHtml, addHeadingIds, extractHeadings } from '@/utils/markdownToHtml';
 
-**UI Layout:**
-```text
-┌──────────────────────────────────────────────────────────────┐
-│ [Cover Image]  │  Title of the Blog Article                 │
-│  (thumbnail)   │  ● Pending Review • Submitted 2 hours ago  │
-│                │  Categories: Buying Guide, First-Time...   │
-│                │  📍 Tel Aviv • 5 min read                  │
-│                ├────────────────────────────────────────────│
-│                │  👤 Agent Name • Verified                  │
-│                │     Agency Name (if applicable)            │
-│                ├────────────────────────────────────────────│
-│                │  [▼ Show More]                             │
-│                │                                            │
-│                │  [✓ Approve] [💬 Request Changes] [✗ Reject] │
-│                │                              [Preview →]   │
-└──────────────────────────────────────────────────────────────┘
+// Inside component:
+const htmlContent = markdownToHtml(post.content);
+const contentWithIds = addHeadingIds(htmlContent);
+const headings = extractHeadings(contentWithIds);
 ```
 
 ---
 
-### 3. New Component: `BlogPreviewModal.tsx`
+### 3. Update StepReview.tsx
 
-Full-screen preview modal showing the article as it would appear on the public blog:
+Replace the inline `renderContent()` function with the shared utility:
 
-- Cover image (full width)
-- Title, author info, publication meta
-- Rendered markdown content (using same styling as public BlogPost page)
-- Categories and tags
-- "Close" button
+```typescript
+import { markdownToHtml } from '@/utils/markdownToHtml';
 
----
-
-### 4. New Page: `AdminBlogReview.tsx`
-
-Main review queue page following `AdminListingReview.tsx` pattern:
-
-**Features:**
-- Header with "Blog Review Queue" title and pending count badge
-- 5 stat cards (Pending, Changes Requested, Approved, Rejected, Drafts)
-- Tabs for filtering by status
-- List of `BlogReviewCard` components
-- Empty state with checkmark icon when all reviewed
-
----
-
-### 5. Update Admin Layout
-
-**File:** `src/pages/admin/AdminLayout.tsx`
-
-Add blog review to the `reviewItems` array:
-```tsx
-const reviewItems = [
-  { href: '/admin/review', label: 'Listings', icon: ClipboardCheck, badge: pendingCount || 0 },
-  { href: '/admin/agents', label: 'Agents', icon: Building2, badge: stats?.pendingAgents || 0 },
-  { href: '/admin/agencies', label: 'Agencies', icon: Building, badge: stats?.pendingAgencies || 0 },
-  { href: '/admin/developers', label: 'Developers', icon: Building, badge: stats?.pendingDevelopers || 0 },
-  { href: '/admin/projects', label: 'Projects', icon: Building, badge: stats?.pendingProjects || 0 },
-  { href: '/admin/blog-review', label: 'Blog Posts', icon: FileText, badge: pendingBlogCount || 0 }, // NEW
-];
+// Replace inline function call:
+dangerouslySetInnerHTML={{ __html: markdownToHtml(data.content) }}
 ```
 
 ---
 
-### 6. Update Routes
+### 4. Update BlogPreviewModal.tsx
 
-**File:** `src/App.tsx`
+Same change - use the shared utility:
 
-Add the new admin route:
-```tsx
-<Route path="blog-review" element={<AdminBlogReview />} />
+```typescript
+import { markdownToHtml } from '@/utils/markdownToHtml';
+
+// Replace inline function call:
+dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }}
 ```
 
 ---
@@ -169,51 +143,32 @@ Add the new admin route:
 
 | File | Action |
 |------|--------|
-| `src/hooks/useBlogReview.tsx` | Create - Hook with queries and mutations |
-| `src/components/admin/BlogReviewCard.tsx` | Create - Review card component |
-| `src/components/admin/BlogPreviewModal.tsx` | Create - Full article preview modal |
-| `src/pages/admin/AdminBlogReview.tsx` | Create - Main review queue page |
-| `src/pages/admin/AdminLayout.tsx` | Update - Add blog review to sidebar |
-| `src/App.tsx` | Update - Add route for blog review |
+| `src/utils/markdownToHtml.ts` | Create - Shared markdown-to-HTML utility |
+| `src/pages/BlogPost.tsx` | Update - Use `markdownToHtml()` for content conversion |
+| `src/components/blog/wizard/StepReview.tsx` | Update - Use shared utility instead of inline function |
+| `src/components/admin/BlogPreviewModal.tsx` | Update - Use shared utility instead of inline function |
 
 ---
 
-## Author Resolution Strategy
+## Benefits
 
-Since blogs can come from agents, agencies, or developers, we need to resolve author info dynamically:
+1. **Immediate fix**: Public blog will render markdown correctly
+2. **Single source of truth**: One function for all renderers means consistent output
+3. **Future-proof**: Any formatting improvements apply everywhere automatically
+4. **Easier maintenance**: Fix bugs or add features in one place
 
-```sql
--- In the query, we join based on author_type:
-SELECT 
-  bp.*,
-  CASE 
-    WHEN bp.author_type = 'agent' THEN ag.name
-    WHEN bp.author_type = 'agency' THEN ay.name
-    WHEN bp.author_type = 'developer' THEN dv.name
-  END as author_name,
-  ...
+---
+
+## Before vs After
+
+**Before (raw markdown visible):**
+```
+## 1. Understand That the Process Is Different
+- **Purchase Tax (Mas Rechisha):** This can be...
 ```
 
-For simplicity in the hook, we'll fetch the author info in a secondary query or use RPC if needed. Alternatively, we can denormalize author_name on the blog_posts table for faster queries.
+**After (properly rendered):**
 
-**Practical approach**: Use JavaScript-side resolution after fetching the posts with separate lookups for agent/agency/developer based on `author_type` and `author_profile_id`.
+## 1. Understand That the Process Is Different
 
----
-
-## Notification Integration
-
-When admin takes action, send notification to the author:
-- **Approve**: "Your article '[title]' has been approved and published!"
-- **Request Changes**: "Changes requested for '[title]': [feedback]"
-- **Reject**: "Your article '[title]' was not approved: [reason]"
-
-Uses existing `send-notification` edge function pattern.
-
----
-
-## Technical Considerations
-
-1. **Markdown Rendering**: Use DOMPurify for safe HTML rendering in preview
-2. **RLS Policies**: Admins need SELECT/UPDATE access to all blog_posts (existing admin role check)
-3. **Query Optimization**: Index on `verification_status` column (already exists from migration)
-4. **Author Type Badge**: Show different colored badges for Agent/Agency/Developer
+- **Purchase Tax (Mas Rechisha):** This can be...
