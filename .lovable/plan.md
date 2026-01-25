@@ -1,67 +1,113 @@
 
-# Sync Header Auth Buttons with Auth Page Tabs
+# Simplify Mortgage Forms: Add Commas + Remove Net/Gross
 
-## Problem
+## Problems to Fix
 
-When you're already on the Auth page and click "Sign In" or "Sign Up" in the header navigation, the form tabs don't switch. This is because the Auth page only reads the `tab` parameter once when it first loads, not when the URL changes while you're already on the page.
+1. **Numbers don't have commas** - When typing "500000", it stays as "500000" instead of showing "500,000"
+2. **Net/Gross selector is overcomplicated** - There's a dropdown to choose between Net and Gross income, but you just want it to be "Net" only
 
 ---
 
 ## Solution
 
-Add a `useEffect` that watches for URL parameter changes and updates the active tab accordingly. This way, clicking the header buttons will trigger a URL change, and the Auth page will react to it.
+### 1. Replace Input with FormattedNumberInput
 
----
+The project already has a `FormattedNumberInput` component that automatically adds commas as you type. Replace the raw `<Input type="number">` elements with this component.
 
-## Technical Details
+**Where to fix:**
+- Down Payment Amount input (when in ₪ or $ mode)
+- Monthly Income input
 
-### Current Behavior (Line 67 of Auth.tsx)
+### 2. Remove Net/Gross Dropdown
 
-```tsx
-const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'signup' ? 'signup' : 'signin');
-```
-
-This only sets the tab once on initial render. It doesn't respond to URL changes.
-
-### Fix: Add useEffect to Watch URL Changes
-
-```tsx
-// Sync activeTab with URL parameter changes
-useEffect(() => {
-  const tabParam = searchParams.get('tab');
-  const newTab = tabParam === 'signup' ? 'signup' : 'signin';
-  if (newTab !== activeTab) {
-    setActiveTab(newTab);
-  }
-}, [searchParams]);
-```
-
-This will:
-1. Watch for any changes to `searchParams`
-2. Check if the `tab` parameter has changed
-3. Update the `activeTab` state to match
+Remove the `<Select>` dropdown that lets users choose between Net and Gross. Simply hardcode the label to say "Net Monthly Income" and always save `income_type: 'net'`.
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/pages/Auth.tsx` | Add useEffect to sync activeTab with URL searchParams |
+| File | Changes |
+|------|---------|
+| `src/components/onboarding/BuyerOnboarding.tsx` | Use `FormattedNumberInput` for amount inputs, remove income_type selector |
+| `src/components/profile/MortgagePreferencesCard.tsx` | Same changes |
 
 ---
 
-## User Experience After Fix
+## Technical Changes
 
-1. User is on `/auth` (Sign In tab active)
-2. User clicks "Sign Up" in the header
-3. URL changes to `/auth?tab=signup`
-4. Auth page detects the URL change and switches to the Sign Up tab
+### BuyerOnboarding.tsx (Step 6)
 
-And vice versa:
-1. User is on `/auth?tab=signup` (Sign Up tab active)
-2. User clicks "Sign In" in the header
-3. URL changes to `/auth`
-4. Auth page detects the URL change and switches to the Sign In tab
+**Down Payment Amount - Replace lines 704-713:**
+```tsx
+// Before
+<Input
+  type="number"
+  value={downPaymentAmount ?? ''}
+  onChange={(e) => setDownPaymentAmount(...)}
+  className="pl-8"
+  placeholder="1,500,000"
+/>
 
-This creates a seamless experience where the header buttons always work, regardless of whether the user is already on the auth page.
+// After
+<FormattedNumberInput
+  value={downPaymentAmount}
+  onChange={setDownPaymentAmount}
+  prefix={currencySymbol}
+  placeholder={amountCurrency === 'USD' ? '400,000' : '1,500,000'}
+/>
+```
+
+**Monthly Income - Replace lines 739-764:**
+```tsx
+// Before: Has Net/Gross dropdown
+<div className="flex items-center justify-between">
+  <Label className="text-sm">Monthly Income (optional)</Label>
+  <Select value={mortgagePrefs.income_type} ...>
+    <SelectItem value="net">Net</SelectItem>
+    <SelectItem value="gross">Gross</SelectItem>
+  </Select>
+</div>
+<Input type="number" ... />
+
+// After: Simple label, formatted input
+<div className="space-y-2">
+  <Label className="text-sm">Net Monthly Income (optional)</Label>
+  <FormattedNumberInput
+    value={mortgagePrefs.monthly_income}
+    onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null })}
+    prefix="₪"
+    placeholder="35,000"
+  />
+  <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
+</div>
+```
+
+**Also update the default state and saved data:**
+```tsx
+// Hardcode income_type to 'net' in the initial state and save logic
+income_type: 'net' as const
+```
+
+### MortgagePreferencesCard.tsx
+
+Same pattern - replace the Input with FormattedNumberInput and remove the Net/Gross selector for monthly income.
+
+---
+
+## Visual Result
+
+| Before | After |
+|--------|-------|
+| `500000` (no commas) | `500,000` (with commas) |
+| "Monthly Income (optional)" with Net/Gross dropdown | "Net Monthly Income (optional)" (no dropdown) |
+
+---
+
+## Summary of Changes
+
+1. **Import** `FormattedNumberInput` in both files
+2. **Replace** down payment amount `<Input type="number">` with `<FormattedNumberInput>`
+3. **Replace** monthly income `<Input type="number">` with `<FormattedNumberInput>`
+4. **Remove** the Net/Gross `<Select>` dropdown entirely
+5. **Update** label to "Net Monthly Income (optional)"
+6. **Hardcode** `income_type: 'net'` in state and save logic
