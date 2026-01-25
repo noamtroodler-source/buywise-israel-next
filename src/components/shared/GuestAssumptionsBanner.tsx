@@ -14,6 +14,8 @@ interface GuestAssumptionsBannerProps {
   hasCompletedProfile: boolean;
   /** Optional: Potential savings amount for Oleh teaser */
   potentialSavings?: number;
+  /** Optional: Benefit summary for the current buyer type (e.g., tax exemption info) */
+  benefitSummary?: string;
   /** Compact mode for tighter layouts */
   compact?: boolean;
   className?: string;
@@ -33,6 +35,7 @@ export function GuestAssumptionsBanner({
   isLoggedIn,
   hasCompletedProfile,
   potentialSavings,
+  benefitSummary,
   compact = false,
   className,
 }: GuestAssumptionsBannerProps) {
@@ -94,6 +97,12 @@ export function GuestAssumptionsBanner({
             <span className="mx-1 text-muted-foreground/50">·</span>
             <span className="font-medium text-foreground">{financingLabel}</span>
           </p>
+          {/* Benefit context for the buyer type */}
+          {benefitSummary && !compact && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {benefitSummary}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-1">
             Your situation different?{' '}
             <Link 
