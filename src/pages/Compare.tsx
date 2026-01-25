@@ -47,6 +47,12 @@ interface MarketDataEntry {
   month: number | null;
 }
 
+interface CityData {
+  name: string;
+  average_price_sqm: number | null;
+  yoy_price_change: number | null;
+}
+
 export default function Compare() {
   const { compareIds, compareCategory, removeFromCompare, clearCompare, maxItems } = useCompare();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -54,6 +60,7 @@ export default function Compare() {
   const [investorView, setInvestorView] = useState(false);
   const [rentalData, setRentalData] = useState<RentalData[]>([]);
   const [marketData, setMarketData] = useState<MarketDataEntry[]>([]);
+  const [cityData, setCityData] = useState<CityData[]>([]);
   const { user } = useAuth();
   const { favoriteIds, toggleFavorite } = useFavorites();
   const formatPrice = useFormatPrice();
@@ -82,13 +89,15 @@ export default function Compare() {
 
         const cities = [...new Set(ordered.map(p => p.city))];
         
-        const [rentalResult, marketResult] = await Promise.all([
+        const [rentalResult, marketResult, citiesResult] = await Promise.all([
           supabase.from('rental_prices').select('*').in('city', cities),
-          supabase.from('market_data').select('*').in('city', cities).order('year', { ascending: false }).order('month', { ascending: false })
+          supabase.from('market_data').select('*').in('city', cities).order('year', { ascending: false }).order('month', { ascending: false }),
+          supabase.from('cities').select('name, average_price_sqm, yoy_price_change')
         ]);
 
         if (rentalResult.data) setRentalData(rentalResult.data);
         if (marketResult.data) setMarketData(marketResult.data);
+        if (citiesResult.data) setCityData(citiesResult.data);
       }
       setLoading(false);
     }
@@ -146,10 +155,10 @@ export default function Compare() {
   };
 
   const getPriceVsCityAvg = (property: Property) => {
-    const cityMarket = marketData.find(m => m.city.toLowerCase() === property.city.toLowerCase());
-    if (cityMarket?.average_price_sqm && property.size_sqm) {
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (city?.average_price_sqm && property.size_sqm) {
       const propertyPricePerSqm = property.price / property.size_sqm;
-      const diff = ((propertyPricePerSqm - cityMarket.average_price_sqm) / cityMarket.average_price_sqm) * 100;
+      const diff = ((propertyPricePerSqm - city.average_price_sqm) / city.average_price_sqm) * 100;
       const prefix = diff >= 0 ? '+' : '';
       return `${prefix}${diff.toFixed(0)}% vs avg`;
     }
@@ -157,10 +166,10 @@ export default function Compare() {
   };
 
   const getPriceChange = (property: Property) => {
-    const cityMarket = marketData.find(m => m.city.toLowerCase() === property.city.toLowerCase());
-    if (cityMarket?.price_change_percent !== null && cityMarket?.price_change_percent !== undefined) {
-      const prefix = cityMarket.price_change_percent >= 0 ? '+' : '';
-      return `${prefix}${cityMarket.price_change_percent.toFixed(1)}%`;
+    const city = cityData.find(c => c.name.toLowerCase() === property.city.toLowerCase());
+    if (city?.yoy_price_change !== null && city?.yoy_price_change !== undefined) {
+      const prefix = city.yoy_price_change >= 0 ? '+' : '';
+      return `${prefix}${city.yoy_price_change.toFixed(1)}%`;
     }
     return '—';
   };
@@ -376,7 +385,7 @@ export default function Compare() {
       getValue: (p: Property) => getPriceChange(p),
       tooltip: 'How prices in this area changed over the past year.',
     },
-  ], [rentalData, marketData]);
+  ], [rentalData, cityData]);
 
   // Calculate winner counts
   const winnerCounts = useMemo(() => {
