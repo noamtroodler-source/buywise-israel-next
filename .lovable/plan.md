@@ -1,198 +1,97 @@
 
-# AI-Generated Cover Image Feature for Blog Wizard
+# Fix Double Bullet Points in Blog Preview
 
-## Overview
+## Problem Identified
 
-Add the ability for Agents, Agencies, and Developers to generate an AI cover image based on their article's title and content. The feature will:
-1. Generate **one** AI image initially (to conserve credits and speed)
-2. Provide a **"Regenerate"** button if the user wants a different option
-3. Auto-upload the generated image to storage and set it as the cover
+When using the "AI Format & Polish" feature, bullet points appear **doubled** in the Review step. 
 
-This uses the existing `generate-hero-image` edge function - no new backend code needed.
-
----
-
-## User Experience Flow
+**Why it happens:**
+1. AI returns markdown with `- ` bullet syntax
+2. The `renderContent()` function in `StepReview.tsx` converts `- Item` to `<li class="ml-4">• Item</li>` (adds a literal `•` character)
+3. The content is rendered inside a `<div className="prose prose-sm">` container
+4. Tailwind's prose styling automatically adds CSS bullets (`::marker`) to all `<li>` elements
+5. Result: Two bullets appear - one from the HTML `•` character, one from the CSS
 
 ```text
-Step 3: Cover Image
-┌─────────────────────────────────────────────────────────────┐
-│  Cover Image                                                 │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                                                     │    │
-│  │  [Currently empty or showing generated/uploaded]    │    │
-│  │                                                     │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  [✨ Generate AI Cover Image]  [📤 Upload Your Own] │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  If image is shown:                                          │
-│  [🔄 Regenerate]  [❌ Remove]                                │
-│                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  💡 Pro Tip                                         │    │
-│  │  AI-generated images are created based on your      │    │
-│  │  article title and content. No attribution needed!  │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  Image Guidelines                                            │
-│  • Use high-quality images (minimum 1200px wide)            │
-│  • Avoid images with too much text                          │
-│  • Choose images relevant to your article topic             │
-│  • Ensure you have rights to use the image                  │
-│  • ✨ Or use AI-generated images - no licensing worries!    │
-└─────────────────────────────────────────────────────────────┘
+Before (current):  • • Research neighborhoods
+After (fixed):     • Research neighborhoods
 ```
 
 ---
 
-## Implementation Details
+## Solution
 
-### File to Modify: `src/components/blog/wizard/StepCoverImage.tsx`
+Remove the explicit `•` character from the regex replacement and instead wrap list items in proper `<ul>` tags so the prose styling handles bullet display consistently.
 
-#### New State Variables
+---
+
+## Technical Changes
+
+### File: `src/components/blog/wizard/StepReview.tsx`
+
+**Current code (line 30):**
 ```tsx
-const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+.replace(/^- (.*$)/gm, '<li class="ml-4">• $1</li>')
 ```
 
-#### New Handler: `generateAIImage`
+**Fixed code:**
 ```tsx
-const generateAIImage = async () => {
-  if (!data.title) {
-    toast.error('Please add an article title first');
-    return;
-  }
+.replace(/^- (.*$)/gm, '<li>$1</li>')
+```
 
-  setIsGeneratingAI(true);
+Additionally, we need to wrap consecutive `<li>` elements in `<ul>` tags so they render correctly. This requires a more robust approach:
 
-  try {
-    // Build prompt from article title and content excerpt
-    const contentPreview = data.content?.slice(0, 500) || '';
-    const prompt = `Create a professional, high-quality blog cover image for an article titled "${data.title}". ${contentPreview ? `The article is about: ${contentPreview.slice(0, 200)}...` : ''} Style: Modern, clean, professional real estate or lifestyle photography. Aspect ratio 16:9, ultra high resolution. No text overlays on the image.`;
+**Improved `renderContent` function:**
+```tsx
+const renderContent = (content: string) => {
+  // First, handle block-level elements
+  let html = content
+    // Headers
+    .replace(/^### (.*$)/gm, '</p><h3 class="text-lg font-semibold mt-6 mb-2">$1</h3><p class="mb-4">')
+    .replace(/^## (.*$)/gm, '</p><h2 class="text-xl font-bold mt-8 mb-3">$1</h2><p class="mb-4">')
+    .replace(/^# (.*$)/gm, '</p><h1 class="text-2xl font-bold mt-8 mb-4">$1</h1><p class="mb-4">')
+    // Bold and italic
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    // Lists - just mark them, we'll wrap in <ul> next
+    .replace(/^- (.*$)/gm, '<li>$1</li>')
+    .replace(/^\d+\. (.*$)/gm, '<li class="list-decimal">$1</li>')
+    // Paragraphs
+    .replace(/\n\n/g, '</p><p class="mb-4">')
+    .replace(/\n/g, '<br/>');
 
-    const { data: result, error } = await supabase.functions.invoke('generate-hero-image', {
-      body: { prompt }
-    });
-
-    if (error) throw error;
-    if (result.error) throw new Error(result.error);
-
-    // The result contains a base64 image URL - upload it to storage
-    const base64Data = result.imageUrl;
-    
-    // Convert base64 to blob for upload
-    const response = await fetch(base64Data);
-    const blob = await response.blob();
-    
-    const fileName = `blog-ai-${Date.now()}.png`;
-    const filePath = `blog-covers/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('property-images')
-      .upload(filePath, blob, { contentType: 'image/png' });
-
-    if (uploadError) throw uploadError;
-
-    const { data: urlData } = supabase.storage
-      .from('property-images')
-      .getPublicUrl(filePath);
-
-    updateData({ coverImage: urlData.publicUrl });
-    toast.success('AI cover image generated!');
-  } catch (error) {
-    console.error('AI generation error:', error);
-    if (error instanceof Error && error.message.includes('Rate limit')) {
-      toast.error('Rate limit exceeded. Please try again in a moment.');
-    } else if (error instanceof Error && error.message.includes('Payment')) {
-      toast.error('AI credits exhausted. Please upload an image manually.');
-    } else {
-      toast.error('Failed to generate image. Please try again or upload manually.');
-    }
-  } finally {
-    setIsGeneratingAI(false);
-  }
+  // Wrap consecutive <li> elements in <ul>
+  html = html.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$&</ul>');
+  
+  // Clean up empty paragraphs
+  html = `<p class="mb-4">${html}</p>`;
+  html = html.replace(/<p class="mb-4"><\/p>/g, '');
+  
+  return DOMPurify.sanitize(html);
 };
 ```
 
-#### Updated UI Structure
-
-**New imports:**
-```tsx
-import { Sparkles, RefreshCw } from 'lucide-react';
-```
-
-**Replace the empty state upload area with two options:**
-
-1. AI Generate button (prominent, with sparkle icon)
-2. Manual upload button (secondary option)
-
-**When image exists, show:**
-- The image preview
-- Regenerate button (for AI)
-- Remove button
-- Upload different button
-
-#### Updated Image Guidelines Section
-Add a new tip about AI-generated images having no licensing concerns.
+This ensures:
+- No duplicate bullet characters
+- Proper `<ul>` wrapper for semantic HTML
+- Consistent styling with the public blog page (which uses prose)
 
 ---
 
-## Technical Notes
+## Files to Modify
 
-### Prompt Engineering
-The prompt is constructed dynamically from:
-- **Title** (required) - e.g., "First-Time Buyer's Guide to Tel Aviv"
-- **Content excerpt** (first 200 chars) - provides context about the article topic
-
-Example generated prompt:
-```
-Create a professional, high-quality blog cover image for an article titled "First-Time Buyer's Guide to Tel Aviv". The article is about: Buying your first home in Tel Aviv can feel overwhelming, but with the right preparation and guidance, it's an achievable dream. This guide covers... Style: Modern, clean, professional real estate or lifestyle photography. Aspect ratio 16:9, ultra high resolution. No text overlays on the image.
-```
-
-### Base64 to Storage Upload
-The `generate-hero-image` function returns a base64-encoded image. We:
-1. Fetch it as a blob
-2. Upload to Supabase storage (`property-images/blog-covers/`)
-3. Get the public URL
-4. Set it as the cover image
-
-This ensures the image is permanently stored (base64 data URLs are too large for database storage).
-
-### Error Handling
-- **Rate limit (429)**: Show friendly message, suggest waiting
-- **Payment required (402)**: Suggest manual upload
-- **No title**: Prevent generation, show error
-- **General errors**: Fallback message with manual upload suggestion
-
----
-
-## File Changes Summary
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/components/blog/wizard/StepCoverImage.tsx` | Add AI generation button, handler, and updated UI |
-
-No edge function changes needed - we reuse the existing `generate-hero-image` function.
+| `src/components/blog/wizard/StepReview.tsx` | Fix `renderContent()` function to remove explicit `•` and wrap lists in `<ul>` |
 
 ---
 
-## Cost & Performance
+## Why This Fixes It
 
-- **1 image per generation** (not 3) - balances cost and user experience
-- **Regenerate available** - if user doesn't like the result
-- **~5-10 seconds** generation time (shown with loading state)
-- Uses `google/gemini-2.5-flash-image-preview` model (existing function)
+| Before | After |
+|--------|-------|
+| `<li class="ml-4">• Item</li>` (no wrapper) | `<ul class="list-disc ml-6"><li>Item</li></ul>` |
+| Prose CSS adds ANOTHER bullet via `::marker` | Prose CSS adds ONE bullet via `list-disc` |
+| Result: `• • Item` | Result: `• Item` |
 
----
-
-## Visual Design
-
-The UI will have:
-1. **Primary action**: "✨ Generate AI Cover" button (gradient/accent styling)
-2. **Secondary action**: "Upload Your Own" button (outline styling)
-3. **Pro tip callout**: Explains AI images have no licensing worries
-4. **Loading state**: Spinner with "Generating your cover image..." text
-5. **Success state**: Image preview with Regenerate and Remove buttons
+The fix aligns the wizard preview with how the public blog page renders content - using proper semantic HTML and letting the Tailwind prose plugin handle bullet styling.
