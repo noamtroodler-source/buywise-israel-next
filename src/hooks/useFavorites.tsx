@@ -3,10 +3,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property } from '@/types/database';
+import { useState, useEffect, useCallback } from 'react';
+import { safeSessionGet, safeSessionSet, safeSessionRemove } from '@/utils/sessionStorage';
+
+const GUEST_FAVORITES_KEY = 'buywise_guest_favorites';
+
+interface GuestFavorite {
+  property_id: string;
+  price?: number;
+}
 
 export function useFavorites() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Guest favorites state (sessionStorage)
+  const [guestFavorites, setGuestFavorites] = useState<GuestFavorite[]>([]);
+  
+  // Load guest favorites on mount
+  useEffect(() => {
+    if (!user) {
+      setGuestFavorites(safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []));
+    }
+  }, [user]);
 
   const { data: favorites = [], isLoading } = useQuery({
     queryKey: ['favorites', user?.id],
@@ -34,7 +53,7 @@ export function useFavorites() {
     enabled: !!user,
   });
 
-  const { data: favoriteIds = [] } = useQuery({
+  const { data: dbFavoriteIds = [] } = useQuery({
     queryKey: ['favoriteIds', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -50,9 +69,46 @@ export function useFavorites() {
     enabled: !!user,
   });
 
+  // Guest property IDs
+  const guestFavoriteIds = guestFavorites.map(f => f.property_id);
+  
+  // Fetch guest property details
+  const { data: guestProperties = [] } = useQuery({
+    queryKey: ['guest-favorite-properties', guestFavoriteIds],
+    queryFn: async () => {
+      if (guestFavoriteIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*, agent:agent_id (*)')
+        .in('id', guestFavoriteIds)
+        .eq('is_published', true);
+
+      if (error) throw error;
+      
+      // Sort by the order in guestFavorites
+      const propertyMap = new Map(data?.map(p => [p.id, p]) || []);
+      return guestFavoriteIds
+        .map(id => propertyMap.get(id))
+        .filter(Boolean) as Property[];
+    },
+    enabled: !user && guestFavoriteIds.length > 0,
+  });
+
+  // Combined favorite IDs
+  const favoriteIds = user ? dbFavoriteIds : guestFavoriteIds;
+
   const addFavorite = useMutation({
     mutationFn: async ({ propertyId, currentPrice }: { propertyId: string; currentPrice?: number }) => {
-      if (!user) throw new Error('Must be logged in');
+      if (!user) {
+        // Guest: use sessionStorage
+        const current = safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []);
+        const filtered = current.filter(f => f.property_id !== propertyId);
+        const updated = [{ property_id: propertyId, price: currentPrice }, ...filtered];
+        safeSessionSet(GUEST_FAVORITES_KEY, updated);
+        setGuestFavorites(updated);
+        return;
+      }
       
       const { error } = await supabase
         .from('favorites')
@@ -65,9 +121,13 @@ export function useFavorites() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-      queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+    onSuccess: (_, variables) => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+        queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });
+      }
       toast.success('Property saved to favorites');
     },
     onError: (error) => {
@@ -77,7 +137,14 @@ export function useFavorites() {
 
   const removeFavorite = useMutation({
     mutationFn: async (propertyId: string) => {
-      if (!user) throw new Error('Must be logged in');
+      if (!user) {
+        // Guest: use sessionStorage
+        const current = safeSessionGet<GuestFavorite[]>(GUEST_FAVORITES_KEY, []);
+        const updated = current.filter(f => f.property_id !== propertyId);
+        safeSessionSet(GUEST_FAVORITES_KEY, updated);
+        setGuestFavorites(updated);
+        return;
+      }
       
       const { error } = await supabase
         .from('favorites')
@@ -88,8 +155,12 @@ export function useFavorites() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-      queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+        queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });
+      }
       toast.success('Property removed from favorites');
     },
     onError: (error) => {
@@ -97,30 +168,35 @@ export function useFavorites() {
     },
   });
 
-  const toggleFavorite = (propertyId: string, currentPrice?: number) => {
+  const toggleFavorite = useCallback((propertyId: string, currentPrice?: number) => {
     if (favoriteIds.includes(propertyId)) {
       removeFavorite.mutate(propertyId);
     } else {
       addFavorite.mutate({ propertyId, currentPrice });
     }
-  };
+  }, [favoriteIds, addFavorite, removeFavorite]);
 
-  const isFavorite = (propertyId: string) => favoriteIds.includes(propertyId);
+  const isFavorite = useCallback((propertyId: string) => favoriteIds.includes(propertyId), [favoriteIds]);
 
   // Extract properties from favorites for the favorites page
-  const favoriteProperties: Property[] = favorites
-    .map((f: any) => f.properties)
-    .filter(Boolean);
+  const favoriteProperties: Property[] = user
+    ? favorites.map((f: any) => f.properties).filter(Boolean)
+    : guestProperties;
 
   return {
-    favorites,
+    favorites: user ? favorites : guestFavorites.map(f => ({ 
+      property_id: f.property_id, 
+      properties: guestProperties.find(p => p.id === f.property_id),
+      price_alert_enabled: false,
+    })),
     favoriteProperties,
     favoriteIds,
-    isLoading,
+    isLoading: user ? isLoading : false,
     addFavorite: addFavorite.mutate,
     removeFavorite: removeFavorite.mutate,
     toggleFavorite,
     isFavorite,
     isToggling: addFavorite.isPending || removeFavorite.isPending,
+    isGuest: !user,
   };
 }

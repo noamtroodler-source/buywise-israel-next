@@ -7,19 +7,19 @@ import { Project } from '@/types/projects';
 const MAX_ITEMS = 20;
 const LOCAL_STORAGE_KEY = 'buywise_recently_viewed_projects';
 
-// Local storage helpers
-function getLocalStorage(): string[] {
+// Session storage helpers (cleared when browser closes)
+function getSessionStorage(): string[] {
   try {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const stored = sessionStorage.getItem(LOCAL_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
-function setLocalStorage(items: string[]) {
+function setSessionStorage(items: string[]) {
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
+    sessionStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
   } catch {
     // Ignore storage errors
   }
@@ -30,10 +30,10 @@ export function useRecentlyViewedProjects() {
   const queryClient = useQueryClient();
   const [guestItems, setGuestItems] = useState<string[]>([]);
 
-  // Initialize guest items from localStorage
+  // Initialize guest items from sessionStorage
   useEffect(() => {
     if (!user) {
-      setGuestItems(getLocalStorage());
+      setGuestItems(getSessionStorage());
     }
   }, [user]);
 
@@ -95,11 +95,11 @@ export function useRecentlyViewedProjects() {
           );
         if (error) throw error;
       } else {
-        // Update localStorage for guests
-        const current = getLocalStorage();
+        // Update sessionStorage for guests (cleared when browser closes)
+        const current = getSessionStorage();
         const filtered = current.filter(id => id !== projectId);
         const updated = [projectId, ...filtered].slice(0, MAX_ITEMS);
-        setLocalStorage(updated);
+        setSessionStorage(updated);
         setGuestItems(updated);
       }
     },
@@ -118,7 +118,7 @@ export function useRecentlyViewedProjects() {
           .eq('user_id', user.id);
         if (error) throw error;
       } else {
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        sessionStorage.removeItem(LOCAL_STORAGE_KEY);
         setGuestItems([]);
       }
     },

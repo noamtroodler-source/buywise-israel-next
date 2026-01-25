@@ -18,7 +18,7 @@ const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', "Ra'anana", "Modi'in
 
 function getSearchHistory(): string[] {
   try {
-    const stored = localStorage.getItem(HISTORY_KEY);
+    const stored = sessionStorage.getItem(HISTORY_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -29,9 +29,9 @@ function addToSearchHistory(city: string) {
   try {
     const history = getSearchHistory().filter(c => c !== city);
     const updated = [city, ...history].slice(0, MAX_HISTORY);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
   } catch {
-    // localStorage unavailable
+    // sessionStorage unavailable
   }
 }
 

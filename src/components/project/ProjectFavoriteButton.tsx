@@ -1,8 +1,6 @@
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useProjectFavorites } from '@/hooks/useProjectFavorites';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface ProjectFavoriteButtonProps {
@@ -11,20 +9,13 @@ interface ProjectFavoriteButtonProps {
 }
 
 export function ProjectFavoriteButton({ projectId, className }: ProjectFavoriteButtonProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { toggleProjectFavorite, isProjectFavorite, isToggling } = useProjectFavorites();
   const isFavorite = isProjectFavorite(projectId);
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!user) {
-      navigate('/auth?redirect=' + encodeURIComponent(window.location.pathname));
-      return;
-    }
-
+    // Guests can now favorite - stored in sessionStorage
     toggleProjectFavorite(projectId);
   };
 

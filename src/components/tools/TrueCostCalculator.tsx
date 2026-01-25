@@ -69,7 +69,6 @@ function mapCategoryToBuyerType(category: BannerBuyerCategory): BuyerType {
 }
 
 const STORAGE_KEY = 'buywise_true_cost_inputs';
-const STORAGE_EXPIRY_DAYS = 7;
 
 // Buyer category type for this calculator
 type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
@@ -197,28 +196,25 @@ export function TrueCostCalculator() {
   // UI State
   const [isCostsInfoOpen, setIsCostsInfoOpen] = useState(false);
 
-  // Load saved inputs on mount
+  // Load saved inputs on mount from sessionStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        const { data, timestamp } = JSON.parse(saved);
-        const daysSaved = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
-        if (daysSaved < STORAGE_EXPIRY_DAYS) {
-          setPropertyPrice(data.propertyPrice || '2750000');
-          setPropertySize(data.propertySize || '80');
-          setSelectedCity(data.selectedCity || '');
-          setBuyerCategory(data.buyerCategory || 'first_time');
-          setAliyahYear(data.aliyahYear || '');
-          setIsNewConstruction(data.isNewConstruction || false);
-          setConstructionMonths(data.constructionMonths || '24');
-          setIncludeAgentFee(data.includeAgentFee ?? true);
-          setIncludeMortgageCosts(data.includeMortgageCosts || false);
-          setLoanAmount(data.loanAmount || '1500000');
-          setIncludeMoving(data.includeMoving || false);
-          setIncludeFurniture(data.includeFurniture || false);
-          setFurnitureLevel(data.furnitureLevel || 'standard');
-        }
+        const data = JSON.parse(saved);
+        setPropertyPrice(data.propertyPrice || '2750000');
+        setPropertySize(data.propertySize || '80');
+        setSelectedCity(data.selectedCity || '');
+        setBuyerCategory(data.buyerCategory || 'first_time');
+        setAliyahYear(data.aliyahYear || '');
+        setIsNewConstruction(data.isNewConstruction || false);
+        setConstructionMonths(data.constructionMonths || '24');
+        setIncludeAgentFee(data.includeAgentFee ?? true);
+        setIncludeMortgageCosts(data.includeMortgageCosts || false);
+        setLoanAmount(data.loanAmount || '1500000');
+        setIncludeMoving(data.includeMoving || false);
+        setIncludeFurniture(data.includeFurniture || false);
+        setFurnitureLevel(data.furnitureLevel || 'standard');
       } catch (e) {
         console.error('Failed to load saved inputs:', e);
       }
@@ -261,7 +257,7 @@ export function TrueCostCalculator() {
     setFurnitureLevel('standard');
     setIncludeRenovation(false);
     setRenovationAmount('100000');
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     toast.success('Reset complete', { description: 'All values restored to defaults' });
   }, []);
 
@@ -384,7 +380,7 @@ export function TrueCostCalculator() {
       includeFurniture,
       furnitureLevel,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     
     if (user) {
       saveToProfile.mutate({

@@ -1,8 +1,6 @@
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
-import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 interface FavoriteButtonProps {
@@ -13,19 +11,12 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ propertyId, propertyPrice, className, size = 'icon' }: FavoriteButtonProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { isFavorite, toggleFavorite, isToggling } = useFavorites();
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!user) {
-      navigate('/auth?redirect=' + encodeURIComponent(window.location.pathname));
-      return;
-    }
-
+    // Guests can now favorite - stored in sessionStorage
     toggleFavorite(propertyId, propertyPrice);
   };
 

@@ -48,9 +48,9 @@ export function PurchaseTaxCalculator() {
   const [aliyahYear, setAliyahYear] = useState<number | undefined>(DEFAULTS.aliyahYear);
   const [purchaseDate, setPurchaseDate] = useState<Date>(DEFAULTS.purchaseDate);
 
-  // Load from localStorage on mount
+  // Load from sessionStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -64,9 +64,9 @@ export function PurchaseTaxCalculator() {
     }
   }, []);
 
-  // Save to localStorage on change
+  // Save to sessionStorage on change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
       propertyPrice,
       buyerType,
       aliyahYear,
@@ -175,7 +175,7 @@ export function PurchaseTaxCalculator() {
     setBuyerType(DEFAULTS.buyerType);
     setAliyahYear(DEFAULTS.aliyahYear);
     setPurchaseDate(DEFAULTS.purchaseDate);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     toast.success('Calculator reset');
   };
 

@@ -99,11 +99,11 @@ export function DocumentChecklistTool() {
   const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) { try { const parsed: StoredState = JSON.parse(saved); setCheckedItems(parsed.checkedItems || {}); setTransactionType(parsed.transactionType || 'buy'); setBuyerTypeFilter(parsed.buyerTypeFilter || 'all'); } catch (e) { console.error('Failed to parse saved checklist state', e); } }
   }, []);
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ checkedItems, transactionType, buyerTypeFilter })); }, [checkedItems, transactionType, buyerTypeFilter]);
+  useEffect(() => { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ checkedItems, transactionType, buyerTypeFilter })); }, [checkedItems, transactionType, buyerTypeFilter]);
 
   useEffect(() => {
     if (buyerProfile && buyerTypeFilter === 'all') {

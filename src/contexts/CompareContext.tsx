@@ -22,7 +22,7 @@ const CATEGORY_STORAGE_KEY = 'property-compare-category';
 export function CompareProvider({ children }: { children: ReactNode }) {
   const [compareIds, setCompareIds] = useState<string[]>(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = sessionStorage.getItem(STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch {
       return [];
@@ -31,7 +31,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
 
   const [compareCategory, setCompareCategory] = useState<CompareCategory | null>(() => {
     try {
-      const stored = localStorage.getItem(CATEGORY_STORAGE_KEY);
+      const stored = sessionStorage.getItem(CATEGORY_STORAGE_KEY);
       return stored ? (JSON.parse(stored) as CompareCategory) : null;
     } catch {
       return null;
@@ -39,11 +39,11 @@ export function CompareProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(compareIds));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(compareIds));
   }, [compareIds]);
 
   useEffect(() => {
-    localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(compareCategory));
+    sessionStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(compareCategory));
   }, [compareCategory]);
 
   const addToCompare = (id: string, category: CompareCategory) => {

@@ -153,7 +153,7 @@ function AffordabilityCalculatorContent() {
   }, [monthlyIncome, downPayment]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -177,7 +177,7 @@ function AffordabilityCalculatorContent() {
       monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate,
       loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent]);
 
   useEffect(() => {
@@ -278,7 +278,7 @@ function AffordabilityCalculatorContent() {
     setInterestRate(DEFAULTS.interestRate); setLoanTermYears(DEFAULTS.loanTermYears);
     setEmploymentType(DEFAULTS.employmentType); setHasForeignIncome(DEFAULTS.hasForeignIncome);
     setForeignIncomePercent(DEFAULTS.foreignIncomePercent);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     toast.success('Calculator reset to defaults');
   };
 
