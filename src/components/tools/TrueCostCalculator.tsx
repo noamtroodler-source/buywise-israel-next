@@ -134,8 +134,8 @@ export function TrueCostCalculator() {
   const saveToProfile = useSaveCalculatorResult();
 
   // Core inputs
-  const [propertyPrice, setPropertyPrice] = useState('2500000');
-  const [propertySize, setPropertySize] = useState('85');
+  const [propertyPrice, setPropertyPrice] = useState('2750000');
+  const [propertySize, setPropertySize] = useState('80');
   const [selectedCity, setSelectedCity] = useState('');
   
   // Fetch canonical metrics for selected city
@@ -205,8 +205,8 @@ export function TrueCostCalculator() {
         const { data, timestamp } = JSON.parse(saved);
         const daysSaved = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
         if (daysSaved < STORAGE_EXPIRY_DAYS) {
-          setPropertyPrice(data.propertyPrice || '2500000');
-          setPropertySize(data.propertySize || '85');
+          setPropertyPrice(data.propertyPrice || '2750000');
+          setPropertySize(data.propertySize || '80');
           setSelectedCity(data.selectedCity || '');
           setBuyerCategory(data.buyerCategory || 'first_time');
           setAliyahYear(data.aliyahYear || '');
@@ -246,8 +246,8 @@ export function TrueCostCalculator() {
   }, [buyerProfile]);
 
   const handleReset = useCallback(() => {
-    setPropertyPrice('2500000');
-    setPropertySize('85');
+    setPropertyPrice('2750000');
+    setPropertySize('80');
     setSelectedCity('');
     setBuyerCategory('first_time');
     setAliyahYear('');

@@ -155,11 +155,11 @@ const MIN_DOWN_PAYMENT: Record<BuyerCategory, number> = {
 
 // Default values for immediate results on load
 const DEFAULTS = {
-  propertyPrice: 3000000,
-  monthlyRent: 7500,
+  propertyPrice: 2750000,
+  monthlyRent: 7000,
   rooms: '3',
   downPaymentPercent: '25',
-  interestRate: '5.0',
+  interestRate: '5.25',
   timeHorizon: 10,
   appreciation: '3.0',
   rentIncrease: '3.0',
