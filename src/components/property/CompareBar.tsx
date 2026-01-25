@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/database';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 
 interface ProjectData {
   id: string;
@@ -107,10 +108,11 @@ export function CompareBar() {
                     key={project.id}
                     className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
                   >
-                    <img
-                      src={project.images?.[0] || '/placeholder.svg'}
+                    <PropertyThumbnail
+                      src={project.images?.[0]}
                       alt={project.name}
-                      className="w-8 h-8 rounded object-cover"
+                      className="w-8 h-8 rounded"
+                      type="project"
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs font-medium truncate max-w-[120px]">{project.name}</span>
@@ -134,10 +136,10 @@ export function CompareBar() {
                     key={property.id}
                     className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
                   >
-                    <img
-                      src={property.images?.[0] || '/placeholder.svg'}
+                    <PropertyThumbnail
+                      src={property.images?.[0]}
                       alt={property.title}
-                      className="w-8 h-8 rounded object-cover"
+                      className="w-8 h-8 rounded"
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs font-medium truncate max-w-[120px]">{property.title}</span>

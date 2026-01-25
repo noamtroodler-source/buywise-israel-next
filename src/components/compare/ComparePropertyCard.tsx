@@ -4,6 +4,7 @@ import { X, Heart, Bed, Bath, Maximize, MapPin, ExternalLink } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 
 interface ComparePropertyCardProps {
   property: Property;
@@ -33,10 +34,10 @@ export function ComparePropertyCard({
     >
       {/* Image Section */}
       <div className="relative aspect-[16/10]">
-        <img
-          src={property.images?.[0] || '/placeholder.svg'}
+        <PropertyThumbnail
+          src={property.images?.[0]}
           alt={property.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full"
         />
         
         {/* Gradient Overlay */}
