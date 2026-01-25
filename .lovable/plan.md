@@ -1,52 +1,128 @@
 
-# 2-Card AI Value Snapshot for Purchase Properties
+# Subtle Account Deletion Feature
 
-## Current Problem
-The AI Value Snapshot for purchase properties shows 4 cards where 3 of them (Price per area, City Average, vs Area Average) are all highly correlated price-per-sqm metrics. This creates redundancy and wastes valuable screen real estate.
+## Overview
+Add a subtle but accessible way for users to permanently delete their account from the My Profile page, following best practices for destructive actions.
 
-## Solution
-Consolidate to a focused **2-card layout** that eliminates redundancy:
+## User Experience Design
 
-### Card 1: Price vs. Market (Combined)
-A single card showing all three related metrics together:
-- **Primary metric**: Property's price/sqm (large, bold)
-- **Context line**: City average price/sqm for comparison
-- **Verdict badge**: Percentage difference with color coding (green = below avg, neutral = above avg)
+### Placement (Subtle but Accessible)
+- Add a small text link at the **bottom of the Account Settings section**, below the "Edit Account" button
+- Use muted styling: `text-xs text-muted-foreground hover:text-destructive`
+- Label: "Delete my account" (understated, not alarming)
 
-Example layout:
+### Confirmation Flow (Multi-Step)
+1. **First Click**: Opens an AlertDialog with clear warnings
+2. **Confirmation Text**: User must type "DELETE" to enable the final button
+3. **Final Action**: Red destructive button to confirm
+
+### Warning Content
+- Clear explanation of what will be deleted
+- Mention that this action is **permanent and irreversible**
+- List affected data: profile, saved properties, alerts, preferences
+
+---
+
+## Technical Implementation
+
+### 1. Edge Function: `delete-account`
+**Purpose**: Securely delete user account server-side with proper auth validation
+
+**Location**: `supabase/functions/delete-account/index.ts`
+
+**Security Measures**:
+- Validate JWT token using `getClaims()`
+- Verify the user is deleting their OWN account (not someone else's)
+- Use service role key for admin-level deletion
+- Log deletion for audit purposes
+
+**Deletion Order** (to respect foreign key constraints):
 ```text
-┌─────────────────────────────────┐
-│ ₪52,000/sqm                     │  ← Property price (large)
-│ Herzliya avg: ₪48,500/sqm       │  ← City context (smaller)
-│ ┌───────────────────┐           │
-│ │ +7% above average │           │  ← Verdict badge
-│ └───────────────────┘           │
-└─────────────────────────────────┘
+1. favorites (user's saved properties)
+2. search_alerts (user's alerts)
+3. inquiries (user's property inquiries)
+4. property_views (user's view history)
+5. user_roles (role assignments)
+6. profiles (user profile data)
+7. auth.users (the actual auth record - via admin API)
 ```
 
-### Card 2: 12-Month Trend (Keep As-Is)
-Retains the existing market direction indicator showing area price movement.
+**Response**: Success confirmation or error with user-friendly message
 
-## Technical Changes
+### 2. Frontend: `DeleteAccountDialog` Component
+**Location**: `src/components/profile/DeleteAccountDialog.tsx`
 
-**File: `src/components/property/PropertyValueSnapshot.tsx`**
+**Features**:
+- AlertDialog with proper accessibility
+- Text input requiring "DELETE" to proceed
+- Loading state during deletion
+- Error handling with toast notifications
 
-1. **Modify the purchase properties section** (lines 175-284):
-   - Remove the three separate cards for price/sqm, city average, and comparison
-   - Create one unified "Price vs. Market" card containing all three data points
-   - Keep the 12-Month Trend card unchanged
+### 3. Update: `AccountSection.tsx`
+**Changes**:
+- Import and render `DeleteAccountDialog`
+- Add subtle trigger link at bottom of section
+- Pass necessary handlers (sign out after deletion)
 
-2. **Update grid layout**:
-   - Change from up to 4 columns to a fixed 2-column layout (`grid-cols-1 sm:grid-cols-2`)
-   - Adjust card count logic to reflect 2 maximum cards
+### 4. Update: `useAuth.tsx`
+**Changes**:
+- Add `deleteAccount` method that:
+  - Calls the edge function
+  - Signs out the user on success
+  - Returns success/error status
 
-3. **Design the combined card**:
-   - Stack the property price/sqm as the hero metric
-   - Show city average as secondary context text
-   - Add inline comparison percentage with appropriate color coding
+---
 
-## Visual Result
-- Cleaner, less cluttered snapshot section
-- All price-per-sqm info in one glanceable card
-- 12-month trend gets equal visual weight
-- Rentals section remains unchanged (already logical grouping)
+## Data Cascade
+
+Tables with user references that need cleanup:
+
+| Table | Column | Action |
+|-------|--------|--------|
+| `profiles` | `id` | Delete row |
+| `user_roles` | `user_id` | Delete rows |
+| `favorites` | `user_id` | Delete rows |
+| `search_alerts` | `user_id` | Delete rows |
+| `inquiries` | `user_id` | Delete rows |
+| `property_views` | `user_id` | Delete rows |
+| `project_views` | `user_id` | Delete rows |
+| `price_drop_notifications` | `user_id` | Delete rows |
+
+**Note**: Professional accounts (agents, developers) should show a different message explaining they need to contact support, as their accounts have additional dependencies.
+
+---
+
+## Edge Cases
+
+### Professional Accounts
+- If user has agent/developer role, show a warning that they should:
+  - Transfer or close their professional listings first
+  - Contact support for account closure
+- This prevents orphaned listings
+
+### Pending Operations
+- Check for active inquiries that need follow-up
+- Warn users about any saved data they'll lose
+
+---
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `supabase/functions/delete-account/index.ts` | **Create** - Edge function |
+| `src/components/profile/DeleteAccountDialog.tsx` | **Create** - Confirmation dialog |
+| `src/hooks/useAuth.tsx` | **Modify** - Add deleteAccount method |
+| `src/components/profile/sections/AccountSection.tsx` | **Modify** - Add delete trigger |
+| `supabase/config.toml` | **Modify** - Add function config |
+
+---
+
+## Security Checklist
+
+- Server-side JWT validation (not client-side checks)
+- User can only delete their own account
+- Service role used only for admin deletion API
+- Audit logging of deletion events
+- Rate limiting on the endpoint
+- Proper CORS headers
