@@ -15,4 +15,5 @@ export { BuyerTypeInfoBanner, BuyerProfileSelector, useBuyerProfileState, catego
 export { ResultRange, formatCurrencyRange, formatPercentageRange } from './ResultRange';
 export { SourceAttribution } from './SourceAttribution';
 export { ExampleValuesHint } from './ExampleValuesHint';
+export { InlineSignupCard } from './InlineSignupCard';
 export type { ToolSourceConfig } from './SourceAttribution';

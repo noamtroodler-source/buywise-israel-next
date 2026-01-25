@@ -222,7 +222,7 @@ export function PersonalizationHeader({
             </Link>
           ) : (
             <Link to="/auth?tab=signup" className="text-primary hover:underline">
-              Set up profile (free)
+              Get accurate estimates for your situation →
             </Link>
           )}
           <span className="mx-1.5 text-muted-foreground/40">·</span>

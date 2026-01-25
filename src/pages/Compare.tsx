@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, TrendingUp, Home, MapPin } from 'lucide-react';
+import { Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, TrendingUp, Home, MapPin, Clock } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import {
   CompareHero,
   ComparePropertyCard,
@@ -391,6 +392,15 @@ export default function Compare() {
       />
 
       <div className="container py-8 space-y-8">
+        {/* Guest Session Warning */}
+        {!user && properties.length > 0 && (
+          <GuestSignupNudge
+            icon={Clock}
+            message="Your comparison is saved to this session only. Sign up to save comparisons and revisit them anytime."
+            variant="banner"
+          />
+        )}
+
         {/* Property Cards */}
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">

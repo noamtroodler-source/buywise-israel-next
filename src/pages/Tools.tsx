@@ -6,6 +6,7 @@ import {
   MapPinned, Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { Button } from '@/components/ui/button';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
@@ -131,7 +132,12 @@ export default function Tools() {
               </div>
             </div>
 
-            <div className="container py-8">
+            <div className="container py-8 space-y-6">
+            
+            {/* Guest Signup Nudge */}
+            <GuestSignupNudge 
+              message="Sign up free to save your calculations and get personalized estimates based on your buyer profile."
+            />
 
             {/* Tools Grid */}
             <motion.div 

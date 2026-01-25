@@ -111,10 +111,17 @@ export function useProjectFavorites() {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
         queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
+        toast.success('Project saved to favorites');
       } else {
         queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });
+        toast.success('Project saved to favorites', {
+          description: 'Saved to this browser only. Sign up free to keep across devices.',
+          action: {
+            label: 'Sign up',
+            onClick: () => window.location.href = '/auth?tab=signup',
+          },
+        });
       }
-      toast.success('Project saved to favorites');
     },
     onError: (error) => {
       toast.error('Failed to save project: ' + (error as Error).message);
