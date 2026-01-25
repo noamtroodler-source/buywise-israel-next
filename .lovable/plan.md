@@ -1,72 +1,114 @@
 
-# Fix Password Toggle (Eye Icon) Not Working
+# Fix Mortgage Preferences Form Issues
 
-## Problem
+## Problems to Solve
 
-The eye icon button to show/hide the password in the `PasswordStrengthInput` component is visible but not responding to clicks. This affects the main Auth page and potentially any other places using password inputs.
-
----
-
-## Root Cause Analysis
-
-Looking at the current implementation in `src/components/auth/PasswordStrengthInput.tsx`:
-
-```tsx
-<button
-  type="button"
-  onClick={() => setShowPassword(!showPassword)}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-  tabIndex={-1}
-  aria-label={showPassword ? 'Hide password' : 'Show password'}
->
-```
-
-**Potential issues:**
-1. Missing `z-index` - the button might be behind an invisible overlay
-2. Missing `pointer-events` - ensuring clicks are captured
-3. The button might need explicit sizing/padding to expand the clickable area
+1. **Yellow toggle color** - The pressed toggle button shows a yellow background (the accent color) instead of blue
+2. **Double percent sign** - Toggle shows both a Percent icon and "%" text, resulting in "% %"
+3. **USD/Shekel option** - Users cannot choose to enter amounts in USD; it's hardcoded to shekels
 
 ---
 
-## Solution
+## Solution Approach
 
-Update the `PasswordStrengthInput` component with these fixes:
+### 1. Fix Toggle Color (Yellow to Blue)
 
-### 1. Add z-index and pointer-events to the button
+The Toggle component uses `data-[state=on]:bg-accent` by default, which is yellow. Override this in the forms to use `data-[state=on]:bg-primary data-[state=on]:text-primary-foreground` for blue styling.
 
+**Affected files:**
+- `src/components/onboarding/BuyerOnboarding.tsx`
+- `src/components/profile/MortgagePreferencesCard.tsx`
+
+### 2. Remove Double Percent Sign
+
+Currently the toggle renders:
 ```tsx
-<button
-  type="button"
-  onClick={() => setShowPassword(!showPassword)}
-  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-1 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-  tabIndex={-1}
-  aria-label={showPassword ? 'Hide password' : 'Show password'}
->
+<Percent className="h-3 w-3 mr-1" />
+%
 ```
 
-**Changes:**
-- Added `z-10` to ensure the button is above any overlaying elements
-- Added `p-1` padding to increase the clickable area
-- Added `focus:outline-none` for cleaner focus states (already has aria-label for accessibility)
+Fix by removing the icon and keeping only the single `%` text:
+```tsx
+%
+```
+
+### 3. Add Currency Selection for Amount Mode
+
+When user switches to "Amount" mode for down payment, show a currency selector (₪/$ toggle) that uses the existing `useCurrencySymbol()` hook. This adds a third toggle option for currency when in amount mode.
+
+**Implementation:**
+- Add currency state that defaults to the global preference
+- Show currency symbol dynamically in input prefix
+- Store amounts in ILS internally (convert if entered in USD)
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/auth/PasswordStrengthInput.tsx` | Add z-index, padding, and focus styles to the toggle button |
+| File | Changes |
+|------|---------|
+| `src/components/onboarding/BuyerOnboarding.tsx` | Fix toggle styling, remove double %, add currency option |
+| `src/components/profile/MortgagePreferencesCard.tsx` | Same fixes as above |
 
 ---
 
-## Verification
+## Technical Implementation
+
+### Toggle Button Updates
+
+```tsx
+// Before
+<Toggle
+  size="sm"
+  pressed={downPaymentMode === 'percent'}
+  onPressedChange={() => setDownPaymentMode('percent')}
+  className="h-7 px-2 text-xs"
+>
+  <Percent className="h-3 w-3 mr-1" />
+  %
+</Toggle>
+
+// After
+<Toggle
+  size="sm"
+  pressed={downPaymentMode === 'percent'}
+  onPressedChange={() => setDownPaymentMode('percent')}
+  className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+>
+  %
+</Toggle>
+```
+
+### Amount Input with Currency Toggle
+
+```tsx
+// Add currency state
+const [amountCurrency, setAmountCurrency] = useState<'ILS' | 'USD'>('ILS');
+const currencySymbol = amountCurrency === 'USD' ? '$' : '₪';
+
+// Render toggle group for percent/amount with currency options
+<div className="flex gap-1">
+  <Toggle pressed={downPaymentMode === 'percent'} ...>
+    %
+  </Toggle>
+  <Toggle pressed={downPaymentMode === 'amount' && amountCurrency === 'ILS'} ...>
+    ₪
+  </Toggle>
+  <Toggle pressed={downPaymentMode === 'amount' && amountCurrency === 'USD'} ...>
+    $
+  </Toggle>
+</div>
+
+// Input prefix updates dynamically
+<span className="...">{currencySymbol}</span>
+```
+
+---
+
+## User Experience
 
 After the fix:
-1. The password toggle should work on `/auth?tab=signup`
-2. The password toggle should work on `/auth` (sign in)
-3. All professional signup flows will automatically benefit since they redirect to the Auth page
-
-No other files need changes since:
-- Agent, Agency, and Developer registration forms don't have password fields
-- They redirect unauthenticated users to `/auth` with the proper role context
-- The fix in the shared `PasswordStrengthInput` component will apply everywhere it's used
+- Toggle buttons will have a **blue background** when selected (matching brand primary color)
+- The percent toggle will show only a single **%** symbol
+- Users can choose between **%**, **₪**, or **$** for entering down payment
+- Input prefix will update to show the correct currency symbol
