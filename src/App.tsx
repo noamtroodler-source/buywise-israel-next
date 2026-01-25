@@ -106,6 +106,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const AdminAccuracyAudit = lazy(() => import("./pages/admin/AdminAccuracyAudit"));
 const AdminListingReview = lazy(() => import("./pages/admin/AdminListingReview"));
+const AdminBlogReview = lazy(() => import("./pages/admin/AdminBlogReview"));
 const AdminAgents = lazy(() => import("./pages/admin/AdminAgents"));
 const AdminAgencies = lazy(() => import("./pages/admin/AdminAgencies"));
 const AdminDevelopers = lazy(() => import("./pages/admin/AdminDevelopers"));
@@ -369,6 +370,7 @@ const App = () => (
                           <Route path="settings" element={<AdminSettings />} />
                           <Route path="analytics" element={<AdminAnalytics />} />
                           <Route path="review" element={<AdminListingReview />} />
+                          <Route path="blog-review" element={<AdminBlogReview />} />
                           <Route path="agents" element={<AdminAgents />} />
                           <Route path="agencies" element={<AdminAgencies />} />
                           <Route path="properties" element={<AdminProperties />} />
