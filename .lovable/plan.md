@@ -1,172 +1,235 @@
 
+# Guest Session Storage Implementation Plan
 
-# Calculator Default Values Harmonization Plan
+## Overview
 
-## Objective
-Standardize default values across all 7 calculators to represent a consistent "typical user" profile while maintaining tool-specific appropriateness.
+This plan implements **session-based persistence** for guest users, allowing them to:
+1. **Save favorite properties** without signing up (cleared when browser closes)
+2. **Keep calculator inputs, recent views, and comparisons** during their session
 
----
-
-## Proposed Standard Defaults
-
-Based on the typical BuyWise user (first-time buyer or Oleh in Israel):
-
-| Parameter | Standard Value | Rationale |
-|-----------|---------------|-----------|
-| Property Price | ₪2,750,000 | Median between current ₪2.5M and ₪3M values; realistic entry-level Tel Aviv/Herzliya area |
-| Down Payment % | 25% | Minimum for first-time buyers per Bank of Israel |
-| Monthly Income | ₪25,000 | ~300K/year, typical dual-income young professional household |
-| Interest Rate | 5.25% | Midpoint of current market range (aligns with MORTGAGE_RATE_RANGES.mid) |
-| Loan Term | 25 years | Most common term in Israel |
-| Buyer Type | first_time | Default assumption for new users |
+The key change is switching from `localStorage` to `sessionStorage` for guest data. This means data persists while the browser is open (including refreshes and navigating between pages) but is automatically cleared when the browser is closed.
 
 ---
 
-## Changes by Calculator
+## What Changes
 
-### 1. MortgageCalculator.tsx
-**Current:** ₪3,000,000, 5.0%
-**Change to:** ₪2,750,000, 5.25%
-
-```tsx
-const DEFAULTS = {
-  propertyPrice: 2750000,  // Changed from 3000000
-  downPaymentPercent: 25,
-  buyerType: 'first_time' as BuyerType,
-  loanTermYears: 25,
-  interestRate: 5.25,  // Changed from 5.0
-};
-```
-
-### 2. AffordabilityCalculator.tsx
-**Current:** ₪25,000 income, ₪500,000 down, 5.5%
-**Change to:** ₪25,000 income, ₪687,500 down (25% of ₪2.75M), 5.25%
-
-```tsx
-const DEFAULTS = {
-  monthlyIncome: 25000,
-  spouseIncome: 0,
-  monthlyDebts: 2000,
-  downPayment: 687500,  // Changed from 500000 (25% of 2.75M)
-  interestRate: 5.25,   // Changed from 5.5
-  loanTermYears: 25,
-  employmentType: 'employed' as const,
-  hasForeignIncome: false,
-  foreignIncomePercent: 0,
-};
-```
-
-### 3. PurchaseTaxCalculator.tsx
-**Current:** ₪2,500,000
-**Change to:** ₪2,750,000
-
-```tsx
-const DEFAULTS = {
-  propertyPrice: 2750000,  // Changed from 2500000
-  buyerType: 'first_time' as BuyerType,
-  aliyahYear: undefined as number | undefined,
-  purchaseDate: new Date(),
-};
-```
-
-### 4. TrueCostCalculator.tsx
-**Current:** ₪2,500,000, 85 sqm
-**Change to:** ₪2,750,000, 80 sqm (matches Renovation)
-
-```tsx
-// Default values in useState calls
-const [propertyPrice, setPropertyPrice] = useState('2750000');  // Changed from 2500000
-const [propertySize, setPropertySize] = useState('80');  // Changed from 85
-```
-
-Also update handleReset:
-```tsx
-const handleReset = useCallback(() => {
-  setPropertyPrice('2750000');  // Changed
-  setPropertySize('80');  // Changed
-  // ... rest unchanged
-}, []);
-```
-
-### 5. RentVsBuyCalculator.tsx
-**Current:** ₪3,000,000, ₪7,500 rent, 5.0%
-**Change to:** ₪2,750,000, ₪7,000 rent, 5.25%
-
-```tsx
-const DEFAULTS = {
-  propertyPrice: 2750000,  // Changed from 3000000
-  monthlyRent: 7000,       // Changed from 7500 (proportional)
-  rooms: '3',
-  downPaymentPercent: '25',
-  interestRate: '5.25',    // Changed from 5.0
-  timeHorizon: 10,
-  appreciation: '3.0',
-  rentIncrease: '3.0',
-  investmentReturn: '5.0',
-};
-```
-
-### 6. InvestmentReturnCalculator.tsx
-**Keep Different** - This calculator targets investors, not first-time buyers
-
-Investors have different constraints:
-- 50% minimum down payment (Bank of Israel regulation)
-- Typically different rate expectations
-- Different property targets
-
-**No changes needed** - These defaults are intentionally investor-focused.
-
-### 7. RenovationCostEstimator.tsx
-**Current:** 80 sqm, 1995 building
-**No changes needed** - Already reasonable and tool-specific.
+| Feature | Current Behavior | New Behavior |
+|---------|-----------------|--------------|
+| **Favorites** | Requires login | Guests can favorite; persists in session only |
+| **Recently Viewed** | localStorage (survives browser close) | sessionStorage (lost on browser close) |
+| **Calculator Inputs** | localStorage (7 day expiry) | sessionStorage (lost on browser close) |
+| **Compare** | localStorage | sessionStorage (lost on browser close) |
+| **Preferences** | localStorage | **No change** (keep across sessions) |
+| **Search History** | localStorage | sessionStorage (lost on browser close) |
 
 ---
 
-## Summary of File Changes
+## Part 1: Session Storage Utility
 
-| File | Changes |
-|------|---------|
-| `src/components/tools/MortgageCalculator.tsx` | Price: 3M→2.75M, Rate: 5.0→5.25 |
-| `src/components/tools/AffordabilityCalculator.tsx` | Down: 500K→687.5K, Rate: 5.5→5.25 |
-| `src/components/tools/PurchaseTaxCalculator.tsx` | Price: 2.5M→2.75M |
-| `src/components/tools/TrueCostCalculator.tsx` | Price: 2.5M→2.75M, Size: 85→80 |
-| `src/components/tools/RentVsBuyCalculator.tsx` | Price: 3M→2.75M, Rent: 7.5K→7K, Rate: 5.0→5.25 |
-| `src/components/tools/InvestmentReturnCalculator.tsx` | No changes (investor-specific) |
-| `src/components/tools/RenovationCostEstimator.tsx` | No changes |
+Create a new utility file `src/utils/sessionStorage.ts` with safe wrapper functions for `sessionStorage`, mirroring the existing `safeStorage.ts` pattern.
 
----
-
-## Why These Values?
-
-### ₪2,750,000 Property Price
-- Realistic entry point for a 3-room apartment in greater Tel Aviv area
-- Not too high to discourage first-time buyers
-- Not too low to seem unrealistic in current market
-- Splits the difference between existing values for consistency
-
-### 5.25% Interest Rate
-- Matches `MORTGAGE_RATE_RANGES.mid` used throughout the codebase
-- Current market average for mixed-track mortgages
-- Provides consistent baseline across all calculators
-
-### 25% Down Payment
-- Bank of Israel minimum for first-time buyers
-- Realistic for young couples saving for first home
-- Aligns with "stretch but achievable" positioning
-
-### ₪25,000 Monthly Income
-- ~₪300K annual household income
-- Typical for dual-income professional couple in Tel Aviv
-- Supports ₪2.75M purchase with 40% PTI
+```text
+┌─────────────────────────────────┐
+│   src/utils/sessionStorage.ts   │
+├─────────────────────────────────┤
+│ • safeSessionGet<T>()           │
+│ • safeSessionSet()              │
+│ • safeSessionRemove()           │
+└─────────────────────────────────┘
+```
 
 ---
 
-## Expected Outcome
+## Part 2: Guest Favorites
 
-After implementation:
-- All general-purpose calculators use ₪2,750,000 as baseline property price
-- Interest rate assumptions aligned at 5.25% (market midpoint)
-- Down payment reflects 25% first-time buyer minimum
-- Investment calculator retains investor-appropriate defaults
-- Users see consistent, believable numbers across all tools
+### 2.1 Update `useFavorites.tsx`
 
+Add hybrid storage like `useRecentlyViewed` already has:
+
+**For guests:**
+- Store favorite property IDs in `sessionStorage` key: `buywise_guest_favorites`
+- Fetch property details from database on demand
+- Show appropriate toast messages
+
+**For logged-in users:**
+- No change - continue using database
+
+**Key changes:**
+- Add `guestFavoriteIds` state managed via `sessionStorage`
+- Modify `toggleFavorite` to work for guests
+- Merge guest favorites into the hook's return values
+- Remove the login redirect from `FavoriteButton` - let the hook handle it
+
+### 2.2 Update `FavoriteButton.tsx`
+
+Remove the login redirect - guests can now favorite:
+
+```tsx
+// Before (lines 24-27):
+if (!user) {
+  navigate('/auth?redirect=' + ...);
+  return;
+}
+
+// After:
+// No redirect - just call toggleFavorite
+toggleFavorite(propertyId, propertyPrice);
+```
+
+### 2.3 Update `useProjectFavorites.tsx`
+
+Same pattern - add guest support with `sessionStorage`.
+
+### 2.4 Update `ProjectFavoriteButton.tsx`
+
+Remove login redirect - let guests favorite projects too.
+
+---
+
+## Part 3: Recently Viewed (Switch to Session)
+
+### 3.1 Update `useRecentlyViewed.tsx`
+
+Change from `localStorage` to `sessionStorage`:
+
+```tsx
+// Before (lines 16-22):
+function getLocalStorage(): RecentlyViewedItem[] {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  ...
+}
+
+// After:
+function getSessionStorage(): RecentlyViewedItem[] {
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  ...
+}
+```
+
+Same changes for `setLocalStorage` → `setSessionStorage`.
+
+### 3.2 Update `useRecentlyViewedProjects.tsx`
+
+Same pattern - switch to `sessionStorage`.
+
+---
+
+## Part 4: Calculator Session Persistence
+
+Update all calculators to use `sessionStorage` instead of `localStorage`:
+
+| Calculator | Storage Key | Changes |
+|------------|-------------|---------|
+| MortgageCalculator | `mortgage-calculator-saved` | localStorage → sessionStorage |
+| AffordabilityCalculator | `affordability-calculator-inputs` | localStorage → sessionStorage |
+| PurchaseTaxCalculator | `purchase-tax-calculator-inputs` | localStorage → sessionStorage |
+| TrueCostCalculator | `true-cost-calculator-inputs` | localStorage → sessionStorage |
+| InvestmentReturnCalculator | `investment-calculator-saved` | localStorage → sessionStorage |
+| RentVsBuyCalculator | `rent-vs-buy-calculator-inputs` | localStorage → sessionStorage |
+| RenovationCostEstimator | (none currently) | No change needed |
+| DocumentChecklistTool | `document-checklist-state` | localStorage → sessionStorage |
+
+**Approach:** Find/replace `localStorage` with `sessionStorage` in each file, and remove the 7-day expiry logic since session data is inherently temporary.
+
+---
+
+## Part 5: Compare Context
+
+Update `src/contexts/CompareContext.tsx` to use `sessionStorage`:
+
+```tsx
+// Before (line 19):
+const STORAGE_KEY = 'property-compare';
+// Uses localStorage.getItem/setItem
+
+// After:
+// Uses sessionStorage.getItem/setItem
+```
+
+---
+
+## Part 6: Search History
+
+Update `src/components/home/CitySearchInput.tsx` to use `sessionStorage`:
+
+```tsx
+// Change localStorage calls to sessionStorage
+```
+
+---
+
+## Part 7: Keep Preferences Persistent
+
+**No changes** to `PreferencesContext.tsx` - user preferences (currency, units) should persist across browser sessions since they represent user settings, not temporary activity.
+
+---
+
+## Part 8: Guest Indicator (Optional Enhancement)
+
+Add a subtle indicator when guests have session favorites, prompting them to sign up to save permanently:
+
+```text
+┌────────────────────────────────────────────┐
+│ 💡 You have 3 saved properties             │
+│ Sign up to keep them across devices →      │
+└────────────────────────────────────────────┘
+```
+
+This could appear on the Favorites page or as a floating prompt similar to `SaveResultsPrompt.tsx`.
+
+---
+
+## Files to Modify
+
+| File | Change Type |
+|------|-------------|
+| `src/utils/sessionStorage.ts` | **New file** - session storage utilities |
+| `src/hooks/useFavorites.tsx` | Add guest support with sessionStorage |
+| `src/hooks/useProjectFavorites.tsx` | Add guest support with sessionStorage |
+| `src/components/property/FavoriteButton.tsx` | Remove login redirect |
+| `src/components/project/ProjectFavoriteButton.tsx` | Remove login redirect |
+| `src/hooks/useRecentlyViewed.tsx` | localStorage → sessionStorage |
+| `src/hooks/useRecentlyViewedProjects.tsx` | localStorage → sessionStorage |
+| `src/components/tools/MortgageCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/AffordabilityCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/PurchaseTaxCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/TrueCostCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/InvestmentReturnCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/RentVsBuyCalculator.tsx` | localStorage → sessionStorage |
+| `src/components/tools/DocumentChecklistTool.tsx` | localStorage → sessionStorage |
+| `src/contexts/CompareContext.tsx` | localStorage → sessionStorage |
+| `src/components/home/CitySearchInput.tsx` | localStorage → sessionStorage |
+| `src/pages/Favorites.tsx` | Handle guest favorites display |
+
+---
+
+## User Experience Summary
+
+### Before (Current)
+- Guest clicks heart → Redirected to login
+- Guest views properties → Saved even after closing browser
+- Guest uses calculator → Inputs persist for 7 days
+
+### After (New)
+- Guest clicks heart → Property saved immediately (session only)
+- Guest views properties → Cleared when browser closes
+- Guest uses calculator → Inputs persist until browser closes
+- Signed-in users → No change, everything persists in database
+
+---
+
+## Technical Notes
+
+- `sessionStorage` persists across page refreshes and navigation within the same tab
+- Each browser tab has its own sessionStorage (unlike localStorage which is shared)
+- Data is automatically cleared when the tab/browser is closed
+- No expiry logic needed since the browser handles cleanup
+
+---
+
+## Migration Consideration
+
+Existing localStorage data for guests will be orphaned (not deleted, but not read). This is acceptable since:
+1. Guest data isn't critical/permanent
+2. Users would expect a "fresh start" with this new behavior
+3. Logged-in user data remains in the database
