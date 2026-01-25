@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail } from 'lucide-react';
+import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail, PenLine } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,6 +134,12 @@ export default function DeveloperDashboard() {
                 <Link to="/developer/projects/new">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Project
+                </Link>
+              </Button>
+              <Button asChild className="rounded-xl shadow-md">
+                <Link to="/developer/blog/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Blog
                 </Link>
               </Button>
             </div>
@@ -294,7 +300,7 @@ export default function DeveloperDashboard() {
           </motion.div>
 
           {/* Quick Actions */}
-          <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-3">
+          <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link to="/developer/projects" className="group">
               <Card className="rounded-2xl border-border/50 hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full">
                 <CardContent className="flex items-center gap-4 p-6">
@@ -337,6 +343,22 @@ export default function DeveloperDashboard() {
                     <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Add New Project</h3>
                     <p className="text-sm text-muted-foreground">
                       Create a new development listing
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link to="/developer/blog" className="group">
+              <Card className="rounded-2xl border-border/50 hover:shadow-lg hover:border-primary/30 transition-all duration-300 h-full">
+                <CardContent className="flex items-center gap-4 p-6">
+                  <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                    <PenLine className="h-7 w-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">Write Blog</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Share development insights
                     </p>
                   </div>
                 </CardContent>
