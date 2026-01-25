@@ -199,11 +199,7 @@ const App = () => (
                             <Profile />
                           </ProtectedRoute>
                         } />
-                        <Route path="/favorites" element={
-                          <ProtectedRoute>
-                            <Favorites />
-                          </ProtectedRoute>
-                        } />
+                        <Route path="/favorites" element={<Favorites />} />
                         
                         {/* Agent routes */}
                         <Route path="/agent/register" element={
