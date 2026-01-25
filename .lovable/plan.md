@@ -1,16 +1,20 @@
 
 
-# Add Currency Toggle to Monthly Income Field
+# Prevent Browser Address Autofill from Blocking Google Maps Suggestions
 
-## Problem
+## The Problem
 
-The "Net Monthly Income" field always shows ₪ (shekel) as the prefix, but users who select $ for their down payment should be able to enter their income in USD as well for consistency.
+Chrome's built-in address autofill popup is appearing on top of the Google Places API suggestions, blocking users from seeing the actual search results. This happens because Chrome detects the input as an "address" field and tries to help with its own saved addresses.
 
 ---
 
 ## Solution
 
-Add a ₪ / $ toggle for the monthly income field, similar to how it works for the down payment amount. This will use a separate state variable for income currency to allow independent selection.
+Add stronger anti-autofill attributes to the Input component. The most effective approach combines several techniques:
+
+1. **Use a random/obscure autocomplete value** instead of "off" (Chrome ignores "off")
+2. **Add name attributes that don't trigger address detection**
+3. **Wrap in a form with autocomplete="off"**
 
 ---
 
@@ -18,133 +22,107 @@ Add a ₪ / $ toggle for the monthly income field, similar to how it works for t
 
 | File | Changes |
 |------|---------|
-| `src/components/onboarding/BuyerOnboarding.tsx` | Add income currency state + toggle for monthly income |
-| `src/components/profile/MortgagePreferencesCard.tsx` | Add income currency state + toggle for monthly income |
+| `src/components/agent/wizard/AddressAutocomplete.tsx` | Update Input attributes in both Google and Nominatim components |
 
 ---
 
 ## Technical Implementation
 
-### BuyerOnboarding.tsx
+### Update GoogleAddressAutocomplete Input (around line 246)
 
-**Add new state variable (near line 57):**
+Replace current Input attributes:
+
 ```tsx
-const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
-const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
+<Input
+  value={inputValue}
+  onChange={(e) => {
+    setValue(e.target.value);
+    setHasValidSelection(false);
+    setSelectedIndex(-1);
+    setCityMismatchError(null);
+    onInputChange?.(e.target.value);
+  }}
+  onKeyDown={handleKeyDown}
+  disabled={!ready}
+  placeholder={placeholder}
+  // Anti-autofill attributes
+  autoComplete="new-password"  // Chrome respects this more than "off"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck={false}
+  data-form-type="other"
+  data-lpignore="true"         // Ignore LastPass
+  data-1p-ignore="true"        // Ignore 1Password
+  name="notASearchField"       // Obscure name that won't trigger autofill
+  className={cn(
+    'h-11 rounded-xl pr-10',
+    hasValidSelection && 'border-primary/50 bg-primary/5',
+    className
+  )}
+/>
 ```
 
-**Update Monthly Income section (lines 734-744):**
+### Update NominatimAddressAutocomplete Input (around line 475)
 
-Replace the simple label with a label + toggle row:
-
-```tsx
-{/* Monthly Income */}
-<div className="space-y-2">
-  <div className="flex items-center justify-between">
-    <Label className="text-sm">Net Monthly Income (optional)</Label>
-    <div className="flex gap-1">
-      <Toggle
-        size="sm"
-        pressed={incomeCurrency === 'ILS'}
-        onPressedChange={() => setIncomeCurrency('ILS')}
-        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        ₪
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={incomeCurrency === 'USD'}
-        onPressedChange={() => setIncomeCurrency('USD')}
-        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        $
-      </Toggle>
-    </div>
-  </div>
-  <FormattedNumberInput
-    value={mortgagePrefs.monthly_income}
-    onChange={(val) => setMortgagePrefs({ ...mortgagePrefs, monthly_income: val ?? null, income_type: 'net' })}
-    prefix={incomeCurrencySymbol}
-    placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
-  />
-  <p className="text-xs text-muted-foreground">Helps calculate your max budget</p>
-</div>
-```
-
-### MortgagePreferencesCard.tsx
-
-**Add new state variable (near line 48):**
-```tsx
-const [incomeCurrency, setIncomeCurrency] = useState<'ILS' | 'USD'>('ILS');
-const incomeCurrencySymbol = incomeCurrency === 'USD' ? '$' : '₪';
-```
-
-**Update Monthly Income section (lines 246-268):**
-
-Same pattern - add toggle row for ₪ / $:
+Same changes for consistency:
 
 ```tsx
-{/* Monthly Income */}
-<div className="space-y-2">
-  <div className="flex items-center justify-between">
-    <Label className="flex items-center gap-1">
-      Net Monthly Income
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <p>Used to calculate your max affordable property price based on Bank of Israel's 40% payment-to-income guideline.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </Label>
-    <div className="flex gap-1">
-      <Toggle
-        size="sm"
-        pressed={incomeCurrency === 'ILS'}
-        onPressedChange={() => setIncomeCurrency('ILS')}
-        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        ₪
-      </Toggle>
-      <Toggle
-        size="sm"
-        pressed={incomeCurrency === 'USD'}
-        onPressedChange={() => setIncomeCurrency('USD')}
-        className="h-7 px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-      >
-        $
-      </Toggle>
-    </div>
-  </div>
-  <FormattedNumberInput
-    value={formData.monthly_income}
-    onChange={(val) => setFormData({ ...formData, monthly_income: val ?? null, income_type: 'net' })}
-    prefix={incomeCurrencySymbol}
-    placeholder={incomeCurrency === 'USD' ? '8,000' : '35,000'}
-  />
-  <p className="text-xs text-muted-foreground">Optional - helps calculate your budget</p>
-</div>
+<Input
+  value={inputValue}
+  onChange={handleNominatimInputChange}
+  onKeyDown={handleKeyDown}
+  onFocus={() => {
+    if (suggestions.length > 0) setIsOpen(true);
+  }}
+  placeholder={placeholder}
+  // Anti-autofill attributes
+  autoComplete="new-password"
+  autoCorrect="off"
+  autoCapitalize="off"
+  spellCheck={false}
+  data-form-type="other"
+  data-lpignore="true"
+  data-1p-ignore="true"
+  name="notASearchField"
+  className={cn(
+    'h-11 rounded-xl pr-10',
+    hasValidSelection && 'border-primary/50 bg-primary/5',
+    className
+  )}
+/>
 ```
 
 ---
 
-## Visual Result
+## Why These Attributes Work
 
-| Before | After |
-|--------|-------|
-| "Net Monthly Income (optional)" with hardcoded ₪ | "Net Monthly Income (optional)" with ₪ / $ toggles |
-| Always shows ₪ prefix | Dynamically shows ₪ or $ based on selection |
-| Placeholder: "35,000" | Placeholder: "35,000" (ILS) or "8,000" (USD) |
+| Attribute | Purpose |
+|-----------|---------|
+| `autoComplete="new-password"` | Chrome specifically respects this value and won't show autofill |
+| `name="notASearchField"` | Prevents heuristic matching that detects "address" fields |
+| `data-lpignore="true"` | Tells LastPass to ignore this field |
+| `data-1p-ignore="true"` | Tells 1Password to ignore this field |
+
+---
+
+## Alternative: Wrap in Hidden Form
+
+If the above doesn't fully work, an additional technique is to wrap the input in a form element:
+
+```tsx
+<form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+  <Input ... />
+</form>
+```
+
+But typically the `autoComplete="new-password"` trick is sufficient for Chrome.
 
 ---
 
 ## Summary
 
-1. Add `incomeCurrency` state variable in both files
-2. Add ₪ / $ toggle buttons next to the monthly income label
-3. Update `FormattedNumberInput` prefix to use dynamic currency symbol
-4. Update placeholder to show appropriate example based on currency
+1. Change `autoComplete="off"` to `autoComplete="new-password"` 
+2. Add `name="notASearchField"` to avoid address field detection
+3. Add `data-lpignore` and `data-1p-ignore` for password managers
+4. Apply to both Google and Nominatim autocomplete inputs
 
