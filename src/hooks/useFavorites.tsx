@@ -161,17 +161,49 @@ export function useFavorites() {
 
       if (error) throw error;
     },
+    onMutate: async (propertyId) => {
+      if (!user) return; // Guest updates are synchronous
+      
+      // Cancel any in-flight queries
+      await queryClient.cancelQueries({ queryKey: ['favorites', user.id] });
+      await queryClient.cancelQueries({ queryKey: ['favoriteIds', user.id] });
+      
+      // Snapshot current state for rollback
+      const previousFavorites = queryClient.getQueryData(['favorites', user.id]);
+      const previousIds = queryClient.getQueryData(['favoriteIds', user.id]);
+      
+      // Optimistically remove from cache
+      queryClient.setQueryData(['favorites', user.id], (old: any[]) => 
+        old?.filter(f => f.property_id !== propertyId) || []
+      );
+      queryClient.setQueryData(['favoriteIds', user.id], (old: string[]) =>
+        old?.filter(id => id !== propertyId) || []
+      );
+      
+      return { previousFavorites, previousIds };
+    },
+    onError: (error, propertyId, context) => {
+      // Rollback on error for logged-in users
+      if (user && context?.previousFavorites) {
+        queryClient.setQueryData(['favorites', user.id], context.previousFavorites);
+      }
+      if (user && context?.previousIds) {
+        queryClient.setQueryData(['favoriteIds', user.id], context.previousIds);
+      }
+      toast.error('Failed to remove property');
+    },
     onSuccess: () => {
-      if (user) {
-        queryClient.invalidateQueries({ queryKey: ['favorites'] });
-        queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
-      } else {
+      if (!user) {
         queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });
       }
       toast.success('Property removed from favorites');
     },
-    onError: (error) => {
-      toast.error('Failed to remove property: ' + (error as Error).message);
+    onSettled: () => {
+      if (user) {
+        // Refetch to ensure sync with server
+        queryClient.invalidateQueries({ queryKey: ['favorites'] });
+        queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
+      }
     },
   });
 
