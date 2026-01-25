@@ -72,7 +72,6 @@ import { calculateMasShevach } from '@/lib/calculations/capitalGains';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'buywise_rent_vs_buy_inputs';
-const STORAGE_EXPIRY_DAYS = 7;
 
 type BuyerCategory = 'first_time' | 'oleh' | 'additional' | 'non_resident';
 
@@ -221,26 +220,23 @@ export function RentVsBuyCalculator() {
     }
   }, [cityMetrics]);
   
-  // Load saved inputs
+  // Load saved inputs from sessionStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const { data, timestamp } = JSON.parse(saved);
-        const expiryMs = STORAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-        if (Date.now() - timestamp < expiryMs) {
-          if (data.selectedCity) setSelectedCity(data.selectedCity);
-          if (data.rooms) setRooms(data.rooms);
-          if (data.propertyPrice) setPropertyPrice(data.propertyPrice);
-          if (data.monthlyRent) setMonthlyRent(data.monthlyRent);
-          if (data.buyerType) setBuyerType(data.buyerType);
-          if (data.downPaymentPercent) setDownPaymentPercent(data.downPaymentPercent);
-          if (data.interestRate) setInterestRate(data.interestRate);
-          if (data.timeHorizon) setTimeHorizon(data.timeHorizon);
-          if (data.appreciation) setAppreciation(data.appreciation);
-          if (data.rentIncrease) setRentIncrease(data.rentIncrease);
-          if (data.investmentReturn) setInvestmentReturn(data.investmentReturn);
-        }
+        const data = JSON.parse(saved);
+        if (data.selectedCity) setSelectedCity(data.selectedCity);
+        if (data.rooms) setRooms(data.rooms);
+        if (data.propertyPrice) setPropertyPrice(data.propertyPrice);
+        if (data.monthlyRent) setMonthlyRent(data.monthlyRent);
+        if (data.buyerType) setBuyerType(data.buyerType);
+        if (data.downPaymentPercent) setDownPaymentPercent(data.downPaymentPercent);
+        if (data.interestRate) setInterestRate(data.interestRate);
+        if (data.timeHorizon) setTimeHorizon(data.timeHorizon);
+        if (data.appreciation) setAppreciation(data.appreciation);
+        if (data.rentIncrease) setRentIncrease(data.rentIncrease);
+        if (data.investmentReturn) setInvestmentReturn(data.investmentReturn);
       }
     } catch (e) {
       console.error('Error loading saved inputs:', e);
@@ -289,7 +285,7 @@ export function RentVsBuyCalculator() {
     setAppreciation(DEFAULTS.appreciation);
     setRentIncrease(DEFAULTS.rentIncrease);
     setInvestmentReturn(DEFAULTS.investmentReturn);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     toast.success('Reset to defaults');
   }, []);
   
@@ -541,10 +537,7 @@ export function RentVsBuyCalculator() {
       rentIncrease,
       investmentReturn,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-    }));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     
     // If logged in, also save to profile
     if (user && calculations) {

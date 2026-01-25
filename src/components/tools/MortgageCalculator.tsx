@@ -120,24 +120,20 @@ function MortgageCalculatorContent() {
     }
   }, [buyerProfile, isProfileLoading]);
 
-  // Load saved data
+  // Load saved data from sessionStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        const savedAt = new Date(data.savedAt);
-        const daysSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceSave < 7) {
-          setPropertyPrice(data.propertyPrice || DEFAULTS.propertyPrice);
-          setPropertyPriceInput(formatNumber(data.propertyPrice || DEFAULTS.propertyPrice));
-          setDownPaymentPercent(data.downPaymentPercent || DEFAULTS.downPaymentPercent);
-          setDownPaymentInput((data.downPaymentPercent || DEFAULTS.downPaymentPercent).toString());
-          setBuyerType(data.buyerType || DEFAULTS.buyerType);
-          setLoanTermYears(data.loanTermYears || DEFAULTS.loanTermYears);
-          setInterestRate(data.interestRate || DEFAULTS.interestRate);
-          setInterestRateInput((data.interestRate || DEFAULTS.interestRate).toFixed(1));
-        }
+        setPropertyPrice(data.propertyPrice || DEFAULTS.propertyPrice);
+        setPropertyPriceInput(formatNumber(data.propertyPrice || DEFAULTS.propertyPrice));
+        setDownPaymentPercent(data.downPaymentPercent || DEFAULTS.downPaymentPercent);
+        setDownPaymentInput((data.downPaymentPercent || DEFAULTS.downPaymentPercent).toString());
+        setBuyerType(data.buyerType || DEFAULTS.buyerType);
+        setLoanTermYears(data.loanTermYears || DEFAULTS.loanTermYears);
+        setInterestRate(data.interestRate || DEFAULTS.interestRate);
+        setInterestRateInput((data.interestRate || DEFAULTS.interestRate).toFixed(1));
       } catch (e) {}
     }
   }, []);
@@ -314,9 +310,8 @@ function MortgageCalculatorContent() {
   const handleSave = () => {
     const savedData = {
       propertyPrice, downPaymentPercent, buyerType, loanTermYears, interestRate,
-      savedAt: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
     
     if (user) {
       saveToProfile.mutate({

@@ -12,20 +12,20 @@ interface RecentlyViewedItem {
   viewed_at: string;
 }
 
-// Get from localStorage for guests
-function getLocalStorage(): RecentlyViewedItem[] {
+// Get from sessionStorage for guests (cleared when browser closes)
+function getSessionStorage(): RecentlyViewedItem[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = sessionStorage.getItem(STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
   }
 }
 
-// Save to localStorage for guests
-function setLocalStorage(items: RecentlyViewedItem[]) {
+// Save to sessionStorage for guests
+function setSessionStorage(items: RecentlyViewedItem[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
   } catch {
     // Storage might be full or disabled
   }
@@ -39,7 +39,7 @@ export function useRecentlyViewed() {
   // Load guest items on mount
   useEffect(() => {
     if (!user) {
-      setGuestItems(getLocalStorage());
+      setGuestItems(getSessionStorage());
     }
   }, [user]);
 
@@ -100,14 +100,14 @@ export function useRecentlyViewed() {
   const addMutation = useMutation({
     mutationFn: async (propertyId: string) => {
       if (!user) {
-        // Guest: use localStorage
-        const items = getLocalStorage();
+        // Guest: use sessionStorage (cleared when browser closes)
+        const items = getSessionStorage();
         const filtered = items.filter(item => item.property_id !== propertyId);
         const newItems = [
           { property_id: propertyId, viewed_at: new Date().toISOString() },
           ...filtered,
         ].slice(0, MAX_ITEMS);
-        setLocalStorage(newItems);
+        setSessionStorage(newItems);
         setGuestItems(newItems);
         return;
       }
@@ -136,7 +136,7 @@ export function useRecentlyViewed() {
   const clearMutation = useMutation({
     mutationFn: async () => {
       if (!user) {
-        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
         setGuestItems([]);
         return;
       }

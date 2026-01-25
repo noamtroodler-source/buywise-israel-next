@@ -182,22 +182,18 @@ function InvestmentCalculatorContent() {
     })).sort((a, b) => a.name.localeCompare(b.name)) || [], 
   [canonicalMetrics]);
 
-  // Load saved data
+  // Load saved data from sessionStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        const savedAt = new Date(data.savedAt);
-        const daysSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60 * 24);
-        if (daysSinceSave < 7) {
-          if (data.purchasePrice) { setPurchasePrice(data.purchasePrice); setPurchasePriceInput(formatNumber(data.purchasePrice)); }
-          if (data.selectedCity) setSelectedCity(data.selectedCity);
-          if (data.monthlyRent) { setMonthlyRent(data.monthlyRent); setMonthlyRentInput(formatNumber(data.monthlyRent)); }
-          if (data.vacancyRate !== undefined) setVacancyRate(data.vacancyRate);
-          if (data.holdingPeriod) setHoldingPeriod(data.holdingPeriod);
-          if (data.appreciationRate !== undefined) setAppreciationRate(data.appreciationRate);
-        }
+        if (data.purchasePrice) { setPurchasePrice(data.purchasePrice); setPurchasePriceInput(formatNumber(data.purchasePrice)); }
+        if (data.selectedCity) setSelectedCity(data.selectedCity);
+        if (data.monthlyRent) { setMonthlyRent(data.monthlyRent); setMonthlyRentInput(formatNumber(data.monthlyRent)); }
+        if (data.vacancyRate !== undefined) setVacancyRate(data.vacancyRate);
+        if (data.holdingPeriod) setHoldingPeriod(data.holdingPeriod);
+        if (data.appreciationRate !== undefined) setAppreciationRate(data.appreciationRate);
       } catch (e) {}
     }
   }, []);
@@ -359,9 +355,9 @@ function InvestmentCalculatorContent() {
     const savedData = {
       purchasePrice, selectedCity, propertySizeSqm, rooms, monthlyRent, vacancyRate, monthlyArnona, monthlyVaadBayit, monthlyInsurance,
       maintenancePercent, usePropertyManagement, managementFeePercent, useLeverage, buyerType, downPaymentPercent, interestRate, loanTermYears,
-      taxMethod, holdingPeriod, appreciationRate, savedAt: new Date().toISOString(),
+      taxMethod, holdingPeriod, appreciationRate,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
     
     if (user) {
       saveToProfile.mutate({
