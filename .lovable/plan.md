@@ -1,128 +1,98 @@
 
+# Keep Add Location Dialog Open After Saving
 
-# Prevent Browser Address Autofill from Blocking Google Maps Suggestions
+## Problem
 
-## The Problem
-
-Chrome's built-in address autofill popup is appearing on top of the Google Places API suggestions, blocking users from seeing the actual search results. This happens because Chrome detects the input as an "address" field and tries to help with its own saved addresses.
+When you save a new location, the dialog closes immediately. If you want to add multiple locations in a row, you have to keep clicking "Add Location" button and the previous address stays in the field until the form refreshes.
 
 ---
 
 ## Solution
 
-Add stronger anti-autofill attributes to the Input component. The most effective approach combines several techniques:
-
-1. **Use a random/obscure autocomplete value** instead of "off" (Chrome ignores "off")
-2. **Add name attributes that don't trigger address detection**
-3. **Wrap in a form with autocomplete="off"**
+Change the behavior so that after successfully adding a location:
+1. The form fields reset (name, icon, address all clear)
+2. The dialog **stays open** so you can add another location
+3. Add a "Done" button so users can close when finished
 
 ---
 
-## Files to Modify
+## File to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/agent/wizard/AddressAutocomplete.tsx` | Update Input attributes in both Google and Nominatim components |
+| `src/components/profile/AddCoreLocationDialog.tsx` | Keep dialog open after save, add success feedback, add Done button |
+
+---
+
+## Changes
+
+### 1. Remove auto-close after saving (line 69)
+
+Remove the `onOpenChange(false)` call from the success handler so the dialog stays open.
+
+### 2. Add success feedback with toast
+
+Import `toast` from sonner and show a quick confirmation when a location is saved, so the user knows it worked even though the dialog stays open.
+
+### 3. Update button layout
+
+Change from:
+- "Save Location" + "Cancel"
+
+To:
+- "Add Location" (saves and clears form) + "Done" (closes dialog)
+
+This makes it clear you can keep adding locations.
 
 ---
 
 ## Technical Implementation
 
-### Update GoogleAddressAutocomplete Input (around line 246)
-
-Replace current Input attributes:
-
+**Update imports (line 2):**
 ```tsx
-<Input
-  value={inputValue}
-  onChange={(e) => {
-    setValue(e.target.value);
-    setHasValidSelection(false);
-    setSelectedIndex(-1);
-    setCityMismatchError(null);
-    onInputChange?.(e.target.value);
-  }}
-  onKeyDown={handleKeyDown}
-  disabled={!ready}
-  placeholder={placeholder}
-  // Anti-autofill attributes
-  autoComplete="new-password"  // Chrome respects this more than "off"
-  autoCorrect="off"
-  autoCapitalize="off"
-  spellCheck={false}
-  data-form-type="other"
-  data-lpignore="true"         // Ignore LastPass
-  data-1p-ignore="true"        // Ignore 1Password
-  name="notASearchField"       // Obscure name that won't trigger autofill
-  className={cn(
-    'h-11 rounded-xl pr-10',
-    hasValidSelection && 'border-primary/50 bg-primary/5',
-    className
-  )}
-/>
+import { toast } from 'sonner';
 ```
 
-### Update NominatimAddressAutocomplete Input (around line 475)
-
-Same changes for consistency:
-
+**Update onSuccess handler (lines 63-70):**
 ```tsx
-<Input
-  value={inputValue}
-  onChange={handleNominatimInputChange}
-  onKeyDown={handleKeyDown}
-  onFocus={() => {
-    if (suggestions.length > 0) setIsOpen(true);
-  }}
-  placeholder={placeholder}
-  // Anti-autofill attributes
-  autoComplete="new-password"
-  autoCorrect="off"
-  autoCapitalize="off"
-  spellCheck={false}
-  data-form-type="other"
-  data-lpignore="true"
-  data-1p-ignore="true"
-  name="notASearchField"
-  className={cn(
-    'h-11 rounded-xl pr-10',
-    hasValidSelection && 'border-primary/50 bg-primary/5',
-    className
-  )}
-/>
+onSuccess: () => {
+  // Show confirmation
+  toast.success(`"${label.trim()}" saved!`);
+  
+  // Reset form for next entry
+  setLabel('');
+  setAddress('');
+  setParsedAddress(null);
+  setSelectedIcon('building');
+  // Dialog stays open - don't call onOpenChange(false)
+},
+```
+
+**Update button section (lines 167-179):**
+```tsx
+<div className="flex gap-2 pt-2">
+  <Button
+    onClick={handleSubmit}
+    disabled={!canSubmit}
+    className="flex-1"
+  >
+    {addLocation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+    Add Location
+  </Button>
+  <Button variant="outline" onClick={() => onOpenChange(false)}>
+    Done
+  </Button>
+</div>
 ```
 
 ---
 
-## Why These Attributes Work
+## Visual Result
 
-| Attribute | Purpose |
-|-----------|---------|
-| `autoComplete="new-password"` | Chrome specifically respects this value and won't show autofill |
-| `name="notASearchField"` | Prevents heuristic matching that detects "address" fields |
-| `data-lpignore="true"` | Tells LastPass to ignore this field |
-| `data-1p-ignore="true"` | Tells 1Password to ignore this field |
+| Before | After |
+|--------|-------|
+| Dialog closes after saving | Dialog stays open with cleared form |
+| No feedback that save worked | Toast shows "Work saved!" |
+| "Save Location" + "Cancel" buttons | "Add Location" + "Done" buttons |
 
----
-
-## Alternative: Wrap in Hidden Form
-
-If the above doesn't fully work, an additional technique is to wrap the input in a form element:
-
-```tsx
-<form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
-  <Input ... />
-</form>
-```
-
-But typically the `autoComplete="new-password"` trick is sufficient for Chrome.
-
----
-
-## Summary
-
-1. Change `autoComplete="off"` to `autoComplete="new-password"` 
-2. Add `name="notASearchField"` to avoid address field detection
-3. Add `data-lpignore` and `data-1p-ignore` for password managers
-4. Apply to both Google and Nominatim autocomplete inputs
-
+User can now add multiple locations quickly without reopening the dialog each time.
