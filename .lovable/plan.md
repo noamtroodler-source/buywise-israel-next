@@ -1,151 +1,139 @@
 
-
-# Clean Up Worth Watching Database
+# Dual Currency/Unit Preferences Button
 
 ## Summary
 
-Clean up the `city_market_factors` table by deactivating outdated entries, fixing sort order conflicts, and reframing negative-toned content to be more constructive for international buyers.
+Replace the current hidden gear icon with a polished, branded button that displays both the active currency and unit preferences (e.g., `₪ · m²` or `$ · ft²`). This makes the preferences feature immediately visible and self-descriptive, encouraging users to click and customize their experience.
 
 ---
 
-## Changes Overview
+## Design Approach
 
-| Action | Count | Cities Affected |
-|--------|-------|-----------------|
-| Deactivate dated entries | 7 | Nahariya, Yokneam, Hadera, Caesarea |
-| Fix sort_order conflicts | 4 | Hadera, Caesarea |
-| Reframe negative tone | 2 | Beer Sheva, Givat Shmuel |
+### Button Appearance
 
----
-
-## 1. Deactivate Dated Historical Entries
-
-These entries reference events from 2006-2009 that are no longer actionable for current buyers:
-
-| City | Title | Reason to Deactivate |
-|------|-------|---------------------|
-| Nahariya | Second Lebanon War Impact (2006) | 20-year-old event, no longer relevant |
-| Nahariya | Beach Promenade Development | Vague timing, unclear status |
-| Yokneam | Golf Course Development Stalled | 2009 event, outdated |
-| Hadera | Coal Plant Transition | Already in progress, not "worth watching" |
-| Caesarea | Golf Course Changes (2009) | 17-year-old event |
-| Caesarea | Historical Value Retention | Generic statement, not specific insight |
-| Caesarea | Exclusive Community Character | Description, not actionable market factor |
-
-```sql
-UPDATE city_market_factors 
-SET is_active = false 
-WHERE id IN (
-  -- Nahariya dated entries
-  SELECT id FROM city_market_factors 
-  WHERE city_slug = 'nahariya' 
-  AND (title ILIKE '%lebanon war%' OR title ILIKE '%beach promenade%'),
-  
-  -- Yokneam stalled project
-  SELECT id FROM city_market_factors 
-  WHERE city_slug = 'yokneam' AND title ILIKE '%golf course%',
-  
-  -- Hadera coal plant (already happening)
-  SELECT id FROM city_market_factors 
-  WHERE city_slug = 'hadera' AND title ILIKE '%coal plant%',
-  
-  -- Caesarea low-value entries
-  SELECT id FROM city_market_factors 
-  WHERE city_slug = 'caesarea' 
-  AND (title ILIKE '%golf course%' OR title ILIKE '%historical value%' OR title ILIKE '%exclusive community%')
-);
+```text
+┌─────────────────┐
+│  ₪ · m²    ▾   │   ← Current state displayed
+└─────────────────┘
 ```
 
+**Styling Details:**
+- **Shape**: Rounded pill/capsule (`rounded-full`)
+- **Size**: Height matches other header elements (`h-9`), padding adjusted for content (`px-3`)
+- **Border**: Subtle border for definition (`border border-border/60`)
+- **Typography**: Medium weight, small text (`text-sm font-medium`)
+- **Icon**: Small chevron to indicate dropdown (`ChevronDown h-3 w-3`)
+- **Hover State**: Light primary tint (`hover:bg-primary/5 hover:border-primary/30`)
+- **Active Indicator**: Subtle dot separator (`·`) between currency and unit
+
+### Dynamic Content Mapping
+
+| Preference | Display Symbol |
+|------------|----------------|
+| ILS currency | `₪` |
+| USD currency | `$` |
+| sqm unit | `m²` |
+| sqft unit | `ft²` |
+
 ---
 
-## 2. Fix Sort Order Conflicts
+## Implementation Changes
 
-Reassign sort_order values to ensure proper prioritization:
+### 1. Update PreferencesDialog Component
 
-**Hadera** (currently has duplicates at sort_order 1 and 2):
-| Current | New | Title |
-|---------|-----|-------|
-| 1 | 1 | Light Rail Extension |
-| 1 | 2 | Tech Sector Growth |
-| 2 | 3 | Affordable Entry Point |
-| 2 | 4 | Young Family Migration |
+**File:** `src/components/layout/PreferencesDialog.tsx`
 
-**Caesarea** (after deactivating low-value entries):
-| Current | New | Title |
-|---------|-----|-------|
-| 1 | 1 | (Top priority item) |
-| 2 | 2 | (Second priority) |
-| etc. | etc. | Sequential ordering |
+Modify the default trigger button to display the current preferences:
 
-```sql
--- Fix Hadera sort_order conflicts
-UPDATE city_market_factors 
-SET sort_order = 2 
-WHERE city_slug = 'hadera' AND title ILIKE '%tech sector%';
+```tsx
+// Add usePreferences context and ChevronDown icon
+import { ChevronDown } from 'lucide-react';
 
-UPDATE city_market_factors 
-SET sort_order = 3 
-WHERE city_slug = 'hadera' AND title ILIKE '%affordable entry%';
+// In the component, derive display values
+const currencySymbol = currency === 'USD' ? '$' : '₪';
+const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
 
-UPDATE city_market_factors 
-SET sort_order = 4 
-WHERE city_slug = 'hadera' AND title ILIKE '%young family%';
+// Replace the default trigger
+{trigger || (
+  <Button 
+    variant="ghost" 
+    className="h-9 px-3 gap-1.5 rounded-full border border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all"
+  >
+    <span className="text-sm font-medium text-foreground">
+      {currencySymbol} · {unitLabel}
+    </span>
+    <ChevronDown className="h-3 w-3 text-muted-foreground" />
+  </Button>
+)}
 ```
 
----
+### 2. Update Mobile Menu Trigger
 
-## 3. Reframe Negative-Toned Entries
+**File:** `src/components/layout/Header.tsx`
 
-**Beer Sheva - "Speculative Bubble Warning"**
+Update the mobile menu preferences trigger to also show the active state:
 
-| Field | Before | After |
-|-------|--------|-------|
-| Title | Speculative Bubble Warning | Market Stabilizing After 2024 Surge |
-| Description | Rapid 2024 price increases may not be sustainable. Exercise caution with premium purchases. | After rapid 2024 gains, prices are stabilizing. Good time to assess long-term value in established neighborhoods. |
-| Icon | policy | infrastructure |
-
-**Givat Shmuel - "Post-War Price Correction"**
-
-| Field | Before | After |
-|-------|--------|-------|
-| Title | Post-War Price Correction | Entry Point Opportunity |
-| Description | 5-8% price softening since Oct 2023 creates potential entry points for buyers. | Recent price adjustments of 5-8% may offer entry points in this high-demand tech corridor city. |
-
-```sql
--- Reframe Beer Sheva entry
-UPDATE city_market_factors 
-SET 
-  title = 'Market Stabilizing After 2024 Surge',
-  description = 'After rapid 2024 gains, prices are stabilizing. Good time to assess long-term value in established neighborhoods.',
-  icon = 'infrastructure'
-WHERE city_slug = 'beer-sheva' AND title ILIKE '%bubble%';
-
--- Reframe Givat Shmuel entry
-UPDATE city_market_factors 
-SET 
-  title = 'Entry Point Opportunity',
-  description = 'Recent price adjustments of 5-8% may offer entry points in this high-demand tech corridor city.'
-WHERE city_slug = 'givat-shmuel' AND title ILIKE '%correction%';
+```tsx
+// Lines 412-419: Update mobile preferences button
+<PreferencesDialog 
+  trigger={
+    <button className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full">
+      <span className="flex items-center gap-2">
+        <Settings className="h-4 w-4" />
+        Preferences
+      </span>
+      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+        {currencySymbol} · {unitLabel}
+      </span>
+    </button>
+  }
+/>
 ```
 
----
-
-## Implementation Steps
-
-1. **Deactivate dated entries** - Set `is_active = false` for 7 historical/low-value entries
-2. **Fix sort conflicts** - Reassign sort_order values in Hadera and Caesarea
-3. **Reframe tone** - Update title and description for Beer Sheva and Givat Shmuel entries
+This requires importing `usePreferences` in the Header component to access the current values.
 
 ---
 
-## Result
+## Visual Integration
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Total active factors | ~130 | ~123 |
-| Dated entries (pre-2020) | 7 | 0 active |
-| Sort order conflicts | 4 | 0 |
-| Negative-toned entries | 2 | 0 |
+### Consistency with BuyWise Branding
 
-All changes are database-only. No frontend code changes required since the component already filters by `is_active = true` and orders by `sort_order`.
+- Uses the established primary blue color for hover states (`hover:bg-primary/5`)
+- Matches the `h-9` height of other header buttons (favorites, user menu)
+- Rounded pill shape complements the logo and navigation style
+- Neutral border with subtle hover accent follows the card hover pattern
 
+### Desktop Layout (Right Side)
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ [Logo]  Buy  Rent  Projects  ...  │  [₪ · m²ˇ] [♡] [👤]  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+The new button sits in the same position as the old gear icon but is now visually prominent and descriptive.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/layout/PreferencesDialog.tsx` | Update default trigger to show currency/unit display with chevron |
+| `src/components/layout/Header.tsx` | Import `usePreferences`, update mobile trigger to show active state |
+
+---
+
+## Expected Result
+
+**Before:** Users see a generic gear icon with no indication of what it does
+**After:** Users see their active currency and unit (e.g., `₪ · m²`) making it immediately clear this controls display preferences, increasing discoverability and clicks
+
+---
+
+## Technical Notes
+
+- No new components needed - just modifying existing trigger styling
+- Uses existing `usePreferences` hook from `PreferencesContext`
+- Maintains full dropdown functionality when clicked
+- Changes persist via existing localStorage mechanism
