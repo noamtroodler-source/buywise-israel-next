@@ -82,7 +82,7 @@ export function RegionExplorer() {
         >
           <div>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-            Explore Real Estate Markets Across Israel
+            Explore Local Markets
           </h2>
           <p className="text-base text-muted-foreground mt-1">
             Market context and buyer-focused insights for each city.
