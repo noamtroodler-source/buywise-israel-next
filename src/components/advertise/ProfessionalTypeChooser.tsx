@@ -70,6 +70,9 @@ export function ProfessionalTypeChooser() {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
           </p>
+          <p className="text-sm text-muted-foreground/80 mt-3">
+            Free during our founding period
+          </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -92,8 +95,11 @@ export function ProfessionalTypeChooser() {
                 </Badge>
               )}
 
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                <type.icon className="h-7 w-7 text-primary" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <type.icon className="h-7 w-7 text-primary" />
+                </div>
+                <Badge variant="secondary" className="text-xs">Free</Badge>
               </div>
 
               <h3 className="text-xl font-semibold text-foreground mb-2">
