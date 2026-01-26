@@ -23,21 +23,25 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
       <CardContent className="space-y-4">
         {/* Developer Info */}
         <div className="flex items-start gap-4">
-          {developer.logo_url && !logoError ? (
-            <img
-              src={developer.logo_url}
-              alt={developer.name}
-              className="w-16 h-16 object-contain rounded-lg bg-muted p-2"
-              onError={() => setLogoError(true)}
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Building className="h-8 w-8 text-primary" />
-            </div>
-          )}
+          <Link to={`/developers/${developer.slug}`} className="shrink-0">
+            {developer.logo_url && !logoError ? (
+              <img
+                src={developer.logo_url}
+                alt={developer.name}
+                className="w-16 h-16 object-contain rounded-lg bg-muted p-2 hover:ring-2 hover:ring-primary/20 transition-all"
+                onError={() => setLogoError(true)}
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all">
+                <Building className="h-8 w-8 text-primary" />
+              </div>
+            )}
+          </Link>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold">{developer.name}</h3>
+              <Link to={`/developers/${developer.slug}`}>
+                <h3 className="font-semibold hover:text-primary hover:underline transition-colors">{developer.name}</h3>
+              </Link>
               {developer.is_verified && (
                 <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                   <CheckCircle className="h-3 w-3" />
