@@ -1,18 +1,32 @@
 import { useEffect, useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Building, MapPin, Calendar, Home, TrendingUp, TrendingDown, Maximize, Loader2, Sparkles, Clock, HardHat, DoorOpen } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { 
+  Building, MapPin, Calendar, Home, HardHat, DoorOpen, Clock, 
+  Percent, Wrench, CheckCircle 
+} from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useProjectFavorites } from '@/hooks/useProjectFavorites';
-import { useFormatPrice, useFormatArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
+import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
+import { Project, ProjectUnit } from '@/types/projects';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
+import {
+  CompareHero,
+  CompareProjectCard,
+  CompareProjectQuickInsights,
+  CompareSection,
+  CompareProjectWinnerSummary,
+  CompareUnitTypesSection,
+  type ComparisonRow,
+} from '@/components/compare';
+
 interface CompareProject {
   id: string;
   name: string;
@@ -38,17 +52,18 @@ interface CompareProject {
 export default function CompareProjects() {
   const { compareIds, removeFromCompare, clearCompare, maxItems } = useCompare();
   const [projects, setProjects] = useState<CompareProject[]>([]);
+  const [projectUnits, setProjectUnits] = useState<Record<string, ProjectUnit[]>>({});
   const [loading, setLoading] = useState(true);
   const { projectFavoriteIds, toggleProjectFavorite } = useProjectFavorites();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
-  const areaUnitLabel = useAreaUnitLabel();
 
   useEffect(() => {
     async function fetchProjects() {
       if (compareIds.length === 0) {
         setProjects([]);
+        setProjectUnits({});
         setLoading(false);
         return;
       }
@@ -66,6 +81,24 @@ export default function CompareProjects() {
           .map(id => data.find(p => p.id === id))
           .filter(Boolean) as CompareProject[];
         setProjects(ordered);
+
+        // Fetch units for all projects
+        const { data: unitsData } = await supabase
+          .from('project_units')
+          .select('*')
+          .in('project_id', compareIds)
+          .order('display_order');
+
+        if (unitsData) {
+          const unitsByProject: Record<string, ProjectUnit[]> = {};
+          unitsData.forEach(unit => {
+            if (!unitsByProject[unit.project_id]) {
+              unitsByProject[unit.project_id] = [];
+            }
+            unitsByProject[unit.project_id].push(unit as ProjectUnit);
+          });
+          setProjectUnits(unitsByProject);
+        }
       }
       setLoading(false);
     }
@@ -91,6 +124,10 @@ export default function CompareProjects() {
     }
   };
 
+  const handleToggleFavorite = (projectId: string) => {
+    toggleProjectFavorite(projectId);
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'planning': return 'Planning';
@@ -103,162 +140,196 @@ export default function CompareProjects() {
     }
   };
 
-  const getStatusProgress = (status: string) => {
-    switch (status) {
-      case 'planning': return 0;
-      case 'pre_sale': return 10;
-      case 'foundation': return 30;
-      case 'structure': return 50;
-      case 'finishing': return 75;
-      case 'delivery': return 100;
-      default: return 0;
-    }
-  };
+  // Core details rows
+  const coreDetailsRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Price Range',
+      getValue: (p: any) => {
+        const project = p as CompareProject;
+        if (!project.price_from) return 'TBD';
+        const from = formatPrice(project.price_from, project.currency || 'ILS');
+        const to = project.price_to ? formatPrice(project.price_to, project.currency || 'ILS') : null;
+        return to ? `${from} - ${to}` : `From ${from}`;
+      },
+      highlight: true,
+      getBestPropertyId: (props: any[]) => {
+        const withPrice = (props as CompareProject[]).filter(p => p.price_from);
+        if (withPrice.length < 2) return null;
+        const min = withPrice.reduce((best, p) => 
+          (p.price_from || Infinity) < (best.price_from || Infinity) ? p : best
+        );
+        return min.id;
+      },
+    },
+    {
+      label: 'City',
+      getValue: (p: any) => (p as CompareProject).city,
+      icon: MapPin,
+    },
+    {
+      label: 'Neighborhood',
+      getValue: (p: any) => (p as CompareProject).neighborhood || '—',
+    },
+    {
+      label: 'Developer',
+      getValue: (p: any) => (p as CompareProject).developer?.name || '—',
+      icon: Building,
+    },
+  ], [formatPrice]);
 
-  // Quick Insights for projects
-  const quickInsights = useMemo(() => {
-    if (projects.length < 2) return [];
-
-    const insights: { icon: React.ElementType; label: string; value: string; projectName: string }[] = [];
-
-    // Lowest starting price
-    const withPrice = projects.filter(p => p.price_from);
-    if (withPrice.length > 0) {
-      const lowestPrice = withPrice.reduce((min, p) => 
-        (p.price_from || Infinity) < (min.price_from || Infinity) ? p : min
-      );
-      if (lowestPrice.price_from) {
-        insights.push({
-          icon: TrendingDown,
-          label: 'Lowest Starting Price',
-          value: formatPrice(lowestPrice.price_from, lowestPrice.currency || 'ILS'),
-          projectName: lowestPrice.name,
+  const constructionRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Status',
+      getValue: (p: any) => getStatusLabel((p as CompareProject).status),
+      icon: Wrench,
+    },
+    {
+      label: 'Construction Progress',
+      getValue: (p: any) => {
+        const progress = (p as CompareProject).construction_progress_percent;
+        return progress !== null ? `${progress}%` : '—';
+      },
+      icon: HardHat,
+      getBestPropertyId: (props: any[]) => {
+        const withProgress = (props as CompareProject[]).filter(p => p.construction_progress_percent !== null);
+        if (withProgress.length < 2) return null;
+        const max = withProgress.reduce((best, p) => 
+          (p.construction_progress_percent || 0) > (best.construction_progress_percent || 0) ? p : best
+        );
+        return max.id;
+      },
+    },
+    {
+      label: 'Completion Date',
+      getValue: (p: any) => {
+        const date = (p as CompareProject).completion_date;
+        return date ? new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : 'TBD';
+      },
+      icon: Calendar,
+      getBestPropertyId: (props: any[]) => {
+        const withDate = (props as CompareProject[]).filter(p => p.completion_date);
+        if (withDate.length < 2) return null;
+        const soonest = withDate.reduce((best, p) => {
+          if (!best.completion_date) return p;
+          if (!p.completion_date) return best;
+          return new Date(p.completion_date) < new Date(best.completion_date) ? p : best;
         });
-      }
-    }
+        return soonest.id;
+      },
+    },
+  ], []);
 
-    // Most units available
-    const withUnits = projects.filter(p => p.available_units !== null && p.available_units !== undefined);
-    if (withUnits.length > 0) {
-      const mostAvailable = withUnits.reduce((max, p) => 
-        (p.available_units || 0) > (max.available_units || 0) ? p : max
-      );
-      if (mostAvailable.available_units && mostAvailable.available_units > 0) {
-        insights.push({
-          icon: DoorOpen,
-          label: 'Most Available Units',
-          value: `${mostAvailable.available_units} units`,
-          projectName: mostAvailable.name,
-        });
-      }
-    }
+  const availabilityRows: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Total Units',
+      getValue: (p: any) => (p as CompareProject).total_units?.toString() || '—',
+      icon: Home,
+    },
+    {
+      label: 'Available Units',
+      getValue: (p: any) => (p as CompareProject).available_units?.toString() || '—',
+      icon: DoorOpen,
+      getBestPropertyId: (props: any[]) => {
+        const withUnits = (props as CompareProject[]).filter(p => p.available_units);
+        if (withUnits.length < 2) return null;
+        const max = withUnits.reduce((best, p) => 
+          (p.available_units || 0) > (best.available_units || 0) ? p : best
+        );
+        return max.id;
+      },
+    },
+    {
+      label: 'Availability Rate',
+      getValue: (p: any) => {
+        const project = p as CompareProject;
+        if (!project.total_units || !project.available_units) return '—';
+        const rate = Math.round((project.available_units / project.total_units) * 100);
+        return `${rate}%`;
+      },
+      icon: Percent,
+    },
+  ], []);
 
-    // Soonest completion
-    const withCompletion = projects.filter(p => p.completion_date);
-    if (withCompletion.length > 0) {
-      const soonest = withCompletion.reduce((earliest, p) => {
-        if (!earliest.completion_date) return p;
-        if (!p.completion_date) return earliest;
-        return new Date(p.completion_date) < new Date(earliest.completion_date) ? p : earliest;
-      });
-      if (soonest.completion_date) {
-        insights.push({
-          icon: Calendar,
-          label: 'Soonest Completion',
-          value: new Date(soonest.completion_date).getFullYear().toString(),
-          projectName: soonest.name,
-        });
-      }
-    }
+  const amenitiesRow: ComparisonRow[] = useMemo(() => [
+    {
+      label: 'Amenities',
+      getValue: (p: any) => {
+        const amenities = (p as CompareProject).amenities;
+        if (!amenities?.length) return '—';
+        return amenities.slice(0, 4).join(', ') + (amenities.length > 4 ? ` +${amenities.length - 4}` : '');
+      },
+      icon: CheckCircle,
+    },
+  ], []);
 
-    // Furthest along in construction
-    const withProgress = projects.filter(p => p.construction_progress_percent !== null);
-    if (withProgress.length > 0) {
-      const furthestAlong = withProgress.reduce((max, p) => 
-        (p.construction_progress_percent || 0) > (max.construction_progress_percent || 0) ? p : max
-      );
-      if (furthestAlong.construction_progress_percent && furthestAlong.construction_progress_percent > 0) {
-        insights.push({
-          icon: HardHat,
-          label: 'Most Progress',
-          value: `${furthestAlong.construction_progress_percent}% complete`,
-          projectName: furthestAlong.name,
-        });
-      }
-    }
-
-    return insights.slice(0, 4); // Max 4 insights
-  }, [projects, formatPrice]);
-
-  // Winner summary
+  // Winner counts
   const winnerCounts = useMemo(() => {
     if (projects.length < 2) return [];
 
+    const allRows = [...coreDetailsRows, ...constructionRows, ...availabilityRows];
     const counts: Record<string, { name: string; wins: number }> = {};
+    
     projects.forEach(p => {
       counts[p.id] = { name: p.name, wins: 0 };
     });
 
-    // Lowest price wins
-    const withPrice = projects.filter(p => p.price_from);
-    if (withPrice.length > 1) {
-      const lowestPrice = withPrice.reduce((min, p) => 
-        (p.price_from || Infinity) < (min.price_from || Infinity) ? p : min
-      );
-      counts[lowestPrice.id].wins++;
-    }
-
-    // Most available units wins
-    const withUnits = projects.filter(p => p.available_units);
-    if (withUnits.length > 1) {
-      const mostAvailable = withUnits.reduce((max, p) => 
-        (p.available_units || 0) > (max.available_units || 0) ? p : max
-      );
-      counts[mostAvailable.id].wins++;
-    }
-
-    // Soonest completion wins
-    const withCompletion = projects.filter(p => p.completion_date);
-    if (withCompletion.length > 1) {
-      const soonest = withCompletion.reduce((earliest, p) => {
-        if (!earliest.completion_date) return p;
-        if (!p.completion_date) return earliest;
-        return new Date(p.completion_date) < new Date(earliest.completion_date) ? p : earliest;
-      });
-      counts[soonest.id].wins++;
-    }
-
-    // Most construction progress wins
-    const withProgress = projects.filter(p => p.construction_progress_percent !== null);
-    if (withProgress.length > 1) {
-      const furthestAlong = withProgress.reduce((max, p) => 
-        (p.construction_progress_percent || 0) > (max.construction_progress_percent || 0) ? p : max
-      );
-      counts[furthestAlong.id].wins++;
-    }
+    allRows.forEach(row => {
+      if (row.getBestPropertyId) {
+        // Cast projects to Property[] since CompareSection expects that
+        const bestId = row.getBestPropertyId(projects as any);
+        if (bestId && counts[bestId]) {
+          counts[bestId].wins++;
+        }
+      }
+    });
 
     return Object.entries(counts).map(([projectId, data]) => ({
       projectId,
       title: data.name,
       wins: data.wins,
     }));
-  }, [projects]);
+  }, [projects, coreDetailsRows, constructionRows, availabilityRows]);
+
+  // Generate winner badges
+  const getWinnerBadge = (projectId: string): string | null => {
+    if (projects.length < 2) return null;
+    
+    const withPrice = projects.filter(p => p.price_from);
+    if (withPrice.length > 0) {
+      const lowestPrice = withPrice.reduce((min, p) => 
+        (p.price_from || Infinity) < (min.price_from || Infinity) ? p : min
+      );
+      if (lowestPrice.id === projectId) return 'Lowest Price';
+    }
+
+    const withProgress = projects.filter(p => p.construction_progress_percent !== null);
+    if (withProgress.length > 0) {
+      const furthestAlong = withProgress.reduce((max, p) => 
+        (p.construction_progress_percent || 0) > (max.construction_progress_percent || 0) ? p : max
+      );
+      if (furthestAlong.id === projectId && furthestAlong.construction_progress_percent! >= 50) {
+        return 'Most Progress';
+      }
+    }
+
+    return null;
+  };
 
   // Loading state
   if (loading) {
     return (
       <Layout>
-        <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
-          <div className="container py-8 md:py-10 text-center">
-            <Skeleton className="h-10 w-64 mx-auto mb-4" />
-            <Skeleton className="h-5 w-96 mx-auto" />
-          </div>
-        </div>
-        <div className="container py-8">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-96" />
-            ))}
+        <div className="bg-gradient-to-b from-primary/5 to-background">
+          <div className="container py-8">
+            <div className="animate-pulse space-y-6">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-6 w-72" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-80 rounded-xl" />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
@@ -301,318 +372,92 @@ export default function CompareProjects() {
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
-        <div className="container py-8 md:py-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Compare <span className="text-primary">Projects</span>
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Side-by-side comparison of {projects.length} development projects
-            </p>
-            <div className="flex justify-center gap-3 mt-6">
-              <Button variant="outline" size="sm" onClick={handleShare}>
-                Share Comparison
-              </Button>
-              <Button variant="ghost" size="sm" onClick={clearCompare}>
-                Clear All
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </div>
+      {/* Hero Header */}
+      <CompareHero
+        propertyCount={projects.length}
+        maxProperties={maxItems}
+        onShare={handleShare}
+        onClearAll={clearCompare}
+        category="projects"
+      />
 
       <div className="container py-8 space-y-8">
-        {/* Quick Insights */}
-        {quickInsights.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">Quick Insights</span>
-            </div>
-            
-            <div className={`grid grid-cols-1 gap-3 ${quickInsights.length <= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
-              {quickInsights.map((insight, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-3 bg-background/80 rounded-lg px-3 py-2.5"
-                >
-                  <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <insight.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs text-muted-foreground">{insight.label}</div>
-                    <div className="text-sm font-semibold truncate">{insight.value}</div>
-                    <div className="text-xs text-muted-foreground truncate">{insight.projectName}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+        {/* Guest Session Warning */}
+        {!user && projects.length > 0 && (
+          <GuestSignupNudge
+            icon={Clock}
+            message="Your comparison is saved to this session only. Sign up to save comparisons and revisit them anytime."
+            variant="banner"
+          />
         )}
 
         {/* Project Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project, index) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className="h-full overflow-hidden">
-                <div className="aspect-video relative">
-                  <img
-                    src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
-                    alt={project.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="text-lg font-bold text-white">{project.name}</h3>
-                    {project.developer && (
-                      <p className="text-sm text-white/80">by {project.developer.name}</p>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-3 right-3 h-8 w-8 bg-background/80 hover:bg-background"
-                    onClick={() => removeFromCompare(project.id)}
-                  >
-                    ×
-                  </Button>
-                </div>
-                <CardContent className="p-4 space-y-4">
-                  {/* Price */}
-                  <div>
-                    <p className="text-xs text-muted-foreground">Starting from</p>
-                    <p className="text-xl font-bold text-primary">
-                      {project.price_from ? formatPrice(project.price_from, project.currency || 'ILS') : 'N/A'}
-                    </p>
-                    {project.price_to && (
-                      <p className="text-sm text-muted-foreground">
-                        up to {formatPrice(project.price_to, project.currency || 'ILS')}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Location */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}</span>
-                  </div>
-
-                  {/* Status */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Status</span>
-                      <Badge variant="secondary">{getStatusLabel(project.status)}</Badge>
-                    </div>
-                    <Progress value={getStatusProgress(project.status)} className="h-2" />
-                  </div>
-
-                  {/* Construction Progress */}
-                  {project.construction_progress_percent !== null && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <HardHat className="h-4 w-4" />
-                        Construction
-                      </span>
-                      <span className="font-medium">{project.construction_progress_percent}%</span>
-                    </div>
-                  )}
-
-                  {/* Completion */}
-                  {project.completion_date && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Completion
-                      </span>
-                      <span className="font-medium">
-                        {new Date(project.completion_date).getFullYear()}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Units */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Home className="h-4 w-4" />
-                      Available Units
-                    </span>
-                    <span className="font-medium">
-                      {project.available_units ?? '—'} / {project.total_units ?? '—'}
-                    </span>
-                  </div>
-
-                  <Button asChild className="w-full mt-4">
-                    <Link to={`/projects/${project.slug}`}>View Project</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence mode="popLayout">
+            {projects.map(project => (
+              <CompareProjectCard
+                key={project.id}
+                project={project}
+                formatPrice={formatPrice}
+                isFavorite={projectFavoriteIds.includes(project.id)}
+                onRemove={() => removeFromCompare(project.id)}
+                onToggleFavorite={() => handleToggleFavorite(project.id)}
+                winnerBadge={getWinnerBadge(project.id)}
+              />
+            ))}
+          </AnimatePresence>
         </div>
 
-        {/* Comparison Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-primary" />
-              Quick Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 pr-4 font-medium text-muted-foreground">Feature</th>
-                    {projects.map(project => (
-                      <th key={project.id} className="text-left py-3 px-4 font-medium">
-                        {project.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Price Range</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        {project.price_from ? formatPrice(project.price_from, project.currency || 'ILS') : 'N/A'}
-                        {project.price_to && ` - ${formatPrice(project.price_to, project.currency || 'ILS')}`}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Location</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">{project.city}</td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Neighborhood</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">{project.neighborhood || '—'}</td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Developer</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">{project.developer?.name || 'N/A'}</td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Status</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        <Badge variant="secondary">{getStatusLabel(project.status)}</Badge>
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Construction Progress</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        {project.construction_progress_percent !== null 
-                          ? `${project.construction_progress_percent}%` 
-                          : '—'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Completion</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        {project.completion_date 
-                          ? new Date(project.completion_date).getFullYear()
-                          : 'TBD'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-3 pr-4 text-muted-foreground">Available / Total Units</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        {project.available_units ?? '—'} / {project.total_units ?? '—'}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="py-3 pr-4 text-muted-foreground">Amenities</td>
-                    {projects.map(project => (
-                      <td key={project.id} className="py-3 px-4">
-                        {project.amenities?.length ? (
-                          <div className="flex flex-wrap gap-1">
-                            {project.amenities.slice(0, 3).map(amenity => (
-                              <Badge key={amenity} variant="outline" className="text-xs">
-                                {amenity}
-                              </Badge>
-                            ))}
-                            {project.amenities.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{project.amenities.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        ) : (
-                          'N/A'
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Insights */}
+        <CompareProjectQuickInsights
+          projects={projects}
+          formatPrice={formatPrice}
+        />
+
+        {/* Comparison Sections */}
+        <div className="space-y-6">
+          <CompareSection
+            title="Project Overview"
+            icon={Building}
+            rows={coreDetailsRows}
+            properties={projects as any}
+          />
+
+          <CompareSection
+            title="Construction"
+            icon={HardHat}
+            rows={constructionRows}
+            properties={projects as any}
+          />
+
+          <CompareSection
+            title="Availability"
+            icon={DoorOpen}
+            rows={availabilityRows}
+            properties={projects as any}
+          />
+
+          <CompareSection
+            title="Amenities"
+            icon={CheckCircle}
+            rows={amenitiesRow}
+            properties={projects as any}
+          />
+        </div>
+
+        {/* Unit Type Comparison (Optional Section) */}
+        <CompareUnitTypesSection
+          projects={projects}
+          projectUnits={projectUnits}
+          formatPrice={formatPrice}
+          formatArea={formatArea}
+        />
 
         {/* Winner Summary */}
-        {winnerCounts.length > 0 && winnerCounts.some(w => w.wins > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Winner Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {winnerCounts
-                  .sort((a, b) => b.wins - a.wins)
-                  .map((item) => (
-                    <div
-                      key={item.projectId}
-                      className={`p-4 rounded-lg border ${
-                        item.wins === Math.max(...winnerCounts.map(w => w.wins)) && item.wins > 0
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border bg-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium truncate">{item.title}</span>
-                        <Badge variant={item.wins > 0 ? 'default' : 'secondary'}>
-                          {item.wins} {item.wins === 1 ? 'win' : 'wins'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <CompareProjectWinnerSummary
+          projects={projects}
+          winnerCounts={winnerCounts}
+        />
       </div>
     </Layout>
   );

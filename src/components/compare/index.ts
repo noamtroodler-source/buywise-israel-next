@@ -1,6 +1,10 @@
 export { CompareHero } from './CompareHero';
 export { ComparePropertyCard } from './ComparePropertyCard';
+export { CompareProjectCard } from './CompareProjectCard';
 export { CompareQuickInsights } from './CompareQuickInsights';
+export { CompareProjectQuickInsights } from './CompareProjectQuickInsights';
 export { CompareSection, type ComparisonRow } from './CompareSection';
 export { CompareEmptyState } from './CompareEmptyState';
 export { CompareWinnerSummary } from './CompareWinnerSummary';
+export { CompareProjectWinnerSummary } from './CompareProjectWinnerSummary';
+export { CompareUnitTypesSection } from './CompareUnitTypesSection';
