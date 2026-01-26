@@ -1,69 +1,66 @@
 
-
-# Vary Mock Listing Dates for Realistic Freshness Display
+# Fix Broken Project Images in ProjectsHighlight
 
 ## The Problem
-All 800 mock properties were created at the same time, so they all show the same "days on market" badge. This doesn't look realistic for the demo.
-
-## Current Freshness Tiers
-The app already has a tiered system based on `created_at`:
-
-| Tier | Days | Badge Display |
-|------|------|---------------|
-| **Hot** | 0-3 days | 🔥 "Just Listed" / "Just Available" (amber) |
-| **Fresh** | 4-7 days | ✨ "New" (blue) |
-| **Standard** | 8-30 days | Muted text "Listed X days ago" |
-| **Stale** | 30+ days | No badge (older listing) |
+The project card for "The Gardens Petah Tikva" shows a broken image icon because:
+1. The Unsplash image URL (`photo-1464938050520-ef2571e0d6bf`) is no longer available/valid
+2. The `ProjectsHighlight` component uses plain `<img>` tags without error handling
+3. The project already has a `PropertyThumbnail` component that gracefully handles broken images with fallbacks
 
 ## The Fix
-Update all 800 properties with varied `created_at` dates to distribute them across all tiers:
+Replace the plain `<img>` tags in `ProjectsHighlight.tsx` with the `PropertyThumbnail` component, which:
+- Detects when an image fails to load via `onError`
+- Automatically switches to a project-appropriate fallback image
+- Maintains a professional appearance even with broken URLs
 
-### Distribution Plan
-- **~15% Hot** (0-3 days ago) - ~120 listings
-- **~20% Fresh** (4-7 days ago) - ~160 listings  
-- **~40% Standard** (8-30 days ago) - ~320 listings
-- **~25% Older** (31-90 days ago) - ~200 listings
+## Files to Update
 
-## Technical Implementation
+### `src/components/home/ProjectsHighlight.tsx`
 
-Run a SQL UPDATE that randomizes the `created_at` timestamps:
-
-```sql
-UPDATE properties 
-SET created_at = NOW() - (
-  CASE 
-    -- 15% Hot: 0-3 days
-    WHEN random() < 0.15 THEN (random() * 3)::int * interval '1 day'
-    -- 20% Fresh: 4-7 days  
-    WHEN random() < 0.35 THEN (4 + random() * 3)::int * interval '1 day'
-    -- 40% Standard: 8-30 days
-    WHEN random() < 0.75 THEN (8 + random() * 22)::int * interval '1 day'
-    -- 25% Older: 31-90 days
-    ELSE (31 + random() * 59)::int * interval '1 day'
-  END
-),
-updated_at = NOW()
-WHERE is_published = true;
+**Add import:**
+```typescript
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 ```
 
-Also update projects with similar distribution:
-```sql
-UPDATE projects 
-SET created_at = NOW() - (
-  CASE 
-    WHEN random() < 0.15 THEN (random() * 3)::int * interval '1 day'
-    WHEN random() < 0.35 THEN (4 + random() * 3)::int * interval '1 day'
-    WHEN random() < 0.75 THEN (8 + random() * 22)::int * interval '1 day'
-    ELSE (31 + random() * 59)::int * interval '1 day'
-  END
-),
-updated_at = NOW()
-WHERE is_published = true;
+**Line 91-95 - Main Project Image:**
+Replace:
+```tsx
+<img
+  src={mainProject.images?.[0] || '/placeholder.svg'}
+  alt={mainProject.name}
+  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+/>
+```
+With:
+```tsx
+<PropertyThumbnail
+  src={mainProject.images?.[0]}
+  alt={mainProject.name}
+  type="project"
+  className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+/>
+```
+
+**Lines 145-149 - Side Project Images:**
+Replace:
+```tsx
+<img
+  src={project.images?.[0] || '/placeholder.svg'}
+  alt={project.name}
+  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+/>
+```
+With:
+```tsx
+<PropertyThumbnail
+  src={project.images?.[0]}
+  alt={project.name}
+  type="project"
+  className="w-full h-full group-hover:scale-105 transition-transform duration-500"
+/>
 ```
 
 ## Result
-After running this update:
-- Property cards will show a mix of "Just Listed", "New", and regular date labels
-- The listings page will look like an active marketplace with varied inventory ages
-- Featured sections will have a realistic mix of new and established listings
-
+- Broken Unsplash URLs will gracefully fall back to a professional building image
+- No more broken image icons shown to users
+- Consistent with the established image fallback pattern used elsewhere in the app
