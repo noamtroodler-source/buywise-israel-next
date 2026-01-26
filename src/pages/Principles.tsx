@@ -60,7 +60,7 @@ const principles = [
   {
     icon: Heart,
     title: 'Trust Before Conversion',
-    description: 'You should understand the market before you speak to anyone. Our job is to educate and clarify — not create pressure.',
+    description: 'You should understand the market before you speak to anyone. Our role is to educate and clarify — not create pressure.',
   },
   {
     icon: Clock,
