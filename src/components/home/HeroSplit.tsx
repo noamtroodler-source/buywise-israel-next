@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Building2, Home, Key } from 'lucide-react';
+import { Search, Building2, Home, Key, House, KeyRound, HardHat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -128,19 +128,22 @@ export function HeroSplit() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-sm text-white/70"
+              className="flex flex-wrap items-center gap-3 pt-2"
             >
-              <span className="flex items-center gap-2">
-                <Home className="w-3.5 h-3.5 text-accent" />
-                {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'} For Sale
+              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+                <House className="w-3.5 h-3.5" />
+                <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
+                <span className="text-white/70">For Sale</span>
               </span>
-              <span className="flex items-center gap-2">
-                <Key className="w-3.5 h-3.5 text-accent" />
-                {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'} Rentals
+              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+                <KeyRound className="w-3.5 h-3.5" />
+                <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
+                <span className="text-white/70">Rentals</span>
               </span>
-              <span className="flex items-center gap-2">
-                <Building2 className="w-3.5 h-3.5 text-accent" />
-                {stats?.projectsCount ?? 15} Projects
+              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+                <HardHat className="w-3.5 h-3.5" />
+                <span className="font-medium">{stats?.projectsCount ?? 15}</span>
+                <span className="text-white/70">Projects</span>
               </span>
             </motion.div>
           </motion.div>
