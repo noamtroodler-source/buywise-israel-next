@@ -1,80 +1,247 @@
 
-# Make Developer Name & Logo Clickable
+# Revamp Developer Profile Page
 
-## Problem
+## Overview
 
-In the `ProjectDeveloperCard` component, users expect to click on the developer's name or logo to visit their profile page, but currently only the "View All Projects" button at the bottom is a link. The name and logo are static elements.
-
-## Solution
-
-Wrap the developer logo and name in a `Link` component that navigates to `/developers/{slug}`.
+Transform the developer profile page to match the polished design of agent and agency pages while showcasing all information collected during signup.
 
 ---
 
-## File to Modify
+## Current Issues
 
-### `src/components/project/ProjectDeveloperCard.tsx`
-
-**Changes:**
-
-1. **Make the logo clickable** (lines 26-37)
-   - Wrap the logo image and fallback icon in a `Link` to `/developers/${developer.slug}`
-   - Add hover cursor styling
-
-2. **Make the developer name clickable** (line 40)
-   - Wrap `<h3>{developer.name}</h3>` in a `Link`
-   - Add hover styling (underline or color change) for visual feedback
+1. **Missing Data Display**: The page doesn't show specializations, company size, company type, or office location
+2. **Outdated Type Definition**: The `Developer` interface lacks new database fields
+3. **Basic Layout**: No tabbed interface, simpler stats, no social links
+4. **Branding Gaps**: Uses some off-brand colors (green for completed status)
 
 ---
 
-## Visual Result
+## Files to Modify
+
+### 1. `src/types/projects.ts` - Update Developer Interface
+
+Add missing fields to match database schema:
+
+```typescript
+export interface Developer {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url: string | null;
+  description: string | null;
+  website: string | null;
+  phone: string | null;
+  email: string | null;
+  founded_year: number | null;
+  total_projects: number;
+  is_verified: boolean;
+  user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // New fields
+  status: string | null;
+  verification_status: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  office_address: string | null;
+  office_city: string | null;
+  company_size: string | null;
+  company_type: string | null;
+  specialties: string[] | null;
+}
+```
+
+---
+
+### 2. `src/pages/DeveloperDetail.tsx` - Complete Redesign
+
+**New Structure:**
 
 ```text
-Before:
-┌─────────────────────────────────────────┐
-│ [Logo]  Blue Square Real Estate ✓       │  ← Not clickable
-│         72 Projects · Since 2004        │
-│                                         │
-│ [Call]  [Email]                         │
-│ Visit Website                      →    │
-│ View All Blue Square Projects      →    │  ← Only this is clickable
-└─────────────────────────────────────────┘
-
-After:
-┌─────────────────────────────────────────┐
-│ [Logo]  Blue Square Real Estate ✓       │  ← Logo & name now clickable!
-│  ↑       ↑ hover underline              │
-│ clickable                               │
-│ [Call]  [Email]                         │
-│ Visit Website                      →    │
-│ View All Blue Square Projects      →    │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ ← Back to Developers                                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  HERO CARD (overflow-hidden, matches Agency style)             │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  [Logo]    Gindi Holdings  ✓ Verified Developer         │   │
+│  │  96x96     Est. 1976 · Private · 51-200 employees       │   │
+│  │                                                          │   │
+│  │  "Innovative developer bringing modern living..."        │   │
+│  │                                                          │   │
+│  │  📍 Herzliya (Office)                                   │   │
+│  │                                                          │   │
+│  │  [Residential] [Luxury] [Affordable Housing]  ← specialties │
+│  │                                                          │   │
+│  │  [WhatsApp] [Call] [Email] [Website] [Share]            │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  STATS BAR (4 columns, matching Agent/Agency)                  │
+│  ┌──────────┬──────────┬──────────┬──────────┐                 │
+│  │ Total    │ Active   │ Completed│ Total    │                 │
+│  │ Projects │ Projects │ Projects │ Units    │                 │
+│  │   19     │    12    │    7     │  2,450   │                 │
+│  └──────────┴──────────┴──────────┴──────────┘                 │
+│                                                                 │
+│  TABBED INTERFACE (matches Agency design)                       │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ [Active Projects (12)] [Completed (7)] [Blog (3)]       │   │
+│  ├─────────────────────────────────────────────────────────┤   │
+│  │                                                          │   │
+│  │   Project Cards Grid (3 columns)                         │   │
+│  │                                                          │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Code Changes
+## Detailed Changes
 
-**Line 26-37** - Wrap logo/fallback in Link:
+### Hero Card Enhancements
+
+**Add Company Metadata Row:**
 ```tsx
-<Link to={`/developers/${developer.slug}`} className="shrink-0">
-  {developer.logo_url && !logoError ? (
-    <img ... className="... hover:ring-2 hover:ring-primary/20 transition-all" />
-  ) : (
-    <div ... className="... hover:ring-2 hover:ring-primary/20 transition-all">
-      ...
-    </div>
+<div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+  {developer.founded_year && <span>Est. {developer.founded_year}</span>}
+  {developer.company_type && (
+    <>
+      <span>·</span>
+      <span className="capitalize">{developer.company_type}</span>
+    </>
   )}
-</Link>
+  {developer.company_size && (
+    <>
+      <span>·</span>
+      <span>{developer.company_size}</span>
+    </>
+  )}
+</div>
 ```
 
-**Line 40** - Make name a link:
+**Add Office Location Badge:**
 ```tsx
-<Link to={`/developers/${developer.slug}`}>
-  <h3 className="font-semibold hover:text-primary hover:underline transition-colors">
-    {developer.name}
-  </h3>
-</Link>
+{developer.office_city && (
+  <div className="flex items-center gap-2 text-muted-foreground">
+    <MapPin className="h-4 w-4" />
+    <span>{developer.office_city} Office</span>
+  </div>
+)}
 ```
 
-This provides the expected UX where clicking anywhere on the developer's identity (logo or name) takes you to their full profile page.
+**Add Specializations Badges:**
+```tsx
+{developer.specialties && developer.specialties.length > 0 && (
+  <div className="flex flex-wrap gap-2">
+    {developer.specialties.map((spec) => (
+      <Badge key={spec} variant="secondary" className="capitalize">
+        {spec}
+      </Badge>
+    ))}
+  </div>
+)}
+```
+
+**Social Links (inline with contact buttons):**
+```tsx
+{developer.linkedin_url && (
+  <Button variant="ghost" size="sm" asChild>
+    <a href={developer.linkedin_url} target="_blank">
+      <Linkedin className="h-4 w-4" />
+    </a>
+  </Button>
+)}
+```
+
+### Stats Bar Updates
+
+- Change icon backgrounds from green/accent to primary blue tints (brand compliance)
+- Keep metrics: Total Projects, Active Projects, Completed, Total Units
+
+### Tabbed Interface
+
+Replace the current flat sections with a professional tabbed UI:
+
+```tsx
+<Tabs defaultValue="active" className="space-y-6">
+  <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
+    <TabsTrigger value="active">
+      Active Projects
+      <span className="...bg-primary/10 text-primary">{activeProjects}</span>
+    </TabsTrigger>
+    <TabsTrigger value="completed">
+      Completed
+      <span className="...">{completedProjects}</span>
+    </TabsTrigger>
+    <TabsTrigger value="blog">
+      Blog
+      <span className="...">{blogPosts.length}</span>
+    </TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="active">
+    {/* Active projects grid */}
+  </TabsContent>
+
+  <TabsContent value="completed">
+    {/* Completed projects grid */}
+  </TabsContent>
+
+  <TabsContent value="blog">
+    {/* Blog posts grid */}
+  </TabsContent>
+</Tabs>
+```
+
+### Color Standardization
+
+Replace off-brand colors:
+- `bg-green-100 text-green-700` becomes `bg-primary/10 text-primary`
+- `bg-accent` becomes `bg-primary/10`
+- All stat icons use `text-primary` consistently
+
+---
+
+## New Imports Required
+
+```tsx
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MapPin, Linkedin, Share2 } from 'lucide-react';
+```
+
+---
+
+## Project Card Status Colors
+
+Update to brand-compliant palette:
+
+| Status | Current | Updated |
+|--------|---------|---------|
+| planning | bg-muted | bg-muted (keep) |
+| pre_sale | bg-accent | bg-primary/20 text-primary |
+| under_construction | bg-primary | bg-primary (keep) |
+| completed | bg-green-100 text-green-700 | bg-primary/10 text-primary |
+
+---
+
+## Empty States
+
+Use Lucide icons matching the content type:
+- **No active projects**: `Building2` icon
+- **No completed projects**: `CheckCircle` icon
+- **No blog posts**: `FileText` icon
+
+Each with muted styling and helpful text.
+
+---
+
+## Summary of Changes
+
+| File | Changes |
+|------|---------|
+| `src/types/projects.ts` | Add 9 new fields to Developer interface |
+| `src/pages/DeveloperDetail.tsx` | Complete redesign with hero card, tabbed interface, new data display |
+
+This brings the developer profile to feature parity with agent/agency pages while showcasing all wizard-collected data.
