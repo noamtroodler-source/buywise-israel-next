@@ -81,12 +81,12 @@ export function RegionExplorer() {
           className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-              Explore by Region
-            </h2>
-            <p className="text-base text-muted-foreground mt-1">
-              Discover cities across Israel
-            </p>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground">
+            Explore Real Estate Markets Across Israel
+          </h2>
+          <p className="text-base text-muted-foreground mt-1">
+            Market context and buyer-focused insights for each city.
+          </p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/areas" className="gap-2">
