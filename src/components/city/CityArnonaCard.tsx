@@ -117,7 +117,7 @@ export function CityArnonaCard({ arnonaRateSqm, arnonaMonthlyAvg, cityName }: Ci
               {arnonaEstimate.discountPercent}% discount
             </span>
           ) : (
-            <span className={percentVsNational >= 0 ? 'text-amber-600' : 'text-emerald-600'}>
+            <span className={percentVsNational >= 0 ? 'text-amber-600' : 'text-primary'}>
               {percentVsNational >= 0 ? '+' : ''}{percentVsNational.toFixed(0)}% vs avg
             </span>
           )}

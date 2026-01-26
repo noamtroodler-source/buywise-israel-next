@@ -150,7 +150,7 @@ export default function AdminAccuracyAudit() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-emerald-600">{summary.perfect}</div>
+              <div className="text-3xl font-bold text-primary">{summary.perfect}</div>
               <div className="text-sm text-muted-foreground">No Issues</div>
             </div>
           </CardContent>
@@ -194,7 +194,7 @@ export default function AdminAccuracyAudit() {
                       <TableCell className="font-medium">{row.name}</TableCell>
                       <TableCell>
                         {row.discrepancies.length === 0 ? (
-                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                          <Badge variant="secondary" className="bg-primary/10 text-primary">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             OK
                           </Badge>

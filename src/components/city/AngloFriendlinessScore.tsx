@@ -16,7 +16,7 @@ export function AngloFriendlinessScore({ angloPresence, socioeconomicRank, cityN
       case 'High':
         return {
           stars: 5,
-          color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+          color: 'bg-primary/10 text-primary border-primary/20',
           description: 'Strong Anglo community presence',
           services: 'Excellent English services',
         };
