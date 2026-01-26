@@ -1,68 +1,68 @@
 
-# Rename "Pardes Hanna-Karkur" to "Pardes Hanna"
+
+# Limit Worth Watching to 6 Items Maximum
 
 ## Summary
 
-The city is currently named "Pardes Hanna-Karkur" in multiple locations. You want to simplify it to just "Pardes Hanna" everywhere.
+Add a maximum limit of 6 items to the "Worth Watching" section on city area pages. Items are already sorted by `sort_order` from the database, so slicing will preserve the most important factors.
+
+---
+
+## Current Flow
+
+```text
+Database (city_market_factors, sorted by sort_order)
+    ↓
+useCityMarketFactors hook
+    ↓
+staticFactors array (mapped to MarketFactor format)
+    ↓
+Combined with dynamic TAMA 38 factor → worthWatching
+    ↓
+CityWorthWatchingNew component (displays ALL factors)
+```
+
+---
+
+## Solution
+
+Apply `.slice(0, 6)` to the `worthWatching` array before passing it to the component.
 
 ---
 
 ## Changes Required
 
-### 1. Database Update
-Update the city name in the `cities` table:
+### File: `src/pages/AreaDetail.tsx`
 
-| Field | Current | New |
-|-------|---------|-----|
-| `name` | Pardes Hanna-Karkur | Pardes Hanna |
-| `slug` | pardes-hanna | pardes-hanna *(no change)* |
-
-### 2. Frontend Files
-
-**File: `src/pages/Areas.tsx` (Line 100)**
-- Change display name from "Pardes Hanna-Karkur" to "Pardes Hanna"
-- Update description text from "Pardes Hanna-Karkur offers..." to "Pardes Hanna offers..."
-
-**File: `src/lib/utils/cityMatcher.ts` (Line 41)**
-- Change the main key from "Pardes Hanna-Karkur" to "Pardes Hanna"
-- Keep aliases for backward compatibility (already includes "pardes hanna")
-
----
-
-## What Stays the Same
-
-- Slug remains `pardes-hanna` (already correct)
-- Asset filenames remain `pardes-hanna.jpg` and `pardes-hanna-hero.jpg`
-- All import statements remain unchanged
-- District mapping already uses "Pardes Hanna"
-- NeighborhoodMatch tool already uses "Pardes Hanna"
-
----
-
-## Implementation Steps
-
-1. Run database migration to update city name
-2. Update `src/pages/Areas.tsx` - change display name and description
-3. Update `src/lib/utils/cityMatcher.ts` - change the primary key
-
----
-
-## Technical Details
-
-```sql
--- Database migration
-UPDATE cities SET name = 'Pardes Hanna' WHERE slug = 'pardes-hanna';
-```
+**Lines 170-173** - Add the slice after combining factors:
 
 ```typescript
-// Areas.tsx line 100
-{ name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, 
-  description: 'Pardes Hanna offers quiet, affordable living in the north...', 
-  tags: ['Quiet living', 'Value north'] },
+// Combine database factors and dynamic TAMA 38 factor
+const allFactors = tama38Factor 
+  ? [...staticFactors.filter(f => !f.title.toLowerCase().includes('tama')), tama38Factor]
+  : staticFactors;
 
-// cityMatcher.ts line 41
-"Pardes Hanna": ["pardes hanna", "pardes-hanna", "pardeshanna", "pardes hana", 
-                 "pardeshana", "pardes hanna-karkur", "pardes hanna karkur"],
+// Limit to maximum 6 items (already sorted by sort_order from database)
+const worthWatching = allFactors.slice(0, 6);
 ```
 
-Note: Adding "pardes hanna-karkur" as an alias ensures anyone searching the old name still finds the city.
+---
+
+## Why This Works
+
+1. **Database ordering preserved**: The `useCityMarketFactors` hook already orders by `sort_order`, so the most important factors come first
+2. **TAMA 38 included**: The dynamic TAMA 38 factor is added before slicing, so it counts toward the 6-item limit
+3. **Grid alignment**: 6 items creates exactly 2 full rows in the 3-column grid layout
+
+---
+
+## Result
+
+| City | Before | After |
+|------|--------|-------|
+| Jerusalem | 8 items | 6 items (top 6 by priority) |
+| Givat Shmuel | 5 items | 5 items (under limit, unchanged) |
+| Herzliya | 3 items | 3 items (under limit, unchanged) |
+
+Cities with 6 or fewer factors are unaffected. Cities with more than 6 will show only the highest-priority items based on their `sort_order`.
+
