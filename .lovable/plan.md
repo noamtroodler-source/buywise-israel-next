@@ -1,47 +1,26 @@
 
-
-# Update TrustStrip Stats Section
+# Remove "Where Should I Buy?" Tool
 
 ## Summary
 
-Replace the current inventory-focused stats with utility and trust-focused metrics that complement (not duplicate) the hero section.
+Delete the "Where Should I Buy?" (Neighborhood Match) tool from the platform entirely. This removes it from the tools directory, homepage promotion, and deletes the component files.
 
 ---
 
-## New Stats Configuration
+## What Will Be Removed
 
-| Icon | Value | Label |
-|------|-------|-------|
-| Calculator | 9 | Free Tools |
-| MapPin | 35+ | Cities |
-| Shield | 100% | Independent |
-| Globe | 100% | In English |
+| Item | Location |
+|------|----------|
+| Tool card on /tools page | Shows in tool grid |
+| Tool functionality | 15-question quiz |
+| Homepage promo reference | ToolsPromo component |
+| Component files | 2 files |
 
 ---
 
-## Implementation
+## Database Impact
 
-**File:** `src/components/home/TrustStrip.tsx`
-
-### Changes Required
-
-1. **Update imports** - Replace `Home, Key, Building2` with `Calculator, MapPin, Globe` (keep `Shield`)
-
-2. **Replace displayStats array** - Remove dynamic database queries since these are now static values
-
-3. **Simplify component** - Remove the `usePlatformStats` hook since we no longer need database counts
-
-```tsx
-import { motion } from 'framer-motion';
-import { Calculator, MapPin, Shield, Globe } from 'lucide-react';
-
-const displayStats = [
-  { icon: Calculator, value: '9', label: 'Free Tools' },
-  { icon: MapPin, value: '35+', label: 'Cities' },
-  { icon: Shield, value: '100%', label: 'Independent' },
-  { icon: Globe, value: '100%', label: 'In English' },
-];
-```
+**No database changes required.** The `tool_runs` and `tool_step_events` tables contain no data related to this tool (verified via query).
 
 ---
 
@@ -49,5 +28,47 @@ const displayStats = [
 
 | File | Change |
 |------|--------|
-| `src/components/home/TrustStrip.tsx` | Update icons, values, labels; remove database hook |
+| `src/pages/Tools.tsx` | Remove import, tool entry from array, and component mapping |
+| `src/components/home/ToolsPromo.tsx` | Remove 'neighborhood' from tools array |
+
+## Files to Delete
+
+| File | Reason |
+|------|--------|
+| `src/components/tools/NeighborhoodMatch.tsx` | Primary component (767 lines) |
+| `src/components/tools/NeighborhoodQuiz.tsx` | Legacy component (unused, 323 lines) |
+
+---
+
+## Technical Details
+
+### Tools.tsx Changes
+
+1. Remove import line 18
+2. Remove tool entry from `tools` array (line 35)
+3. Remove mapping from `toolComponents` (line 46)
+4. Remove `MapPinned` from icon imports if no longer used
+
+### ToolsPromo.tsx Changes
+
+1. Remove neighborhood entry from tools array (line 10)
+2. Remove `Compass` from icon imports if no longer used
+
+### TrustStrip Update
+
+After removal, the "9 Free Tools" stat in TrustStrip should be updated to "8 Free Tools" to reflect accurate count.
+
+---
+
+## Post-Removal Tool Count
+
+The platform will have **8 tools** remaining:
+1. Mortgage Calculator
+2. Total Cost Calculator
+3. Affordability Calculator
+4. Investment Return Calculator
+5. Rent vs Buy Calculator
+6. Renovation Cost Estimator
+7. Document Checklist
+8. *(One tool removed)*
 
