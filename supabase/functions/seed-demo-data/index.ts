@@ -107,33 +107,46 @@ const AVATARS = [
 
 // ============ ISRAELI DATA ============
 
-const CITIES = [
-  { name: "Tel Aviv", slug: "tel-aviv", lat: 32.0853, lng: 34.7818, priceMultiplier: 1.8 },
-  { name: "Jerusalem", slug: "jerusalem", lat: 31.7683, lng: 35.2137, priceMultiplier: 1.3 },
-  { name: "Haifa", slug: "haifa", lat: 32.7940, lng: 34.9896, priceMultiplier: 0.9 },
-  { name: "Herzliya", slug: "herzliya", lat: 32.1656, lng: 34.8467, priceMultiplier: 1.6 },
-  { name: "Ra'anana", slug: "raanana", lat: 32.1841, lng: 34.8710, priceMultiplier: 1.4 },
-  { name: "Netanya", slug: "netanya", lat: 32.3286, lng: 34.8570, priceMultiplier: 1.0 },
-  { name: "Ashkelon", slug: "ashkelon", lat: 31.6688, lng: 34.5743, priceMultiplier: 0.7 },
-  { name: "Ashdod", slug: "ashdod", lat: 31.8040, lng: 34.6553, priceMultiplier: 0.75 },
-  { name: "Beer Sheva", slug: "beer-sheva", lat: 31.2518, lng: 34.7913, priceMultiplier: 0.55 },
-  { name: "Rehovot", slug: "rehovot", lat: 31.8928, lng: 34.8113, priceMultiplier: 1.1 },
-  { name: "Petah Tikva", slug: "petah-tikva", lat: 32.0868, lng: 34.8859, priceMultiplier: 1.0 },
-  { name: "Rishon LeZion", slug: "rishon-lezion", lat: 31.9730, lng: 34.7925, priceMultiplier: 1.05 },
-  { name: "Holon", slug: "holon", lat: 32.0105, lng: 34.7726, priceMultiplier: 0.95 },
-  { name: "Bat Yam", slug: "bat-yam", lat: 32.0231, lng: 34.7503, priceMultiplier: 0.85 },
-  { name: "Kfar Saba", slug: "kfar-saba", lat: 32.1780, lng: 34.9078, priceMultiplier: 1.2 },
-  { name: "Modiin", slug: "modiin", lat: 31.8977, lng: 35.0104, priceMultiplier: 1.15 },
-  { name: "Ramat Gan", slug: "ramat-gan", lat: 32.0680, lng: 34.8248, priceMultiplier: 1.35 },
-  { name: "Givatayim", slug: "givatayim", lat: 32.0718, lng: 34.8124, priceMultiplier: 1.4 },
-  { name: "Hod HaSharon", slug: "hod-hasharon", lat: 32.1530, lng: 34.8920, priceMultiplier: 1.25 },
-  { name: "Nahariya", slug: "nahariya", lat: 33.0081, lng: 35.0942, priceMultiplier: 0.65 },
-  { name: "Eilat", slug: "eilat", lat: 29.5581, lng: 34.9482, priceMultiplier: 0.9 },
-  { name: "Beit Shemesh", slug: "beit-shemesh", lat: 31.7514, lng: 34.9886, priceMultiplier: 0.8 },
-  { name: "Caesarea", slug: "caesarea", lat: 32.5006, lng: 34.8978, priceMultiplier: 2.0 },
-  { name: "Pardes Hanna", slug: "pardes-hanna", lat: 32.4706, lng: 34.9699, priceMultiplier: 0.7 },
-  { name: "Mevaseret Zion", slug: "mevaseret-zion", lat: 31.8024, lng: 35.1527, priceMultiplier: 1.25 },
-];
+// City coordinates and price multipliers - used when fetching from database
+const CITY_COORDS: Record<string, { lat: number; lng: number; priceMultiplier: number }> = {
+  "Tel Aviv": { lat: 32.0853, lng: 34.7818, priceMultiplier: 1.8 },
+  "Jerusalem": { lat: 31.7683, lng: 35.2137, priceMultiplier: 1.3 },
+  "Haifa": { lat: 32.7940, lng: 34.9896, priceMultiplier: 0.9 },
+  "Herzliya": { lat: 32.1656, lng: 34.8467, priceMultiplier: 1.6 },
+  "Ra'anana": { lat: 32.1841, lng: 34.8710, priceMultiplier: 1.4 },
+  "Netanya": { lat: 32.3286, lng: 34.8570, priceMultiplier: 1.0 },
+  "Ashkelon": { lat: 31.6688, lng: 34.5743, priceMultiplier: 0.7 },
+  "Ashdod": { lat: 31.8040, lng: 34.6553, priceMultiplier: 0.75 },
+  "Beer Sheva": { lat: 31.2518, lng: 34.7913, priceMultiplier: 0.55 },
+  "Petah Tikva": { lat: 32.0868, lng: 34.8859, priceMultiplier: 1.0 },
+  "Kfar Saba": { lat: 32.1780, lng: 34.9078, priceMultiplier: 1.2 },
+  "Modiin": { lat: 31.8977, lng: 35.0104, priceMultiplier: 1.15 },
+  "Modi'in": { lat: 31.8977, lng: 35.0104, priceMultiplier: 1.15 },
+  "Ramat Gan": { lat: 32.0680, lng: 34.8248, priceMultiplier: 1.35 },
+  "Hod HaSharon": { lat: 32.1530, lng: 34.8920, priceMultiplier: 1.25 },
+  "Eilat": { lat: 29.5581, lng: 34.9482, priceMultiplier: 0.9 },
+  "Beit Shemesh": { lat: 31.7514, lng: 34.9886, priceMultiplier: 0.8 },
+  "Caesarea": { lat: 32.5006, lng: 34.8978, priceMultiplier: 2.0 },
+  "Pardes Hanna": { lat: 32.4706, lng: 34.9699, priceMultiplier: 0.7 },
+  "Mevaseret Zion": { lat: 31.8024, lng: 35.1527, priceMultiplier: 1.25 },
+  "Zichron Yaakov": { lat: 32.5714, lng: 34.9520, priceMultiplier: 1.1 },
+  "Tiberias": { lat: 32.7940, lng: 35.5300, priceMultiplier: 0.65 },
+  "Kiryat Ata": { lat: 32.8100, lng: 35.1100, priceMultiplier: 0.7 },
+  "Yavne": { lat: 31.8780, lng: 34.7390, priceMultiplier: 0.85 },
+  "Givat Shmuel": { lat: 32.0800, lng: 34.8500, priceMultiplier: 1.3 },
+};
+
+// Helper function to get city data with coordinates
+function getCityWithCoords(cityName: string, citySlug: string) {
+  const coords = CITY_COORDS[cityName] || { lat: 32.0, lng: 34.8, priceMultiplier: 1.0 };
+  return {
+    name: cityName,
+    slug: citySlug,
+    lat: coords.lat,
+    lng: coords.lng,
+    priceMultiplier: coords.priceMultiplier,
+  };
+}
 
 const FIRST_NAMES_MALE = ["Yosef", "David", "Moshe", "Avraham", "Yitzhak", "Yaakov", "Eli", "Oren", "Noam", "Amit", "Eitan", "Gal", "Roi", "Nadav", "Ido", "Lior", "Tal", "Amir", "Yonatan", "Dan"];
 const FIRST_NAMES_FEMALE = ["Sarah", "Rachel", "Miriam", "Rivka", "Leah", "Tamar", "Noa", "Maya", "Shira", "Yael", "Michal", "Ronit", "Keren", "Dana", "Liora", "Talia", "Avital", "Inbar", "Orly", "Ayelet"];
@@ -252,6 +265,20 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ============ FETCH OFFICIAL CITIES FROM DATABASE ============
+    console.log("Fetching official cities from database...");
+    const { data: dbCities, error: citiesError } = await supabase
+      .from('cities')
+      .select('name, slug');
+    
+    if (citiesError || !dbCities || dbCities.length === 0) {
+      throw new Error(`Failed to fetch cities: ${citiesError?.message || 'No cities found'}`);
+    }
+    
+    // Build CITIES array from database - ensures we ONLY use official cities
+    const CITIES = dbCities.map(city => getCityWithCoords(city.name, city.slug));
+    console.log(`Using ${CITIES.length} official cities from database`);
 
     const results = {
       agencies: 0,
