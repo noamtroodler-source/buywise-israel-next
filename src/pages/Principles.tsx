@@ -159,8 +159,8 @@ export default function Principles() {
               >
                 <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 rounded-xl p-6 md:p-8 border border-primary/20">
                   <p className="text-lg md:text-xl text-foreground font-medium leading-relaxed">
-                    You're not behind. You're not stupid for feeling unsure.
-                    <span className="block mt-2 text-primary">You're doing this the right way.</span>
+                    Taking time to understand is not a delay.
+                    <span className="block mt-2 text-primary">It's how confident decisions are made.</span>
                   </p>
                 </div>
               </motion.div>
