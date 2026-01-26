@@ -1,123 +1,62 @@
 
 
-# Improved Trust Indicator Graphics
+# Update PlatformPromise Section
 
-## Current Issue
+## Summary
 
-The current icons (`Home`, `Key`, `Building2`) are basic and don't feel premium enough against the hero background. The yellow accent color also makes them look a bit flat.
-
----
-
-## Design Options
-
-### Option A: Better Icon Choices (Recommended)
-
-Replace with more descriptive, visually appealing icons:
-
-| Current | New Icon | Why Better |
-|---------|----------|------------|
-| `Home` (house outline) | `House` or `MapPin` | More refined shape |
-| `Key` (key shape) | `DoorOpen` or `KeyRound` | More modern feel |
-| `Building2` (office block) | `Landmark` or `Building` | Cleaner silhouette |
-
-**Recommended set:**
-- **For Sale**: `House` - cleaner house icon
-- **Rentals**: `KeyRound` - rounder, more modern key
-- **Projects**: `Crane` or `HardHat` - conveys "new construction" better
-
-### Option B: Pill/Badge Style
-
-Wrap each stat in a subtle glass-morphism pill for more visual weight:
-
-```text
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ 🏠 65+ For Sale │  │ 🔑 20+ Rentals  │  │ 🏗️ 15 Projects │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-```
-
-**Styling:**
-- `bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5`
-- Icons in white instead of yellow for cleaner look
-- Subtle border: `border border-white/20`
-
-### Option C: Text-Only with Accent Numbers (Minimal)
-
-Remove icons entirely, make the numbers pop:
-
-```text
-65+ For Sale  •  20+ Rentals  •  15 Projects
-```
-
-With the numbers in accent color: `<span className="text-accent font-semibold">65+</span> For Sale`
+Update the quote/mission statement in the PlatformPromise section with new copy and styling.
 
 ---
 
-## Recommended Approach: Option B (Pill Badges)
+## Branding Answer
 
-This gives the most visual improvement while keeping the icons. The glass-morphism style adds depth and feels more premium.
+**"BuyWise Israel"** (with a space) is the correct format. This is consistently used across:
+- Page titles and meta tags
+- Footer copyright
+- Marketing content
+- Hero sections
+
+The no-space version (`BuyWiseIsrael`) only appears in technical contexts like User-Agent headers and the domain name.
+
+---
+
+## Text Change
+
+**Current:**
+> BuyWise isn't a brokerage. It's a starting point — designed to help you **explore with clarity**, not pressure.
+
+**New:**
+> Buying or renting in **Israel** no longer has to feel overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
+
+---
+
+## Styling Change
+
+| Element | Current | New |
+|---------|---------|-----|
+| Main text | `text-foreground` (dark gray) | Black (`text-foreground` works, already near-black) |
+| Highlighted word | "explore with clarity" in primary (blue) | "Israel" in primary (blue) |
+| Link text | "How BuyWise works" | Could update to "How BuyWise Israel works" for consistency |
 
 ---
 
 ## Implementation
 
-**File:** `src/components/home/HeroSplit.tsx` (lines 126-145)
+**File:** `src/components/home/PlatformPromise.tsx`
 
-### Icon Changes
-Replace current icons with better alternatives:
-- `Home` → `House` (cleaner residential feel)
-- `Key` → `KeyRound` (more modern)
-- `Building2` → `Crane` (conveys "new construction" better than office building)
-
-### Style Changes
-Wrap each stat in a pill badge with glass effect:
+### Line 22-25: Update the paragraph text
 
 ```tsx
-{/* Trust Indicators */}
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.6, delay: 0.5 }}
-  className="flex flex-wrap items-center gap-3 pt-2"
->
-  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-    <House className="w-3.5 h-3.5" />
-    <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
-    <span className="text-white/70">For Sale</span>
-  </span>
-  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-    <KeyRound className="w-3.5 h-3.5" />
-    <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
-    <span className="text-white/70">Rentals</span>
-  </span>
-  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-    <Crane className="w-3.5 h-3.5" />
-    <span className="font-medium">{stats?.projectsCount ?? 15}</span>
-    <span className="text-white/70">Projects</span>
-  </span>
-</motion.div>
+<p className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed -mt-6">
+  Buying or renting in <span className="text-primary">Israel</span> no longer has to feel 
+  overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
+</p>
 ```
 
-### Import Update
+### Line 31: Update the link text (optional but recommended)
+
 ```tsx
-import { Search, Building2, Home, Key, House, KeyRound, Crane } from 'lucide-react';
-```
-
----
-
-## Visual Comparison
-
-**Before:**
-```text
-🏠 65+ For Sale   🔑 20+ Rentals   🏗️ 15 Projects
-(yellow icons, plain text, flat appearance)
-```
-
-**After:**
-```text
-┌──────────────────┐ ┌─────────────────┐ ┌────────────────┐
-│ 🏠 65+ For Sale  │ │ 🔑 20+ Rentals  │ │ 🏗️ 15 Projects │
-└──────────────────┘ └─────────────────┘ └────────────────┘
-(white icons, glass pills, premium feel)
+How BuyWise Israel works
 ```
 
 ---
@@ -126,15 +65,11 @@ import { Search, Building2, Home, Key, House, KeyRound, Crane } from 'lucide-rea
 
 | File | Change |
 |------|--------|
-| `src/components/home/HeroSplit.tsx` | Update icons (`House`, `KeyRound`, `Crane`) and add pill/badge styling with glass-morphism effect |
+| `src/components/home/PlatformPromise.tsx` | Update quote text and highlight "Israel" instead of "explore with clarity" |
 
 ---
 
 ## Result
 
-The trust indicators will have a more polished, premium appearance with:
-- Better icon choices that more clearly represent each category
-- Glass-morphism pill badges that add visual depth
-- White icons instead of yellow for a cleaner look against the hero image
-- Numbers emphasized with bold/medium weight
+The PlatformPromise section will display the new messaging with consistent "BuyWise Israel" branding and "Israel" highlighted in the primary blue color.
 
