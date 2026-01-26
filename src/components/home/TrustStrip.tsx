@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, Wrench, Shield, Users } from 'lucide-react';
+import { Home, Key, Building2, Shield } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/usePlatformStats';
 
 export function TrustStrip() {
@@ -7,24 +7,24 @@ export function TrustStrip() {
 
   const displayStats = [
     {
-      icon: MapPin,
-      value: stats?.cityCount?.toString() ?? '34',
-      label: 'Cities Covered',
+      icon: Home,
+      value: stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+',
+      label: 'For Sale',
     },
     {
-      icon: Wrench,
-      value: stats?.toolCount?.toString() ?? '9',
-      label: 'Free Tools',
+      icon: Key,
+      value: stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+',
+      label: 'Rentals',
+    },
+    {
+      icon: Building2,
+      value: (stats?.projectsCount ?? 15).toString(),
+      label: 'Projects',
     },
     {
       icon: Shield,
       value: '100%',
       label: 'Independent',
-    },
-    {
-      icon: Users,
-      value: 'Built by',
-      label: 'Internationals',
     },
   ];
 
