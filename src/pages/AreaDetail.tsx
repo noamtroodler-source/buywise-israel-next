@@ -236,6 +236,10 @@ export default function CityDetail() {
             ] : undefined}
             dataSources={(city as any).data_sources}
             lastVerified={canonicalMetrics?.updated_at}
+            canonicalMetrics={canonicalMetrics}
+            cityData={{
+              average_price_sqm: city.average_price_sqm,
+            }}
           />
         </section>
 
