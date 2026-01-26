@@ -20,15 +20,15 @@ export function PlatformPromise() {
           <div className="text-5xl text-primary/20 font-serif leading-none">"</div>
           
           <p className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed -mt-6">
-            BuyWise isn't a brokerage. It's a starting point — designed to help you 
-            <span className="text-primary"> explore with clarity</span>, not pressure.
+            Buying or renting in <span className="text-primary">Israel</span> no longer has to feel 
+            overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
           </p>
           
           <Link 
             to="/about" 
             className="inline-flex items-center gap-2 text-base text-primary hover:text-primary-hover transition-colors font-medium group"
           >
-            How BuyWise works
+            How BuyWise Israel works
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </motion.div>
