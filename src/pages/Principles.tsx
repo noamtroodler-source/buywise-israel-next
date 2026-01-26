@@ -181,7 +181,7 @@ export default function Principles() {
                 What BuyWise Actually Is
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                BuyWise is an English-first discovery and decision platform for internationals buying or renting in Israel — designed to help you understand your options clearly and move forward with confidence and clarity.
+                BuyWise is an English-first discovery and decision platform for internationals buying or renting in Israel — designed to help you understand your options clearly and move forward with confidence.
               </p>
             </motion.div>
 
