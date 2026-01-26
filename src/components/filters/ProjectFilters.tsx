@@ -591,7 +591,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center justify-between",
                     filters.sort_by === option.value 
-                      ? "bg-amber-100 text-foreground font-medium" 
+                      ? "bg-primary/10 text-primary font-medium" 
                       : "hover:bg-muted"
                   )}
                   onClick={() => {
