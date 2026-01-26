@@ -3,6 +3,7 @@ import { useSearchIntelligence } from '@/hooks/useAnalyticsData';
 import { Loader2, Search, TrendingUp, AlertTriangle, Target } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { SampleSizeWarning } from './SampleSizeWarning';
 
 const COLORS = [
   'hsl(var(--primary))',
@@ -45,6 +46,11 @@ export function SearchIntelligenceTab({ dateRange }: SearchIntelligenceTabProps)
 
   return (
     <div className="space-y-6">
+      {/* Sample Size Indicator */}
+      <div className="flex justify-end">
+        <SampleSizeWarning sampleSize={conversion.totalSearches} showLabel />
+      </div>
+
       {/* Conversion Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
