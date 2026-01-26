@@ -36,7 +36,7 @@ const whatWeAre = [
   {
     icon: Compass,
     title: 'Discovery, Made Clear',
-    description: 'An english-first platform for internationals buying or renting in Israel. Clean, intuitive browsing across listings in Israel.',
+    description: 'An English-first platform for internationals buying or renting in Israel. Clean, intuitive browsing across verified resale homes, rentals, and new projects.',
   },
   {
     icon: Layers,
