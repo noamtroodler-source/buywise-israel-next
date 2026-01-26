@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, MessageSquare, Building2, TrendingUp, Loader2, Calendar, Home, BarChart3, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, Eye, MessageSquare, Building2, TrendingUp, Loader2, Calendar, BarChart3, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { useDeveloperAnalytics, DateRangeFilter } from '@/hooks/useDeveloperAnalytics';
-import { InquiryBreakdownChart, ProjectPerformanceChart, ConversionFunnel } from '@/components/developer/analytics';
+import { ConversionFunnel } from '@/components/developer/analytics';
 import {
   Select,
   SelectContent,
@@ -59,17 +59,6 @@ export default function DeveloperAnalytics() {
 
   const dateRangeLabel = dateRangeOptions.find(o => o.value === dateRange)?.label || 'All time';
 
-  // Prepare chart data
-  const projectChartData = projects.map(project => {
-    const stats = analytics?.projectAnalytics.find(p => p.projectId === project.id);
-    return {
-      projectId: project.id,
-      name: project.name,
-      views: stats?.views || 0,
-      inquiries: stats?.inquiries || 0,
-    };
-  });
-
   const stats = [
     {
       label: 'Total Views',
@@ -82,12 +71,6 @@ export default function DeveloperAnalytics() {
       value: analytics?.totalInquiries || 0,
       icon: MessageSquare,
       description: 'Buyer inquiries received'
-    },
-    {
-      label: 'Available Units',
-      value: analytics?.availableUnits || 0,
-      icon: Home,
-      description: `of ${analytics?.totalUnits || 0} total`
     },
     {
       label: 'Conversion Rate',
@@ -126,7 +109,7 @@ export default function DeveloperAnalytics() {
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
-                    <p className="text-muted-foreground">Track your project performance and buyer engagement</p>
+                    <p className="text-muted-foreground">Track your project performance</p>
                   </div>
                 </div>
                 
@@ -154,12 +137,12 @@ export default function DeveloperAnalytics() {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
-          {/* Stats Grid */}
+          {/* Stats Grid - 3 cards now */}
           <motion.div 
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             {stats.map((stat) => (
               <motion.div key={stat.label} variants={itemVariants}>
@@ -193,41 +176,11 @@ export default function DeveloperAnalytics() {
             />
           </motion.div>
 
-          {/* Charts Row */}
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid gap-6 lg:grid-cols-2"
-          >
-            <motion.div variants={itemVariants}>
-              <InquiryBreakdownChart 
-                data={analytics?.inquiriesByUnitType || {}} 
-                title="Inquiries by Unit Type"
-              />
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <InquiryBreakdownChart 
-                data={analytics?.inquiriesByBudget || {}} 
-                title="Inquiries by Budget Range"
-              />
-            </motion.div>
-          </motion.div>
-
-          {/* Project Performance Chart */}
+          {/* Project Performance Table */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <ProjectPerformanceChart data={projectChartData} />
-          </motion.div>
-
-          {/* Detailed Project Performance Table */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
           >
             <Card className="rounded-2xl border-border/50 hover:shadow-lg transition-all">
               <CardHeader className="pb-4">
@@ -237,7 +190,7 @@ export default function DeveloperAnalytics() {
                   </div>
                   <div>
                     <CardTitle className="text-lg font-semibold">Project Performance</CardTitle>
-                    <p className="text-sm text-muted-foreground">Detailed breakdown by project</p>
+                    <p className="text-sm text-muted-foreground">Breakdown by project</p>
                   </div>
                 </div>
               </CardHeader>
@@ -255,12 +208,11 @@ export default function DeveloperAnalytics() {
                 ) : (
                   <div className="space-y-3">
                     {/* Header Row */}
-                    <div className="hidden sm:grid grid-cols-6 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground">
+                    <div className="hidden sm:grid grid-cols-5 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground">
                       <span className="col-span-2">Project</span>
                       <span className="text-center">Views</span>
                       <span className="text-center">Inquiries</span>
-                      <span className="text-center">Available</span>
-                      <span className="text-center">Rate</span>
+                      <span className="text-center">Conversion</span>
                     </div>
                     
                     {/* Data Rows */}
@@ -273,7 +225,7 @@ export default function DeveloperAnalytics() {
                       return (
                         <div 
                           key={project.id}
-                          className="group grid grid-cols-2 sm:grid-cols-6 gap-4 px-4 py-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all cursor-pointer"
+                          className="group grid grid-cols-2 sm:grid-cols-5 gap-4 px-4 py-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-all"
                         >
                           <div className="col-span-2 flex items-center gap-3">
                             <div className="h-10 w-10 rounded-lg bg-card border border-border flex items-center justify-center group-hover:border-primary/30 transition-colors flex-shrink-0">
@@ -301,10 +253,6 @@ export default function DeveloperAnalytics() {
                             </div>
                           </div>
                           
-                          <div className="hidden sm:flex items-center justify-center">
-                            <span className="font-medium text-foreground">{project.available_units || 0}</span>
-                          </div>
-                          
                           <div className="flex items-center justify-end sm:justify-center">
                             <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10">
                               <ArrowUpRight className="h-3.5 w-3.5 text-primary" />
@@ -321,9 +269,6 @@ export default function DeveloperAnalytics() {
                             <div className="flex items-center gap-1">
                               <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
                               <span>{inquiries}</span>
-                            </div>
-                            <div className="text-muted-foreground">
-                              {project.available_units || 0} available
                             </div>
                           </div>
                         </div>
