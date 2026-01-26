@@ -1,74 +1,44 @@
 
-# Remove "Where Should I Buy?" Tool
+
+# Fix Free Tools Count
 
 ## Summary
 
-Delete the "Where Should I Buy?" (Neighborhood Match) tool from the platform entirely. This removes it from the tools directory, homepage promotion, and deletes the component files.
+Update the TrustStrip component to show the correct number of tools: **7** instead of 8.
 
 ---
 
-## What Will Be Removed
-
-| Item | Location |
-|------|----------|
-| Tool card on /tools page | Shows in tool grid |
-| Tool functionality | 15-question quiz |
-| Homepage promo reference | ToolsPromo component |
-| Component files | 2 files |
-
----
-
-## Database Impact
-
-**No database changes required.** The `tool_runs` and `tool_step_events` tables contain no data related to this tool (verified via query).
-
----
-
-## Files to Modify
+## Change Required
 
 | File | Change |
 |------|--------|
-| `src/pages/Tools.tsx` | Remove import, tool entry from array, and component mapping |
-| `src/components/home/ToolsPromo.tsx` | Remove 'neighborhood' from tools array |
-
-## Files to Delete
-
-| File | Reason |
-|------|--------|
-| `src/components/tools/NeighborhoodMatch.tsx` | Primary component (767 lines) |
-| `src/components/tools/NeighborhoodQuiz.tsx` | Legacy component (unused, 323 lines) |
+| `src/components/home/TrustStrip.tsx` | Update value from '8' to '7' |
 
 ---
 
-## Technical Details
+## Implementation
 
-### Tools.tsx Changes
+**Line 5** in `src/components/home/TrustStrip.tsx`:
 
-1. Remove import line 18
-2. Remove tool entry from `tools` array (line 35)
-3. Remove mapping from `toolComponents` (line 46)
-4. Remove `MapPinned` from icon imports if no longer used
+```tsx
+// Before
+{ icon: Calculator, value: '8', label: 'Free Tools' },
 
-### ToolsPromo.tsx Changes
-
-1. Remove neighborhood entry from tools array (line 10)
-2. Remove `Compass` from icon imports if no longer used
-
-### TrustStrip Update
-
-After removal, the "9 Free Tools" stat in TrustStrip should be updated to "8 Free Tools" to reflect accurate count.
+// After
+{ icon: Calculator, value: '7', label: 'Free Tools' },
+```
 
 ---
 
-## Post-Removal Tool Count
+## Current Tool Inventory (7 Total)
 
-The platform will have **8 tools** remaining:
-1. Mortgage Calculator
-2. Total Cost Calculator
-3. Affordability Calculator
-4. Investment Return Calculator
-5. Rent vs Buy Calculator
-6. Renovation Cost Estimator
-7. Document Checklist
-8. *(One tool removed)*
+| # | Tool ID | Name |
+|---|---------|------|
+| 1 | mortgage | Mortgage Calculator |
+| 2 | totalcost | Total Cost Calculator |
+| 3 | affordability | Affordability Calculator |
+| 4 | investment | Investment Return Calculator |
+| 5 | rentvsbuy | Rent vs Buy Calculator |
+| 6 | renovation | Renovation Cost Estimator |
+| 7 | documents | Document Checklist |
 
