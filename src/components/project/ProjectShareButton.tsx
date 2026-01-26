@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, Link, MessageCircle, Send } from 'lucide-react';
+import { Share2, Link, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -49,15 +49,6 @@ export const ProjectShareButton = React.forwardRef<HTMLButtonElement, ProjectSha
       }
     };
 
-    const handleTelegram = (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const url = `https://t.me/share/url?url=${encodeURIComponent(projectUrl)}&text=${encodeURIComponent(shareText)}`;
-      window.open(url, '_blank');
-      if (projectId) {
-        trackShare({ entityType: 'project', entityId: projectId, shareMethod: 'telegram' });
-      }
-    };
 
     const handleTriggerClick = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -87,10 +78,6 @@ export const ProjectShareButton = React.forwardRef<HTMLButtonElement, ProjectSha
           <DropdownMenuItem onClick={handleWhatsApp}>
             <MessageCircle className="h-4 w-4 mr-2" />
             WhatsApp
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleTelegram}>
-            <Send className="h-4 w-4 mr-2" />
-            Telegram
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -22,7 +22,7 @@ function getOrCreateSessionId(): string {
   return newSession;
 }
 
-export type ShareMethod = 'copy_link' | 'whatsapp' | 'telegram' | 'native_share';
+export type ShareMethod = 'copy_link' | 'whatsapp' | 'native_share';
 export type ShareEntityType = 'property' | 'project' | 'area' | 'tool';
 
 interface TrackShareOptions {
