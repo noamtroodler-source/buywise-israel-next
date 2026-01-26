@@ -19,7 +19,7 @@ const stats = [
   },
   {
     icon: Calculator,
-    value: "9",
+    value: "7",
     label: "Buyer Tools",
   },
 ];
