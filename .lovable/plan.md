@@ -1,66 +1,147 @@
 
-# Fix Broken Project Images in ProjectsHighlight
+# Fix Ref Warning and Verify Sorting Works Across All Pages
 
 ## The Problem
-The project card for "The Gardens Petah Tikva" shows a broken image icon because:
-1. The Unsplash image URL (`photo-1464938050520-ef2571e0d6bf`) is no longer available/valid
-2. The `ProjectsHighlight` component uses plain `<img>` tags without error handling
-3. The project already has a `PropertyThumbnail` component that gracefully handles broken images with fallbacks
+
+The console shows two React warnings:
+```
+Warning: Function components cannot be given refs.
+Check the render method of `Listings`.
+```
+
+These warnings occur because:
+1. **ListingsGrid** and **PropertyCard** are function components that don't use `React.forwardRef`
+2. React or a parent component is attempting to pass refs to these components
+3. The warnings don't break functionality but indicate a code quality issue
+
+## Root Cause Analysis
+
+Looking at the code:
+
+### 1. ListingsGrid (line 15-37)
+```tsx
+export function ListingsGrid({ children, isFetching, className }: ListingsGridProps) {
+  return (
+    <div className={cn("relative", className)}>
+      ...
+    </div>
+  );
+}
+```
+- Regular function component, no `forwardRef`
+
+### 2. PropertyCard (line 31 & 527)
+```tsx
+const PropertyCardComponent = memo(function PropertyCard(...) { ... });
+export const PropertyCard = PropertyCardComponent;
+```
+- Uses `memo` but no `forwardRef`
 
 ## The Fix
-Replace the plain `<img>` tags in `ProjectsHighlight.tsx` with the `PropertyThumbnail` component, which:
-- Detects when an image fails to load via `onError`
-- Automatically switches to a project-appropriate fallback image
-- Maintains a professional appearance even with broken URLs
 
-## Files to Update
+Wrap both components with `React.forwardRef` to properly handle refs:
 
-### `src/components/home/ProjectsHighlight.tsx`
+### File 1: `src/components/listings/ListingsGrid.tsx`
 
-**Add import:**
-```typescript
-import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-```
+**Changes:**
+- Import `forwardRef` from React
+- Wrap component with `forwardRef`
+- Accept `ref` parameter and pass to outer div
 
-**Line 91-95 - Main Project Image:**
-Replace:
 ```tsx
-<img
-  src={mainProject.images?.[0] || '/placeholder.svg'}
-  alt={mainProject.name}
-  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-/>
-```
-With:
-```tsx
-<PropertyThumbnail
-  src={mainProject.images?.[0]}
-  alt={mainProject.name}
-  type="project"
-  className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-/>
+import { ReactNode, forwardRef } from 'react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface ListingsGridProps {
+  children: ReactNode;
+  isFetching?: boolean;
+  className?: string;
+}
+
+export const ListingsGrid = forwardRef<HTMLDivElement, ListingsGridProps>(
+  function ListingsGrid({ children, isFetching, className }, ref) {
+    return (
+      <div ref={ref} className={cn("relative", className)}>
+        {/* existing content unchanged */}
+      </div>
+    );
+  }
+);
 ```
 
-**Lines 145-149 - Side Project Images:**
-Replace:
+### File 2: `src/components/property/PropertyCard.tsx`
+
+**Changes:**
+- Import `forwardRef` from React
+- Wrap component with `forwardRef` and `memo`
+- Accept `ref` parameter and pass to Link wrapper element
+
 ```tsx
-<img
-  src={project.images?.[0] || '/placeholder.svg'}
-  alt={project.name}
-  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-/>
+import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
+
+// ... existing code ...
+
+const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(
+  function PropertyCard({ property, className, ... }, ref) {
+    // ... existing logic ...
+    
+    return (
+      <>
+        <Link ref={ref} to={`/property/${property.id}`} onClick={handleCardClick}>
+          {/* existing card content */}
+        </Link>
+      </>
+    );
+  }
+));
+
+export const PropertyCard = PropertyCardComponent;
 ```
-With:
+
+## Sorting Verification
+
+The sorting is already properly implemented in the hooks. Here's the confirmation:
+
+### Properties (`usePaginatedProperties.tsx` lines 183-199)
 ```tsx
-<PropertyThumbnail
-  src={project.images?.[0]}
-  alt={project.name}
-  type="project"
-  className="w-full h-full group-hover:scale-105 transition-transform duration-500"
-/>
+function applySorting(query: any, filters?: PropertyFilters) {
+  switch (filters.sort_by) {
+    case 'newest': return query.order('created_at', { ascending: false });
+    case 'price_asc': return query.order('price', { ascending: true });
+    case 'price_desc': return query.order('price', { ascending: false });
+    case 'size_desc': return query.order('size_sqm', { ascending: false, nullsFirst: false });
+    case 'rooms_desc': return query.order('bedrooms', { ascending: false });
+    default: return query.order('created_at', { ascending: false });
+  }
+}
 ```
+
+### Projects (`usePaginatedProjects.tsx` lines 119-134)
+```tsx
+function applySorting(query: any, filters?: ProjectFiltersType) {
+  switch (filters.sort_by) {
+    case 'price_asc': return query.order('price_from', { ascending: true, nullsFirst: false });
+    case 'price_desc': return query.order('price_from', { ascending: false });
+    case 'completion': return query.order('completion_date', { ascending: true, nullsFirst: false });
+    case 'newest':
+    default: return query.order('created_at', { ascending: false });
+  }
+}
+```
+
+All sorting options are correctly mapped and implemented.
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `src/components/listings/ListingsGrid.tsx` | Add `forwardRef` wrapper |
+| `src/components/property/PropertyCard.tsx` | Add `forwardRef` wrapper with `memo` |
 
 ## Result
-- Broken Unsplash URLs will gracefully fall back to a professional building image
-- No more broken image icons shown to users
-- Consistent with the established image fallback pattern used elsewhere in the app
+
+After these changes:
+- No more "Function components cannot be given refs" warnings
+- All sorting options will continue to work correctly on Buy, Rent, and Projects pages
+- The codebase follows React best practices for ref forwarding
