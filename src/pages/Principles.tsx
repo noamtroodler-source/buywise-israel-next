@@ -70,7 +70,7 @@ const principles = [
   {
     icon: Shield,
     title: 'Honest Ranges, Not False Precision',
-    description: 'Real estate is messy. We show ranges and explain why they vary — because fake certainty causes regret later.',
+    description: 'Real estate is messy. We show ranges and explain why they vary — because false certainty often leads to regret later.',
   },
   {
     icon: Eye,
