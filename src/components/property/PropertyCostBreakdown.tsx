@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Calculator, Receipt, Calendar, Home, ChevronDown, Zap } from 'lucide-react';
+import { Calculator, Receipt, Calendar, Home, ChevronDown, Zap, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -91,6 +93,7 @@ export function PropertyCostBreakdown({
 }: PropertyCostBreakdownProps) {
   const { data: buyerProfile, isLoading } = useBuyerProfile();
   const formatPrice = useFormatPrice();
+  const { user } = useAuth();
   
   // Get saved profile dimensions (buyer type comes from profile, not editable inline)
   const savedProfileDimensions = useMemo(() => profileToDimensions(buyerProfile), [buyerProfile]);
@@ -284,8 +287,24 @@ export function PropertyCostBreakdown({
         <div className="space-y-5">
           {/* Personalization header - simplified for rentals (no mortgage info) */}
           {!isLoading && (
-            <div className="text-sm text-muted-foreground">
-              Calculating for: <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+              <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap text-sm">
+                  <span className="text-muted-foreground">
+                    Calculating for:{' '}
+                    <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
+                  </span>
+                </div>
+                {!user && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your situation different?{' '}
+                    <Link to="/auth?tab=signup" className="text-primary hover:underline">
+                      Get accurate estimates for your situation →
+                    </Link>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
