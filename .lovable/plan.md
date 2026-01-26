@@ -1,98 +1,80 @@
 
-# Fix "Save as Draft" for Pending Agents
+# Make Developer Name & Logo Clickable
 
-## Problem Identified
+## Problem
 
-When you click "Save as Draft", you see "Failed to create property: Agent profile not found" even though your agent profile exists in the database (with `status: pending`).
-
-**Root Cause**: The `useCreateProperty` hook has a stale closure issue. It captures `agentProfile` from `useAgentProfile()` at render time, but by the time the mutation actually runs, the value may still be `undefined` because:
-
-1. The `useAgentProfile` query runs asynchronously
-2. The mutation captures the `agentProfile` value at the time the hook is called
-3. When you click "Save Draft", the captured `agentProfile` may still be `null/undefined` even though the query has since resolved
-
-Your agent profile **does exist** and is correctly in `pending` status:
-```
-id: 6f158b7a-55f8-4b3e-8502-ce6ac06ddb04
-name: Daniel Troodler
-status: pending
-user_id: 137e8e73-fe2c-454c-a2ae-20cff8d1948e
-```
-
----
+In the `ProjectDeveloperCard` component, users expect to click on the developer's name or logo to visit their profile page, but currently only the "View All Projects" button at the bottom is a link. The name and logo are static elements.
 
 ## Solution
 
-Modify `useCreateProperty` to fetch the agent profile **inside the mutation function** rather than relying on the stale hook value. This guarantees we get the current profile at mutation time.
+Wrap the developer logo and name in a `Link` component that navigates to `/developers/{slug}`.
 
 ---
 
 ## File to Modify
 
-### `src/hooks/useAgentProperties.tsx`
+### `src/components/project/ProjectDeveloperCard.tsx`
 
-**Change the `useCreateProperty` hook (lines 100-145)**:
+**Changes:**
 
-1. Remove the captured `agentProfile` from the hook level
-2. Add a direct Supabase query inside `mutationFn` to get the current user's agent profile
-3. This ensures the profile is fetched fresh when saving, not stale from render time
+1. **Make the logo clickable** (lines 26-37)
+   - Wrap the logo image and fallback icon in a `Link` to `/developers/${developer.slug}`
+   - Add hover cursor styling
+
+2. **Make the developer name clickable** (line 40)
+   - Wrap `<h3>{developer.name}</h3>` in a `Link`
+   - Add hover styling (underline or color change) for visual feedback
+
+---
+
+## Visual Result
 
 ```text
-Before (line 100-106):
-┌───────────────────────────────────────────────────┐
-│ export function useCreateProperty() {             │
-│   const queryClient = useQueryClient();           │
-│   const { data: agentProfile } = useAgentProfile(); │ ← Captured at render time (stale)
-│                                                   │
-│   return useMutation({                            │
-│     mutationFn: async (...) => {                  │
-│       if (!agentProfile) throw new Error(...)     │ ← Uses stale value
-│       ...                                         │
-└───────────────────────────────────────────────────┘
+Before:
+┌─────────────────────────────────────────┐
+│ [Logo]  Blue Square Real Estate ✓       │  ← Not clickable
+│         72 Projects · Since 2004        │
+│                                         │
+│ [Call]  [Email]                         │
+│ Visit Website                      →    │
+│ View All Blue Square Projects      →    │  ← Only this is clickable
+└─────────────────────────────────────────┘
 
 After:
-┌───────────────────────────────────────────────────┐
-│ export function useCreateProperty() {             │
-│   const queryClient = useQueryClient();           │
-│   const { user } = useAuth();                     │ ← Get user directly
-│                                                   │
-│   return useMutation({                            │
-│     mutationFn: async (...) => {                  │
-│       // Fetch agent profile fresh at mutation time │
-│       const { data: agentProfile } = await supabase │ ← Fresh fetch!
-│         .from('agents')                           │
-│         .select('id')                             │
-│         .eq('user_id', user?.id)                  │
-│         .maybeSingle();                           │
-│                                                   │
-│       if (!agentProfile) throw new Error(...)     │ ← Now has real data
-│       ...                                         │
-└───────────────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ [Logo]  Blue Square Real Estate ✓       │  ← Logo & name now clickable!
+│  ↑       ↑ hover underline              │
+│ clickable                               │
+│ [Call]  [Email]                         │
+│ Visit Website                      →    │
+│ View All Blue Square Projects      →    │
+└─────────────────────────────────────────┘
 ```
 
 ---
 
-## Why This Works
+## Code Changes
 
-- **Fresh Data**: Fetching inside the mutation guarantees we get the current database state
-- **No Status Filter**: The query doesn't filter by `status`, so pending agents are included
-- **Proper RLS**: The "Agents are viewable by everyone" policy allows this SELECT
-- **Minimal Impact**: Only affects the create flow, existing update/delete flows remain unchanged
+**Line 26-37** - Wrap logo/fallback in Link:
+```tsx
+<Link to={`/developers/${developer.slug}`} className="shrink-0">
+  {developer.logo_url && !logoError ? (
+    <img ... className="... hover:ring-2 hover:ring-primary/20 transition-all" />
+  ) : (
+    <div ... className="... hover:ring-2 hover:ring-primary/20 transition-all">
+      ...
+    </div>
+  )}
+</Link>
+```
 
----
+**Line 40** - Make name a link:
+```tsx
+<Link to={`/developers/${developer.slug}`}>
+  <h3 className="font-semibold hover:text-primary hover:underline transition-colors">
+    {developer.name}
+  </h3>
+</Link>
+```
 
-## Developer Portal Coverage
-
-This same fix pattern should also be applied to:
-- `useCreateProject` in `src/hooks/useDeveloperProjects.tsx` (if it has the same issue)
-
-This ensures developers with pending profiles can also save project drafts.
-
----
-
-## Expected Result
-
-After this fix:
-- "Save as Draft" will work even with a pending agent account
-- "Submit for Review" will continue to be blocked (as intended by the `isAgentVerified` check in the UI)
-- No changes to RLS policies or database schema required
+This provides the expected UX where clicking anywhere on the developer's identity (logo or name) takes you to their full profile page.
