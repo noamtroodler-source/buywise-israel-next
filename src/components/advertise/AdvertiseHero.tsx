@@ -26,7 +26,8 @@ export function AdvertiseHero() {
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
               Grow Your Business with{" "}
-              <span className="text-primary">BuyWise Israel</span>
+              <span className="text-foreground">BuyWise</span>{" "}
+              <span className="text-primary">Israel</span>
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-xl">
