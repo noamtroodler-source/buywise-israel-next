@@ -1,125 +1,151 @@
 
-# Fix: Favorites Page Showing Empty State After Removing a Favorite
+# Unified Source Attribution: Consistent Design Across City Pages
 
 ## Problem Summary
 
-When you remove a favorite project (as a guest), the Favorites page briefly flashes to the "no favorites" empty state, even though you still have other favorites. This happens because of a race condition between React state updates and React Query invalidation.
+Looking at your screenshots and the code, the source attribution tooltips show inconsistent formats:
+
+| Screenshot | Issues |
+|------------|--------|
+| Image 1 (Ra'anana) | Shows specific data types: Arnona, Price Data, Rental Data, Historical Prices - detailed with dates |
+| Image 2 (Modi'in) | Shows generic labels: Primary, Secondary, Tier 1 Government - with empty values for Secondary and Tier 1 |
+| Image 3 (Modi'in) | Same empty labels issue in a different location |
+
+The root causes are:
+1. Cities have different `data_sources` JSON structures in the database
+2. The tooltip blindly displays whatever keys exist, including empty ones
+3. Labels are auto-generated from keys like `tier_1_government` becoming "Tier 1 Government:"
 
 ---
 
-## Root Cause
+## The Trust-Building Solution
 
-The bug is in **both** `useProjectFavorites.tsx` and `useFavorites.tsx`:
+Based on best practices for building user trust, the unified design should:
 
-### How the Bug Occurs
-
-1. When you click to remove a favorite, the mutation runs
-2. For guests, it updates the context state: `setGuestProjectFavoriteIds(current => current.filter(...))`
-3. The `onSuccess` callback immediately runs: `queryClient.invalidateQueries(...)`
-4. The query that fetches project details has `guestProjectFavoriteIds` in its query key
-5. **Race condition**: The invalidation happens before React has finished updating `guestProjectFavoriteIds`
-6. The query refetches with the OLD IDs, or becomes disabled if the array appears empty momentarily
-7. This causes `projectFavorites` to return empty, triggering the empty state view
-
-### Why Property Favorites (Buy/Rent) Are Less Affected
-
-The `useFavorites` hook has similar code, but the bug is less noticeable because:
-- The `favorites` array for properties includes the `properties` data inline
-- The structure slightly differs, but the same race condition exists
+1. **Never show empty values** - If a field has no data, hide it entirely
+2. **Use consistent, user-friendly labels** - Map technical keys to readable names
+3. **Prioritize the primary source** - Lead with the most authoritative source
+4. **Show verification date prominently** - Users care about data freshness
+5. **Use the same icon** - Consistency signals reliability (`ShieldCheck` is best)
+6. **Hide confusing technical terms** - "Tier 1 Government" → show a simple checkmark badge instead
 
 ---
 
-## Solution
+## Unified Design Specification
 
-Remove the unnecessary `queryClient.invalidateQueries` calls for guest users. Since we're already updating the context state synchronously, React Query will automatically refetch because the query key changes when `guestProjectFavoriteIds` updates.
+### Inline Badge (CityQuickStats, MarketOverviewCards, PriceTrendsSection)
 
-### Changes to `src/hooks/useProjectFavorites.tsx`
-
-**Remove the guest invalidation in `onSuccess`** (lines 137-145):
-
-```tsx
-// BEFORE
-onSuccess: () => {
-  if (user) {
-    queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
-    queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
-  } else {
-    queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });  // ❌ Remove this
-  }
-  toast.success('Project removed from favorites');
-}
-
-// AFTER
-onSuccess: () => {
-  if (user) {
-    queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
-    queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
-  }
-  // Guest updates are reactive via context - no invalidation needed
-  toast.success('Project removed from favorites');
-}
+```text
++---------------------------------------------+
+|  ✓ CBS · Jan 2026                           |
++---------------------------------------------+
 ```
 
-**Also fix `addProjectFavorite`** (lines 100-114) - same pattern:
+On hover/click (tooltip):
 
-```tsx
-// BEFORE
-onSuccess: () => {
-  if (user) {
-    // ... user invalidations
-  } else {
-    queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });  // ❌ Remove this
-    toast.success(...);
-  }
-}
-
-// AFTER - Remove the guest invalidation, keep the toast
+```text
++---------------------------------------------+
+|  ✓ Verified Data Sources                    |
+|                                             |
+|  Price Data: CBS, Madlan Q4 2024            |
+|  Rental Data: Yad2, Madlan                  |
+|  Arnona: Municipality 2025                  |
+|                                             |
+|  ─────────────────────────────────          |
+|  Last verified: Jan 2026                    |
++---------------------------------------------+
 ```
 
-### Changes to `src/hooks/useFavorites.tsx`
+Key changes:
+- Only show non-empty data categories
+- Use friendly labels (not raw database keys)
+- Consistent "Last verified" wording
+- No "Primary/Secondary" hierarchy confusion
 
-**Fix `removeFavorite` onSuccess** (lines 185-190):
+---
 
-```tsx
-// BEFORE
-onSuccess: () => {
-  if (!user) {
-    queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });  // ❌ Remove this
-  }
-  toast.success('Property removed from favorites');
-}
+## Implementation Plan
 
-// AFTER
-onSuccess: () => {
-  toast.success('Property removed from favorites');
-  // Guest updates are reactive via context - query key includes guestFavoriteIds
-}
-```
+### Phase 1: Normalize Source Labels
 
-**Fix `addFavorite` onSuccess** (lines 117-131):
+Create a shared utility for consistent label mapping:
 
-```tsx
-// BEFORE
-onSuccess: (_, variables) => {
-  if (user) {
-    // ... user invalidations
-  } else {
-    queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });  // ❌ Remove this
-    toast.success(...);
-  }
-}
+**New file: `src/lib/utils/sourceFormatting.ts`**
 
-// AFTER - Remove the guest invalidation, keep the toast
+```typescript
+// Friendly labels for source categories
+export const SOURCE_LABELS: Record<string, string> = {
+  // Specific data types (preferred format)
+  price_data: 'Price Data',
+  rental_data: 'Rental Data',
+  arnona: 'Arnona',
+  arnona_data: 'Arnona',
+  historical_prices: 'Historical Prices',
+  market_factors: 'Market Factors',
+  demographics: 'Demographics',
+  
+  // Generic hierarchy (older format - to be deprecated)
+  primary: 'Primary Source',
+  secondary: 'Secondary Sources',
+  profile: 'Profile Data',
+  
+  // Boolean flags (don't display as text)
+  tier_1_government: null, // Handle specially
+  earliest_reliable_year: null, // Don't show
+};
+
+// Categories that should show as badges, not text
+export const BADGE_CATEGORIES = ['tier_1_government'];
+
+// Categories to skip entirely
+export const HIDDEN_CATEGORIES = ['earliest_reliable_year'];
 ```
 
 ---
 
-## Why This Fix Works
+### Phase 2: Update InlineSourceBadge Component
 
-1. **Context state is the source of truth** for guest favorites (`guestFavoriteIds` / `guestProjectFavoriteIds`)
-2. **Query keys include the IDs array**: `['guest-project-favorites-data', guestProjectFavoriteIds]`
-3. When context updates, the query key changes, triggering an automatic refetch
-4. Removing the manual `invalidateQueries` eliminates the race condition
+**File: `src/components/shared/InlineSourceBadge.tsx`**
+
+Changes:
+1. Import and use the new label mapping
+2. Filter out empty values and hidden categories
+3. Handle nested `{date, source}` format correctly
+4. Improve primary source abbreviation logic
+5. Add "Government Verified" badge for `tier_1_government: true`
+
+Key logic improvements:
+- Check if value is actually meaningful before displaying
+- Use consistent `ShieldCheck` icon
+- Better extraction of primary sources for display
+
+---
+
+### Phase 3: Update CitySourceAttribution Component
+
+**File: `src/components/city/CitySourceAttribution.tsx`**
+
+Changes:
+1. Use shared label mapping
+2. Filter out empty/null values before rendering
+3. Handle array values (secondary sources) properly
+4. Show "Government Verified" badge when `tier_1_government: true`
+5. Keep the expandable methodology section
+
+---
+
+### Phase 4: Standardize Database Format (Future)
+
+While not blocking this fix, recommend standardizing all city `data_sources` to use the specific category format:
+
+```json
+{
+  "price_data": { "source": "CBS, Madlan", "date": "Q1 2025" },
+  "rental_data": { "source": "Yad2, Madlan", "date": "January 2025" },
+  "arnona": { "source": "Municipality", "date": "2025" },
+  "tier_1_government": true
+}
+```
 
 ---
 
@@ -127,21 +153,68 @@ onSuccess: (_, variables) => {
 
 | File | Changes |
 |------|---------|
-| `src/hooks/useProjectFavorites.tsx` | Remove guest invalidation calls in both `addProjectFavorite` and `removeProjectFavorite` mutations |
-| `src/hooks/useFavorites.tsx` | Remove guest invalidation calls in both `addFavorite` and `removeFavorite` mutations |
+| `src/lib/utils/sourceFormatting.ts` | **New file** - Shared label mapping and formatting utilities |
+| `src/components/shared/InlineSourceBadge.tsx` | Filter empty values, use consistent labels, improve formatting |
+| `src/components/city/CitySourceAttribution.tsx` | Filter empty values, use consistent labels, handle arrays |
 
 ---
 
-## Testing Checklist
+## Before/After Comparison
 
-After the fix:
+### Before (Current - Inconsistent)
 
-- [ ] As a guest, add multiple projects to favorites
-- [ ] Remove one project - remaining projects should stay visible
-- [ ] Remove all projects - empty state should appear
-- [ ] As a guest, add multiple properties (buy) to favorites
-- [ ] Remove one property - remaining properties should stay visible
-- [ ] As a guest, add multiple rentals to favorites  
-- [ ] Remove one rental - remaining rentals should stay visible
-- [ ] Switching between tabs (Buy/Rent/Projects) works correctly
-- [ ] Toast messages still appear when adding/removing favorites
+Modi'in tooltip:
+```
+Verified Data Sources
+Primary: Central Bureau of Statistics (CBS)
+Secondary:
+Tier 1 Government:
+Last verified: Jan 2026
+```
+
+Ra'anana tooltip:
+```
+Verified Data Sources
+Arnona: Tel Aviv Municipality 2019 baseline, 2025 adjusted (2025)
+Price Data: CBS Housing Price Index Q3 2025 (2025-09)
+Rental Data: Yad2, Semerenkogroup (2025-09)
+Historical Prices: CBS Housing Price Index Northern District (2015-2025)
+Last verified: Jan 2026
+```
+
+### After (Unified)
+
+All cities:
+```
+Verified Data Sources
+
+Price Data: CBS, Madlan Q4 2024
+Rental Data: Yad2, Market listings
+Arnona: Municipality 2025
+
+✓ Government verified source
+─────────────────────────────────
+Last verified: Jan 2026
+```
+
+---
+
+## Trust-Building Enhancements
+
+1. **Government Badge**: When `tier_1_government: true`, show a small badge "Government verified source" instead of an empty label
+2. **Consistent Icon**: Always use `ShieldCheck` (the checkmark in a shield) for verification
+3. **Smart Abbreviation**: Show "CBS" inline, expand to "Central Bureau of Statistics" in tooltip
+4. **Never Empty**: If a city has no detailed sources, show a generic "Data sourced from official government and industry records"
+5. **Date Formatting**: Consistent "Jan 2026" format everywhere
+
+---
+
+## Summary
+
+This plan:
+- Creates a shared source formatting utility
+- Updates 2 existing components to use consistent formatting
+- Filters out empty values so users never see blank labels
+- Adds a "Government verified" badge for official sources
+- Uses consistent icons and terminology throughout
+- Builds user trust through visual consistency
