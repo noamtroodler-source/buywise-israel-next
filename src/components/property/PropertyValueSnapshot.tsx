@@ -141,21 +141,15 @@ export function PropertyValueSnapshot({
             <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {rentalComparisonPercent > 0 ? (
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <TrendingUp className="h-4 w-4" />
               ) : rentalComparisonPercent < 0 ? (
-                <TrendingDown className="h-4 w-4 text-primary" />
+                <TrendingDown className="h-4 w-4" />
               ) : (
                 <Minus className="h-4 w-4" />
               )}
                 <span className="text-sm">vs Market Rate</span>
               </div>
-              <p className={`text-2xl font-bold ${
-                rentalComparisonPercent > 0 
-                  ? 'text-muted-foreground' 
-                  : rentalComparisonPercent < 0 
-                    ? 'text-primary' 
-                    : 'text-foreground'
-              }`}>
+              <p className="text-2xl font-bold text-foreground">
                 {rentalComparisonPercent > 0 ? '+' : ''}{rentalComparisonPercent}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -237,21 +231,15 @@ export function PropertyValueSnapshot({
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {priceChange > 0 ? (
-                <TrendingUp className="h-4 w-4 text-primary" />
+                <TrendingUp className="h-4 w-4" />
               ) : priceChange < 0 ? (
-                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                <TrendingDown className="h-4 w-4" />
               ) : (
                 <Minus className="h-4 w-4" />
               )}
               <span className="text-sm">12-Month Trend</span>
             </div>
-            <p className={`text-2xl font-bold ${
-              priceChange > 0 
-                ? 'text-primary' 
-                : priceChange < 0 
-                  ? 'text-muted-foreground' 
-                  : 'text-foreground'
-            }`}>
+            <p className="text-2xl font-bold text-foreground">
               {priceChange > 0 ? '+' : ''}{priceChange}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
