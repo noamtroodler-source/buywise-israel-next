@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { FileText, Plus, X, Lightbulb, Sparkles, Wand2, CheckCircle2, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { FileText, Plus, X, Lightbulb, Sparkles, Wand2, CheckCircle2, Loader2, Info } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -179,10 +179,10 @@ export function StepDescription() {
                   <span className="text-sm">Analyzing your description...</span>
                 </div>
               ) : feedback && (
-              <div className={`p-4 ${feedback.hasIssues ? 'bg-amber-500/5' : 'bg-primary/5'}`}>
+              <div className="p-4 bg-primary/5">
                   <div className="flex items-start gap-3">
                     {feedback.hasIssues ? (
-                      <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                      <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     ) : (
                       <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     )}
