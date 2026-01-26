@@ -1,57 +1,172 @@
 
-Goal
-- Bring back a clear “Paid in Full” state everywhere (especially in Edit mode), while keeping the exact same underlying logic (include_mortgage boolean) and behavior.
-- Make the on/off control “make sense” by clearly indicating the current state and what toggling will do.
+# Add Blog Posts to Agent, Agency & Developer Profile Pages
 
-What’s happening now (based on current code)
-- View mode (not editing) DOES show “Paid in Full” (lines ~140–159) and a “Switch to Mortgage” button. So the option still exists.
-- Edit mode (when you click “Edit Preferences”) shows a Switch with a fixed label “Take a Mortgage” (lines ~70–88). When the switch is OFF, it implies “Paid in Full” but never explicitly says “Paid in Full”. That’s why it feels like the option disappeared.
+## Overview
 
-Design decision (minimal change, no reinvention)
-- Keep the same control type (Switch) and the same data model (include_mortgage).
-- Only change the copy + icon in the Edit mode header so it explicitly shows:
-  - Current state: “Paid in Full” when OFF, “Taking a Mortgage” when ON
-  - Action hint: “Toggle on to take a mortgage” vs “Toggle off to pay in full”
-- Keep the rest (mortgage fields only when ON, Save/Cancel, etc.) exactly as-is.
+Currently, profile pages for agents, agencies, and developers only display listings (Active/Past). The database already supports linking blog posts to professionals via `author_type` and `author_profile_id` fields, but there's no public-facing display of these posts on profile pages.
 
-Implementation steps (single file)
-1) Update Edit Mode “Financing Method Toggle” block in:
-   - src/components/profile/sections/MortgageSection.tsx
-   - The block currently at lines ~70–88
+This plan adds a "Blog Posts" tab to all three profile types so visitors can see articles written by that professional.
 
-2) Replace the fixed “Take a Mortgage” label with a dynamic state-based header:
-   - When formData.includeMortgage === false:
-     - Icon: Banknote
-     - Title: “Paid in Full”
-     - Subtitle: “Cash purchase — mortgage costs are excluded. Toggle on to take a mortgage.”
-   - When formData.includeMortgage === true:
-     - Icon: CreditCard
-     - Title: “Taking a Mortgage”
-     - Subtitle: “Mortgage costs included. Toggle off to pay in full.”
+---
 
-3) Keep the Switch behavior identical:
-   - checked={formData.includeMortgage}
-   - onCheckedChange sets formData.includeMortgage
-   - No change to save logic, normalization logic, or preference storage.
+## What Will Be Built
 
-4) Leave View Mode as-is (already correct now):
-   - Paid in Full card with “Switch to Mortgage”
-   - Mortgage detail grid with “Switch to Paid in Full”
-   This keeps the “simple Paid in Full vs. detailed Mortgage” mental model you described.
+### New Hook: `useAuthorBlogPosts`
 
-Edge cases / behavior to verify after change
-- If user is Paid in Full and clicks “Edit Preferences”:
-  - They should see “Paid in Full” explicitly in the header (not “Take a Mortgage”).
-  - Mortgage fields should remain hidden until toggled on.
-- If user is Mortgage and clicks “Edit Preferences”:
-  - They should see “Taking a Mortgage” explicitly and the mortgage fields visible.
-- Toggling on/off in Edit mode should only affect UI until pressing Save (current behavior).
-- Toggling via the View mode buttons should still immediately persist (current behavior).
+A new query hook in `src/hooks/useBlog.tsx` that fetches **published** blog posts for a specific author (agent, agency, or developer).
 
-Why this meets your request
-- Paid in Full never “goes away” visually anymore: it’s clearly shown in both View mode and Edit mode.
-- The UI becomes “cleaner between the two” states with no logic changes and no new components—just clearer labeling in the existing Switch row.
+```text
+┌─────────────────────────────────────────────────────────┐
+│  useAuthorBlogPosts(authorType, authorProfileId)        │
+├─────────────────────────────────────────────────────────┤
+│  Filters:                                               │
+│   - is_published = true                                 │
+│   - verification_status = 'approved'                    │
+│   - author_type = authorType                            │
+│   - author_profile_id = authorProfileId                 │
+│  Ordering: published_at DESC                            │
+└─────────────────────────────────────────────────────────┘
+```
 
-Files to change
-- src/components/profile/sections/MortgageSection.tsx
-  - Edit-mode toggle header copy + icon only.
+---
+
+## UI Changes
+
+### 1. Agent Profile (`/agents/:id`)
+
+Add a third tab "Blog Posts" alongside "Active Listings" and "Past Listings":
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│ [ Active Listings (8) ] [ Past Listings (0) ] [ Blog (3) ]  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+The tab content will show a grid of `BlogCard` components, or an empty state if no posts exist.
+
+### 2. Agency Profile (`/agencies/:slug`)
+
+Same pattern - add "Blog Posts" tab to existing tabs.
+
+### 3. Developer Profile (`/developers/:slug`)
+
+Developers currently don't use tabs (they just show projects in a section). Two options:
+- **Option A**: Add a separate "Articles" section below projects
+- **Option B**: Convert to tabs like agents/agencies
+
+I'll implement **Option A** (separate section) to keep the developer page's current layout style consistent.
+
+---
+
+## Technical Implementation
+
+### File: `src/hooks/useBlog.tsx`
+
+Add new hook at the end of the file:
+
+```tsx
+// Fetch published blog posts by author profile
+export function useAuthorBlogPosts(authorType: string, authorProfileId: string | undefined) {
+  return useQuery({
+    queryKey: ['authorBlogPosts', authorType, authorProfileId],
+    queryFn: async () => {
+      if (!authorProfileId) return [];
+      
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          category:category_id (*)
+        `)
+        .eq('is_published', true)
+        .eq('verification_status', 'approved')
+        .eq('author_type', authorType)
+        .eq('author_profile_id', authorProfileId)
+        .order('published_at', { ascending: false });
+
+      if (error) throw error;
+      return data as BlogPost[];
+    },
+    enabled: !!authorProfileId,
+  });
+}
+```
+
+---
+
+### File: `src/pages/AgentDetail.tsx`
+
+1. Import the new hook and `BlogCard` component
+2. Fetch blog posts using `useAuthorBlogPosts('agent', agent?.id)`
+3. Add "Blog" tab trigger with count badge
+4. Add `TabsContent` for blog posts grid
+
+Changes around lines 290-350:
+- Add new TabsTrigger for "Blog"
+- Add new TabsContent with BlogCard grid or empty state
+
+---
+
+### File: `src/pages/AgencyDetail.tsx`
+
+Same approach:
+1. Import the new hook and `BlogCard`
+2. Fetch posts using `useAuthorBlogPosts('agency', agency?.id)`
+3. Add "Blog" tab with count badge
+4. Add TabsContent with grid or empty state
+
+---
+
+### File: `src/pages/DeveloperDetail.tsx`
+
+Add a new section after the "Projects" section:
+1. Import the new hook and `BlogCard`
+2. Fetch posts using `useAuthorBlogPosts('developer', developer?.id)`
+3. Add "Articles by {developer.name}" section heading
+4. Render grid of BlogCards or skip section entirely if no posts
+
+---
+
+## Empty States
+
+Each profile type will show an appropriate empty state when no blog posts exist:
+
+**Agent:**
+```text
+┌────────────────────────────────────┐
+│      📝 (FileText icon)            │
+│   No articles published yet.       │
+└────────────────────────────────────┘
+```
+
+**Agency:**
+```text
+┌────────────────────────────────────────────┐
+│      📝 (FileText icon)                    │
+│   This agency hasn't published             │
+│   any articles yet.                        │
+└────────────────────────────────────────────┘
+```
+
+**Developer:**
+Section is only rendered if there are blog posts (no empty state needed since it's not a tab).
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/hooks/useBlog.tsx` | Add `useAuthorBlogPosts` hook |
+| `src/pages/AgentDetail.tsx` | Import hook/BlogCard, add Blog tab |
+| `src/pages/AgencyDetail.tsx` | Import hook/BlogCard, add Blog tab |
+| `src/pages/DeveloperDetail.tsx` | Import hook/BlogCard, add Articles section |
+
+---
+
+## Dependencies
+
+- Uses existing `BlogCard` component (no changes needed)
+- Uses existing `useSavedArticles` hook for save functionality
+- Relies on existing database columns `author_type` and `author_profile_id`
+
