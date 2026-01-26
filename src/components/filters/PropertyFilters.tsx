@@ -674,7 +674,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     className={cn(
                       "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
                       filters.sort_by === option.value 
-                        ? "bg-amber-400 font-medium" 
+                        ? "bg-primary/10 text-primary font-medium" 
                         : "hover:bg-muted"
                     )}
                     onClick={() => {
