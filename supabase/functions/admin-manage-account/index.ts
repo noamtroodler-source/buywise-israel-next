@@ -121,8 +121,8 @@ Deno.serve(async (req) => {
       await adminClient.from("favorites").delete().eq("user_id", userId);
       await adminClient.from("search_alerts").delete().eq("user_id", userId);
       await adminClient.from("inquiries").delete().eq("user_id", userId);
-      await adminClient.from("property_views").delete().eq("user_id", userId);
-      await adminClient.from("project_views").delete().eq("user_id", userId);
+      await adminClient.from("property_views").delete().eq("viewer_user_id", userId);
+      await adminClient.from("project_views").delete().eq("viewer_id", userId);
       await adminClient.from("buyer_profiles").delete().eq("user_id", userId);
       await adminClient.from("content_engagement").delete().eq("user_id", userId);
       await adminClient.from("experiment_exposures").delete().eq("user_id", userId);
