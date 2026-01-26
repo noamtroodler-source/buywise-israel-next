@@ -1,49 +1,53 @@
 
-# Split AI Value Snapshot into Separate Cards (Purchase Listings)
+# Reduce AI Value Snapshot to 3 Cards (Purchase Listings)
 
 ## Problem
-The current "Price vs. Market" card for purchase listings combines too much information in one box:
-- Property price per m² (main value)
-- City average price (sub-text)
-- Comparison percentage badge
+The current AI Value Snapshot for purchase listings shows 4 cards:
+1. This Property (₪26,471/m²)
+2. City Average (₪43,500/m²)
+3. vs Market (-39%)
+4. 12-Month Trend (+7.5%)
 
-This feels dense compared to the rental AI Snapshot which uses 3 separate, clean cards (Total Monthly, City Avg, vs Market Rate).
+This is too much visual clutter - you want a maximum of 3 cards.
 
 ## Solution
-Split the purchase property AI Value Snapshot into 3 separate cards matching the rental pattern:
+Combine "City Average" and "vs Market" into a single card since they're directly related (the percentage IS the comparison to city average). This gives us:
 
 ```text
-Current (2 cards, one dense):
-┌─────────────────────────────┐  ┌─────────────────────────┐
-│ $ Price vs. Market          │  │ ↗ 12-Month Trend        │
-│ ₪26,471/m²                  │  │ +5%                     │
-│ Herzliya avg: ₪43,500/m²    │  │ Area price change       │
-│ ↘ -39% below avg            │  │                         │
-└─────────────────────────────┘  └─────────────────────────┘
-
-Proposed (3 cards, clean):
+Before (4 cards):
 ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ $ This Property  │  │ 🏠 City Average  │  │ ↗ vs Market      │
+│ $ This Property  │  │ 🏠 City Average  │  │ ↘ vs Market      │
 │ ₪26,471/m²      │  │ ₪43,500/m²      │  │ -39%             │
-│ Price per m²     │  │ Herzliya avg     │  │ Below average    │
 └──────────────────┘  └──────────────────┘  └──────────────────┘
+┌──────────────────┐
+│ ↗ 12-Month Trend │
+│ +7.5%            │
+└──────────────────┘
+
+After (3 cards):
+┌──────────────────┐  ┌────────────────────────┐  ┌──────────────────┐
+│ $ This Property  │  │ 🏠 vs City Average     │  │ ↗ 12-Month Trend │
+│ ₪26,471/m²      │  │ -39%                   │  │ +7.5%            │
+│ Price per m²     │  │ Herzliya: ₪43,500/m²  │  │ Area price change│
+└──────────────────┘  └────────────────────────┘  └──────────────────┘
 ```
 
 ## File to Modify
-**`src/components/property/PropertyValueSnapshot.tsx`**
+`src/components/property/PropertyValueSnapshot.tsx`
 
-### Changes
+## Changes
 
-**1. Update grid layout (line 178)**
-Change from fixed 2-column to dynamic 3-column:
+### 1. Update card counting logic (lines 171-185)
+Remove `hasCityAvg` as a separate condition since it will be merged with `hasComparison`:
+
 ```tsx
-// Count available cards dynamically
 const hasPropertyPrice = !!propertyPricePerSqm;
-const hasCityAvg = !!averagePriceSqm;
-const hasComparison = purchaseComparisonPercent !== null;
+const hasComparison = purchaseComparisonPercent !== null && averagePriceSqm;
 const hasTrend = priceChange !== null && priceChange !== undefined;
 
-const cardCount = [hasPropertyPrice, hasCityAvg || hasComparison, hasTrend].filter(Boolean).length;
+if (!hasPropertyPrice && !hasComparison && !hasTrend) return null;
+
+const cardCount = [hasPropertyPrice, hasComparison, hasTrend].filter(Boolean).length;
 const gridCols = cardCount === 3 
   ? 'grid-cols-1 sm:grid-cols-3' 
   : cardCount === 2
@@ -51,47 +55,14 @@ const gridCols = cardCount === 3
     : 'grid-cols-1';
 ```
 
-**2. Replace combined card (lines 188-227) with 3 separate cards:**
+### 2. Remove the standalone "City Average" card (lines 211-225)
+Delete this entire block.
 
-**Card 1: This Property (Price/m²)**
-```tsx
-{propertyPricePerSqm && (
-  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-      <DollarSign className="h-4 w-4" />
-      <span className="text-sm">This Property</span>
-    </div>
-    <p className="text-2xl font-bold text-foreground">
-      {formatPricePerArea(propertyPricePerSqm, 'ILS')}
-    </p>
-    <p className="text-xs text-muted-foreground mt-1">
-      Price per m²
-    </p>
-  </div>
-)}
-```
+### 3. Modify "vs Market" card to include city average info (lines 227-251)
+Change the card to show the percentage as the main value, with the city average as supporting context:
 
-**Card 2: City Average**
 ```tsx
-{averagePriceSqm && (
-  <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-    <div className="flex items-center gap-2 text-muted-foreground mb-1">
-      <Home className="h-4 w-4" />
-      <span className="text-sm">{city} Average</span>
-    </div>
-    <p className="text-2xl font-bold text-foreground">
-      {formatPricePerArea(averagePriceSqm, 'ILS')}
-    </p>
-    <p className="text-xs text-muted-foreground mt-1">
-      Market price per m²
-    </p>
-  </div>
-)}
-```
-
-**Card 3: vs Market (Comparison %)**
-```tsx
-{purchaseComparisonPercent !== null && (
+{purchaseComparisonPercent !== null && averagePriceSqm && (
   <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
     <div className="flex items-center gap-2 text-muted-foreground mb-1">
       {purchaseComparisonPercent > 0 ? (
@@ -101,41 +72,28 @@ const gridCols = cardCount === 3
       ) : (
         <Minus className="h-4 w-4" />
       )}
-      <span className="text-sm">vs Market</span>
+      <span className="text-sm">vs {city} Average</span>
     </div>
     <p className="text-2xl font-bold text-foreground">
       {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
     </p>
     <p className="text-xs text-muted-foreground mt-1">
-      {purchaseComparisonPercent > 0 
-        ? 'Above city average' 
-        : purchaseComparisonPercent < 0 
-          ? 'Below city average' 
-          : 'At city average'}
+      {city}: {formatPricePerArea(averagePriceSqm, 'ILS')}
     </p>
   </div>
 )}
 ```
 
-**3. Keep 12-Month Trend as separate 4th card** (unchanged, lines 229-249)
+### 4. Keep "12-Month Trend" card unchanged (lines 253-273)
 
 ## Visual Result
+A clean 3-card layout:
+- **Card 1 - This Property**: Shows this listing's price per m²
+- **Card 2 - vs City Average**: Shows the comparison percentage with city avg as subtext
+- **Card 3 - 12-Month Trend**: Shows area price trend
 
-After implementation:
-```text
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ $ This Property  │  │ 🏠 Herzliya Avg  │  │ ↘ vs Market      │
-│ ₪26,471/m²      │  │ ₪43,500/m²      │  │ -39%             │
-│ Price per m²     │  │ Market price/m²  │  │ Below city avg   │
-└──────────────────┘  └──────────────────┘  └──────────────────┘
-
-┌──────────────────────────────────────────────────────────────┐
-│ 12-Month Trend (if available, spans or shows as 4th card)   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Notes
-- If only some data is available, the grid auto-adjusts (same logic as rentals)
-- Matches the visual rhythm and card density of the rental AI Snapshot
-- Each metric is now scannable at a glance
-- Removes the nested badge styling complexity
+## Why This Approach
+- The city average and comparison percentage are redundant when separate - you need both to understand either
+- Combining them keeps all the information but in one scannable card
+- The trend data is independent and valuable for investment decisions, so it stays separate
+- Matches the 3-card pattern used in rentals (Total Monthly, City Avg, vs Market Rate)
