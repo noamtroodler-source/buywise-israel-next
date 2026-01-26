@@ -70,13 +70,19 @@ export function MortgageSection() {
           {/* Financing Method Toggle */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-primary" />
+              {formData.includeMortgage ? (
+                <CreditCard className="h-4 w-4 text-primary" />
+              ) : (
+                <Banknote className="h-4 w-4 text-primary" />
+              )}
               <div>
-                <p className="text-sm font-medium">Take a Mortgage</p>
+                <p className="text-sm font-medium">
+                  {formData.includeMortgage ? 'Taking a Mortgage' : 'Paid in Full'}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {formData.includeMortgage 
-                    ? 'Currently financing part of the purchase' 
-                    : 'Toggle on to include mortgage costs'}
+                    ? 'Mortgage costs included. Toggle off to pay in full.' 
+                    : 'Cash purchase — mortgage costs are excluded. Toggle on to take a mortgage.'}
                 </p>
               </div>
             </div>
