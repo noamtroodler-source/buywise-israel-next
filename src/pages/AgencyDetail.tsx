@@ -253,7 +253,7 @@ export default function AgencyDetail() {
                     <Card className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4 text-center">
                         <Avatar className="h-16 w-16 mx-auto mb-3">
-                          <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} />
+                          <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} className="object-cover" />
                           <AvatarFallback>{getInitials(agent.name)}</AvatarFallback>
                         </Avatar>
                         <div className="flex items-center justify-center gap-1 mb-1">
