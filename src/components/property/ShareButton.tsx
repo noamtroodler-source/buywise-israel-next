@@ -9,6 +9,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { buildWhatsAppShareUrl, openWhatsApp } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
+import { useShareTracking } from "@/hooks/useShareTracking";
 
 interface ShareButtonProps {
   propertyId: string;
@@ -17,6 +18,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ propertyId, propertyTitle, className = "" }: ShareButtonProps) {
+  const { trackShare } = useShareTracking();
   const propertyUrl = `${window.location.origin}/property/${propertyId}`;
   const shareText = `Check out this property: ${propertyTitle}`;
 
@@ -28,6 +30,7 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
       title: "Link copied!",
       description: "Property link copied to clipboard",
     });
+    trackShare({ entityType: 'property', entityId: propertyId, shareMethod: 'copy_link' });
   };
 
   const handleWhatsApp = (e: React.MouseEvent) => {
@@ -35,6 +38,7 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
     e.stopPropagation();
     const url = buildWhatsAppShareUrl(`${shareText}\n${propertyUrl}`);
     openWhatsApp(url);
+    trackShare({ entityType: 'property', entityId: propertyId, shareMethod: 'whatsapp' });
   };
 
   const handleTelegram = (e: React.MouseEvent) => {
@@ -42,6 +46,7 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
     e.stopPropagation();
     const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(propertyUrl)}&text=${encodeURIComponent(shareText)}`;
     window.open(telegramUrl, "_blank");
+    trackShare({ entityType: 'property', entityId: propertyId, shareMethod: 'telegram' });
   };
 
   return (

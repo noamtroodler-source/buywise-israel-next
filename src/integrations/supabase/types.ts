@@ -713,6 +713,8 @@ export type Database = {
         Row: {
           aliyah_year: number | null
           arnona_discount_categories: string[] | null
+          budget_max: number | null
+          budget_min: number | null
           buyer_entity: string
           created_at: string
           has_existing_property: boolean | null
@@ -721,10 +723,13 @@ export type Database = {
           is_upgrading: boolean | null
           mortgage_preferences: Json | null
           onboarding_completed: boolean
+          property_type_preferences: string[] | null
           purchase_purpose: string
+          purchase_timeline: string | null
           rental_budget: number | null
           residency_status: string
           saved_locations: Json | null
+          target_cities: string[] | null
           updated_at: string
           upgrade_sale_date: string | null
           user_id: string
@@ -732,6 +737,8 @@ export type Database = {
         Insert: {
           aliyah_year?: number | null
           arnona_discount_categories?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
           buyer_entity?: string
           created_at?: string
           has_existing_property?: boolean | null
@@ -740,10 +747,13 @@ export type Database = {
           is_upgrading?: boolean | null
           mortgage_preferences?: Json | null
           onboarding_completed?: boolean
+          property_type_preferences?: string[] | null
           purchase_purpose?: string
+          purchase_timeline?: string | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
+          target_cities?: string[] | null
           updated_at?: string
           upgrade_sale_date?: string | null
           user_id: string
@@ -751,6 +761,8 @@ export type Database = {
         Update: {
           aliyah_year?: number | null
           arnona_discount_categories?: string[] | null
+          budget_max?: number | null
+          budget_min?: number | null
           buyer_entity?: string
           created_at?: string
           has_existing_property?: boolean | null
@@ -759,10 +771,13 @@ export type Database = {
           is_upgrading?: boolean | null
           mortgage_preferences?: Json | null
           onboarding_completed?: boolean
+          property_type_preferences?: string[] | null
           purchase_purpose?: string
+          purchase_timeline?: string | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
+          target_cities?: string[] | null
           updated_at?: string
           upgrade_sale_date?: string | null
           user_id?: string
@@ -2954,6 +2969,9 @@ export type Database = {
           features: string[] | null
           floor: number | null
           furnished_status: string | null
+          has_balcony: boolean | null
+          has_elevator: boolean | null
+          has_storage: boolean | null
           id: string
           images: string[] | null
           is_accessible: boolean | null
@@ -3007,6 +3025,9 @@ export type Database = {
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null
+          has_balcony?: boolean | null
+          has_elevator?: boolean | null
+          has_storage?: boolean | null
           id?: string
           images?: string[] | null
           is_accessible?: boolean | null
@@ -3060,6 +3081,9 @@ export type Database = {
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null
+          has_balcony?: boolean | null
+          has_elevator?: boolean | null
+          has_storage?: boolean | null
           id?: string
           images?: string[] | null
           is_accessible?: boolean | null
@@ -3639,6 +3663,39 @@ export type Database = {
           time_to_first_click_ms?: number | null
           user_id?: string | null
           zero_results?: boolean | null
+        }
+        Relationships: []
+      }
+      share_events: {
+        Row: {
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          page_path: string | null
+          session_id: string
+          share_method: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          page_path?: string | null
+          session_id: string
+          share_method: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string
+          share_method?: string
+          user_id?: string | null
         }
         Relationships: []
       }

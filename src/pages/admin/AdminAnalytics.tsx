@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Eye, MessageSquare, TrendingUp, Users, 
-  Home, Calendar, BarChart3, Search, Activity, Building
+  Home, Calendar, BarChart3, Search, Activity, Building, Share2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,6 +51,7 @@ import { ContentPerformanceTab } from '@/components/admin/analytics/ContentPerfo
 import { FunnelHealthTab } from '@/components/admin/analytics/FunnelHealthTab';
 import { PerformanceMonitorTab } from '@/components/admin/analytics/PerformanceMonitorTab';
 import { ExperimentResultsTab } from '@/components/admin/analytics/ExperimentResultsTab';
+import { ShareAnalyticsTab } from '@/components/admin/analytics/ShareAnalyticsTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -164,6 +165,9 @@ export default function AdminAnalytics() {
           <TabsTrigger value="funnel" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Funnel</TabsTrigger>
           <TabsTrigger value="performance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Performance</TabsTrigger>
           <TabsTrigger value="experiments" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Experiments</TabsTrigger>
+          <TabsTrigger value="shares" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Share2 className="h-3.5 w-3.5 mr-1.5" />Shares
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -258,6 +262,10 @@ export default function AdminAnalytics() {
 
         <TabsContent value="experiments" className="space-y-6">
           <ExperimentResultsTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="shares" className="space-y-6">
+          <ShareAnalyticsTab dateRange={days} />
         </TabsContent>
       </Tabs>
     </div>

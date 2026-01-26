@@ -32,6 +32,11 @@ export interface PropertyWizardData {
   vaad_bayit_monthly: number | undefined;
   features: string[];
   
+  // Explicit amenity booleans (synced from features array)
+  has_balcony: boolean;
+  has_elevator: boolean;
+  has_storage: boolean;
+  
   // Lease reality fields (Step 3)
   lease_term: LeaseTermOption | undefined;
   subletting_allowed: SublettingOption | undefined;
@@ -86,6 +91,10 @@ export const defaultPropertyData: PropertyWizardData = {
   is_immediate_entry: true,
   vaad_bayit_monthly: undefined,
   features: [],
+  // Explicit amenity booleans
+  has_balcony: false,
+  has_elevator: false,
+  has_storage: false,
   // Lease reality defaults
   lease_term: undefined,
   subletting_allowed: undefined,

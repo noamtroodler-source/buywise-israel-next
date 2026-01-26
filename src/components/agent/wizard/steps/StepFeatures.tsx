@@ -75,7 +75,20 @@ export function StepFeatures() {
     const newFeatures = data.features.includes(featureId)
       ? data.features.filter(f => f !== featureId)
       : [...data.features, featureId];
-    updateData({ features: newFeatures });
+    
+    // Sync explicit boolean fields for key amenities
+    const updates: Partial<typeof data> = { features: newFeatures };
+    if (featureId === 'balcony') {
+      updates.has_balcony = newFeatures.includes('balcony');
+    }
+    if (featureId === 'elevator') {
+      updates.has_elevator = newFeatures.includes('elevator');
+    }
+    if (featureId === 'storage') {
+      updates.has_storage = newFeatures.includes('storage');
+    }
+    
+    updateData(updates);
   };
 
   return (
