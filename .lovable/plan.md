@@ -1,122 +1,124 @@
 
-# Hero Trust Indicators: Category Breakdown
 
-## Summary
+# Improved Trust Indicator Graphics
 
-Replace the generic trust indicators with a category-specific breakdown showing active inventory across Rentals, Homes for Sale, and New Projects. This gives users immediate visibility into what's available on BuyWise.
+## Current Issue
 
----
-
-## Current vs New
-
-| Current | New |
-|---------|-----|
-| 25 Cities | 65+ For Sale |
-| 102+ Listings | 20+ Rentals |
-| 9 Free Tools | 15 Projects |
+The current icons (`Home`, `Key`, `Building2`) are basic and don't feel premium enough against the hero background. The yellow accent color also makes them look a bit flat.
 
 ---
 
-## Design
+## Design Options
+
+### Option A: Better Icon Choices (Recommended)
+
+Replace with more descriptive, visually appealing icons:
+
+| Current | New Icon | Why Better |
+|---------|----------|------------|
+| `Home` (house outline) | `House` or `MapPin` | More refined shape |
+| `Key` (key shape) | `DoorOpen` or `KeyRound` | More modern feel |
+| `Building2` (office block) | `Landmark` or `Building` | Cleaner silhouette |
+
+**Recommended set:**
+- **For Sale**: `House` - cleaner house icon
+- **Rentals**: `KeyRound` - rounder, more modern key
+- **Projects**: `Crane` or `HardHat` - conveys "new construction" better
+
+### Option B: Pill/Badge Style
+
+Wrap each stat in a subtle glass-morphism pill for more visual weight:
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  🏠 65+ For Sale   🔑 20+ Rentals   🏗️ 15 Projects     │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ 🏠 65+ For Sale │  │ 🔑 20+ Rentals  │  │ 🏗️ 15 Projects │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 **Styling:**
-- Small icons (14px) in accent color for visual interest
-- Text in `text-white/70` for readability on hero background
-- Rounded numbers with "+" suffix for flexibility (65+, 20+, 15)
-- Same horizontal layout, same animation
+- `bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5`
+- Icons in white instead of yellow for cleaner look
+- Subtle border: `border border-white/20`
+
+### Option C: Text-Only with Accent Numbers (Minimal)
+
+Remove icons entirely, make the numbers pop:
+
+```text
+65+ For Sale  •  20+ Rentals  •  15 Projects
+```
+
+With the numbers in accent color: `<span className="text-accent font-semibold">65+</span> For Sale`
+
+---
+
+## Recommended Approach: Option B (Pill Badges)
+
+This gives the most visual improvement while keeping the icons. The glass-morphism style adds depth and feels more premium.
 
 ---
 
 ## Implementation
 
-### 1. Update usePlatformStats Hook
+**File:** `src/components/home/HeroSplit.tsx` (lines 126-145)
 
-**File:** `src/hooks/usePlatformStats.tsx`
+### Icon Changes
+Replace current icons with better alternatives:
+- `Home` → `House` (cleaner residential feel)
+- `Key` → `KeyRound` (more modern)
+- `Building2` → `Crane` (conveys "new construction" better than office building)
 
-Replace the current queries with category-specific counts:
-
-```tsx
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-
-export function usePlatformStats() {
-  return useQuery({
-    queryKey: ['platformStats'],
-    queryFn: async () => {
-      const [forSaleRes, rentalsRes, projectsRes] = await Promise.all([
-        supabase
-          .from('properties')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_published', true)
-          .eq('listing_status', 'for_sale'),
-        supabase
-          .from('properties')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_published', true)
-          .eq('listing_status', 'for_rent'),
-        supabase
-          .from('projects')
-          .select('id', { count: 'exact', head: true })
-          .eq('is_published', true)
-      ]);
-      
-      return {
-        forSaleCount: forSaleRes.count || 0,
-        rentalsCount: rentalsRes.count || 0,
-        projectsCount: projectsRes.count || 0
-      };
-    },
-    staleTime: 1000 * 60 * 60, // Cache for 1 hour
-  });
-}
-```
-
-### 2. Update HeroSplit Component
-
-**File:** `src/components/home/HeroSplit.tsx`
-
-Update the trust indicators section (around lines 127-145):
+### Style Changes
+Wrap each stat in a pill badge with glass effect:
 
 ```tsx
-import { Home, Key, Building2 } from 'lucide-react';
-
-// Helper to round down to nearest 5 for cleaner display
-const roundToFive = (n: number) => Math.floor(n / 5) * 5;
-
-// In the component:
 {/* Trust Indicators */}
 <motion.div
   initial={{ opacity: 0 }}
   animate={{ opacity: 1 }}
   transition={{ duration: 0.6, delay: 0.5 }}
-  className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-sm text-white/70"
+  className="flex flex-wrap items-center gap-3 pt-2"
 >
-  <span className="flex items-center gap-2">
-    <Home className="w-3.5 h-3.5 text-accent" />
-    {stats?.forSaleCount ? `${roundToFive(stats.forSaleCount)}+` : '65+'} For Sale
+  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+    <House className="w-3.5 h-3.5" />
+    <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
+    <span className="text-white/70">For Sale</span>
   </span>
-  <span className="flex items-center gap-2">
-    <Key className="w-3.5 h-3.5 text-accent" />
-    {stats?.rentalsCount ? `${roundToFive(stats.rentalsCount)}+` : '20+'} Rentals
+  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+    <KeyRound className="w-3.5 h-3.5" />
+    <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
+    <span className="text-white/70">Rentals</span>
   </span>
-  <span className="flex items-center gap-2">
-    <Building2 className="w-3.5 h-3.5 text-accent" />
-    {stats?.projectsCount ?? 15} Projects
+  <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
+    <Crane className="w-3.5 h-3.5" />
+    <span className="font-medium">{stats?.projectsCount ?? 15}</span>
+    <span className="text-white/70">Projects</span>
   </span>
 </motion.div>
 ```
 
-### 3. Update TrustStrip Component (Optional)
+### Import Update
+```tsx
+import { Search, Building2, Home, Key, House, KeyRound, Crane } from 'lucide-react';
+```
 
-**File:** `src/components/home/TrustStrip.tsx`
+---
 
-If you want consistency, update this component to also show the category breakdown. However, this section currently shows different stats (Cities, Tools, Independent, Built by Internationals), so it may make sense to keep it as differentiated content.
+## Visual Comparison
+
+**Before:**
+```text
+🏠 65+ For Sale   🔑 20+ Rentals   🏗️ 15 Projects
+(yellow icons, plain text, flat appearance)
+```
+
+**After:**
+```text
+┌──────────────────┐ ┌─────────────────┐ ┌────────────────┐
+│ 🏠 65+ For Sale  │ │ 🔑 20+ Rentals  │ │ 🏗️ 15 Projects │
+└──────────────────┘ └─────────────────┘ └────────────────┘
+(white icons, glass pills, premium feel)
+```
 
 ---
 
@@ -124,23 +126,15 @@ If you want consistency, update this component to also show the category breakdo
 
 | File | Change |
 |------|--------|
-| `src/hooks/usePlatformStats.tsx` | Query for sale, rental, and project counts instead of total properties/cities |
-| `src/components/home/HeroSplit.tsx` | Update trust indicators to show category breakdown with icons |
-
----
-
-## Current Database Counts
-
-| Category | Count |
-|----------|-------|
-| For Sale | 68 |
-| Rentals | 21 |
-| Projects | 15 |
-
-**Display as:** `65+ For Sale`, `20+ Rentals`, `15 Projects`
+| `src/components/home/HeroSplit.tsx` | Update icons (`House`, `KeyRound`, `Crane`) and add pill/badge styling with glass-morphism effect |
 
 ---
 
 ## Result
 
-Users landing on the homepage will immediately see what inventory is available in each category, setting clear expectations and inviting them to explore the search they're interested in.
+The trust indicators will have a more polished, premium appearance with:
+- Better icon choices that more clearly represent each category
+- Glass-morphism pill badges that add visual depth
+- White icons instead of yellow for a cleaner look against the hero image
+- Numbers emphasized with bold/medium weight
+
