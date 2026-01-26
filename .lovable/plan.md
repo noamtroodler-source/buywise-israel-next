@@ -1,34 +1,46 @@
 
-# Update RegionExplorer Section Header
+
+# Update TrustStrip Stats Section
 
 ## Summary
 
-Replace the "Explore by Region" section header with new copy.
+Replace the current inventory-focused stats with utility and trust-focused metrics that complement (not duplicate) the hero section.
 
 ---
 
-## Text Changes
+## New Stats Configuration
 
-| Element | Current | New |
-|---------|---------|-----|
-| Title (h2) | "Explore by Region" | "Explore Real Estate Markets Across Israel" |
-| Subtitle (p) | "Discover cities across Israel" | "Market context and buyer-focused insights for each city." |
+| Icon | Value | Label |
+|------|-------|-------|
+| Calculator | 9 | Free Tools |
+| MapPin | 35+ | Cities |
+| Shield | 100% | Independent |
+| Globe | 100% | In English |
 
 ---
 
 ## Implementation
 
-**File:** `src/components/home/RegionExplorer.tsx`
+**File:** `src/components/home/TrustStrip.tsx`
 
-### Lines 84-89: Update the header text
+### Changes Required
+
+1. **Update imports** - Replace `Home, Key, Building2` with `Calculator, MapPin, Globe` (keep `Shield`)
+
+2. **Replace displayStats array** - Remove dynamic database queries since these are now static values
+
+3. **Simplify component** - Remove the `usePlatformStats` hook since we no longer need database counts
 
 ```tsx
-<h2 className="text-2xl md:text-4xl font-bold text-foreground">
-  Explore Real Estate Markets Across Israel
-</h2>
-<p className="text-base text-muted-foreground mt-1">
-  Market context and buyer-focused insights for each city.
-</p>
+import { motion } from 'framer-motion';
+import { Calculator, MapPin, Shield, Globe } from 'lucide-react';
+
+const displayStats = [
+  { icon: Calculator, value: '9', label: 'Free Tools' },
+  { icon: MapPin, value: '35+', label: 'Cities' },
+  { icon: Shield, value: '100%', label: 'Independent' },
+  { icon: Globe, value: '100%', label: 'In English' },
+];
 ```
 
 ---
@@ -37,4 +49,5 @@ Replace the "Explore by Region" section header with new copy.
 
 | File | Change |
 |------|--------|
-| `src/components/home/RegionExplorer.tsx` | Update h2 title and subtitle paragraph |
+| `src/components/home/TrustStrip.tsx` | Update icons, values, labels; remove database hook |
+
