@@ -1,59 +1,147 @@
 
-# Update MarketStatsCards.tsx to Use Shared Constants
+# Fix: Favorites Page Showing Empty State After Removing a Favorite
 
-## Overview
+## Problem Summary
 
-This is a simple update to replace the locally defined `NATIONAL_AVG_PRICE_SQM` constant with an import from the shared constants file, ensuring full consistency across all components.
+When you remove a favorite project (as a guest), the Favorites page briefly flashes to the "no favorites" empty state, even though you still have other favorites. This happens because of a race condition between React state updates and React Query invalidation.
 
 ---
 
-## Current State
+## Root Cause
 
-**File:** `src/components/city/MarketStatsCards.tsx`
+The bug is in **both** `useProjectFavorites.tsx` and `useFavorites.tsx`:
 
-**Lines 11-13:**
+### How the Bug Occurs
+
+1. When you click to remove a favorite, the mutation runs
+2. For guests, it updates the context state: `setGuestProjectFavoriteIds(current => current.filter(...))`
+3. The `onSuccess` callback immediately runs: `queryClient.invalidateQueries(...)`
+4. The query that fetches project details has `guestProjectFavoriteIds` in its query key
+5. **Race condition**: The invalidation happens before React has finished updating `guestProjectFavoriteIds`
+6. The query refetches with the OLD IDs, or becomes disabled if the array appears empty momentarily
+7. This causes `projectFavorites` to return empty, triggering the empty state view
+
+### Why Property Favorites (Buy/Rent) Are Less Affected
+
+The `useFavorites` hook has similar code, but the bug is less noticeable because:
+- The `favorites` array for properties includes the `properties` data inline
+- The structure slightly differs, but the same race condition exists
+
+---
+
+## Solution
+
+Remove the unnecessary `queryClient.invalidateQueries` calls for guest users. Since we're already updating the context state synchronously, React Query will automatically refetch because the query key changes when `guestProjectFavoriteIds` updates.
+
+### Changes to `src/hooks/useProjectFavorites.tsx`
+
+**Remove the guest invalidation in `onSuccess`** (lines 137-145):
+
 ```tsx
-// National average for context (Israel-wide benchmark)
-const NATIONAL_AVG_PRICE_SQM = 22800;
-const NATIONAL_AVG_YIELD = 2.8;
+// BEFORE
+onSuccess: () => {
+  if (user) {
+    queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
+    queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
+  } else {
+    queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });  // ❌ Remove this
+  }
+  toast.success('Project removed from favorites');
+}
+
+// AFTER
+onSuccess: () => {
+  if (user) {
+    queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
+    queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
+  }
+  // Guest updates are reactive via context - no invalidation needed
+  toast.success('Project removed from favorites');
+}
 ```
 
-**Issue:** The local constant uses `22800` while the shared constant in `@/lib/constants/marketAverages` uses `32000`.
-
----
-
-## Changes Required
-
-### 1. Add Import Statement
-
-Add import from the shared constants file after line 9:
+**Also fix `addProjectFavorite`** (lines 100-114) - same pattern:
 
 ```tsx
-import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
+// BEFORE
+onSuccess: () => {
+  if (user) {
+    // ... user invalidations
+  } else {
+    queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });  // ❌ Remove this
+    toast.success(...);
+  }
+}
+
+// AFTER - Remove the guest invalidation, keep the toast
 ```
 
-### 2. Remove Local NATIONAL_AVG_PRICE_SQM
+### Changes to `src/hooks/useFavorites.tsx`
 
-Remove line 12 (`const NATIONAL_AVG_PRICE_SQM = 22800;`), keeping only the `NATIONAL_AVG_YIELD` constant which is not in the shared file:
+**Fix `removeFavorite` onSuccess** (lines 185-190):
 
 ```tsx
-// National average for context (Israel-wide benchmark)
-const NATIONAL_AVG_YIELD = 2.8;
+// BEFORE
+onSuccess: () => {
+  if (!user) {
+    queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });  // ❌ Remove this
+  }
+  toast.success('Property removed from favorites');
+}
+
+// AFTER
+onSuccess: () => {
+  toast.success('Property removed from favorites');
+  // Guest updates are reactive via context - query key includes guestFavoriteIds
+}
+```
+
+**Fix `addFavorite` onSuccess** (lines 117-131):
+
+```tsx
+// BEFORE
+onSuccess: (_, variables) => {
+  if (user) {
+    // ... user invalidations
+  } else {
+    queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });  // ❌ Remove this
+    toast.success(...);
+  }
+}
+
+// AFTER - Remove the guest invalidation, keep the toast
 ```
 
 ---
 
-## Files Modified
+## Why This Fix Works
 
-| File | Change |
-|------|--------|
-| `src/components/city/MarketStatsCards.tsx` | Import `NATIONAL_AVG_PRICE_SQM` from shared constants, remove local definition |
+1. **Context state is the source of truth** for guest favorites (`guestFavoriteIds` / `guestProjectFavoriteIds`)
+2. **Query keys include the IDs array**: `['guest-project-favorites-data', guestProjectFavoriteIds]`
+3. When context updates, the query key changes, triggering an automatic refetch
+4. Removing the manual `invalidateQueries` eliminates the race condition
 
 ---
 
-## Result
+## Files to Modify
 
-After this change:
-- The national average benchmark in the "National Context Benchmark" footer will display `₪32K/m²` instead of `₪22.8K/m²`
-- Full consistency with `CityQuickStats.tsx` and `MarketOverviewCards.tsx`
-- All components now use the same centralized constant
+| File | Changes |
+|------|---------|
+| `src/hooks/useProjectFavorites.tsx` | Remove guest invalidation calls in both `addProjectFavorite` and `removeProjectFavorite` mutations |
+| `src/hooks/useFavorites.tsx` | Remove guest invalidation calls in both `addFavorite` and `removeFavorite` mutations |
+
+---
+
+## Testing Checklist
+
+After the fix:
+
+- [ ] As a guest, add multiple projects to favorites
+- [ ] Remove one project - remaining projects should stay visible
+- [ ] Remove all projects - empty state should appear
+- [ ] As a guest, add multiple properties (buy) to favorites
+- [ ] Remove one property - remaining properties should stay visible
+- [ ] As a guest, add multiple rentals to favorites  
+- [ ] Remove one rental - remaining rentals should stay visible
+- [ ] Switching between tabs (Buy/Rent/Projects) works correctly
+- [ ] Toast messages still appear when adding/removing favorites
