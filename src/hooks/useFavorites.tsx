@@ -114,13 +114,13 @@ export function useFavorites() {
 
       if (error) throw error;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['favorites'] });
         queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
         toast.success('Property saved to favorites');
       } else {
-        queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });
+        // Guest updates are reactive via context - no invalidation needed
         toast.success('Property saved to favorites', {
           description: 'Saved to this browser only. Sign up free to keep across devices.',
           action: {
@@ -183,9 +183,7 @@ export function useFavorites() {
       toast.error('Failed to remove property');
     },
     onSuccess: () => {
-      if (!user) {
-        queryClient.invalidateQueries({ queryKey: ['guest-favorite-properties'] });
-      }
+      // Guest updates are reactive via context - no invalidation needed
       toast.success('Property removed from favorites');
     },
     onSettled: () => {
