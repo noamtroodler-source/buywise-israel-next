@@ -1,37 +1,73 @@
 
-# Remove "This Week's Performance" Section from Developer Dashboard
 
-## What's Being Removed
+# Update AI Feedback Section to BuyWise Israel Brand Standards
 
-The "This Week's Performance" section that displays:
-- Project Views (with 0% week-over-week comparison)
-- New Inquiries (with 0% week-over-week comparison)  
-- Active Projects count
+## Current Issue
 
-This section is rendered by the `DeveloperPerformanceInsights` component.
+The AI feedback section in the property description step uses amber/orange styling for "Suggestions for Improvement" which is off-brand. Per the platform's color palette standards, red, orange, green, and emerald semantic colors should be replaced with primary blue tints.
+
+**Current (off-brand):**
+- `bg-amber-500/5` background
+- `text-amber-500` icon (AlertTriangle)
+- Orange warning triangle icon
+
+**Brand standard:**
+- `bg-primary/5` background  
+- `text-primary` icon
+- Blue-branded icons (Info, Lightbulb, or CheckCircle2)
 
 ---
 
 ## File to Modify
 
-### `src/pages/developer/DeveloperDashboard.tsx`
+### `src/components/agent/wizard/steps/StepDescription.tsx`
 
-**Remove lines 227-230** - The Performance Insights section:
+**Changes:**
 
-```tsx
-{/* Performance Insights */}
-<motion.div variants={itemVariants}>
-  <DeveloperPerformanceInsights />
-</motion.div>
-```
+1. **Replace AlertTriangle icon with Info icon** (line 6)
+   - Remove `AlertTriangle` from imports
+   - Keep `Info` (already imported)
 
-**Also remove the import** on line 13:
-```tsx
-import { DeveloperPerformanceInsights } from '@/components/developer/DeveloperPerformanceInsights';
-```
+2. **Update feedback container background** (line 182)
+   - Change from: `bg-amber-500/5` 
+   - Change to: `bg-primary/5` (same as success state — unified styling)
+
+3. **Update icon for suggestions** (lines 184-188)
+   - Replace `AlertTriangle` with `Info` icon
+   - Change `text-amber-500` to `text-primary`
+
+4. **Update header text styling** (line 190-191)
+   - Keep the text content but ensure consistent styling
 
 ---
 
-## Result
+## Visual Result
 
-The developer dashboard will no longer show the performance metrics section, making the page cleaner and less overwhelming. The stats cards (Projects, Leads, Views, etc.) will remain as they provide a more concise overview.
+**Before:**
+```
+┌─────────────────────────────────────┐
+│ ⚠️ Suggestions for Improvement      │  ← Orange warning triangle
+│   (amber background)                │
+└─────────────────────────────────────┘
+```
+
+**After:**
+```
+┌─────────────────────────────────────┐
+│ ℹ️ Suggestions for Improvement      │  ← Blue info icon
+│   (primary/5 background)            │
+└─────────────────────────────────────┘
+```
+
+Both states (has issues / looking good) will now use the same blue-branded styling, matching the "Writing Tips" card and other informational components across the platform. This creates visual consistency and removes the alarming amber color that feels out of place.
+
+---
+
+## Code Changes Summary
+
+| Line | Current | Updated |
+|------|---------|---------|
+| 6 | `AlertTriangle` import | Remove (unused) |
+| 182 | `bg-amber-500/5` | `bg-primary/5` |
+| 185 | `<AlertTriangle className="h-5 w-5 text-amber-500 ...` | `<Info className="h-5 w-5 text-primary ...` |
+
