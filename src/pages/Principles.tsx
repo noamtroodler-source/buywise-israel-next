@@ -6,8 +6,6 @@ import {
   Clock, 
   Heart, 
   Eye,
-  XCircle,
-  CheckCircle2,
   ArrowRight,
   Layers,
   Scale,
@@ -77,22 +75,6 @@ const principles = [
     title: 'Transparency as a Feature',
     description: "We tell you what we know, what we estimate, where data comes from — and what we intentionally don't claim to know.",
   },
-];
-
-// Updated for alignment
-const whatWeDo = [
-  'Curate listings for quality, clarity, and accuracy',
-  'Provide Israel-specific calculations and tools — not generic estimates',
-  'Show the full picture, including uncomfortable tradeoffs',
-  'Build tools that reduce anxiety and improve decision-making',
-  'Educate before asking you to take action',
-];
-
-const whatWeDontDo = [
-  'No pressure tactics or artificial urgency',
-  'No fake precision when ranges are more honest',
-  "No pushing you toward decisions before you're ready",
-  'No confusing ads disguised as advice',
 ];
 
 export default function Principles() {
@@ -258,61 +240,6 @@ export default function Principles() {
                   </Card>
                 </motion.div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* What We Do / Don't Do */}
-        <section className="py-16 bg-muted/30">
-          <div className="container">
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {/* What We Do */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <Card className="h-full">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      What We Do
-                    </h3>
-                    <ul className="space-y-3">
-                      {whatWeDo.map((item) => (
-                        <li key={item} className="flex items-start gap-3 text-sm">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                          <span className="text-muted-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* What We Don't Do */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-              >
-                <Card className="h-full">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
-                      <XCircle className="h-5 w-5 text-destructive" />
-                      What We Don't Do
-                    </h3>
-                    <ul className="space-y-3">
-                      {whatWeDontDo.map((item) => (
-                        <li key={item} className="flex items-start gap-3 text-sm">
-                          <XCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                          <span className="text-muted-foreground">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </motion.div>
             </div>
           </div>
         </section>
