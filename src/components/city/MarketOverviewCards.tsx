@@ -318,26 +318,6 @@ export function MarketOverviewCards({
                   />
                 </div>
 
-                {/* Discount or comparison message */}
-                {arnonaEstimate.discountPercent > 0 ? (
-                  <p className="text-sm text-primary font-medium">
-                    {arnonaEstimate.discountPercent}% {arnonaEstimate.discountType} discount
-                    {arnonaEstimate.areaLimitApplied && ` (on first ${arnonaEstimate.areaLimitSqm}m²)`}
-                  </p>
-                ) : arnonaEstimate.olehStatusChecked && arnonaEstimate.olehYearsSinceAliyah !== null && arnonaEstimate.olehYearsSinceAliyah >= 2 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Oleh arnona discount: Years 1-2 only
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {arnonaVsNational > 10 
-                      ? `${Math.abs(Math.round(arnonaVsNational))}% above national average`
-                      : arnonaVsNational < -10
-                        ? `${Math.abs(Math.round(arnonaVsNational))}% below national average`
-                        : 'Close to national average'
-                    }
-                  </p>
-                )}
               </CardContent>
             </Card>
           </motion.div>
