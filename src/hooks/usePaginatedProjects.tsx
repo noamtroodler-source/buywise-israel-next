@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/projects';
@@ -99,11 +99,14 @@ export function usePaginatedProjects(
   }, [queryClient, filters]);
 
   // Reset page when filters change
-  const prevFilterKey = useState(filterKey)[0];
-  if (filterKey !== prevFilterKey) {
-    setPage(1);
-    setAllProjects([]);
-  }
+  const prevFilterKeyRef = useRef(filterKey);
+  useEffect(() => {
+    if (filterKey !== prevFilterKeyRef.current) {
+      prevFilterKeyRef.current = filterKey;
+      setPage(1);
+      setAllProjects([]);
+    }
+  }, [filterKey]);
 
   return {
     projects,
