@@ -128,19 +128,19 @@ export function HeroSplit() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-sm text-white/60"
+              className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-sm text-white/70"
             >
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                {stats?.cityCount ?? 34} Cities
+                <Home className="w-3.5 h-3.5 text-accent" />
+                {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'} For Sale
               </span>
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                {stats?.propertyCount ? `${stats.propertyCount}+` : '100+'} Listings
+                <Key className="w-3.5 h-3.5 text-accent" />
+                {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'} Rentals
               </span>
               <span className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                {stats?.toolCount ?? 9} Free Tools
+                <Building2 className="w-3.5 h-3.5 text-accent" />
+                {stats?.projectsCount ?? 15} Projects
               </span>
             </motion.div>
           </motion.div>

@@ -5,6 +5,8 @@ import { usePlatformStats } from "@/hooks/usePlatformStats";
 export function PlatformStats() {
   const { data: stats, isLoading } = usePlatformStats();
   
+  const totalListings = stats ? stats.forSaleCount + stats.rentalsCount : 0;
+  
   const statItems = [
     {
       icon: Users,
@@ -14,19 +16,19 @@ export function PlatformStats() {
     },
     {
       icon: Home,
-      value: isLoading ? "..." : (stats?.propertyCount || 0).toLocaleString(),
+      value: isLoading ? "..." : totalListings.toLocaleString(),
       label: "Properties Listed",
       description: "Across Israel"
     },
     {
       icon: MapPin,
-      value: isLoading ? "..." : (stats?.cityCount || 0).toString(),
-      label: "Cities Covered",
-      description: "From Eilat to Nahariya"
+      value: isLoading ? "..." : (stats?.projectsCount || 0).toString(),
+      label: "Active Projects",
+      description: "New developments"
     },
     {
       icon: Calculator,
-      value: stats?.toolCount?.toString() || "9",
+      value: "9",
       label: "Buyer Tools",
       description: "Calculators & guides"
     }
