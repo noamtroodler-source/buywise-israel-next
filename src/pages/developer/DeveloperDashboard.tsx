@@ -11,7 +11,7 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
 import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
-import { DeveloperPerformanceInsights } from '@/components/developer/DeveloperPerformanceInsights';
+
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 
 const containerVariants = {
@@ -224,10 +224,6 @@ export default function DeveloperDashboard() {
             </motion.div>
           )}
 
-          {/* Performance Insights */}
-          <motion.div variants={itemVariants}>
-            <DeveloperPerformanceInsights />
-          </motion.div>
 
           {/* Stats Cards */}
           <motion.div variants={itemVariants} className="grid gap-4 grid-cols-2 lg:grid-cols-6">
