@@ -10,6 +10,7 @@ import { useBuyerProfile, BuyerProfile } from '@/hooks/useBuyerProfile';
 import { calculateArnonaWithDiscount } from '@/lib/calculations/arnona';
 import { ARNONA_AREA_TOOLTIP } from '@/lib/content/areaTooltips';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
+import { NATIONAL_AVG_PRICE_SQM, NATIONAL_AVG_ARNONA } from '@/lib/constants/marketAverages';
 
 interface MarketOverviewCardsProps {
   marketData: MarketData[];
@@ -20,10 +21,7 @@ interface MarketOverviewCardsProps {
   lastVerified?: string | null;
 }
 
-const NATIONAL_AVG_PRICE_SQM = 32000;
-const NATIONAL_AVG_ARNONA = 25;
-
-export function MarketOverviewCards({ 
+export function MarketOverviewCards({
   marketData, 
   cityName, 
   arnonaRateSqm,
