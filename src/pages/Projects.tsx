@@ -72,6 +72,14 @@ export default function Projects() {
     trackClick('project_card', 'ProjectCard', { project_id: projectId });
   };
 
+  // Calculate progress based on stage position (6 stages total)
+  const getStageProgress = (status: string): number => {
+    const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
+    const stageIndex = stages.findIndex(s => s === status);
+    if (stageIndex === -1) return 0;
+    return Math.round(((stageIndex + 1) / stages.length) * 100);
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'planning': return 'Planning';
@@ -257,19 +265,12 @@ export default function Projects() {
                                   {project.status === 'finishing' && 'Finishing'}
                                   {project.status === 'delivery' && 'Ready for Move-In'}
                                 </span>
-                                <span className="font-medium text-primary">
-                                  {project.status === 'planning' && 'Coming Soon'}
-                                  {project.status === 'pre_sale' && 'Starting Soon'}
-                                  {['foundation', 'structure', 'finishing'].includes(project.status) && `${(project as any).construction_progress_percent || 0}%`}
-                                  {project.status === 'delivery' && '100%'}
+                              <span className="font-medium text-primary">
+                                  {getStageProgress(project.status)}%
                                 </span>
                               </div>
                               <Progress 
-                                value={
-                                  project.status === 'delivery' ? 100 :
-                                  ['foundation', 'structure', 'finishing'].includes(project.status) ? ((project as any).construction_progress_percent || 0) :
-                                  0
-                                } 
+                                value={getStageProgress(project.status)} 
                                 className="h-1.5" 
                               />
                             </div>
