@@ -103,7 +103,7 @@ export function useProjectFavorites() {
         queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
         toast.success('Project saved to favorites');
       } else {
-        queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });
+        // Guest updates are reactive via context - no invalidation needed
         toast.success('Project saved to favorites', {
           description: 'Saved to this browser only. Sign up free to keep across devices.',
           action: {
@@ -138,9 +138,8 @@ export function useProjectFavorites() {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
         queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['guest-project-favorites-data'] });
       }
+      // Guest updates are reactive via context - no invalidation needed
       toast.success('Project removed from favorites');
     },
     onError: (error) => {
