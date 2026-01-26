@@ -1,4 +1,4 @@
-import { Share2, Link, MessageCircle, Send } from "lucide-react";
+import { Share2, Link, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,13 +41,6 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
     trackShare({ entityType: 'property', entityId: propertyId, shareMethod: 'whatsapp' });
   };
 
-  const handleTelegram = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(propertyUrl)}&text=${encodeURIComponent(shareText)}`;
-    window.open(telegramUrl, "_blank");
-    trackShare({ entityType: 'property', entityId: propertyId, shareMethod: 'telegram' });
-  };
 
   return (
     <DropdownMenu>
@@ -73,10 +66,6 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
         <DropdownMenuItem onClick={handleWhatsApp} className="cursor-pointer">
           <MessageCircle className="h-4 w-4 mr-2" />
           WhatsApp
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleTelegram} className="cursor-pointer">
-          <Send className="h-4 w-4 mr-2" />
-          Telegram
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

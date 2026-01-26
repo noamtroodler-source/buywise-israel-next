@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Share2, Link, MessageCircle, Send, TrendingUp } from 'lucide-react';
+import { Share2, Link, MessageCircle, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { format, subDays } from 'date-fns';
 
@@ -12,14 +12,12 @@ interface ShareAnalyticsTabProps {
 const SHARE_METHOD_COLORS = {
   copy_link: 'hsl(var(--primary))',
   whatsapp: '#25D366',
-  telegram: '#0088cc',
   native_share: 'hsl(var(--muted-foreground))',
 };
 
 const SHARE_METHOD_LABELS = {
   copy_link: 'Copy Link',
   whatsapp: 'WhatsApp',
-  telegram: 'Telegram',
   native_share: 'Native Share',
 };
 
@@ -94,7 +92,7 @@ export function ShareAnalyticsTab({ dateRange }: ShareAnalyticsTabProps) {
       (data || []).forEach((row) => {
         const day = format(new Date(row.created_at), 'MMM dd');
         if (!dayMap[day]) {
-          dayMap[day] = { copy_link: 0, whatsapp: 0, telegram: 0, native_share: 0 };
+          dayMap[day] = { copy_link: 0, whatsapp: 0, native_share: 0 };
         }
         dayMap[day][row.share_method] = (dayMap[day][row.share_method] || 0) + 1;
       });
@@ -138,22 +136,6 @@ export function ShareAnalyticsTab({ dateRange }: ShareAnalyticsTabProps) {
               </div>
               <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
                 <MessageCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-blue-500/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Telegram Shares</p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {isLoading ? '...' : methodBreakdown?.find(m => m.method === 'telegram')?.count || 0}
-                </p>
-              </div>
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Send className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -280,15 +262,7 @@ export function ShareAnalyticsTab({ dateRange }: ShareAnalyticsTabProps) {
                     strokeWidth={2}
                     dot={false}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="telegram" 
-                    name="Telegram"
-                    stroke="#0088cc" 
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
+                  <Line
                     type="monotone" 
                     dataKey="copy_link" 
                     name="Copy Link"
