@@ -20,7 +20,7 @@ import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { toast } from 'sonner';
-import { BookOpen } from 'lucide-react';
+
 
 import { motion } from 'framer-motion';
 
@@ -131,14 +131,6 @@ export default function PropertyDetail() {
             {/* Description */}
             <PropertyDescription description={property.description} />
             
-            {/* Understanding Listings Guide Link */}
-            <Link 
-              to="/guides/understanding-listings" 
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              <span>Understanding Israeli listing terminology</span>
-            </Link>
 
             {/* Value Snapshot */}
             <motion.div 
