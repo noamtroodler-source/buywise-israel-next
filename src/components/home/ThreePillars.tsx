@@ -24,7 +24,7 @@ const pillars = [
     icon: MessageCircle,
     title: 'Decide',
     subtitle: 'Move forward with confidence',
-    description: 'Use our free tools to calculate costs, compare options, and prepare before contacting agents.',
+    description: 'Use clarity tools to evaluate affordability, compare scenarios, and decide when — and how — to move forward.',
     gradient: 'from-primary/5 to-muted/50',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
