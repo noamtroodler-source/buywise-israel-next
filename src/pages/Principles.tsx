@@ -41,7 +41,7 @@ const whatWeAre = [
   {
     icon: Layers,
     title: 'Context Built Into Every Listing',
-    description: 'Real cost context, market insight, and plain-English explanations — so you understand what a property actually means, not just its listing price.',
+    description: 'Real cost context and market insight — so you understand what a property actually costs and how it fits the market, not just its listing price.',
   },
   {
     icon: Lightbulb,
