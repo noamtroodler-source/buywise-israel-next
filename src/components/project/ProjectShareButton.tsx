@@ -9,48 +9,60 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useShareTracking } from '@/hooks/useShareTracking';
 
 interface ProjectShareButtonProps {
   projectSlug: string;
   projectName: string;
+  projectId?: string;
   className?: string;
   size?: 'sm' | 'default' | 'icon';
 }
 
 export const ProjectShareButton = React.forwardRef<HTMLButtonElement, ProjectShareButtonProps>(
-  function ProjectShareButton({ projectSlug, projectName, className, size = 'icon' }, ref) {
-  const projectUrl = `${window.location.origin}/projects/${projectSlug}`;
-  const shareText = `Check out this project: ${projectName}`;
+  function ProjectShareButton({ projectSlug, projectName, projectId, className, size = 'icon' }, ref) {
+    const { trackShare } = useShareTracking();
+    const projectUrl = `${window.location.origin}/projects/${projectSlug}`;
+    const shareText = `Check out this project: ${projectName}`;
 
-  const handleCopyLink = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(projectUrl);
-      toast.success('Link copied to clipboard');
-    } catch {
-      toast.error('Failed to copy link');
-    }
-  };
+    const handleCopyLink = async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(projectUrl);
+        toast.success('Link copied to clipboard');
+        if (projectId) {
+          trackShare({ entityType: 'project', entityId: projectId, shareMethod: 'copy_link' });
+        }
+      } catch {
+        toast.error('Failed to copy link');
+      }
+    };
 
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${projectUrl}`)}`;
-    window.open(url, '_blank');
-  };
+    const handleWhatsApp = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${projectUrl}`)}`;
+      window.open(url, '_blank');
+      if (projectId) {
+        trackShare({ entityType: 'project', entityId: projectId, shareMethod: 'whatsapp' });
+      }
+    };
 
-  const handleTelegram = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const url = `https://t.me/share/url?url=${encodeURIComponent(projectUrl)}&text=${encodeURIComponent(shareText)}`;
-    window.open(url, '_blank');
-  };
+    const handleTelegram = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = `https://t.me/share/url?url=${encodeURIComponent(projectUrl)}&text=${encodeURIComponent(shareText)}`;
+      window.open(url, '_blank');
+      if (projectId) {
+        trackShare({ entityType: 'project', entityId: projectId, shareMethod: 'telegram' });
+      }
+    };
 
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+    const handleTriggerClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
 
     return (
       <DropdownMenu>

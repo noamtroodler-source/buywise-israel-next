@@ -32,6 +32,12 @@ export interface BuyerProfile {
   rental_budget?: number | null;
   // Mortgage preferences (stored as JSON in DB, typed here)
   mortgage_preferences?: MortgagePreferencesJson | null;
+  // New preference tracking fields
+  target_cities?: string[] | null;
+  property_type_preferences?: string[] | null;
+  purchase_timeline?: 'immediate' | '1_3_months' | '3_6_months' | '6_12_months' | 'flexible' | null;
+  budget_min?: number | null;
+  budget_max?: number | null;
   created_at: string;
   updated_at: string;
 }

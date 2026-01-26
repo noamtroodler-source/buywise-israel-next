@@ -85,6 +85,10 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
+        // Explicit amenity booleans
+        has_balcony: data.has_balcony,
+        has_elevator: data.has_elevator,
+        has_storage: data.has_storage,
         // Lease reality fields
         lease_term: data.lease_term,
         subletting_allowed: data.subletting_allowed,
@@ -124,6 +128,10 @@ function WizardContent() {
         entry_date: data.is_immediate_entry ? undefined : data.entry_date,
         ac_type: data.ac_type as any,
         vaad_bayit_monthly: data.vaad_bayit_monthly,
+        // Explicit amenity booleans
+        has_balcony: data.has_balcony,
+        has_elevator: data.has_elevator,
+        has_storage: data.has_storage,
         // Lease reality fields
         lease_term: data.lease_term,
         subletting_allowed: data.subletting_allowed,

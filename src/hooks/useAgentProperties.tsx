@@ -41,6 +41,10 @@ export interface CreatePropertyData {
   vaad_bayit_monthly?: number;
   verification_status?: VerificationStatus;
   submitted_at?: string;
+  // Explicit amenity booleans
+  has_balcony?: boolean;
+  has_elevator?: boolean;
+  has_storage?: boolean;
   // Lease reality fields
   lease_term?: string;
   subletting_allowed?: string;

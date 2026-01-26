@@ -129,6 +129,10 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         is_immediate_entry: !property.entry_date,
         vaad_bayit_monthly: property.vaad_bayit_monthly || undefined,
         features: property.features || [],
+        // Explicit amenity booleans - derive from features array or db columns
+        has_balcony: (property as any).has_balcony ?? (property.features || []).includes('balcony'),
+        has_elevator: (property as any).has_elevator ?? (property.features || []).includes('elevator'),
+        has_storage: (property as any).has_storage ?? (property.features || []).includes('storage'),
         // Lease reality fields
         lease_term: (property as any).lease_term || undefined,
         subletting_allowed: (property as any).subletting_allowed || undefined,
