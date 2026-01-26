@@ -21,7 +21,7 @@ export function PlatformPromise() {
           
           <p className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed -mt-6">
             Buying or renting in <span className="text-primary">Israel</span> no longer has to feel 
-            overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
+            overwhelming. We bring clarity and confidence — without pressure.
           </p>
           
           <Link 
