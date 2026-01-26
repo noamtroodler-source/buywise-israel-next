@@ -245,7 +245,7 @@ export default function Principles() {
         </section>
 
         {/* Pro-Agent Section */}
-        <section className="py-16 md:py-20">
+        <section className="py-16 md:py-20 bg-muted/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
