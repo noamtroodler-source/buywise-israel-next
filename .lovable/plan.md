@@ -1,40 +1,36 @@
 
-# Remove Telegram from Share Buttons
+# Fix Blue Focus Ring on Select Component
 
-## Summary
-Remove the Telegram sharing option from all share buttons across the platform, keeping only "Copy Link" and "WhatsApp" options.
+## Problem
+The Select dropdown shows a persistent blue focus ring after making a selection with the mouse. This ring stays visible until clicking somewhere else on the page, which is visually distracting.
 
-## Files to Modify
+## Root Cause
+The `SelectTrigger` component in `src/components/ui/select.tsx` uses `focus:ring-2` styles which apply whenever the element is focused (including after mouse clicks). The better approach is `focus-visible:ring-2` which only shows the ring during keyboard navigation.
 
-### 1. `src/components/property/ShareButton.tsx`
-- Remove `Send` from the lucide-react import (line 1)
-- Delete the `handleTelegram` function (lines 44-50)
-- Remove the Telegram dropdown menu item (lines 77-80)
+## Solution
+Update the `SelectTrigger` component to use `focus-visible` instead of `focus` for the ring styles.
 
-### 2. `src/components/project/ProjectShareButton.tsx`
-- Remove `Send` from the lucide-react import (line 2)
-- Delete the `handleTelegram` function (lines 52-60)
-- Remove the Telegram dropdown menu item (lines 91-94)
+## File to Modify
+`src/components/ui/select.tsx` (line 20)
 
-### 3. `src/hooks/useShareTracking.ts`
-- Remove `'telegram'` from the `ShareMethod` type union (line 25)
-- Change from: `'copy_link' | 'whatsapp' | 'telegram' | 'native_share'`
-- Change to: `'copy_link' | 'whatsapp' | 'native_share'`
+### Current Code:
+```tsx
+"flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+```
 
-### 4. `src/components/admin/analytics/ShareAnalyticsTab.tsx`
-- Remove `Send` from lucide-react imports
-- Remove `telegram` entry from `SHARE_METHOD_COLORS` (line 15)
-- Remove `telegram` entry from `SHARE_METHOD_LABELS` (line 22)
-- Remove `telegram: 0` from the dayMap initialization (line 97)
-- Delete the entire "Telegram Shares" card (lines 146-158)
-- Remove the Telegram `<Line>` component from the chart (lines 283-290)
+### Updated Code:
+```tsx
+"flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+```
+
+## What Changes
+- `focus:outline-none` → `focus-visible:outline-none`
+- `focus:ring-2` → `focus-visible:ring-2`
+- `focus:ring-ring` → `focus-visible:ring-ring`
+- `focus:ring-offset-2` → `focus-visible:ring-offset-2`
 
 ## Result
-Share dropdowns will show only two options:
-- Copy Link
-- WhatsApp
+- **Mouse clicks**: No blue ring after selecting an option
+- **Keyboard navigation**: Ring still appears for accessibility (Tab key navigation)
 
-The admin analytics dashboard will no longer display Telegram-specific metrics, though historical Telegram share data will remain in the database for reference.
-
-## Note on Database
-The database constraint still allows 'telegram' as a valid share_method value, which is fine - it preserves historical data and doesn't cause any issues. No migration needed.
+This matches the behavior already used on the Button component and is the modern best practice for focus indicators.
