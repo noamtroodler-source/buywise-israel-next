@@ -8,11 +8,11 @@ import { CompareCategory } from '@/contexts/CompareContext';
 interface CompareHeroProps {
   propertyCount: number;
   maxProperties: number;
-  investorView: boolean;
-  onInvestorViewChange: (checked: boolean) => void;
+  investorView?: boolean;
+  onInvestorViewChange?: (checked: boolean) => void;
   onShare: () => void;
   onClearAll: () => void;
-  category?: CompareCategory | null;
+  category?: CompareCategory | 'projects' | null;
 }
 
 export function CompareHero({
@@ -25,28 +25,34 @@ export function CompareHero({
   category,
 }: CompareHeroProps) {
   const isRental = category === 'rent';
+  const isProject = category === 'projects';
   
   const getBackLink = () => {
+    if (isProject) return '/projects';
     if (isRental) return '/listings?status=for_rent';
     return '/listings?status=for_sale';
   };
 
   const getBackLabel = () => {
+    if (isProject) return 'Back to Projects';
     if (isRental) return 'Back to Rentals';
     return 'Back to Listings';
   };
 
   const getTitle = () => {
+    if (isProject) return 'Compare Projects';
     if (isRental) return 'Compare Rentals';
     return 'Compare Properties';
   };
 
   const getSubtitle = () => {
+    if (isProject) return 'Side-by-side comparison of development projects';
     if (isRental) return 'Find the best deal for your needs';
     return 'See what matters most — side by side';
   };
 
   const getItemLabel = () => {
+    if (isProject) return 'projects';
     if (isRental) return 'rentals';
     return 'properties';
   };
@@ -94,8 +100,8 @@ export function CompareHero({
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Investor View Toggle - only show for sales */}
-            {!isRental && (
+            {/* Investor View Toggle - only show for sales (not rentals or projects) */}
+            {!isRental && !isProject && onInvestorViewChange && (
               <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-border/50">
                 <TrendingUp className="h-4 w-4 text-primary" />
                 <Label 
@@ -106,7 +112,7 @@ export function CompareHero({
                 </Label>
                 <Switch
                   id="investor-view"
-                  checked={investorView}
+                  checked={investorView ?? false}
                   onCheckedChange={onInvestorViewChange}
                 />
               </div>
