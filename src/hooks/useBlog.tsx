@@ -175,3 +175,29 @@ export function useRelatedPosts(categoryId: string | undefined, currentPostId: s
     enabled: !!categoryId && !!currentPostId,
   });
 }
+
+// Fetch published blog posts by author profile (agent, agency, or developer)
+export function useAuthorBlogPosts(authorType: string, authorProfileId: string | undefined) {
+  return useQuery({
+    queryKey: ['authorBlogPosts', authorType, authorProfileId],
+    queryFn: async () => {
+      if (!authorProfileId) return [];
+      
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select(`
+          *,
+          category:category_id (*)
+        `)
+        .eq('is_published', true)
+        .eq('verification_status', 'approved')
+        .eq('author_type', authorType)
+        .eq('author_profile_id', authorProfileId)
+        .order('published_at', { ascending: false });
+
+      if (error) throw error;
+      return data as BlogPost[];
+    },
+    enabled: !!authorProfileId,
+  });
+}

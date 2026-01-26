@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAgent, useAgentListings, useAgentStats } from '@/hooks/useAgent';
+import { useAuthorBlogPosts } from '@/hooks/useBlog';
+import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyCard } from '@/components/property/PropertyCard';
+import { BlogCard } from '@/components/blog/BlogCard';
 import { 
   MessageCircle, 
   Mail, 
@@ -31,6 +34,8 @@ export default function AgentDetail() {
   const { data: activeListings, isLoading: activeLoading } = useAgentListings(id || '', 'active');
   const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past');
   const { data: stats } = useAgentStats(id || '');
+  const { data: blogPosts = [], isLoading: blogLoading } = useAuthorBlogPosts('agent', agent?.id);
+  const { isArticleSaved, toggleSave } = useSavedArticles();
   const formatPrice = useFormatPrice();
   const { user } = useAuth();
 
@@ -301,6 +306,12 @@ export default function AgentDetail() {
                 {stats?.pastListingsCount ?? 0}
               </span>
             </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Blog
+              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                {blogPosts.length}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
@@ -344,6 +355,35 @@ export default function AgentDetail() {
                 <CardContent className="p-8 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                   <p className="text-muted-foreground">No past sales recorded yet.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="blog">
+            {blogLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-80 rounded-xl" />
+                ))}
+              </div>
+            ) : blogPosts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {blogPosts.map((post, index) => (
+                  <BlogCard
+                    key={post.id}
+                    post={post}
+                    index={index}
+                    isSaved={isArticleSaved(post.id)}
+                    onToggleSave={toggleSave}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No articles published yet.</p>
                 </CardContent>
               </Card>
             )}

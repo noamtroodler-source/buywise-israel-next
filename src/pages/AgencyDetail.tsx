@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,7 +7,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyCard } from '@/components/property/PropertyCard';
+import { BlogCard } from '@/components/blog/BlogCard';
 import { useAgency, useAgencyAgents, useAgencyListings, useAgencyStats } from '@/hooks/useAgency';
+import { useAuthorBlogPosts } from '@/hooks/useBlog';
+import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { toast } from 'sonner';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +27,8 @@ export default function AgencyDetail() {
   const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active');
   const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past');
   const { data: stats } = useAgencyStats(agency?.id);
+  const { data: blogPosts = [], isLoading: blogLoading } = useAuthorBlogPosts('agency', agency?.id);
+  const { isArticleSaved, toggleSave } = useSavedArticles();
   const [logoError, setLogoError] = useState(false);
   
   const { data: userAgent } = useQuery({
@@ -285,6 +290,12 @@ export default function AgencyDetail() {
                 {stats?.pastListingsCount ?? 0}
               </span>
             </TabsTrigger>
+            <TabsTrigger value="blog" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Blog
+              <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
+                {blogPosts.length}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-6">
@@ -330,6 +341,36 @@ export default function AgencyDetail() {
                   <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No Past Listings</h3>
                   <p className="text-muted-foreground">No past listings to display yet.</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="blog" className="space-y-6">
+            {blogLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-80 rounded-xl" />
+                ))}
+              </div>
+            ) : blogPosts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {blogPosts.map((post, index) => (
+                  <BlogCard
+                    key={post.id}
+                    post={post}
+                    index={index}
+                    isSaved={isArticleSaved(post.id)}
+                    onToggleSave={toggleSave}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Articles Yet</h3>
+                  <p className="text-muted-foreground">This agency hasn't published any articles yet.</p>
                 </CardContent>
               </Card>
             )}
