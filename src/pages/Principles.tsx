@@ -267,7 +267,7 @@ export default function Principles() {
                   Our role isn't to replace them — it's to <span className="text-foreground font-medium">prepare you for them</span>.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  BuyWise helps you reach out when you feel ready, with better questions, clearer expectations, and less anxiety — which leads to better conversations and better outcomes for everyone involved.
+                  BuyWise helps you reach out when you feel ready — with better questions, clearer expectations, and less anxiety. That leads to better conversations and better outcomes for everyone involved.
                 </p>
               </div>
             </motion.div>
