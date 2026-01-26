@@ -1,147 +1,55 @@
 
-# Fix Ref Warning and Verify Sorting Works Across All Pages
+# Clean Up Unauthorized City Listings
 
 ## The Problem
+The mock data generator created listings for 6 cities that are NOT part of your official 25 market areas. These need to be removed to maintain data integrity.
 
-The console shows two React warnings:
-```
-Warning: Function components cannot be given refs.
-Check the render method of `Listings`.
-```
+## Cities to Remove (Not in Your 25)
 
-These warnings occur because:
-1. **ListingsGrid** and **PropertyCard** are function components that don't use `React.forwardRef`
-2. React or a parent component is attempting to pass refs to these components
-3. The warnings don't break functionality but indicate a code quality issue
+| City | Properties | Projects | Total Listings |
+|------|------------|----------|----------------|
+| Bat Yam | 32 | 4 | 36 |
+| Givatayim | 32 | 4 | 36 |
+| Holon | 32 | 4 | 36 |
+| Nahariya | 32 | 4 | 36 |
+| Rehovot | 32 | 4 | 36 |
+| Rishon LeZion | 32 | 4 | 36 |
+| **TOTAL** | **192** | **24** | **216** |
 
-## Root Cause Analysis
+## Action Plan
 
-Looking at the code:
-
-### 1. ListingsGrid (line 15-37)
-```tsx
-export function ListingsGrid({ children, isFetching, className }: ListingsGridProps) {
-  return (
-    <div className={cn("relative", className)}>
-      ...
-    </div>
-  );
-}
-```
-- Regular function component, no `forwardRef`
-
-### 2. PropertyCard (line 31 & 527)
-```tsx
-const PropertyCardComponent = memo(function PropertyCard(...) { ... });
-export const PropertyCard = PropertyCardComponent;
-```
-- Uses `memo` but no `forwardRef`
-
-## The Fix
-
-Wrap both components with `React.forwardRef` to properly handle refs:
-
-### File 1: `src/components/listings/ListingsGrid.tsx`
-
-**Changes:**
-- Import `forwardRef` from React
-- Wrap component with `forwardRef`
-- Accept `ref` parameter and pass to outer div
-
-```tsx
-import { ReactNode, forwardRef } from 'react';
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-interface ListingsGridProps {
-  children: ReactNode;
-  isFetching?: boolean;
-  className?: string;
-}
-
-export const ListingsGrid = forwardRef<HTMLDivElement, ListingsGridProps>(
-  function ListingsGrid({ children, isFetching, className }, ref) {
-    return (
-      <div ref={ref} className={cn("relative", className)}>
-        {/* existing content unchanged */}
-      </div>
-    );
-  }
-);
+### Step 1: Delete Unauthorized Properties
+```sql
+DELETE FROM properties 
+WHERE city IN ('Bat Yam', 'Givatayim', 'Holon', 'Nahariya', 'Rehovot', 'Rishon LeZion');
 ```
 
-### File 2: `src/components/property/PropertyCard.tsx`
-
-**Changes:**
-- Import `forwardRef` from React
-- Wrap component with `forwardRef` and `memo`
-- Accept `ref` parameter and pass to Link wrapper element
-
-```tsx
-import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
-
-// ... existing code ...
-
-const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(
-  function PropertyCard({ property, className, ... }, ref) {
-    // ... existing logic ...
-    
-    return (
-      <>
-        <Link ref={ref} to={`/property/${property.id}`} onClick={handleCardClick}>
-          {/* existing card content */}
-        </Link>
-      </>
-    );
-  }
-));
-
-export const PropertyCard = PropertyCardComponent;
+### Step 2: Delete Unauthorized Projects
+```sql
+DELETE FROM projects 
+WHERE city IN ('Bat Yam', 'Givatayim', 'Holon', 'Nahariya', 'Rehovot', 'Rishon LeZion');
 ```
 
-## Sorting Verification
+### Step 3: Update Seed Script for Future Prevention
+Modify `supabase/functions/seed-demo-data/index.ts` to ONLY use cities from the official 25-city roster fetched from the database, preventing this from happening again.
 
-The sorting is already properly implemented in the hooks. Here's the confirmation:
+## Technical Details
 
-### Properties (`usePaginatedProperties.tsx` lines 183-199)
-```tsx
-function applySorting(query: any, filters?: PropertyFilters) {
-  switch (filters.sort_by) {
-    case 'newest': return query.order('created_at', { ascending: false });
-    case 'price_asc': return query.order('price', { ascending: true });
-    case 'price_desc': return query.order('price', { ascending: false });
-    case 'size_desc': return query.order('size_sqm', { ascending: false, nullsFirst: false });
-    case 'rooms_desc': return query.order('bedrooms', { ascending: false });
-    default: return query.order('created_at', { ascending: false });
-  }
-}
+### Current Seed Script Issue
+The seed script likely has a hardcoded city array that doesn't match the `cities` table. Will update it to:
+
+```typescript
+// Fetch official cities from database
+const { data: officialCities } = await supabase
+  .from('cities')
+  .select('name');
+
+const CITIES = officialCities.map(c => c.name);
 ```
 
-### Projects (`usePaginatedProjects.tsx` lines 119-134)
-```tsx
-function applySorting(query: any, filters?: ProjectFiltersType) {
-  switch (filters.sort_by) {
-    case 'price_asc': return query.order('price_from', { ascending: true, nullsFirst: false });
-    case 'price_desc': return query.order('price_from', { ascending: false });
-    case 'completion': return query.order('completion_date', { ascending: true, nullsFirst: false });
-    case 'newest':
-    default: return query.order('created_at', { ascending: false });
-  }
-}
-```
-
-All sorting options are correctly mapped and implemented.
-
-## Summary of Changes
-
-| File | Change |
-|------|--------|
-| `src/components/listings/ListingsGrid.tsx` | Add `forwardRef` wrapper |
-| `src/components/property/PropertyCard.tsx` | Add `forwardRef` wrapper with `memo` |
-
-## Result
-
-After these changes:
-- No more "Function components cannot be given refs" warnings
-- All sorting options will continue to work correctly on Buy, Rent, and Projects pages
-- The codebase follows React best practices for ref forwarding
+### Result After Cleanup
+- 192 unauthorized properties removed
+- 24 unauthorized projects removed  
+- Seed script updated to only use your official 25 cities
+- Future mock data will always match your Areas pages
+- AI Value Snapshot will work for all remaining properties (since they're all in cities with data)
