@@ -21,7 +21,7 @@ const steps = [
     number: "03",
     title: "Add Listings",
     description:
-      "Upload your properties or development projects. Our easy wizard guides you through the process.",
+      "Upload your properties or development projects. Our easy step-by-step guide helps you through the process.",
   },
   {
     icon: TrendingUp,
