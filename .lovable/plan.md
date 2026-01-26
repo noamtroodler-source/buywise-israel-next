@@ -1,77 +1,77 @@
 
 
-# Remove Arnona Discount Text from City Market Overview
+# Fix Developer Profile Pages Not Loading
 
-## What's Being Removed
+## Problem Identified
 
-The blue text under the Arnona slider that shows discount information like:
-- "40% 75-89% Disability discount"
-- "90% New Immigrant discount (on first 100m²)"
-- "Oleh arnona discount: Years 1-2 only"
-- Comparison text like "15% above national average"
+The mock developers created by the seed function have `status: 'active'`, but the hooks that fetch developers are filtering for `status: 'approved'`. This mismatch causes all developer profile pages to show "Developer not found".
 
-## Files to Modify
+**Database state:**
+| Developer | status | verification_status |
+|-----------|--------|---------------------|
+| Azrieli Development Group | active | approved |
+| Tidhar Group | active | approved |
+| All 8 developers... | active | approved |
 
-### 1. `src/components/city/MarketOverviewCards.tsx`
-
-**Remove lines 320-340** - The entire "Discount or comparison message" block:
-
+**Hook filter:**
 ```tsx
-{/* Discount or comparison message */}
-{arnonaEstimate.discountPercent > 0 ? (
-  <p className="text-sm text-primary font-medium">
-    {arnonaEstimate.discountPercent}% {arnonaEstimate.discountType} discount
-    {arnonaEstimate.areaLimitApplied && ` (on first ${arnonaEstimate.areaLimitSqm}m²)`}
-  </p>
-) : arnonaEstimate.olehStatusChecked && ... ? (
-  <p className="text-sm text-muted-foreground">
-    Oleh arnona discount: Years 1-2 only
-  </p>
-) : (
-  <p className="text-sm text-muted-foreground">
-    {/* National average comparison text */}
-  </p>
-)}
+.eq('status', 'approved')  // Looking for 'approved' but data has 'active'
 ```
-
-This entire conditional block will be removed.
 
 ---
 
-### 2. `src/components/city/CityArnonaCard.tsx`
+## Solution
 
-**Remove lines 113-124** - The discount/comparison row:
-
-```tsx
-<div className="flex items-center justify-between text-sm">
-  <span className="text-muted-foreground">Rate: ₪{rate}/m²/year</span>
-  {arnonaEstimate.discountPercent > 0 ? (
-    <span className="text-primary font-medium">
-      {arnonaEstimate.discountPercent}% discount
-    </span>
-  ) : (
-    <span className="...">
-      +15% vs avg
-    </span>
-  )}
-</div>
-```
-
-This entire row will be removed.
+Update both developer hooks in `src/hooks/useProjects.tsx` to filter by `status: 'active'` instead of `status: 'approved'`. This aligns with:
+1. The seed data generation (uses `active`)
+2. The professional role lifecycle documented in the memory (uses `active` for approved professionals)
 
 ---
 
-## What Stays
+## Files to Change
 
-- The "Personalized" badge with the user icon (shows that their profile was considered)
-- The Arnona monthly/annual amounts
-- The apartment size slider
-- All functionality continues to work; only the descriptive text is removed
+### `src/hooks/useProjects.tsx`
+
+**Change 1 - Line 56** (`useDevelopers` hook):
+```tsx
+// Before
+.eq('status', 'approved')
+
+// After
+.eq('status', 'active')
+```
+
+**Change 2 - Line 74** (`useDeveloper` hook):
+```tsx
+// Before
+.eq('status', 'approved')
+
+// After
+.eq('status', 'active')
+```
+
+---
+
+## Why This Is Correct
+
+Per the architecture memory: *"Admin approval sets the 'status' to 'active'"*
+
+The `status` field represents the account state:
+- `pending` - Awaiting admin review
+- `active` - Approved and visible
+- `suspended` - Blocked from platform
+
+The `verification_status` field is a separate check:
+- `pending` / `approved` / `rejected`
+
+So filtering by `status: 'active'` is the correct behavior for showing public-facing profiles.
+
+---
 
 ## Result
 
-The Arnona cards will show:
-- The ₪ amount with optional "Personalized" badge
-- The slider to adjust apartment size
-- No additional text below explaining discounts or comparisons
+After this fix:
+- `/developers` page will list all 8 mock developers
+- `/developers/azrieli-development-group` (and all other slugs) will load the full profile
+- Projects, stats, contact info, and blog posts will all display correctly
 
