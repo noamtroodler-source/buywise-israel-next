@@ -15,6 +15,17 @@ export interface Developer {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  // New fields from signup wizard
+  status: string | null;
+  verification_status: string | null;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  office_address: string | null;
+  office_city: string | null;
+  company_size: string | null;
+  company_type: string | null;
+  specialties: string[] | null;
 }
 
 export interface Project {
