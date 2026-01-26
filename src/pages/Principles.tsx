@@ -65,7 +65,7 @@ const principles = [
   {
     icon: Clock,
     title: 'Your Timeline, Not Ours',
-    description: "We'd rather you take six months to feel ready than rush into a decision you'll regret. There's no urgency here except yours.",
+    description: "We'd rather you take six months to feel ready than rush into a decision you'll regret. The only urgency that matters is yours.",
   },
   {
     icon: Shield,
