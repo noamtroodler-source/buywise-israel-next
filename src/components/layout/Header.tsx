@@ -18,6 +18,7 @@ import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,10 +32,13 @@ export function Header() {
   const { projectFavoriteIds } = useProjectFavorites();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
+  const { currency, areaUnit } = usePreferences();
   
   const favoriteCount = (favoriteIds?.length || 0) + (projectFavoriteIds?.length || 0);
   const isAgencyAdmin = !!myAgency;
   const hasDeveloperProfile = !!developerProfile;
+  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
 
   const handleSignOut = async () => {
     await signOut();
@@ -411,9 +415,14 @@ export function Header() {
             <hr className="my-2 border-border" />
             <PreferencesDialog 
               trigger={
-                <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full text-left">
-                  <Settings className="h-4 w-4" />
-                  Preferences
+                <button className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full">
+                  <span className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Preferences
+                  </span>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                    {currencySymbol} · {unitLabel}
+                  </span>
                 </button>
               }
             />

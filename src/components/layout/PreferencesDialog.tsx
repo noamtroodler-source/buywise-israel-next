@@ -1,4 +1,4 @@
-import { Settings, Check } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,12 +66,21 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
     }
   };
 
+  const currencySymbol = currency === 'USD' ? '$' : '₪';
+  const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="icon" className="h-9 w-9">
-            <Settings className="h-4 w-4" />
+          <Button 
+            variant="ghost" 
+            className="h-9 px-3 gap-1.5 rounded-full border border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all"
+          >
+            <span className="text-sm font-medium text-foreground">
+              {currencySymbol} · {unitLabel}
+            </span>
+            <ChevronDown className="h-3 w-3 text-muted-foreground" />
           </Button>
         )}
       </DropdownMenuTrigger>
