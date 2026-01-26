@@ -82,7 +82,7 @@ export function CityComparison({ currentCitySlug, currentCityName }: CityCompari
   const getCellStyle = (value: number | null, bestValue: number | null, higherIsBetter: boolean) => {
     if (value === null || bestValue === null) return '';
     if (value === bestValue && comparisonCities.length > 1) {
-      return 'bg-emerald-50 dark:bg-emerald-950/30';
+      return 'bg-primary/10';
     }
     return '';
   };
@@ -90,7 +90,7 @@ export function CityComparison({ currentCitySlug, currentCityName }: CityCompari
   const getIndicator = (value: number | null, bestValue: number | null, higherIsBetter: boolean) => {
     if (value === null || bestValue === null || comparisonCities.length <= 1) return null;
     if (value === bestValue) {
-      return <Crown className="h-3.5 w-3.5 text-emerald-600 inline ml-1" />;
+      return <Crown className="h-3.5 w-3.5 text-primary inline ml-1" />;
     }
     return null;
   };
@@ -194,7 +194,7 @@ export function CityComparison({ currentCitySlug, currentCityName }: CityCompari
         
         {comparisonCities.length > 1 && (
           <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-            <Crown className="h-3.5 w-3.5 text-emerald-600" />
+            <Crown className="h-3.5 w-3.5 text-primary" />
             <span>Best value highlighted</span>
           </div>
         )}

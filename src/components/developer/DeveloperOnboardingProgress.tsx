@@ -132,18 +132,18 @@ export function DeveloperOnboardingProgress() {
                   className={cn(
                     "flex items-center gap-3 p-3 rounded-lg transition-colors",
                     item.isComplete 
-                      ? "bg-green-50 dark:bg-green-950/20" 
+                      ? "bg-primary/5" 
                       : "bg-muted/50 hover:bg-muted"
                   )}
                 >
                   <div className={cn(
                     "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0",
                     item.isComplete 
-                      ? "bg-green-100 dark:bg-green-900/50" 
+                      ? "bg-primary/10" 
                       : "bg-background"
                   )}>
                     {item.isComplete ? (
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <Check className="h-4 w-4 text-primary" />
                     ) : (
                       <Icon className="h-4 w-4 text-muted-foreground" />
                     )}

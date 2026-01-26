@@ -154,7 +154,7 @@ export function MarketRealityTabs({
                   ₪{pricePerSqm.toLocaleString()}
                   <span className="text-lg font-normal text-muted-foreground">/m²</span>
                 </p>
-                <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                <p className={`text-sm mt-2 font-medium ${percentAboveNational >= 0 ? 'text-amber-600' : 'text-primary'}`}>
                   {percentAboveNational >= 0 ? '+' : ''}{percentAboveNational.toFixed(0)}% vs national average
                 </p>
               </div>
@@ -165,7 +165,7 @@ export function MarketRealityTabs({
                   <span>Affordable</span>
                   <span>Premium</span>
                 </div>
-                <div className="relative h-3 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500">
+                <div className="relative h-3 rounded-full bg-gradient-to-r from-primary via-amber-500 to-red-500">
                   <TooltipProvider delayDuration={0}>
                     {/* Current city marker - always visible and highlighted */}
                     <UITooltip>
@@ -403,7 +403,7 @@ export function MarketRealityTabs({
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-muted-foreground">vs National Avg</span>
-                  <span className={`text-sm font-medium ${arnonaVsNational > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  <span className={`text-sm font-medium ${arnonaVsNational > 0 ? 'text-amber-600' : 'text-primary'}`}>
                     {arnonaVsNational > 0 ? '+' : ''}{arnonaVsNational.toFixed(0)}%
                   </span>
                 </div>

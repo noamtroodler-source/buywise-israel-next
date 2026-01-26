@@ -19,7 +19,7 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const LINE_COLORS = [
   'hsl(213 94% 45%)',  // Primary blue
   'hsl(38 92% 50%)',   // Amber
-  'hsl(152 69% 40%)',  // Emerald
+  'hsl(221 83% 53%)',  // Secondary blue
 ];
 
 export function PriceTrendChart({ marketData, cityName }: PriceTrendChartProps) {

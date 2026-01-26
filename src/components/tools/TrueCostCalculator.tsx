@@ -472,7 +472,7 @@ export function TrueCostCalculator() {
                 {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
                   <p className={cn(
                     "text-xs px-2.5",
-                    priceComparison.isAbove ? "text-amber-600" : "text-emerald-600"
+                    priceComparison.isAbove ? "text-amber-600" : "text-primary"
                   )}>
                     {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
                   </p>

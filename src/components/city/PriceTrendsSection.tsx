@@ -112,7 +112,7 @@ export function PriceTrendsSection({
           {data.yoy != null && (
             <div className="flex items-center justify-between gap-4">
               <span className="text-xs text-muted-foreground">YoY Change</span>
-              <span className={`text-sm font-medium ${data.yoy >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+              <span className={`text-sm font-medium ${data.yoy >= 0 ? 'text-primary' : 'text-destructive'}`}>
                 {data.yoy >= 0 ? '+' : ''}{Number(data.yoy).toFixed(1)}%
               </span>
             </div>
@@ -217,7 +217,7 @@ export function PriceTrendsSection({
                 {period === 'all' ? 'Yearly Index' : 'Quarterly Index'} • Base: Oct-Nov 2017
               </span>
               {totalGrowth && (
-                <span className={`text-xs px-2 py-0.5 rounded ${Number(totalGrowth) >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                <span className={`text-xs px-2 py-0.5 rounded ${Number(totalGrowth) >= 0 ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>
                   {Number(totalGrowth) >= 0 ? '+' : ''}{totalGrowth}% total
                 </span>
               )}
