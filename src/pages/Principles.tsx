@@ -264,7 +264,7 @@ export default function Principles() {
                   Agents and professionals are valuable — and at the right moment, they're essential.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Our role isn't to replace them — it's to <span className="text-foreground font-medium">prepare you</span>.
+                  Our role isn't to replace them — it's to <span className="text-foreground font-medium">prepare you for them</span>.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   BuyWise helps you reach out when you feel ready, with better questions, clearer expectations, and less anxiety — which leads to better conversations and better outcomes for everyone involved.
