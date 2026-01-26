@@ -169,16 +169,15 @@ export function PropertyValueSnapshot({
   // Purchase properties (for_sale, sold)
   // Count available cards dynamically
   const hasPropertyPrice = !!propertyPricePerSqm;
-  const hasCityAvg = !!averagePriceSqm;
-  const hasComparison = purchaseComparisonPercent !== null;
+  const hasComparison = purchaseComparisonPercent !== null && averagePriceSqm;
   const hasTrend = priceChange !== null && priceChange !== undefined;
   
   // Don't render if no data at all
-  if (!hasPropertyPrice && !hasCityAvg && !hasTrend) return null;
+  if (!hasPropertyPrice && !hasComparison && !hasTrend) return null;
   
-  // Dynamic grid based on card count
-  const cardCount = [hasPropertyPrice, hasCityAvg, hasComparison, hasTrend].filter(Boolean).length;
-  const gridCols = cardCount >= 3 
+  // Dynamic grid based on card count (max 3 cards)
+  const cardCount = [hasPropertyPrice, hasComparison, hasTrend].filter(Boolean).length;
+  const gridCols = cardCount === 3 
     ? 'grid-cols-1 sm:grid-cols-3' 
     : cardCount === 2
       ? 'grid-cols-1 sm:grid-cols-2'
@@ -208,24 +207,8 @@ export function PropertyValueSnapshot({
           </div>
         )}
 
-        {/* Card 2: City Average */}
-        {averagePriceSqm && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Home className="h-4 w-4" />
-              <span className="text-sm">{city} Average</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {formatPricePerArea(averagePriceSqm, 'ILS')}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Market price per m²
-            </p>
-          </div>
-        )}
-
-        {/* Card 3: vs Market (Comparison %) */}
-        {purchaseComparisonPercent !== null && (
+        {/* Card 2: vs City Average (combines comparison % with city avg as subtext) */}
+        {purchaseComparisonPercent !== null && averagePriceSqm && (
           <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               {purchaseComparisonPercent > 0 ? (
@@ -235,17 +218,13 @@ export function PropertyValueSnapshot({
               ) : (
                 <Minus className="h-4 w-4" />
               )}
-              <span className="text-sm">vs Market</span>
+              <span className="text-sm">vs {city} Average</span>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {purchaseComparisonPercent > 0 
-                ? 'Above city average' 
-                : purchaseComparisonPercent < 0 
-                  ? 'Below city average' 
-                  : 'At city average'}
+              {city}: {formatPricePerArea(averagePriceSqm, 'ILS')}
             </p>
           </div>
         )}
