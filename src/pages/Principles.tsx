@@ -226,7 +226,7 @@ export default function Principles() {
                 What We Believe
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                These aren't marketing slogans. They're constraints we build into every feature.
+                These aren't marketing slogans. They're principles we build into every feature.
               </p>
             </motion.div>
 
