@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useFeaturedProjects } from '@/hooks/useProjects';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 
 function formatPrice(price: number | null, currency: string = 'ILS') {
   if (!price) return 'Price on request';
@@ -88,10 +89,11 @@ export function ProjectsHighlight() {
               className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
             >
               <div className="aspect-[16/9] overflow-hidden">
-                <img
-                  src={mainProject.images?.[0] || '/placeholder.svg'}
+                <PropertyThumbnail
+                  src={mainProject.images?.[0]}
                   alt={mainProject.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  type="project"
+                  className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
@@ -142,10 +144,11 @@ export function ProjectsHighlight() {
                 className="group block relative overflow-hidden rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
               >
                 <div className="aspect-[16/7] overflow-hidden">
-                  <img
-                    src={project.images?.[0] || '/placeholder.svg'}
+                  <PropertyThumbnail
+                    src={project.images?.[0]}
                     alt={project.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    type="project"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent" />
