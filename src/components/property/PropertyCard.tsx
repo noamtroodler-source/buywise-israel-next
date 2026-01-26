@@ -1,4 +1,4 @@
-import { useState, memo, useMemo, useCallback } from 'react';
+import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, Flame, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,7 +28,7 @@ interface PropertyCardProps {
   compareCategory?: 'buy' | 'rent';
 }
 
-const PropertyCardComponent = memo(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }: PropertyCardProps) {
+const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }, ref) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -151,7 +151,7 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
 
   return (
     <>
-      <Link to={`/property/${property.id}`} onClick={handleCardClick}>
+      <Link ref={ref} to={`/property/${property.id}`} onClick={handleCardClick}>
         <Card className={cn(
           "overflow-hidden transition-all duration-300 group cursor-pointer rounded-xl",
           "border border-border/50 bg-white ring-1 ring-black/5 shadow-sm",
@@ -522,6 +522,6 @@ const PropertyCardComponent = memo(function PropertyCard({ property, className, 
       </Link>
     </>
   );
-});
+}));
 
 export const PropertyCard = PropertyCardComponent;
