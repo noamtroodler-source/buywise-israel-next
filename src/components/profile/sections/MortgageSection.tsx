@@ -138,23 +138,24 @@ export function MortgageSection() {
         <div className="space-y-4">
           {/* Show financing method status */}
           {!includeMortgage ? (
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-medium">Take a Mortgage</p>
-                  <p className="text-xs text-muted-foreground">
-                    Toggle on to include mortgage costs
-                  </p>
-                </div>
+            <div className="p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Banknote className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium">Paid in Full</p>
               </div>
-              <Switch
-                checked={includeMortgage}
-                onCheckedChange={(checked) => {
-                  savePreferences({ include_mortgage: checked });
-                }}
+              <p className="text-xs text-muted-foreground mb-3">
+                Cash purchase — cost breakdowns exclude mortgage fees
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => savePreferences({ include_mortgage: true })}
                 disabled={isSaving}
-              />
+                className="text-xs h-7"
+              >
+                <CreditCard className="h-3 w-3 mr-1" />
+                Switch to Mortgage
+              </Button>
             </div>
           ) : (
             <>
@@ -191,6 +192,17 @@ export function MortgageSection() {
                   </p>
                 </div>
               )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => savePreferences({ include_mortgage: false })}
+                disabled={isSaving}
+                className="text-xs h-7"
+              >
+                <Banknote className="h-3 w-3 mr-1" />
+                Switch to Paid in Full
+              </Button>
             </>
           )}
 
