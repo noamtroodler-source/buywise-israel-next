@@ -19,6 +19,7 @@ import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
+import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 
 export default function Projects() {
   const [filters, setFilters] = useState<ProjectFiltersType>({});
@@ -184,12 +185,11 @@ export default function Projects() {
                       <Link to={`/projects/${project.slug}`} onClick={() => handleProjectClick(project.id)}>
                         <Card className="h-full overflow-hidden border border-border/60 shadow-sm hover:shadow-card-hover hover:border-primary/30 transition-all duration-300 group">
                         <div className="aspect-[16/10] overflow-hidden relative">
-                            <img
-                              src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
+                            <PropertyThumbnail
+                              src={project.images?.[0]}
                               alt={project.name}
-                              loading="lazy"
-                              decoding="async"
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              type="project"
+                              className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                             />
                             
                             {/* Badges - Top Left */}
