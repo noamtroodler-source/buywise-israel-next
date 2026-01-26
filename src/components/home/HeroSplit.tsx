@@ -142,7 +142,7 @@ export function HeroSplit() {
               </span>
               <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
                 <HardHat className="w-3.5 h-3.5" />
-                <span className="font-medium">{stats?.projectsCount ?? 15}</span>
+                <span className="font-medium">{stats?.projectsCount ?? 15}+</span>
                 <span className="text-white/70">Projects</span>
               </span>
             </motion.div>
