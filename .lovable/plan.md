@@ -1,139 +1,44 @@
 
-# Dual Currency/Unit Preferences Button
+# Fix Focus Ring on Preferences Button
 
-## Summary
+## Problem
 
-Replace the current hidden gear icon with a polished, branded button that displays both the active currency and unit preferences (e.g., `₪ · m²` or `$ · ft²`). This makes the preferences feature immediately visible and self-descriptive, encouraging users to click and customize their experience.
-
----
-
-## Design Approach
-
-### Button Appearance
-
-```text
-┌─────────────────┐
-│  ₪ · m²    ▾   │   ← Current state displayed
-└─────────────────┘
-```
-
-**Styling Details:**
-- **Shape**: Rounded pill/capsule (`rounded-full`)
-- **Size**: Height matches other header elements (`h-9`), padding adjusted for content (`px-3`)
-- **Border**: Subtle border for definition (`border border-border/60`)
-- **Typography**: Medium weight, small text (`text-sm font-medium`)
-- **Icon**: Small chevron to indicate dropdown (`ChevronDown h-3 w-3`)
-- **Hover State**: Light primary tint (`hover:bg-primary/5 hover:border-primary/30`)
-- **Active Indicator**: Subtle dot separator (`·`) between currency and unit
-
-### Dynamic Content Mapping
-
-| Preference | Display Symbol |
-|------------|----------------|
-| ILS currency | `₪` |
-| USD currency | `$` |
-| sqm unit | `m²` |
-| sqft unit | `ft²` |
+The new preferences button (`₪ · m²`) retains a blue focus ring after clicking away from the dropdown. This happens because the `Button` component has default focus-visible ring styling, and the button stays focused after the dropdown closes.
 
 ---
 
-## Implementation Changes
+## Solution
 
-### 1. Update PreferencesDialog Component
+Add focus ring override classes to the Button component to remove the persistent ring effect.
 
-**File:** `src/components/layout/PreferencesDialog.tsx`
+---
 
-Modify the default trigger button to display the current preferences:
+## Change Required
+
+**File:** `src/components/layout/PreferencesDialog.tsx` (line 78)
+
+Add `focus-visible:ring-0 focus-visible:ring-offset-0` to the button's className:
 
 ```tsx
-// Add usePreferences context and ChevronDown icon
-import { ChevronDown } from 'lucide-react';
-
-// In the component, derive display values
-const currencySymbol = currency === 'USD' ? '$' : '₪';
-const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
-
-// Replace the default trigger
-{trigger || (
-  <Button 
-    variant="ghost" 
-    className="h-9 px-3 gap-1.5 rounded-full border border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all"
-  >
-    <span className="text-sm font-medium text-foreground">
-      {currencySymbol} · {unitLabel}
-    </span>
-    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-  </Button>
-)}
+<Button 
+  variant="ghost" 
+  className="h-9 px-3 gap-1.5 rounded-full border border-border/60 hover:bg-primary/5 hover:border-primary/30 transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+>
 ```
 
-### 2. Update Mobile Menu Trigger
+---
 
-**File:** `src/components/layout/Header.tsx`
+## Why This Works
 
-Update the mobile menu preferences trigger to also show the active state:
-
-```tsx
-// Lines 412-419: Update mobile preferences button
-<PreferencesDialog 
-  trigger={
-    <button className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full">
-      <span className="flex items-center gap-2">
-        <Settings className="h-4 w-4" />
-        Preferences
-      </span>
-      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-        {currencySymbol} · {unitLabel}
-      </span>
-    </button>
-  }
-/>
+The `Button` component in `src/components/ui/button.tsx` has these default focus styles:
+```
+focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
 ```
 
-This requires importing `usePreferences` in the Header component to access the current values.
+By adding `focus-visible:ring-0 focus-visible:ring-offset-0`, we override these defaults and remove the blue ring that appears after interaction.
 
 ---
 
-## Visual Integration
+## Result
 
-### Consistency with BuyWise Branding
-
-- Uses the established primary blue color for hover states (`hover:bg-primary/5`)
-- Matches the `h-9` height of other header buttons (favorites, user menu)
-- Rounded pill shape complements the logo and navigation style
-- Neutral border with subtle hover accent follows the card hover pattern
-
-### Desktop Layout (Right Side)
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ [Logo]  Buy  Rent  Projects  ...  │  [₪ · m²ˇ] [♡] [👤]  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-The new button sits in the same position as the old gear icon but is now visually prominent and descriptive.
-
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/layout/PreferencesDialog.tsx` | Update default trigger to show currency/unit display with chevron |
-| `src/components/layout/Header.tsx` | Import `usePreferences`, update mobile trigger to show active state |
-
----
-
-## Expected Result
-
-**Before:** Users see a generic gear icon with no indication of what it does
-**After:** Users see their active currency and unit (e.g., `₪ · m²`) making it immediately clear this controls display preferences, increasing discoverability and clicks
-
----
-
-## Technical Notes
-
-- No new components needed - just modifying existing trigger styling
-- Uses existing `usePreferences` hook from `PreferencesContext`
-- Maintains full dropdown functionality when clicked
-- Changes persist via existing localStorage mechanism
+After clicking the preferences dropdown and clicking away, the button will return to its normal state without any lingering focus ring, matching the expected behavior of other header elements.
