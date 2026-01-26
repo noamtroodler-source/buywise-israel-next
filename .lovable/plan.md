@@ -1,36 +1,91 @@
 
-# Fix Blue Focus Ring on Select Component
 
-## Problem
-The Select dropdown shows a persistent blue focus ring after making a selection with the mouse. This ring stays visible until clicking somewhere else on the page, which is visually distracting.
+# Delete All Mock Data - Fresh Start
 
-## Root Cause
-The `SelectTrigger` component in `src/components/ui/select.tsx` uses `focus:ring-2` styles which apply whenever the element is focused (including after mouse clicks). The better approach is `focus-visible:ring-2` which only shows the ring during keyboard navigation.
+## Summary
+Delete all current mock/test data from the database including properties, projects, agents, agencies, and developers so you can start fresh.
 
-## Solution
-Update the `SelectTrigger` component to use `focus-visible` instead of `focus` for the ring styles.
+## Data to Delete
 
-## File to Modify
-`src/components/ui/select.tsx` (line 20)
+### Listings & Projects
+- **102 properties** (all rentals and sales listings)
+- **17 projects** (new development projects)
+- **155 project units** (units within projects)
 
-### Current Code:
-```tsx
-"flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
+### Professionals
+- **5 agents**
+- **5 agencies**
+- **5 developers**
+
+### Related Data (will be deleted automatically or explicitly)
+- **250 property views** (analytics)
+- **95 project views** (analytics)
+- **1 agency invite**
+
+## Deletion Order (respects foreign key constraints)
+
+The deletion must happen in a specific order to respect database relationships:
+
+1. **First - Analytics & tracking data**
+   - `property_views` (references properties)
+   - `project_views` (references projects)
+   - `share_events` (if any exist)
+
+2. **Second - Project-related**
+   - `project_units` (references projects)
+   - `project_inquiries` (if any exist)
+   - `projects` (references developers)
+
+3. **Third - Property-related**
+   - `inquiries` (references properties and agents)
+   - `favorites` (references properties)
+   - `listing_lifecycle` (references properties)
+   - `properties` (references agents)
+
+4. **Fourth - Professional accounts**
+   - `agency_invites` (references agencies)
+   - `agents` (references agencies)
+   - `agencies`
+   - `developers`
+
+## Technical Details
+
+SQL commands to execute (in order):
+
+```sql
+-- Step 1: Clear analytics and tracking
+DELETE FROM property_views;
+DELETE FROM project_views;
+DELETE FROM share_events;
+DELETE FROM listing_lifecycle;
+DELETE FROM listing_price_history;
+DELETE FROM listing_status_history;
+
+-- Step 2: Clear project data
+DELETE FROM project_units;
+DELETE FROM project_inquiries;
+DELETE FROM projects;
+
+-- Step 3: Clear property data
+DELETE FROM inquiries;
+DELETE FROM favorites;
+DELETE FROM price_drop_notifications;
+DELETE FROM properties;
+
+-- Step 4: Clear professional accounts
+DELETE FROM agency_invites;
+DELETE FROM agents;
+DELETE FROM agencies;
+DELETE FROM developers;
 ```
 
-### Updated Code:
-```tsx
-"flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"
-```
-
-## What Changes
-- `focus:outline-none` → `focus-visible:outline-none`
-- `focus:ring-2` → `focus-visible:ring-2`
-- `focus:ring-ring` → `focus-visible:ring-ring`
-- `focus:ring-offset-2` → `focus-visible:ring-offset-2`
+## What Stays
+- User accounts and profiles
+- Cities and market data
+- Platform settings and configuration
+- Search alerts (user-created)
+- User events/analytics
 
 ## Result
-- **Mouse clicks**: No blue ring after selecting an option
-- **Keyboard navigation**: Ring still appears for accessibility (Tab key navigation)
+After this, your database will be clean and ready for real listings, agents, agencies, and developers to be added.
 
-This matches the behavior already used on the Button component and is the modern best practice for focus indicators.
