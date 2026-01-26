@@ -3,14 +3,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { 
   AlertCircle, CheckCircle2, Home, ImageOff, 
-  FileText, Clock, DollarSign 
+  FileText, Clock, DollarSign, Building2
 } from 'lucide-react';
 import { InventoryHealth } from '@/hooks/useInventoryHealth';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { SampleSizeWarning } from './analytics/SampleSizeWarning';
 
 interface InventoryHealthCardProps {
   data: InventoryHealth | undefined;
   isLoading?: boolean;
+  amenityCoverage?: {
+    balcony: number;
+    elevator: number;
+    storage: number;
+    total: number;
+  };
 }
 
 // BuyWise brand-compliant palette
@@ -29,7 +36,7 @@ const VERIFICATION_COLORS: Record<string, string> = {
   'Rejected': 'hsl(213, 30%, 50%)',
 };
 
-export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProps) {
+export function InventoryHealthCard({ data, isLoading, amenityCoverage }: InventoryHealthCardProps) {
   if (isLoading) {
     return (
       <Card className="rounded-2xl border-border/50">
@@ -74,8 +81,9 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
         <CardTitle className="text-lg flex items-center gap-2">
           <Home className="h-5 w-5 text-primary" />
           Inventory Health
-          <span className="text-sm font-normal text-muted-foreground ml-auto">
+          <span className="text-sm font-normal text-muted-foreground ml-auto flex items-center gap-2">
             {data?.totalListings || 0} listings
+            <SampleSizeWarning sampleSize={data?.totalListings || 0} />
           </span>
         </CardTitle>
       </CardHeader>
@@ -192,6 +200,49 @@ export function InventoryHealthCard({ data, isLoading }: InventoryHealthCardProp
             ))}
           </div>
         </div>
+
+        {/* Amenity Coverage Section */}
+        {amenityCoverage && amenityCoverage.total > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                <Building2 className="h-4 w-4 text-primary" />
+                Amenity Field Coverage
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Balcony', count: amenityCoverage.balcony, icon: '🏠' },
+                { label: 'Elevator', count: amenityCoverage.elevator, icon: '🛗' },
+                { label: 'Storage', count: amenityCoverage.storage, icon: '📦' },
+              ].map(item => {
+                const pct = ((item.count / amenityCoverage.total) * 100);
+                const hasGoodCoverage = pct > 50;
+                return (
+                  <div 
+                    key={item.label} 
+                    className={`p-3 rounded-xl text-center transition-colors ${
+                      hasGoodCoverage 
+                        ? 'bg-primary/10 border border-primary/20' 
+                        : 'bg-muted/30 border border-border/50'
+                    }`}
+                  >
+                    <p className={`text-lg font-bold ${hasGoodCoverage ? 'text-primary' : 'text-foreground'}`}>
+                      {pct.toFixed(0)}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ({item.count}/{amenityCoverage.total})
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Encourage agents to fill in balcony, elevator, and storage fields for better search filtering
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

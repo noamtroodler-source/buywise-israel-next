@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingDown, TrendingUp, ArrowRightLeft, DollarSign } from 'lucide-react';
+import { TrendingDown, TrendingUp, ArrowRightLeft, DollarSign, AlertTriangle } from 'lucide-react';
 import { usePriceHistoryAnalytics } from '@/hooks/usePriceHistoryAnalytics';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { SampleSizeWarning } from './SampleSizeWarning';
 
 interface PriceIntelligenceTabProps {
   dateRange: number;
@@ -25,9 +26,17 @@ export function PriceIntelligenceTab({ dateRange }: PriceIntelligenceTabProps) {
 
   const priceMetrics = data?.priceMetrics;
   const statusMetrics = data?.statusMetrics;
+  
+  // Calculate sample size for warnings
+  const totalSamples = (priceMetrics?.totalPriceChanges || 0) + (statusMetrics?.totalStatusChanges || 0);
 
   return (
     <div className="space-y-6">
+      {/* Sample Size Warning */}
+      <div className="flex justify-end">
+        <SampleSizeWarning sampleSize={totalSamples} showLabel />
+      </div>
+
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-primary/20">

@@ -17,7 +17,7 @@ export function DataHealthCard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['data-health-stats'],
     queryFn: async () => {
-      const [
+const [
         userEventsRes,
         searchAnalyticsRes,
         listingLifecycleRes,
@@ -25,6 +25,9 @@ export function DataHealthCard() {
         propertyViewsRes,
         propertyInquiriesRes,
         recentlyViewedRes,
+        shareEventsRes,
+        buyerProfilesRes,
+        amenityCoverageRes,
       ] = await Promise.all([
         supabase.from('user_events').select('id', { count: 'exact', head: true }),
         supabase.from('search_analytics').select('id', { count: 'exact', head: true }),
@@ -33,7 +36,20 @@ export function DataHealthCard() {
         supabase.from('property_views').select('id', { count: 'exact', head: true }),
         supabase.from('property_inquiries').select('id', { count: 'exact', head: true }),
         supabase.from('recently_viewed').select('id', { count: 'exact', head: true }),
+        supabase.from('share_events').select('id', { count: 'exact', head: true }),
+        supabase.from('buyer_profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('properties').select('id, has_balcony, has_elevator, has_storage'),
       ]);
+
+      // Calculate amenity coverage
+      const properties = amenityCoverageRes.data || [];
+      const totalProps = properties.length;
+      const amenityCoverage = {
+        balcony: totalProps > 0 ? properties.filter(p => p.has_balcony === true).length : 0,
+        elevator: totalProps > 0 ? properties.filter(p => p.has_elevator === true).length : 0,
+        storage: totalProps > 0 ? properties.filter(p => p.has_storage === true).length : 0,
+        total: totalProps,
+      };
 
       return {
         userEvents: userEventsRes.count || 0,
@@ -43,6 +59,9 @@ export function DataHealthCard() {
         propertyViews: propertyViewsRes.count || 0,
         propertyInquiries: propertyInquiriesRes.count || 0,
         recentlyViewed: recentlyViewedRes.count || 0,
+        shareEvents: shareEventsRes.count || 0,
+        buyerProfiles: buyerProfilesRes.count || 0,
+        amenityCoverage,
       };
     },
     staleTime: 30000,
@@ -91,7 +110,23 @@ export function DataHealthCard() {
       description: 'Contact form submissions',
       isActive: (stats?.propertyInquiries || 0) > 0,
     },
+    {
+      name: 'share_events',
+      count: stats?.shareEvents || 0,
+      label: 'Share Events',
+      description: 'Social/link sharing actions',
+      isActive: (stats?.shareEvents || 0) > 0,
+    },
+    {
+      name: 'buyer_profiles',
+      count: stats?.buyerProfiles || 0,
+      label: 'Buyer Profiles',
+      description: 'Registered buyer preferences',
+      isActive: (stats?.buyerProfiles || 0) > 0,
+    },
   ];
+
+  const amenityCoverage = stats?.amenityCoverage;
 
   const activeCount = tables.filter(t => t.isActive).length;
   const totalCount = tables.length;
@@ -159,6 +194,28 @@ export function DataHealthCard() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Amenity Coverage */}
+        {amenityCoverage && amenityCoverage.total > 0 && (
+          <div className="mt-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+            <p className="text-sm font-medium text-foreground mb-2">Property Amenity Coverage</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Balcony', count: amenityCoverage.balcony },
+                { label: 'Elevator', count: amenityCoverage.elevator },
+                { label: 'Storage', count: amenityCoverage.storage },
+              ].map(item => {
+                const pct = ((item.count / amenityCoverage.total) * 100).toFixed(0);
+                return (
+                  <div key={item.label} className="text-center">
+                    <p className="text-lg font-bold text-foreground">{pct}%</p>
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

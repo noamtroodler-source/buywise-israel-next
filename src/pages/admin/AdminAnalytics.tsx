@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Eye, MessageSquare, TrendingUp, Users, 
-  Home, Calendar, BarChart3, Search, Activity, Building, Share2
+  Home, Calendar, BarChart3, Search, Activity, Building, Share2, UserCheck
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +52,7 @@ import { FunnelHealthTab } from '@/components/admin/analytics/FunnelHealthTab';
 import { PerformanceMonitorTab } from '@/components/admin/analytics/PerformanceMonitorTab';
 import { ExperimentResultsTab } from '@/components/admin/analytics/ExperimentResultsTab';
 import { ShareAnalyticsTab } from '@/components/admin/analytics/ShareAnalyticsTab';
+import { BuyerInsightsTab } from '@/components/admin/analytics/BuyerInsightsTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -168,6 +169,9 @@ export default function AdminAnalytics() {
           <TabsTrigger value="shares" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Share2 className="h-3.5 w-3.5 mr-1.5" />Shares
           </TabsTrigger>
+          <TabsTrigger value="buyers" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <UserCheck className="h-3.5 w-3.5 mr-1.5" />Buyer Insights
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -266,6 +270,10 @@ export default function AdminAnalytics() {
 
         <TabsContent value="shares" className="space-y-6">
           <ShareAnalyticsTab dateRange={days} />
+        </TabsContent>
+
+        <TabsContent value="buyers" className="space-y-6">
+          <BuyerInsightsTab />
         </TabsContent>
       </Tabs>
     </div>

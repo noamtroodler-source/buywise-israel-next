@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { SampleSizeWarning } from './SampleSizeWarning';
 
 interface CityAnalyticsTabProps {
   days?: number;
@@ -93,6 +94,10 @@ export function CityAnalyticsTab({ days = 30 }: CityAnalyticsTabProps) {
     z: city.avgPrice,
   }));
 
+  // Calculate total listings for sample size
+  const totalListings = (data?.cities || []).reduce((sum, c) => sum + c.listings, 0);
+  const totalViews = (data?.cities || []).reduce((sum, c) => sum + c.totalViews, 0);
+
   return (
     <div className="space-y-6">
       {/* Summary Stats */}
@@ -106,15 +111,16 @@ export function CityAnalyticsTab({ days = 30 }: CityAnalyticsTabProps) {
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-4 text-center">
             <p className="text-3xl font-bold text-foreground">
-              {(data?.cities || []).reduce((sum, c) => sum + c.listings, 0)}
+              {totalListings}
             </p>
             <p className="text-sm text-muted-foreground">Total Listings</p>
+            <SampleSizeWarning sampleSize={totalListings} className="mt-2" />
           </CardContent>
         </Card>
         <Card className="rounded-2xl border-border/50">
           <CardContent className="p-4 text-center">
             <p className="text-3xl font-bold text-foreground">
-              {(data?.cities || []).reduce((sum, c) => sum + c.totalViews, 0).toLocaleString()}
+              {totalViews.toLocaleString()}
             </p>
             <p className="text-sm text-muted-foreground">Total Views</p>
           </CardContent>
