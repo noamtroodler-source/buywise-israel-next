@@ -1,33 +1,14 @@
 import { motion } from 'framer-motion';
-import { Home, Key, Building2, Shield } from 'lucide-react';
-import { usePlatformStats } from '@/hooks/usePlatformStats';
+import { Calculator, MapPin, Shield, Globe } from 'lucide-react';
+
+const displayStats = [
+  { icon: Calculator, value: '9', label: 'Free Tools' },
+  { icon: MapPin, value: '35+', label: 'Cities' },
+  { icon: Shield, value: '100%', label: 'Independent' },
+  { icon: Globe, value: '100%', label: 'In English' },
+];
 
 export function TrustStrip() {
-  const { data: stats } = usePlatformStats();
-
-  const displayStats = [
-    {
-      icon: Home,
-      value: stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+',
-      label: 'For Sale',
-    },
-    {
-      icon: Key,
-      value: stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+',
-      label: 'Rentals',
-    },
-    {
-      icon: Building2,
-      value: (stats?.projectsCount ?? 15).toString(),
-      label: 'Projects',
-    },
-    {
-      icon: Shield,
-      value: '100%',
-      label: 'Independent',
-    },
-  ];
-
   return (
     <section className="py-8 md:py-10 border-y border-border bg-muted/20">
       <div className="container">
