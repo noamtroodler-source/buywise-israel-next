@@ -99,11 +99,21 @@ export function useAgentProperties() {
 
 export function useCreateProperty() {
   const queryClient = useQueryClient();
-  const { data: agentProfile } = useAgentProfile();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (propertyData: CreatePropertyData & { submitForReview?: boolean }) => {
-      if (!agentProfile) throw new Error('Agent profile not found');
+      if (!user) throw new Error('You must be logged in to create a property');
+      
+      // Fetch agent profile fresh at mutation time to avoid stale closure issues
+      const { data: agentProfile, error: profileError } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profileError) throw new Error('Failed to fetch agent profile');
+      if (!agentProfile) throw new Error('Agent profile not found. Please complete agent registration first.');
 
       const { submitForReview, ...data } = propertyData;
       
