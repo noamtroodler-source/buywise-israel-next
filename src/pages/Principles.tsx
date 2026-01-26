@@ -181,7 +181,7 @@ export default function Principles() {
                 What BuyWise Actually Is
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                BuyWise isn't a brokerage. It isn't just a listings site. And it doesn't push you toward outreach before you're ready.
+                BuyWise is an English-first discovery and decision platform for internationals buying or renting in Israel — designed to help you understand your options clearly and move forward with confidence and clarity.
               </p>
             </motion.div>
 
