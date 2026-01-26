@@ -97,7 +97,7 @@ const regions: Region[] = [
     icon: Trees,
     cities: [
       { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, description: 'Zichron Yaakov is a historic town on the Carmel coast...', tags: ['Wine country', 'Historic charm'] },
-      { name: 'Pardes Hanna-Karkur', slug: 'pardes-hanna', image: pardesHannaImg, description: 'Pardes Hanna-Karkur offers quiet, affordable living in the north...', tags: ['Quiet living', 'Value north'] },
+      { name: 'Pardes Hanna', slug: 'pardes-hanna', image: pardesHannaImg, description: 'Pardes Hanna offers quiet, affordable living in the north...', tags: ['Quiet living', 'Value north'] },
     ],
   },
   {
