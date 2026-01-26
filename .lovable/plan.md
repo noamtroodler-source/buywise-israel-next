@@ -1,68 +1,77 @@
 
-
-# Fix AI Snapshot Card Visual Consistency
+# Update Rental Cost Breakdown Personalization Header
 
 ## Problem
-The "vs Market Rate" card in AI Rental Snapshot appears faded/lighter than the other two cards because of conditional color logic. When the percentage is positive (above market rate), both the icon and the main percentage value use `text-muted-foreground` instead of `text-foreground`, making the entire card look washed out.
-
-The same issue exists in the "12-Month Trend" card for purchase properties where negative trends appear muted.
+The rental property cost breakdown uses plain text for "Calculating for: First-Time Buyer" which appears unstyled compared to the purchase and project pages that use the full `PersonalizationHeader` component with a gray box background and signup nudge.
 
 ## Solution
-Standardize all snapshot cards to use consistent `text-foreground` for the main value text, ensuring visual uniformity across all cards. Icons will remain neutral (no conditional coloring).
+Replace the plain text personalization line in the rental section with a styled component that matches the guest experience from `PersonalizationHeader`, but simplified since rentals don't need mortgage configuration options.
 
-## File to Modify
-**`src/components/property/PropertyValueSnapshot.tsx`**
+## Changes
 
-### Change 1: Fix Rental "vs Market Rate" Card (Lines 143-158)
+### File: `src/components/property/PropertyCostBreakdown.tsx`
 
-**Current:**
-- Icon: Conditionally `text-muted-foreground` or `text-primary`
-- Value: Conditionally `text-muted-foreground`, `text-primary`, or `text-foreground`
+**Replace lines 286-290** (the plain text personalization for rentals):
 
-**New:**
-- Icon: Remove conditional coloring (use default from parent `text-muted-foreground`)
-- Value: Always use `text-foreground`
+Current code:
+```tsx
+{!isLoading && (
+  <div className="text-sm text-muted-foreground">
+    Calculating for: <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
+  </div>
+)}
+```
 
-### Change 2: Fix Purchase "12-Month Trend" Card (Lines 239-254)
+New code:
+```tsx
+{!isLoading && (
+  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
+    <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-wrap text-sm">
+        <span className="text-muted-foreground">
+          Calculating for:{' '}
+          <span className="font-medium text-foreground">{getBuyerCategoryLabel(buyerCategory)}</span>
+        </span>
+      </div>
+      {!user && (
+        <p className="text-xs text-muted-foreground mt-1">
+          Your situation different?{' '}
+          <Link to="/auth?tab=signup" className="text-primary hover:underline">
+            Get accurate estimates for your situation →
+          </Link>
+        </p>
+      )}
+    </div>
+  </div>
+)}
+```
 
-**Current:**
-- Icon: Conditionally `text-primary` or `text-muted-foreground`
-- Value: Conditionally `text-primary`, `text-muted-foreground`, or `text-foreground`
+**Additional imports needed at the top of the file:**
+- `Info` from lucide-react (already imported)
+- `Link` from react-router-dom (already imported)
+- `useAuth` hook (already imported)
 
-**New:**
-- Icon: Remove conditional coloring (use default)
-- Value: Always use `text-foreground`
+**Get user from useAuth:**
+Add `const { user } = useAuth();` inside the component (if not already present)
 
 ## Visual Result
 
-All cards will now have:
-- Same background: `bg-muted/30 border border-border/50`
-- Same header styling: `text-muted-foreground`
-- Same value styling: `text-2xl font-bold text-foreground`
-- Same helper text: `text-xs text-muted-foreground`
-
-```text
-Before:
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ Total Monthly│  │ City Avg     │  │ vs Market    │
-│ ₪19,403/mo  │  │ ₪8,000/mo   │  │ +143%        │ ← faded gray
-│ (bold black) │  │ (bold black) │  │ (light gray) │
-└──────────────┘  └──────────────┘  └──────────────┘
-
-After:
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│ Total Monthly│  │ City Avg     │  │ vs Market    │
-│ ₪19,403/mo  │  │ ₪8,000/mo   │  │ +143%        │ ← consistent
-│ (bold black) │  │ (bold black) │  │ (bold black) │
-└──────────────┘  └──────────────┘  └──────────────┘
+Before (plain text):
+```
+Calculating for: First-Time Buyer
 ```
 
-## Technical Details
+After (styled gray box with signup nudge for guests):
+```
+┌──────────────────────────────────────────────────────┐
+│ ⓘ Calculating for: First-Time Buyer                 │
+│   Your situation different? Get accurate estimates → │
+└──────────────────────────────────────────────────────┘
+```
 
-The specific lines to update:
-
-1. **Lines 143-149**: Remove conditional icon coloring for rental comparison
-2. **Lines 152-158**: Change to always use `text-foreground`
-3. **Lines 239-245**: Remove conditional icon coloring for price trend
-4. **Lines 248-254**: Change to always use `text-foreground`
-
+## Why This Approach
+- **Matches existing design**: Uses the same `bg-muted/50 border border-border/50` styling as the purchase PersonalizationHeader
+- **Adds signup nudge**: Encourages guest conversion with a subtle CTA
+- **Keeps it simple for rentals**: No mortgage toggle or complex configuration needed
+- **Consistent with project pages**: Provides visual parity across property types
