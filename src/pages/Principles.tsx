@@ -46,7 +46,7 @@ const whatWeAre = [
   {
     icon: Lightbulb,
     title: 'Confidence Before Contact',
-    description: 'Speak to agents, brokers, or lawyers with confidence and clarity. Know what matters, what to ask, and where tradeoffs exist.',
+    description: 'Prepare for conversations with agents, brokers, or lawyers. Know what matters, what to ask, and where tradeoffs exist.',
   },
   {
     icon: Scale,
