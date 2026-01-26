@@ -138,14 +138,23 @@ export function MortgageSection() {
         <div className="space-y-4">
           {/* Show financing method status */}
           {!includeMortgage ? (
-            <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2">
-                <Banknote className="h-4 w-4 text-accent-foreground" />
-                <p className="text-sm font-medium text-accent-foreground">Paid in Full</p>
+                <CreditCard className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Take a Mortgage</p>
+                  <p className="text-xs text-muted-foreground">
+                    Toggle on to include mortgage costs
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Cost breakdowns will exclude mortgage-related fees
-              </p>
+              <Switch
+                checked={includeMortgage}
+                onCheckedChange={(checked) => {
+                  savePreferences({ include_mortgage: checked });
+                }}
+                disabled={isSaving}
+              />
             </div>
           ) : (
             <>
