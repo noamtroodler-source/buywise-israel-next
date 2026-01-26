@@ -32,6 +32,8 @@ export interface BuyerProfile {
   rental_budget?: number | null;
   // Mortgage preferences (stored as JSON in DB, typed here)
   mortgage_preferences?: MortgagePreferencesJson | null;
+  // Saved locations (stored as JSON in DB)
+  saved_locations?: unknown[] | null;
   // New preference tracking fields
   target_cities?: string[] | null;
   property_type_preferences?: string[] | null;
@@ -83,21 +85,25 @@ export function useCreateBuyerProfile() {
     mutationFn: async (profileData: Partial<BuyerProfileInsert>) => {
       if (!user) throw new Error('Not authenticated');
 
+      const insertData = {
+        user_id: user.id,
+        residency_status: profileData.residency_status || 'israeli_resident',
+        aliyah_year: profileData.aliyah_year || null,
+        is_first_property: profileData.is_first_property ?? true,
+        purchase_purpose: profileData.purchase_purpose || 'primary_residence',
+        buyer_entity: profileData.buyer_entity || 'individual',
+        onboarding_completed: profileData.onboarding_completed ?? true,
+        has_existing_property: profileData.has_existing_property ?? false,
+        is_upgrading: profileData.is_upgrading ?? false,
+        upgrade_sale_date: profileData.upgrade_sale_date || null,
+        arnona_discount_categories: profileData.arnona_discount_categories || [],
+        saved_locations: profileData.saved_locations || [],
+        mortgage_preferences: profileData.mortgage_preferences || null,
+      };
+
       const { data, error } = await supabase
         .from('buyer_profiles')
-        .insert({
-          user_id: user.id,
-          residency_status: profileData.residency_status || 'israeli_resident',
-          aliyah_year: profileData.aliyah_year || null,
-          is_first_property: profileData.is_first_property ?? true,
-          purchase_purpose: profileData.purchase_purpose || 'primary_residence',
-          buyer_entity: profileData.buyer_entity || 'individual',
-          onboarding_completed: profileData.onboarding_completed ?? true,
-          has_existing_property: profileData.has_existing_property ?? false,
-          is_upgrading: profileData.is_upgrading ?? false,
-          upgrade_sale_date: profileData.upgrade_sale_date || null,
-          arnona_discount_categories: profileData.arnona_discount_categories || [],
-        })
+        .insert(insertData as never)
         .select()
         .single();
 
