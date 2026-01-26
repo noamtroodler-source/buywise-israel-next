@@ -51,7 +51,7 @@ const whatWeAre = [
   {
     icon: Scale,
     title: 'Independent & Unbiased',
-    description: "BuyWise is not a brokerage or a sales-driven portal. We don't push listings or rush decisions — we help you get clarity and move forward on your own terms.",
+    description: "BuyWise is not a brokerage or commission-based platform. We don't profit from transactions — we focus on clarity, transparency, and helping users move forward on their own terms.",
   },
 ];
 
