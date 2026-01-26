@@ -19,6 +19,13 @@ interface MarketOverviewCardsProps {
   propertyTypes?: { name: string; value: number }[];
   dataSources?: Record<string, string> | null;
   lastVerified?: string | null;
+  // For proper fallback when market_data is empty
+  canonicalMetrics?: {
+    average_price_sqm?: number | null;
+  } | null;
+  cityData?: {
+    average_price_sqm?: number | null;
+  };
 }
 
 export function MarketOverviewCards({
@@ -27,13 +34,19 @@ export function MarketOverviewCards({
   arnonaRateSqm,
   propertyTypes = [],
   dataSources,
-  lastVerified
+  lastVerified,
+  canonicalMetrics,
+  cityData
 }: MarketOverviewCardsProps) {
   const [apartmentSize, setApartmentSize] = useState(80);
   const { data: buyerProfile } = useBuyerProfile();
   
   const latestData = marketData[0];
-  const pricePerSqm = latestData?.average_price_sqm || 0;
+  // Priority: Canonical > cityData > marketData > 0
+  const pricePerSqm = canonicalMetrics?.average_price_sqm 
+    ?? cityData?.average_price_sqm 
+    ?? latestData?.average_price_sqm 
+    ?? 0;
   const percentDiff = ((pricePerSqm - NATIONAL_AVG_PRICE_SQM) / NATIONAL_AVG_PRICE_SQM) * 100;
   
   // Arnona calculations with discount
