@@ -1,62 +1,34 @@
 
-
-# Update PlatformPromise Section
+# Update RegionExplorer Section Header
 
 ## Summary
 
-Update the quote/mission statement in the PlatformPromise section with new copy and styling.
+Replace the "Explore by Region" section header with new copy.
 
 ---
 
-## Branding Answer
-
-**"BuyWise Israel"** (with a space) is the correct format. This is consistently used across:
-- Page titles and meta tags
-- Footer copyright
-- Marketing content
-- Hero sections
-
-The no-space version (`BuyWiseIsrael`) only appears in technical contexts like User-Agent headers and the domain name.
-
----
-
-## Text Change
-
-**Current:**
-> BuyWise isn't a brokerage. It's a starting point — designed to help you **explore with clarity**, not pressure.
-
-**New:**
-> Buying or renting in **Israel** no longer has to feel overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
-
----
-
-## Styling Change
+## Text Changes
 
 | Element | Current | New |
 |---------|---------|-----|
-| Main text | `text-foreground` (dark gray) | Black (`text-foreground` works, already near-black) |
-| Highlighted word | "explore with clarity" in primary (blue) | "Israel" in primary (blue) |
-| Link text | "How BuyWise works" | Could update to "How BuyWise Israel works" for consistency |
+| Title (h2) | "Explore by Region" | "Explore Real Estate Markets Across Israel" |
+| Subtitle (p) | "Discover cities across Israel" | "Market context and buyer-focused insights for each city." |
 
 ---
 
 ## Implementation
 
-**File:** `src/components/home/PlatformPromise.tsx`
+**File:** `src/components/home/RegionExplorer.tsx`
 
-### Line 22-25: Update the paragraph text
+### Lines 84-89: Update the header text
 
 ```tsx
-<p className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground leading-relaxed -mt-6">
-  Buying or renting in <span className="text-primary">Israel</span> no longer has to feel 
-  overwhelming. BuyWise Israel brings clarity and confidence to the entire journey — without pressure.
+<h2 className="text-2xl md:text-4xl font-bold text-foreground">
+  Explore Real Estate Markets Across Israel
+</h2>
+<p className="text-base text-muted-foreground mt-1">
+  Market context and buyer-focused insights for each city.
 </p>
-```
-
-### Line 31: Update the link text (optional but recommended)
-
-```tsx
-How BuyWise Israel works
 ```
 
 ---
@@ -65,11 +37,4 @@ How BuyWise Israel works
 
 | File | Change |
 |------|--------|
-| `src/components/home/PlatformPromise.tsx` | Update quote text and highlight "Israel" instead of "explore with clarity" |
-
----
-
-## Result
-
-The PlatformPromise section will display the new messaging with consistent "BuyWise Israel" branding and "Israel" highlighted in the primary blue color.
-
+| `src/components/home/RegionExplorer.tsx` | Update h2 title and subtitle paragraph |
