@@ -168,9 +168,12 @@ export default function CityDetail() {
   })();
   
   // Combine database factors and dynamic TAMA 38 factor
-  const worthWatching = tama38Factor 
+  const allFactors = tama38Factor 
     ? [...staticFactors.filter(f => !f.title.toLowerCase().includes('tama')), tama38Factor]
     : staticFactors;
+
+  // Limit to maximum 6 items (already sorted by sort_order from database)
+  const worthWatching = allFactors.slice(0, 6);
     
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
