@@ -24,38 +24,7 @@ import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
 
-// City Identity Sentences - universally true, one-liner descriptions
-// Fallback identity sentences for cities without database data
-const fallbackIdentities: Record<string, string> = {
-  'tel-aviv': "Tel Aviv is Israel's cultural and economic capital — a Mediterranean metropolis known for its beaches, nightlife, and startup ecosystem.",
-  'herzliya': "Herzliya is a coastal tech hub north of Tel Aviv, home to Israel's \"Silicon Wadi\" and luxury beachfront living.",
-  'jerusalem': "Jerusalem is Israel's capital and spiritual center — a city of historical significance, diverse neighborhoods, and strong community ties.",
-  'raanana': "Ra'anana is a family-friendly suburb with excellent schools, a strong Anglo community, and proximity to Tel Aviv.",
-  'beer-sheva': "Beer Sheva is the capital of the Negev, home to Ben-Gurion University and emerging as a tech and innovation hub.",
-  'ashkelon': "Ashkelon is a southern coastal city known for archaeological sites, beaches, and affordable housing.",
-  'eilat': "Eilat is Israel's Red Sea resort city — tax-free, tourism-focused, with year-round warm weather.",
-  'ramat-gan': "Ramat Gan is an urban center adjacent to Tel Aviv, known for the Diamond Exchange and growing residential demand.",
-  'petah-tikva': "Petah Tikva is one of Israel's oldest cities, now a commercial hub with strong transport links.",
-  'givatayim': "Givatayim is a small, walkable city bordering Tel Aviv — urban living with a neighborhood feel.",
-  'holon': "Holon is a family-oriented city south of Tel Aviv, known for the Design Museum and affordable housing.",
-  'bat-yam': "Bat Yam is a beachfront city south of Tel Aviv, undergoing urban renewal with improving infrastructure.",
-  'kfar-saba': "Kfar Saba is a Sharon region suburb with good schools, parks, and proximity to Highway 6.",
-  'hod-hasharon': "Hod HaSharon is a growing residential town in the Sharon region, popular with young families.",
-  'rosh-haayin': "Rosh HaAyin is a hilltop city east of Tel Aviv, known for its diverse population and train connectivity.",
-  'shoham': "Shoham is a small planned community between Tel Aviv and Jerusalem, known for quiet suburban living.",
-  'givat-shmuel': "Givat Shmuel is one of Israel's smallest cities, bordering Ramat Gan, with strong residential demand.",
-  'zichron-yaakov': "Zichron Yaakov is a wine country town on Mount Carmel, known for historic architecture and boutique living.",
-  'pardes-hanna': "Pardes Hanna-Karkur is a rural community in the Sharon region, offering quiet living near nature.",
-  'kiryat-tivon': "Kiryat Tivon is a green suburban town near Haifa, popular with families seeking a quieter lifestyle.",
-  'yokneam': "Yokneam is a Jezreel Valley town with a growing tech park, near Haifa and the Galilee.",
-  'nahariya': "Nahariya is Israel's northernmost coastal city, known for its beaches, German heritage, and relaxed atmosphere.",
-  'beit-shemesh': "Beit Shemesh is a growing city west of Jerusalem, with distinct secular and religious neighborhoods.",
-  'mevaseret-zion': "Mevaseret Zion is a suburban town overlooking Jerusalem, known for its mountain views and family atmosphere.",
-  'efrat': "Efrat is a community in the Judean Hills, south of Jerusalem, with a strong English-speaking presence.",
-  'gush-etzion': "Gush Etzion is a bloc of communities in the Judean Hills, known for its historical significance and scenic landscapes.",
-  'maale-adumim': "Ma'ale Adumim is a city east of Jerusalem, offering suburban living with mountain views.",
-  'givat-zeev': "Givat Ze'ev is a residential town north of Jerusalem, popular with families seeking affordable housing.",
-};
+// Generic fallback for cities without identity_sentence in database
 
 // Hero Images (high resolution 1920x800)
 import telAvivHeroImg from '@/assets/cities/hero/tel-aviv.jpg';
@@ -206,8 +175,8 @@ export default function CityDetail() {
   const heroImage = cityHeroImages[slug || ''] || city.hero_image || 'https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=1920';
   const medianPrice = canonicalMetrics?.median_apartment_price ?? city.median_apartment_price ?? null;
   const grossYield = canonicalMetrics?.gross_yield_percent ?? city.gross_yield_percent ?? null;
-  // Priority: database identity_sentence > fallback > description > generic
-  const identitySentence = (city as any).identity_sentence || fallbackIdentities[slug || ''] || city.description || `${city.name} is a city in Israel with a unique character and real estate market.`;
+  // Priority: database identity_sentence > description > generic fallback
+  const identitySentence = (city as any).identity_sentence || city.description || `${city.name} is a city in Israel with its own unique character and real estate market.`;
   const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change ?? undefined;
 
   return (

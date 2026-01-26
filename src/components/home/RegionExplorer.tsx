@@ -25,7 +25,6 @@ interface City {
   name: string;
   slug: string;
   image: string;
-  propertyCount: number;
 }
 
 const regions: Record<Region, { label: string; icon: React.ElementType; cities: City[] }> = {
@@ -33,37 +32,37 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
     label: 'Coastal',
     icon: Waves,
     cities: [
-      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg, propertyCount: 150 },
-      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg, propertyCount: 85 },
-      { name: 'Netanya', slug: 'netanya', image: netanyaImg, propertyCount: 65 },
-      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg, propertyCount: 72 },
+      { name: 'Tel Aviv', slug: 'tel-aviv', image: telAvivImg },
+      { name: 'Herzliya', slug: 'herzliya', image: herzliyaImg },
+      { name: 'Netanya', slug: 'netanya', image: netanyaImg },
+      { name: 'Ramat Gan', slug: 'ramat-gan', image: ramatGanImg },
     ],
   },
   central: {
     label: 'Central',
     icon: Building,
     cities: [
-      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg, propertyCount: 120 },
-      { name: "Ra'anana", slug: 'raanana', image: raananaImg, propertyCount: 55 },
-      { name: "Modi'in", slug: 'modiin', image: modiinImg, propertyCount: 70 },
-      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg, propertyCount: 48 },
+      { name: 'Jerusalem', slug: 'jerusalem', image: jerusalemImg },
+      { name: "Ra'anana", slug: 'raanana', image: raananaImg },
+      { name: "Modi'in", slug: 'modiin', image: modiinImg },
+      { name: 'Kfar Saba', slug: 'kfar-saba', image: kfarSabaImg },
     ],
   },
   north: {
     label: 'North',
     icon: Mountain,
     cities: [
-      { name: 'Haifa', slug: 'haifa', image: haifaImg, propertyCount: 90 },
-      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg, propertyCount: 28 },
+      { name: 'Haifa', slug: 'haifa', image: haifaImg },
+      { name: 'Zichron Yaakov', slug: 'zichron-yaakov', image: zichronYaakovImg },
     ],
   },
   south: {
     label: 'South',
     icon: Sun,
     cities: [
-      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg, propertyCount: 45 },
-      { name: 'Eilat', slug: 'eilat', image: eilatImg, propertyCount: 40 },
-      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg, propertyCount: 38 },
+      { name: 'Beer Sheva', slug: 'beer-sheva', image: beerShevaImg },
+      { name: 'Eilat', slug: 'eilat', image: eilatImg },
+      { name: 'Ashkelon', slug: 'ashkelon', image: ashkelonImg },
     ],
   },
 };
@@ -155,7 +154,7 @@ export function RegionExplorer() {
                       {city.name}
                     </h3>
                     <p className="text-sm text-white/80">
-                      {city.propertyCount} properties
+                      Explore properties
                     </p>
                   </div>
                 </Link>

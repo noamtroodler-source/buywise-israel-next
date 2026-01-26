@@ -5,6 +5,7 @@ import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { MarketData } from '@/types/projects';
 import { InlineSourceBadge } from '@/components/shared/InlineSourceBadge';
 import { useFormatPrice, useCurrencySymbol, useAreaUnitLabel, useFormatPricePerArea } from '@/contexts/PreferencesContext';
+import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
 
 interface CityQuickStatsProps {
   marketData: MarketData[];
@@ -27,8 +28,6 @@ interface CityQuickStatsProps {
   dataSources?: Record<string, string> | null;
   lastVerified?: string | null;
 }
-
-const NATIONAL_AVG_PRICE_SQM = 22800;
 
 export function CityQuickStats({ marketData, canonicalMetrics, cityData, dataSources, lastVerified }: CityQuickStatsProps) {
   // Determine if we have verified data
