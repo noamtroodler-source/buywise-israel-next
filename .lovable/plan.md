@@ -1,69 +1,93 @@
 
 
-# Remove Yellow "Paid in Full" Box and Show Toggle Instead
+# Restore Clear "Paid in Full" / "Mortgage" Choice UI
 
-## Problem
+## What You Want
 
-When the user is in "Paid in Full" mode (not editing), they see a yellow box with "Paid in Full" text. The user wants to remove this yellow box and instead show the same toggle interface that appears in the editing mode.
+You want both financing options to be clearly visible:
+- If you're on **Paid in Full** → see that clearly, with option to switch to Mortgage
+- If you're on **Mortgage** → see that with the mortgage details, with option to switch back to Paid in Full
 
-## Current Behavior (Lines 140-149)
-
-When not editing and `includeMortgage = false`:
-```tsx
-<div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-  <div className="flex items-center gap-2">
-    <Banknote className="h-4 w-4 text-accent-foreground" />
-    <p className="text-sm font-medium text-accent-foreground">Paid in Full</p>
-  </div>
-  <p className="text-xs text-muted-foreground mt-1">
-    Cost breakdowns will exclude mortgage-related fees
-  </p>
-</div>
-```
-
-This creates the yellow/accent-colored box the user wants removed.
+The toggle should make logical sense - showing what you're switching TO, not just a generic "Take a Mortgage" label.
 
 ## The Fix
 
-Replace the yellow "Paid in Full" box with the same toggle interface used in the editing mode. This provides a consistent experience and lets users quickly toggle their financing method.
-
 ### File: `src/components/profile/sections/MortgageSection.tsx`
 
-**Lines 140-149** - Replace the yellow box with the toggle interface:
+**When NOT editing (view mode):**
+
+Replace the current toggle-only approach (lines 140-158) with a clear two-state display:
+
+**If Paid in Full:**
+```
+┌─────────────────────────────────────────────┐
+│ 💵 Paid in Full                             │
+│    Cash purchase - no mortgage costs        │
+│                                             │
+│    [ Switch to Mortgage ]  ← subtle button  │
+└─────────────────────────────────────────────┘
+```
+
+**If Mortgage:**
+```
+┌─────────────────────────────────────────────────┐
+│ 💳 Taking a Mortgage                            │
+│    Down Payment: 25% | Term: 25 years | etc.   │
+│                                                 │
+│    [ Switch to Paid in Full ]  ← subtle button │
+└─────────────────────────────────────────────────┘
+```
+
+### Code Changes
+
+**Lines 140-158** - Replace with clear state display:
 
 ```tsx
 {!includeMortgage ? (
-  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-    <div className="flex items-center gap-2">
-      <CreditCard className="h-4 w-4 text-primary" />
-      <div>
-        <p className="text-sm font-medium">Take a Mortgage</p>
-        <p className="text-xs text-muted-foreground">
-          Toggle on to include mortgage costs
-        </p>
-      </div>
+  // Paid in Full state
+  <div className="p-3 rounded-lg bg-muted/50">
+    <div className="flex items-center gap-2 mb-2">
+      <Banknote className="h-4 w-4 text-primary" />
+      <p className="text-sm font-medium">Paid in Full</p>
     </div>
-    <Switch
-      checked={includeMortgage}
-      onCheckedChange={(checked) => {
-        savePreferences({ include_mortgage: checked });
-      }}
+    <p className="text-xs text-muted-foreground mb-3">
+      Cash purchase — cost breakdowns exclude mortgage fees
+    </p>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => savePreferences({ include_mortgage: true })}
       disabled={isSaving}
-    />
+      className="text-xs h-7"
+    >
+      <CreditCard className="h-3 w-3 mr-1" />
+      Switch to Mortgage
+    </Button>
   </div>
 ) : (
 ```
 
-## Changes Summary
+**After the mortgage details grid (around line 193)** - Add switch-back button:
 
-| Location | Before | After |
-|----------|--------|-------|
-| Lines 140-149 | Yellow `bg-accent/10` box with "Paid in Full" | Gray `bg-muted/50` toggle with "Take a Mortgage" label and Switch |
+```tsx
+<Button
+  variant="ghost"
+  size="sm"
+  onClick={() => savePreferences({ include_mortgage: false })}
+  disabled={isSaving}
+  className="text-xs h-7"
+>
+  <Banknote className="h-3 w-3 mr-1" />
+  Switch to Paid in Full
+</Button>
+```
 
-## Result
+## Summary
 
-- No more yellow box when in "Paid in Full" mode
-- Users see a clean toggle interface matching the second screenshot
-- Toggling directly saves the preference (no need to click Edit first)
-- Consistent visual style with the editing mode
+| State | What User Sees | Action Available |
+|-------|----------------|------------------|
+| Paid in Full | Clear "Paid in Full" label with description | "Switch to Mortgage" button |
+| Mortgage | Mortgage details (down payment, term, etc.) | "Switch to Paid in Full" button |
+
+Both options are always accessible, and the current state is clearly displayed.
 
