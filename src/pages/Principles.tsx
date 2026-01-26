@@ -321,7 +321,10 @@ export default function Principles() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link to="/areas">Browse Areas</Link>
+                  <Link to="/areas" className="gap-2">
+                    Browse Areas
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
               </div>
             </motion.div>
