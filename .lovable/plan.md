@@ -1,21 +1,39 @@
 
 
-## Delete "What We Do / What We Don't Do" Section
+## Add Visual Distinction Between "What We Believe" and "Pro-Agent" Sections
 
-### Overview
-Remove the entire section from the Principles page that displays "What We Do" and "What We Don't Do" in a two-column card layout.
+### The Problem
+Both the "What We Believe" section (with the 4 principle cards) and the "Pro-Agent" section directly below it share the same plain white background, causing them to visually blend together.
+
+### Solution
+Add a subtle background treatment to the "Pro-Agent" section to create visual separation while maintaining design consistency with the rest of the page.
+
+### Recommended Approach
+Apply a `bg-muted/30` background to the "Pro-Agent" section. This matches the styling already used in the "What BuyWise Actually Is" section, creating a consistent visual rhythm throughout the page where sections alternate between plain and tinted backgrounds.
 
 ### Changes Required
 
 **File: `src/pages/Principles.tsx`**
 
-1. **Remove the data arrays** (lines 83-97):
-   - Delete the `whatWeDo` array
-   - Delete the `whatWeDontDo` array
+Update the Pro-Agent section (line 248) to add a background:
 
-2. **Remove the JSX section** (lines 282-332):
-   - Delete the entire `{/* What We Do / Don't Do */}` section including the background container, grid layout, and both cards
+```tsx
+// Before
+<section className="py-16 md:py-20">
 
-### Result
-The page will flow directly from the "What We Believe" (Core Principles) section to the "Pro-Agent" section, removing the checklist-style cards entirely.
+// After  
+<section className="py-16 md:py-20 bg-muted/30">
+```
+
+### Visual Result
+The page will have this alternating pattern:
+1. Hero - gradient background
+2. "If This Sounds Familiar" - plain
+3. "What BuyWise Actually Is" - muted background
+4. "What We Believe" - plain
+5. "Pro-Agent" - muted background (the change)
+6. "The Promise" - gradient background
+7. CTA - plain
+
+This creates a clear visual rhythm and helps distinguish each section from its neighbors.
 
