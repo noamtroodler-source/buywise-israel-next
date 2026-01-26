@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Building2, Globe, Phone, Mail, Calendar, CheckCircle, ArrowLeft, Loader2,
-  MessageCircle, Eye, Users, TrendingUp, Shield
+  MessageCircle, Eye, Users, TrendingUp, Shield, FileText
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useDeveloper, useDeveloperProjects } from '@/hooks/useProjects';
+import { useAuthorBlogPosts } from '@/hooks/useBlog';
+import { useSavedArticles } from '@/hooks/useSavedArticles';
+import { BlogCard } from '@/components/blog/BlogCard';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +23,8 @@ export default function DeveloperDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: developer, isLoading, error } = useDeveloper(slug || '');
   const { data: projects = [] } = useDeveloperProjects(developer?.id || '');
+  const { data: blogPosts = [] } = useAuthorBlogPosts('developer', developer?.id);
+  const { isArticleSaved, toggleSave } = useSavedArticles();
   const { mutate: trackInquiry } = useProjectInquiryTracking();
   const [logoError, setLogoError] = useState(false);
 
@@ -357,6 +362,29 @@ export default function DeveloperDetail() {
               </div>
             )}
           </div>
+
+          {/* Blog Posts Section - only if there are posts */}
+          {blogPosts.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-foreground">
+                  Articles by {developer.name}
+                </h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {blogPosts.map((post, index) => (
+                    <BlogCard
+                      key={post.id}
+                      post={post}
+                      index={index}
+                      isSaved={isArticleSaved(post.id)}
+                      onToggleSave={toggleSave}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </div>
     </Layout>
