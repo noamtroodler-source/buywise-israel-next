@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, Home, TrendingUp, Compass, ArrowRight } from 'lucide-react';
+import { Calculator, Home, TrendingUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -7,7 +7,6 @@ const tools = [
   { id: 'mortgage', icon: Calculator, label: 'Mortgage Calculator' },
   { id: 'rentvsbuy', icon: Home, label: 'Rent vs Buy' },
   { id: 'investment', icon: TrendingUp, label: 'Investment Returns' },
-  { id: 'neighborhood', icon: Compass, label: 'Neighborhood Match' },
 ];
 
 export const ToolsPromo = () => {

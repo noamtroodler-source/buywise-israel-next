@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Calculator, MapPin, Shield, Globe } from 'lucide-react';
 
 const displayStats = [
-  { icon: Calculator, value: '9', label: 'Free Tools' },
+  { icon: Calculator, value: '8', label: 'Free Tools' },
   { icon: MapPin, value: '35+', label: 'Cities' },
   { icon: Shield, value: '100%', label: 'Independent' },
   { icon: Globe, value: '100%', label: 'In English' },

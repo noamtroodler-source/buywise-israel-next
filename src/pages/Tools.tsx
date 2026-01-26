@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
-  MapPinned, Hammer, ClipboardList, ArrowRight, ArrowLeft
+  Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
@@ -15,7 +15,7 @@ import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
-import { NeighborhoodMatch } from '@/components/tools/NeighborhoodMatch';
+
 
 interface Tool {
   id: string;
@@ -32,7 +32,7 @@ const tools: Tool[] = [
   { id: 'investment', label: 'Investment Return Calculator', description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', icon: TrendingUp, category: 'calculator' },
   { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare renting versus buying in Israel — and when ownership makes sense.', icon: Scale, category: 'calculator' },
   { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs in Israel — beyond how a property looks.', icon: Hammer, category: 'calculator' },
-  { id: 'neighborhood', label: 'Where Should I Buy?', description: 'Take a quick quiz to discover which Israeli cities match your lifestyle, budget, and priorities.', icon: MapPinned, category: 'discovery' },
+  
   { id: 'documents', label: 'Document Checklist', description: "Stay organized through the Israeli buying process — and know what's needed at every step.", icon: ClipboardList, category: 'discovery' },
 ];
 
@@ -43,7 +43,7 @@ const toolComponents: Record<string, React.ComponentType> = {
   investment: InvestmentReturnCalculator,
   rentvsbuy: RentVsBuyCalculator,
   renovation: RenovationCostEstimator,
-  neighborhood: NeighborhoodMatch,
+  
   documents: DocumentChecklistTool,
 };
 
