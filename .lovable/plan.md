@@ -1,77 +1,37 @@
 
+# Remove "This Week's Performance" Section from Developer Dashboard
 
-# Fix Developer Profile Pages Not Loading
+## What's Being Removed
 
-## Problem Identified
+The "This Week's Performance" section that displays:
+- Project Views (with 0% week-over-week comparison)
+- New Inquiries (with 0% week-over-week comparison)  
+- Active Projects count
 
-The mock developers created by the seed function have `status: 'active'`, but the hooks that fetch developers are filtering for `status: 'approved'`. This mismatch causes all developer profile pages to show "Developer not found".
-
-**Database state:**
-| Developer | status | verification_status |
-|-----------|--------|---------------------|
-| Azrieli Development Group | active | approved |
-| Tidhar Group | active | approved |
-| All 8 developers... | active | approved |
-
-**Hook filter:**
-```tsx
-.eq('status', 'approved')  // Looking for 'approved' but data has 'active'
-```
+This section is rendered by the `DeveloperPerformanceInsights` component.
 
 ---
 
-## Solution
+## File to Modify
 
-Update both developer hooks in `src/hooks/useProjects.tsx` to filter by `status: 'active'` instead of `status: 'approved'`. This aligns with:
-1. The seed data generation (uses `active`)
-2. The professional role lifecycle documented in the memory (uses `active` for approved professionals)
+### `src/pages/developer/DeveloperDashboard.tsx`
 
----
+**Remove lines 227-230** - The Performance Insights section:
 
-## Files to Change
-
-### `src/hooks/useProjects.tsx`
-
-**Change 1 - Line 56** (`useDevelopers` hook):
 ```tsx
-// Before
-.eq('status', 'approved')
-
-// After
-.eq('status', 'active')
+{/* Performance Insights */}
+<motion.div variants={itemVariants}>
+  <DeveloperPerformanceInsights />
+</motion.div>
 ```
 
-**Change 2 - Line 74** (`useDeveloper` hook):
+**Also remove the import** on line 13:
 ```tsx
-// Before
-.eq('status', 'approved')
-
-// After
-.eq('status', 'active')
+import { DeveloperPerformanceInsights } from '@/components/developer/DeveloperPerformanceInsights';
 ```
-
----
-
-## Why This Is Correct
-
-Per the architecture memory: *"Admin approval sets the 'status' to 'active'"*
-
-The `status` field represents the account state:
-- `pending` - Awaiting admin review
-- `active` - Approved and visible
-- `suspended` - Blocked from platform
-
-The `verification_status` field is a separate check:
-- `pending` / `approved` / `rejected`
-
-So filtering by `status: 'active'` is the correct behavior for showing public-facing profiles.
 
 ---
 
 ## Result
 
-After this fix:
-- `/developers` page will list all 8 mock developers
-- `/developers/azrieli-development-group` (and all other slugs) will load the full profile
-- Projects, stats, contact info, and blog posts will all display correctly
-
+The developer dashboard will no longer show the performance metrics section, making the page cleaner and less overwhelming. The stats cards (Projects, Leads, Views, etc.) will remain as they provide a more concise overview.
