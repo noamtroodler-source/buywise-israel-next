@@ -7,9 +7,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { MarketData } from '@/types/projects';
 import { CanonicalMetrics, getRentalRange } from '@/hooks/useCanonicalMetrics';
 import { HistoricalPrice, calculateCAGR } from '@/hooks/useHistoricalPrices';
+import { NATIONAL_AVG_PRICE_SQM } from '@/lib/constants/marketAverages';
 
 // National average for context (Israel-wide benchmark)
-const NATIONAL_AVG_PRICE_SQM = 22800;
 const NATIONAL_AVG_YIELD = 2.8;
 
 interface MarketStatsCardsProps {
