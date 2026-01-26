@@ -95,7 +95,6 @@ export function useDeveloperProject(projectId: string) {
 
 export function useCreateProject() {
   const queryClient = useQueryClient();
-  const { data: developerProfile } = useDeveloperProfile();
 
   return useMutation({
     mutationFn: async (projectData: {
@@ -120,7 +119,18 @@ export function useCreateProject() {
       unit_types?: UnitTypeData[];
       submitForReview?: boolean;
     }) => {
-      if (!developerProfile?.id) throw new Error('Developer profile not found');
+      // Fetch developer profile fresh at mutation time to avoid stale closure issues
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('You must be logged in to create a project');
+      
+      const { data: developerProfile, error: profileError } = await supabase
+        .from('developers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (profileError) throw new Error('Failed to fetch developer profile');
+      if (!developerProfile?.id) throw new Error('Developer profile not found. Please complete developer registration first.');
 
       // Generate slug from name
       const slug = projectData.name
