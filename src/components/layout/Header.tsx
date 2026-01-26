@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
@@ -27,10 +28,11 @@ export function Header() {
   // These hooks already have internal `enabled: !!user` checks for performance
   const { data: profile } = useProfile();
   const { favoriteIds } = useFavorites();
+  const { projectFavoriteIds } = useProjectFavorites();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
   
-  const favoriteCount = favoriteIds?.length || 0;
+  const favoriteCount = (favoriteIds?.length || 0) + (projectFavoriteIds?.length || 0);
   const isAgencyAdmin = !!myAgency;
   const hasDeveloperProfile = !!developerProfile;
 
