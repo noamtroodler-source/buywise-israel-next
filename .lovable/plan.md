@@ -1,110 +1,104 @@
 
-# Fix Project Progress Bar to Reflect Stage Position
+
+# Fix Core Locations Not Saving During Onboarding
 
 ## Problem Identified
 
-On the Projects listing page, the progress bar on each project card shows **0%** for "Planning" and "Pre-Sale" stages, despite these being meaningful milestones. The user wants the bar to be divided into 6 equal segments reflecting the 6-stage lifecycle.
+When a new user signs up and adds a core location during the onboarding wizard (e.g., "Hanadi Fourteen Street"), the location is **not saved to the database**. The user arrives at their profile page and sees "None added" with an "Add Your First Location" button.
 
-### Current Logic (Broken)
-In `src/pages/Projects.tsx` lines 267-274:
-```tsx
-<Progress 
-  value={
-    project.status === 'delivery' ? 100 :
-    ['foundation', 'structure', 'finishing'].includes(project.status) 
-      ? ((project as any).construction_progress_percent || 0) :
-    0  // <-- Planning & Pre-Sale always show 0%
-  } 
-/>
+### Root Cause
+
+The `useCreateBuyerProfile` hook in `src/hooks/useBuyerProfile.tsx` **explicitly lists each field** to insert but **omits two important fields**:
+
+1. `saved_locations` - Core locations added during onboarding
+2. `mortgage_preferences` - Mortgage settings from onboarding
+
+**Lines 86-100 (current broken code):**
+```typescript
+const { data, error } = await supabase
+  .from('buyer_profiles')
+  .insert({
+    user_id: user.id,
+    residency_status: profileData.residency_status || 'israeli_resident',
+    aliyah_year: profileData.aliyah_year || null,
+    is_first_property: profileData.is_first_property ?? true,
+    purchase_purpose: profileData.purchase_purpose || 'primary_residence',
+    buyer_entity: profileData.buyer_entity || 'individual',
+    onboarding_completed: profileData.onboarding_completed ?? true,
+    has_existing_property: profileData.has_existing_property ?? false,
+    is_upgrading: profileData.is_upgrading ?? false,
+    upgrade_sale_date: profileData.upgrade_sale_date || null,
+    arnona_discount_categories: profileData.arnona_discount_categories || [],
+    // MISSING: saved_locations and mortgage_preferences!
+  })
 ```
 
-### Correct Logic (Already in ProjectTimeline.tsx)
-```tsx
-const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
-const currentStageIndex = stages.findIndex(s => s === project.status);
-const stageProgress = ((currentStageIndex + 1) / stages.length) * 100;
+Meanwhile, the `BuyerOnboarding.tsx` component correctly prepares these fields (lines 165-177):
+```typescript
+const savedLocations = onboardingLocations.map(loc => ({...}));
+const profileData = {
+  ...answers,
+  onboarding_completed: true,
+  mortgage_preferences: mortgagePreferences,
+  ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
+};
+await createProfile.mutateAsync(profileData);
 ```
 
-This gives each stage a meaningful progress value:
+The data is prepared correctly but **dropped silently** because `useCreateBuyerProfile` doesn't include those fields in the insert.
 
-| Stage | Index | Progress |
-|-------|-------|----------|
-| Planning | 0 | ~17% (1/6) |
-| Pre-Sale | 1 | ~33% (2/6) |
-| Foundation | 2 | 50% (3/6) |
-| Structure | 3 | ~67% (4/6) |
-| Finishing | 4 | ~83% (5/6) |
-| Delivery | 5 | 100% (6/6) |
+### Database Evidence
+
+I queried the `buyer_profiles` table and found the user's profile created at `2026-01-26 19:13:32` has:
+```json
+{ "saved_locations": [] }
+```
+
+This confirms the locations were never saved.
+
+---
 
 ## The Fix
 
-### File: `src/pages/Projects.tsx`
+Add the missing `saved_locations` and `mortgage_preferences` fields to the insert statement in `useCreateBuyerProfile`.
 
-**Step 1:** Add a helper function to calculate stage-based progress (around line 50, with other helpers)
+### File: `src/hooks/useBuyerProfile.tsx`
 
-```tsx
-// Calculate progress based on stage position (6 stages total)
-const getStageProgress = (status: string): number => {
-  const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
-  const stageIndex = stages.findIndex(s => s === status);
-  if (stageIndex === -1) return 0;
-  // Each completed stage represents a portion of the bar
-  // Stage 0 (planning) = 1/6, Stage 5 (delivery) = 6/6 = 100%
-  return Math.round(((stageIndex + 1) / stages.length) * 100);
-};
+**Lines 86-100 - Add two missing fields:**
+
+```typescript
+const { data, error } = await supabase
+  .from('buyer_profiles')
+  .insert({
+    user_id: user.id,
+    residency_status: profileData.residency_status || 'israeli_resident',
+    aliyah_year: profileData.aliyah_year || null,
+    is_first_property: profileData.is_first_property ?? true,
+    purchase_purpose: profileData.purchase_purpose || 'primary_residence',
+    buyer_entity: profileData.buyer_entity || 'individual',
+    onboarding_completed: profileData.onboarding_completed ?? true,
+    has_existing_property: profileData.has_existing_property ?? false,
+    is_upgrading: profileData.is_upgrading ?? false,
+    upgrade_sale_date: profileData.upgrade_sale_date || null,
+    arnona_discount_categories: profileData.arnona_discount_categories || [],
+    // ADD THESE TWO LINES:
+    saved_locations: profileData.saved_locations || [],
+    mortgage_preferences: profileData.mortgage_preferences || null,
+  })
 ```
 
-**Step 2:** Update the Progress component value (lines 267-274)
+---
 
-Before:
-```tsx
-<Progress 
-  value={
-    project.status === 'delivery' ? 100 :
-    ['foundation', 'structure', 'finishing'].includes(project.status) 
-      ? ((project as any).construction_progress_percent || 0) :
-    0
-  } 
-  className="h-1.5" 
-/>
-```
+## Summary
 
-After:
-```tsx
-<Progress 
-  value={getStageProgress(project.status)} 
-  className="h-1.5" 
-/>
-```
-
-**Step 3:** Update the right-side percentage display (lines 260-265)
-
-Before:
-```tsx
-<span className="font-medium text-primary">
-  {project.status === 'planning' && 'Coming Soon'}
-  {project.status === 'pre_sale' && 'Starting Soon'}
-  {['foundation', 'structure', 'finishing'].includes(project.status) && `${(project as any).construction_progress_percent || 0}%`}
-  {project.status === 'delivery' && '100%'}
-</span>
-```
-
-After:
-```tsx
-<span className="font-medium text-primary">
-  {getStageProgress(project.status)}%
-</span>
-```
+| File | Change |
+|------|--------|
+| `src/hooks/useBuyerProfile.tsx` | Add `saved_locations` and `mortgage_preferences` to the insert object (lines 99-100) |
 
 ## Result After Fix
 
-| Project Status | Bar Fill | Display |
-|----------------|----------|---------|
-| Planning | 17% | 17% |
-| Pre-Sale | 33% | 33% |
-| Foundation | 50% | 50% |
-| Structure | 67% | 67% |
-| Finishing | 83% | 83% |
-| Delivery | 100% | 100% |
+- Core locations added during onboarding will be saved to the database
+- The profile page will show the user's saved locations immediately
+- Mortgage preferences will also persist correctly for new users
+- The fix ensures new users don't lose any data they entered during signup
 
-All project cards will now show an accurate, consistent progress bar based on their lifecycle stage, dividing the bar into 6 equal segments.
