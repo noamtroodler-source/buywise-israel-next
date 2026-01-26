@@ -75,7 +75,7 @@ const principles = [
   {
     icon: Eye,
     title: 'Transparency as a Feature',
-    description: "We tell you what we know, what we estimate, where data comes from, and what we intentionally don't claim to know.",
+    description: "We tell you what we know, what we estimate, where data comes from — and what we intentionally don't claim to know.",
   },
 ];
 
