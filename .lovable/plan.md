@@ -1,73 +1,98 @@
 
+# Fix "Save as Draft" for Pending Agents
 
-# Update AI Feedback Section to BuyWise Israel Brand Standards
+## Problem Identified
 
-## Current Issue
+When you click "Save as Draft", you see "Failed to create property: Agent profile not found" even though your agent profile exists in the database (with `status: pending`).
 
-The AI feedback section in the property description step uses amber/orange styling for "Suggestions for Improvement" which is off-brand. Per the platform's color palette standards, red, orange, green, and emerald semantic colors should be replaced with primary blue tints.
+**Root Cause**: The `useCreateProperty` hook has a stale closure issue. It captures `agentProfile` from `useAgentProfile()` at render time, but by the time the mutation actually runs, the value may still be `undefined` because:
 
-**Current (off-brand):**
-- `bg-amber-500/5` background
-- `text-amber-500` icon (AlertTriangle)
-- Orange warning triangle icon
+1. The `useAgentProfile` query runs asynchronously
+2. The mutation captures the `agentProfile` value at the time the hook is called
+3. When you click "Save Draft", the captured `agentProfile` may still be `null/undefined` even though the query has since resolved
 
-**Brand standard:**
-- `bg-primary/5` background  
-- `text-primary` icon
-- Blue-branded icons (Info, Lightbulb, or CheckCircle2)
+Your agent profile **does exist** and is correctly in `pending` status:
+```
+id: 6f158b7a-55f8-4b3e-8502-ce6ac06ddb04
+name: Daniel Troodler
+status: pending
+user_id: 137e8e73-fe2c-454c-a2ae-20cff8d1948e
+```
+
+---
+
+## Solution
+
+Modify `useCreateProperty` to fetch the agent profile **inside the mutation function** rather than relying on the stale hook value. This guarantees we get the current profile at mutation time.
 
 ---
 
 ## File to Modify
 
-### `src/components/agent/wizard/steps/StepDescription.tsx`
+### `src/hooks/useAgentProperties.tsx`
 
-**Changes:**
+**Change the `useCreateProperty` hook (lines 100-145)**:
 
-1. **Replace AlertTriangle icon with Info icon** (line 6)
-   - Remove `AlertTriangle` from imports
-   - Keep `Info` (already imported)
+1. Remove the captured `agentProfile` from the hook level
+2. Add a direct Supabase query inside `mutationFn` to get the current user's agent profile
+3. This ensures the profile is fetched fresh when saving, not stale from render time
 
-2. **Update feedback container background** (line 182)
-   - Change from: `bg-amber-500/5` 
-   - Change to: `bg-primary/5` (same as success state — unified styling)
+```text
+Before (line 100-106):
+┌───────────────────────────────────────────────────┐
+│ export function useCreateProperty() {             │
+│   const queryClient = useQueryClient();           │
+│   const { data: agentProfile } = useAgentProfile(); │ ← Captured at render time (stale)
+│                                                   │
+│   return useMutation({                            │
+│     mutationFn: async (...) => {                  │
+│       if (!agentProfile) throw new Error(...)     │ ← Uses stale value
+│       ...                                         │
+└───────────────────────────────────────────────────┘
 
-3. **Update icon for suggestions** (lines 184-188)
-   - Replace `AlertTriangle` with `Info` icon
-   - Change `text-amber-500` to `text-primary`
-
-4. **Update header text styling** (line 190-191)
-   - Keep the text content but ensure consistent styling
+After:
+┌───────────────────────────────────────────────────┐
+│ export function useCreateProperty() {             │
+│   const queryClient = useQueryClient();           │
+│   const { user } = useAuth();                     │ ← Get user directly
+│                                                   │
+│   return useMutation({                            │
+│     mutationFn: async (...) => {                  │
+│       // Fetch agent profile fresh at mutation time │
+│       const { data: agentProfile } = await supabase │ ← Fresh fetch!
+│         .from('agents')                           │
+│         .select('id')                             │
+│         .eq('user_id', user?.id)                  │
+│         .maybeSingle();                           │
+│                                                   │
+│       if (!agentProfile) throw new Error(...)     │ ← Now has real data
+│       ...                                         │
+└───────────────────────────────────────────────────┘
+```
 
 ---
 
-## Visual Result
+## Why This Works
 
-**Before:**
-```
-┌─────────────────────────────────────┐
-│ ⚠️ Suggestions for Improvement      │  ← Orange warning triangle
-│   (amber background)                │
-└─────────────────────────────────────┘
-```
-
-**After:**
-```
-┌─────────────────────────────────────┐
-│ ℹ️ Suggestions for Improvement      │  ← Blue info icon
-│   (primary/5 background)            │
-└─────────────────────────────────────┘
-```
-
-Both states (has issues / looking good) will now use the same blue-branded styling, matching the "Writing Tips" card and other informational components across the platform. This creates visual consistency and removes the alarming amber color that feels out of place.
+- **Fresh Data**: Fetching inside the mutation guarantees we get the current database state
+- **No Status Filter**: The query doesn't filter by `status`, so pending agents are included
+- **Proper RLS**: The "Agents are viewable by everyone" policy allows this SELECT
+- **Minimal Impact**: Only affects the create flow, existing update/delete flows remain unchanged
 
 ---
 
-## Code Changes Summary
+## Developer Portal Coverage
 
-| Line | Current | Updated |
-|------|---------|---------|
-| 6 | `AlertTriangle` import | Remove (unused) |
-| 182 | `bg-amber-500/5` | `bg-primary/5` |
-| 185 | `<AlertTriangle className="h-5 w-5 text-amber-500 ...` | `<Info className="h-5 w-5 text-primary ...` |
+This same fix pattern should also be applied to:
+- `useCreateProject` in `src/hooks/useDeveloperProjects.tsx` (if it has the same issue)
 
+This ensures developers with pending profiles can also save project drafts.
+
+---
+
+## Expected Result
+
+After this fix:
+- "Save as Draft" will work even with a pending agent account
+- "Submit for Review" will continue to be blocked (as intended by the `isAgentVerified` check in the UI)
+- No changes to RLS policies or database schema required
