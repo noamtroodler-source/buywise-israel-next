@@ -261,7 +261,7 @@ export default function Principles() {
               </h2>
               <div className="space-y-4">
                 <p className="text-lg text-muted-foreground leading-relaxed">
-                  Agents and professionals are valuable. They're necessary. And at the right moment, they're incredibly helpful.
+                  Agents and professionals are valuable — and at the right moment, they're essential.
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
                   Our role isn't to replace them — it's to <span className="text-foreground font-medium">prepare you</span>.
