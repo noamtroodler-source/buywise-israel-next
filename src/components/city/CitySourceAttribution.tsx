@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { CheckCircle2, ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, BookOpen, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-
-// Support both flat string and nested {date, source} formats
-type SourceValue = string | { date?: string; source?: string };
+import { Badge } from '@/components/ui/badge';
+import {
+  type SourceValue,
+  getDisplayableSources,
+  hasGovernmentVerification,
+} from '@/lib/utils/sourceFormatting';
 
 interface CitySourceAttributionProps {
   sources?: Record<string, SourceValue> | null;
@@ -13,27 +16,15 @@ interface CitySourceAttributionProps {
   className?: string;
 }
 
-// Format source value for display (includes date if available)
-const formatSourceValue = (value: SourceValue): string => {
-  if (typeof value === 'string') return value;
-  const parts: string[] = [];
-  if (value?.source) parts.push(value.source);
-  if (value?.date) parts.push(`(${value.date})`);
-  return parts.join(' ') || '';
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  price_data: 'Price Data',
-  rental_data: 'Rental Data',
-  arnona_data: 'Arnona Rates',
-  demographics: 'Demographics',
-  market_factors: 'Market Factors',
-};
-
 export function CitySourceAttribution({ sources, lastVerified, className }: CitySourceAttributionProps) {
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   
-  if (!sources || Object.keys(sources).length === 0) {
+  // Get displayable sources (filters out empty values and hidden categories)
+  const displayableSources = getDisplayableSources(sources);
+  const hasGovVerification = hasGovernmentVerification(sources);
+  
+  // Don't render if no meaningful sources
+  if (displayableSources.length === 0 && !hasGovVerification) {
     return null;
   }
 
@@ -57,17 +48,29 @@ export function CitySourceAttribution({ sources, lastVerified, className }: City
               )}
             </div>
             
-            {/* Source list */}
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-              {Object.entries(sources).map(([key, value]) => (
-                <div key={key} className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground/80">
-                    {SOURCE_LABELS[key] || key.replace(/_/g, ' ')}:
-                  </span>{' '}
-                  {formatSourceValue(value)}
-                </div>
-              ))}
-            </div>
+            {/* Source list - only show non-empty sources */}
+            {displayableSources.length > 0 && (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+                {displayableSources.map(({ key, label, value }) => (
+                  <div key={key} className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground/80">
+                      {label}:
+                    </span>{' '}
+                    {value}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Government verification badge */}
+            {hasGovVerification && (
+              <div className="mb-4">
+                <Badge variant="secondary" className="text-xs gap-1.5">
+                  <Building2 className="h-3 w-3" />
+                  Government verified source
+                </Badge>
+              </div>
+            )}
             
             {/* Methodology Collapsible */}
             <Collapsible open={isMethodologyOpen} onOpenChange={setIsMethodologyOpen}>
