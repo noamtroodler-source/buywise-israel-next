@@ -53,7 +53,7 @@ export function useDevelopers() {
       const { data, error } = await supabase
         .from('developers')
         .select('*')
-        .eq('status', 'approved')
+        .eq('status', 'active')
         .eq('is_verified', true)
         .order('name');
 
@@ -71,7 +71,7 @@ export function useDeveloper(slug: string) {
         .from('developers')
         .select('*')
         .eq('slug', slug)
-        .eq('status', 'approved')
+        .eq('status', 'active')
         .maybeSingle();
 
       if (error) throw error;
