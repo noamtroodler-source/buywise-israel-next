@@ -1,104 +1,113 @@
 
 
-# Fix Core Locations Not Saving During Onboarding
+# Fix Financing Method Toggle to Show the Action, Not Current State
 
-## Problem Identified
+## Problem
 
-When a new user signs up and adds a core location during the onboarding wizard (e.g., "Hanadi Fourteen Street"), the location is **not saved to the database**. The user arrives at their profile page and sees "None added" with an "Add Your First Location" button.
+In the Financing Method section on the profile page, when the user's current preference is "Paid in Full" (cash), the toggle displays:
+- **Label**: "Paying in Full"  
+- **Subtitle**: "Cash purchase"  
+- **Toggle**: OFF
 
-### Root Cause
+This is confusing because the toggle label describes the **current state**, not what happens when you toggle it. The user expects the toggle to show what you're switching **to** when you turn it on.
 
-The `useCreateBuyerProfile` hook in `src/hooks/useBuyerProfile.tsx` **explicitly lists each field** to insert but **omits two important fields**:
-
-1. `saved_locations` - Core locations added during onboarding
-2. `mortgage_preferences` - Mortgage settings from onboarding
-
-**Lines 86-100 (current broken code):**
-```typescript
-const { data, error } = await supabase
-  .from('buyer_profiles')
-  .insert({
-    user_id: user.id,
-    residency_status: profileData.residency_status || 'israeli_resident',
-    aliyah_year: profileData.aliyah_year || null,
-    is_first_property: profileData.is_first_property ?? true,
-    purchase_purpose: profileData.purchase_purpose || 'primary_residence',
-    buyer_entity: profileData.buyer_entity || 'individual',
-    onboarding_completed: profileData.onboarding_completed ?? true,
-    has_existing_property: profileData.has_existing_property ?? false,
-    is_upgrading: profileData.is_upgrading ?? false,
-    upgrade_sale_date: profileData.upgrade_sale_date || null,
-    arnona_discount_categories: profileData.arnona_discount_categories || [],
-    // MISSING: saved_locations and mortgage_preferences!
-  })
+## Current Behavior (Lines 79-84)
+```tsx
+<p className="text-sm font-medium">
+  {formData.includeMortgage ? 'Taking a Mortgage' : 'Paying in Full'}
+</p>
+<p className="text-xs text-muted-foreground">
+  {formData.includeMortgage ? 'Financing part of the purchase' : 'Cash purchase'}
+</p>
 ```
 
-Meanwhile, the `BuyerOnboarding.tsx` component correctly prepares these fields (lines 165-177):
-```typescript
-const savedLocations = onboardingLocations.map(loc => ({...}));
-const profileData = {
-  ...answers,
-  onboarding_completed: true,
-  mortgage_preferences: mortgagePreferences,
-  ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
-};
-await createProfile.mutateAsync(profileData);
-```
+When `includeMortgage = false` (Paid in Full):
+- Shows: "Paying in Full / Cash purchase" with toggle OFF
+- Problem: Turning the toggle ON doesn't mean "Paying in Full" - it means the opposite!
 
-The data is prepared correctly but **dropped silently** because `useCreateBuyerProfile` doesn't include those fields in the insert.
+## Expected Behavior
 
-### Database Evidence
+The toggle should describe **what happens when you turn it ON**:
 
-I queried the `buyer_profiles` table and found the user's profile created at `2026-01-26 19:13:32` has:
-```json
-{ "saved_locations": [] }
-```
+| Current State | Toggle Label | Toggle Subtitle | Toggle State |
+|---------------|--------------|-----------------|--------------|
+| Paid in Full | Take a Mortgage | Finance part of the purchase | OFF → turn ON to enable mortgage |
+| Taking Mortgage | Pay in Full | Cash purchase | ON → turn OFF to go back to cash |
 
-This confirms the locations were never saved.
-
----
+This is a common UX pattern where the toggle label describes the action you're opting into.
 
 ## The Fix
 
-Add the missing `saved_locations` and `mortgage_preferences` fields to the insert statement in `useCreateBuyerProfile`.
+### File: `src/components/profile/sections/MortgageSection.tsx`
 
-### File: `src/hooks/useBuyerProfile.tsx`
+Change lines 78-85 to use a **fixed label approach** that describes the action:
 
-**Lines 86-100 - Add two missing fields:**
-
-```typescript
-const { data, error } = await supabase
-  .from('buyer_profiles')
-  .insert({
-    user_id: user.id,
-    residency_status: profileData.residency_status || 'israeli_resident',
-    aliyah_year: profileData.aliyah_year || null,
-    is_first_property: profileData.is_first_property ?? true,
-    purchase_purpose: profileData.purchase_purpose || 'primary_residence',
-    buyer_entity: profileData.buyer_entity || 'individual',
-    onboarding_completed: profileData.onboarding_completed ?? true,
-    has_existing_property: profileData.has_existing_property ?? false,
-    is_upgrading: profileData.is_upgrading ?? false,
-    upgrade_sale_date: profileData.upgrade_sale_date || null,
-    arnona_discount_categories: profileData.arnona_discount_categories || [],
-    // ADD THESE TWO LINES:
-    saved_locations: profileData.saved_locations || [],
-    mortgage_preferences: profileData.mortgage_preferences || null,
-  })
+**Before:**
+```tsx
+<div>
+  <p className="text-sm font-medium">
+    {formData.includeMortgage ? 'Taking a Mortgage' : 'Paying in Full'}
+  </p>
+  <p className="text-xs text-muted-foreground">
+    {formData.includeMortgage ? 'Financing part of the purchase' : 'Cash purchase'}
+  </p>
+</div>
 ```
 
----
+**After:**
+```tsx
+<div>
+  <p className="text-sm font-medium">Take a Mortgage</p>
+  <p className="text-xs text-muted-foreground">
+    {formData.includeMortgage 
+      ? 'Currently financing part of the purchase' 
+      : 'Toggle on to include mortgage costs'}
+  </p>
+</div>
+```
+
+This approach:
+1. Uses a **fixed label** "Take a Mortgage" - the toggle is for opting INTO a mortgage
+2. The **subtitle dynamically explains** the current state or what toggling will do
+3. When OFF: "Toggle on to include mortgage costs"
+4. When ON: "Currently financing part of the purchase"
+
+### Icon Change (Lines 73-77)
+
+Also update the icon to always show the mortgage/credit card icon since that's what the toggle controls:
+
+**Before:**
+```tsx
+{formData.includeMortgage ? (
+  <CreditCard className="h-4 w-4 text-primary" />
+) : (
+  <Banknote className="h-4 w-4 text-primary" />
+)}
+```
+
+**After:**
+```tsx
+<CreditCard className="h-4 w-4 text-primary" />
+```
 
 ## Summary
 
-| File | Change |
-|------|--------|
-| `src/hooks/useBuyerProfile.tsx` | Add `saved_locations` and `mortgage_preferences` to the insert object (lines 99-100) |
+| File | Lines | Change |
+|------|-------|--------|
+| `src/components/profile/sections/MortgageSection.tsx` | 73-77 | Use fixed CreditCard icon |
+| `src/components/profile/sections/MortgageSection.tsx` | 78-85 | Fixed "Take a Mortgage" label with dynamic subtitle |
 
 ## Result After Fix
 
-- Core locations added during onboarding will be saved to the database
-- The profile page will show the user's saved locations immediately
-- Mortgage preferences will also persist correctly for new users
-- The fix ensures new users don't lose any data they entered during signup
+When user is "Paid in Full" (cash):
+- Label: "Take a Mortgage"
+- Subtitle: "Toggle on to include mortgage costs"
+- Toggle: OFF
+
+When user is "Taking a Mortgage":
+- Label: "Take a Mortgage" 
+- Subtitle: "Currently financing part of the purchase"
+- Toggle: ON
+
+This follows standard toggle UX where the label describes what you're opting into, and the ON/OFF state indicates whether that option is active.
 
