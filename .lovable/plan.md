@@ -1,55 +1,95 @@
 
-# Clean Up Unauthorized City Listings
+# Fix Project Sorting Bug
 
-## The Problem
-The mock data generator created listings for 6 cities that are NOT part of your official 25 market areas. These need to be removed to maintain data integrity.
+## Problem Identified
 
-## Cities to Remove (Not in Your 25)
+The sorting filters on the Projects page are not working because of a bug in `usePaginatedProjects.tsx`.
 
-| City | Properties | Projects | Total Listings |
-|------|------------|----------|----------------|
-| Bat Yam | 32 | 4 | 36 |
-| Givatayim | 32 | 4 | 36 |
-| Holon | 32 | 4 | 36 |
-| Nahariya | 32 | 4 | 36 |
-| Rehovot | 32 | 4 | 36 |
-| Rishon LeZion | 32 | 4 | 36 |
-| **TOTAL** | **192** | **24** | **216** |
-
-## Action Plan
-
-### Step 1: Delete Unauthorized Properties
-```sql
-DELETE FROM properties 
-WHERE city IN ('Bat Yam', 'Givatayim', 'Holon', 'Nahariya', 'Rehovot', 'Rishon LeZion');
-```
-
-### Step 2: Delete Unauthorized Projects
-```sql
-DELETE FROM projects 
-WHERE city IN ('Bat Yam', 'Givatayim', 'Holon', 'Nahariya', 'Rehovot', 'Rishon LeZion');
-```
-
-### Step 3: Update Seed Script for Future Prevention
-Modify `supabase/functions/seed-demo-data/index.ts` to ONLY use cities from the official 25-city roster fetched from the database, preventing this from happening again.
-
-## Technical Details
-
-### Current Seed Script Issue
-The seed script likely has a hardcoded city array that doesn't match the `cities` table. Will update it to:
+### Root Cause
+In `usePaginatedProjects.tsx` (lines 101-106), there's a broken filter change detection pattern:
 
 ```typescript
-// Fetch official cities from database
-const { data: officialCities } = await supabase
-  .from('cities')
-  .select('name');
-
-const CITIES = officialCities.map(c => c.name);
+// BUG: useState only returns the INITIAL value, it never updates!
+const prevFilterKey = useState(filterKey)[0];
+if (filterKey !== prevFilterKey) {
+  setPage(1);
+  setAllProjects([]);
+}
 ```
 
-### Result After Cleanup
-- 192 unauthorized properties removed
-- 24 unauthorized projects removed  
-- Seed script updated to only use your official 25 cities
-- Future mock data will always match your Areas pages
-- AI Value Snapshot will work for all remaining properties (since they're all in cities with data)
+When you click "Price: Low to High" or any other sort option:
+1. The `filters.sort_by` value changes
+2. `filterKey` (JSON stringified filters) changes
+3. BUT `prevFilterKey` stays at its initial value forever
+4. The comparison fails, so the page doesn't reset
+5. The query cache returns stale data instead of refetching with new sort order
+
+### Working Pattern (from Properties)
+The `usePaginatedProperties.tsx` uses the correct pattern with `useRef` and `useEffect`:
+
+```typescript
+const prevFilterKeyRef = useRef(filterKey);
+useEffect(() => {
+  if (filterKey !== prevFilterKeyRef.current) {
+    prevFilterKeyRef.current = filterKey;
+    setPage(1);
+    setAllProperties([]);
+  }
+}, [filterKey]);
+```
+
+## The Fix
+
+Update `src/hooks/usePaginatedProjects.tsx` to use the same working pattern as properties:
+
+### Changes to Make
+
+**File: `src/hooks/usePaginatedProjects.tsx`**
+
+1. Add `useEffect` and `useRef` to imports (line 1)
+2. Replace the broken filter detection logic (lines 101-106) with the working pattern
+
+**Before (broken):**
+```typescript
+import { useState, useCallback, useMemo } from 'react';
+
+// ... later in the hook ...
+
+// Reset page when filters change
+const prevFilterKey = useState(filterKey)[0];
+if (filterKey !== prevFilterKey) {
+  setPage(1);
+  setAllProjects([]);
+}
+```
+
+**After (fixed):**
+```typescript
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+
+// ... later in the hook ...
+
+// Reset page when filters change
+const prevFilterKeyRef = useRef(filterKey);
+useEffect(() => {
+  if (filterKey !== prevFilterKeyRef.current) {
+    prevFilterKeyRef.current = filterKey;
+    setPage(1);
+    setAllProjects([]);
+  }
+}, [filterKey]);
+```
+
+## Summary
+
+| File | Change |
+|------|--------|
+| `src/hooks/usePaginatedProjects.tsx` | Fix filter change detection using useRef + useEffect pattern |
+
+## Result After Fix
+
+- "Newest First" will show projects ordered by creation date (newest first)
+- "Price: Low to High" will show projects ordered by ascending price
+- "Price: High to Low" will show projects ordered by descending price  
+- "Completion Date" will show projects ordered by earliest completion date first
+- The fix matches the working pattern already used in the Properties/Rentals pages
