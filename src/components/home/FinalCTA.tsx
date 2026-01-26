@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, Wrench } from 'lucide-react';
+import { ArrowRight, Search, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function FinalCTA() {
@@ -35,9 +35,9 @@ export function FinalCTA() {
               </Link>
             </Button>
             <Button variant="outline" asChild className="gap-2">
-              <Link to="/tools">
-                <Wrench className="h-4 w-4" />
-                Try Our Tools
+              <Link to="/guides">
+                <BookOpen className="h-4 w-4" />
+                Browse Guides
               </Link>
             </Button>
           </div>
