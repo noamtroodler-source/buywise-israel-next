@@ -1,28 +1,25 @@
 
-# Fix Project Favorite Hearts to Use Blue Instead of Red
+# Fix Header Badge to Show Combined Favorites Count (Properties + Projects)
 
 ## The Problem
 
-On the Favorites page, the project favorite hearts are showing as **red** (`text-destructive`) instead of **blue** (`text-primary`) like the property and rental favorites.
+When you click a project's favorite heart on the /projects page, the header favorites badge **does not update**. This is because:
 
-| Category | Current Color | Expected Color |
-|----------|--------------|----------------|
-| Properties | ✅ Blue (primary) | Blue (primary) |
-| Rentals | ✅ Blue (primary) | Blue (primary) |
-| Projects | ❌ Red (destructive) | Blue (primary) |
+| Source | What It Tracks | Used in Header? |
+|--------|----------------|-----------------|
+| `useFavorites()` | Property favorites (Buy/Rent) | ✅ Yes |
+| `useProjectFavorites()` | Project favorites | ❌ No |
 
-## Root Cause
+The header's `favoriteCount` only includes property favorites, so project favorites are never reflected in the badge.
 
-The Favorites page (`src/pages/Favorites.tsx`) uses a **hardcoded button** for project favorites instead of the standardized `ProjectFavoriteButton` component. The hardcoded button has `text-destructive` styling.
-
-**Line 368:**
-```tsx
-className="h-8 w-8 bg-background/80 hover:bg-background text-destructive hover:text-destructive"
-```
+---
 
 ## The Fix
 
-Update the project favorite button in the Favorites page to use `text-primary` instead of `text-destructive`.
+Update the Header component to:
+1. Import `useProjectFavorites` hook
+2. Get `projectFavoriteIds` from that hook  
+3. Combine both counts for the badge display
 
 ---
 
@@ -30,20 +27,37 @@ Update the project favorite button in the Favorites page to use `text-primary` i
 
 | File | Change |
 |------|--------|
-| `src/pages/Favorites.tsx` | Change `text-destructive` → `text-primary` on line 368 |
+| `src/components/layout/Header.tsx` | Add project favorites to the total count |
 
 ---
 
-## Code Change
+## Technical Changes
 
-**Line 368** - Update from:
+### 1. Add Import
+
 ```tsx
-className="h-8 w-8 bg-background/80 hover:bg-background text-destructive hover:text-destructive"
+import { useProjectFavorites } from '@/hooks/useProjectFavorites';
+```
+
+### 2. Get Project Favorite IDs
+
+Add after the existing `useFavorites` call:
+
+```tsx
+const { favoriteIds } = useFavorites();
+const { projectFavoriteIds } = useProjectFavorites();
+```
+
+### 3. Update the Count Calculation
+
+Change from:
+```tsx
+const favoriteCount = favoriteIds?.length || 0;
 ```
 
 To:
 ```tsx
-className="h-8 w-8 bg-background/80 hover:bg-background text-primary hover:text-primary/80"
+const favoriteCount = (favoriteIds?.length || 0) + (projectFavoriteIds?.length || 0);
 ```
 
 ---
@@ -52,6 +66,7 @@ className="h-8 w-8 bg-background/80 hover:bg-background text-primary hover:text-
 
 | Before | After |
 |--------|-------|
-| 🔴 Red heart on project cards | 🔵 Blue heart on project cards |
+| Badge shows: Properties only | Badge shows: Properties + Projects |
+| Click project heart → No update | Click project heart → Badge updates instantly |
 
-All favorite hearts across the site will now use consistent blue (`text-primary`) styling, matching the brand color palette standards.
+This works for both **logged-in users** (data from database) and **guests** (data from sessionStorage via FavoritesContext), since both `useFavorites` and `useProjectFavorites` already handle that logic internally.
