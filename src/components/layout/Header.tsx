@@ -37,6 +37,7 @@ export function Header() {
   const favoriteCount = (favoriteIds?.length || 0) + (projectFavoriteIds?.length || 0);
   const isAgencyAdmin = !!myAgency;
   const hasDeveloperProfile = !!developerProfile;
+  const hasProfessionalRole = isAgent || isAgencyAdmin || hasDeveloperProfile || isDeveloper || isAdmin;
   const currencySymbol = currency === 'USD' ? '$' : '₪';
   const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
 
@@ -137,74 +138,76 @@ export function Header() {
             </Link>
           </Button>
 
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+        {user ? (
+            hasProfessionalRole ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-lg p-1.5">
+                  {/* User Info Header */}
+                  <div className="px-3 py-2 mb-1">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {profile?.full_name || 'Welcome'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                  <DropdownMenuSeparator className="bg-border/50 mb-1" />
+                  
+                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
+                    <Link to="/profile" className="flex items-center gap-2.5">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAgent && (
+                    <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
+                      <Link to="/agent" className="flex items-center gap-2.5">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        Agent Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isAgencyAdmin && (
+                    <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
+                      <Link to="/agency" className="flex items-center gap-2.5">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        Agency Portal
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {(isDeveloper || hasDeveloperProfile) && (
+                    <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
+                      <Link to="/developer" className="flex items-center gap-2.5">
+                        <Landmark className="h-4 w-4 text-muted-foreground" />
+                        Developer Portal
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
+                      <Link to="/admin" className="flex items-center gap-2.5">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="bg-border/50 my-1" />
+                  <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                <Link to="/profile">
                   <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-lg p-1.5">
-                {/* User Info Header */}
-                <div className="px-3 py-2 mb-1">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {profile?.full_name || 'Welcome'}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                </div>
-                <DropdownMenuSeparator className="bg-border/50 mb-1" />
-                
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                  <Link to="/profile" className="flex items-center gap-2.5">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    My Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                  <Link to="/favorites" className="flex items-center gap-2.5">
-                    <Heart className="h-4 w-4 text-muted-foreground" />
-                    Saved Properties
-                  </Link>
-                </DropdownMenuItem>
-                {isAgent && (
-                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                    <Link to="/agent" className="flex items-center gap-2.5">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      Agent Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAgencyAdmin && (
-                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                    <Link to="/agency" className="flex items-center gap-2.5">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      Agency Portal
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {(isDeveloper || hasDeveloperProfile) && (
-                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                    <Link to="/developer" className="flex items-center gap-2.5">
-                      <Landmark className="h-4 w-4 text-muted-foreground" />
-                      Developer Portal
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isAdmin && (
-                  <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-                    <Link to="/admin" className="flex items-center gap-2.5">
-                      <Shield className="h-4 w-4 text-muted-foreground" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator className="bg-border/50 my-1" />
-                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-muted-foreground hover:text-foreground">
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </Link>
+              </Button>
+            )
           ) : (
             <div className="hidden md:flex items-center gap-2">
               <Button variant="ghost" asChild>
