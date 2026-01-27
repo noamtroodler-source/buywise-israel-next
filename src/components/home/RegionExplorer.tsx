@@ -96,7 +96,7 @@ export function RegionExplorer() {
           </Button>
         </motion.div>
 
-        {/* Region Tabs */}
+        {/* Region Tabs - Enhanced touch targets */}
         <div className="flex flex-wrap gap-2 mb-5">
           {(Object.keys(regions) as Region[]).map((region) => {
             const { label, icon: Icon } = regions[region];
@@ -105,13 +105,13 @@ export function RegionExplorer() {
               <button
                 key={region}
                 onClick={() => setActiveRegion(region)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
+                className={`flex items-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all active:scale-[0.98] ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 border border-border'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4 flex-shrink-0" />
                 {label}
               </button>
             );
