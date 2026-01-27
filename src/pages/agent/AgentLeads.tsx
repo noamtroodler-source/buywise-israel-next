@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import {
   MessageSquare,
-  Phone,
   Mail,
   BarChart3,
   ArrowLeft,
@@ -95,10 +94,10 @@ export default function AgentLeads() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {isLoading ? (
                 <>
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                  {[1, 2, 3, 4, 5].map((i) => (
                     <Card key={i} className="rounded-2xl border-primary/10">
                       <CardContent className="p-4 text-center">
                         <Skeleton className="h-8 w-16 mx-auto mb-2" />
@@ -145,15 +144,6 @@ export default function AgentLeads() {
                       <p className="text-sm text-muted-foreground">WhatsApp</p>
                     </CardContent>
                   </Card>
-                  <Card className="rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5">
-                    <CardContent className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <Phone className="h-4 w-4 text-primary" />
-                      </div>
-                      <p className="text-2xl font-bold text-primary">{analytics?.callClicks || 0}</p>
-                      <p className="text-sm text-muted-foreground">Calls</p>
-                    </CardContent>
-                  </Card>
                   <Card className="rounded-2xl border-primary/10">
                     <CardContent className="p-4 text-center">
                       <div className="flex items-center justify-center gap-2 mb-1">
@@ -189,7 +179,6 @@ export default function AgentLeads() {
                   <InquiryPieChart
                     data={{
                       whatsapp: analytics?.whatsappClicks || 0,
-                      call: analytics?.callClicks || 0,
                       email: analytics?.emailClicks || 0,
                       form: analytics?.formClicks || 0,
                     }}

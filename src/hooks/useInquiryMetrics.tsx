@@ -124,7 +124,6 @@ function formatStatus(status: string): string {
 function formatType(type: string): string {
   const typeMap: Record<string, string> = {
     whatsapp: 'WhatsApp',
-    call: 'Phone Call',
     email: 'Email',
     form: 'Contact Form',
   };

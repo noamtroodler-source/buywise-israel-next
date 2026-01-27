@@ -21,7 +21,6 @@ interface AgencyAnalyticsData {
   agentPerformance: AgentPerformance[];
   inquiriesByType: {
     whatsapp: number;
-    call: number;
     email: number;
     form: number;
   };
@@ -40,7 +39,7 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
           totalInquiries: 0,
           conversionRate: 0,
           agentPerformance: [],
-          inquiriesByType: { whatsapp: 0, call: 0, email: 0, form: 0 },
+          inquiriesByType: { whatsapp: 0, email: 0, form: 0 },
         };
       }
 
@@ -70,7 +69,7 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
           totalInquiries: 0,
           conversionRate: 0,
           agentPerformance: [],
-          inquiriesByType: { whatsapp: 0, call: 0, email: 0, form: 0 },
+          inquiriesByType: { whatsapp: 0, email: 0, form: 0 },
         };
       }
 
@@ -163,7 +162,6 @@ export function useAgencyAnalytics(dateRange: DateRangeFilter = 'all') {
       // Group inquiries by type
       const inquiriesByType = {
         whatsapp: inquiries?.filter(i => i.inquiry_type === 'whatsapp').length || 0,
-        call: inquiries?.filter(i => i.inquiry_type === 'call').length || 0,
         email: inquiries?.filter(i => i.inquiry_type === 'email').length || 0,
         form: inquiries?.filter(i => i.inquiry_type === 'form').length || 0,
       };

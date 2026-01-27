@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export type InquiryType = 'whatsapp' | 'call' | 'email' | 'form';
+export type InquiryType = 'whatsapp' | 'email' | 'form';
 
 interface TrackInquiryParams {
   propertyId: string;

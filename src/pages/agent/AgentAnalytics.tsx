@@ -175,7 +175,7 @@ export default function AgentAnalytics() {
             {/* Charts Row */}
             <div className="grid gap-6 lg:grid-cols-2">
               <motion.div variants={itemVariants}>
-                <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, call: 0, email: 0, form: 0 }} />
+                <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
               </motion.div>
               <motion.div variants={itemVariants}>
                 <PropertyPerformanceChart data={propertyChartData} />
