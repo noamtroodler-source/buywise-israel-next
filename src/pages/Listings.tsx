@@ -154,7 +154,7 @@ export default function Listings() {
     <Layout>
       {/* Page Header */}
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
-        <div className="container py-8 md:py-10">
+        <div className="container py-6 md:py-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{pageContent.title}</h1>
           <p className="text-muted-foreground">{pageContent.subtitle}</p>
           <Link 
@@ -180,7 +180,7 @@ export default function Listings() {
         )}
 
         {/* Filters */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <PropertyFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
@@ -236,9 +236,9 @@ export default function Listings() {
             )}
           </>
         ) : (
-          <div className="text-center py-16 max-w-lg mx-auto">
+          <div className="text-center py-10 md:py-16 max-w-lg mx-auto px-4">
             {/* Icon */}
-            <div className="relative mx-auto w-20 h-20 mb-6">
+            <div className="relative mx-auto w-16 h-16 md:w-20 md:h-20 mb-4 md:mb-6">
               <div className="absolute inset-0 bg-muted rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Search className="h-8 w-8 text-muted-foreground" />

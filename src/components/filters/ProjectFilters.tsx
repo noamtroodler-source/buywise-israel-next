@@ -119,7 +119,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     });
   };
 
-  const filterButtonBase = "h-11 gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all";
+  const filterButtonBase = "h-11 min-h-[44px] gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all active:scale-[0.98] touch-manipulation";
   const filterButtonActive = "bg-accent/20 border-accent/40 text-foreground";
 
   return (
@@ -136,7 +136,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Select City</h3>
@@ -206,7 +206,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {statusOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Project Status</h3>
@@ -260,7 +260,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
           <TooltipProvider>
             <div className="p-4 space-y-5">
               {/* Header */}
@@ -302,7 +302,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     className={cn(
                       "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
@@ -334,7 +334,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               {/* Bathrooms Section */}
               <div className="space-y-2.5">
                 <span className="font-medium text-sm">Bathrooms</span>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     className={cn(
                       "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
@@ -392,7 +392,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Price Range</h3>
@@ -444,7 +444,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {yearOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Completion</h3>
@@ -493,7 +493,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {developerOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Developer</h3>
@@ -584,7 +584,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 {sortOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-2 bg-background border shadow-xl z-50" align="end">
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-2 bg-background border shadow-xl z-50" align="end">
               {SORT_OPTIONS.map(option => (
                 <button
                   key={option.value}
