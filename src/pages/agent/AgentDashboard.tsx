@@ -173,29 +173,29 @@ export default function AgentDashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" asChild className="border-primary/20 hover:bg-primary/5">
+              <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+                <Button variant="outline" size="sm" asChild className="border-primary/20 hover:bg-primary/5">
                   <Link to="/agent/settings">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
+                    <Settings className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Settings</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="border-primary/20 hover:bg-primary/5">
+                <Button variant="outline" size="sm" asChild className="border-primary/20 hover:bg-primary/5">
                   <Link to="/agent/analytics">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Analytics
+                    <BarChart3 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Analytics</span>
                   </Link>
                 </Button>
-                <Button asChild>
+                <Button size="sm" asChild>
                   <Link to="/agent/properties/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Property
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Add Property</span>
                   </Link>
                 </Button>
-                <Button asChild>
+                <Button size="sm" asChild>
                   <Link to="/agent/blog/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Blog
+                    <Plus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Add Blog</span>
                   </Link>
                 </Button>
               </div>

@@ -43,27 +43,32 @@ This plan covers a systematic audit and enhancement of mobile responsiveness acr
 
 ## Implementation Plan
 
-### Phase 1: Critical Bug Fixes
+### Phase 1: Critical Bug Fixes ✅ COMPLETED
 
-#### 1.1 Fix forwardRef Warning in CityAnchorCard
-**File:** `src/components/property/CityAnchorCard.tsx`
+#### 1.1 Fix forwardRef Warning in FavoriteButton and Badge ✅
+**Files:** `src/components/property/FavoriteButton.tsx`, `src/components/ui/badge.tsx`
 
-The Tooltip component is receiving a ref but CityAnchorCard isn't forwarding it properly. The button inside TooltipTrigger needs to handle the ref.
+Both components now properly use `React.forwardRef()` to handle ref forwarding.
 
-```typescript
-// Fix the asChild pattern with Tooltip
-<Tooltip>
-  <TooltipTrigger asChild>
-    <button 
-      type="button"
-      className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
-    >
-      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-    </button>
-  </TooltipTrigger>
-  // ...
-</Tooltip>
-```
+#### 1.2 Fix AgentDashboard Header Button Overflow ✅
+**File:** `src/pages/agent/AgentDashboard.tsx`
+
+Buttons now use `flex-wrap`, `size="sm"`, and hide text labels on mobile (icons only).
+
+#### 1.3 Constrain Filter Popover Widths ✅
+**File:** `src/components/filters/PropertyFilters.tsx`
+
+All PopoverContent components now use `w-[calc(100vw-2rem)] sm:w-[XXXpx]` for mobile-first responsive widths.
+
+#### 1.4 Footer Mobile Grid ✅
+**File:** `src/components/layout/Footer.tsx`
+
+Changed from `grid-cols-1` to `grid-cols-2` on mobile for better space utilization.
+
+#### 1.5 Enhanced useBreakpoint Hook ✅
+**File:** `src/hooks/useMediaQuery.ts`
+
+Created a robust `useMediaQuery` and `useBreakpoint` hook for responsive design utilities.
 
 ### Phase 2: Header & Navigation
 
