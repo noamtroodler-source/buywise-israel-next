@@ -3,17 +3,17 @@ import { Home, Mail, MapPin, MessageSquare } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="space-y-4">
+<footer className="border-t border-border bg-muted/30">
+      <div className="container py-8 md:py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+          {/* Brand - Full width on mobile */}
+          <div className="col-span-2 md:col-span-1 space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-                <Home className="h-5 w-5 text-primary-foreground" />
+              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-primary">
+                <Home className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">BuyWise</span>
-              <span className="text-xl font-bold text-primary">Israel</span>
+              <span className="text-lg md:text-xl font-bold text-foreground">BuyWise</span>
+              <span className="text-lg md:text-xl font-bold text-primary">Israel</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Helping international buyers navigate Israeli real estate with clarity and confidence.

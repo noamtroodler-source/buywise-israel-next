@@ -291,7 +291,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Location</h3>
@@ -384,7 +384,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Price Range</h3>
@@ -441,7 +441,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
             <div className="p-4 space-y-5">
               {/* Header */}
               <div className="flex items-center justify-between">
@@ -580,7 +580,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {typeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
+          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Property Type</h3>
