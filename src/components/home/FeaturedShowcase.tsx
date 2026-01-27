@@ -40,12 +40,12 @@ export function FeaturedShowcase() {
             </p>
           </div>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-3">
+          {/* Tabs - Enhanced touch targets for mobile */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="inline-flex rounded-lg bg-background p-1 border border-border">
               <button
                 onClick={() => setActiveTab('sale')}
-                className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                className={`min-h-[44px] px-4 sm:px-5 py-2.5 text-sm font-medium rounded-md transition-colors active:scale-[0.98] ${
                   activeTab === 'sale'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
@@ -55,7 +55,7 @@ export function FeaturedShowcase() {
               </button>
               <button
                 onClick={() => setActiveTab('rent')}
-                className={`px-5 py-2.5 text-sm font-medium rounded-md transition-colors ${
+                className={`min-h-[44px] px-4 sm:px-5 py-2.5 text-sm font-medium rounded-md transition-colors active:scale-[0.98] ${
                   activeTab === 'rent'
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground'

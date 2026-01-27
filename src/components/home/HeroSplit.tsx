@@ -58,22 +58,22 @@ export function HeroSplit() {
       </div>
 
       {/* Content */}
-      <div className="container relative z-10 py-10 md:py-14">
+      <div className="container relative z-10 py-8 md:py-14">
         <div className="max-w-xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-4"
+            className="space-y-3 md:space-y-4"
           >
             {/* Headline */}
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
               <span className="text-primary">Israel</span> Real Estate,
               <span className="block">Reinvented for You</span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
               Built for internationals—transparent costs, market insights, and local context in English. Finally.
             </p>
 
@@ -82,10 +82,10 @@ export function HeroSplit() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
-              className="pt-2"
+              className="pt-1 md:pt-2"
             >
-              <form onSubmit={handleSearch} className="bg-background rounded-xl p-2.5 shadow-xl">
-                <div className="flex flex-col sm:flex-row gap-3">
+              <form onSubmit={handleSearch} className="bg-background rounded-xl p-2 sm:p-2.5 shadow-xl">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   {/* City Search Input */}
                   <div className="flex-1">
                     <CitySearchInput
@@ -97,7 +97,7 @@ export function HeroSplit() {
 
                   {/* Category Select */}
                   <Select value={category} onValueChange={(val) => setCategory(val as SearchCategory)}>
-                    <SelectTrigger className="w-full sm:w-[140px] h-12 gap-2">
+                    <SelectTrigger className="w-full sm:w-[140px] h-11 sm:h-12 gap-2">
                       {getCategoryIcon()}
                       <SelectValue />
                     </SelectTrigger>
@@ -123,25 +123,25 @@ export function HeroSplit() {
               </form>
             </motion.div>
 
-            {/* Trust Indicators */}
+            {/* Trust Indicators - Optimized for mobile wrapping */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap items-center gap-3 pt-2"
+              className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 md:pt-2"
             >
-              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-                <House className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                <House className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                 <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
                 <span className="text-white/70">For Sale</span>
               </span>
-              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-                <KeyRound className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                <KeyRound className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                 <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
                 <span className="text-white/70">Rentals</span>
               </span>
-              <span className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1.5 text-sm text-white">
-                <HardHat className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                <HardHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
                 <span className="font-medium">{stats?.projectsCount ?? 15}+</span>
                 <span className="text-white/70">Projects</span>
               </span>
