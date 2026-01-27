@@ -245,7 +245,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   };
 
   // Filter button base styles
-  const filterButtonBase = "h-11 gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all";
+  const filterButtonBase = "h-11 min-h-[44px] gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all active:scale-[0.98] touch-manipulation";
   const filterButtonActive = "bg-primary text-primary-foreground border-primary";
 
   return (
@@ -485,7 +485,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     </Tooltip>
                   </TooltipProvider>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     className={cn(
                       "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
@@ -517,7 +517,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               {/* Bathrooms Section */}
               <div className="space-y-2.5">
                 <span className="font-medium text-sm">Bathrooms</span>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     className={cn(
                       "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
@@ -702,7 +702,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
             >
               <Bell className="h-4 w-4" />
-              <span>Create Alert</span>
+              <span className="hidden sm:inline">Create Alert</span>
             </Button>
           )}
         </div>
