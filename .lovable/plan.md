@@ -1,164 +1,118 @@
 
-# Simplify Profile Icon in Header
 
-## Current Situation
+# Remove "Calls" from Analytics Tracking
 
-The profile icon dropdown currently shows:
-- User name & email
-- My Profile
-- Saved Properties ← **redundant** (heart icon already in header)
-- Agent Dashboard (if agent)
-- Agency Portal (if agency admin)
-- Developer Portal (if developer)
-- Admin Panel (if admin)
-- Sign Out
+## Overview
 
-The Profile page **already has a Sign Out button** in the `ProfileWelcomeHeader` component, so Sign Out in the dropdown is also somewhat redundant.
+Since the platform only allows WhatsApp and Email contact methods (Call buttons were removed), we need to remove the "Calls" metric from all analytics dashboards and related components to avoid showing confusing empty stats.
 
 ---
 
-## Recommendation
+## Files to Modify
 
-**For regular users (non-agents/developers/admins)**: Remove the dropdown entirely and make the profile icon a direct link to `/profile`. This is cleaner and faster.
+### 1. `src/pages/agent/AgentLeads.tsx`
+**Remove the Calls stat card and update the grid**
 
-**For professional users (agents, developers, admins)**: Keep a simplified dropdown that provides quick access to their professional dashboards, since navigating to profile first to access the dashboard adds friction.
+- **Lines 14, 148-156**: Remove the `Phone` import and the Calls stat card
+- **Lines 192**: Remove `call` from the `InquiryPieChart` data prop
+- **Lines 98**: Change grid from `lg:grid-cols-6` to `lg:grid-cols-5` (removing one column)
+
+### 2. `src/components/agent/analytics/InquiryPieChart.tsx`
+**Remove call from the chart data and interface**
+
+- **Line 9**: Remove `call: number;` from interface
+- **Lines 17-18**: Remove "Phone Calls" from `chartData` array
+- **Lines 36-37, 62-63**: Update tooltip text to remove "phone calls" reference
+
+### 3. `src/hooks/useAgentInquiryAnalytics.tsx`
+**Remove call tracking from analytics hook**
+
+- **Line 10**: Remove `callClicks: number;` from interface
+- **Lines 67-72**: Remove `call` from `typeCounts` object
+- **Line 147**: Remove `callClicks` from return object
+
+### 4. `src/hooks/useAgentAnalytics.tsx`
+**Remove call from agent analytics interface and calculations**
+
+- **Lines 18-24**: Remove `call` from `inquiriesByType` interface
+- **Line 41, 71**: Remove `call: 0` from default return objects
+- **Line 143**: Remove call filter line
+
+### 5. `src/hooks/useAgencyAnalytics.tsx`
+**Remove call from agency analytics interface and calculations**
+
+- **Lines 22-27**: Remove `call` from `inquiriesByType` interface
+- **Line 43, 73**: Remove `call: 0` from default return objects
+- **Line 166**: Remove call filter line
+
+### 6. `src/hooks/useInquiryMetrics.tsx`
+**Remove call from type formatting**
+
+- **Line 127**: Remove `call: 'Phone Call'` from `typeMap`
+
+### 7. `src/hooks/useInquiryTracking.tsx`
+**Remove call from InquiryType**
+
+- **Line 5**: Change `'whatsapp' | 'call' | 'email' | 'form'` to `'whatsapp' | 'email' | 'form'`
+
+### 8. `src/hooks/useProjectInquiryTracking.tsx`
+**Remove call from ProjectInquiryType**
+
+- **Line 5**: Change `'whatsapp' | 'call' | 'email' | 'form'` to `'whatsapp' | 'email' | 'form'`
 
 ---
 
-## Solution
+## Detailed Changes
 
-### `src/components/layout/Header.tsx`
-
-**Logic:**
+### AgentLeads.tsx - Stats Grid Update
 
 ```text
-If user is regular buyer (no special roles):
-  → Profile icon is direct <Link> to /profile (no dropdown)
-  
-If user is agent/developer/admin:
-  → Keep dropdown with:
-    - User name & email (header)
-    - My Profile
-    - [Agent Dashboard] (if agent)
-    - [Agency Portal] (if agency admin)
-    - [Developer Portal] (if developer)
-    - [Admin Panel] (if admin)
-    - Sign Out
+Before (6 columns):
+┌────────┬────────┬────────┬────────┬────────┬────────┐
+│ Views  │ Saves  │ Clicks │WhatsApp│ Calls  │ Emails │
+└────────┴────────┴────────┴────────┴────────┴────────┘
+
+After (5 columns):
+┌────────┬────────┬────────┬────────┬────────┐
+│ Views  │ Saves  │ Clicks │WhatsApp│ Emails │
+└────────┴────────┴────────┴────────┴────────┘
 ```
 
-**Changes:**
+### InquiryPieChart - Data Update
 
-1. Create a condition to check if user has any professional role:
-   ```tsx
-   const hasProfessionalRole = isAgent || isAgencyAdmin || hasDeveloperProfile || isDeveloper || isAdmin;
-   ```
-
-2. **If no professional role**: Replace `DropdownMenu` with a simple `Button` that links to `/profile`
-
-3. **If has professional role**: Keep dropdown but remove "Saved Properties" since it's redundant
-
----
-
-## Visual Result
-
-**Regular Users (buyers):**
 ```text
-Before:                           After:
-┌────────────────────┐           ┌──────┐
-│ Noam Troodler      │           │  👤  │ ← Click goes directly
-│ you4@gmail.com     │     →     └──────┘   to /profile
-├────────────────────┤
-│ 👤 My Profile      │
-│ ♥ Saved Properties │
-├────────────────────┤
-│ → Sign Out         │
-└────────────────────┘
-```
+Before:
+- WhatsApp
+- Phone Calls  ← removed
+- Emails
+- Forms
 
-**Professional Users (agents, developers, admins):**
-```text
-Before:                           After:
-┌────────────────────┐           ┌────────────────────┐
-│ Noam Troodler      │           │ Noam Troodler      │
-│ you4@gmail.com     │           │ you4@gmail.com     │
-├────────────────────┤     →     ├────────────────────┤
-│ 👤 My Profile      │           │ 👤 My Profile      │
-│ ♥ Saved Properties │ (removed) │ 🏢 Agent Dashboard │
-│ 🏢 Agent Dashboard │           │ → Sign Out         │
-│ → Sign Out         │           └────────────────────┘
-└────────────────────┘
+After:
+- WhatsApp
+- Emails
+- Forms
 ```
 
 ---
 
-## Code Changes
+## Note on Database
 
-### Lines 140-207 in `src/components/layout/Header.tsx`
-
-Replace the existing `{user ? ( ... )}` block with:
-
-```tsx
-{user ? (
-  hasProfessionalRole ? (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <User className="h-5 w-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-lg p-1.5">
-        {/* User Info Header */}
-        <div className="px-3 py-2 mb-1">
-          <p className="text-sm font-medium text-foreground truncate">
-            {profile?.full_name || 'Welcome'}
-          </p>
-          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-        </div>
-        <DropdownMenuSeparator className="bg-border/50 mb-1" />
-        
-        <DropdownMenuItem asChild className="rounded-lg px-3 py-2">
-          <Link to="/profile">
-            <User className="h-4 w-4 text-muted-foreground" />
-            My Profile
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Professional dashboard links - kept as-is */}
-        {isAgent && ...}
-        {isAgencyAdmin && ...}
-        {(isDeveloper || hasDeveloperProfile) && ...}
-        {isAdmin && ...}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
-          <LogOut className="h-4 w-4" />
-          Sign Out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ) : (
-    /* Regular user - direct link to profile */
-    <Button variant="ghost" size="icon" className="rounded-full" asChild>
-      <Link to="/profile">
-        <User className="h-5 w-5" />
-      </Link>
-    </Button>
-  )
-) : (
-  /* Not logged in - show Sign In / Sign Up buttons */
-  ...
-)}
-```
+The database still stores `call` as a valid inquiry type (for historical data or future use), but we simply won't display it in the UI since users can't generate new call inquiries anymore. This is a UI-only change that aligns with the existing platform strategy.
 
 ---
 
 ## Summary
 
-| Change | Description |
-|--------|-------------|
-| Add `hasProfessionalRole` variable | Check if user is agent/agency admin/developer/admin |
-| Regular users | Profile icon links directly to `/profile` (no dropdown) |
-| Professional users | Keep dropdown but remove "Saved Properties" |
-| Sign Out for regular users | Already available on Profile page |
+| File | Change |
+|------|--------|
+| `AgentLeads.tsx` | Remove Calls stat card, update grid to 5 columns |
+| `InquiryPieChart.tsx` | Remove `call` from interface and chart data |
+| `useAgentInquiryAnalytics.tsx` | Remove `callClicks` from interface and return |
+| `useAgentAnalytics.tsx` | Remove `call` from `inquiriesByType` |
+| `useAgencyAnalytics.tsx` | Remove `call` from `inquiriesByType` |
+| `useInquiryMetrics.tsx` | Remove `call` from type formatting map |
+| `useInquiryTracking.tsx` | Remove `call` from `InquiryType` type |
+| `useProjectInquiryTracking.tsx` | Remove `call` from `ProjectInquiryType` type |
 
-This creates a cleaner, faster experience for regular buyers while maintaining quick dashboard access for professionals who need it.
+This cleans up the analytics UI to only show the contact methods that are actually available to users (WhatsApp, Email, and Form submissions).
+
