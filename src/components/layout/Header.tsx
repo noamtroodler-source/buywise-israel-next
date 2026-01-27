@@ -123,11 +123,11 @@ export function Header() {
         </nav>
 
         {/* Right Side */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Preferences Button */}
           <PreferencesDialog />
-          {/* Favorites Icon - visible to all users */}
-          <Button variant="ghost" size="icon" className="relative rounded-full hidden md:flex" asChild>
+          {/* Favorites Icon - visible to all users on all screen sizes */}
+          <Button variant="ghost" size="icon" className="relative rounded-full h-10 w-10" asChild>
             <Link to="/favorites">
               <Heart className={favoriteCount > 0 ? "h-5 w-5 fill-primary text-primary" : "h-5 w-5"} />
               {favoriteCount > 0 && (
@@ -142,7 +142,7 @@ export function Header() {
             hasProfessionalRole ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
                     <User className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -202,7 +202,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="ghost" size="icon" className="rounded-full" asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-10 w-10" asChild>
                 <Link to="/profile">
                   <User className="h-5 w-5" />
                 </Link>
@@ -219,22 +219,27 @@ export function Header() {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - 44px touch target */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden h-10 w-10"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background">
-          <nav className="container py-4 flex flex-col gap-2">
+      {/* Mobile Menu with smooth animation */}
+      <div 
+        className={`md:hidden border-t border-border bg-background overflow-hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <nav className="container py-4 flex flex-col gap-1">
             {/* User Section (when logged in) */}
             {user ? (
               <>
@@ -250,67 +255,52 @@ export function Header() {
                   </div>
                 </div>
                 
-                {/* Quick access links */}
+                {/* Quick access links - min 44px touch targets */}
                 <Link 
                   to="/profile" 
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <User className="h-4 w-4" />
+                  <User className="h-5 w-5" />
                   My Profile
-                </Link>
-                <Link 
-                  to="/favorites" 
-                  className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <Heart className="h-4 w-4" />
-                    Saved Properties
-                  </span>
-                  {favoriteCount > 0 && (
-                    <Badge variant="secondary" className="rounded-full text-xs">
-                      {favoriteCount}
-                    </Badge>
-                  )}
                 </Link>
                 {isAgent && (
                   <Link 
                     to="/agent" 
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Building2 className="h-4 w-4" />
+                    <Building2 className="h-5 w-5" />
                     Agent Dashboard
                   </Link>
                 )}
                 {isAgencyAdmin && (
                   <Link 
                     to="/agency" 
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Users className="h-4 w-4" />
+                    <Users className="h-5 w-5" />
                     Agency Portal
                   </Link>
                 )}
                 {(isDeveloper || hasDeveloperProfile) && (
                   <Link 
                     to="/developer" 
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Landmark className="h-4 w-4" />
+                    <Landmark className="h-5 w-5" />
                     Developer Portal
                   </Link>
                 )}
                 {isAdmin && (
                   <Link 
                     to="/admin" 
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Shield className="h-4 w-4" />
+                    <Shield className="h-5 w-5" />
                     Admin Panel
                   </Link>
                 )}
@@ -345,72 +335,73 @@ export function Header() {
               </>
             )}
             
+            {/* Main navigation links - 44px touch targets */}
             <Link 
               to="/listings?status=for_sale"
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Buy
             </Link>
             <Link 
               to="/listings?status=for_rent" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Rent
             </Link>
             <Link 
               to="/projects" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Projects
             </Link>
             <Link 
               to="/tools" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Tools
             </Link>
             <Link 
               to="/guides" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Guides
             </Link>
             <Link 
               to="/areas" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Areas
             </Link>
             <Link 
               to="/blog" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blog
             </Link>
             <Link 
               to="/advertise" 
-              className="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md"
+              className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
               onClick={() => setMobileMenuOpen(false)}
             >
               Advertise
             </Link>
             <Link 
               to="/about" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
             </Link>
             <Link 
               to="/contact" 
-              className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
               onClick={() => setMobileMenuOpen(false)}
             >
               Contact
@@ -432,9 +423,9 @@ export function Header() {
             {user ? (
               <button 
                 onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md w-full text-left"
+                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg active:bg-muted/80 w-full text-left"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-5 w-5" />
                 Sign Out
               </button>
             ) : (
@@ -442,14 +433,14 @@ export function Header() {
                 <hr className="my-2 border-border" />
                 <Link 
                   to="/auth" 
-                  className="px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md"
+                  className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link 
                   to="/auth?tab=signup" 
-                  className="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-md"
+                  className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up
@@ -458,7 +449,6 @@ export function Header() {
             )}
           </nav>
         </div>
-      )}
     </header>
   );
 }
