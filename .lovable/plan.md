@@ -1,457 +1,381 @@
 
-# Comprehensive SEO Meta Tags Implementation
+# Comprehensive Mobile Responsiveness Audit for BuyWise Israel
 
 ## Overview
 
-This plan implements a robust, production-grade SEO system for BuyWise Israel that will dramatically improve search engine visibility, social sharing appearance, and rich results in Google. The implementation follows real estate industry best practices and Schema.org standards.
+This plan covers a systematic audit and enhancement of mobile responsiveness across the entire BuyWise Israel platform. The audit identified 45+ pages and 100+ components that need attention for consistent mobile experience.
 
 ---
 
-## Current State Analysis
+## Current State Assessment
 
-**What exists:**
-- Static meta tags in `index.html` (one-size-fits-all for entire site)
-- No dynamic meta tags on detail pages
-- No JSON-LD structured data
-- No canonical URLs
-- No page-specific titles
+### Strengths Already in Place
+- Mobile menu exists in Header with proper navigation
+- Many components use Tailwind responsive prefixes (sm:, md:, lg:)
+- MobileContactBar components exist for Property and Project detail pages
+- `useIsMobile` hook available for conditional rendering
+- PropertyCard and similar cards use responsive grid layouts
 
-**Impact of missing SEO:**
-- All pages share the same title/description in search results
-- Social shares (WhatsApp, Facebook, Twitter) show generic site info
-- No rich snippets for properties (price, bedrooms, etc. in search results)
-- Potential duplicate content issues without canonical URLs
+### Critical Issues Identified
+
+**1. Console Error - forwardRef Warning**
+- `CityAnchorCard` component has a ref forwarding issue with Tooltip
+- This causes React warnings and potential issues on mobile
+
+**2. Layout Issues to Address**
+- Some button groups overflow on small screens (AgentDashboard header buttons)
+- Footer 4-column grid doesn't stack properly on mobile
+- Filter popovers may be too wide for mobile screens
+- Some text truncation needed for long titles on mobile
+
+**3. Touch Target Concerns**
+- Some buttons are below 44px minimum touch target
+- Filter toggle buttons may be too small
+- Close buttons on modals need larger tap areas
+
+**4. Missing Mobile Optimizations**
+- No swipe gestures on property image carousels
+- Compare page table not optimized for horizontal scroll
+- Calculator tools have complex layouts not ideal for mobile
+- Some padding inconsistencies (desktop padding too large for mobile)
 
 ---
 
-## Implementation Architecture
+## Implementation Plan
 
-```text
-src/
-├── lib/
-│   └── seo/
-│       ├── index.ts              # Re-exports all SEO utilities
-│       ├── constants.ts          # Site-wide SEO constants
-│       ├── useSEO.ts             # React hook for dynamic meta tags
-│       ├── jsonLd.ts             # JSON-LD schema generators
-│       └── metaGenerators.ts     # Meta tag content generators
-├── components/
-│   └── seo/
-│       └── SEOHead.tsx           # Component that applies meta tags
-```
+### Phase 1: Critical Bug Fixes
 
----
+#### 1.1 Fix forwardRef Warning in CityAnchorCard
+**File:** `src/components/property/CityAnchorCard.tsx`
 
-## Files to Create
-
-### 1. `src/lib/seo/constants.ts`
-Site-wide SEO constants used across all pages:
+The Tooltip component is receiving a ref but CityAnchorCard isn't forwarding it properly. The button inside TooltipTrigger needs to handle the ref.
 
 ```typescript
-export const SITE_CONFIG = {
-  siteName: 'BuyWise Israel',
-  siteUrl: 'https://buywiseisrael.com',
-  defaultTitle: 'BuyWise Israel | Property Discovery for International Buyers',
-  defaultDescription: 'Navigate Israeli real estate with clarity and confidence. Explore properties, calculate costs, and understand the market — built for international buyers.',
-  defaultImage: 'https://buywiseisrael.com/og-image.png',
-  twitterHandle: '@BuyWiseIsrael',
-  locale: 'en_US',
-  currency: 'ILS',
-};
-
-export const PROPERTY_TYPE_LABELS: Record<string, string> = {
-  apartment: 'Apartment',
-  garden_apartment: 'Garden Apartment',
-  penthouse: 'Penthouse',
-  mini_penthouse: 'Mini Penthouse',
-  duplex: 'Duplex',
-  house: 'House',
-  cottage: 'Cottage',
-  land: 'Land',
-  commercial: 'Commercial Property',
-};
-
-export const LISTING_STATUS_LABELS: Record<string, string> = {
-  for_sale: 'For Sale',
-  for_rent: 'For Rent',
-  sold: 'Sold',
-  rented: 'Rented',
-};
-
-export const PROJECT_STATUS_LABELS: Record<string, string> = {
-  planning: 'Planning Stage',
-  pre_sale: 'Pre-Sale',
-  foundation: 'Foundation Stage',
-  structure: 'Under Construction',
-  finishing: 'Finishing Stage',
-  delivery: 'Ready for Delivery',
-};
+// Fix the asChild pattern with Tooltip
+<Tooltip>
+  <TooltipTrigger asChild>
+    <button 
+      type="button"
+      className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+    >
+      <Info className="h-3.5 w-3.5 text-muted-foreground" />
+    </button>
+  </TooltipTrigger>
+  // ...
+</Tooltip>
 ```
 
-### 2. `src/lib/seo/metaGenerators.ts`
-Functions that generate optimized meta content for each entity type:
+### Phase 2: Header & Navigation
 
-**Property Meta Generation:**
-- Title: "3 Bed Apartment in Tel Aviv | ₪2,500,000 | BuyWise Israel"
-- Description: "Beautiful 3 bedroom apartment for sale in Neve Tzedek, Tel Aviv. 95 sqm, renovated condition, with balcony and parking. Listed by [Agent Name]."
+#### 2.1 Header Mobile Improvements
+**File:** `src/components/layout/Header.tsx`
 
-**Project Meta Generation:**
-- Title: "Haifa Heights | New Development by [Developer] | From ₪1,800,000"
-- Description: "Luxury new construction project in Haifa with 45 available units. 1-4 bedroom apartments from ₪1.8M. Expected completion: 2026."
+- Ensure Favorites badge is visible on mobile (currently hidden md:flex)
+- Improve mobile menu styling for better touch targets
+- Add smooth transition when mobile menu opens/closes
 
-**City/Area Meta Generation:**
-- Title: "Real Estate in Tel Aviv | Market Data & Properties | BuyWise Israel"
-- Description: "Explore Tel Aviv real estate: current market prices, trends, and available properties. Average price: ₪X/sqm. X listings available."
+#### 2.2 Footer Mobile Improvements  
+**File:** `src/components/layout/Footer.tsx`
 
-### 3. `src/lib/seo/jsonLd.ts`
-JSON-LD structured data generators following Schema.org:
-
-**Property Schema (RealEstateListing):**
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "RealEstateListing",
-  "name": "3 Bedroom Apartment in Neve Tzedek",
-  "description": "...",
-  "url": "https://buywiseisrael.com/property/abc123",
-  "image": ["https://..."],
-  "datePosted": "2024-01-15",
-  "offers": {
-    "@type": "Offer",
-    "price": "2500000",
-    "priceCurrency": "ILS",
-    "availability": "https://schema.org/InStock"
-  },
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Tel Aviv",
-    "addressRegion": "Tel Aviv District",
-    "addressCountry": "IL"
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": 32.0853,
-    "longitude": 34.7818
-  },
-  "numberOfRooms": 3,
-  "numberOfBathroomsTotal": 2,
-  "floorSize": {
-    "@type": "QuantitativeValue",
-    "value": 95,
-    "unitCode": "MTK"
-  }
-}
-```
-
-**Project Schema (Place + Product):**
-- Combines Place schema for location with Product schema for units
-- Includes developer Organization schema
-- Adds AggregateOffer for price range
-
-**BreadcrumbList Schema:**
-- Generates breadcrumb structured data for all detail pages
-- Improves search result appearance with breadcrumb trails
-
-### 4. `src/lib/seo/useSEO.ts`
-React hook that manages document head updates:
+Current: `grid-cols-1 md:grid-cols-4` - needs better mobile spacing
 
 ```typescript
-interface SEOProps {
-  title?: string;
-  description?: string;
-  image?: string;
-  url?: string;
-  type?: 'website' | 'article' | 'product';
-  jsonLd?: object | object[];
-  noindex?: boolean;
-}
+// Improve to 2-column on small screens
+<div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+```
 
-export function useSEO(props: SEOProps) {
+### Phase 3: Homepage Components
+
+#### 3.1 Hero Section
+**File:** `src/components/home/HeroSplit.tsx`
+
+Current mobile experience is good but can improve:
+- Trust indicator pills may wrap awkwardly
+- Search form stacks well but needs tighter padding on mobile
+
+#### 3.2 Featured Showcase
+**File:** `src/components/home/FeaturedShowcase.tsx`
+
+- Property grid is responsive (1/2/3/4 columns)
+- Mobile "View All" button exists - good pattern
+- Tab buttons could use better touch sizing
+
+#### 3.3 Region Explorer
+**File:** `src/components/home/RegionExplorer.tsx`
+
+- Region tabs use flexwrap which works
+- City cards grid is `grid-cols-2 sm:grid-cols-4` - good
+- Card aspect ratio maintained - good
+
+### Phase 4: Listings & Filters
+
+#### 4.1 Property Filters Mobile Sheet
+**File:** `src/components/filters/PropertyFilters.tsx`
+
+- "More Filters" opens a Sheet - good mobile pattern
+- Some popovers (Price, Beds/Baths) may need width constraints
+- Consider making all filter popovers use Sheet on mobile
+
+Changes needed:
+```typescript
+// Add responsive width to PopoverContent
+<PopoverContent 
+  className="w-[calc(100vw-2rem)] sm:w-[340px] p-0 bg-background" 
+  align="start"
+>
+```
+
+#### 4.2 Listings Page
+**File:** `src/pages/Listings.tsx`
+
+- Grid is responsive: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
+- Load More button is full width - good
+- Empty state could be more compact on mobile
+
+### Phase 5: Property/Project Cards
+
+#### 5.1 Property Card
+**File:** `src/components/property/PropertyCard.tsx`
+
+- Card is well-structured for mobile
+- Image navigation arrows show on hover (need touch alternative)
+- Compact mode works well
+
+Improvement: Add touch swipe support for image carousel
+
+#### 5.2 Project Cards
+**Files in:** `src/components/project/`
+
+- Similar patterns to PropertyCard
+- ProjectStickyCard already has mobile-specific MobileContactBar
+
+### Phase 6: Detail Pages
+
+#### 6.1 Property Detail
+**File:** `src/pages/PropertyDetail.tsx`
+
+- Two-column layout collapses to single column
+- MobileContactBar exists for bottom sticky CTA
+- Sticky sidebar hidden on mobile - correct
+
+Issues to fix:
+- Padding adjustments for mobile: `py-6 md:py-8 pb-24 md:pb-8`
+- Ensure all sections have proper mobile spacing
+
+#### 6.2 Project Detail
+**File:** `src/pages/ProjectDetail.tsx`
+
+- Similar structure to PropertyDetail
+- ProjectStickyCard and ProjectMobileContactBar exist
+- Unit selector tabs may need horizontal scroll on mobile
+
+#### 6.3 Area/City Detail
+**File:** `src/pages/AreaDetail.tsx`
+
+- Hero, stats, and sections stack naturally
+- Market overview cards need responsive grid
+
+### Phase 7: Dashboard Pages
+
+#### 7.1 Agent Dashboard
+**File:** `src/pages/agent/AgentDashboard.tsx`
+
+Critical issue: Header button group overflows on mobile
+
+```typescript
+// Current - buttons in row without wrap
+<div className="flex gap-2">
+  <Button>Settings</Button>
+  <Button>Analytics</Button>
+  <Button>Add Property</Button>
+  <Button>Add Blog</Button>
+</div>
+
+// Fix - responsive layout
+<div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
+  // Or use grid on mobile
+</div>
+```
+
+#### 7.2 Profile Page
+**File:** `src/pages/Profile.tsx`
+
+- Two-column layout: `lg:grid-cols-[1fr,380px]`
+- Stacks to single column on mobile - good
+- Sections use Card components that work well
+
+### Phase 8: Tools & Calculators
+
+#### 8.1 Mortgage Calculator
+**File:** `src/components/tools/MortgageCalculator.tsx`
+
+- Uses ToolLayout which has responsive two-column design
+- Left/right columns stack on mobile
+- Complex inputs work but may feel cramped
+
+#### 8.2 Tool Layout Shared Component
+**File:** `src/components/tools/shared/ToolLayout.tsx`
+
+Current responsive grid: `lg:grid-cols-[1fr,420px]`
+- Order swaps on mobile (results first)
+- This is good UX for calculators
+
+### Phase 9: Compare Pages
+
+#### 9.1 Compare Properties
+**File:** `src/pages/Compare.tsx`
+
+- Property cards grid: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+- Comparison sections use horizontal scroll on mobile - needs testing
+
+#### 9.2 Compare Projects  
+**File:** `src/pages/CompareProjects.tsx`
+
+- Similar structure to Compare
+- Unit comparison table needs horizontal scroll indicator
+
+### Phase 10: Forms & Wizards
+
+#### 10.1 Property Wizard Steps
+**Files in:** `src/pages/agent/`
+
+- Multi-step forms should have clear mobile navigation
+- Progress bar should be visible
+- Submit buttons should be sticky on mobile
+
+#### 10.2 Auth Page
+**File:** `src/pages/Auth.tsx`
+
+- Sign in/up forms are typically simple
+- Ensure form fields have proper mobile keyboard types
+
+### Phase 11: Misc Components
+
+#### 11.1 Modals & Dialogs
+- Ensure all Dialog/Sheet components use Sheet on mobile
+- Modal widths should be max-w-[calc(100vw-2rem)]
+
+#### 11.2 Tables
+- AgentProperties, AdminDashboard tables need horizontal scroll
+- Add `overflow-x-auto` wrappers
+
+#### 11.3 Maps
+- Leaflet/Google Maps components should be touch-friendly
+- Ensure zoom controls are accessible
+
+---
+
+## Files to Modify Summary
+
+| Priority | File | Changes |
+|----------|------|---------|
+| Critical | `CityAnchorCard.tsx` | Fix forwardRef warning |
+| High | `Header.tsx` | Improve mobile nav touch targets |
+| High | `Footer.tsx` | Better 2-col mobile grid |
+| High | `PropertyFilters.tsx` | Constrain popover widths |
+| High | `AgentDashboard.tsx` | Fix header button overflow |
+| Medium | `Compare.tsx` | Horizontal scroll indicators |
+| Medium | `AreaDetail.tsx` | Section spacing adjustments |
+| Medium | `Listings.tsx` | Filter bar mobile tweaks |
+| Medium | `MortgageCalculator.tsx` | Tighter mobile input spacing |
+| Low | `ToolLayout.tsx` | Mobile column order optimization |
+| Low | Various cards | Touch swipe gestures |
+
+---
+
+## New Utilities to Create
+
+### 11.1 useMediaQuery Hook Enhancement
+Create a more robust responsive hook:
+
+```typescript
+// src/hooks/useMediaQuery.ts
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  
   useEffect(() => {
-    // Update document.title
-    // Update/create meta tags
-    // Inject JSON-LD scripts
-    // Cleanup on unmount
-  }, [props]);
-}
-```
-
-### 5. `src/components/seo/SEOHead.tsx`
-Declarative component wrapper for useSEO hook:
-
-```typescript
-interface SEOHeadProps {
-  title?: string;
-  description?: string;
-  image?: string;
-  canonicalUrl?: string;
-  jsonLd?: object | object[];
-  noindex?: boolean;
-  children?: React.ReactNode;
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+    
+    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [query]);
+  
+  return matches;
 }
 
-export function SEOHead(props: SEOHeadProps) {
-  useSEO(props);
-  return null; // No visual rendering
+export function useBreakpoint() {
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const isTablet = useMediaQuery('(min-width: 640px) and (max-width: 1023px)');
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  
+  return { isMobile, isTablet, isDesktop };
 }
 ```
 
 ---
 
-## Files to Modify
+## Testing Checklist
 
-### 1. `src/pages/PropertyDetail.tsx`
+After implementation, test these scenarios:
 
-Add SEO component with property-specific meta:
+### Device Testing
+- iPhone SE (375px) - smallest common phone
+- iPhone 14 Pro (393px) - modern phone
+- iPad Mini (768px) - tablet portrait
+- iPad Pro (1024px) - tablet landscape
 
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generatePropertyMeta, generatePropertyJsonLd } from '@/lib/seo';
+### Page-by-Page Verification
+1. **Homepage** - Hero search, property cards, region tabs
+2. **Listings** - Filter bar, property grid, pagination
+3. **Property Detail** - Image gallery, description, mobile CTA
+4. **Project Detail** - Unit selector, timeline, developer card
+5. **Area Detail** - Stats strip, market cards, trends
+6. **Tools** - Calculator inputs, result cards
+7. **Compare** - Card grid, comparison table
+8. **Profile** - Settings forms, activity sections
+9. **Agent Dashboard** - Stats cards, property list
+10. **Auth** - Sign in/up forms
 
-// Inside component, after property loads:
-const seoMeta = generatePropertyMeta(property);
-const jsonLd = generatePropertyJsonLd(property);
-
-return (
-  <Layout>
-    <SEOHead 
-      title={seoMeta.title}
-      description={seoMeta.description}
-      image={property.images?.[0]}
-      canonicalUrl={`https://buywiseisrael.com/property/${property.id}`}
-      jsonLd={jsonLd}
-    />
-    {/* existing content */}
-  </Layout>
-);
-```
-
-### 2. `src/pages/ProjectDetail.tsx`
-
-Add SEO for new construction projects:
-
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generateProjectMeta, generateProjectJsonLd } from '@/lib/seo';
-
-// Inside component:
-const seoMeta = generateProjectMeta(project);
-const jsonLd = generateProjectJsonLd(project);
-
-return (
-  <Layout>
-    <SEOHead 
-      title={seoMeta.title}
-      description={seoMeta.description}
-      image={project.images?.[0]}
-      canonicalUrl={`https://buywiseisrael.com/projects/${project.slug}`}
-      jsonLd={jsonLd}
-    />
-    {/* existing content */}
-  </Layout>
-);
-```
-
-### 3. `src/pages/AreaDetail.tsx`
-
-Add SEO for city pages with market data:
-
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generateCityMeta, generateCityJsonLd } from '@/lib/seo';
-
-// Inside component:
-const seoMeta = generateCityMeta(city, marketData);
-const jsonLd = generateCityJsonLd(city);
-
-return (
-  <Layout>
-    <SEOHead 
-      title={seoMeta.title}
-      description={seoMeta.description}
-      image={cityHeroImage}
-      canonicalUrl={`https://buywiseisrael.com/areas/${slug}`}
-      jsonLd={jsonLd}
-    />
-    {/* existing content */}
-  </Layout>
-);
-```
-
-### 4. `src/pages/BlogPost.tsx`
-
-Add Article schema for blog posts:
-
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generateArticleMeta, generateArticleJsonLd } from '@/lib/seo';
-
-const seoMeta = generateArticleMeta(post);
-const jsonLd = generateArticleJsonLd(post);
-
-return (
-  <Layout>
-    <SEOHead 
-      title={seoMeta.title}
-      description={seoMeta.description}
-      image={post.featured_image}
-      canonicalUrl={`https://buywiseisrael.com/blog/${post.slug}`}
-      jsonLd={jsonLd}
-    />
-    {/* existing content */}
-  </Layout>
-);
-```
-
-### 5. `src/pages/AgentDetail.tsx`
-
-Add Person/RealEstateAgent schema:
-
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generateAgentMeta, generateAgentJsonLd } from '@/lib/seo';
-
-const seoMeta = generateAgentMeta(agent);
-const jsonLd = generateAgentJsonLd(agent);
-
-return (
-  <Layout>
-    <SEOHead 
-      title={seoMeta.title}
-      description={seoMeta.description}
-      image={agent.avatar_url}
-      canonicalUrl={`https://buywiseisrael.com/agents/${agent.id}`}
-      jsonLd={jsonLd}
-    />
-    {/* existing content */}
-  </Layout>
-);
-```
-
-### 6. `src/pages/DeveloperDetail.tsx`
-
-Add Organization schema for developers:
-
-```typescript
-import { SEOHead } from '@/components/seo/SEOHead';
-import { generateDeveloperMeta, generateDeveloperJsonLd } from '@/lib/seo';
-
-const seoMeta = generateDeveloperMeta(developer);
-const jsonLd = generateDeveloperJsonLd(developer);
-```
-
-### 7. `src/pages/AgencyDetail.tsx`
-
-Add Organization schema for agencies.
-
----
-
-## SEO Content Templates
-
-### Property Titles (optimized for search)
-```text
-For Sale:  "{Beds} Bed {Type} in {Neighborhood}, {City} | ₪{Price} | BuyWise Israel"
-For Rent:  "{Beds} Bed {Type} for Rent in {City} | ₪{Price}/mo | BuyWise Israel"
-Example:   "3 Bed Apartment in Neve Tzedek, Tel Aviv | ₪2,500,000 | BuyWise Israel"
-```
-
-### Property Descriptions (155-160 chars for SERP)
-```text
-"{Beds} bedroom {type} {status} in {neighborhood}, {city}. {size} sqm, {condition}, with {top features}. Contact agent for viewing."
-
-Example: "3 bedroom apartment for sale in Neve Tzedek, Tel Aviv. 95 sqm, renovated, with balcony and parking. Contact agent for viewing."
-```
-
-### Project Titles
-```text
-"{Project Name} | New Development in {City} | From ₪{PriceFrom}"
-Example: "Haifa Heights | New Development in Haifa | From ₪1,800,000"
-```
-
-### Project Descriptions
-```text
-"{Project Name}: {Units} unit development in {City} by {Developer}. {Bedroom range} apartments from ₪{Price}. {Status}. Completion: {Date}."
-
-Example: "Haifa Heights: 45 unit luxury development in Haifa by Azrieli Group. 1-4 bedroom apartments from ₪1.8M. Under construction. Completion: Q2 2026."
-```
-
----
-
-## JSON-LD Schema Coverage
-
-| Page Type | Primary Schema | Additional Schemas |
-|-----------|---------------|-------------------|
-| Property Detail | RealEstateListing | BreadcrumbList, RealEstateAgent |
-| Project Detail | Place + Product | BreadcrumbList, Organization (developer) |
-| City/Area | Place | BreadcrumbList |
-| Agent | RealEstateAgent | BreadcrumbList |
-| Developer | Organization | BreadcrumbList |
-| Agency | Organization | BreadcrumbList |
-| Blog Post | Article | BreadcrumbList, Person (author) |
-| Homepage | WebSite | Organization, SearchAction |
+### Interaction Testing
+- Swipe gestures on carousels
+- Touch target sizes (44px minimum)
+- Keyboard visibility (forms don't get hidden)
+- Scroll behavior (no horizontal overflow)
+- Modal/Sheet opening and closing
+- Bottom navigation bars (no overlap with content)
 
 ---
 
 ## Implementation Order
 
-1. **Create SEO utilities** (`src/lib/seo/`)
-   - Constants, meta generators, JSON-LD generators, useSEO hook
+1. **Week 1: Critical Fixes**
+   - Fix CityAnchorCard ref warning
+   - AgentDashboard button overflow
+   - Filter popover width constraints
 
-2. **Create SEOHead component** (`src/components/seo/SEOHead.tsx`)
+2. **Week 2: Layout Adjustments**
+   - Footer responsive grid
+   - Header mobile improvements
+   - Dashboard responsive fixes
 
-3. **Implement on PropertyDetail** (highest traffic page)
-   - Test with Google Rich Results Test
-   - Verify social sharing previews
+3. **Week 3: Detail Pages**
+   - Property/Project detail spacing
+   - Area detail section optimization
+   - Compare page horizontal scroll
 
-4. **Implement on ProjectDetail**
-
-5. **Roll out to remaining pages**
-   - AreaDetail, BlogPost, AgentDetail, DeveloperDetail, AgencyDetail
-
-6. **Add to listing pages** (optional)
-   - Listings, Projects, Agents, etc.
-
----
-
-## Validation & Testing
-
-After implementation, test using:
-- **Google Rich Results Test**: https://search.google.com/test/rich-results
-- **Facebook Sharing Debugger**: https://developers.facebook.com/tools/debug/
-- **Twitter Card Validator**: https://cards-dev.twitter.com/validator
-- **LinkedIn Post Inspector**: https://www.linkedin.com/post-inspector/
+4. **Week 4: Polish**
+   - Touch gesture enhancements
+   - Animation smoothness
+   - Final QA pass
 
 ---
 
-## Expected SEO Benefits
+## Success Metrics
 
-1. **Rich Snippets in Google**: Property listings can show price, bedrooms, and images directly in search results
-2. **Enhanced Social Sharing**: WhatsApp, Facebook, and Twitter will show property images and details
-3. **Better Click-Through Rates**: Descriptive titles and meta descriptions improve CTR by 20-35%
-4. **Improved Indexing**: Canonical URLs prevent duplicate content penalties
-5. **Voice Search Ready**: Structured data helps voice assistants understand content
-
----
-
-## Summary
-
-| New Files | Purpose |
-|-----------|---------|
-| `src/lib/seo/constants.ts` | Site-wide SEO configuration |
-| `src/lib/seo/metaGenerators.ts` | Title/description generators |
-| `src/lib/seo/jsonLd.ts` | Schema.org structured data |
-| `src/lib/seo/useSEO.ts` | React hook for meta management |
-| `src/lib/seo/index.ts` | Module exports |
-| `src/components/seo/SEOHead.tsx` | Declarative SEO component |
-
-| Modified Files | Changes |
-|----------------|---------|
-| `PropertyDetail.tsx` | Add SEOHead with property schema |
-| `ProjectDetail.tsx` | Add SEOHead with project schema |
-| `AreaDetail.tsx` | Add SEOHead with city schema |
-| `BlogPost.tsx` | Add SEOHead with article schema |
-| `AgentDetail.tsx` | Add SEOHead with agent schema |
-| `DeveloperDetail.tsx` | Add SEOHead with organization schema |
-| `AgencyDetail.tsx` | Add SEOHead with organization schema |
-
-This implementation provides enterprise-grade SEO that matches what platforms like Zillow, Redfin, and Rightmove use for their property listings.
+- Zero horizontal scroll on any page at 375px width
+- All touch targets minimum 44px
+- No console warnings on mobile
+- Page load under 3s on 3G
+- All forms usable with mobile keyboard open
