@@ -20,6 +20,8 @@ import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateDeveloperMeta, generateDeveloperJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function DeveloperDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -162,8 +164,19 @@ export default function DeveloperDetail() {
   const activeProjectsList = projects.filter(p => p.status !== 'delivery');
   const completedProjectsList = projects.filter(p => p.status === 'delivery');
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateDeveloperMeta(developer);
+  const jsonLd = generateDeveloperJsonLd(developer);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={developer.logo_url || undefined}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/developers/${developer.slug}`}
+        jsonLd={jsonLd}
+      />
       <div className="container py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

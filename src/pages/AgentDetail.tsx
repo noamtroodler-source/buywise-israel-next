@@ -27,6 +27,8 @@ import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateAgentMeta, generateAgentJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -130,8 +132,19 @@ export default function AgentDetail() {
   // Check if current user owns this agent profile
   const isOwnProfile = agent && user?.id === agent.user_id;
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateAgentMeta(agent);
+  const jsonLd = generateAgentJsonLd(agent);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={agent.avatar_url || undefined}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/agents/${agent.id}`}
+        jsonLd={jsonLd}
+      />
       <div className="container py-6 md:py-8 space-y-6">
         {/* Back Navigation */}
         {isOwnProfile && (

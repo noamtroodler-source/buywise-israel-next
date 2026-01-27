@@ -18,6 +18,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateArticleMeta, generateArticleJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -66,8 +68,20 @@ export default function BlogPost() {
   const headings = extractHeadings(contentWithIds);
   const isSaved = isArticleSaved(post.id);
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateArticleMeta(post);
+  const jsonLd = generateArticleJsonLd(post);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={post.cover_image || undefined}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/blog/${post.slug}`}
+        type="article"
+        jsonLd={jsonLd}
+      />
       <article>
         {/* Hero Section with Gradient Background */}
         <div className="bg-gradient-to-b from-primary/5 to-background">

@@ -12,17 +12,16 @@ import { getDistrictForCity } from '@/lib/utils/districtMapping';
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CityOpener } from '@/components/city/CityOpener';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
-
-
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
 import { PriceTrendsSection } from '@/components/city/PriceTrendsSection';
 import { CityWorthWatchingNew, MarketFactor } from '@/components/city/CityWorthWatchingNew';
-
 import { CityExploreListings } from '@/components/city/CityExploreListings';
 import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties';
 import { useCityDetails } from '@/hooks/useCityDetails';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 // Generic fallback for cities without identity_sentence in database
 
@@ -182,8 +181,22 @@ export default function CityDetail() {
   const identitySentence = (city as any).identity_sentence || city.description || `${city.name} is a city in Israel with its own unique character and real estate market.`;
   const yoyChange = canonicalMetrics?.yoy_price_change ?? city.yoy_price_change ?? undefined;
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateCityMeta(city, properties.length);
+  const jsonLd = generateCityJsonLd({
+    ...city,
+    hero_image: heroImage,
+  });
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={heroImage}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/areas/${slug}`}
+        jsonLd={jsonLd}
+      />
       <div className="min-h-screen">
         {/* 1. Guide-Style Hero */}
         <CityHeroGuide
