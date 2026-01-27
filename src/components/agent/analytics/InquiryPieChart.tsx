@@ -6,7 +6,6 @@ import { Info } from 'lucide-react';
 interface InquiryPieChartProps {
   data: {
     whatsapp: number;
-    call: number;
     email: number;
     form: number;
   };
@@ -15,8 +14,7 @@ interface InquiryPieChartProps {
 export function InquiryPieChart({ data }: InquiryPieChartProps) {
   const chartData = [
     { name: 'WhatsApp', value: data.whatsapp, color: 'hsl(var(--primary))' },
-    { name: 'Phone Calls', value: data.call, color: 'hsl(var(--primary) / 0.7)' },
-    { name: 'Emails', value: data.email, color: 'hsl(var(--primary) / 0.5)' },
+    { name: 'Emails', value: data.email, color: 'hsl(var(--primary) / 0.6)' },
     { name: 'Forms', value: data.form, color: 'hsl(var(--primary) / 0.3)' },
   ].filter(item => item.value > 0);
 
@@ -34,7 +32,7 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent className="font-normal">
-                  How buyers contact you - WhatsApp, phone calls, emails, or contact forms
+                  How buyers contact you - WhatsApp, emails, or contact forms
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -60,7 +58,7 @@ export function InquiryPieChart({ data }: InquiryPieChartProps) {
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent className="font-normal">
-                How buyers contact you - WhatsApp, phone calls, emails, or contact forms
+                How buyers contact you - WhatsApp, emails, or contact forms
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -7,7 +7,6 @@ export interface InquiryAnalytics {
   totalViews: number;
   totalSaves: number;
   whatsappClicks: number;
-  callClicks: number;
   emailClicks: number;
   formClicks: number;
   hourlyDistribution: { hour: number; count: number }[];
@@ -66,7 +65,6 @@ export function useAgentInquiryAnalytics(dateRange: '7d' | '30d' | '90d' | 'all'
       // Count by type
       const typeCounts = {
         whatsapp: 0,
-        call: 0,
         email: 0,
         form: 0,
       };
@@ -144,7 +142,6 @@ export function useAgentInquiryAnalytics(dateRange: '7d' | '30d' | '90d' | 'all'
         totalViews,
         totalSaves,
         whatsappClicks: typeCounts.whatsapp,
-        callClicks: typeCounts.call,
         emailClicks: typeCounts.email,
         formClicks: typeCounts.form,
         hourlyDistribution,

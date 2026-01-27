@@ -182,7 +182,7 @@ export default function AgencyAnalytics() {
             {/* Charts Row */}
             <div className="grid gap-6 lg:grid-cols-2">
               <motion.div variants={itemVariants}>
-                <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, call: 0, email: 0, form: 0 }} />
+                <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
               </motion.div>
               
               {/* Team Performance Card */}

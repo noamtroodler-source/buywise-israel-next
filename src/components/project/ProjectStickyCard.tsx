@@ -67,16 +67,6 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
     openWhatsApp(url);
   };
 
-  const handleCallClick = (source: 'developer' | 'agent') => {
-    if (developer) {
-      trackInquiry({
-        projectId: project.id,
-        developerId: developer.id,
-        inquiryType: 'call',
-        projectName: project.name,
-      });
-    }
-  };
 
   const handleEmailClick = (source: 'developer' | 'agent') => {
     if (developer) {
@@ -132,29 +122,16 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
           </Button>
         )}
         <div className="grid grid-cols-2 gap-2">
-          {representingAgent?.phone && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              asChild
-              onClick={() => handleCallClick('agent')}
-            >
-              <a href={`tel:${representingAgent.phone}`}>
-                <Phone className="h-4 w-4 mr-1.5" />
-                Call
-              </a>
-            </Button>
-          )}
           <Button 
             variant="outline" 
             size="sm" 
             asChild
-            className={representingAgent?.phone ? '' : 'col-span-2'}
+            className="col-span-2"
             onClick={() => handleEmailClick('agent')}
           >
             <a href={`mailto:${representingAgent?.email}`}>
               <Mail className="h-4 w-4 mr-1.5" />
-              Email
+              Email Agent
             </a>
           </Button>
         </div>
@@ -199,33 +176,18 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
             WhatsApp Developer
           </Button>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          {developer?.phone && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              asChild
-              onClick={() => handleCallClick('developer')}
-            >
-              <a href={`tel:${developer.phone}`}>
-                <Phone className="h-4 w-4 mr-1.5" />
-                Call
-              </a>
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => {
-              handleEmailClick('developer');
-              handleContactClick();
-            }}
-            className={developer?.phone ? '' : 'col-span-2'}
-          >
-            <Mail className="h-4 w-4 mr-1.5" />
-            Email
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            handleEmailClick('developer');
+            handleContactClick();
+          }}
+        >
+          <Mail className="h-4 w-4 mr-1.5" />
+          Email Developer
+        </Button>
       </div>
     </div>
   );
@@ -306,16 +268,6 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
     openWhatsApp(whatsappUrl);
   };
 
-  const handleCallClick = () => {
-    if (developer) {
-      trackInquiry({
-        projectId: project.id,
-        developerId: developer.id,
-        inquiryType: 'call',
-        projectName: project.name,
-      });
-    }
-  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
@@ -329,13 +281,6 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
           <Button className="flex-1" size="lg">
             <Mail className="h-4 w-4 mr-2" />
             Request Info
-          </Button>
-        )}
-        {primaryPhone && (
-          <Button variant="outline" size="lg" asChild onClick={handleCallClick}>
-            <a href={`tel:${primaryPhone}`}>
-              <Phone className="h-4 w-4" />
-            </a>
           </Button>
         )}
       </div>

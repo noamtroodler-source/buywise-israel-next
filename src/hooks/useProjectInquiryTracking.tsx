@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export type ProjectInquiryType = 'whatsapp' | 'call' | 'email' | 'form';
+export type ProjectInquiryType = 'whatsapp' | 'email' | 'form';
 
 interface TrackProjectInquiryParams {
   projectId: string;
