@@ -1,9 +1,8 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { useProjectViewTracking } from '@/hooks/useProjectViewTracking';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
@@ -24,6 +23,8 @@ import {
   ProjectDescription,
   ProjectNextSteps,
 } from '@/components/project';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateProjectMeta, generateProjectJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 // Helper to convert city name to slug
 const cityToSlug = (city: string) => city.toLowerCase().replace(/\s+/g, '-');
@@ -61,8 +62,20 @@ export default function ProjectDetail() {
 
   const citySlug = cityToSlug(project.city);
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateProjectMeta(project);
+  const jsonLd = generateProjectJsonLd(project);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={project.images?.[0]}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/projects/${project.slug}`}
+        type="product"
+        jsonLd={jsonLd}
+      />
       <div className="min-h-screen pb-24 lg:pb-8">
         <div className="container py-6">
           {/* Breadcrumb Navigation */}

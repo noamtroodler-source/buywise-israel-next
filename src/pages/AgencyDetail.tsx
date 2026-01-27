@@ -18,6 +18,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useState } from 'react';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generateAgencyMeta, generateAgencyJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -101,8 +103,19 @@ export default function AgencyDetail() {
     );
   }
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generateAgencyMeta(agency);
+  const jsonLd = generateAgencyJsonLd(agency);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={agency.logo_url || undefined}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/agencies/${agency.slug}`}
+        jsonLd={jsonLd}
+      />
       <div className="container py-8 space-y-8">
         {/* Back Navigation */}
         {isOwner && (

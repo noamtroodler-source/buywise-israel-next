@@ -13,16 +13,15 @@ import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary
 import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
-
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { toast } from 'sonner';
-
-
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
+import { generatePropertyMeta, generatePropertyJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
@@ -106,8 +105,20 @@ export default function PropertyDetail() {
     );
   }
 
+  // Generate SEO meta and JSON-LD
+  const seoMeta = generatePropertyMeta(property);
+  const jsonLd = generatePropertyJsonLd(property);
+
   return (
     <Layout>
+      <SEOHead 
+        title={seoMeta.title}
+        description={seoMeta.description}
+        image={property.images?.[0]}
+        canonicalUrl={`${SITE_CONFIG.siteUrl}/property/${property.id}`}
+        type="product"
+        jsonLd={jsonLd}
+      />
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
