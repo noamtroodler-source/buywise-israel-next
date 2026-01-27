@@ -1,78 +1,195 @@
 
-
-# Rename "Inquiry Analytics" → "Analytics" and "Leads" → "Analytics"
+# Redesign Developer Analytics to Match Agent Analytics
 
 ## Overview
 
-The user wants to simplify the naming since the page shows more than just inquiry data - it includes views, saves, and overall engagement metrics. Renaming to simply "Analytics" better reflects the content.
+The current Developer Analytics page has a different structure from the Agent Analytics page. We'll align them to have the same layout and metrics:
+
+**Current Developer Analytics:**
+- 3 stat cards: Total Views, Inquiries, Conversion Rate
+- Conversion Funnel chart
+- Project Performance table
+
+**Target (Agent Analytics style):**
+- 5 stat cards: Total Views, Total Saves, Total Clicks, WhatsApp, Emails
+- 2 charts: Inquiry Sources (pie), Activity by Hour (bar)
+- Project Engagement table
 
 ---
 
-## Changes
+## Files to Modify
 
-### 1. `src/pages/agent/AgentLeads.tsx`
+### 1. `src/hooks/useDeveloperAnalytics.tsx`
 
-**Line 72** - Update page title:
+**Add new data fields to the interface and query:**
+
+```typescript
+interface DeveloperAnalyticsData {
+  totalViews: number;
+  totalInquiries: number;
+  totalSaves: number;           // NEW
+  whatsappClicks: number;        // NEW
+  emailClicks: number;           // NEW
+  formClicks: number;            // NEW
+  conversionRate: number;
+  projectAnalytics: ProjectAnalytics[];
+  hourlyDistribution: { hour: number; count: number }[];  // NEW
+  projectEngagement: ProjectEngagement[];  // NEW
+}
+```
+
+**New queries to add:**
+1. Fetch `project_favorites` to count total saves
+2. Fetch `inquiry_type` from `project_inquiries` to count WhatsApp/Email/Form
+3. Build hourly distribution from inquiry timestamps
+4. Build project engagement data with views, saves, and clicks
+
+### 2. `src/pages/developer/DeveloperAnalytics.tsx`
+
+**Complete rewrite to match AgentLeads.tsx structure:**
 
 ```text
-Before:
-<h1 className="text-2xl font-bold">Inquiry Analytics</h1>
+Layout:
+┌─────────────────────────────────────────────────┐
+│  ← Back    [Analytics Header]     [Date Range] │
+└─────────────────────────────────────────────────┘
 
-After:
-<h1 className="text-2xl font-bold">Analytics</h1>
+┌─────────┬─────────┬─────────┬─────────┬─────────┐
+│  Views  │  Saves  │  Clicks │WhatsApp │  Emails │
+└─────────┴─────────┴─────────┴─────────┴─────────┘
+
+┌─────────────────────┬───────────────────────────┐
+│  Inquiry Sources    │    Activity by Hour       │
+│    (Pie Chart)      │      (Bar Chart)          │
+└─────────────────────┴───────────────────────────┘
+
+┌─────────────────────────────────────────────────┐
+│              Project Engagement                  │
+│   (Table with views, saves, clicks per project) │
+└─────────────────────────────────────────────────┘
+```
+
+**Changes:**
+- Replace 3-card stats grid with 5-card grid (Views, Saves, Clicks, WhatsApp, Emails)
+- Remove ConversionFunnel component
+- Add InquiryPieChart (reuse agent component)
+- Add HourlyActivityChart (reuse agent component)
+- Create new ProjectEngagementTable (similar to PropertyEngagementTable)
+
+### 3. New Component: `src/components/developer/analytics/ProjectEngagementTable.tsx`
+
+Create a component similar to `PropertyEngagementTable.tsx` but for projects:
+
+```typescript
+interface ProjectEngagement {
+  projectId: string;
+  name: string;
+  city: string;
+  image: string | null;
+  views: number;
+  saves: number;
+  clicks: number;
+}
 ```
 
 ---
 
-### 2. `src/pages/agent/AgentDashboard.tsx`
-
-**Line 141** - Update quick action card:
+## Data Flow
 
 ```text
-Before:
-{ title: 'Leads', desc: 'Manage buyer inquiries', icon: Users, href: '/agent/leads', badge: leadStats?.new },
+project_inquiries table
+       │
+       ├── Count by inquiry_type → whatsappClicks, emailClicks, formClicks
+       ├── Group by hour → hourlyDistribution
+       └── Group by project_id → clicks per project
 
-After:
-{ title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
-```
+project_favorites table
+       │
+       ├── Total count → totalSaves
+       └── Group by project_id → saves per project
 
-This also changes the icon from `Users` to `BarChart3` (which is already imported on line 4) to better match the analytics theme.
-
----
-
-## Visual Result
-
-**Agent Dashboard Quick Actions:**
-```text
-Before:                              After:
-┌────────────────────┐              ┌────────────────────┐
-│ 👥 Leads           │      →       │ 📊 Analytics       │
-│ Manage buyer       │              │ View engagement    │
-│ inquiries          │              │ and inquiries      │
-└────────────────────┘              └────────────────────┘
-```
-
-**Analytics Page Header:**
-```text
-Before:                              After:
-┌────────────────────────┐          ┌────────────────────────┐
-│ 📊 Inquiry Analytics   │    →     │ 📊 Analytics           │
-│ See how buyers are...  │          │ See how buyers are...  │
-└────────────────────────┘          └────────────────────────┘
+projects table
+       │
+       └── views_count per project → views
 ```
 
 ---
 
-## Note on Routes
+## Reusable Components
 
-The URL path `/agent/leads` will remain unchanged. Changing URLs would break any existing bookmarks or notification links. The route path is internal - only the user-facing labels are being updated.
+These agent components can be reused directly for developers:
+- `InquiryPieChart` - Shows WhatsApp/Email/Form breakdown
+- `HourlyActivityChart` - Shows activity by hour of day
+
+---
+
+## Implementation Details
+
+### Updated Hook Interface
+
+```typescript
+interface ProjectAnalytics {
+  projectId: string;
+  views: number;
+  inquiries: number;
+}
+
+interface ProjectEngagement {
+  projectId: string;
+  name: string;
+  city: string;
+  image: string | null;
+  views: number;
+  saves: number;
+  clicks: number;
+}
+
+interface DeveloperAnalyticsData {
+  totalViews: number;
+  totalInquiries: number;
+  totalSaves: number;
+  whatsappClicks: number;
+  emailClicks: number;
+  formClicks: number;
+  conversionRate: number;
+  projectAnalytics: ProjectAnalytics[];
+  hourlyDistribution: { hour: number; count: number }[];
+  projectEngagement: ProjectEngagement[];
+}
+```
+
+### Stats Cards (5 cards)
+
+| Card | Icon | Data Source |
+|------|------|-------------|
+| Total Views | Eye | Sum of project views_count |
+| Total Saves | Heart | Count from project_favorites |
+| Total Clicks | MousePointerClick | Count from project_inquiries |
+| WhatsApp | MessageSquare | inquiry_type = 'whatsapp' |
+| Emails | Mail | inquiry_type = 'email' |
+
+### Charts Row (2 charts)
+
+1. **Inquiry Sources (Pie)**: Shows distribution of WhatsApp, Email, Form
+2. **Activity by Hour (Bar)**: Shows when inquiries come in during the day
+
+### Project Engagement Table
+
+Shows each project with:
+- Project image/name/city
+- Views count
+- Saves count
+- Clicks count (total inquiries)
 
 ---
 
 ## Summary
 
-| File | Line | Change |
-|------|------|--------|
-| `AgentLeads.tsx` | 72 | "Inquiry Analytics" → "Analytics" |
-| `AgentDashboard.tsx` | 141 | Title: "Leads" → "Analytics", Desc: updated, Icon: Users → BarChart3 |
+| File | Change |
+|------|--------|
+| `useDeveloperAnalytics.tsx` | Add saves, clicks breakdown, hourly distribution, project engagement data |
+| `DeveloperAnalytics.tsx` | Complete UI rewrite to match agent analytics layout |
+| `ProjectEngagementTable.tsx` | New component for project-level engagement stats |
+| `index.ts` | Export new component |
 
+This will give developers the same analytics experience as agents, with consistent UI patterns and metrics that matter: views, saves, contact clicks by type, and activity timing.
