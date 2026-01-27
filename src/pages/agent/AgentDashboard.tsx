@@ -138,7 +138,7 @@ export default function AgentDashboard() {
 
   const quickActions = [
     { title: 'Manage Properties', desc: 'View, edit, or delete your listings', icon: Home, href: '/agent/properties' },
-    { title: 'Leads', desc: 'Manage buyer inquiries', icon: Users, href: '/agent/leads', badge: leadStats?.new },
+    { title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
     { title: 'Add New Property', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
     { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
   ];
