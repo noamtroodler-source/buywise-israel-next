@@ -69,7 +69,7 @@ export default function AgentLeads() {
                       <BarChart3 className="h-7 w-7 text-primary" />
                     </div>
                     <div>
-                      <h1 className="text-2xl font-bold">Inquiry Analytics</h1>
+                      <h1 className="text-2xl font-bold">Analytics</h1>
                       <p className="text-muted-foreground">
                         See how buyers are engaging with your listings
                       </p>
