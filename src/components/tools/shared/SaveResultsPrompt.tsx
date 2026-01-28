@@ -28,7 +28,7 @@ export function SaveResultsPrompt({ show, calculatorName, onDismiss, resultSumma
   if (user || dismissed || !show) return null;
 
   const handleSignUp = () => {
-    navigate('/auth?tab=signup');
+    navigate('/auth?tab=signup&intent=save_calculation');
   };
 
   const handleDismiss = () => {

@@ -137,6 +137,7 @@ export default function Tools() {
             {/* Guest Signup Nudge */}
             <GuestSignupNudge 
               message="Sign up free to save your calculations and get personalized estimates based on your buyer profile."
+              intent="save_calculation"
             />
 
             {/* Tools Grid */}

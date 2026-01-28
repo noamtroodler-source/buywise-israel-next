@@ -172,6 +172,7 @@ export default function Favorites() {
                 message="These properties are saved to this browser only. Create a free account to keep them forever and get price drop alerts."
                 ctaText="Create account"
                 variant="banner"
+                intent="save_favorite"
               />
             )}
 

@@ -15,7 +15,7 @@ import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
 import { PostSignupSuggestions } from '@/components/onboarding/PostSignupSuggestions';
 import { PasswordStrengthInput } from '@/components/auth/PasswordStrengthInput';
 import { toast } from 'sonner';
-import { Shield, Loader2, Mail, User, Building2, Landmark } from 'lucide-react';
+import { Shield, Loader2, Mail, User, Building2, Landmark, Bell, Calculator, Heart, Scale, type LucideIcon } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -24,6 +24,45 @@ const authSchema = z.object({
 });
 
 type AuthFormData = z.infer<typeof authSchema>;
+
+// Intent-based messaging configuration for context-aware auth
+const intentConfig: Record<string, { signupDesc: string; signinDesc: string; icon: LucideIcon }> = {
+  create_alert: {
+    signupDesc: "Create an account to set up search alerts and get notified when new listings match your criteria",
+    signinDesc: "Sign in to create search alerts",
+    icon: Bell,
+  },
+  save_calculation: {
+    signupDesc: "Create an account to save your calculations and access them on any device",
+    signinDesc: "Sign in to access your saved calculations",
+    icon: Calculator,
+  },
+  enable_price_alerts: {
+    signupDesc: "Create an account to enable price alerts and get notified when prices drop",
+    signinDesc: "Sign in to manage your price alerts",
+    icon: Bell,
+  },
+  save_favorite: {
+    signupDesc: "Create an account to save your favorites and sync them across devices",
+    signinDesc: "Sign in to access your saved properties",
+    icon: Heart,
+  },
+  view_profile: {
+    signupDesc: "Create your account to set up your buyer profile and get personalized estimates",
+    signinDesc: "Sign in to access your profile",
+    icon: User,
+  },
+  compare_properties: {
+    signupDesc: "Create an account to save and compare properties side by side",
+    signinDesc: "Sign in to compare your saved properties",
+    icon: Scale,
+  },
+  set_profile: {
+    signupDesc: "Create an account to personalize your cost estimates based on your buyer status",
+    signinDesc: "Sign in to update your profile",
+    icon: User,
+  },
+};
 
 type ProfessionalRole = 'agent' | 'agency' | 'developer' | null;
 
@@ -78,12 +117,18 @@ export default function Auth() {
   const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
   
-  // Get professional role and invite code from URL params
+  // Get professional role, invite code, and intent from URL params
   const roleParam = searchParams.get('role') as ProfessionalRole;
   const inviteCode = searchParams.get('code');
+  const intentParam = searchParams.get('intent');
   const isProfessionalSignup = roleParam && ['agent', 'agency', 'developer'].includes(roleParam);
   const config = isProfessionalSignup ? roleConfig[roleParam] : roleConfig.default;
-  const IconComponent = config.icon;
+  
+  // Get intent-specific info for context-aware messaging
+  const intentInfo = intentParam ? intentConfig[intentParam] : null;
+  
+  // Use intent icon if available and not a professional signup, otherwise use config icon
+  const IconComponent = (!isProfessionalSignup && intentInfo?.icon) ? intentInfo.icon : config.icon;
 
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
@@ -193,10 +238,10 @@ export default function Auth() {
             <CardTitle className="text-2xl font-bold">{config.title}</CardTitle>
             <CardDescription className="text-muted-foreground">
               {activeTab === 'signup' 
-                ? config.description
+                ? (intentInfo?.signupDesc || config.description)
                 : isProfessionalSignup 
                   ? 'Sign in to continue your registration'
-                  : 'Sign in to access your saved properties'}
+                  : (intentInfo?.signinDesc || 'Sign in to access your saved properties')}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">

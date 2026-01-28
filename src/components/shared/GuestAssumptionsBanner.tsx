@@ -106,7 +106,7 @@ export function GuestAssumptionsBanner({
           <p className="text-xs text-muted-foreground mt-1">
             Your situation different?{' '}
             <Link 
-              to={isLoggedIn ? "/profile?tab=settings" : "/auth?tab=signup"}
+              to={isLoggedIn ? "/profile?tab=settings" : "/auth?tab=signup&intent=set_profile"}
               className="text-primary hover:underline"
             >
               {isLoggedIn ? 'Complete your profile' : 'Set up profile (free)'}
@@ -126,7 +126,7 @@ export function GuestAssumptionsBanner({
             <p className="text-xs text-muted-foreground mt-0.5">
               You could save ₪{potentialSavings.toLocaleString()}+ in purchase tax.{' '}
               <Link 
-                to="/auth?tab=signup"
+                to="/auth?tab=signup&intent=set_profile"
                 className="text-primary hover:underline"
               >
                 Create profile to see your real costs

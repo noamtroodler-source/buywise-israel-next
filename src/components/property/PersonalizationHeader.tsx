@@ -221,7 +221,7 @@ export function PersonalizationHeader({
               Complete your profile
             </Link>
           ) : (
-            <Link to="/auth?tab=signup" className="text-primary hover:underline">
+            <Link to="/auth?tab=signup&intent=set_profile" className="text-primary hover:underline">
               Get accurate estimates for your situation →
             </Link>
           )}
@@ -257,7 +257,7 @@ export function PersonalizationHeader({
             </Button>
           </Link>
         ) : (
-          <Link to="/auth?tab=signup">
+          <Link to="/auth?tab=signup&intent=set_profile">
             <Button variant="ghost" size="sm" className="text-xs text-primary h-7 gap-1.5 hover:bg-primary/5">
               Sign up to set profile
               <ExternalLink className="h-3 w-3" />

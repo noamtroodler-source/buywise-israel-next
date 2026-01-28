@@ -24,7 +24,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}&intent=view_profile`} replace />;
   }
 
   if (requiredRole && !hasRole(requiredRole)) {

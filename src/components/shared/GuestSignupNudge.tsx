@@ -8,6 +8,7 @@ interface GuestSignupNudgeProps {
   message: string;
   ctaText?: string;
   variant?: 'inline' | 'banner' | 'card';
+  intent?: string;
   className?: string;
 }
 
@@ -20,9 +21,13 @@ export function GuestSignupNudge({
   message,
   ctaText = 'Sign up free',
   variant = 'banner',
+  intent,
   className,
 }: GuestSignupNudgeProps) {
   const { user } = useAuth();
+  
+  // Build the auth URL with optional intent
+  const authUrl = `/auth?tab=signup${intent ? `&intent=${intent}` : ''}`;
   
   // Only show to guests
   if (user) return null;
@@ -33,7 +38,7 @@ export function GuestSignupNudge({
         <Icon className="h-3 w-3 shrink-0" />
         <span>{message}</span>
         <Link 
-          to="/auth?tab=signup" 
+          to={authUrl} 
           className="text-primary hover:underline inline-flex items-center gap-0.5"
         >
           {ctaText}
@@ -56,7 +61,7 @@ export function GuestSignupNudge({
           </p>
         </div>
         <Link 
-          to="/auth?tab=signup"
+          to={authUrl}
           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
           {ctaText}
@@ -77,7 +82,7 @@ export function GuestSignupNudge({
         <span>{message}</span>
       </div>
       <Link 
-        to="/auth?tab=signup"
+        to={authUrl}
         className="text-sm font-medium text-primary hover:underline whitespace-nowrap flex items-center gap-1"
       >
         {ctaText}

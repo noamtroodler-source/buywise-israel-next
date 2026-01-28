@@ -137,7 +137,7 @@ export function usePriceDropAlerts() {
         toast.error('Sign up to enable price alerts and get notified when prices drop!', {
           action: {
             label: 'Sign Up',
-            onClick: () => window.location.href = '/auth?tab=signup',
+            onClick: () => window.location.href = '/auth?tab=signup&intent=enable_price_alerts',
           },
         });
       } else {

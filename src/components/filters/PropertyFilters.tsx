@@ -121,7 +121,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
   const handleCreateAlertClick = () => {
     if (!user) {
-      navigate('/auth?redirect=/listings');
+      navigate('/auth?redirect=/listings&intent=create_alert');
       return;
     }
     onCreateAlert?.();
