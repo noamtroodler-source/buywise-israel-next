@@ -24,6 +24,10 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use refs for hover state so timeout callbacks always see current values
+  const isTriggerHoveredRef = useRef(false);
+  const isContentHoveredRef = useRef(false);
+  
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
@@ -48,27 +52,61 @@ export function Header() {
     navigate('/');
   };
 
-  // Debounced hover handlers for "More" dropdown (fixes portal gap issue)
-  const handleMoreMouseEnter = () => {
+  // Cancel any pending close timeout
+  const cancelClose = () => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
+  };
+
+  // Schedule a close only if neither trigger nor content is hovered
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimeoutRef.current = setTimeout(() => {
+      if (!isTriggerHoveredRef.current && !isContentHoveredRef.current) {
+        setMoreDropdownOpen(false);
+      }
+      closeTimeoutRef.current = null;
+    }, 220);
+  };
+
+  // Trigger hover handlers
+  const handleTriggerPointerEnter = () => {
+    isTriggerHoveredRef.current = true;
+    cancelClose();
     setMoreDropdownOpen(true);
   };
 
-  const handleMoreMouseLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setMoreDropdownOpen(false);
-    }, 200);
+  const handleTriggerPointerLeave = () => {
+    isTriggerHoveredRef.current = false;
+    scheduleClose();
+  };
+
+  // Content hover handlers
+  const handleContentPointerEnter = () => {
+    isContentHoveredRef.current = true;
+    cancelClose();
+  };
+
+  const handleContentPointerLeave = () => {
+    isContentHoveredRef.current = false;
+    scheduleClose();
+  };
+
+  // Handle Radix onOpenChange (for click/keyboard) without fighting hover logic
+  const handleOpenChange = (open: boolean) => {
+    if (!open && (isTriggerHoveredRef.current || isContentHoveredRef.current)) {
+      // Don't close if still hovering
+      return;
+    }
+    setMoreDropdownOpen(open);
   };
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
+      cancelClose();
     };
   }, []);
 
@@ -128,34 +166,33 @@ export function Header() {
           >
             Advertise
           </Link>
-          <div 
-            onMouseEnter={handleMoreMouseEnter} 
-            onMouseLeave={handleMoreMouseLeave}
-          >
-            <DropdownMenu open={moreDropdownOpen} onOpenChange={setMoreDropdownOpen}>
-              <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none">
-                More
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="end" 
-                sideOffset={0}
-                className="w-40 bg-background border-border relative before:content-[''] before:absolute before:inset-x-0 before:-top-2 before:h-2"
-                onMouseEnter={handleMoreMouseEnter}
-                onMouseLeave={handleMoreMouseLeave}
-              >
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link to="/blog">Blog</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link to="/about">About</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link to="/contact">Contact</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DropdownMenu open={moreDropdownOpen} onOpenChange={handleOpenChange}>
+            <DropdownMenuTrigger 
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none"
+              onPointerEnter={handleTriggerPointerEnter}
+              onPointerLeave={handleTriggerPointerLeave}
+            >
+              More
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="end" 
+              sideOffset={0}
+              className="w-40 bg-background border-border relative before:content-[''] before:absolute before:inset-x-0 before:-top-2 before:h-2"
+              onPointerEnter={handleContentPointerEnter}
+              onPointerLeave={handleContentPointerLeave}
+            >
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/blog">Blog</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/about">About</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/contact">Contact</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Right Side */}
