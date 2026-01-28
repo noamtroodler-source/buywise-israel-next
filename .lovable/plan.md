@@ -1,87 +1,100 @@
 
+# Clean Up Agent Avatar Styling
 
-# Improve Navigation Menu Timing and Click Behavior
+## Problem
+The agent profile picture on the Agent Detail page looks like viewing through a "glass tank" or "mirror" - the current styling has too many layered effects that create an overly processed, cheap-looking appearance.
 
-## Summary
-Reduce the hover-out delay for a snappier feel, and ensure click-to-open/close works cleanly alongside the hover behavior.
-
----
-
-## Changes Overview
-
-### 1. Update NavigationMenu Component (`src/components/ui/navigation-menu.tsx`)
-
-Add `delayDuration` and `skipDelayDuration` props to the NavigationMenu wrapper to allow customization, with faster defaults:
-
-**Current:**
+**Current styling on AgentDetail.tsx:**
 ```tsx
-const NavigationMenu = React.forwardRef<...>(({ className, children, ...props }, ref) => (
-  <NavigationMenuPrimitive.Root
-    ref={ref}
-    className={cn("relative z-10...", className)}
-    {...props}
-  >
+<Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-background shadow-lg">
 ```
 
-**Updated:**
+**Compare to clean Blog Author styling:**
 ```tsx
-interface NavigationMenuProps extends React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root> {
-  delayDuration?: number;
-  skipDelayDuration?: number;
-}
-
-const NavigationMenu = React.forwardRef<...>(({ 
-  className, 
-  children, 
-  delayDuration = 100,      // Faster open (was 200)
-  skipDelayDuration = 150,  // Faster switch (was 300)
-  ...props 
-}, ref) => (
-  <NavigationMenuPrimitive.Root
-    ref={ref}
-    delayDuration={delayDuration}
-    skipDelayDuration={skipDelayDuration}
-    className={cn("relative z-10...", className)}
-    {...props}
-  >
+<Avatar className="h-12 w-12">  // Simple and clean
 ```
 
----
-
-### 2. Timing Values
-
-| Setting | Default | New Value | Effect |
-|---------|---------|-----------|--------|
-| `delayDuration` | 200ms | 100ms | Menu opens faster after hover |
-| `skipDelayDuration` | 150ms | 150ms | Quick switch between menu items |
-
-The close behavior is affected by the exit delay, which we're reducing to make the menu feel more responsive when moving away.
+The issue is caused by:
+- `border-4 border-background` - creates a thick white border that looks like a photo frame
+- `shadow-lg` - heavy drop shadow adds an artificial floating effect
+- The combination creates a "layered glass" appearance
 
 ---
 
-### 3. Click Behavior
+## Solution
 
-Radix Navigation Menu natively supports click-to-toggle. The trigger already handles:
-- **Click to open** - opens the menu
-- **Click again to close** - closes the menu
-- **Click outside** - closes the menu
-
-The current implementation should already work. If there are issues, we can verify by:
-- Ensuring no `onPointerDown` or `onClick` handlers are interfering
-- The trigger uses `data-state="open"` or `data-state="closed"` which toggles on click
+Simplify the avatar styling across agent-related components to match the clean blog author look, while keeping the avatar size appropriate for each context.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/components/ui/navigation-menu.tsx` | Add timing props with faster defaults (100ms/150ms) |
+### 1. AgentDetail.tsx (Main Agent Profile Page)
+
+**Line 164 - Hero Avatar**
+
+| Current | New |
+|---------|-----|
+| `border-4 border-background shadow-lg` | Simple ring with subtle offset |
+
+New styling:
+```tsx
+<Avatar className="h-24 w-24 md:h-28 md:w-28 ring-2 ring-border">
+```
+
+This gives:
+- Clean, simple ring around the avatar
+- No heavy shadows or thick borders
+- Professional, modern look
+
+---
+
+### 2. ProjectAgentCard.tsx (Agent Card on Project Pages)
+
+**Line 90 - Agent Avatar in sidebar card**
+
+| Current | New |
+|---------|-----|
+| `ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background` | Simple, clean styling |
+
+New styling:
+```tsx
+<Avatar className="h-16 w-16 ring-2 ring-border">
+```
+
+---
+
+### 3. StickyContactCard.tsx (Agent Card on Listing Pages)
+
+**Line 89 - Agent Avatar in contact sidebar**
+
+| Current | New |
+|---------|-----|
+| `ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background` | Simple, clean styling |
+
+New styling:
+```tsx
+<Avatar className="h-16 w-16 ring-2 ring-border">
+```
+
+---
+
+## Visual Comparison
+
+**Before (glass tank effect):**
+- Thick white border around the photo
+- Heavy shadow underneath
+- Multiple overlapping decorative elements
+- Looks like the photo is in a frame inside another frame
+
+**After (clean look):**
+- Single subtle ring around the avatar
+- No shadows or thick borders
+- Photo feels natural and integrated
+- Matches blog author styling and modern design standards
 
 ---
 
 ## Result
-- Snappier hover response - menu closes faster when cursor leaves
-- Click-to-toggle works cleanly alongside hover
-- Consistent behavior across all mega-menus and the Company dropdown
 
+All agent avatars across the site will have a consistent, clean, professional appearance without the artificial "glass tank" or "framed" look - matching the quality you see on blog pages.
