@@ -18,6 +18,7 @@ import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
+import { RecentNearbySales } from '@/components/property/RecentNearbySales';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -166,6 +167,24 @@ export default function PropertyDetail() {
               />
             </motion.div>
 
+            {/* Recent Nearby Sales */}
+            {property.latitude && property.longitude && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                className="py-6 border-b border-border"
+              >
+                <RecentNearbySales
+                  latitude={property.latitude}
+                  longitude={property.longitude}
+                  city={property.city}
+                  propertyRooms={property.bedrooms}
+                  propertyPrice={property.price}
+                  propertySizeSqm={property.size_sqm}
+                />
+              </motion.div>
+            )}
 
             {/* Cost Breakdown - Only for sale/rent properties */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (

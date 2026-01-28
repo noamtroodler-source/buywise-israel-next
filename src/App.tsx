@@ -113,6 +113,7 @@ const AdminAgencies = lazy(() => import("./pages/admin/AdminAgencies"));
 const AdminDevelopers = lazy(() => import("./pages/admin/AdminDevelopers"));
 const AdminProjects = lazy(() => import("./pages/admin/AdminProjects"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminSoldTransactions = lazy(() => import("./pages/admin/SoldTransactionsAdmin"));
 const HeroImageGenerator = lazy(() => import("./pages/admin/HeroImageGenerator"));
 const HeroPreview = lazy(() => import("./pages/admin/HeroPreview"));
 
@@ -388,6 +389,7 @@ const App = () => (
                           <Route path="announcements" element={<AdminAnnouncements />} />
                           <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
                           <Route path="featured" element={<AdminFeatured />} />
+                          <Route path="sold-transactions" element={<AdminSoldTransactions />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
