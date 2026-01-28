@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -59,67 +59,66 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
           <Link 
             to="/listings?status=for_sale" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Buy
           </Link>
           <Link 
             to="/listings?status=for_rent" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Rent
           </Link>
           <Link 
             to="/projects" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Projects
           </Link>
           <Link 
             to="/tools" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Tools
           </Link>
           <Link 
             to="/guides" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Guides
           </Link>
           <Link 
             to="/areas" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Areas
           </Link>
           <Link 
-            to="/blog" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Blog
-          </Link>
-          <Link 
             to="/advertise" 
-            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            className="text-base font-medium text-primary hover:text-primary/80 transition-colors"
           >
             Advertise
           </Link>
-          <Link 
-            to="/about" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            About
-          </Link>
-          <Link 
-            to="/contact" 
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Contact
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none">
+              More
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 bg-background border-border">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/blog">Blog</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/about">About</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link to="/contact">Contact</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
 
         {/* Right Side */}
