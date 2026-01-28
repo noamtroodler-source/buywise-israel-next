@@ -1,88 +1,89 @@
 
 
-# Redesign "More" Dropdown to Match Mega-Menu Style
+# Elevate Blog & Rename "More" to "Company"
 
-## Current Issue
-The "More" dropdown uses a basic list design while Buy/Rent/Projects use a polished mega-menu style with:
-- Rounded corners (`rounded-xl` vs `rounded-md`)
-- Larger shadow (`shadow-xl` vs `shadow-lg`)
-- Column headers with uppercase styling
-- More generous padding
-- Better hover transitions
-
-## Design Approach
-Since "More" only has 3 items (Blog, About, Contact), we'll create a single-column version that still feels like a mega-menu with:
-- Section header ("Resources" or "Company")
-- Same rounded corners and shadow
-- Same link styling with hover transitions
-- Consistent padding and spacing
+## Summary
+Move Blog to top-level navigation and convert the "More" dropdown into a focused "Company" dropdown with just About and Contact.
 
 ---
 
-## Changes to `src/components/layout/MoreNav.tsx`
+## Changes Overview
 
-### Before (current basic list):
-```tsx
-<div className="w-40 rounded-md border bg-popover text-popover-foreground shadow-lg overflow-hidden">
-  <Link className="block px-3 py-2 text-sm hover:bg-accent...">Blog</Link>
-  ...
-</div>
+### Desktop Navigation (Header.tsx lines 69-86)
+
+**Current order:**
+```
+Buy | Rent | Projects | Areas | Advertise | More (Blog, About, Contact)
 ```
 
-### After (mega-menu consistent):
+**New order:**
+```
+Buy | Rent | Projects | Areas | Blog | Advertise | Company (About, Contact)
+```
+
+**Changes:**
+- Add a new top-level `<Link to="/blog">` between Areas and Advertise
+- Keep `<MoreNav />` but it will now be called "Company"
+
+---
+
+### MoreNav Component Refactor
+
+**File:** `src/components/layout/MoreNav.tsx`
+
+1. Change trigger text from "More" to "Company"
+2. Remove the "Company" section header (since the dropdown IS the company section)
+3. Remove Blog from the list - keep only About and Contact
+4. Simplify width from 200px to 180px (fewer items need less space)
+
+**Updated structure:**
 ```tsx
-<div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[200px]">
-  <div className="p-4">
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-      Company
-    </h4>
-    <ul className="space-y-1">
-      <li>
-        <Link className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors">
-          <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-            Blog
-          </span>
-          <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
-            News & insights
-          </span>
-        </Link>
-      </li>
-      ...
-    </ul>
+<NavigationMenuTrigger>
+  Company
+</NavigationMenuTrigger>
+<NavigationMenuContent>
+  <div className="rounded-xl border bg-popover shadow-xl w-[180px]">
+    <div className="p-3">
+      <ul className="space-y-1">
+        <li>About - Our story</li>
+        <li>Contact - Get in touch</li>
+      </ul>
+    </div>
   </div>
-</div>
+</NavigationMenuContent>
 ```
 
 ---
 
-## Specific Style Alignment
+### Mobile Menu (Header.tsx lines 391-426)
 
-| Property | MegaMenu | MoreNav (Current) | MoreNav (Fixed) |
-|----------|----------|-------------------|-----------------|
-| Border radius | `rounded-xl` | `rounded-md` | `rounded-xl` |
-| Shadow | `shadow-xl` | `shadow-lg` | `shadow-xl` |
-| Container padding | `p-4` per column | None | `p-4` |
-| Section header | Yes (uppercase) | No | Yes ("Company") |
-| Link container | `<ul>` with `space-y-1` | Direct links | `<ul>` with `space-y-1` |
-| Link padding | `px-2 py-1.5` | `px-3 py-2` | `px-2 py-1.5` |
-| Link style | Rounded with transition | Basic | Rounded with transition |
-| Descriptions | Supported | None | Add brief descriptions |
+The mobile menu already has Blog, About, and Contact as separate links - no changes needed there. The structure already supports this layout.
 
 ---
 
-## Items with Descriptions
+## Files to Modify
 
-| Link | Description |
-|------|-------------|
-| Blog | News & insights |
-| About | Our story |
-| Contact | Get in touch |
+| File | Changes |
+|------|---------|
+| `src/components/layout/Header.tsx` | Add Blog link between Areas and Advertise in desktop nav (line 78-79) |
+| `src/components/layout/MoreNav.tsx` | Rename to "Company", remove Blog, remove section header |
+
+---
+
+## Final Desktop Nav Structure
+
+```
+Buy | Rent | Projects | Areas | Blog | Advertise | Company
+ ^      ^       ^        ^       ^        ^           ^
+mega  mega    mega    simple  simple   primary    dropdown
+menu  menu    menu    link    link     link      (About, Contact)
+```
 
 ---
 
 ## Result
-- Consistent mega-menu appearance across all navigation dropdowns
-- Same visual language: rounded corners, shadows, typography, spacing
-- Professional, cohesive navigation experience
-- Single-column layout appropriate for fewer items
+- Blog is now a prominent top-level link (more visibility for content)
+- "Company" is an accurate label for About and Contact
+- Cleaner semantic grouping
+- No confusing category mismatch
 
