@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
@@ -46,6 +47,30 @@ export function Header() {
     await signOut();
     navigate('/');
   };
+
+  // Debounced hover handlers for "More" dropdown (fixes portal gap issue)
+  const handleMoreMouseEnter = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setMoreDropdownOpen(true);
+  };
+
+  const handleMoreMouseLeave = () => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setMoreDropdownOpen(false);
+    }, 150);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -104,15 +129,20 @@ export function Header() {
             Advertise
           </Link>
           <div 
-            onMouseEnter={() => setMoreDropdownOpen(true)} 
-            onMouseLeave={() => setMoreDropdownOpen(false)}
+            onMouseEnter={handleMoreMouseEnter} 
+            onMouseLeave={handleMoreMouseLeave}
           >
             <DropdownMenu open={moreDropdownOpen} onOpenChange={setMoreDropdownOpen}>
               <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none">
                 More
                 <ChevronDown className="h-4 w-4" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-background border-border">
+              <DropdownMenuContent 
+                align="end" 
+                className="w-40 bg-background border-border"
+                onMouseEnter={handleMoreMouseEnter}
+                onMouseLeave={handleMoreMouseLeave}
+              >
                 <DropdownMenuItem asChild className="cursor-pointer">
                   <Link to="/blog">Blog</Link>
                 </DropdownMenuItem>
