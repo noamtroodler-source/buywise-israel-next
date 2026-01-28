@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Upload, MapPin, Database, RefreshCw, FileJson, History, TrendingUp } from 'lucide-react';
+import { Upload, MapPin, Database, RefreshCw, FileJson, History, TrendingUp, Sparkles, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { SoldTransaction, SoldDataImport } from '@/types/soldTransactions';
 
@@ -22,6 +23,8 @@ export default function SoldTransactionsAdmin() {
   const [jsonInput, setJsonInput] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [clearExistingOnSeed, setClearExistingOnSeed] = useState(false);
 
   // Fetch cities
   const { data: cities } = useQuery({
@@ -130,6 +133,28 @@ export default function SoldTransactionsAdmin() {
     },
   });
 
+  // Seed mutation
+  const seedMutation = useMutation({
+    mutationFn: async (options: { clearExisting: boolean }) => {
+      const response = await supabase.functions.invoke('seed-sold-transactions', {
+        body: {
+          clearExisting: options.clearExisting,
+          limitCities: selectedCity ? [selectedCity] : undefined,
+        },
+      });
+
+      if (response.error) throw response.error;
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Seeded ${data.transactions_inserted} transactions for ${data.properties_processed} properties`);
+      queryClient.invalidateQueries({ queryKey: ['sold-transactions-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['sold-data-imports'] });
+    },
+    onError: (error) => {
+      toast.error(`Seeding failed: ${error.message}`);
+    },
+  });
   const handleImport = async () => {
     if (!selectedCity) {
       toast.error('Please select a city');
@@ -162,6 +187,15 @@ export default function SoldTransactionsAdmin() {
       await geocodeMutation.mutateAsync();
     } finally {
       setIsGeocoding(false);
+    }
+  };
+
+  const handleSeedMockData = async () => {
+    setIsSeeding(true);
+    try {
+      await seedMutation.mutateAsync({ clearExisting: clearExistingOnSeed });
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -368,6 +402,80 @@ export default function SoldTransactionsAdmin() {
               All transactions have been geocoded.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Seed Mock Data Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Seed Mock Data
+          </CardTitle>
+          <CardDescription>
+            Generate realistic sold transactions near all resale listings for demo purposes
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="space-y-2 flex-1 max-w-xs">
+              <Label>City (optional)</Label>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All cities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All cities</SelectItem>
+                  {cities?.map((city) => (
+                    <SelectItem key={city.slug} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 pt-6">
+              <Checkbox
+                id="clearExisting"
+                checked={clearExistingOnSeed}
+                onCheckedChange={(checked) => setClearExistingOnSeed(checked === true)}
+              />
+              <Label htmlFor="clearExisting" className="text-sm font-normal cursor-pointer">
+                Clear existing data first
+              </Label>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button 
+              onClick={handleSeedMockData} 
+              disabled={isSeeding}
+              variant={clearExistingOnSeed ? "destructive" : "default"}
+            >
+              {isSeeding ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Seeding...
+                </>
+              ) : clearExistingOnSeed ? (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear &amp; Seed Mock Data
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Seed Mock Data
+                </>
+              )}
+            </Button>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            This will generate 4-8 nearby sold transactions for each resale listing with coordinates.
+            Prices will be calibrated to ±15% of listing prices for realistic comparisons.
+          </p>
         </CardContent>
       </Card>
 
