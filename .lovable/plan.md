@@ -1,43 +1,52 @@
 
 
-# Fix Avatar Image Display in Blog Author Contact Card
+# Make "More" Dropdown Open on Hover
 
-## Problem
+## Overview
 
-The author avatar images in the blog post sidebar card appear "compact and weird looking" because the images are being stretched/distorted to fit the circular avatar container. This happens when the source image has a different aspect ratio than the avatar.
+Change the "More" navigation dropdown in the site header to open when the user hovers over it, rather than requiring a click. This provides a smoother navigation experience similar to traditional website mega-menus.
+
+## Current Behavior
+
+The "More" dropdown uses Radix's `DropdownMenu` component with default behavior (click to open/close).
 
 ## Solution
 
-Add `object-cover` CSS class to the `AvatarImage` component. This ensures images:
-- Fill the entire circular avatar area
-- Maintain their original aspect ratio
-- Crop from the center if needed (no distortion)
+Convert the dropdown to a controlled component with state that responds to mouse enter/leave events:
 
-This is the same fix already applied in `AgencyDetail.tsx` for agent avatars.
+1. Add state to track whether the "More" dropdown is open
+2. Add `onMouseEnter` to open the dropdown when hovering over the trigger
+3. Add `onMouseLeave` to close the dropdown when the mouse leaves both the trigger and content
+4. Use the `open` and `onOpenChange` props on `DropdownMenu` for controlled behavior
 
-## Technical Change
+## Technical Changes
 
-**File:** `src/components/blog/BlogAuthorContactCard.tsx`
+**File:** `src/components/layout/Header.tsx`
 
-**Current code (line 77):**
-```tsx
-<AvatarImage src={author.avatar_url || undefined} alt={author.name} />
-```
+1. Add new state variable:
+   ```tsx
+   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
+   ```
 
-**Updated code:**
-```tsx
-<AvatarImage src={author.avatar_url || undefined} alt={author.name} className="object-cover" />
-```
+2. Wrap the dropdown in a container div with hover handlers:
+   ```tsx
+   <div 
+     onMouseEnter={() => setMoreDropdownOpen(true)} 
+     onMouseLeave={() => setMoreDropdownOpen(false)}
+   >
+     <DropdownMenu open={moreDropdownOpen} onOpenChange={setMoreDropdownOpen}>
+       ...
+     </DropdownMenu>
+   </div>
+   ```
 
-## Visual Result
-
-| Before | After |
-|--------|-------|
-| Image stretched/squished | Image fills avatar naturally |
-| Distorted proportions | Correct aspect ratio |
-| Weird compact look | Professional appearance |
+3. The dropdown will now:
+   - Open when mouse enters the "More" button
+   - Stay open when mouse moves to the dropdown content
+   - Close when mouse leaves the entire area
+   - Still work with click/keyboard for accessibility
 
 ## Files Modified
 
-1. `src/components/blog/BlogAuthorContactCard.tsx` - Add `object-cover` class to AvatarImage
+1. `src/components/layout/Header.tsx` - Add hover behavior to "More" dropdown
 
