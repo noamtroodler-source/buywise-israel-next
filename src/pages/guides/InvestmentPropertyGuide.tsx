@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { 
   ArrowLeft, TrendingUp, Clock, ChevronDown, ChevronUp,
   Calculator, PieChart, MapPin, AlertTriangle, Target,
-  CheckCircle2, Percent
+  CheckCircle2, Percent, Building2, Wallet, Users,
+  Home, DollarSign, Key, Scale
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,7 @@ function CollapsibleSection({ section, isOpen, onToggle }: {
 }
 
 export default function InvestmentPropertyGuide() {
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['yields']));
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['real-numbers']));
   const [readSections, setReadSections] = useState<Set<string>>(new Set());
 
   const toggleSection = (id: string) => {
@@ -70,222 +71,499 @@ export default function InvestmentPropertyGuide() {
 
   const sections: Section[] = [
     {
-      id: 'yields',
-      title: '1. Understanding Israeli Rental Yields',
-      icon: Percent,
+      id: 'real-numbers',
+      title: '1. Real Numbers: Rental Income Examples',
+      icon: DollarSign,
       content: (
         <div className="space-y-4">
           <p>
-            Israeli rental yields are generally lower than many other markets, but capital appreciation 
-            has historically been strong.
+            Forget vague "yield ranges." Here are actual rental income examples from recent 
+            market data to ground your expectations.
           </p>
-          <h4 className="font-semibold">Typical Gross Yields by Area:</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Tel Aviv center:</strong> 2-3% gross yield</li>
-            <li><strong>Jerusalem:</strong> 2.5-3.5% gross yield</li>
-            <li><strong>Haifa:</strong> 3.5-4.5% gross yield</li>
-            <li><strong>Peripheral cities:</strong> 4-5.5% gross yield</li>
-            <li><strong>Development towns:</strong> 5-7% gross yield</li>
-          </ul>
-          <h4 className="font-semibold mt-4">Net vs Gross Yield:</h4>
-          <p>After accounting for expenses, net yields are typically 1-1.5% lower:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><GlossaryTooltip term="ארנונה">Arnona</GlossaryTooltip> (if landlord pays)</li>
-            <li><GlossaryTooltip term="ועד בית">Vaad Bayit</GlossaryTooltip> fees</li>
-            <li>Maintenance and repairs</li>
-            <li>Property management (if applicable)</li>
-            <li>Vacancy periods</li>
-          </ul>
-          <Link to="/tools?tool=investment">
-            <Button variant="outline" size="sm" className="gap-2 mt-4">
-              <Calculator className="h-4 w-4" />
-              Calculate Investment Returns
-            </Button>
-          </Link>
-        </div>
-      ),
-    },
-    {
-      id: 'taxes',
-      title: '2. Investment Property Taxes',
-      icon: Calculator,
-      content: (
-        <div className="space-y-4">
-          <h4 className="font-semibold text-foreground">Higher Purchase Tax:</h4>
-          <p>
-            Investment properties (second+ property) face significantly higher 
-            <GlossaryTooltip term="מס רכישה"> purchase tax</GlossaryTooltip>:
-          </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>8%</strong> on amount up to ~6,000,000 ₪</li>
-            <li><strong>10%</strong> on amount above ~6,000,000 ₪</li>
-          </ul>
-          <div className="bg-muted p-4 rounded-lg border border-border my-4">
+          
+          <h4 className="font-semibold">Tel Aviv - 3 Room Apartment (~70 sqm)</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Purchase Price:</span>
+              <span className="font-medium">₪3,200,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Monthly Rent:</span>
+              <span className="font-medium">₪7,000 - 8,500</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Gross Yield:</span>
+              <span className="font-bold text-primary">2.6% - 3.2%</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="text-muted-foreground">After Expenses (Net):</span>
+              <span className="font-bold text-foreground">1.8% - 2.4%</span>
+            </div>
+          </div>
+
+          <h4 className="font-semibold mt-4">Haifa (Carmel) - 4 Room Apartment (~100 sqm)</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Purchase Price:</span>
+              <span className="font-medium">₪1,800,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Monthly Rent:</span>
+              <span className="font-medium">₪5,500 - 6,500</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Gross Yield:</span>
+              <span className="font-bold text-primary">3.7% - 4.3%</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="text-muted-foreground">After Expenses (Net):</span>
+              <span className="font-bold text-foreground">2.8% - 3.4%</span>
+            </div>
+          </div>
+
+          <h4 className="font-semibold mt-4">Beer Sheva - 3 Room Apartment (~80 sqm)</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Purchase Price:</span>
+              <span className="font-medium">₪950,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Monthly Rent:</span>
+              <span className="font-medium">₪3,800 - 4,500</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Gross Yield:</span>
+              <span className="font-bold text-primary">4.8% - 5.7%</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="text-muted-foreground">After Expenses (Net):</span>
+              <span className="font-bold text-foreground">3.8% - 4.6%</span>
+            </div>
+          </div>
+
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
             <p className="text-sm">
-              <strong>Example:</strong> A 3M ₪ investment property incurs ~₪240,000 in purchase tax alone.
+              <strong>💡 The Yield Reality:</strong> Higher yields in periphery come with trade-offs: 
+              lower appreciation, tenant turnover, less liquidity. Tel Aviv's low yield is offset by 
+              consistent 5-8% annual appreciation historically.
             </p>
           </div>
-          
-          <h4 className="font-semibold mt-4">Rental Income Tax:</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Exempt up to ~5,470 ₪/month</strong> (for residential, 2024)</li>
-            <li><strong>10% flat rate option</strong> on gross rental income (no deductions)</li>
-            <li><strong>Marginal rate option</strong> with expense deductions</li>
-          </ul>
-
-          <h4 className="font-semibold mt-4">Capital Gains Tax:</h4>
-          <p>When selling investment property:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>25% on real (inflation-adjusted) gains</li>
-            <li>No exemption for investment properties</li>
-            <li>Depreciation recapture may apply</li>
-          </ul>
         </div>
       ),
     },
     {
-      id: 'financing',
-      title: '3. Financing Investment Properties',
-      icon: PieChart,
+      id: 'total-cost',
+      title: '2. The True Cost of Investment Properties',
+      icon: Wallet,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold">LTV Limits for Investment:</h4>
-          <p>Bank of Israel regulations restrict leverage for investment properties:</p>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Maximum 50% LTV</strong> for second property</li>
-            <li><strong>Maximum 50% LTV</strong> for foreign residents</li>
-            <li>Stricter income verification requirements</li>
-          </ul>
-          
-          <div className="bg-muted p-4 rounded-lg border border-border my-4">
+          <p>
+            Investment property taxes are significantly higher. Here's the exact breakdown 
+            so you can budget accurately.
+          </p>
+
+          <h4 className="font-semibold">Purchase Tax (Investor Rate):</h4>
+          <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>First ₪6,055,070:</span>
+                <span className="font-bold">8%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Above ₪6,055,070:</span>
+                <span className="font-bold">10%</span>
+              </div>
+            </div>
+          </div>
+
+          <h4 className="font-semibold mt-4">Example: ₪2,000,000 Investment Property</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Purchase Tax (8%):</span>
+              <span className="font-medium">₪160,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Lawyer Fees (1%):</span>
+              <span className="font-medium">₪23,400</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mortgage Fees:</span>
+              <span className="font-medium">₪8,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Renovation Budget:</span>
+              <span className="font-medium">₪50,000</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 text-lg">
+              <span className="font-semibold">Total Additional Costs:</span>
+              <span className="font-bold text-primary">₪241,400 (12%+)</span>
+            </div>
+          </div>
+
+          <h4 className="font-semibold mt-4">Ongoing Costs (Annual):</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Arnona (varies by city):</span>
+              <span className="font-medium">₪4,000 - 12,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vaad Bayit:</span>
+              <span className="font-medium">₪2,400 - 6,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Insurance:</span>
+              <span className="font-medium">₪800 - 1,500</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Maintenance Reserve (5%):</span>
+              <span className="font-medium">₪3,000 - 5,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vacancy (1 month/year avg):</span>
+              <span className="font-medium">₪5,000 - 8,000</span>
+            </div>
+          </div>
+
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
             <p className="text-sm flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <span>You'll need at least 50% down payment for investment properties. 
-              Plan your capital allocation carefully.</span>
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+              <span><strong>Cash Flow Reality:</strong> With 50% down and current interest rates, 
+              most Israeli investment properties are cash-flow negative or break-even. The strategy 
+              relies on appreciation + principal paydown.</span>
             </p>
           </div>
-
-          <h4 className="font-semibold mt-4">Cash Flow Considerations:</h4>
-          <p>With 50% financing and current interest rates:</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Monthly mortgage payment often exceeds rental income</li>
-            <li>Negative cash flow common in prime areas</li>
-            <li>Strategy relies on appreciation + principal paydown</li>
-          </ul>
         </div>
       ),
     },
     {
-      id: 'locations',
-      title: '4. Best Areas for Investment',
-      icon: MapPin,
+      id: 'property-management',
+      title: '3. Property Management Options',
+      icon: Users,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold">High Yield Strategy (Cash Flow Focus):</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Haifa (lower city, Hadar):</strong> 4-5% yields, improving area</li>
-            <li><strong>Beer Sheva:</strong> Strong rental demand from university, tech hub</li>
-            <li><strong>Ashdod:</strong> Port city, growing population</li>
-            <li><strong>Netanya (eastern neighborhoods):</strong> More affordable, decent yields</li>
-          </ul>
-          
-          <h4 className="font-semibold mt-4">Appreciation Strategy (Capital Gains Focus):</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Tel Aviv:</strong> Limited supply, global city, lower yields but strong appreciation</li>
-            <li><strong>Areas with new infrastructure:</strong> Light rail expansion, new highways</li>
-            <li><strong>Up-and-coming neighborhoods:</strong> Jaffa, South Tel Aviv, Florentine</li>
-          </ul>
+          <p>
+            Managing rental property from abroad adds complexity. Here are your options with 
+            actual costs and trade-offs.
+          </p>
 
-          <h4 className="font-semibold mt-4">Balanced Approach:</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Modi'in:</strong> Strong demand, family-oriented, stable appreciation</li>
-            <li><strong>Petah Tikva:</strong> Close to tech hubs, improving infrastructure</li>
-            <li><strong>Ra'anana (older buildings):</strong> Premium location, renovation potential</li>
-          </ul>
-          <Link to="/areas">
-            <Button variant="outline" size="sm" className="gap-2 mt-4">
-              <MapPin className="h-4 w-4" />
-              Compare City Data
-            </Button>
-          </Link>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-card border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-foreground">Option 1: Self-Management</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Handle tenant finding, rent collection, and maintenance coordination yourself.
+                  </p>
+                </div>
+                <span className="text-success font-bold">₪0</span>
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <p className="text-success">✓ No management fees</p>
+                <p className="text-destructive">✗ Requires Hebrew fluency</p>
+                <p className="text-destructive">✗ Time zone challenges from abroad</p>
+                <p className="text-destructive">✗ Emergency repairs at 2am your time</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-card border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-foreground">Option 2: Full Property Management</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Professional company handles everything: tenant search, rent collection, 
+                    maintenance, legal issues.
+                  </p>
+                </div>
+                <span className="text-primary font-bold">8-12% of rent</span>
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <p className="text-success">✓ Completely hands-off</p>
+                <p className="text-success">✓ Local expertise and language</p>
+                <p className="text-destructive">✗ Reduces yield by ~1%</p>
+                <p className="text-destructive">✗ Quality varies significantly</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-card border">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-semibold text-foreground">Option 3: Family/Friend Arrangement</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Trusted local contact handles day-to-day, you handle major decisions.
+                  </p>
+                </div>
+                <span className="text-muted-foreground font-bold">Varies</span>
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <p className="text-success">✓ Trust and communication</p>
+                <p className="text-success">✓ Flexible compensation</p>
+                <p className="text-warning-foreground">⚠ Can strain relationships</p>
+                <p className="text-destructive">✗ Not always reliable long-term</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <p className="text-sm">
+              <strong>💡 Pro Tip:</strong> For foreign investors, professional management is often 
+              worth the cost—especially for first properties. The ₪4,000-8,000/year fee prevents 
+              much larger losses from tenant problems or maintenance neglect.
+            </p>
+          </div>
         </div>
       ),
     },
     {
-      id: 'strategy',
-      title: '5. Investment Strategies',
+      id: 'short-term',
+      title: '4. Short-Term Rental Regulations',
+      icon: Key,
+      content: (
+        <div className="space-y-4">
+          <p>
+            Airbnb and short-term rentals are increasingly regulated in Israel. Here's what you 
+            need to know before planning a vacation rental strategy.
+          </p>
+
+          <h4 className="font-semibold">Tel Aviv Regulations:</h4>
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+            <ul className="text-sm space-y-2">
+              <li><strong>License Required:</strong> Business license from municipality</li>
+              <li><strong>Rental Limit:</strong> Maximum 90 days per year without license</li>
+              <li><strong>Enforcement:</strong> Active enforcement with ₪50,000+ fines</li>
+              <li><strong>Arnona:</strong> Higher commercial rate applies</li>
+            </ul>
+          </div>
+
+          <h4 className="font-semibold mt-4">Jerusalem:</h4>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <ul className="text-sm space-y-2">
+              <li><strong>Less strict:</strong> Enforcement is lighter than Tel Aviv</li>
+              <li><strong>Seasonal demand:</strong> High during holidays, lower otherwise</li>
+              <li><strong>Neighborhoods vary:</strong> Old City area very regulated</li>
+            </ul>
+          </div>
+
+          <h4 className="font-semibold mt-4">Eilat:</h4>
+          <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+            <ul className="text-sm space-y-2">
+              <li><strong>Tourist-friendly:</strong> More permissive regulations</li>
+              <li><strong>No VAT zone:</strong> Different tax treatment</li>
+              <li><strong>Seasonal:</strong> Winter peak, summer slow</li>
+            </ul>
+          </div>
+
+          <h4 className="font-semibold mt-4">Financial Reality:</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Potential Gross Yield:</span>
+              <span className="font-medium">6-10%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Platform Fees (Airbnb):</span>
+              <span className="font-medium">-3%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Cleaning/Turnover:</span>
+              <span className="font-medium">-15-20%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Vacancy (off-season):</span>
+              <span className="font-medium">-20-30%</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-semibold">Realistic Net Yield:</span>
+              <span className="font-bold text-foreground">3-5%</span>
+            </div>
+          </div>
+
+          <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20 mt-4">
+            <p className="text-sm flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+              <span><strong>Warning:</strong> Many buildings prohibit short-term rentals in their 
+              bylaws. Verify before purchase—violating building rules can result in legal action 
+              from neighbors.</span>
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'exit-strategy',
+      title: '5. Exit Strategy & Selling Costs',
       icon: Target,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold">Strategy 1: Buy and Hold</h4>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Long-term appreciation play</li>
-            <li>Accept lower/negative cash flow</li>
-            <li>Best in prime locations</li>
-            <li>Requires patient capital</li>
-          </ul>
+          <p>
+            Investment properties are illiquid. Plan your exit before you buy.
+          </p>
 
-          <h4 className="font-semibold mt-4">Strategy 2: Value-Add</h4>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Buy undervalued properties needing renovation</li>
-            <li>Improve and increase rent/value</li>
-            <li>Higher returns but more work</li>
-            <li>Consider TAMA 38 buildings</li>
-          </ul>
+          <h4 className="font-semibold">Selling Timeline:</h4>
+          <div className="bg-muted/50 rounded-lg p-4">
+            <ul className="text-sm space-y-2">
+              <li><strong>Listing to Offer:</strong> 1-6 months (market dependent)</li>
+              <li><strong>Contract to Closing:</strong> 2-4 months</li>
+              <li><strong>Total Timeline:</strong> 3-10 months is realistic</li>
+            </ul>
+          </div>
 
-          <h4 className="font-semibold mt-4">Strategy 3: New Construction</h4>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Buy off-plan at developer prices</li>
-            <li>Sell/rent upon completion at market prices</li>
-            <li>No immediate rental income</li>
-            <li>Developer risk considerations</li>
-          </ul>
+          <h4 className="font-semibold mt-4">Selling Costs:</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Agent Commission:</span>
+              <span className="font-medium">1-2% + VAT</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Capital Gains Tax:</span>
+              <span className="font-medium">25% on real gains</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Lawyer Fees:</span>
+              <span className="font-medium">0.5% + VAT</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mortgage Prepayment (if any):</span>
+              <span className="font-medium">Varies by track</span>
+            </div>
+          </div>
 
-          <h4 className="font-semibold mt-4">Strategy 4: Short-Term Rentals</h4>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Higher yields in tourist areas</li>
-            <li>More management intensive</li>
-            <li>Municipal regulations apply</li>
-            <li>Tel Aviv, Jerusalem, Eilat</li>
-          </ul>
+          <h4 className="font-semibold mt-4">Capital Gains Example:</h4>
+          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span>Purchase Price (2020):</span>
+              <span>₪1,800,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Sale Price (2025):</span>
+              <span>₪2,400,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Nominal Gain:</span>
+              <span>₪600,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Inflation Adjustment:</span>
+              <span className="text-success">-₪150,000</span>
+            </div>
+            <div className="flex justify-between">
+              <span>"Real" Gain:</span>
+              <span>₪450,000</span>
+            </div>
+            <div className="flex justify-between border-t pt-2 text-destructive">
+              <span className="font-semibold">Capital Gains Tax (25%):</span>
+              <span className="font-bold">₪112,500</span>
+            </div>
+          </div>
+
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <p className="text-sm">
+              <strong>💡 Planning Tip:</strong> Hold for 5+ years to maximize appreciation and 
+              reduce the tax rate effective impact. Quick flips are heavily taxed.
+            </p>
+          </div>
         </div>
       ),
     },
     {
       id: 'risks',
-      title: '6. Risks & Considerations',
+      title: '6. Risk Assessment Framework',
       icon: AlertTriangle,
       content: (
         <div className="space-y-4">
-          <h4 className="font-semibold text-foreground">Key Risks:</h4>
-          <ul className="list-disc pl-5 space-y-2">
-            <li>
-              <strong>Interest Rate Risk:</strong> Rising rates impact both mortgage payments 
-              and property values
-            </li>
-            <li>
-              <strong>Vacancy Risk:</strong> Periods without tenants, especially in 
-              less desirable areas
-            </li>
-            <li>
-              <strong>Tenant Risk:</strong> Israeli tenant protection laws are strong; 
-              eviction can be lengthy
-            </li>
-            <li>
-              <strong>Regulatory Risk:</strong> Government policies on housing, rent control discussions
-            </li>
-            <li>
-              <strong>Currency Risk:</strong> For foreign investors, NIS/USD fluctuations
-            </li>
-            <li>
-              <strong>Liquidity Risk:</strong> Real estate is not quickly convertible to cash
-            </li>
-          </ul>
+          <p>
+            Every investment has risks. Here's a framework to evaluate them for your situation.
+          </p>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">📈</span>
+                <div>
+                  <h4 className="font-semibold">Interest Rate Risk</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    If rates rise 2%, your monthly payment could increase ₪1,500-3,000. 
+                    Fixed-rate portions protect you; variable portions expose you.
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Mitigation:</strong> Lock 50%+ in fixed tracks; stress-test at +3% rates
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🏠</span>
+                <div>
+                  <h4 className="font-semibold">Vacancy Risk</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    1-2 months vacancy per year is normal. In peripheral areas, 
+                    it can be 2-4 months during market downturns.
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Mitigation:</strong> Budget for 2 months vacancy; maintain property well; 
+                    price competitively
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">👤</span>
+                <div>
+                  <h4 className="font-semibold">Tenant Risk</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Israeli tenant protections are strong. Eviction can take 6-12 months 
+                    for non-paying tenants.
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Mitigation:</strong> Thorough screening; require bank guarantee or 
+                    guarantors; use standard rental contracts
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">💱</span>
+                <div>
+                  <h4 className="font-semibold">Currency Risk (Foreign Investors)</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    NIS/USD can swing 10-15% in a year. Your property might appreciate 5% 
+                    in NIS but lose 10% in USD.
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Mitigation:</strong> Think long-term (10+ years); consider NIS income 
+                    to service NIS mortgage
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg border border-warning/20 bg-warning/5">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🏛️</span>
+                <div>
+                  <h4 className="font-semibold">Regulatory Risk</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Government could increase investor taxes, implement rent control, 
+                    or change short-term rental rules.
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Mitigation:</strong> Diversify holdings; don't over-leverage; 
+                    stay informed on policy changes
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-primary/5 p-4 rounded-lg mt-4">
             <p className="text-sm">
-              <strong>💡 Pro Tip:</strong> Always stress-test your investment at higher interest rates 
-              and with a few months of vacancy built in.
+              <strong>💡 Stress Test:</strong> Before buying, ask: "Can I hold this property 
+              for 5 years if rates rise 3%, I have 3 months vacancy, and the market drops 15%?" 
+              If no, reconsider the investment.
             </p>
           </div>
         </div>
@@ -319,7 +597,7 @@ export default function InvestmentPropertyGuide() {
                 <span>Investment Guide</span>
                 <span>•</span>
                 <Clock className="h-4 w-4" />
-                <span>22 min read</span>
+                <span>25 min read</span>
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
@@ -327,8 +605,8 @@ export default function InvestmentPropertyGuide() {
               </h1>
               
               <p className="text-lg text-muted-foreground">
-                Maximize returns on Israeli real estate investments. Learn about yields, 
-                tax implications, financing, and market analysis.
+                Real rental income numbers, actual costs, property management options, 
+                and honest risk assessment for Israeli investment properties.
               </p>
 
               {/* Progress */}
@@ -342,18 +620,38 @@ export default function InvestmentPropertyGuide() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-muted rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-foreground">8%</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-destructive/10 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-destructive">8%</div>
                 <div className="text-xs text-muted-foreground">Min purchase tax</div>
               </div>
-              <div className="bg-primary/10 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-primary">50%</div>
+              <div className="bg-warning/10 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-warning-foreground">50%</div>
                 <div className="text-xs text-muted-foreground">Max LTV</div>
               </div>
               <div className="bg-primary/10 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-primary">3-5%</div>
-                <div className="text-xs text-muted-foreground">Typical yield range</div>
+                <div className="text-xs text-muted-foreground">Typical net yield</div>
+              </div>
+              <div className="bg-muted rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-foreground">25%</div>
+                <div className="text-xs text-muted-foreground">Capital gains tax</div>
+              </div>
+            </div>
+
+            {/* Investment Reality Box */}
+            <div className="p-5 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <Scale className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="font-semibold text-foreground mb-1">The Investment Reality</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Israeli investment properties typically don't cash-flow positively with financing. 
+                    The strategy is: (1) appreciation over time, (2) principal paydown, and (3) eventual 
+                    positive cash flow as rents rise and mortgage shrinks. This is a 7-15 year play, 
+                    not a quick return.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -369,17 +667,23 @@ export default function InvestmentPropertyGuide() {
               ))}
             </div>
 
-            {/* Related Guides */}
+            {/* Related Tools */}
             <div className="border-t border-border pt-8 mt-8">
-              <h3 className="font-semibold text-foreground mb-4">Continue Learning</h3>
+              <h3 className="font-semibold text-foreground mb-4">Investment Calculators</h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <Link to="/guides/buying-in-israel" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
-                  <h4 className="font-medium text-foreground">Complete Guide to Buying in Israel</h4>
-                  <p className="text-sm text-muted-foreground mt-1">The fundamentals of Israeli real estate</p>
+                <Link to="/tools?tool=investment" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    Investment Returns Calculator
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">Model your specific investment scenario</p>
                 </Link>
-                <Link to="/guides/new-vs-resale" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
-                  <h4 className="font-medium text-foreground">New Construction vs Resale</h4>
-                  <p className="text-sm text-muted-foreground mt-1">Compare investment property types</p>
+                <Link to="/tools?tool=purchasetax" className="p-4 bg-card border border-border rounded-lg hover:border-primary/40 transition-colors">
+                  <h4 className="font-medium text-foreground flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-primary" />
+                    Purchase Tax Calculator
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-1">Calculate investor tax rates</p>
                 </Link>
               </div>
             </div>
