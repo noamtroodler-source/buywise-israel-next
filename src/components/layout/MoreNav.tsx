@@ -19,31 +19,59 @@ export function MoreNav() {
             More
           </NavigationMenuTrigger>
           <NavigationMenuContent className="md:left-auto md:right-0">
-            <div className="w-40 rounded-md border bg-popover text-popover-foreground shadow-lg overflow-hidden">
-              <NavigationMenuLink asChild>
-                <Link
-                  to="/blog"
-                  className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                >
-                  Blog
-                </Link>
-              </NavigationMenuLink>
-              <NavigationMenuLink asChild>
-                <Link
-                  to="/about"
-                  className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                >
-                  About
-                </Link>
-              </NavigationMenuLink>
-              <NavigationMenuLink asChild>
-                <Link
-                  to="/contact"
-                  className="block px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                >
-                  Contact
-                </Link>
-              </NavigationMenuLink>
+            <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[200px]">
+              <div className="p-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Company
+                </h4>
+                <ul className="space-y-1">
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/blog"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          Blog
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          News & insights
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/about"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          About
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Our story
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/contact"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          Contact
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Get in touch
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                </ul>
+              </div>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
