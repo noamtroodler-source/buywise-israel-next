@@ -1,335 +1,258 @@
 
-# RecentNearbySales Design Enhancement Plan
+
+# Mock Sold Transactions Seeding Plan
 
 ## Overview
 
-Enhance the "Recent Nearby Sales" component to match the design quality, educational approach, and visual standards established across the BuyWise Israel platform. The current implementation is functional but lacks the tooltips, educational context, and refined styling patterns used in PropertyValueSnapshot, PropertyCostBreakdown, and PropertyQuickSummary.
+Create an edge function to seed realistic mock sold transaction data into the `sold_transactions` table. This will ensure every resale listing shows "Recent Nearby Sales" with believable comps that match the listing's location and price range.
 
 ---
 
-## Design Patterns to Apply
+## Data Generation Strategy
 
-Based on analysis of the existing codebase:
+### Per-Property Clustering
 
-### 1. Educational Tooltips (GlossaryTooltip Pattern)
-- **Current approach**: Small text below for context ("Data source: Israel Tax Authority...")
-- **Target approach**: Dotted-underline triggers with TooltipProvider + Tooltip for inline education
-- **Example from site**: PropertyCostBreakdown uses `border-b border-dotted border-muted-foreground/50` with `cursor-help` for explanation triggers
+For each resale listing with coordinates, generate 4-8 sold transactions nearby:
 
-### 2. Section Header Pattern
-- **Current approach**: Icon + title left, small metadata right
-- **Target approach**: Match PropertyValueSnapshot/PropertyCostBreakdown with consistent icon sizing and BarChart3-style header treatment
+| Distance Tier | Percentage | Distance Range | Badge |
+|---------------|------------|----------------|-------|
+| Same building | 15% | 0-20m | "Same building" badge |
+| Very close | 35% | 20-150m | "85m away" |
+| Nearby | 50% | 150-500m | "320m away" |
 
-### 3. Card Layout Pattern
-- **Current approach**: Basic border cards with icon + text
-- **Target approach**: Match PropertyQuickSummary's "Quick Facts" grid style with `bg-muted/50 rounded-lg p-3` containers
+### Price Calibration
 
-### 4. Badge Styling
-- **Current approach**: Uses `variant="destructive"` for above-market comparison
-- **Target approach**: Per brand guidelines, replace red/destructive with brand-blue variants (`bg-primary/10 text-primary`)
+Use the property's actual price to calibrate sold prices:
+- Base the sold price per sqm on the listing's implied price/sqm
+- Add realistic variance: ±15% to create natural market spread
+- This ensures "Listing is X% above/below this sale" badges make sense
 
-### 5. Price Formatting
-- **Current approach**: Uses local formatPrice function
-- **Target approach**: Use `useFormatPrice` hook from PreferencesContext for user currency preferences
+### Date Distribution (24 months)
+
+| Time Period | Weight | Example Range |
+|-------------|--------|---------------|
+| Recent (0-6 months) | 45% | Aug 2025 - Jan 2026 |
+| Mid-range (6-12 months) | 35% | Feb 2025 - Jul 2025 |
+| Older (12-24 months) | 20% | Feb 2024 - Jan 2025 |
 
 ---
 
 ## Implementation Details
 
-### 3.1 Add TooltipProvider Wrapper
+### New Edge Function: `seed-sold-transactions`
 
-Wrap entire component in TooltipProvider for consistent tooltip behavior:
+**File:** `supabase/functions/seed-sold-transactions/index.ts`
 
-```tsx
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+#### Core Logic Flow
 
-return (
-  <TooltipProvider>
-    <div className="space-y-4">
-      {/* Component content */}
-    </div>
-  </TooltipProvider>
-);
+```text
+1. Fetch all resale properties with lat/lng from properties table
+2. For each property:
+   a. Determine number of comps to generate (4-8)
+   b. Calculate base price/sqm from property price and size
+   c. For each comp:
+      - Pick distance tier (same building / close / nearby)
+      - Generate coordinates near the property
+      - Generate rooms/size with slight variance from listing
+      - Calculate sold price based on listing's price/sqm ± variance
+      - Generate sold date (weighted toward recent)
+      - Pick property type, condition, floor, etc.
+   d. Insert batch to sold_transactions
+3. Return summary stats
 ```
 
-### 3.2 Section Header with Educational Tooltip
+#### Coordinate Generation
 
-Add tooltip explaining what "Recent Nearby Sales" means and why it's valuable:
-
-```tsx
-<div className="flex items-center justify-between">
-  <div className="flex items-center gap-2">
-    <TrendingUp className="h-5 w-5 text-primary" />
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-          Recent Nearby Sales
-        </h3>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-sm">
-        <p className="font-medium mb-1">Government Transaction Data</p>
-        <p className="text-xs text-muted-foreground">
-          Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
-          These are actual recorded transactions—not listing prices.
-        </p>
-      </TooltipContent>
-    </Tooltip>
-  </div>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-        Last 24 months • Within 500m
-      </span>
-    </TooltipTrigger>
-    <TooltipContent side="left" className="max-w-xs">
-      <p className="text-xs">Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.</p>
-    </TooltipContent>
-  </Tooltip>
-</div>
+```typescript
+function generateNearbyCoords(lat: number, lng: number, maxDistanceMeters: number) {
+  // Generate random point within radius
+  const radiusInDegrees = maxDistanceMeters / 111000; // ~111km per degree
+  const angle = Math.random() * 2 * Math.PI;
+  const r = Math.sqrt(Math.random()) * radiusInDegrees;
+  
+  return {
+    latitude: lat + r * Math.cos(angle),
+    longitude: lng + r * Math.sin(angle) / Math.cos(lat * Math.PI / 180),
+  };
+}
 ```
 
-### 3.3 Comp Card Redesign
+#### Price Generation (Relative to Listing)
 
-Match PropertyQuickSummary's Quick Facts grid styling:
-
-Current card styling:
-```tsx
-className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/30"
+```typescript
+function generateSoldPrice(listingPrice: number, listingSqm: number, soldSqm: number) {
+  const listingPriceSqm = listingPrice / listingSqm;
+  
+  // Add ±15% variance to create realistic spread
+  const variance = 0.85 + Math.random() * 0.30; // 0.85 to 1.15
+  const soldPriceSqm = listingPriceSqm * variance;
+  
+  return Math.round(soldSqm * soldPriceSqm);
+}
 ```
 
-New styling (matching Quick Facts):
-```tsx
-className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
-```
+#### Transaction Fields
 
-### 3.4 Educational Tooltips for Comp Details
+| Field | Generation Logic |
+|-------|-----------------|
+| `sold_price` | Based on listing price/sqm ± 15% variance |
+| `sold_date` | Random date within 24 months, weighted toward recent |
+| `property_type` | 60% apartment, 15% duplex, 10% penthouse, 10% garden_apartment, 5% cottage |
+| `rooms` | Listing rooms ± 1 (min 2, max 6) |
+| `size_sqm` | Listing size ± 20% variance |
+| `floor` | 0-12, weighted toward middle floors |
+| `year_built` | 1975-2024, weighted toward 2000+ |
+| `asset_condition` | 40% good, 35% renovated, 25% new |
+| `is_new_construction` | True if year_built > 2022 |
+| `latitude/longitude` | Near listing with controlled radius |
+| `address` | Generated street name + number in listing's city |
+| `source` | 70% 'nadlan_gov_il', 30% 'israel_tax_authority' |
 
-Add tooltips to explain each data point:
+---
 
-**Distance Tooltip:**
-```tsx
-<Tooltip>
-  <TooltipTrigger asChild>
-    <span className="flex items-center gap-1 cursor-help">
-      <MapPin className="h-3 w-3" />
-      {comp.is_same_building ? (
-        <Badge variant="secondary" className="text-xs px-1.5 py-0">
-          Same building
-        </Badge>
-      ) : (
-        <span className="border-b border-dotted border-muted-foreground/50">
-          {formatDistance(comp.distance_meters)}
-        </span>
-      )}
-    </span>
-  </TooltipTrigger>
-  <TooltipContent side="top" className="max-w-xs">
-    <p className="font-medium mb-1">{comp.is_same_building ? 'Same Building' : 'Nearby Sale'}</p>
-    <p className="text-xs text-muted-foreground">
-      {comp.is_same_building 
-        ? 'This sale occurred in the same building. Most relevant for direct price comparison.'
-        : `This property sold ${Math.round(comp.distance_meters)} meters from this listing. Similar location factors should apply.`
-      }
-    </p>
-  </TooltipContent>
-</Tooltip>
-```
+## Address Generation
 
-**Price per sqm Tooltip:**
-```tsx
-<Tooltip>
-  <TooltipTrigger asChild>
-    <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
-      <BarChart3 className="h-3 w-3" />
-      {formatPrice(comp.price_per_sqm)}/m²
-    </span>
-  </TooltipTrigger>
-  <TooltipContent side="top" className="max-w-xs">
-    <p className="font-medium mb-1">Price per Square Meter</p>
-    <p className="text-xs text-muted-foreground">
-      The actual sold price divided by property size. Use this to compare value across different-sized properties.
-    </p>
-  </TooltipContent>
-</Tooltip>
-```
+Generate realistic Israeli addresses for each transaction:
 
-### 3.5 Comparison Badge Update
+```typescript
+const STREET_NAMES = [
+  "Herzl", "Ben Yehuda", "Rothschild", "Jabotinsky", "Weizmann",
+  "Dizengoff", "Ben Gurion", "Nordau", "Arlozorov", "King George",
+  "HaNevi'im", "Emek Refaim", "Jaffa", "Bialik", "Sokolov"
+];
 
-Replace destructive variant with brand-consistent styling:
-
-Current:
-```tsx
-<Badge variant={comparison > 0 ? 'destructive' : 'default'}>
-```
-
-Updated (per color-palette-standards memory):
-```tsx
-<Badge 
-  variant="secondary"
-  className={cn(
-    "text-xs",
-    comparison > 0 ? "bg-primary/10 text-primary" : "bg-primary/10 text-primary"
-  )}
->
-```
-
-Add tooltip explaining what the comparison means:
-
-```tsx
-<Tooltip>
-  <TooltipTrigger asChild>
-    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary cursor-help">
-      {comparison > 0 
-        ? `Listing is ${comparison.toFixed(0)}% above this sale`
-        : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-      }
-    </Badge>
-  </TooltipTrigger>
-  <TooltipContent side="top" className="max-w-xs">
-    <p className="font-medium mb-1">Price per m² Comparison</p>
-    <p className="text-xs text-muted-foreground">
-      {comparison > 0 
-        ? 'This listing\'s price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation.'
-        : 'This listing\'s price per sqm is below recent comparable sales—potentially good value or motivated seller.'
-      }
-    </p>
-  </TooltipContent>
-</Tooltip>
-```
-
-### 3.6 Use Global Currency Formatting
-
-Replace local `formatPrice` with hook:
-
-```tsx
-import { useFormatPrice } from '@/contexts/PreferencesContext';
-
-// Inside component
-const formatPrice = useFormatPrice();
-
-// Usage
-{formatPrice(comp.sold_price, 'ILS')}
-```
-
-### 3.7 Empty State Enhancement
-
-Add educational context to empty state:
-
-```tsx
-<div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
-  <Building2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
-  <p className="text-sm font-medium text-foreground mb-1">
-    No nearby sales data yet
-  </p>
-  <p className="text-xs text-muted-foreground">
-    Government transaction data is added continuously. Check back later or explore the city's market overview.
-  </p>
-  <Button variant="outline" size="sm" className="mt-3" asChild>
-    <Link to={`/areas/${citySlug}`}>
-      View {city} Market Data
-    </Link>
-  </Button>
-</div>
-```
-
-### 3.8 Source Attribution Footer Enhancement
-
-Move data source to a more educational tooltip rather than small text:
-
-```tsx
-<div className="flex items-center justify-center gap-2 pt-3 border-t border-border/50">
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
-        <ShieldCheck className="h-3.5 w-3.5" />
-        <span className="border-b border-dotted border-muted-foreground/30">
-          Government verified data
-        </span>
-      </div>
-    </TooltipTrigger>
-    <TooltipContent side="top" className="max-w-xs">
-      <p className="font-medium mb-1">Official Transaction Records</p>
-      <p className="text-xs text-muted-foreground">
-        Sourced from Israel Tax Authority and Nadlan.gov.il. 
-        These are legally recorded sale prices—more reliable than listing or asking prices.
-      </p>
-    </TooltipContent>
-  </Tooltip>
-</div>
+function generateAddress(city: string): string {
+  const street = randomChoice(STREET_NAMES);
+  const number = randomInt(1, 120);
+  return `${number} ${street} Street, ${city}`;
+}
 ```
 
 ---
 
-## Files to Modify
+## Expected Outcomes
+
+### Database State After Seeding
+- **sold_transactions** table: ~1,500-2,000 rows (assuming ~200 resale listings × 6 comps average)
+- Coverage: All cities with resale listings
+- Date range: February 2024 - January 2026
+
+### Frontend Behavior
+
+On any property detail page with coordinates:
+- **RecentNearbySales** will show 3-5 actual comps from database
+- **"Same building"** badge appears for closest matches (~15%)
+- **Price comparison badges** show realistic comparisons (±15% variance)
+- Tooltips explain data source and calculations
+
+### Sample Display
+
+```text
+📍 Recent Nearby Sales
+Last 24 months • Within 500m
+────────────────────────────────────────────────────────
+🏠 3BR, 92m² sold for ₪2,480,000
+   Same building • Oct 2025
+   ₪26,957/m²
+   🏷️ Listing is 8% above this sale
+
+🏠 4BR, 115m² sold for ₪3,150,000
+   85m away • Aug 2025
+   ₪27,391/m²
+
+🏠 3BR, 88m² sold for ₪2,310,000
+   220m away • Jun 2025
+   ₪26,250/m²
+────────────────────────────────────────────────────────
+🛡️ Government verified data
+```
+
+---
+
+## Files to Create/Modify
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/seed-sold-transactions/index.ts` | Edge function to generate and insert mock sold data |
+
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/property/RecentNearbySales.tsx` | Complete redesign with tooltips, updated styling, global price formatting |
+| `supabase/config.toml` | Add config entry for new edge function |
 
 ---
 
-## Visual Comparison
+## Technical Details
 
-### Before (Current)
+### Function Structure
+
 ```text
-📍 Recent Nearby Sales                    Last 24 months • Within 500m
-────────────────────────────────────────────────────────────────────────
-┌ border card ──────────────────────────────────────────────────────────┐
-│ 🏠 3BR, 92m² sold for ₪2,480,000                                     │
-│    📍 Same building • 📅 Oct 2025 • 📈 ₪26,957/m²                    │
-│    ⚠️ Listing is 8% above this sale  <-- red destructive badge       │
-└───────────────────────────────────────────────────────────────────────┘
-
-Data source: Israel Tax Authority & Nadlan.gov.il  <-- small footer text
+seed-sold-transactions/index.ts
+├── CORS headers
+├── Constants:
+│   ├── STREET_NAMES (Israeli street names)
+│   ├── PROPERTY_TYPES_WEIGHTED
+│   └── ASSET_CONDITIONS
+├── Helper functions:
+│   ├── randomInt(), randomChoice()
+│   ├── generateNearbyCoords(lat, lng, maxMeters)
+│   ├── generateSoldDate(monthsBack)
+│   ├── generateSoldPrice(listingPrice, listingSqm, soldSqm)
+│   └── generateAddress(city)
+├── Main logic:
+│   ├── Fetch resale properties with coordinates
+│   ├── Generate 4-8 comps per property
+│   ├── Batch insert to sold_transactions
+│   └── Clear existing data first (optional flag)
+└── Response with summary stats
 ```
 
-### After (Enhanced)
-```text
-📈 Recent Nearby Sales (hover for explanation)    Last 24 months • 500m (hover)
-   ─── dotted underline ───                       ─── dotted underline ───
-────────────────────────────────────────────────────────────────────────
-┌ bg-muted/50 card ─────────────────────────────────────────────────────┐
-│ 🏠 3BR, 92m² sold for ₪2,480,000                                     │
-│    📍 Same building (hover)  📅 Oct 2025  📊 ₪26,957/m² (hover)      │
-│    🔵 Listing is 8% above this sale  <-- blue primary badge (hover)  │
-└───────────────────────────────────────────────────────────────────────┘
+### Unique Constraint Handling
 
-────────────────────────────────────────────────────────────────────────
-  🛡️ Government verified data (hover for source details)
+The `sold_transactions` table has a unique constraint on `(address, city, sold_date, sold_price)`. The seeder will generate unique addresses by combining:
+- Random street name
+- Random building number (1-120)
+- Random apartment suffix (optional)
+
+---
+
+## Admin Triggering
+
+After deployment, the function can be triggered:
+
+1. **Via SoldTransactionsAdmin page** - Add a "Seed Mock Data" button
+2. **Via direct API call** - POST to the edge function endpoint
+
+### Request Options
+
+```typescript
+interface SeedRequest {
+  clearExisting?: boolean;  // Delete existing data first
+  compsPerProperty?: number; // Override default 4-8
+  limitCities?: string[];   // Only seed specific cities
+}
 ```
 
 ---
 
 ## Testing Checklist
 
-1. **Tooltip Functionality**
-   - Hover on "Recent Nearby Sales" title shows explanation
-   - Hover on "Last 24 months • Within 500m" shows criteria
-   - Hover on "Same building" badge shows proximity details
-   - Hover on price/m² shows calculation explanation
-   - Hover on comparison badge explains meaning
+1. **Data Quality**
+   - Verify prices are realistic relative to each listing
+   - Confirm date distribution spans 24 months
+   - Check coordinate clustering near listings
 
-2. **Visual Consistency**
-   - Cards match Quick Facts grid styling (`bg-muted/50 rounded-lg`)
-   - Badges use brand blue (`bg-primary/10 text-primary`) not red
-   - Icons consistent with other sections (h-5 w-5 in headers)
+2. **Frontend Integration**
+   - Visit 5+ property pages in different cities
+   - Confirm comps appear with proper formatting
+   - Verify "Same building" badges show correctly
+   - Check price comparison badges show realistic percentages
 
-3. **Mobile Responsiveness**
-   - Tooltips work on touch (tap to reveal)
-   - Cards stack properly on narrow screens
-   - Text remains readable at all sizes
+3. **Edge Cases**
+   - Properties at city boundaries
+   - Properties with unusual sizes/prices
+   - Very expensive vs. affordable listings
 
-4. **Currency Preferences**
-   - Prices respect user's currency preference setting
-   - Format matches other price displays on property page
-
----
-
-## Success Criteria
-
-- All interactive elements have educational tooltips
-- No red/destructive colors used (brand blue only)
-- Visual styling matches PropertyQuickSummary and PropertyCostBreakdown
-- Empty state includes actionable next step
-- Data source is verified with ShieldCheck icon pattern
-- User can understand the value of each data point through hover education
