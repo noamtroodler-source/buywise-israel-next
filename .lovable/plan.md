@@ -1,88 +1,105 @@
 
 Goal
-- Make the header “More” dropdown behave like Zillow: opens on hover, no “in-and-out” flicker when moving near the border/edge, and still works with keyboard/click.
+- Stop the “More” dropdown from flickering so it behaves like a normal hover menu: open stays stable while the cursor is anywhere on the trigger or menu, and closes only after leaving both.
 
-What’s causing the glitch (root cause)
-- The dropdown menu content is rendered in a Portal (outside the trigger’s DOM tree).
-- Your current hover logic relies on mouse enter/leave events, but:
-  1) There is a built-in gap between trigger and menu because `DropdownMenuContent` defaults to `sideOffset = 4` (in `src/components/ui/dropdown-menu.tsx`), creating a thin “dead zone”.
-  2) When your cursor crosses that gap (or skims the menu border), the pointer briefly leaves both “trigger area” and “menu area”, which schedules a close. If you re-enter quickly, it cancels, producing a visible flicker.
-- Zillow-style menus typically solve this with either:
-  - No physical gap (0 offset / overlap), and/or
-  - A small invisible “hover bridge” (a safe area that catches the pointer so the menu doesn’t think you left), and often
-  - A slightly more forgiving close delay (“hover intent”).
+What we know (from the current code + what we already tried)
+- We already tried:
+  - Hover open/close using controlled `open` state
+  - A close delay (now 200ms)
+  - `sideOffset={0}` to remove the gap
+  - An invisible “hover bridge” on the menu content
+- Despite that, the flicker persists.
 
-Best-practice fix (what we’ll implement)
-We’ll use a layered approach that is robust and common in production nav menus:
+Root cause (why it can still flicker with the current code)
+- There’s a bug in the debounce implementation: **we create multiple close timers and only track the most recent one**.
+  - `handleMoreMouseLeave` sets `closeTimeoutRef.current = setTimeout(...)` but **does not clear any existing timeout first**.
+  - If the pointer rapidly crosses boundaries (especially the trigger edge / border / tiny movements), `onMouseLeave` can fire multiple times in a row.
+  - Each time, a *new* timeout is created, but only the last timeout ID is stored in `closeTimeoutRef.current`.
+  - When the pointer comes back in, `handleMoreMouseEnter()` clears only the last timeout ID — **older timeouts remain alive** and will still execute later, forcing `setMoreDropdownOpen(false)` while you are still hovering, causing the “in-and-out” flicker.
+- This also explains why the problem can feel “border-related”: borders/rounded corners increase the likelihood of tiny enter/leave events firing quickly.
 
-1) Remove or reduce the gap that causes the dead zone
-- In `Header.tsx`, pass `sideOffset={0}` (or very small like 1–2) to `DropdownMenuContent`.
-- This alone often eliminates 80–90% of flicker because the cursor can move from trigger to menu without leaving the hoverable region.
+Proposed solution (robust, best-practice fix)
+We’ll fix this in layers, starting with the real bug:
 
-2) Add an invisible “hover bridge” above the menu content (to handle border-skimming and micro-gaps)
-- Add a Tailwind-based pseudo-element to the menu content that extends the hoverable area upward by ~8px without changing visuals.
-- This means even if there’s a 1–4px dead zone (from border, rounding, subpixel layout, etc.), the cursor still hits an element that counts as “inside the menu”.
+1) Fix the timer bug (critical)
+- In `handleMoreMouseLeave`, always clear any existing timeout before scheduling a new one.
+- Also set the ref back to `null` after closing, to avoid stale references.
 
-3) Move hover tracking onto the actual Trigger and Content (instead of only the wrapper)
-- Keep the menu open while either the trigger OR the content is hovered.
-- This avoids edge cases where leaving the content but still being on the trigger could close the menu due to event timing.
+2) Make hover state deterministic (recommended)
+Right now, we’re using “enter = open, leave = schedule close” without knowing whether we’re leaving trigger vs leaving the menu content. Because the dropdown content is portaled, relying on wrapper hover alone is fragile.
+- Add two booleans:
+  - `isMoreTriggerHovered`
+  - `isMoreContentHovered`
+- Keep the menu open if either is true.
+- Only schedule close when both become false.
 
-4) Make the close delay slightly more forgiving (and cancel reliably)
-- Increase the close delay from 150ms to ~200–250ms (still feels instant, but prevents flicker on imperfect cursor movement).
-- Ensure we always clear any pending timeout on any pointer-enter of trigger/content, and on unmount.
+3) Switch to pointer events for more consistent behavior (recommended)
+- Replace `onMouseEnter/onMouseLeave` with `onPointerEnter/onPointerLeave` on:
+  - `DropdownMenuTrigger`
+  - `DropdownMenuContent`
+- Pointer events reduce oddities with nested elements and are more consistent across input types.
 
-Concrete code changes (implementation details)
-File: src/components/layout/Header.tsx
+4) Reduce event jitter and state conflicts (recommended cleanup)
+- Remove the outer wrapper `<div onMouseEnter/onMouseLeave>` around the dropdown (or stop using it for open/close).
+  - With portals, wrapper hover detection is inherently unreliable because the menu content is not inside that wrapper in the DOM.
+  - Instead, attach hover handlers directly to Trigger and Content.
 
-A) Track hover state for trigger and content (two booleans)
-- Add state like:
-  - isMoreTriggerHovered
-  - isMoreContentHovered
-- Compute “shouldBeOpen” = isMoreTriggerHovered || isMoreContentHovered
-- Keep `DropdownMenu` controlled with `open={moreDropdownOpen}` but drive it from that hover logic.
+5) Keep what helped visually, but ensure it’s not masking logic issues
+- Keep `sideOffset={0}` and the hover bridge pseudo-element as “insurance,” but the main fix should be the timer + deterministic hover tracking.
 
-B) Use pointer events instead of mouse events (optional but recommended)
-- Prefer `onPointerEnter` / `onPointerLeave` for more consistent behavior across devices.
-- Still keep click behavior supported via `onOpenChange`, so keyboard/click users can open it.
+Implementation details (exact edits)
+File: `src/components/layout/Header.tsx`
 
-C) Set sideOffset to remove the gap
-- Update:
-  <DropdownMenuContent align="end" sideOffset={0} ...>
+A) Replace the current hover handlers with safer logic
+- Add state:
+  - `const [isMoreTriggerHovered, setIsMoreTriggerHovered] = useState(false);`
+  - `const [isMoreContentHovered, setIsMoreContentHovered] = useState(false);`
+- Add helper:
+  - `const cancelClose = () => { if (closeTimeoutRef.current) { clearTimeout(closeTimeoutRef.current); closeTimeoutRef.current = null; } };`
+- Update enter handlers:
+  - On trigger/content pointer enter: `cancelClose(); setMoreDropdownOpen(true); setIsMoreTriggerHovered(true)` / `setIsMoreContentHovered(true)`
+- Update leave handlers:
+  - On trigger/content pointer leave: set the appropriate hovered flag false, then schedule close:
+    - First `cancelClose()` (important!)
+    - Then `closeTimeoutRef.current = setTimeout(() => { if (!isMoreTriggerHovered && !isMoreContentHovered) setMoreDropdownOpen(false); }, 200-250);`
+  - Important: because state updates are async, we’ll compute “next hovered” values inside the handler (or store hovered flags in refs) so the timeout checks the latest truth. This prevents a close from being scheduled based on outdated state.
 
-D) Add the invisible hover bridge to DropdownMenuContent
-- Add classes to make content `relative` and add a `before:` pseudo-element:
-  - Example Tailwind intent:
-    - `relative`
-    - `before:content-[''] before:absolute before:inset-x-0 before:-top-2 before:h-2`
-    - (Optionally) `before:bg-transparent`
-- This creates an invisible 8px strip above the menu that still counts as hovering “inside the menu”.
+B) Attach handlers to Trigger + Content (not the wrapper)
+- `DropdownMenuTrigger`: add `onPointerEnter` / `onPointerLeave`
+- `DropdownMenuContent`: add `onPointerEnter` / `onPointerLeave`
+- Remove or neutralize the wrapper `div` hover handlers around the dropdown.
 
-E) Adjust the debounce close logic to only close when neither trigger nor content is hovered
-- Instead of immediately scheduling close on any leave, schedule close and then check the two hover flags at timeout time; only close if both are false.
-- Bump delay to ~200–250ms.
+C) Keep the hover bridge and zero offset
+- Keep:
+  - `sideOffset={0}`
+  - `className` includes the `before:` hover bridge
+- Also ensure the dropdown content has a solid background and high z-index (Radix already applies `z-50`, but we’ll keep your explicit background classes).
 
-F) Keep cleanup
-- Keep the existing `useEffect` cleanup to clear timeouts on unmount.
+D) Optional: clamp state updates from Radix
+- Keep `onOpenChange={setMoreDropdownOpen}` so click/keyboard still works.
+- But add a small guard so hover logic doesn’t fight click logic:
+  - Example idea: if hover is currently active, don’t allow `onOpenChange(false)` to close it unless both hovered flags are false.
+  - This is usually not necessary once the timer bug is fixed, but it’s a safe fallback if Radix sends close events while hover is still active.
+
+Why this will stop flickering (in plain terms)
+- The flicker is caused by “ghost closes” from old timers firing after you’ve already hovered back in.
+- By always cancelling any existing timer before creating a new one, and by only closing when we are sure the pointer is over neither trigger nor menu, the dropdown can’t randomly close while you’re still interacting with it.
 
 Acceptance criteria (how we’ll verify it’s fixed)
-- Hover on “More” opens immediately.
-- Moving the cursor from “More” down into the dropdown does not flicker.
-- Moving the cursor near the border edges of the dropdown does not cause rapid open/close.
-- Leaving the dropdown entirely closes it within ~200–250ms.
-- Click still opens/closes (works for touch and accessibility).
-- Keyboard: Tab to “More” + Enter/Space still opens; Escape closes (Radix default behavior remains intact).
+- Hover over “More”: opens immediately.
+- Move cursor down into the dropdown: no flicker.
+- Skim along the border edges: no flicker, no repeated open/close.
+- Leave the menu area entirely: closes after ~200–250ms.
+- Click and keyboard still work:
+  - Click trigger toggles open/close.
+  - Tab to trigger + Enter/Space opens.
+  - Escape closes.
 
-Potential small follow-ups (if you still feel any micro-flicker)
-- If your design needs a visible gap for aesthetics, keep sideOffset small (2–4) but rely on the hover bridge to maintain continuity.
-- If the menu is right at the viewport edge and Radix flips sides, we may also add a hover bridge on whichever side is “closest” (usually top) which already covers most cases.
+Fallback if you want the exact “Zillow-grade” behavior
+If after fixing the timer bug you still want a more purpose-built navigation interaction:
+- Replace `DropdownMenu` with the existing `NavigationMenu` component (`src/components/ui/navigation-menu.tsx` is already in the project).
+- `NavigationMenu` is designed specifically for hoverable header nav and tends to behave more like large production sites out of the box.
+- We’ll only do this if needed; the timer fix + hover tracking should already eliminate the flicker.
 
-Out of scope (but optional, “Zillow-grade”)
-- Replace `DropdownMenu` with `@radix-ui/react-navigation-menu` for true header nav behavior (hover-first, focus management tuned for nav bars). This is a larger change and not required for a clean fix.
-
-Files affected
-- src/components/layout/Header.tsx (primary)
-- No need to change `src/components/ui/dropdown-menu.tsx` unless you want to change the default sideOffset globally (we can keep it local to “More” only).
-
-Risks / edge cases
-- Touch devices don’t “hover”: we’ll keep click-to-open working via `onOpenChange`.
-- If you later add nested submenus, we’ll replicate the hover bridge logic for sub content as needed.
+Files to change
+- `src/components/layout/Header.tsx`
