@@ -219,7 +219,21 @@ export function PropertyValueSnapshot({
               ) : (
                 <Minus className="h-4 w-4" />
               )}
-              <span className="text-sm">vs {city} Average</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
+                      vs {city} Average
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="font-medium mb-1">Price vs City Average</p>
+                    <p className="text-xs text-muted-foreground">
+                      Compares this property's price per m² against the average sale price in {city}, based on recent government-recorded transactions. A positive % means priced above average; negative means below.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
