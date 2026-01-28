@@ -1,92 +1,88 @@
 
 
-# Fix Navigation Menu Hover Hitbox Issue
+# Redesign "More" Dropdown to Match Mega-Menu Style
 
-## Problem Identified
-The mega-menu dropdowns require hovering "above" the trigger text to activate because there's a **6px gap** (`mt-1.5`) between the trigger and the dropdown content. When the mouse moves through this gap, it loses focus and the menu closes.
+## Current Issue
+The "More" dropdown uses a basic list design while Buy/Rent/Projects use a polished mega-menu style with:
+- Rounded corners (`rounded-xl` vs `rounded-md`)
+- Larger shadow (`shadow-xl` vs `shadow-lg`)
+- Column headers with uppercase styling
+- More generous padding
+- Better hover transitions
 
-Additionally, each menu (Buy, Rent, Projects) creates its own isolated `NavigationMenu` instance with its own viewport, which prevents smooth transitions between menus.
-
----
-
-## Root Cause Analysis
-
-### Issue 1: Gap Between Trigger and Dropdown
-In `src/components/ui/navigation-menu.tsx` line 83:
-```typescript
-"relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)]..."
-```
-The `mt-1.5` creates a 6px gap where hover is lost.
-
-### Issue 2: Trigger Has Minimal Height
-In `MegaMenu.tsx` line 27:
-```typescript
-className="bg-transparent px-0 py-0 h-auto..."
-```
-The trigger button has no padding, making the hover target very small.
-
-### Issue 3: Separate NavigationMenu Instances
-Each MegaMenu creates its own `<NavigationMenu>` root. This isolates each menu, preventing Radix's built-in hover-bridging behavior that normally works when multiple items share a single root.
+## Design Approach
+Since "More" only has 3 items (Blog, About, Contact), we'll create a single-column version that still feels like a mega-menu with:
+- Section header ("Resources" or "Company")
+- Same rounded corners and shadow
+- Same link styling with hover transitions
+- Consistent padding and spacing
 
 ---
 
-## Solution
+## Changes to `src/components/layout/MoreNav.tsx`
 
-### Step 1: Increase Trigger Hitbox
-Add vertical padding to the trigger so users have a larger hover target and the trigger extends closer to where the dropdown appears.
-
-**File**: `src/components/layout/MegaMenu.tsx`
-```typescript
-// Change trigger className from:
-className="bg-transparent px-0 py-0 h-auto text-base..."
-
-// To:
-className="bg-transparent px-2 py-2 h-auto text-base..."
+### Before (current basic list):
+```tsx
+<div className="w-40 rounded-md border bg-popover text-popover-foreground shadow-lg overflow-hidden">
+  <Link className="block px-3 py-2 text-sm hover:bg-accent...">Blog</Link>
+  ...
+</div>
 ```
 
-### Step 2: Eliminate the Viewport Gap
-Remove the `mt-1.5` that creates the dead zone.
-
-**File**: `src/components/ui/navigation-menu.tsx`
-```typescript
-// Change viewport className from:
-"relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)]..."
-
-// To:
-"relative mt-0 h-[var(--radix-navigation-menu-viewport-height)]..."
+### After (mega-menu consistent):
+```tsx
+<div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[200px]">
+  <div className="p-4">
+    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+      Company
+    </h4>
+    <ul className="space-y-1">
+      <li>
+        <Link className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors">
+          <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+            Blog
+          </span>
+          <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+            News & insights
+          </span>
+        </Link>
+      </li>
+      ...
+    </ul>
+  </div>
+</div>
 ```
-
-### Step 3: Add Invisible Hover Bridge (Fallback)
-Add an invisible pseudo-element that extends the trigger's hover area downward to bridge any remaining gap.
-
-**File**: `src/components/layout/MegaMenu.tsx`
-```typescript
-// Add after:before pseudo-element to NavigationMenuItem
-<NavigationMenuItem className="relative after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-4 after:bg-transparent">
-```
-
-### Step 4: Apply Same Fixes to MoreNav
-Apply consistent fixes to the "More" dropdown.
-
-**File**: `src/components/layout/MoreNav.tsx`
-- Add padding to trigger
-- Add hover bridge pseudo-element
 
 ---
 
-## Files to Modify
+## Specific Style Alignment
 
-| File | Change |
-|------|--------|
-| `src/components/ui/navigation-menu.tsx` | Remove `mt-1.5` gap from viewport |
-| `src/components/layout/MegaMenu.tsx` | Add trigger padding + hover bridge |
-| `src/components/layout/MoreNav.tsx` | Add trigger padding + hover bridge |
+| Property | MegaMenu | MoreNav (Current) | MoreNav (Fixed) |
+|----------|----------|-------------------|-----------------|
+| Border radius | `rounded-xl` | `rounded-md` | `rounded-xl` |
+| Shadow | `shadow-xl` | `shadow-lg` | `shadow-xl` |
+| Container padding | `p-4` per column | None | `p-4` |
+| Section header | Yes (uppercase) | No | Yes ("Company") |
+| Link container | `<ul>` with `space-y-1` | Direct links | `<ul>` with `space-y-1` |
+| Link padding | `px-2 py-1.5` | `px-3 py-2` | `px-2 py-1.5` |
+| Link style | Rounded with transition | Basic | Rounded with transition |
+| Descriptions | Supported | None | Add brief descriptions |
 
 ---
 
-## Expected Result
-- Users can hover directly on "Buy", "Rent", "Projects", and "More" text
-- Smooth transition from trigger to dropdown without losing focus
-- Works consistently on preview, live site, and all browsers
-- No visible visual change (bridge is invisible)
+## Items with Descriptions
+
+| Link | Description |
+|------|-------------|
+| Blog | News & insights |
+| About | Our story |
+| Contact | Get in touch |
+
+---
+
+## Result
+- Consistent mega-menu appearance across all navigation dropdowns
+- Same visual language: rounded corners, shadows, typography, spacing
+- Professional, cohesive navigation experience
+- Single-column layout appropriate for fewer items
 
