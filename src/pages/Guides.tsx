@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuideCard } from '@/components/guides';
+import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
 
 import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
 import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
@@ -23,8 +24,9 @@ export interface Guide {
   featured?: boolean;
 }
 
-const guides: Guide[] = [
-  {
+// All guides with their metadata
+const allGuides: Record<string, Guide> = {
+  'buying-in-israel': {
     slug: 'buying-in-israel',
     title: 'Complete Guide to Buying in Israel',
     description: 'Everything you need to know about purchasing property in Israel, from search to closing.',
@@ -33,7 +35,7 @@ const guides: Guide[] = [
     chaptersCount: 14,
     featured: true,
   },
-  {
+  'understanding-listings': {
     slug: 'understanding-listings',
     title: 'Understanding Israeli Listings',
     description: 'Why listings feel misleading to internationals and how to read them with confidence.',
@@ -41,7 +43,7 @@ const guides: Guide[] = [
     readingTime: 20,
     chaptersCount: 13,
   },
-  {
+  'purchase-tax': {
     slug: 'purchase-tax',
     title: 'Purchase Tax Guide',
     description: "What foreign buyers don't realize about Mas Rechisha and how to understand the system.",
@@ -49,7 +51,7 @@ const guides: Guide[] = [
     readingTime: 15,
     chaptersCount: 12,
   },
-  {
+  'true-cost': {
     slug: 'true-cost',
     title: 'The True Cost of Buying',
     description: 'Beyond the listing price: taxes, fees, and expenses that add up before, during, and after.',
@@ -57,7 +59,7 @@ const guides: Guide[] = [
     readingTime: 18,
     chaptersCount: 11,
   },
-  {
+  'talking-to-professionals': {
     slug: 'talking-to-professionals',
     title: 'What to Know Before Talking to an Agent, Lawyer, or Broker',
     description: 'Understand roles, incentives, and timing before engaging Israeli real estate professionals.',
@@ -65,7 +67,7 @@ const guides: Guide[] = [
     readingTime: 15,
     chaptersCount: 9,
   },
-  {
+  'mortgages': {
     slug: 'mortgages',
     title: 'Mortgages in Israel for Foreign Buyers',
     description: 'How Israeli mortgages actually work: pre-approval, timing, eligibility, and why the process feels opaque.',
@@ -73,7 +75,7 @@ const guides: Guide[] = [
     readingTime: 20,
     chaptersCount: 11,
   },
-  {
+  'new-vs-resale': {
     slug: 'new-vs-resale',
     title: 'New Construction vs Resale in Israel',
     description: 'Distinct legal structures, payment schedules, and risks. Which path fits your situation?',
@@ -81,7 +83,7 @@ const guides: Guide[] = [
     readingTime: 18,
     chaptersCount: 11,
   },
-  {
+  'rent-vs-buy': {
     slug: 'rent-vs-buy',
     title: 'Rent vs Buy in Israel',
     description: 'How this decision works differently for foreigners—psychologically, legally, and culturally.',
@@ -89,10 +91,14 @@ const guides: Guide[] = [
     readingTime: 15,
     chaptersCount: 10,
   },
-];
+};
 
-// Calculate total reading time
-const totalReadingTime = guides.reduce((sum, g) => sum + g.readingTime, 0);
+// All guides as an array for counting
+const guidesArray = Object.values(allGuides);
+const totalReadingTime = guidesArray.reduce((sum, g) => sum + g.readingTime, 0);
+
+// Journey phase order
+const phaseOrder = ['understand', 'explore', 'check', 'move_forward'];
 
 export default function Guides() {
   return (
@@ -112,24 +118,57 @@ export default function Guides() {
                 <span className="block">Step by Step</span>
               </h1>
               <p className="text-muted-foreground text-lg mb-4">
-                Comprehensive guides for international buyers.
+                Comprehensive guides for international buyers —
                 <br className="hidden md:block" />
-                Read at your own pace. No pressure, no fluff.
+                organized by where you are in your journey.
               </p>
               <p className="text-sm text-muted-foreground">
-                {guides.length} guides • ~{totalReadingTime} min total reading
+                {guidesArray.length} guides • ~{totalReadingTime} min total reading
               </p>
             </motion.div>
           </div>
         </section>
 
-        {/* Guides Grid */}
-        <section className="container pb-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {guides.map((guide, index) => (
-              <GuideCard key={guide.slug} guide={guide} index={index} />
-            ))}
-          </div>
+        {/* Guides by Journey Phase */}
+        <section className="container pb-16 space-y-12">
+          {phaseOrder.map((phaseKey, phaseIndex) => {
+            const phase = GUIDES_BY_PHASE[phaseKey];
+            if (!phase) return null;
+            
+            const phaseGuides = phase.slugs
+              .map(slug => allGuides[slug])
+              .filter(Boolean);
+            
+            if (phaseGuides.length === 0) return null;
+            
+            return (
+              <motion.div
+                key={phaseKey}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * phaseIndex }}
+              >
+                <div className="mb-5">
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {phase.title}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {phase.description}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {phaseGuides.map((guide, index) => (
+                    <GuideCard 
+                      key={guide.slug} 
+                      guide={guide} 
+                      index={phaseIndex * 3 + index} 
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            );
+          })}
         </section>
 
         {/* Quiz CTA */}

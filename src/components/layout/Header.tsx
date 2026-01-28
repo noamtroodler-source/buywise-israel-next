@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark } from 'lucide-react';
+import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -20,6 +21,8 @@ import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { MoreNav } from './MoreNav';
+import { MegaMenu } from './MegaMenu';
+import { NAV_CONFIG } from '@/lib/navigationConfig';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -63,37 +66,10 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
-          <Link 
-            to="/listings?status=for_sale" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Buy
-          </Link>
-          <Link 
-            to="/listings?status=for_rent" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Rent
-          </Link>
-          <Link 
-            to="/projects" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Projects
-          </Link>
-          <Link 
-            to="/tools" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Tools
-          </Link>
-          <Link 
-            to="/guides" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Guides
-          </Link>
+        <nav className="hidden md:flex items-center gap-6">
+          <MegaMenu config={NAV_CONFIG.buy} />
+          <MegaMenu config={NAV_CONFIG.rent} />
+          <MegaMenu config={NAV_CONFIG.projects} />
           <Link 
             to="/areas" 
             className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -322,42 +298,97 @@ export function Header() {
               </>
             )}
             
-            {/* Main navigation links - 44px touch targets */}
-            <Link 
-              to="/listings?status=for_sale"
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Buy
-            </Link>
-            <Link 
-              to="/listings?status=for_rent" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Rent
-            </Link>
-            <Link 
-              to="/projects" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Projects
-            </Link>
-            <Link 
-              to="/tools" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Tools
-            </Link>
-            <Link 
-              to="/guides" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Guides
-            </Link>
+            {/* Main navigation with accordions for mega-menu sections */}
+            <Accordion type="multiple" className="w-full">
+              {/* Buy Accordion */}
+              <AccordionItem value="buy" className="border-b-0">
+                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
+                  Buy
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="pl-4 space-y-1">
+                    {NAV_CONFIG.buy.columns.map((column) => (
+                      <div key={column.title} className="mb-2">
+                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {column.title}
+                        </p>
+                        {column.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              
+              {/* Rent Accordion */}
+              <AccordionItem value="rent" className="border-b-0">
+                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
+                  Rent
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="pl-4 space-y-1">
+                    {NAV_CONFIG.rent.columns.map((column) => (
+                      <div key={column.title} className="mb-2">
+                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {column.title}
+                        </p>
+                        {column.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              
+              {/* Projects Accordion */}
+              <AccordionItem value="projects" className="border-b-0">
+                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
+                  Projects
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="pl-4 space-y-1">
+                    {NAV_CONFIG.projects.columns.map((column) => (
+                      <div key={column.title} className="mb-2">
+                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {column.title}
+                        </p>
+                        {column.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            
+            {/* Static nav links */}
             <Link 
               to="/areas" 
               className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
