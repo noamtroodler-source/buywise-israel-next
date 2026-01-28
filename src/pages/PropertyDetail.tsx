@@ -167,8 +167,8 @@ export default function PropertyDetail() {
               />
             </motion.div>
 
-            {/* Recent Nearby Sales */}
-            {property.latitude && property.longitude && (
+            {/* Recent Nearby Sales - Only for sale/sold properties, not rentals */}
+            {property.latitude && property.longitude && property.listing_status !== 'for_rent' && (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
