@@ -5,12 +5,19 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+interface NavigationMenuProps extends React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root> {
+  delayDuration?: number;
+  skipDelayDuration?: number;
+}
+
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root>
->(({ className, children, ...props }, ref) => (
+  NavigationMenuProps
+>(({ className, children, delayDuration = 100, skipDelayDuration = 150, ...props }, ref) => (
   <NavigationMenuPrimitive.Root
     ref={ref}
+    delayDuration={delayDuration}
+    skipDelayDuration={skipDelayDuration}
     className={cn("relative z-10 flex max-w-max flex-1 items-center justify-center", className)}
     {...props}
   >
