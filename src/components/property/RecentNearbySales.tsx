@@ -1,8 +1,13 @@
-import { MapPin, Home, TrendingUp, Calendar, Building2 } from 'lucide-react';
+import { MapPin, Home, TrendingUp, Calendar, BarChart3, Building2, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { cn } from '@/lib/utils';
 
 interface RecentNearbySalesProps {
   latitude: number | null;
@@ -21,6 +26,7 @@ export function RecentNearbySales({
   propertyPrice,
   propertySizeSqm,
 }: RecentNearbySalesProps) {
+  const formatPrice = useFormatPrice();
   const { data: comps, isLoading, error } = useNearbySoldComps(
     latitude,
     longitude,
@@ -35,19 +41,13 @@ export function RecentNearbySales({
     }
   );
 
+  // Generate city slug for links
+  const citySlug = city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
+
   // Don't render if we don't have coordinates
   if (!latitude || !longitude) {
     return null;
   }
-
-  // Format price in ILS
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'ILS',
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
 
   // Format distance
   const formatDistance = (meters: number) => {
@@ -77,7 +77,7 @@ export function RecentNearbySales({
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
+          <TrendingUp className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
         </div>
         <div className="space-y-3">
@@ -91,108 +91,218 @@ export function RecentNearbySales({
 
   if (error || !comps || comps.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
+      <TooltipProvider>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                  Recent Nearby Sales
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm">
+                <p className="font-medium mb-1">Government Transaction Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
+                  These are actual recorded transactions—not listing prices.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
+            <Building2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
+            <p className="text-sm font-medium text-foreground mb-1">
+              No nearby sales data yet
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Government transaction data is added continuously. Check back later or explore the city's market overview.
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/areas/${citySlug}`}>
+                View {city} Market Data
+              </Link>
+            </Button>
+          </div>
         </div>
-        <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
-          <Building2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
-          <p className="text-sm text-muted-foreground">
-            No recent sales data available for this area yet.
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Government transaction data is being added continuously.
-          </p>
-        </div>
-      </div>
+      </TooltipProvider>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
+    <TooltipProvider>
+      <div className="space-y-4">
+        {/* Header with educational tooltips */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                  Recent Nearby Sales
+                </h3>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-sm">
+                <p className="font-medium mb-1">Government Transaction Data</p>
+                <p className="text-xs text-muted-foreground">
+                  Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
+                  These are actual recorded transactions—not listing prices.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                Last 24 months • Within 500m
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs">
+              <p className="text-xs">
+                Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-        <span className="text-xs text-muted-foreground">
-          Last 24 months • Within 500m
-        </span>
-      </div>
 
-      <div className="space-y-3">
-        {comps.map((comp) => {
-          const comparison = getComparison(comp.price_per_sqm);
-          
-          return (
-            <div
-              key={comp.id}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-muted/30 transition-colors"
-            >
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Home className="h-5 w-5 text-primary" />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-foreground">
-                    {comp.rooms ? `${comp.rooms}BR` : 'Apartment'}
-                    {comp.size_sqm ? `, ${comp.size_sqm}m²` : ''}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    sold for
-                  </span>
-                  <span className="font-bold text-primary">
-                    {formatPrice(comp.sold_price)}
-                  </span>
+        {/* Comp cards */}
+        <div className="space-y-3">
+          {comps.map((comp) => {
+            const comparison = getComparison(comp.price_per_sqm);
+            
+            return (
+              <div
+                key={comp.id}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+              >
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Home className="h-5 w-5 text-primary" />
                 </div>
                 
-                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {comp.is_same_building ? (
-                      <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                        Same building
-                      </Badge>
-                    ) : (
-                      formatDistance(comp.distance_meters)
-                    )}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatSoldDate(comp.sold_date)}
-                  </span>
-                  {comp.price_per_sqm && (
-                    <span className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" />
-                      {formatPrice(comp.price_per_sqm)}/m²
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-foreground">
+                      {comp.rooms ? `${comp.rooms}BR` : 'Apartment'}
+                      {comp.size_sqm ? `, ${comp.size_sqm}m²` : ''}
                     </span>
+                    <span className="text-sm text-muted-foreground">
+                      sold for
+                    </span>
+                    <span className="font-bold text-primary">
+                      {formatPrice(comp.sold_price, 'ILS')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
+                    {/* Distance with tooltip */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-help">
+                          <MapPin className="h-3 w-3" />
+                          {comp.is_same_building ? (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                              Same building
+                            </Badge>
+                          ) : (
+                            <span className="border-b border-dotted border-muted-foreground/50">
+                              {formatDistance(comp.distance_meters)}
+                            </span>
+                          )}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <p className="font-medium mb-1">{comp.is_same_building ? 'Same Building' : 'Nearby Sale'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {comp.is_same_building 
+                            ? 'This sale occurred in the same building. Most relevant for direct price comparison.'
+                            : `This property sold ${Math.round(comp.distance_meters)} meters from this listing. Similar location factors should apply.`
+                          }
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {/* Date */}
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {formatSoldDate(comp.sold_date)}
+                    </span>
+
+                    {/* Price per sqm with tooltip */}
+                    {comp.price_per_sqm && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
+                            <BarChart3 className="h-3 w-3" />
+                            {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="font-medium mb-1">Price per Square Meter</p>
+                          <p className="text-xs text-muted-foreground">
+                            The actual sold price divided by property size. Use this to compare value across different-sized properties.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+
+                  {/* Comparison badge with tooltip */}
+                  {comparison !== null && Math.abs(comparison) > 5 && (
+                    <div className="mt-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            variant="secondary"
+                            className={cn(
+                              "text-xs cursor-help",
+                              "bg-primary/10 text-primary hover:bg-primary/15"
+                            )}
+                          >
+                            {comparison > 0 
+                              ? `Listing is ${comparison.toFixed(0)}% above this sale`
+                              : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
+                            }
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="font-medium mb-1">Price per m² Comparison</p>
+                          <p className="text-xs text-muted-foreground">
+                            {comparison > 0 
+                              ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
+                              : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
+                            }
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   )}
                 </div>
-
-                {comparison !== null && Math.abs(comparison) > 5 && (
-                  <div className="mt-2">
-                    <Badge 
-                      variant={comparison > 0 ? 'destructive' : 'default'}
-                      className="text-xs"
-                    >
-                      {comparison > 0 
-                        ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                        : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                      }
-                    </Badge>
-                  </div>
-                )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <p className="text-xs text-muted-foreground text-center pt-2">
-        Data source: Israel Tax Authority & Nadlan.gov.il
-      </p>
-    </div>
+        {/* Source attribution footer */}
+        <div className="flex items-center justify-center gap-2 pt-3 border-t border-border/50">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span className="border-b border-dotted border-muted-foreground/30">
+                  Government verified data
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <p className="font-medium mb-1">Official Transaction Records</p>
+              <p className="text-xs text-muted-foreground">
+                Sourced from Israel Tax Authority and Nadlan.gov.il. 
+                These are legally recorded sale prices—more reliable than listing or asking prices.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 }
