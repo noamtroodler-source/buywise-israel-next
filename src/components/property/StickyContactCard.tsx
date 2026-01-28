@@ -86,7 +86,7 @@ export function StickyContactCard({
         {agent && (
           <>
             <div className="p-5 flex items-center gap-3 bg-muted/30">
-              <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+              <Avatar className="h-16 w-16 ring-2 ring-border">
                 <AvatarImage 
                   src={agent.avatar_url || undefined} 
                   alt={agent.name}
