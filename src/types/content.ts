@@ -15,6 +15,8 @@ export interface BlogPost {
   cover_image: string | null;
   category_id: string | null;
   author_id: string | null;
+  author_type: string | null;
+  author_profile_id: string | null;
   is_published: boolean;
   published_at: string | null;
   views_count: number;

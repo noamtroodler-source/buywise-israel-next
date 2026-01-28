@@ -1,13 +1,15 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Eye, Clock, Bookmark, Share2, ChevronRight, Loader2, Calculator } from 'lucide-react';
+import { Calendar, Eye, Clock, Bookmark, Share2, ChevronRight, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useBlogPost, useRelatedPosts } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
+import { useBlogPostAuthor } from '@/hooks/useBlogPostAuthor';
 import { BlogCard } from '@/components/blog/BlogCard';
+import { BlogAuthorContactCard } from '@/components/blog/BlogAuthorContactCard';
 import { toast } from 'sonner';
 import { markdownToHtml, addHeadingIds, extractHeadings } from '@/utils/markdownToHtml';
 import {
@@ -26,6 +28,7 @@ export default function BlogPost() {
   const { data: post, isLoading, error } = useBlogPost(slug || '');
   const { data: relatedPosts = [] } = useRelatedPosts(post?.category_id ?? undefined, post?.id);
   const { isArticleSaved, toggleSave } = useSavedArticles();
+  const { data: author } = useBlogPostAuthor(post?.author_type, post?.author_profile_id);
 
   const handleShare = async () => {
     try {
@@ -268,24 +271,13 @@ export default function BlogPost() {
                   </Card>
                 )}
 
-                {/* Calculator CTA */}
-                <Card className="p-5 bg-primary/5 border-primary/10">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Calculator className="h-5 w-5 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-foreground">Run the Numbers</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Use our calculators to understand the true costs of buying in Israel.
-                  </p>
-                  <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link to="/tools">
-                      Explore Tools
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </Card>
+                {/* Author Contact Card */}
+                {author && (
+                  <BlogAuthorContactCard 
+                    author={author} 
+                    postTitle={post.title}
+                  />
+                )}
               </div>
             </motion.aside>
           </div>
