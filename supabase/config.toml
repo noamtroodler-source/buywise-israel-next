@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.seed-demo-data]
 verify_jwt = false
+
+[functions.import-sold-transactions]
+verify_jwt = false
+
+[functions.geocode-sold-transaction]
+verify_jwt = false

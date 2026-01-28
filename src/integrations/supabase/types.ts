@@ -3732,6 +3732,126 @@ export type Database = {
         }
         Relationships: []
       }
+      sold_data_imports: {
+        Row: {
+          city: string
+          created_at: string | null
+          date_range_end: string | null
+          date_range_start: string | null
+          id: string
+          imported_by: string | null
+          notes: string | null
+          records_failed: number | null
+          records_geocoded: number | null
+          records_imported: number | null
+          source: string
+        }
+        Insert: {
+          city: string
+          created_at?: string | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          imported_by?: string | null
+          notes?: string | null
+          records_failed?: number | null
+          records_geocoded?: number | null
+          records_imported?: number | null
+          source: string
+        }
+        Update: {
+          city?: string
+          created_at?: string | null
+          date_range_end?: string | null
+          date_range_start?: string | null
+          id?: string
+          imported_by?: string | null
+          notes?: string | null
+          records_failed?: number | null
+          records_geocoded?: number | null
+          records_imported?: number | null
+          source?: string
+        }
+        Relationships: []
+      }
+      sold_transactions: {
+        Row: {
+          address: string
+          asset_condition: string | null
+          city: string
+          created_at: string | null
+          floor: number | null
+          geocode_source: string | null
+          geocoded_at: string | null
+          gush_helka: string | null
+          id: string
+          is_new_construction: boolean | null
+          latitude: number | null
+          longitude: number | null
+          neighborhood: string | null
+          price_per_sqm: number | null
+          property_type: string | null
+          raw_data: Json | null
+          rooms: number | null
+          size_sqm: number | null
+          sold_date: string
+          sold_price: number
+          source: string
+          updated_at: string | null
+          year_built: number | null
+        }
+        Insert: {
+          address: string
+          asset_condition?: string | null
+          city: string
+          created_at?: string | null
+          floor?: number | null
+          geocode_source?: string | null
+          geocoded_at?: string | null
+          gush_helka?: string | null
+          id?: string
+          is_new_construction?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          price_per_sqm?: number | null
+          property_type?: string | null
+          raw_data?: Json | null
+          rooms?: number | null
+          size_sqm?: number | null
+          sold_date: string
+          sold_price: number
+          source: string
+          updated_at?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          address?: string
+          asset_condition?: string | null
+          city?: string
+          created_at?: string | null
+          floor?: number | null
+          geocode_source?: string | null
+          geocoded_at?: string | null
+          gush_helka?: string | null
+          id?: string
+          is_new_construction?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood?: string | null
+          price_per_sqm?: number | null
+          property_type?: string | null
+          raw_data?: Json | null
+          rooms?: number | null
+          size_sqm?: number | null
+          sold_date?: string
+          sold_price?: number
+          source?: string
+          updated_at?: string | null
+          year_built?: number | null
+        }
+        Relationships: []
+      }
       tool_feedback: {
         Row: {
           comment: string | null
@@ -4029,6 +4149,29 @@ export type Database = {
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
+      }
+      get_nearby_sold_comps: {
+        Args: {
+          p_city: string
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_max_rooms?: number
+          p_min_rooms?: number
+          p_months_back?: number
+          p_radius_km?: number
+        }
+        Returns: {
+          distance_meters: number
+          id: string
+          is_same_building: boolean
+          price_per_sqm: number
+          property_type: string
+          rooms: number
+          size_sqm: number
+          sold_date: string
+          sold_price: number
+        }[]
       }
       has_role: {
         Args: {

@@ -84,7 +84,7 @@ export default function AdminDashboard() {
     { label: 'Review Listings', icon: Eye, href: '/admin/review' },
     { label: 'View Analytics', icon: BarChart3, href: '/admin/analytics' },
     { label: 'Manage Agents', icon: Building2, href: '/admin/agents' },
-    { label: 'Update Market Data', icon: TrendingUp, href: '/admin/market-data' },
+    { label: 'Sold Transactions', icon: TrendingUp, href: '/admin/sold-transactions' },
   ];
 
   return (
