@@ -77,6 +77,12 @@ export function Header() {
             Areas
           </Link>
           <Link 
+            to="/blog" 
+            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Blog
+          </Link>
+          <Link 
             to="/advertise" 
             className="text-base font-medium text-primary hover:text-primary/80 transition-colors"
           >

@@ -16,30 +16,12 @@ export function MoreNav() {
           <NavigationMenuTrigger
             className="bg-transparent px-2 py-2 h-auto text-base font-medium text-muted-foreground hover:text-foreground hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent"
           >
-            More
+            Company
           </NavigationMenuTrigger>
           <NavigationMenuContent className="md:left-auto md:right-0">
-            <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[200px]">
-              <div className="p-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                  Company
-                </h4>
+            <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[180px]">
+              <div className="p-3">
                 <ul className="space-y-1">
-                  <li>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        to="/blog"
-                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
-                      >
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                          Blog
-                        </span>
-                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
-                          News & insights
-                        </span>
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
                   <li>
                     <NavigationMenuLink asChild>
                       <Link
