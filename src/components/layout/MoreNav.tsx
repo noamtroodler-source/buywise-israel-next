@@ -12,9 +12,9 @@ export function MoreNav() {
   return (
     <NavigationMenu className="!z-50">
       <NavigationMenuList className="space-x-0">
-        <NavigationMenuItem>
+        <NavigationMenuItem className="relative after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-4 after:bg-transparent">
           <NavigationMenuTrigger
-            className="bg-transparent px-0 py-0 h-auto text-base font-medium text-muted-foreground hover:text-foreground hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent"
+            className="bg-transparent px-2 py-2 h-auto text-base font-medium text-muted-foreground hover:text-foreground hover:bg-transparent focus:bg-transparent data-[state=open]:bg-transparent"
           >
             More
           </NavigationMenuTrigger>
