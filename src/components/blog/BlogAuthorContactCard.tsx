@@ -74,7 +74,7 @@ export function BlogAuthorContactCard({ author, postTitle }: BlogAuthorContactCa
       <div className="flex items-start gap-3 mb-4">
         <Link to={profileUrl}>
           <Avatar className="h-12 w-12">
-            <AvatarImage src={author.avatar_url || undefined} alt={author.name} />
+            <AvatarImage src={author.avatar_url || undefined} alt={author.name} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary font-medium">
               {getInitials(author.name)}
             </AvatarFallback>
