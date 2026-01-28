@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, Minus, DollarSign, BarChart3, Home, Calendar } from 'lucide-react';
 import { useFormatPrice, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { useMemo } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface PropertyValueSnapshotProps {
   price: number;
@@ -240,7 +241,21 @@ export function PropertyValueSnapshot({
               ) : (
                 <Minus className="h-4 w-4" />
               )}
-              <span className="text-sm">12-Month Trend</span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-sm cursor-help border-b border-dotted border-muted-foreground/30">
+                      12-Month Trend
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="font-medium mb-1">Area Price Trend</p>
+                    <p className="text-xs text-muted-foreground">
+                      How much property prices in {city} have changed over the past 12 months, based on government transaction data.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <p className="text-2xl font-bold text-foreground">
               {priceChange > 0 ? '+' : ''}{priceChange}%
