@@ -1,189 +1,133 @@
 
-# Context-Aware Authentication Messaging
 
-## Overview
+# Header Navigation Enhancement Plan
 
-Implement dynamic, context-aware messaging on the sign-in/sign-up page (`/auth`) that adapts based on what action the user was trying to perform. Instead of the generic "Sign in to access your saved properties," users will see specific messaging like "Sign up to create search alerts" or "Sign in to save your calculations."
+## Problem Analysis
+
+Looking at the screenshots, the header navigation appears "minuscule" for several reasons:
+
+| Current Value | Issue | Best Practice |
+|---------------|-------|---------------|
+| `text-sm` (14px) | Too small for primary navigation | `text-base` (16px) for main nav items |
+| 10 nav items | Too cluttered, spreads content thin | 5-7 max primary items |
+| `gap-6` (24px) | Tight with so many items | Reduce items OR use `gap-8` |
+| Logo `text-xl` | Appropriate | Keep as-is |
+
+## Recommended Solution
+
+### Option A: Increase Font Size + Consolidate Nav Items (Recommended)
+
+**1. Increase navigation font size from `text-sm` to `text-base`**
+
+This immediately makes the navigation feel more prominent and easier to read:
+
+```tsx
+// Before
+className="text-sm font-medium text-muted-foreground..."
+
+// After
+className="text-base font-medium text-muted-foreground..."
+```
+
+**2. Consolidate less-critical items into a "More" dropdown**
+
+Current 10 items are too many. Group secondary items:
+
+| Primary (Stay Visible) | Secondary (Move to "More") |
+|------------------------|---------------------------|
+| Buy | About |
+| Rent | Contact |
+| Projects | Blog |
+| Tools | |
+| Guides | |
+| Areas | |
+| Advertise | |
+
+This reduces visible nav items from 10 to 7, giving each item more breathing room.
+
+**3. Increase gap between items from `gap-6` to `gap-8`**
+
+With fewer items, we can afford more generous spacing:
+
+```tsx
+// Before
+<nav className="hidden md:flex items-center gap-6">
+
+// After  
+<nav className="hidden md:flex items-center gap-8">
+```
+
+### Option B: Simple Font Size Increase Only
+
+If you prefer to keep all 10 items visible:
+
+- Change `text-sm` to `text-base` for all nav links
+- This alone will make the navigation feel more substantial
 
 ---
 
-## How It Works
+## Visual Comparison
 
-### URL-Based Context Passing
-
-When redirecting to `/auth`, pass an `intent` parameter that describes the action:
-
+### Before (Current)
 ```text
-/auth?tab=signup&intent=create_alert
-/auth?tab=signup&intent=save_calculation
-/auth?tab=signup&intent=enable_price_alerts
-/auth?redirect=/profile&intent=view_profile
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🏠 BuyWise Israel   Buy  Rent  Projects  Tools  Guides  Areas  Blog  Advertise  About  Contact   [⚙] [♥] [Sign In] [Sign Up] │
+└─────────────────────────────────────────────────────────────────────────────┘
+          ↑ text-sm (14px), 10 items, gap-6 - feels cramped and small
 ```
 
-### Auth Page Reads Intent
-
-The Auth page reads the `intent` parameter and displays appropriate messaging:
-
-| Intent | Sign Up Description | Sign In Description |
-|--------|---------------------|---------------------|
-| `create_alert` | "Create an account to set up search alerts and get notified when new listings match your criteria" | "Sign in to create search alerts" |
-| `save_calculation` | "Create an account to save your calculations and access them on any device" | "Sign in to access your saved calculations" |
-| `enable_price_alerts` | "Create an account to enable price alerts and get notified when prices drop" | "Sign in to manage your price alerts" |
-| `save_favorite` | "Create an account to save your favorites and sync them across devices" | "Sign in to access your saved properties" |
-| `view_profile` | "Create your account to set up your buyer profile and get personalized estimates" | "Sign in to access your profile" |
-| `compare_properties` | "Create an account to save and compare properties side by side" | "Sign in to compare your saved properties" |
-| (default) | "Create your account to start your property journey" | "Sign in to access your saved properties" |
+### After (Recommended)
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 🏠 BuyWise Israel    Buy   Rent   Projects   Tools   Guides   Areas   Advertise   [More ▾]   [⚙] [♥] [Sign In] [Sign Up] │
+└─────────────────────────────────────────────────────────────────────────────┘
+          ↑ text-base (16px), 7 items + dropdown, gap-8 - feels substantial and clean
+```
 
 ---
 
 ## Implementation Details
 
-### 1. Create Intent Configuration Object
+### Changes to `Header.tsx`
 
-Add to `Auth.tsx`:
+**1. Update nav link font sizes:**
 
-```typescript
-const intentConfig: Record<string, { signupDesc: string; signinDesc: string; icon?: LucideIcon }> = {
-  create_alert: {
-    signupDesc: "Create an account to set up search alerts and get notified when new listings match your criteria",
-    signinDesc: "Sign in to create search alerts",
-    icon: Bell,
-  },
-  save_calculation: {
-    signupDesc: "Create an account to save your calculations and access them on any device",
-    signinDesc: "Sign in to access your saved calculations",
-    icon: Calculator,
-  },
-  enable_price_alerts: {
-    signupDesc: "Create an account to enable price alerts and get notified when prices drop",
-    signinDesc: "Sign in to manage your price alerts",
-    icon: Bell,
-  },
-  save_favorite: {
-    signupDesc: "Create an account to save your favorites and sync them across devices",
-    signinDesc: "Sign in to access your saved properties",
-    icon: Heart,
-  },
-  view_profile: {
-    signupDesc: "Create your account to set up your buyer profile and get personalized estimates",
-    signinDesc: "Sign in to access your profile",
-    icon: User,
-  },
-  compare_properties: {
-    signupDesc: "Create an account to save and compare properties side by side",
-    signinDesc: "Sign in to compare your saved properties",
-    icon: Scale,
-  },
-  set_profile: {
-    signupDesc: "Create an account to personalize your cost estimates based on your buyer status",
-    signinDesc: "Sign in to update your profile",
-    icon: User,
-  },
-};
+```tsx
+// All navigation links change from text-sm to text-base
+<Link 
+  to="/listings?status=for_sale" 
+  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+>
+  Buy
+</Link>
 ```
 
-### 2. Read Intent Parameter
+**2. Add "More" dropdown for secondary items:**
 
-```typescript
-const intentParam = searchParams.get('intent');
-const intentInfo = intentParam ? intentConfig[intentParam] : null;
+```tsx
+<DropdownMenu>
+  <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+    More
+    <ChevronDown className="h-4 w-4" />
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end" className="w-40">
+    <DropdownMenuItem asChild>
+      <Link to="/blog">Blog</Link>
+    </DropdownMenuItem>
+    <DropdownMenuItem asChild>
+      <Link to="/about">About</Link>
+    </DropdownMenuItem>
+    <DropdownMenuItem asChild>
+      <Link to="/contact">Contact</Link>
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
 ```
 
-### 3. Update Description Logic
+**3. Increase gap:**
 
-Replace the current hardcoded description with:
-
-```typescript
-<CardDescription className="text-muted-foreground">
-  {activeTab === 'signup' 
-    ? (intentInfo?.signupDesc || config.description)
-    : isProfessionalSignup 
-      ? 'Sign in to continue your registration'
-      : (intentInfo?.signinDesc || 'Sign in to access your saved properties')}
-</CardDescription>
-```
-
-### 4. Optional: Dynamic Icon
-
-If intent provides an icon and user is NOT a professional signup, use that icon instead of the default Shield icon.
-
----
-
-## Files to Update
-
-### Updates to Redirect Sources
-
-Each location that redirects to `/auth` needs to include the `intent` parameter:
-
-| File | Current | Updated |
-|------|---------|---------|
-| `PropertyFilters.tsx` | `/auth?redirect=/listings` | `/auth?redirect=/listings&intent=create_alert` |
-| `Projects.tsx` | `/auth?redirect=/projects` | `/auth?redirect=/projects&intent=create_alert` |
-| `SaveResultsPrompt.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=save_calculation` |
-| `usePriceDropAlerts.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=enable_price_alerts` |
-| `MortgageAssumptionsPanel.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=save_calculation` |
-| `InlineSignupCard.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=save_calculation` |
-| `GuestSignupNudge.tsx` | `/auth?tab=signup` | Accept `intent` prop, append to URL |
-| `GuestAssumptionsBanner.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=set_profile` |
-| `PersonalizationHeader.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=set_profile` |
-| `PropertyCostBreakdown.tsx` | `/auth?tab=signup` | `/auth?tab=signup&intent=set_profile` |
-| `ProtectedRoute.tsx` | `/auth?redirect=...` | `/auth?redirect=...&intent=view_profile` |
-
-### Core Auth Page Update
-
-| File | Changes |
-|------|---------|
-| `src/pages/Auth.tsx` | Add `intentConfig` object, read `intent` param, update description rendering logic, optionally update icon |
-
----
-
-## GuestSignupNudge Enhancement
-
-Update component to accept an optional `intent` prop:
-
-```typescript
-interface GuestSignupNudgeProps {
-  icon?: LucideIcon;
-  message: string;
-  ctaText?: string;
-  variant?: 'inline' | 'banner' | 'card';
-  intent?: string; // NEW: context for auth page messaging
-  className?: string;
-}
-
-// Usage in link:
-<Link to={`/auth?tab=signup${intent ? `&intent=${intent}` : ''}`}>
-```
-
----
-
-## Examples
-
-### Before (Generic)
-
-User clicks "Create Alert" on listings page → Redirected to `/auth`:
-
-```text
-┌─────────────────────────────────────────┐
-│         🛡️ Welcome to BuyWise Israel   │
-│                                         │
-│   Sign in to access your saved          │
-│   properties                            │
-└─────────────────────────────────────────┘
-```
-
-### After (Context-Aware)
-
-User clicks "Create Alert" on listings page → Redirected to `/auth?intent=create_alert`:
-
-```text
-┌─────────────────────────────────────────┐
-│         🔔 Welcome to BuyWise Israel    │
-│                                         │
-│   Create an account to set up search    │
-│   alerts and get notified when new      │
-│   listings match your criteria          │
-└─────────────────────────────────────────┘
+```tsx
+<nav className="hidden md:flex items-center gap-8">
 ```
 
 ---
@@ -192,31 +136,29 @@ User clicks "Create Alert" on listings page → Redirected to `/auth?intent=crea
 
 | File | Changes |
 |------|---------|
-| `src/pages/Auth.tsx` | Add intentConfig, read intent param, update CardDescription logic |
-| `src/components/filters/PropertyFilters.tsx` | Add `&intent=create_alert` to navigate |
-| `src/pages/Projects.tsx` | Add `&intent=create_alert` to navigate |
-| `src/components/tools/shared/SaveResultsPrompt.tsx` | Add `&intent=save_calculation` |
-| `src/components/tools/shared/InlineSignupCard.tsx` | Add `&intent=save_calculation` |
-| `src/hooks/usePriceDropAlerts.tsx` | Add `&intent=enable_price_alerts` |
-| `src/components/property/MortgageAssumptionsPanel.tsx` | Add `&intent=save_calculation` |
-| `src/components/shared/GuestSignupNudge.tsx` | Add optional `intent` prop, update Link URLs |
-| `src/components/shared/GuestAssumptionsBanner.tsx` | Add `&intent=set_profile` |
-| `src/components/property/PersonalizationHeader.tsx` | Add `&intent=set_profile` |
-| `src/components/property/PropertyCostBreakdown.tsx` | Add `&intent=set_profile` |
-| `src/components/shared/ProtectedRoute.tsx` | Add `&intent=view_profile` |
-| `src/pages/Tools.tsx` | Pass `intent="save_calculation"` to GuestSignupNudge |
-| `src/pages/Favorites.tsx` | Pass `intent="save_favorite"` to GuestSignupNudge |
+| `src/components/layout/Header.tsx` | Change `text-sm` to `text-base` for nav links, increase gap to `gap-8`, add "More" dropdown for Blog/About/Contact, import ChevronDown icon |
 
 ---
 
-## Intent Reference Table
+## Alternative: Minimal Change
 
-| Intent Key | Triggered From | Messaging Focus |
-|------------|----------------|-----------------|
-| `create_alert` | Listings/Projects filter "Create Alert" button | Search alerts |
-| `save_calculation` | Tools/Calculator save prompts | Saving calculations |
-| `enable_price_alerts` | Favorites page price alert toggle | Price drop notifications |
-| `save_favorite` | Favorites page guest banner | Syncing favorites |
-| `set_profile` | Profile banners, cost breakdowns | Personalized estimates |
-| `view_profile` | Protected routes (profile, dashboard) | Account access |
-| `compare_properties` | Compare feature (if gated) | Property comparison |
+If you want the simplest fix, just change font size:
+
+| Change | From | To |
+|--------|------|-----|
+| Nav link font | `text-sm` | `text-base` |
+| Nav gap | `gap-6` | `gap-6` (keep same) |
+| Items | 10 | 10 (keep all) |
+
+This alone will make a noticeable improvement.
+
+---
+
+## Summary of Best Practices Applied
+
+1. **Font size**: Primary navigation should be at least 16px (`text-base`)
+2. **Item count**: 5-7 primary items maximum for clean appearance
+3. **Spacing**: `gap-8` (32px) provides comfortable reading separation
+4. **Visual hierarchy**: Distinguish primary (main nav) from secondary ("More" dropdown)
+5. **Logo prominence**: Keep logo size at `text-xl` or larger
+
