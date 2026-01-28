@@ -1,105 +1,294 @@
 
-Goal
-- Stop the “More” dropdown from flickering so it behaves like a normal hover menu: open stays stable while the cursor is anywhere on the trigger or menu, and closes only after leaving both.
+# Comprehensive Navigation & Journey-Centric Content Strategy
 
-What we know (from the current code + what we already tried)
-- We already tried:
-  - Hover open/close using controlled `open` state
-  - A close delay (now 200ms)
-  - `sideOffset={0}` to remove the gap
-  - An invisible “hover bridge” on the menu content
-- Despite that, the flicker persists.
+## Vision Summary
+Transform BuyWise Israel's navigation from a flat structure (separate Tools page, separate Guides page) into a **journey-aware, contextual navigation system** — like Zillow and Redfin — where hovering over Buy, Rent, or Projects surfaces the **relevant tools, guides, and resources** for that specific context. The goal: guide users through each phase of their journey, surfacing the right resource at the right moment.
 
-Root cause (why it can still flicker with the current code)
-- There’s a bug in the debounce implementation: **we create multiple close timers and only track the most recent one**.
-  - `handleMoreMouseLeave` sets `closeTimeoutRef.current = setTimeout(...)` but **does not clear any existing timeout first**.
-  - If the pointer rapidly crosses boundaries (especially the trigger edge / border / tiny movements), `onMouseLeave` can fire multiple times in a row.
-  - Each time, a *new* timeout is created, but only the last timeout ID is stored in `closeTimeoutRef.current`.
-  - When the pointer comes back in, `handleMoreMouseEnter()` clears only the last timeout ID — **older timeouts remain alive** and will still execute later, forcing `setMoreDropdownOpen(false)` while you are still hovering, causing the “in-and-out” flicker.
-- This also explains why the problem can feel “border-related”: borders/rounded corners increase the likelihood of tiny enter/leave events firing quickly.
+---
 
-Proposed solution (robust, best-practice fix)
-We’ll fix this in layers, starting with the real bug:
+## Current State Analysis
 
-1) Fix the timer bug (critical)
-- In `handleMoreMouseLeave`, always clear any existing timeout before scheduling a new one.
-- Also set the ref back to `null` after closing, to avoid stale references.
+**What exists today:**
+- **Header navigation**: Buy | Rent | Projects | Tools | Guides | Areas | Advertise | More
+- **Tools page**: 7 tools listed flat (Mortgage, Total Cost, Affordability, Investment, Rent vs Buy, Renovation, Document Checklist)
+- **Guides page**: 8 guides listed flat (Buying in Israel, Understanding Listings, Purchase Tax, True Cost, Talking to Professionals, Mortgages, New vs Resale, Rent vs Buy)
+- **MoreNav**: Simple dropdown with Blog, About, Contact
 
-2) Make hover state deterministic (recommended)
-Right now, we’re using “enter = open, leave = schedule close” without knowing whether we’re leaving trigger vs leaving the menu content. Because the dropdown content is portaled, relying on wrapper hover alone is fragile.
-- Add two booleans:
-  - `isMoreTriggerHovered`
-  - `isMoreContentHovered`
-- Keep the menu open if either is true.
-- Only schedule close when both become false.
+**The problem:**
+- Tools and Guides are siloed — users must hunt for what's relevant
+- No journey awareness — a first-time buyer and someone ready to close see the same flat list
+- Navigation doesn't educate — it just links
+- Context is lost — the "Mortgage Calculator" has no connection to the "Mortgages Guide"
 
-3) Switch to pointer events for more consistent behavior (recommended)
-- Replace `onMouseEnter/onMouseLeave` with `onPointerEnter/onPointerLeave` on:
-  - `DropdownMenuTrigger`
-  - `DropdownMenuContent`
-- Pointer events reduce oddities with nested elements and are more consistent across input types.
+---
 
-4) Reduce event jitter and state conflicts (recommended cleanup)
-- Remove the outer wrapper `<div onMouseEnter/onMouseLeave>` around the dropdown (or stop using it for open/close).
-  - With portals, wrapper hover detection is inherently unreliable because the menu content is not inside that wrapper in the DOM.
-  - Instead, attach hover handlers directly to Trigger and Content.
+## The Journey Framework (Your 6 Phases)
 
-5) Keep what helped visually, but ensure it’s not masking logic issues
-- Keep `sideOffset={0}` and the hover bridge pseudo-element as “insurance,” but the main fix should be the timer + deterministic hover tracking.
+```text
+PHASE 1: UNDERSTAND THE SYSTEM
+├── How Israeli real estate works
+├── What's different for internationals
+└── Market dynamics and expectations
 
-Implementation details (exact edits)
-File: `src/components/layout/Header.tsx`
+PHASE 2: DEFINE WHAT FITS YOU
+├── Budget, financing, residency status
+├── Buyer type (investment vs. primary)
+└── Location preferences
 
-A) Replace the current hover handlers with safer logic
-- Add state:
-  - `const [isMoreTriggerHovered, setIsMoreTriggerHovered] = useState(false);`
-  - `const [isMoreContentHovered, setIsMoreContentHovered] = useState(false);`
-- Add helper:
-  - `const cancelClose = () => { if (closeTimeoutRef.current) { clearTimeout(closeTimeoutRef.current); closeTimeoutRef.current = null; } };`
-- Update enter handlers:
-  - On trigger/content pointer enter: `cancelClose(); setMoreDropdownOpen(true); setIsMoreTriggerHovered(true)` / `setIsMoreContentHovered(true)`
-- Update leave handlers:
-  - On trigger/content pointer leave: set the appropriate hovered flag false, then schedule close:
-    - First `cancelClose()` (important!)
-    - Then `closeTimeoutRef.current = setTimeout(() => { if (!isMoreTriggerHovered && !isMoreContentHovered) setMoreDropdownOpen(false); }, 200-250);`
-  - Important: because state updates are async, we’ll compute “next hovered” values inside the handler (or store hovered flags in refs) so the timeout checks the latest truth. This prevents a close from being scheduled based on outdated state.
+PHASE 3: EXPLORE REAL OPTIONS
+├── Browse listings, projects, areas
+├── Understand what you're seeing
+└── Compare options
 
-B) Attach handlers to Trigger + Content (not the wrapper)
-- `DropdownMenuTrigger`: add `onPointerEnter` / `onPointerLeave`
-- `DropdownMenuContent`: add `onPointerEnter` / `onPointerLeave`
-- Remove or neutralize the wrapper `div` hover handlers around the dropdown.
+PHASE 4: CHECK BEFORE YOU COMMIT
+├── Due diligence
+├── True costs and hidden fees
+└── Professional engagement
 
-C) Keep the hover bridge and zero offset
-- Keep:
-  - `sideOffset={0}`
-  - `className` includes the `before:` hover bridge
-- Also ensure the dropdown content has a solid background and high z-index (Radix already applies `z-50`, but we’ll keep your explicit background classes).
+PHASE 5: MOVE FORWARD CONFIDENTLY
+├── Mortgage, legal, paperwork
+├── Negotiation and closing
+└── Document preparation
 
-D) Optional: clamp state updates from Radix
-- Keep `onOpenChange={setMoreDropdownOpen}` so click/keyboard still works.
-- But add a small guard so hover logic doesn’t fight click logic:
-  - Example idea: if hover is currently active, don’t allow `onOpenChange(false)` to close it unless both hovered flags are false.
-  - This is usually not necessary once the timer bug is fixed, but it’s a safe fallback if Radix sends close events while hover is still active.
+PHASE 6: AFTER THE DEAL
+├── Post-purchase costs
+├── Renovation planning
+└── Ongoing ownership
+```
 
-Why this will stop flickering (in plain terms)
-- The flicker is caused by “ghost closes” from old timers firing after you’ve already hovered back in.
-- By always cancelling any existing timer before creating a new one, and by only closing when we are sure the pointer is over neither trigger nor menu, the dropdown can’t randomly close while you’re still interacting with it.
+---
 
-Acceptance criteria (how we’ll verify it’s fixed)
-- Hover over “More”: opens immediately.
-- Move cursor down into the dropdown: no flicker.
-- Skim along the border edges: no flicker, no repeated open/close.
-- Leave the menu area entirely: closes after ~200–250ms.
-- Click and keyboard still work:
-  - Click trigger toggles open/close.
-  - Tab to trigger + Enter/Space opens.
-  - Escape closes.
+## Proposed Navigation Architecture
 
-Fallback if you want the exact “Zillow-grade” behavior
-If after fixing the timer bug you still want a more purpose-built navigation interaction:
-- Replace `DropdownMenu` with the existing `NavigationMenu` component (`src/components/ui/navigation-menu.tsx` is already in the project).
-- `NavigationMenu` is designed specifically for hoverable header nav and tends to behave more like large production sites out of the box.
-- We’ll only do this if needed; the timer fix + hover tracking should already eliminate the flicker.
+### Desktop: Mega-Menu Pattern (Like Zillow/Redfin)
 
-Files to change
-- `src/components/layout/Header.tsx`
+Replace the flat nav links with hover-activated mega-menus that show **contextual columns**:
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  BuyWise Israel    │  Buy ▼  │  Rent ▼  │  Projects ▼  │  Areas  │  More ▼  │
+└──────────────────────────────────────────────────────────────────────────────┘
+                          │
+                          ▼ (Hover reveals mega-menu)
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  BROWSE                    │  TOOLS & CALCULATORS      │  GUIDES            │
+│  ─────────────────────     │  ─────────────────────    │  ─────────────────  │
+│  All Properties for Sale   │  Mortgage Calculator      │  Complete Buying   │
+│  New Construction          │  Affordability Calculator │  Guide             │
+│  Recently Sold             │  True Cost Calculator     │  Understanding     │
+│                            │  Investment Calculator    │  Listings          │
+│                            │                           │  Purchase Tax      │
+│  EXPLORE                   │  DECISION TOOLS           │  Guide             │
+│  ─────────────────────     │  ─────────────────────    │  True Cost of      │
+│  Browse by Area            │  Rent vs Buy Calculator   │  Buying            │
+│  Compare Properties        │  Document Checklist       │  Mortgages Guide   │
+│                            │                           │  New vs Resale     │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**For Rent, show different context:**
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  BROWSE                    │  TOOLS FOR RENTERS        │  GUIDES            │
+│  ─────────────────────     │  ─────────────────────    │  ─────────────────  │
+│  All Rentals               │  Affordability Calculator │  Rent vs Buy       │
+│  Pet-Friendly              │  Rent vs Buy Calculator   │  Guide             │
+│  Furnished                 │  True Cost (Rental)       │  Understanding     │
+│                            │                           │  Listings          │
+│  EXPLORE                   │  PREPARE                  │                    │
+│  ─────────────────────     │  ─────────────────────    │                    │
+│  Browse by Area            │  Document Checklist       │                    │
+│                            │                           │                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Plan
+
+### Phase 1: Create Navigation Data Structure
+
+**New file: `src/lib/navigationConfig.ts`**
+
+Define a centralized configuration that maps each main nav item to its contextual sub-items, organized by the journey phases:
+
+```typescript
+export const NAV_CONFIG = {
+  buy: {
+    label: 'Buy',
+    columns: [
+      {
+        title: 'Browse',
+        items: [
+          { label: 'All Properties', href: '/listings?status=for_sale', phase: 'explore' },
+          { label: 'New Construction', href: '/projects', phase: 'explore' },
+          { label: 'Recently Sold', href: '/listings?status=sold', phase: 'check' },
+        ]
+      },
+      {
+        title: 'Calculators',
+        items: [
+          { label: 'Mortgage Calculator', href: '/tools?tool=mortgage', phase: 'define' },
+          { label: 'Affordability', href: '/tools?tool=affordability', phase: 'define' },
+          { label: 'True Cost', href: '/tools?tool=totalcost', phase: 'check' },
+          { label: 'Investment Returns', href: '/tools?tool=investment', phase: 'check' },
+          { label: 'Rent vs Buy', href: '/tools?tool=rentvsbuy', phase: 'define' },
+        ]
+      },
+      {
+        title: 'Guides',
+        items: [
+          { label: 'Complete Buying Guide', href: '/guides/buying-in-israel', phase: 'understand' },
+          { label: 'Understanding Listings', href: '/guides/understanding-listings', phase: 'explore' },
+          { label: 'Purchase Tax Guide', href: '/guides/purchase-tax', phase: 'check' },
+          { label: 'True Cost of Buying', href: '/guides/true-cost', phase: 'check' },
+          { label: 'Mortgages in Israel', href: '/guides/mortgages', phase: 'move_forward' },
+          { label: 'New vs Resale', href: '/guides/new-vs-resale', phase: 'explore' },
+        ]
+      }
+    ],
+    cta: { label: 'Start Your Search', href: '/listings?status=for_sale' }
+  },
+  rent: {
+    label: 'Rent',
+    columns: [
+      // Rental-specific content...
+    ]
+  },
+  projects: {
+    label: 'Projects',
+    columns: [
+      // Projects-specific content...
+    ]
+  }
+};
+```
+
+### Phase 2: Create MegaMenu Component
+
+**New file: `src/components/layout/MegaMenu.tsx`**
+
+A reusable mega-menu component using Radix `NavigationMenu` that renders the column-based layout:
+
+- Uses `NavigationMenu` for native hover handling (no flicker issues)
+- Renders 2-3 columns based on config
+- Each column has a title and list of links
+- Optional CTA at bottom
+- Responsive: full-width on desktop, stacked on tablet
+
+### Phase 3: Refactor Header
+
+**File: `src/components/layout/Header.tsx`**
+
+- Replace individual `<Link>` elements for Buy/Rent/Projects with `<MegaMenu>` components
+- Keep "Areas" as a direct link (or add a simpler dropdown with popular cities)
+- Consolidate "Tools" and "Guides" into the mega-menus (remove standalone nav links)
+- Keep "Advertise" prominent
+- Keep "More" for Blog/About/Contact
+
+### Phase 4: Journey-Aware Tool & Guide Pages
+
+**Files: `src/pages/Tools.tsx`, `src/pages/Guides.tsx`**
+
+Reorganize these pages to display content grouped by journey phase rather than flat lists:
+
+**Tools page restructured:**
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  UNDERSTAND YOUR OPTIONS                                        │
+│  ─────────────────────────────────────────────────────────────  │
+│  [Rent vs Buy Calculator] [Affordability Calculator]            │
+│                                                                  │
+│  CALCULATE TRUE COSTS                                            │
+│  ─────────────────────────────────────────────────────────────  │
+│  [Total Cost Calculator] [Mortgage Calculator] [Investment]     │
+│                                                                  │
+│  PREPARE FOR CLOSING                                             │
+│  ─────────────────────────────────────────────────────────────  │
+│  [Document Checklist] [Renovation Estimator]                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Phase 5: Contextual CTAs Throughout the Site
+
+Add "What's Next?" prompts on key pages:
+
+- **After viewing a listing**: "Ready to calculate? Try our Mortgage Calculator →"
+- **After using a tool**: "Learn more with our [related guide] →"
+- **On guide pages**: "Run the numbers with our [related calculator] →"
+
+---
+
+## Mobile Navigation Strategy
+
+For mobile, the mega-menu transforms into an **accordion-style** navigation within the existing mobile drawer:
+
+```text
+┌─────────────────────────────────────────────┐
+│  ☰ Menu                                     │
+├─────────────────────────────────────────────┤
+│  ▼ Buy                                      │
+│    ├─ All Properties for Sale               │
+│    ├─ New Construction                      │
+│    ├─ Mortgage Calculator                   │
+│    ├─ Complete Buying Guide                 │
+│    └─ ...                                   │
+│  ▶ Rent                                     │
+│  ▶ Projects                                 │
+│  Areas                                      │
+│  Advertise                                  │
+│  ▶ More                                     │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/lib/navigationConfig.ts` | Create | Centralized nav config with journey phases |
+| `src/components/layout/MegaMenu.tsx` | Create | Reusable mega-menu component |
+| `src/components/layout/Header.tsx` | Modify | Replace flat links with MegaMenu components |
+| `src/components/layout/MoreNav.tsx` | Modify | Potentially expand or keep simple |
+| `src/pages/Tools.tsx` | Modify | Group tools by journey phase |
+| `src/pages/Guides.tsx` | Modify | Group guides by journey phase |
+| `src/lib/routes.ts` | Modify | Add journey phase metadata |
+
+---
+
+## Content Mapping: Tools & Guides by Journey Phase
+
+| Phase | Tools | Guides |
+|-------|-------|--------|
+| **Understand the System** | — | Complete Buying Guide, Rent vs Buy Guide |
+| **Define What Fits You** | Affordability Calculator, Rent vs Buy Calculator | — |
+| **Explore Real Options** | — | Understanding Listings, New vs Resale |
+| **Check Before You Commit** | True Cost Calculator, Investment Calculator | Purchase Tax Guide, True Cost Guide, Talking to Professionals |
+| **Move Forward Confidently** | Mortgage Calculator, Document Checklist | Mortgages Guide |
+| **After the Deal** | Renovation Estimator | — |
+
+---
+
+## Success Metrics
+
+After implementation, users should:
+1. Hover over "Buy" and immediately see relevant calculators and guides
+2. Never need to hunt for the "right" tool — it's surfaced contextually
+3. Feel guided through their journey, not lost in a flat list
+4. Experience smooth, flicker-free mega-menu interactions
+
+---
+
+## Technical Considerations
+
+- **No flicker**: Use `NavigationMenu` primitive (already working in `MoreNav.tsx`)
+- **Performance**: Lazy-load mega-menu content only when hovered
+- **Accessibility**: Full keyboard navigation, proper ARIA labels
+- **SEO**: All links are standard `<a>` tags, crawlable
+- **Mobile**: Accordion pattern within existing mobile drawer
