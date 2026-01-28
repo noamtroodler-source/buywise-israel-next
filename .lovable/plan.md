@@ -1,63 +1,74 @@
 
 
-# Elevate Blog & Rename "More" to "Company"
+# Improve Navigation Menu Timing and Click Behavior
 
 ## Summary
-Move Blog to top-level navigation and convert the "More" dropdown into a focused "Company" dropdown with just About and Contact.
+Reduce the hover-out delay for a snappier feel, and ensure click-to-open/close works cleanly alongside the hover behavior.
 
 ---
 
 ## Changes Overview
 
-### Desktop Navigation (Header.tsx lines 69-86)
+### 1. Update NavigationMenu Component (`src/components/ui/navigation-menu.tsx`)
 
-**Current order:**
-```
-Buy | Rent | Projects | Areas | Advertise | More (Blog, About, Contact)
-```
+Add `delayDuration` and `skipDelayDuration` props to the NavigationMenu wrapper to allow customization, with faster defaults:
 
-**New order:**
-```
-Buy | Rent | Projects | Areas | Blog | Advertise | Company (About, Contact)
-```
-
-**Changes:**
-- Add a new top-level `<Link to="/blog">` between Areas and Advertise
-- Keep `<MoreNav />` but it will now be called "Company"
-
----
-
-### MoreNav Component Refactor
-
-**File:** `src/components/layout/MoreNav.tsx`
-
-1. Change trigger text from "More" to "Company"
-2. Remove the "Company" section header (since the dropdown IS the company section)
-3. Remove Blog from the list - keep only About and Contact
-4. Simplify width from 200px to 180px (fewer items need less space)
-
-**Updated structure:**
+**Current:**
 ```tsx
-<NavigationMenuTrigger>
-  Company
-</NavigationMenuTrigger>
-<NavigationMenuContent>
-  <div className="rounded-xl border bg-popover shadow-xl w-[180px]">
-    <div className="p-3">
-      <ul className="space-y-1">
-        <li>About - Our story</li>
-        <li>Contact - Get in touch</li>
-      </ul>
-    </div>
-  </div>
-</NavigationMenuContent>
+const NavigationMenu = React.forwardRef<...>(({ className, children, ...props }, ref) => (
+  <NavigationMenuPrimitive.Root
+    ref={ref}
+    className={cn("relative z-10...", className)}
+    {...props}
+  >
+```
+
+**Updated:**
+```tsx
+interface NavigationMenuProps extends React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root> {
+  delayDuration?: number;
+  skipDelayDuration?: number;
+}
+
+const NavigationMenu = React.forwardRef<...>(({ 
+  className, 
+  children, 
+  delayDuration = 100,      // Faster open (was 200)
+  skipDelayDuration = 150,  // Faster switch (was 300)
+  ...props 
+}, ref) => (
+  <NavigationMenuPrimitive.Root
+    ref={ref}
+    delayDuration={delayDuration}
+    skipDelayDuration={skipDelayDuration}
+    className={cn("relative z-10...", className)}
+    {...props}
+  >
 ```
 
 ---
 
-### Mobile Menu (Header.tsx lines 391-426)
+### 2. Timing Values
 
-The mobile menu already has Blog, About, and Contact as separate links - no changes needed there. The structure already supports this layout.
+| Setting | Default | New Value | Effect |
+|---------|---------|-----------|--------|
+| `delayDuration` | 200ms | 100ms | Menu opens faster after hover |
+| `skipDelayDuration` | 150ms | 150ms | Quick switch between menu items |
+
+The close behavior is affected by the exit delay, which we're reducing to make the menu feel more responsive when moving away.
+
+---
+
+### 3. Click Behavior
+
+Radix Navigation Menu natively supports click-to-toggle. The trigger already handles:
+- **Click to open** - opens the menu
+- **Click again to close** - closes the menu
+- **Click outside** - closes the menu
+
+The current implementation should already work. If there are issues, we can verify by:
+- Ensuring no `onPointerDown` or `onClick` handlers are interfering
+- The trigger uses `data-state="open"` or `data-state="closed"` which toggles on click
 
 ---
 
@@ -65,25 +76,12 @@ The mobile menu already has Blog, About, and Contact as separate links - no chan
 
 | File | Changes |
 |------|---------|
-| `src/components/layout/Header.tsx` | Add Blog link between Areas and Advertise in desktop nav (line 78-79) |
-| `src/components/layout/MoreNav.tsx` | Rename to "Company", remove Blog, remove section header |
-
----
-
-## Final Desktop Nav Structure
-
-```
-Buy | Rent | Projects | Areas | Blog | Advertise | Company
- ^      ^       ^        ^       ^        ^           ^
-mega  mega    mega    simple  simple   primary    dropdown
-menu  menu    menu    link    link     link      (About, Contact)
-```
+| `src/components/ui/navigation-menu.tsx` | Add timing props with faster defaults (100ms/150ms) |
 
 ---
 
 ## Result
-- Blog is now a prominent top-level link (more visibility for content)
-- "Company" is an accurate label for About and Contact
-- Cleaner semantic grouping
-- No confusing category mismatch
+- Snappier hover response - menu closes faster when cursor leaves
+- Click-to-toggle works cleanly alongside hover
+- Consistent behavior across all mega-menus and the Company dropdown
 
