@@ -245,7 +245,7 @@ export function MortgageAssumptionsPanel({
                   >
                     Save Locally
                   </Button>
-                  <Link to="/auth?tab=signup">
+                  <Link to="/auth?tab=signup&intent=save_calculation">
                     <Button size="sm" variant="default" className="gap-1.5">
                       <LogIn className="h-3.5 w-3.5" />
                       Sign Up to Save

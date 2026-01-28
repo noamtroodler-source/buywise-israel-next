@@ -115,7 +115,7 @@ export default function Projects() {
 
   const handleCreateAlert = () => {
     if (!user) {
-      navigate('/auth?redirect=/projects');
+      navigate('/auth?redirect=/projects&intent=create_alert');
       return;
     }
     setAlertDialogOpen(true);

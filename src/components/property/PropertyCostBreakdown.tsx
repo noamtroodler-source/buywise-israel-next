@@ -299,7 +299,7 @@ export function PropertyCostBreakdown({
                 {!user && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Your situation different?{' '}
-                    <Link to="/auth?tab=signup" className="text-primary hover:underline">
+                    <Link to="/auth?tab=signup&intent=set_profile" className="text-primary hover:underline">
                       Get accurate estimates for your situation →
                     </Link>
                   </p>
