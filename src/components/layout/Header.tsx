@@ -60,7 +60,7 @@ export function Header() {
   const handleMoreMouseLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setMoreDropdownOpen(false);
-    }, 150);
+    }, 200);
   };
 
   // Cleanup timeout on unmount
@@ -139,7 +139,8 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-40 bg-background border-border"
+                sideOffset={0}
+                className="w-40 bg-background border-border relative before:content-[''] before:absolute before:inset-x-0 before:-top-2 before:h-2"
                 onMouseEnter={handleMoreMouseEnter}
                 onMouseLeave={handleMoreMouseLeave}
               >
