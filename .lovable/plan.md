@@ -1,164 +1,130 @@
 
 
-# Header Navigation Enhancement Plan
+# Mock Blog Posts for Professionals Demo
 
-## Problem Analysis
+## Overview
 
-Looking at the screenshots, the header navigation appears "minuscule" for several reasons:
+Delete all existing blog posts (53 total) and create new mock blog posts authored by the existing agents, developers, and agencies in the database. This will showcase how different professionals can contribute content to the blog.
 
-| Current Value | Issue | Best Practice |
-|---------------|-------|---------------|
-| `text-sm` (14px) | Too small for primary navigation | `text-base` (16px) for main nav items |
-| 10 nav items | Too cluttered, spreads content thin | 5-7 max primary items |
-| `gap-6` (24px) | Tight with so many items | Reduce items OR use `gap-8` |
-| Logo `text-xl` | Appropriate | Keep as-is |
+## Current State
 
-## Recommended Solution
+| Entity | Count Available | Status |
+|--------|-----------------|--------|
+| Agents | 10+ active | Ready to use |
+| Developers | 8 active | Ready to use |
+| Agencies | 10+ active | Ready to use |
+| Existing Blog Posts | 53 | Will be deleted |
+| Blog Categories | 10 | Will be used |
 
-### Option A: Increase Font Size + Consolidate Nav Items (Recommended)
+## Implementation Plan
 
-**1. Increase navigation font size from `text-sm` to `text-base`**
+### Step 1: Delete Existing Blog Posts
 
-This immediately makes the navigation feel more prominent and easier to read:
+Remove all current blog posts to start fresh:
 
-```tsx
-// Before
-className="text-sm font-medium text-muted-foreground..."
-
-// After
-className="text-base font-medium text-muted-foreground..."
+```sql
+DELETE FROM blog_posts;
 ```
 
-**2. Consolidate less-critical items into a "More" dropdown**
+Also delete any saved articles references:
 
-Current 10 items are too many. Group secondary items:
-
-| Primary (Stay Visible) | Secondary (Move to "More") |
-|------------------------|---------------------------|
-| Buy | About |
-| Rent | Contact |
-| Projects | Blog |
-| Tools | |
-| Guides | |
-| Areas | |
-| Advertise | |
-
-This reduces visible nav items from 10 to 7, giving each item more breathing room.
-
-**3. Increase gap between items from `gap-6` to `gap-8`**
-
-With fewer items, we can afford more generous spacing:
-
-```tsx
-// Before
-<nav className="hidden md:flex items-center gap-6">
-
-// After  
-<nav className="hidden md:flex items-center gap-8">
+```sql
+DELETE FROM saved_articles;
 ```
 
-### Option B: Simple Font Size Increase Only
+### Step 2: Create Mock Blog Posts
 
-If you prefer to keep all 10 items visible:
+Create 15-20 professional blog posts distributed across:
 
-- Change `text-sm` to `text-base` for all nav links
-- This alone will make the navigation feel more substantial
+| Author Type | Posts | Example Authors |
+|-------------|-------|-----------------|
+| Agent | 6 posts | Ayelet Weiss, Moshe Gross, Yael Peretz |
+| Developer | 6 posts | Azrieli Development, Shikun & Binui, Gindi Holdings |
+| Agency | 6 posts | Anglo Israel Properties, Jerusalem Heritage Realty, Central Israel RE |
 
----
+### Step 3: Blog Post Content Themes
 
-## Visual Comparison
+Each professional type will have relevant content:
 
-### Before (Current)
+**Agent Posts:**
+- "My Top 5 Tips for First-Time Buyers in Tel Aviv"
+- "What I Wish Clients Knew Before Their Property Search"
+- "Navigating Bidding Wars: An Agent's Perspective"
+- "The Most Common Questions I Get from Olim Buyers"
+- "How to Spot a Good Investment Property"
+- "Why Location Research Matters More Than You Think"
+
+**Developer Posts:**
+- "Behind the Scenes: How We Design Modern Israeli Living"
+- "Sustainability in Israeli Construction: Our Approach"
+- "What Makes a Premium Development Stand Out"
+- "The Future of Urban Living in Israel"
+- "Our Process: From Blueprint to Move-In Ready"
+- "Why We Focus on Family-Friendly Communities"
+
+**Agency Posts:**
+- "Market Report: Q4 Trends Across Israel"
+- "How Our Team Evaluates Properties for Clients"
+- "The Anglo Buyer's Complete Guide to Israeli Real Estate"
+- "Investment Strategies for 2024 and Beyond"
+- "Understanding Israeli Property Law: Key Points"
+- "Why Working with an Agency Matters"
+
+### Step 4: Blog Post Fields
+
+Each post will include:
+
+- **title**: Professional, market-relevant title
+- **slug**: URL-friendly version
+- **excerpt**: 1-2 sentence summary
+- **content**: 3-4 paragraphs of placeholder content
+- **cover_image**: High-quality Unsplash images
+- **category_id**: Mapped to existing categories
+- **author_type**: 'agent', 'developer', or 'agency'
+- **author_profile_id**: UUID of the actual professional
+- **is_published**: true
+- **verification_status**: 'approved' (for display)
+- **published_at**: Distributed over past 2 months
+- **city**: Relevant Israeli city
+- **audiences**: Array like ['investors', 'olim', 'first-time-buyers']
+- **reading_time_minutes**: 3-8 minutes
+- **views_count**: Random 50-500
+
+## Data Distribution
+
 ```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ 🏠 BuyWise Israel   Buy  Rent  Projects  Tools  Guides  Areas  Blog  Advertise  About  Contact   [⚙] [♥] [Sign In] [Sign Up] │
-└─────────────────────────────────────────────────────────────────────────────┘
-          ↑ text-sm (14px), 10 items, gap-6 - feels cramped and small
+┌─────────────────────────────────────────────────────────────┐
+│                    18 Mock Blog Posts                        │
+├─────────────────────────────────────────────────────────────┤
+│  AGENTS (6)          DEVELOPERS (6)       AGENCIES (6)       │
+│  ├─ Ayelet Weiss     ├─ Azrieli Group    ├─ Anglo Israel     │
+│  ├─ Moshe Gross      ├─ Shikun & Binui   ├─ Jerusalem Herit. │
+│  ├─ Yael Peretz      ├─ Gindi Holdings   ├─ Central Israel   │
+│  ├─ Keren Shapiro    ├─ Africa Israel    ├─ Negev Living     │
+│  ├─ Orly Rosen       ├─ Azorim Group     ├─ Mediterranean    │
+│  └─ Dan Friedman     └─ Tidhar Group     └─ Gush Dan Realty  │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### After (Recommended)
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ 🏠 BuyWise Israel    Buy   Rent   Projects   Tools   Guides   Areas   Advertise   [More ▾]   [⚙] [♥] [Sign In] [Sign Up] │
-└─────────────────────────────────────────────────────────────────────────────┘
-          ↑ text-base (16px), 7 items + dropdown, gap-8 - feels substantial and clean
-```
+## Categories Used
 
----
+- Market Insights
+- Investment Tips
+- Buying Guide
+- Neighborhood Guides
+- Living in Israel
+- Legal & Finance
 
-## Implementation Details
+## Expected Result
 
-### Changes to `Header.tsx`
+After implementation:
+- Blog page shows 18 diverse articles
+- Each article displays author name, photo, and type
+- Clicking author name goes to their professional profile
+- Mix of topics relevant to each professional's expertise
+- Realistic publication dates and view counts
 
-**1. Update nav link font sizes:**
+## Files Modified
 
-```tsx
-// All navigation links change from text-sm to text-base
-<Link 
-  to="/listings?status=for_sale" 
-  className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
->
-  Buy
-</Link>
-```
-
-**2. Add "More" dropdown for secondary items:**
-
-```tsx
-<DropdownMenu>
-  <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-    More
-    <ChevronDown className="h-4 w-4" />
-  </DropdownMenuTrigger>
-  <DropdownMenuContent align="end" className="w-40">
-    <DropdownMenuItem asChild>
-      <Link to="/blog">Blog</Link>
-    </DropdownMenuItem>
-    <DropdownMenuItem asChild>
-      <Link to="/about">About</Link>
-    </DropdownMenuItem>
-    <DropdownMenuItem asChild>
-      <Link to="/contact">Contact</Link>
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
-```
-
-**3. Increase gap:**
-
-```tsx
-<nav className="hidden md:flex items-center gap-8">
-```
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/layout/Header.tsx` | Change `text-sm` to `text-base` for nav links, increase gap to `gap-8`, add "More" dropdown for Blog/About/Contact, import ChevronDown icon |
-
----
-
-## Alternative: Minimal Change
-
-If you want the simplest fix, just change font size:
-
-| Change | From | To |
-|--------|------|-----|
-| Nav link font | `text-sm` | `text-base` |
-| Nav gap | `gap-6` | `gap-6` (keep same) |
-| Items | 10 | 10 (keep all) |
-
-This alone will make a noticeable improvement.
-
----
-
-## Summary of Best Practices Applied
-
-1. **Font size**: Primary navigation should be at least 16px (`text-base`)
-2. **Item count**: 5-7 primary items maximum for clean appearance
-3. **Spacing**: `gap-8` (32px) provides comfortable reading separation
-4. **Visual hierarchy**: Distinguish primary (main nav) from secondary ("More" dropdown)
-5. **Logo prominence**: Keep logo size at `text-xl` or larger
+No code changes required - this is data-only via SQL inserts.
 
