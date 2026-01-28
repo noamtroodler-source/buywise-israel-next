@@ -161,7 +161,7 @@ export default function AgentDetail() {
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6">
               {/* Avatar */}
-              <Avatar className="h-24 w-24 md:h-28 md:w-28 border-4 border-background shadow-lg">
+              <Avatar className="h-24 w-24 md:h-28 md:w-28 ring-2 ring-border">
                 <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} />
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                   {getInitials(agent.name)}

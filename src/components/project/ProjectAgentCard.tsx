@@ -87,7 +87,7 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
       <CardContent className="space-y-4">
         {/* Agent Info */}
         <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-md border border-background">
+          <Avatar className="h-16 w-16 ring-2 ring-border">
             <AvatarImage 
               src={agent.avatar_url || undefined} 
               alt={agent.name}
