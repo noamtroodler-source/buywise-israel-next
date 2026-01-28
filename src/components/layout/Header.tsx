@@ -22,6 +22,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
@@ -102,23 +103,28 @@ export function Header() {
           >
             Advertise
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none">
-              More
-              <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 bg-background border-border">
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/blog">Blog</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/about">About</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link to="/contact">Contact</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div 
+            onMouseEnter={() => setMoreDropdownOpen(true)} 
+            onMouseLeave={() => setMoreDropdownOpen(false)}
+          >
+            <DropdownMenu open={moreDropdownOpen} onOpenChange={setMoreDropdownOpen}>
+              <DropdownMenuTrigger className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 outline-none">
+                More
+                <ChevronDown className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 bg-background border-border">
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/blog">Blog</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/about">About</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link to="/contact">Contact</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </nav>
 
         {/* Right Side */}
