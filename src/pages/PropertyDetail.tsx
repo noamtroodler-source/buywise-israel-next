@@ -7,6 +7,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { usePropertyViewTracking } from '@/hooks/usePropertyViewTracking';
+import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
@@ -21,6 +22,9 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { RecentNearbySales } from '@/components/property/RecentNearbySales';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
+import { MobileSectionNav } from '@/components/property/MobileSectionNav';
+import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
+import { Calculator, BarChart3, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -32,6 +36,7 @@ export default function PropertyDetail() {
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addToRecentlyViewed } = useRecentlyViewed();
+  const formatPrice = useFormatPrice();
   
   // Track property view in database (for agent analytics)
   usePropertyViewTracking(property?.id);
@@ -128,51 +133,66 @@ export default function PropertyDetail() {
         type="product"
         jsonLd={jsonLd}
       />
+      {/* Mobile Section Navigation */}
+      <MobileSectionNav />
+      
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Hero - Inside Grid */}
-            <PropertyHero 
-              property={property}
-              onSave={handleSave}
-              onShare={handleShare}
-              isSaved={isSaved}
-            />
+            <div id="section-photos">
+              <PropertyHero 
+                property={property}
+                onSave={handleSave}
+                onShare={handleShare}
+                isSaved={isSaved}
+              />
+            </div>
 
             {/* Quick Summary - Price, Title, Stats */}
-            <PropertyQuickSummary
-              property={property}
-              onShare={handleShare}
-              onSave={handleSave}
-              isSaved={isSaved}
-            />
+            <div id="section-details">
+              <PropertyQuickSummary
+                property={property}
+                onShare={handleShare}
+                onSave={handleSave}
+                isSaved={isSaved}
+              />
+            </div>
 
             {/* Description */}
             <PropertyDescription description={property.description} />
             
 
-            {/* Value Snapshot */}
+            {/* Value Snapshot - Collapsible on mobile */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="py-6 border-b border-border"
+              className="py-6 border-b border-border md:border-none"
             >
-              <PropertyValueSnapshot 
-                price={property.price}
-                sizeSqm={property.size_sqm}
-                city={property.city}
-                averagePriceSqm={cityData?.average_price_sqm}
-                priceChange={cityData?.yoy_price_change}
-                listingStatus={property.listing_status}
-                bedrooms={property.bedrooms}
-                cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
-                cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
-                vaadBayitMonthly={property.vaad_bayit_monthly}
-                cityArnonaRate={cityData?.arnona_rate_sqm}
-                cityAvgVaadBayit={cityData?.average_vaad_bayit}
-              />
+              <MobileCollapsibleSection
+                id="value-snapshot"
+                title="AI Value Snapshot"
+                icon={<BarChart3 className="h-5 w-5" />}
+                summary={`${formatPrice(property.price, 'ILS')} • ${property.city}`}
+                defaultOpen={false}
+              >
+                <PropertyValueSnapshot 
+                  price={property.price}
+                  sizeSqm={property.size_sqm}
+                  city={property.city}
+                  averagePriceSqm={cityData?.average_price_sqm}
+                  priceChange={cityData?.yoy_price_change}
+                  listingStatus={property.listing_status}
+                  bedrooms={property.bedrooms}
+                  cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
+                  cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+                  vaadBayitMonthly={property.vaad_bayit_monthly}
+                  cityArnonaRate={cityData?.arnona_rate_sqm}
+                  cityAvgVaadBayit={cityData?.average_vaad_bayit}
+                />
+              </MobileCollapsibleSection>
             </motion.div>
 
             {/* Recent Nearby Sales - Only for sale/sold properties, not rentals */}
@@ -194,46 +214,64 @@ export default function PropertyDetail() {
               </motion.div>
             )}
 
-            {/* Cost Breakdown - Only for sale/rent properties */}
+            {/* Cost Breakdown - Collapsible on mobile */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (
               <motion.div 
+                id="section-costs"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="py-6 border-b border-border"
+                className="py-6 border-b border-border md:border-none"
               >
-              <PropertyCostBreakdown 
-                  price={property.price}
-                  currency={property.currency || 'ILS'}
-                  listingStatus={property.listing_status}
-                  city={property.city}
-                  sizeSqm={property.size_sqm}
-                  vaadBayitMonthly={property.vaad_bayit_monthly}
-                  agentFeeRequired={property.agent_fee_required}
-                  bankGuaranteeRequired={property.bank_guarantee_required}
-                  checksRequired={property.checks_required}
-                />
+                <MobileCollapsibleSection
+                  id="cost-breakdown"
+                  title="Cost Breakdown"
+                  icon={<Calculator className="h-5 w-5" />}
+                  summary="Upfront costs & monthly expenses"
+                  defaultOpen={false}
+                >
+                  <PropertyCostBreakdown 
+                    price={property.price}
+                    currency={property.currency || 'ILS'}
+                    listingStatus={property.listing_status}
+                    city={property.city}
+                    sizeSqm={property.size_sqm}
+                    vaadBayitMonthly={property.vaad_bayit_monthly}
+                    agentFeeRequired={property.agent_fee_required}
+                    bankGuaranteeRequired={property.bank_guarantee_required}
+                    checksRequired={property.checks_required}
+                  />
+                </MobileCollapsibleSection>
               </motion.div>
             )}
 
-            {/* Location */}
+            {/* Location - Collapsible on mobile */}
             <motion.div 
+              id="section-map"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.25 }}
-              className="py-6 border-b border-border"
+              className="py-6 border-b border-border md:border-none"
             >
-              <GoogleMapsProvider>
-                <PropertyLocation 
-                  address={property.address}
-                  city={property.city}
-                  neighborhood={property.neighborhood}
-                  latitude={property.latitude}
-                  longitude={property.longitude}
-                  entityId={property.id}
-                  entityType="property"
-                />
-              </GoogleMapsProvider>
+              <MobileCollapsibleSection
+                id="location"
+                title="Location"
+                icon={<MapPin className="h-5 w-5" />}
+                summary={`${property.neighborhood || ''} ${property.city}`.trim()}
+                defaultOpen={false}
+              >
+                <GoogleMapsProvider>
+                  <PropertyLocation 
+                    address={property.address}
+                    city={property.city}
+                    neighborhood={property.neighborhood}
+                    latitude={property.latitude}
+                    longitude={property.longitude}
+                    entityId={property.id}
+                    entityType="property"
+                  />
+                </GoogleMapsProvider>
+              </MobileCollapsibleSection>
             </motion.div>
 
             {/* Next Steps CTAs */}
@@ -263,7 +301,9 @@ export default function PropertyDetail() {
         </div>
 
         {/* Similar Properties - Full Width */}
-        <SimilarProperties currentProperty={property} />
+        <div id="section-similar">
+          <SimilarProperties currentProperty={property} />
+        </div>
       </div>
 
       {/* Mobile Contact Bar */}
@@ -271,6 +311,10 @@ export default function PropertyDetail() {
         agent={property.agent}
         propertyId={property.id}
         propertyTitle={property.title}
+        price={property.price}
+        isSaved={isSaved}
+        onSave={handleSave}
+        onShare={handleShare}
       />
     </Layout>
   );
