@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { useFeaturedSaleProperties, useFeaturedRentalProperties } from '@/hooks/useProperties';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -12,7 +14,15 @@ type Tab = 'sale' | 'rent';
 export function FeaturedShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('sale');
   const isMobile = useIsMobile();
+  const [selectedIndex, setSelectedIndex] = useState(0);
   
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: false,
+    skipSnaps: false,
+    containScroll: 'trimSnaps',
+  });
+
   // Only fetch data for the active tab (conditional fetching for performance)
   const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties({ 
     enabled: activeTab === 'sale' 
@@ -25,10 +35,39 @@ export function FeaturedShowcase() {
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
   const viewAllLink = activeTab === 'sale' ? '/listings?status=for_sale' : '/listings?status=for_rent';
 
-  // Show 4 cards on mobile, 8 on desktop to reduce scroll
-  const maxCards = isMobile ? 4 : 8;
+  // Show 8 cards on both mobile and desktop
+  const maxCards = 8;
   const displayProperties = properties?.slice(0, maxCards) || [];
   const totalCount = properties?.length || 0;
+
+  // Handle carousel index changes
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  // Reset carousel when tab changes
+  useEffect(() => {
+    if (emblaApi) {
+      emblaApi.scrollTo(0);
+      setSelectedIndex(0);
+    }
+  }, [activeTab, emblaApi]);
+
+  const scrollTo = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
 
   return (
     <section className="py-8 md:py-10 bg-muted/30">
@@ -79,16 +118,54 @@ export function FeaturedShowcase() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(isMobile ? 4 : 8)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[4/3] sm:aspect-[16/10] rounded-lg" />
-            ))}
+          <>
+            {/* Mobile: Single skeleton */}
+            <div className="sm:hidden">
+              <Skeleton className="aspect-[4/3] rounded-lg" />
+            </div>
+            {/* Desktop: Grid of skeletons */}
+            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <Skeleton key={i} className="aspect-[16/10] rounded-lg" />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Mobile: Horizontal Carousel */}
+        {!isLoading && isMobile && displayProperties.length > 0 && (
+          <div className="sm:hidden animate-fade-in">
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {displayProperties.map((property, index) => (
+                  <div 
+                    key={property.id} 
+                    className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+                  >
+                    <PropertyCard 
+                      property={property} 
+                      showShareButton 
+                      showCompareButton={false} 
+                      maxBadges={1}
+                      compact
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Dot Indicators */}
+            <CarouselDots 
+              total={displayProperties.length} 
+              current={selectedIndex} 
+              onDotClick={scrollTo}
+              className="mt-4"
+            />
           </div>
         )}
 
-        {/* Property Grid - 4-column layout, compact on mobile */}
-        {!isLoading && displayProperties.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
+        {/* Desktop: Property Grid - 4-column layout */}
+        {!isLoading && !isMobile && displayProperties.length > 0 && (
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
             {displayProperties.map((property) => (
               <PropertyCard 
                 key={property.id} 
@@ -96,15 +173,14 @@ export function FeaturedShowcase() {
                 showShareButton 
                 showCompareButton={false} 
                 maxBadges={1}
-                compact={isMobile}
               />
             ))}
           </div>
         )}
         
-        {/* Mobile "See All" CTA - shows when there are more properties */}
-        {!isLoading && isMobile && totalCount > maxCards && (
-          <div className="mt-4 text-center">
+        {/* Mobile "See All" CTA */}
+        {!isLoading && isMobile && totalCount > 0 && (
+          <div className="mt-4 sm:hidden">
             <Button variant="outline" asChild className="w-full gap-2">
               <Link to={viewAllLink}>
                 See All {totalCount} Properties
@@ -124,8 +200,8 @@ export function FeaturedShowcase() {
           </div>
         )}
 
-        {/* Mobile View All */}
-        <div className="mt-8 sm:hidden">
+        {/* Desktop View All - hidden on mobile since we have the CTA above */}
+        <div className="mt-8 hidden">
           <Button variant="default" asChild className="w-full gap-2">
             <Link to={viewAllLink}>
               View All Properties
