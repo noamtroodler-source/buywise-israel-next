@@ -46,6 +46,8 @@ const Contact = () => {
     category: "",
     message: "",
   });
+  // Honeypot field - if filled, it's a bot
+  const [honeypot, setHoneypot] = useState("");
 
   // Auto-fill name and email for logged-in users
   useEffect(() => {
@@ -60,6 +62,17 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Honeypot check - if filled, silently reject (looks like success to bot)
+    if (honeypot) {
+      // Fake success to confuse bots
+      toast({
+        title: "Message sent!",
+        description: "Thanks for reaching out. We'll get back to you within 24 hours.",
+      });
+      setFormData({ name: "", email: "", category: "", message: "" });
+      return;
+    }
     
     // Validate with zod schema
     const validation = contactSchema.safeParse(formData);
@@ -187,6 +200,20 @@ const Contact = () => {
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Honeypot field - invisible to humans, bots will fill it */}
+                    <div className="absolute -left-[9999px]" aria-hidden="true">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                      />
+                    </div>
+                    
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="name">Your name</Label>
