@@ -1,242 +1,104 @@
 
-# Mobile UX Enhancement Plan for BuyWise Israel
+
+# Mobile Carousel for Recent Nearby Sales
 
 ## Overview
-A comprehensive set of improvements to enhance the mobile experience across the platform, prioritized by user impact and implementation complexity. These changes follow the Zillow-style patterns already established with the homepage carousels.
+Convert the "Recent Nearby Sales" section on property detail pages into a horizontal swipeable carousel on mobile, matching the pattern used on the homepage for properties and projects.
 
 ---
 
-## Phase 1: High-Impact Quick Wins
+## Changes Required
 
-### 1.1 Tools Page Mobile Carousel
-Convert the tool cards grid into a horizontal swipeable carousel on mobile (matching homepage pattern).
+### File: `src/components/property/RecentNearbySales.tsx`
 
-**Files to modify:**
-- `src/pages/Tools.tsx`
+**1. Add imports for carousel functionality:**
+- `useEmblaCarousel` from `embla-carousel-react`
+- `useIsMobile` hook
+- `CarouselDots` component
+- React hooks: `useState`, `useCallback`, `useEffect`
 
-**Changes:**
-- Import `useIsMobile` hook and `useEmblaCarousel`
-- Add `CarouselDots` component for navigation
-- Render carousel for mobile, keep grid for desktop
-- Group tools by phase with individual carousels per section
+**2. Add carousel state management:**
+- Initialize `emblaRef` and `emblaApi` with carousel options (`loop: true`, `align: 'start'`)
+- Track `selectedIndex` for dot navigation
+- Set up `onSelect` callback to sync dots with carousel position
 
----
+**3. Conditional rendering based on device:**
 
-### 1.2 Guides Page Mobile Carousel
-Apply the same carousel treatment to guide cards.
+| Device | Layout |
+|--------|--------|
+| Mobile | Horizontal carousel with peek effect, swipeable cards, dot indicators |
+| Desktop | Keep existing vertical stacked cards (no changes) |
 
-**Files to modify:**
-- `src/pages/Guides.tsx`
-
-**Changes:**
-- Same pattern as Tools - carousel per journey phase section on mobile
-- Keep the visual hierarchy with phase headers
-
----
-
-### 1.3 Blog Category Horizontal Scroll
-Add horizontal scrolling category chips on the Blog page.
-
-**Files to modify:**
-- `src/components/blog/BlogFilters.tsx`
-
-**Changes:**
-- Make category pills horizontally scrollable on mobile
-- Add fade gradient at scroll edges to indicate more content
-- Sticky position at top when scrolling
+**4. Mobile card styling:**
+- Each comp card: `flex-[0_0_calc(100%-1.5rem)]` for peek effect
+- Add padding/margin for card separation
+- Maintain all existing card content (price, distance, date, comparison badges)
 
 ---
 
-## Phase 2: Listings & Filters Overhaul
+## Implementation Details
 
-### 2.1 Full-Screen Mobile Filter Sheet
-Replace popover-based filters with a full-screen bottom sheet on mobile.
+### Carousel Configuration
+```tsx
+const [emblaRef, emblaApi] = useEmblaCarousel({
+  align: 'start',
+  loop: true,
+  skipSnaps: false,
+  containScroll: 'trimSnaps',
+});
+```
 
-**Files to modify:**
-- `src/components/filters/PropertyFilters.tsx`
-- Create new `src/components/filters/MobileFilterSheet.tsx`
+### Mobile Card Structure
+```tsx
+{/* Mobile Carousel */}
+{isMobile && (
+  <div className="overflow-hidden" ref={emblaRef}>
+    <div className="flex">
+      {comps.map((comp) => (
+        <div key={comp.id} className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0">
+          {/* Existing card content */}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
-**Changes:**
-- Detect mobile and render Sheet instead of Popover components
-- Organize filters in scrollable sections within the sheet
-- Add sticky "Show X Results" button at bottom
-- Include "Clear All" and individual filter clear buttons
-- Horizontal scrolling for applied filter chips below the main filter bar
+{/* Desktop - unchanged */}
+{!isMobile && (
+  <div className="space-y-3">
+    {/* Existing vertical layout */}
+  </div>
+)}
+```
 
----
-
-### 2.2 Sticky Filter Bar on Scroll
-Make the filter chips bar sticky when scrolling on mobile.
-
-**Files to modify:**
-- `src/pages/Listings.tsx`
-- `src/pages/Projects.tsx`
-
-**Changes:**
-- Add `sticky top-0 z-40` to filter container on mobile
-- Add subtle shadow when scrolled
-- Background blur for visual separation
-
----
-
-### 2.3 Quick Filter Chips
-Add tap-friendly preset filter chips for common searches.
-
-**Changes:**
-- "Under ₪2M" / "Under ₪3M" price presets
-- "3+ Rooms" / "4+ Rooms" room presets  
-- "New Listings" (last 7 days)
-- Horizontal scroll for chips
-
----
-
-## Phase 3: Property Detail Mobile Experience
-
-### 3.1 Collapsible Sections with Accordions
-Convert lengthy detail sections into expandable accordions on mobile.
-
-**Files to modify:**
-- `src/pages/PropertyDetail.tsx`
-- `src/components/property/PropertyCostBreakdown.tsx`
-- `src/components/property/PropertyValueSnapshot.tsx`
-
-**Changes:**
-- Wrap major sections (Cost Breakdown, Value Snapshot, Location) in collapsible accordions
-- Show summary/preview when collapsed
-- Remember expansion state in session storage
-- Keep desktop layout unchanged
+### Dot Navigation
+```tsx
+<CarouselDots 
+  total={comps.length} 
+  current={selectedIndex} 
+  onDotClick={scrollTo}
+  className="mt-4"
+/>
+```
 
 ---
 
-### 3.2 Sticky Section Navigation
-Add a compact sticky navigation bar that lets users jump between sections.
+## Visual Behavior
 
-**Files to create:**
-- `src/components/property/MobileSectionNav.tsx`
-
-**Implementation:**
-- Horizontal scrolling nav with section names: Photos | Details | Costs | Map | Similar
-- Highlight current section based on scroll position (Intersection Observer)
-- Smooth scroll to section on tap
-- Only visible on mobile, appears after scrolling past hero
+- **Swipe Gesture**: Users can swipe left/right through nearby sale cards
+- **Peek Effect**: Next card is partially visible (~1.5rem) to indicate more content
+- **Infinite Loop**: Carousel loops infinitely for smooth navigation
+- **Dot Indicators**: Show current position and allow tap navigation
+- **Desktop Unchanged**: Vertical stacked list remains for larger screens
 
 ---
 
-### 3.3 Enhanced Mobile Contact Bar
-Improve the bottom contact bar with more actions.
+## Summary
 
-**Files to modify:**
-- `src/components/property/StickyContactCard.tsx`
+| Aspect | Details |
+|--------|---------|
+| Files Modified | `src/components/property/RecentNearbySales.tsx` |
+| Pattern Used | Same as homepage `FeaturedShowcase.tsx` |
+| Mobile Experience | Horizontal swipeable carousel with dots |
+| Desktop Experience | No changes - keeps vertical stack |
 
-**Changes:**
-- Add share button alongside WhatsApp
-- Add save/favorite button
-- Show price in the bar for reference
-- Animate in on scroll (not visible at very top when CTA is in view)
-
----
-
-## Phase 4: Gesture & Interaction Improvements
-
-### 4.1 Swipe Between Property Images in Gallery
-Already exists via `useTouchSwipe` - ensure it works smoothly.
-
-### 4.2 Pull-to-Refresh Consistency
-Extend `PullToRefresh` to more pages.
-
-**Files to modify:**
-- `src/pages/Projects.tsx` - Add PullToRefresh wrapper
-- `src/pages/Favorites.tsx` - Add PullToRefresh wrapper
-- `src/pages/Blog.tsx` - Add PullToRefresh wrapper
-
----
-
-### 4.3 Haptic Feedback (Progressive Enhancement)
-Add subtle haptic feedback for key interactions.
-
-**Implementation:**
-- Use `navigator.vibrate()` API for supported devices
-- Add to: favorite toggle, filter apply, pull-to-refresh threshold
-
----
-
-## Phase 5: Empty States & Loading UX
-
-### 5.1 Enhanced Loading Skeletons
-Improve skeleton states to match content layout better.
-
-**Files to modify:**
-- `src/pages/Listings.tsx`
-- `src/pages/Projects.tsx`
-
-**Changes:**
-- Mobile: Show 1 larger skeleton card matching carousel layout
-- Add subtle shimmer animation
-- Match exact card dimensions to prevent layout shift
-
----
-
-### 5.2 Actionable Empty States
-Make empty states more engaging and helpful on mobile.
-
-**Changes:**
-- Larger, more playful illustrations
-- Clear primary action button
-- Secondary suggestions
-- Context-aware messaging (different for "no results" vs "no saved")
-
----
-
-## Phase 6: Navigation Enhancements
-
-### 6.1 Recent Searches
-Show recent search terms when focusing the search/filter.
-
-**Files to create:**
-- `src/hooks/useRecentSearches.ts`
-- Integrate into PropertyFilters
-
-**Implementation:**
-- Store last 5 searches in localStorage
-- Show as tappable chips when filter sheet opens
-- Clear all option
-
----
-
-### 6.2 Improved Mobile Menu
-Enhance the bottom sheet menu with better organization.
-
-**Files to modify:**
-- `src/components/layout/MobileBottomNav.tsx`
-
-**Changes:**
-- Group menu items by category (Browse, Learn, Tools, Account)
-- Add icons to menu items
-- Show user avatar/login status at top if authenticated
-- Quick access to saved/favorites count
-
----
-
-## Implementation Priority
-
-| Phase | Effort | Impact | Priority |
-|-------|--------|--------|----------|
-| 1.1 Tools Carousel | Low | Medium | High |
-| 1.2 Guides Carousel | Low | Medium | High |
-| 2.1 Mobile Filter Sheet | Medium | High | High |
-| 3.1 Collapsible Sections | Medium | High | High |
-| 3.2 Section Navigation | Medium | Medium | Medium |
-| 2.2 Sticky Filters | Low | Medium | Medium |
-| 4.2 Pull-to-Refresh | Low | Low | Medium |
-| 5.1 Loading Skeletons | Low | Medium | Medium |
-| 6.2 Improved Menu | Medium | Medium | Low |
-
----
-
-## Technical Notes
-
-- All carousels use `embla-carousel-react` (already installed)
-- Mobile detection via existing `useIsMobile()` hook
-- Accordions use Radix UI `Collapsible` (already installed)
-- Bottom sheets use existing `Sheet` component from shadcn/ui
-- All changes maintain desktop experience unchanged
