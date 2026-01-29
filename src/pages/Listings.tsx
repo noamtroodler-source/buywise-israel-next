@@ -3,7 +3,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { QuickFilterChips } from '@/components/filters/QuickFilterChips';
@@ -15,6 +14,8 @@ import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -242,9 +243,7 @@ export default function Listings() {
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded-xl" />)}
-          </div>
+          <MobileListingsSkeletonGrid count={isMobile ? 4 : 6} />
         ) : properties && properties.length > 0 ? (
           <>
             <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
@@ -278,67 +277,39 @@ export default function Listings() {
 
           </>
         ) : (
-          <div className="text-center py-10 md:py-16 max-w-lg mx-auto px-4">
-            {/* Icon */}
-            <div className="relative mx-auto w-16 h-16 md:w-20 md:h-20 mb-4 md:mb-6">
-              <div className="absolute inset-0 bg-muted rounded-full" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </div>
-
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              No properties found
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              We couldn't find any properties matching your current filters. Here are some suggestions:
-            </p>
-
-            {/* Suggestions */}
-            <div className="bg-muted/50 rounded-xl p-5 text-left space-y-3 mb-6">
-              <ul className="text-sm text-muted-foreground space-y-2">
-                {filters.city && (
-                  <li className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                    Try expanding your search to nearby cities or remove the location filter
-                  </li>
-                )}
-                {(filters.min_price || filters.max_price) && (
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary flex-shrink-0">₪</span>
-                    Consider widening your price range — Israeli property prices vary significantly by city
-                  </li>
-                )}
-                {filters.min_rooms && (
-                  <li className="flex items-start gap-2">
-                    <Home className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                    In Israel, "rooms" include living areas — a 3-room apartment typically has 2 bedrooms
-                  </li>
-                )}
-                {!filters.city && !filters.min_price && !filters.max_price && !filters.min_rooms && (
-                  <li className="flex items-start gap-2">
-                    <Lightbulb className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                    New listings are added regularly — create an alert to get notified
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button 
-                variant="outline" 
-                onClick={() => handleFiltersChange({ listing_status: listingStatus })}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset Filters
-              </Button>
-              <Button onClick={() => setShowAlertDialog(true)}>
-                <Bell className="h-4 w-4 mr-2" />
-                Create Alert
-              </Button>
-            </div>
-
+          <EnhancedEmptyState
+            icon={Search}
+            title="No properties found"
+            description="We couldn't find any properties matching your current filters. Try adjusting your search criteria."
+            primaryAction={{
+              label: 'Reset Filters',
+              onClick: () => handleFiltersChange({ listing_status: listingStatus }),
+              icon: RotateCcw,
+            }}
+            secondaryAction={{
+              label: 'Create Alert',
+              onClick: () => setShowAlertDialog(true),
+              icon: Bell,
+            }}
+            suggestions={[
+              ...(filters.city ? [{
+                icon: MapPin,
+                text: 'Try expanding your search to nearby cities or remove the location filter',
+              }] : []),
+              ...((filters.min_price || filters.max_price) ? [{
+                icon: undefined,
+                text: 'Consider widening your price range — Israeli property prices vary significantly by city',
+              }] : []),
+              ...(filters.min_rooms ? [{
+                icon: Home,
+                text: 'In Israel, "rooms" include living areas — a 3-room apartment typically has 2 bedrooms',
+              }] : []),
+              ...(!filters.city && !filters.min_price && !filters.max_price && !filters.min_rooms ? [{
+                icon: Lightbulb,
+                text: 'New listings are added regularly — create an alert to get notified',
+              }] : []),
+            ]}
+          >
             {/* Explore More Links */}
             <div className="mt-8 pt-6 border-t border-border">
               <p className="text-sm text-muted-foreground mb-3">
@@ -373,7 +344,7 @@ export default function Listings() {
               variant="subtle"
               className="mt-6"
             />
-          </div>
+          </EnhancedEmptyState>
         )}
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff, Building, Bookmark } from 'lucide-react';
+import { Heart, MapPin, Calculator, ArrowRight, Bell, BellOff, Building, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -55,8 +56,16 @@ export default function Favorites() {
   if (isLoadingAll) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <section className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
+          <div className="container py-8 md:py-10 text-center">
+            <div className="space-y-2">
+              <div className="h-9 w-48 bg-muted rounded-lg mx-auto animate-pulse" />
+              <div className="h-5 w-72 bg-muted/60 rounded mx-auto animate-pulse" />
+            </div>
+          </div>
+        </section>
+        <div className="container py-8">
+          <MobileListingsSkeletonGrid count={isMobile ? 4 : 6} />
         </div>
       </Layout>
     );
