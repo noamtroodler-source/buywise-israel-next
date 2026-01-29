@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Lightbulb, Send, Mail, MessageCircle, Clock, Heart, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { buildWhatsAppUrl, openWhatsApp as openWhatsAppHelper } from "@/lib/whatsapp";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 const WHATSAPP_NUMBER = "14155238886";
 const EMAIL_ADDRESS = "hello@buywiseisrael.com";
@@ -35,6 +37,8 @@ const categories = [
 
 const Contact = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -42,6 +46,17 @@ const Contact = () => {
     category: "",
     message: "",
   });
+
+  // Auto-fill name and email for logged-in users
+  useEffect(() => {
+    if (profile?.full_name || user?.email) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || profile?.full_name || '',
+        email: prev.email || user?.email || '',
+      }));
+    }
+  }, [profile?.full_name, user?.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
