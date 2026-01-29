@@ -35,3 +35,18 @@ verify_jwt = false
 
 [functions.process-search-alerts]
 verify_jwt = false
+
+[functions.send-verification-email]
+verify_jwt = false
+
+[functions.send-developer-notification]
+verify_jwt = false
+
+[functions.send-agency-notification]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-digest-email]
+verify_jwt = false

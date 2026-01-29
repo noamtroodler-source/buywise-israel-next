@@ -135,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "BuyWise Israel <onboarding@resend.dev>",
+        from: "BuyWise Israel <hello@buywiseisrael.com>",
         to: [email],
         subject: `Your BuyWise Israel Verification Code: ${code}`,
         html: emailHtml,
