@@ -1,113 +1,40 @@
 
+# Fix: Affordability Calculator Range Text Wrapping
 
-## Google OAuth User Onboarding - Implementation Plan
+## Problem
+The maximum budget range display (e.g., "₪2.3M – ₪2.6M") in the Affordability Calculator wraps to two lines when values have multiple decimal digits. This happens because the browser treats the space around the en-dash (` – `) as a valid line break point.
 
-### The Problem
+## Solution
+Add `whitespace-nowrap` to the motion.p element displaying the hero range value to prevent text from wrapping regardless of container width.
 
-When users sign up via Google, they're authenticated but skip the profile onboarding flow entirely:
+## File to Modify
 
-```text
-Email Signup:
-[Sign Up Form] → [justSignedUp = true] → [Buyer Onboarding Wizard] → [Home]
+### `src/components/tools/AffordabilityCalculator.tsx`
 
-Google OAuth:
-[Google Button] → [Redirect to Google] → [Return to /auth with session] → [Home] ❌
-                                                                          └── Onboarding SKIPPED!
+**Line 386-388** - Add `whitespace-nowrap` class:
+
+```tsx
+// Before:
+<motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary">
+  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
+</motion.p>
+
+// After:
+<motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary whitespace-nowrap">
+  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
+</motion.p>
 ```
 
-### Root Cause
+## Additional Consideration
 
-The `justSignedUp` state is only set in the email/password `handleSubmit` function, but Google OAuth users return already authenticated without triggering this flag.
+For very large numbers (e.g., "$10.5M – $12.8M" in USD mode), we should also consider:
+1. Reducing font size on smaller screens if needed via responsive classes
+2. Updating the shared `ResultRange` component to include `whitespace-nowrap` by default for the `hero` variant
 
----
+I'll add `whitespace-nowrap` to ensure the range always stays on one line, and include responsive font sizing to handle edge cases with very large numbers.
 
-## The Solution
-
-Detect first-time Google OAuth users by checking if:
-1. User is authenticated
-2. No `buyer_profiles` record exists (for buyers)
-3. The user just logged in (first load of Auth page)
-
-### Implementation Approach
-
-**Option A: Check for new users on Auth page return (Recommended)**
-
-When the Auth page loads with an authenticated user who has no buyer profile, show onboarding. This works regardless of whether they signed up via email or Google.
-
----
-
-## Implementation Details
-
-### 1. Update Auth.tsx - Detect Google OAuth New Users
-
-**Current Logic (problematic):**
-```typescript
-// Only shows onboarding if justSignedUp === true
-if (justSignedUp && !buyerProfile && !isProfessionalSignup) {
-  setShowOnboarding(true);
-}
-```
-
-**New Logic:**
-```typescript
-// Detect if this is a new user (no buyer profile) who just authenticated
-// Works for both email signup AND Google OAuth
-const isNewUser = user && !buyerProfile && !profileLoading;
-const isOAuthReturn = searchParams.has('code') || searchParams.has('access_token');
-
-useEffect(() => {
-  if (isNewUser && !isProfessionalSignup) {
-    setShowOnboarding(true);
-  }
-}, [isNewUser, isProfessionalSignup]);
-```
-
-### 2. Files to Modify
-
+## Changes Summary
 | File | Change |
 |------|--------|
-| `src/pages/Auth.tsx` | Update user detection logic to handle Google OAuth returns |
-
-### 3. Edge Cases to Handle
-
-- **Returning users who login via Google**: They already have a buyer profile, so no onboarding
-- **Professional signups via Google**: Redirect to registration wizard (already works)
-- **Users who skip onboarding**: Profile page still shows "Set Up Buyer Profile" button
-
----
-
-## On Password Creation for Google Users
-
-### Best Practice: No Separate Password Required
-
-When users sign up via Google OAuth, they authenticate through Google - no separate password is needed or recommended.
-
-**Why NOT to add password creation:**
-
-| Issue | Explanation |
-|-------|-------------|
-| Security risk | Users may set weak passwords, undermining Google's 2FA |
-| Confusion | "Which password do I use?" |
-| Account sync | If they update one, does the other change? |
-| Support burden | More password reset requests |
-
-**What happens if a Google user wants email login later?**
-They can use "Forgot Password" which will:
-1. Verify their email (same as Google)
-2. Let them create a password
-3. Link both methods to the same account
-
-This is the industry standard (Stripe, Notion, Figma all do this).
-
----
-
-## Summary
-
-| Task | Complexity |
-|------|------------|
-| Detect Google OAuth new users | Low |
-| Show onboarding wizard for all new buyers | Already exists |
-| Password creation | Not needed (industry best practice) |
-
-**Single file change needed**: `src/pages/Auth.tsx` - update the user detection logic to trigger onboarding for users without a buyer profile, regardless of how they authenticated.
-
+| `src/components/tools/AffordabilityCalculator.tsx` | Add `whitespace-nowrap` to hero range display |
+| `src/components/tools/shared/ResultRange.tsx` | Add `whitespace-nowrap` to hero variant for consistency across all calculators |
