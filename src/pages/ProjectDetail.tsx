@@ -23,6 +23,7 @@ import {
   ProjectDescription,
   ProjectNextSteps,
 } from '@/components/project';
+import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateProjectMeta, generateProjectJsonLd, SITE_CONFIG } from '@/lib/seo';
 
@@ -134,6 +135,9 @@ export default function ProjectDetail() {
                 citySlug={citySlug}
                 projectPrice={project.price_from || undefined}
               />
+
+              {/* Listing Feedback */}
+              <ListingFeedback listingType="projects" />
               
               {/* FAQ Section */}
               <ProjectFAQ />
