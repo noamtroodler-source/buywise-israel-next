@@ -247,7 +247,7 @@ export default function Projects() {
             <>
               <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
                 <ListingsGrid isFetching={isFetching && !isLoading}>
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {projects.map((project) => (
                     <div key={project.id} className="animate-fade-in">
                       <Link to={`/projects/${project.slug}`} onClick={() => handleProjectClick(project.id)}>

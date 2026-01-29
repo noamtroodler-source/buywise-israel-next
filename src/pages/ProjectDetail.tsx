@@ -89,8 +89,10 @@ export default function ProjectDetail() {
           >
             {/* Left Column - Main Content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Hero - Inside Grid */}
+            {/* Hero - Edge-to-edge on mobile */}
+            <div className="-mx-4 md:mx-0">
               <ProjectHero project={project} />
+            </div>
               {/* Quick Summary - Price, Title, Stats */}
               <ProjectQuickSummary 
                 project={project} 

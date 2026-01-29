@@ -192,6 +192,16 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  /* Edge-to-edge on mobile, respects container on desktop */
+  .mobile-full-bleed {
+    @apply -mx-4 px-4 md:mx-0 md:px-0;
+  }
+  
+  /* Edge-to-edge without inner padding */
+  .mobile-edge-to-edge {
+    @apply -mx-4 md:mx-0;
+  }
 }
 
 @keyframes fadeIn {

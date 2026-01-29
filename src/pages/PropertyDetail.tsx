@@ -140,9 +140,9 @@ export default function PropertyDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Hero - Inside Grid */}
-            <div id="section-photos">
-              <PropertyHero 
+            {/* Hero - Edge-to-edge on mobile */}
+            <div id="section-photos" className="-mx-4 md:mx-0">
+              <PropertyHero
                 property={property}
                 onSave={handleSave}
                 onShare={handleShare}
