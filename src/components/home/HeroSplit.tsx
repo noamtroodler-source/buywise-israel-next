@@ -109,7 +109,7 @@ export function HeroSplit() {
                         <span className="flex items-center gap-2">Rent</span>
                       </SelectItem>
                       <SelectItem value="projects">
-                        <span className="flex items-center gap-2">New Projects</span>
+                        <span className="flex items-center gap-2">Projects</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>
