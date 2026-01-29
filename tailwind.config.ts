@@ -106,6 +106,10 @@ export default {
           from: { opacity: "0", transform: "scale(0.95)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -114,6 +118,7 @@ export default {
         "slide-up": "slide-up 0.5s ease-out forwards",
         "slide-down": "slide-down 0.5s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
+        "shimmer": "shimmer 1.5s infinite",
       },
       boxShadow: {
         "card": "0 2px 8px -2px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.06)",

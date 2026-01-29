@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { Building, MapPin, Calendar, Loader2, Home, TrendingDown } from 'lucide-react';
+import { Building, MapPin, Calendar, Loader2, Home, TrendingDown, Bell, RotateCcw, Compass, BookOpen } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,8 @@ import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButto
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { MobileProjectsSkeletonGrid } from '@/components/shared/MobileProjectSkeleton';
+import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
@@ -208,20 +210,39 @@ export default function Projects() {
 
           {/* Projects Grid */}
           {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+            <MobileProjectsSkeletonGrid count={isMobile ? 4 : 6} />
           ) : projects.length === 0 ? (
-            <div className="text-center py-12">
-              <Building className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-foreground mb-2">No projects found</h2>
-              <p className="text-muted-foreground">
-                {totalCount > 0 
+            <EnhancedEmptyState
+              icon={Building}
+              title="No projects found"
+              description={
+                totalCount > 0 
                   ? 'Try adjusting your filters to see more results.'
                   : 'New construction projects will be available soon.'
-                }
-              </p>
-            </div>
+              }
+              primaryAction={totalCount > 0 ? {
+                label: 'Reset Filters',
+                onClick: () => setFilters({}),
+                icon: RotateCcw,
+              } : {
+                label: 'Create Alert',
+                onClick: handleCreateAlert,
+                icon: Bell,
+              }}
+              secondaryAction={totalCount > 0 ? {
+                label: 'Create Alert',
+                onClick: handleCreateAlert,
+                icon: Bell,
+              } : {
+                label: 'Explore Areas',
+                href: '/areas',
+                icon: Compass,
+              }}
+              suggestions={totalCount > 0 ? [
+                { icon: MapPin, text: 'Try searching in nearby cities' },
+                { icon: Home, text: 'Expand your price range for more options' },
+              ] : undefined}
+            />
           ) : (
             <>
               <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
