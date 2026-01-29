@@ -29,7 +29,7 @@ export function ProjectsHighlight() {
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
-    loop: false,
+    loop: true,
     skipSnaps: false,
     containScroll: 'trimSnaps',
   });
