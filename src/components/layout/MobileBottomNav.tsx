@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, Menu, X } from 'lucide-react';
+import { Home, Search, Heart, Menu, X, Building, User, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NavItemProps {
   icon: React.ElementType;
@@ -16,21 +19,44 @@ interface NavItemProps {
 }
 
 function NavItem({ icon: Icon, label, to, isActive, badge, onClick }: NavItemProps) {
+  const { light } = useHapticFeedback();
+  
+  const handleClick = () => {
+    light();
+    onClick?.();
+  };
+
   const content = (
-    <div className="flex flex-col items-center justify-center gap-0.5 min-w-[64px]">
+    <div className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] relative">
+      {/* Active indicator dot */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="absolute -top-1 w-1 h-1 rounded-full bg-primary"
+          />
+        )}
+      </AnimatePresence>
+      
       <div className="relative">
         <Icon className={cn(
-          "h-5 w-5 transition-colors",
-          isActive ? "text-primary" : "text-muted-foreground"
+          "h-5 w-5 transition-all duration-200",
+          isActive ? "text-primary scale-110" : "text-muted-foreground"
         )} />
         {badge !== undefined && badge > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 text-[10px] font-medium bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+          <motion.span 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 text-[10px] font-medium bg-primary text-primary-foreground rounded-full flex items-center justify-center"
+          >
             {badge > 99 ? '99+' : badge}
-          </span>
+          </motion.span>
         )}
       </div>
       <span className={cn(
-        "text-[10px] font-medium transition-colors",
+        "text-[10px] font-medium transition-all duration-200",
         isActive ? "text-primary" : "text-muted-foreground"
       )}>
         {label}
@@ -42,7 +68,8 @@ function NavItem({ icon: Icon, label, to, isActive, badge, onClick }: NavItemPro
     return (
       <Link 
         to={to} 
-        className="flex-1 flex items-center justify-center py-2 active:bg-muted/50 transition-colors"
+        onClick={handleClick}
+        className="flex-1 flex items-center justify-center py-2 active:bg-muted/50 transition-colors touch-manipulation"
       >
         {content}
       </Link>
@@ -51,36 +78,63 @@ function NavItem({ icon: Icon, label, to, isActive, badge, onClick }: NavItemPro
 
   return (
     <button 
-      onClick={onClick}
-      className="flex-1 flex items-center justify-center py-2 active:bg-muted/50 transition-colors"
+      onClick={handleClick}
+      className="flex-1 flex items-center justify-center py-2 active:bg-muted/50 transition-colors touch-manipulation"
     >
       {content}
     </button>
   );
 }
 
-const menuLinks = [
-  { label: 'For Sale', to: '/listings?status=for_sale' },
-  { label: 'For Rent', to: '/listings?status=for_rent' },
-  { label: 'New Projects', to: '/projects' },
-  { label: 'Explore Areas', to: '/areas' },
-  { label: 'Tools & Calculators', to: '/tools' },
-  { label: 'Guides', to: '/guides' },
-  { label: 'Blog', to: '/blog' },
-  { label: 'About', to: '/about' },
-  { label: 'Contact', to: '/contact' },
+const menuSections = [
+  {
+    title: 'Browse',
+    links: [
+      { label: 'Properties for Sale', to: '/listings?status=for_sale', icon: Home },
+      { label: 'Rentals', to: '/listings?status=for_rent', icon: Home },
+      { label: 'New Projects', to: '/projects', icon: Building },
+    ],
+  },
+  {
+    title: 'Explore',
+    links: [
+      { label: 'Explore Areas', to: '/areas' },
+      { label: 'Tools & Calculators', to: '/tools' },
+      { label: 'Guides', to: '/guides' },
+      { label: 'Blog', to: '/blog' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About', to: '/about' },
+      { label: 'Contact', to: '/contact' },
+      { label: 'Advertise', to: '/advertise' },
+    ],
+  },
 ];
 
 export function MobileBottomNav() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { guestFavorites, guestProjectFavoriteIds } = useFavoritesContext();
+  const { user } = useAuth();
+  const { light } = useHapticFeedback();
   
   const totalFavorites = guestFavorites.length + guestProjectFavoriteIds.length;
   
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
+    if (path.includes('?')) {
+      const basePath = path.split('?')[0];
+      return location.pathname === basePath && location.search.includes(path.split('?')[1]);
+    }
     return location.pathname.startsWith(path);
+  };
+
+  const handleMenuOpen = (open: boolean) => {
+    if (open) light();
+    setMenuOpen(open);
   };
 
   return (
@@ -95,7 +149,7 @@ export function MobileBottomNav() {
         <NavItem 
           icon={Search} 
           label="Search" 
-          to="/listings" 
+          to="/listings?status=for_sale" 
           isActive={isActive('/listings') || isActive('/projects')} 
         />
         <NavItem 
@@ -105,37 +159,73 @@ export function MobileBottomNav() {
           isActive={isActive('/favorites')} 
           badge={totalFavorites}
         />
+        <NavItem 
+          icon={User} 
+          label={user ? "Profile" : "Sign In"} 
+          to={user ? "/profile" : "/auth"} 
+          isActive={isActive('/profile') || isActive('/auth')} 
+        />
         
-        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <Sheet open={menuOpen} onOpenChange={handleMenuOpen}>
           <SheetTrigger asChild>
             <div className="flex-1">
               <NavItem 
-                icon={Menu} 
-                label="Menu" 
+                icon={menuOpen ? X : Menu} 
+                label="More" 
                 onClick={() => setMenuOpen(true)}
               />
             </div>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl px-0">
-            <div className="flex items-center justify-between px-4 pb-4 border-b border-border">
-              <span className="text-lg font-semibold">Menu</span>
-              <SheetClose asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <X className="h-5 w-5" />
-                </Button>
-              </SheetClose>
+          <SheetContent side="bottom" className="h-[75vh] rounded-t-3xl px-0 pb-safe">
+            {/* Handle bar */}
+            <div className="flex justify-center pt-2 pb-4">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
-            <div className="overflow-y-auto py-2">
-              {menuLinks.map((link) => (
-                <SheetClose asChild key={link.to}>
-                  <Link
-                    to={link.to}
-                    className="flex items-center px-6 py-3.5 text-base font-medium text-foreground hover:bg-muted active:bg-muted/80 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </SheetClose>
+            
+            <div className="overflow-y-auto pb-8">
+              {menuSections.map((section, sectionIndex) => (
+                <div key={section.title} className={cn(sectionIndex > 0 && "mt-4")}>
+                  <p className="px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {section.title}
+                  </p>
+                  {section.links.map((link) => (
+                    <SheetClose asChild key={link.to}>
+                      <Link
+                        to={link.to}
+                        className={cn(
+                          "flex items-center justify-between px-6 py-3.5 text-base font-medium transition-colors touch-manipulation",
+                          isActive(link.to) 
+                            ? "text-primary bg-primary/5" 
+                            : "text-foreground hover:bg-muted active:bg-muted/80"
+                        )}
+                        onClick={() => light()}
+                      >
+                        <div className="flex items-center gap-3">
+                          {link.icon && <link.icon className="h-5 w-5 text-muted-foreground" />}
+                          <span>{link.label}</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </div>
               ))}
+              
+              {/* Quick Actions Footer */}
+              {!user && (
+                <div className="mt-6 mx-4 p-4 bg-muted/50 rounded-xl">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Create an account to save properties and get alerts
+                  </p>
+                  <SheetClose asChild>
+                    <Link to="/auth?tab=signup">
+                      <Button className="w-full" size="lg">
+                        Sign Up Free
+                      </Button>
+                    </Link>
+                  </SheetClose>
+                </div>
+              )}
             </div>
           </SheetContent>
         </Sheet>
