@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -13,6 +13,8 @@ import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calc
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
@@ -20,6 +22,7 @@ import { useEventTracking } from '@/hooks/useEventTracking';
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const isMobile = useIsMobile();
 
   // Get listing status from URL, default to for_sale
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -70,8 +73,16 @@ export default function Listings() {
     isLoading, 
     isFetching, 
     hasNextPage, 
-    loadMore 
+    loadMore,
+    reset 
   } = usePaginatedProperties(filters);
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    reset();
+    // Small delay to show the refresh animation
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }, [reset]);
 
   // Search tracking
   const { trackSearchStart, trackSearch } = useSearchTracking();
@@ -196,18 +207,20 @@ export default function Listings() {
           </p>
         )}
 
-        {/* Property Grid with loading overlay */}
+        {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="aspect-[4/3] rounded-xl" />)}
           </div>
         ) : properties && properties.length > 0 ? (
           <>
-            <ListingsGrid isFetching={isFetching && !isLoading}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-                {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
-              </div>
-            </ListingsGrid>
+            <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
+              <ListingsGrid isFetching={isFetching && !isLoading}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                  {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
+                </div>
+              </ListingsGrid>
+            </PullToRefresh>
 
             {/* Load More Button */}
             {hasNextPage && (

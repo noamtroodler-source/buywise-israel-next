@@ -13,6 +13,7 @@ import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { differenceInDays } from 'date-fns';
 import { useEventTracking } from '@/hooks/useEventTracking';
+import { useTouchSwipe } from '@/hooks/useTouchSwipe';
 
 interface PropertyCardProps {
   property: Property;
@@ -90,21 +91,36 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   // Check if this is a rental (for more prominent freshness treatment)
   const isRental = property.listing_status === 'for_rent';
 
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const goToPrevImage = useCallback(() => {
     setImageLoaded(false);
     setImageError(false);
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  }, [images.length]);
+
+  const goToNextImage = useCallback(() => {
+    setImageLoaded(false);
+    setImageError(false);
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [images.length]);
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    goToPrevImage();
   };
 
   const handleNextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageLoaded(false);
-    setImageError(false);
-    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    goToNextImage();
   };
+
+  // Touch swipe support for mobile
+  const touchHandlers = useTouchSwipe({
+    onSwipeLeft: hasMultipleImages ? goToNextImage : undefined,
+    onSwipeRight: hasMultipleImages ? goToPrevImage : undefined,
+    threshold: 30,
+  });
 
   // NOTE: Avoid clearing imageError inside onLoad.
   // If a listing image 404s, the placeholder loads successfully, and onLoad would
@@ -161,7 +177,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
         {compact ? (
             /* Compact Mode: Stacked Layout - Image + Content Below (Zillow-style) */
             <>
-              <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl" {...touchHandlers}>
                 {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
@@ -333,7 +349,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
           ) : (
             /* Non-Compact Mode: Standard Layout */
             <>
-              <div className="relative aspect-[16/10] overflow-hidden">
+              <div className="relative aspect-[16/10] overflow-hidden" {...touchHandlers}>
                 {/* Loading skeleton */}
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-muted animate-pulse" />
