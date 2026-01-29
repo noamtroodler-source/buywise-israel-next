@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Eye, MessageSquare, TrendingUp, Users, 
-  Home, Calendar, BarChart3, Search, Activity, Building, Share2, UserCheck
+  Eye, MessageSquare, Home, Calendar, BarChart3, 
+  MapPin, Activity, Target, Package, Settings
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,62 +13,29 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { 
-  usePlatformStats, 
-  useViewsTrend, 
-  useInquiryBreakdown,
-  useTopProperties 
-} from '@/hooks/useAdminAnalytics';
-import { useConversionMetrics } from '@/hooks/useConversionMetrics';
-import { useGeographicAnalytics } from '@/hooks/useGeographicAnalytics';
-import { useInventoryHealth } from '@/hooks/useInventoryHealth';
-import { useAgentPerformance } from '@/hooks/useAgentPerformance';
-import { useGrowthMetrics, useCumulativeGrowth } from '@/hooks/useGrowthMetrics';
-import { usePriceAnalytics } from '@/hooks/usePriceAnalytics';
-import { useInquiryMetrics } from '@/hooks/useInquiryMetrics';
+import { usePlatformStats } from '@/hooks/useAdminAnalytics';
 
-import { ConversionFunnel } from '@/components/admin/ConversionFunnel';
-import { GeographicAnalytics } from '@/components/admin/GeographicAnalytics';
-import { InventoryHealthCard } from '@/components/admin/InventoryHealthCard';
-import { AgentLeaderboard } from '@/components/admin/AgentLeaderboard';
-import { GrowthMetrics } from '@/components/admin/GrowthMetrics';
-import { PriceAnalytics } from '@/components/admin/PriceAnalytics';
-import { InquiryPipeline } from '@/components/admin/InquiryPipeline';
-import { ViewsTrendChart } from '@/components/admin/ViewsTrendChart';
-import { UserBehaviorTab } from '@/components/admin/analytics/UserBehaviorTab';
-import { SearchIntelligenceTab } from '@/components/admin/analytics/SearchIntelligenceTab';
-import { ListingIntelligenceTab } from '@/components/admin/analytics/ListingIntelligenceTab';
-import { AdvertiserAnalyticsTab } from '@/components/admin/analytics/AdvertiserAnalyticsTab';
-import { DataHealthCard } from '@/components/admin/analytics/DataHealthCard';
-import { CityAnalyticsTab } from '@/components/admin/analytics/CityAnalyticsTab';
-import { ImpressionsTab } from '@/components/admin/analytics/ImpressionsTab';
-import { EngagementDepthTab } from '@/components/admin/analytics/EngagementDepthTab';
-import { PriceIntelligenceTab } from '@/components/admin/analytics/PriceIntelligenceTab';
-import { ToolPerformanceTab } from '@/components/admin/analytics/ToolPerformanceTab';
-import { LocationModuleTab } from '@/components/admin/analytics/LocationModuleTab';
-import { LeadQualityTab } from '@/components/admin/analytics/LeadQualityTab';
-import { ContentPerformanceTab } from '@/components/admin/analytics/ContentPerformanceTab';
-import { FunnelHealthTab } from '@/components/admin/analytics/FunnelHealthTab';
-import { PerformanceMonitorTab } from '@/components/admin/analytics/PerformanceMonitorTab';
-import { ExperimentResultsTab } from '@/components/admin/analytics/ExperimentResultsTab';
-import { ShareAnalyticsTab } from '@/components/admin/analytics/ShareAnalyticsTab';
-import { BuyerInsightsTab } from '@/components/admin/analytics/BuyerInsightsTab';
+// Chapter components
 import { ExecutiveDashboardTab } from '@/components/admin/analytics/ExecutiveDashboardTab';
+import { 
+  DiscoveryChapter,
+  EngagementChapter,
+  ConversionChapter,
+  SupplyChapter,
+  OperationsChapter
+} from '@/components/admin/analytics/chapters';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
   const days = parseInt(dateRange);
 
   const { data: stats, isLoading: statsLoading } = usePlatformStats();
-  const { data: viewsTrend, isLoading: viewsLoading } = useViewsTrend(days);
-  const { data: conversionData, isLoading: conversionLoading } = useConversionMetrics(days);
-  const { data: geoData, isLoading: geoLoading } = useGeographicAnalytics(days);
-  const { data: inventoryData, isLoading: inventoryLoading } = useInventoryHealth();
-  const { data: agentData, isLoading: agentLoading } = useAgentPerformance(days);
-  const { data: growthData, isLoading: growthLoading } = useGrowthMetrics(days === 7 ? 7 : days === 30 ? 30 : 30);
-  const { data: trendData, isLoading: trendLoading } = useCumulativeGrowth(days);
-  const { data: priceData, isLoading: priceLoading } = usePriceAnalytics();
-  const { data: inquiryData, isLoading: inquiryLoading } = useInquiryMetrics(days);
+
+  const keyMetrics = [
+    { label: 'Total Views', value: stats?.totalViews7d || 0, sub: 'Last 7 days', icon: Eye, gradient: 'from-primary/10 to-primary/5' },
+    { label: 'Total Inquiries', value: stats?.totalInquiries7d || 0, sub: 'Last 7 days', icon: MessageSquare, gradient: 'from-primary/8 to-transparent' },
+    { label: 'Active Listings', value: stats?.totalProperties || 0, sub: 'Total properties', icon: Home, gradient: 'from-primary/10 to-primary/5' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -82,7 +49,7 @@ export default function AdminAnalytics() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">Platform Analytics</h2>
-              <p className="text-muted-foreground">Comprehensive performance metrics & insights</p>
+              <p className="text-muted-foreground">Story-driven insights & actionable intelligence</p>
             </div>
           </div>
           <Select value={dateRange} onValueChange={setDateRange}>
@@ -99,14 +66,9 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Key Metrics - Premium Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: 'Total Views', value: stats?.totalViews7d || 0, sub: 'Last 7 days', icon: Eye, gradient: 'from-primary/10 to-primary/5' },
-          { label: 'Total Inquiries', value: stats?.totalInquiries7d || 0, sub: 'Last 7 days', icon: MessageSquare, gradient: 'from-primary/8 to-transparent' },
-          { label: 'Active Listings', value: stats?.totalProperties || 0, sub: 'Total properties', icon: Home, gradient: 'from-primary/10 to-primary/5' },
-          { label: 'Registered Users', value: stats?.totalUsers || 0, sub: `+${stats?.newUsersThisWeek || 0} this week`, icon: Users, gradient: 'from-primary/8 to-transparent' },
-        ].map((metric, index) => (
+      {/* Key Metrics - Compact Cards */}
+      <div className="grid gap-4 grid-cols-3">
+        {keyMetrics.map((metric, index) => (
           <motion.div
             key={metric.label}
             initial={{ opacity: 0, y: 10 }}
@@ -114,17 +76,17 @@ export default function AdminAnalytics() {
             transition={{ delay: index * 0.1 }}
           >
             <Card className={`border-primary/20 bg-gradient-to-br ${metric.gradient} rounded-2xl overflow-hidden`}>
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground font-medium">{metric.label}</p>
-                    <p className="text-3xl font-bold text-foreground mt-1">
+                    <p className="text-2xl font-bold text-foreground mt-1">
                       {statsLoading ? '...' : metric.value.toLocaleString()}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">{metric.sub}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{metric.sub}</p>
                   </div>
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <metric.icon className="h-6 w-6 text-primary" />
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <metric.icon className="h-5 w-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -133,48 +95,50 @@ export default function AdminAnalytics() {
         ))}
       </div>
 
-      {/* Tabbed Analytics - Premium Styling */}
+      {/* Chapter-Based Navigation */}
       <Tabs defaultValue="executive" className="space-y-4">
-        <TabsList className="bg-muted/50 p-1 rounded-xl flex-wrap h-auto gap-1">
-          <TabsTrigger value="executive" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Activity className="h-3.5 w-3.5 mr-1.5" />Executive
+        <TabsList className="bg-muted/50 p-1 rounded-xl h-auto gap-1">
+          <TabsTrigger 
+            value="executive" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Executive
           </TabsTrigger>
-          <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Overview</TabsTrigger>
-          <TabsTrigger value="behavior" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Activity className="h-3.5 w-3.5 mr-1.5" />User Behavior
+          <TabsTrigger 
+            value="discovery" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <MapPin className="h-4 w-4 mr-2" />
+            Discovery
           </TabsTrigger>
-          <TabsTrigger value="search" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Search className="h-3.5 w-3.5 mr-1.5" />Search Intel
+          <TabsTrigger 
+            value="engagement" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            Engagement
           </TabsTrigger>
-          <TabsTrigger value="listings" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Building className="h-3.5 w-3.5 mr-1.5" />Listing Intel
+          <TabsTrigger 
+            value="conversion" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Target className="h-4 w-4 mr-2" />
+            Conversion
           </TabsTrigger>
-          <TabsTrigger value="advertisers" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Users className="h-3.5 w-3.5 mr-1.5" />Advertisers
+          <TabsTrigger 
+            value="supply" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Supply
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventory</TabsTrigger>
-          <TabsTrigger value="agents" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Agents</TabsTrigger>
-          <TabsTrigger value="inquiries" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inquiries</TabsTrigger>
-          <TabsTrigger value="growth" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Growth</TabsTrigger>
-          <TabsTrigger value="market" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Market</TabsTrigger>
-          <TabsTrigger value="cities" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Building className="h-3.5 w-3.5 mr-1.5" />Cities
-          </TabsTrigger>
-          <TabsTrigger value="impressions" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Impressions</TabsTrigger>
-          <TabsTrigger value="engagement" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Engagement</TabsTrigger>
-          <TabsTrigger value="price-intel" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Price Intel</TabsTrigger>
-          <TabsTrigger value="tools" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Tools</TabsTrigger>
-          <TabsTrigger value="location" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Location</TabsTrigger>
-          <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Leads</TabsTrigger>
-          <TabsTrigger value="content" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Content</TabsTrigger>
-          <TabsTrigger value="funnel" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Funnel</TabsTrigger>
-          <TabsTrigger value="performance" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Performance</TabsTrigger>
-          <TabsTrigger value="experiments" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Experiments</TabsTrigger>
-          <TabsTrigger value="shares" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Share2 className="h-3.5 w-3.5 mr-1.5" />Shares
-          </TabsTrigger>
-          <TabsTrigger value="buyers" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <UserCheck className="h-3.5 w-3.5 mr-1.5" />Buyer Insights
+          <TabsTrigger 
+            value="operations" 
+            className="rounded-lg px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Operations
           </TabsTrigger>
         </TabsList>
 
@@ -182,106 +146,24 @@ export default function AdminAnalytics() {
           <ExecutiveDashboardTab dateRange={days} />
         </TabsContent>
 
-        <TabsContent value="overview" className="space-y-6">
-          <DataHealthCard />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <ConversionFunnel data={conversionData} isLoading={conversionLoading} />
-            <GeographicAnalytics data={geoData} isLoading={geoLoading} />
-          </div>
-          <ViewsTrendChart data={viewsTrend} isLoading={viewsLoading} />
-        </TabsContent>
-
-        <TabsContent value="behavior" className="space-y-6">
-          <UserBehaviorTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="search" className="space-y-6">
-          <SearchIntelligenceTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="listings" className="space-y-6">
-          <ListingIntelligenceTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="advertisers" className="space-y-6">
-          <AdvertiserAnalyticsTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="inventory" className="space-y-6">
-          <InventoryHealthCard data={inventoryData} isLoading={inventoryLoading} />
-        </TabsContent>
-
-        <TabsContent value="agents" className="space-y-6">
-          <AgentLeaderboard data={agentData} isLoading={agentLoading} limit={15} />
-        </TabsContent>
-
-        <TabsContent value="inquiries" className="space-y-6">
-          <InquiryPipeline data={inquiryData} isLoading={inquiryLoading} />
-        </TabsContent>
-
-        <TabsContent value="growth" className="space-y-6">
-          <GrowthMetrics 
-            data={growthData} 
-            trendData={trendData}
-            isLoading={growthLoading || trendLoading} 
-            periodLabel={`Last ${days} days vs previous`}
-          />
-        </TabsContent>
-
-        <TabsContent value="market" className="space-y-6">
-          <PriceAnalytics data={priceData} isLoading={priceLoading} />
-        </TabsContent>
-
-        <TabsContent value="cities" className="space-y-6">
-          <CityAnalyticsTab days={days} />
-        </TabsContent>
-
-        <TabsContent value="impressions" className="space-y-6">
-          <ImpressionsTab dateRange={days} />
+        <TabsContent value="discovery" className="space-y-6">
+          <DiscoveryChapter dateRange={days} />
         </TabsContent>
 
         <TabsContent value="engagement" className="space-y-6">
-          <EngagementDepthTab dateRange={days} />
+          <EngagementChapter dateRange={days} />
         </TabsContent>
 
-        <TabsContent value="price-intel" className="space-y-6">
-          <PriceIntelligenceTab dateRange={days} />
+        <TabsContent value="conversion" className="space-y-6">
+          <ConversionChapter dateRange={days} />
         </TabsContent>
 
-        <TabsContent value="tools" className="space-y-6">
-          <ToolPerformanceTab dateRange={days} />
+        <TabsContent value="supply" className="space-y-6">
+          <SupplyChapter dateRange={days} />
         </TabsContent>
 
-        <TabsContent value="location" className="space-y-6">
-          <LocationModuleTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="leads" className="space-y-6">
-          <LeadQualityTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="content" className="space-y-6">
-          <ContentPerformanceTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="funnel" className="space-y-6">
-          <FunnelHealthTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <PerformanceMonitorTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="experiments" className="space-y-6">
-          <ExperimentResultsTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="shares" className="space-y-6">
-          <ShareAnalyticsTab dateRange={days} />
-        </TabsContent>
-
-        <TabsContent value="buyers" className="space-y-6">
-          <BuyerInsightsTab />
+        <TabsContent value="operations" className="space-y-6">
+          <OperationsChapter dateRange={days} />
         </TabsContent>
       </Tabs>
     </div>
