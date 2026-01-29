@@ -241,6 +241,31 @@ export default function AgentRegisterWizard() {
         bio: formData.bio || undefined,
       });
       
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: { email: formData.email, name: formData.name, userType: 'agent' }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+      
+      // Notify agency if agent joined via invite code
+      if (validatedAgencyId && validatedAgencyName) {
+        try {
+          await supabase.functions.invoke('send-agency-notification', {
+            body: {
+              type: 'agent_joined',
+              agencyId: validatedAgencyId,
+              agentName: formData.name,
+              agentEmail: formData.email
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to notify agency:', notifyError);
+        }
+      }
+      
       setShowSuccessDialog(true);
     } catch (error) {
       // Error handled by mutation

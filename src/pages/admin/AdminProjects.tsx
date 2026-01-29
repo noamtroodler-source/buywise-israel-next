@@ -144,7 +144,12 @@ export default function AdminProjects() {
                   project={project}
                   onApprove={(id, notes, featureThis, featureSlotType) => {
                     approveProject.mutate(
-                      { id, adminFeedback: notes },
+                      { 
+                        id, 
+                        adminFeedback: notes,
+                        projectName: project.name,
+                        developerId: project.developer?.id
+                      },
                       {
                         onSuccess: () => {
                           if (featureThis && featureSlotType) {
@@ -164,8 +169,18 @@ export default function AdminProjects() {
                       }
                     );
                   }}
-                  onRequestChanges={(id, feedback) => requestChanges.mutate({ id, feedback })}
-                  onReject={(id, reason) => rejectProject.mutate({ id, reason })}
+                  onRequestChanges={(id, feedback) => requestChanges.mutate({ 
+                    id, 
+                    feedback,
+                    projectName: project.name,
+                    developerId: project.developer?.id
+                  })}
+                  onReject={(id, reason) => rejectProject.mutate({ 
+                    id, 
+                    reason,
+                    projectName: project.name,
+                    developerId: project.developer?.id
+                  })}
                   isLoading={isMutating}
                 />
               </motion.div>

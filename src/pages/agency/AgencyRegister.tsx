@@ -291,6 +291,15 @@ export default function AgencyRegister() {
           is_active: true,
         });
 
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: { email: formData.email, name: formData.name, userType: 'agency' }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+
       setShowSuccessDialog(true);
     } catch (error: unknown) {
       toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
