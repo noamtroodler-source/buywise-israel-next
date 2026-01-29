@@ -20,6 +20,7 @@ import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { RecentNearbySales } from '@/components/property/RecentNearbySales';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -241,6 +242,11 @@ export default function PropertyDetail() {
               citySlug={citySlug}
               propertyPrice={property.price}
               listingStatus={property.listing_status}
+            />
+
+            {/* Listing Feedback */}
+            <ListingFeedback 
+              listingType={property.listing_status === 'for_rent' ? 'rentals' : 'buy'} 
             />
           </div>
 

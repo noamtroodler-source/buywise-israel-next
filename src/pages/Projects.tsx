@@ -14,7 +14,7 @@ import { ProjectFilters, ProjectFiltersType } from '@/components/filters/Project
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
-import { ListingFeedback } from '@/components/listings/ListingFeedback';
+
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
@@ -311,10 +311,6 @@ export default function Projects() {
               </div>
             )}
 
-            {/* Listing Feedback - only show when there are results */}
-            <div className="mt-10 max-w-xl mx-auto">
-              <ListingFeedback listingType="projects" />
-            </div>
           </>
           )}
         </div>

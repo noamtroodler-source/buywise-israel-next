@@ -13,7 +13,7 @@ import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calc
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
-import { ListingFeedback } from '@/components/listings/ListingFeedback';
+
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 
@@ -230,10 +230,6 @@ export default function Listings() {
               </div>
             )}
 
-            {/* Listing Feedback - only show when there are results */}
-            <div className="mt-10 max-w-xl mx-auto">
-              <ListingFeedback listingType={isRentals ? 'rentals' : 'buy'} />
-            </div>
           </>
         ) : (
           <div className="text-center py-10 md:py-16 max-w-lg mx-auto px-4">
