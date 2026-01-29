@@ -119,7 +119,7 @@ export function ResultRange({
           animate={{ opacity: 1, scale: 1 }}
           className={cn(
             "font-semibold tracking-tight",
-            variant === 'hero' && 'text-4xl md:text-5xl text-primary',
+            variant === 'hero' && 'text-4xl md:text-5xl text-primary whitespace-nowrap',
             variant === 'stat' && 'text-lg mt-0.5',
             variant === 'inline' && 'text-base'
           )}
@@ -129,7 +129,7 @@ export function ResultRange({
       ) : (
         <p className={cn(
           "font-semibold tracking-tight",
-          variant === 'hero' && 'text-4xl md:text-5xl text-primary',
+          variant === 'hero' && 'text-4xl md:text-5xl text-primary whitespace-nowrap',
           variant === 'stat' && 'text-lg mt-0.5',
           variant === 'inline' && 'text-base'
         )}>
