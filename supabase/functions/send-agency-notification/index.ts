@@ -24,67 +24,90 @@ interface NotificationPayload {
   message?: string;
 }
 
+const brandFooter = `
+  <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+    Questions? Just reply — we read every email.<br>
+    <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+  </p>
+`;
+
 const getNotificationContent = (payload: NotificationPayload) => {
   switch (payload.type) {
     case 'agent_joined':
       return {
-        subject: `New agent joined your agency: ${payload.agentName}`,
+        subject: `${payload.agentName} joined your agency`,
         body: `${payload.agentName} has joined your agency using an invite code.\n\nEmail: ${payload.agentEmail || 'Not provided'}\n\nYou can view and manage your team from your agency dashboard.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #22c55e;">👋 New Agent Joined!</h1>
-            <p><strong>${payload.agentName}</strong> has joined your agency using an invite code.</p>
-            <div style="margin-top: 16px; padding: 16px; background-color: #f0fdf4; border-radius: 8px;">
-              <p style="margin: 0;"><strong>Name:</strong> ${payload.agentName}</p>
-              ${payload.agentEmail ? `<p style="margin: 8px 0 0 0;"><strong>Email:</strong> ${payload.agentEmail}</p>` : ''}
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Something good just happened</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has joined your agency using an invite code.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
+              <p style="margin: 0; color: #333;"><strong>Name:</strong> ${payload.agentName}</p>
+              ${payload.agentEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.agentEmail}</p>` : ''}
             </div>
-            <p style="margin-top: 24px;">You can view and manage your team from your agency dashboard.</p>
+            <p style="margin-top: 24px; color: #666;">You can view and manage your team from your agency dashboard.</p>
+            <a href="https://buywiseisrael.com/agency/team" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Team
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'agent_left':
       return {
-        subject: `Agent ${payload.agentName} has left your agency`,
+        subject: `Just a heads up: ${payload.agentName} has left your agency`,
         body: `${payload.agentName} has left your agency.\n\nIf this was unexpected, you may want to reach out to them.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #f59e0b;">Agent Departure</h1>
-            <p><strong>${payload.agentName}</strong> has left your agency.</p>
-            <p style="color: #6b7280;">If this was unexpected, you may want to reach out to them.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has left your agency.</p>
+            <p style="color: #666; font-size: 14px;">If this was unexpected, you may want to reach out to them.</p>
+            <a href="https://buywiseisrael.com/agency/team" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Team
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'new_lead':
       return {
-        subject: `New lead for your agency: ${payload.propertyTitle || 'Property Inquiry'}`,
+        subject: `New inquiry for ${payload.propertyTitle || 'your agency'}`,
         body: `Your agency has received a new lead!\n\nFrom: ${payload.leadName || 'A potential buyer'}${payload.leadEmail ? `\nEmail: ${payload.leadEmail}` : ''}${payload.propertyTitle ? `\nProperty: ${payload.propertyTitle}` : ''}\n\nLog in to your dashboard to assign this lead to an agent.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #3b82f6;">📩 New Lead!</h1>
-            <p>Your agency has received a new lead!</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">New inquiry received</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Your agency has received a new inquiry.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
-              <p style="margin: 0;"><strong>From:</strong> ${payload.leadName || 'A potential buyer'}</p>
-              ${payload.leadEmail ? `<p style="margin: 8px 0 0 0;"><strong>Email:</strong> ${payload.leadEmail}</p>` : ''}
-              ${payload.propertyTitle ? `<p style="margin: 8px 0 0 0;"><strong>Property:</strong> ${payload.propertyTitle}</p>` : ''}
+              <p style="margin: 0; color: #333;"><strong>From:</strong> ${payload.leadName || 'A potential buyer'}</p>
+              ${payload.leadEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.leadEmail}</p>` : ''}
+              ${payload.propertyTitle ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Property:</strong> ${payload.propertyTitle}</p>` : ''}
             </div>
-            <p style="margin-top: 24px;">Log in to your dashboard to assign this lead to an agent.</p>
+            <p style="margin-top: 24px; color: #666;">Log in to your dashboard to assign this lead to an agent.</p>
+            <a href="https://buywiseisrael.com/agency/leads" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Leads
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'join_request':
       return {
-        subject: `New join request from ${payload.agentName}`,
+        subject: `${payload.agentName} wants to join your agency`,
         body: `${payload.agentName} has requested to join your agency.\n\nEmail: ${payload.agentEmail || 'Not provided'}${payload.message ? `\nMessage: ${payload.message}` : ''}\n\nLog in to your dashboard to approve or decline this request.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #3b82f6;">📋 Join Request</h1>
-            <p><strong>${payload.agentName}</strong> has requested to join your agency.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Someone wants to join your team</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;"><strong>${payload.agentName}</strong> has requested to join your agency.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
-              <p style="margin: 0;"><strong>Name:</strong> ${payload.agentName}</p>
-              ${payload.agentEmail ? `<p style="margin: 8px 0 0 0;"><strong>Email:</strong> ${payload.agentEmail}</p>` : ''}
-              ${payload.message ? `<p style="margin: 8px 0 0 0;"><strong>Message:</strong> ${payload.message}</p>` : ''}
+              <p style="margin: 0; color: #333;"><strong>Name:</strong> ${payload.agentName}</p>
+              ${payload.agentEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.agentEmail}</p>` : ''}
+              ${payload.message ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Message:</strong> ${payload.message}</p>` : ''}
             </div>
-            <p style="margin-top: 24px;">Log in to your dashboard to approve or decline this request.</p>
+            <p style="margin-top: 24px; color: #666;">Log in to your dashboard to approve or decline this request.</p>
+            <a href="https://buywiseisrael.com/agency/requests" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Requests
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
@@ -93,9 +116,10 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Notification</h1>
-            <p>${payload.message || 'You have a new notification.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
+            <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
+            ${brandFooter}
           </div>
         `,
       };

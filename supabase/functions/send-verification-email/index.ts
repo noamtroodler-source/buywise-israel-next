@@ -74,6 +74,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Get first name for greeting
+    const firstName = name.split(' ')[0];
+
     // Get display type for email
     const typeDisplay = type === 'agent' ? 'Agent' : type === 'developer' ? 'Developer' : 'Agency';
 
@@ -82,6 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
     }
+    
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -92,36 +96,37 @@ const handler = async (req: Request): Promise<Response> => {
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
         <div style="max-width: 480px; margin: 0 auto; background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">🔐 Email Verification</h1>
+            <h1 style="color: #1a1a1a; font-size: 24px; margin: 0;">Almost there — let's verify your email</h1>
             <p style="color: #666; margin-top: 8px;">BuyWise Israel ${typeDisplay} Registration</p>
           </div>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6;">
-            Hi ${name},
+            Hi ${firstName},
           </p>
           
           <p style="color: #333; font-size: 16px; line-height: 1.6;">
-            Your verification code is:
+            This helps us keep your account secure. Here's your verification code:
           </p>
           
-          <div style="background-color: #f8f9fa; border: 2px dashed #e9ecef; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+          <div style="background-color: #eff6ff; border: 2px dashed #bfdbfe; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
             <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">
               ${code}
             </span>
           </div>
           
           <p style="color: #666; font-size: 14px; text-align: center;">
-            ⏱️ This code expires in <strong>10 minutes</strong>
+            This code is valid for 10 minutes — no rush.
           </p>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
           
           <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-            If you didn't request this code, please ignore this email.
+            If you didn't request this code, you can safely ignore this email.
           </p>
           
           <p style="color: #999; font-size: 12px; text-align: center; margin-top: 20px;">
-            — The BuyWise Israel Team
+            Questions? Just reply — we read every email.<br>
+            <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
           </p>
         </div>
       </body>
@@ -137,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "BuyWise Israel <hello@buywiseisrael.com>",
         to: [email],
-        subject: `Your BuyWise Israel Verification Code: ${code}`,
+        subject: `Your verification code: ${code}`,
         html: emailHtml,
       }),
     });

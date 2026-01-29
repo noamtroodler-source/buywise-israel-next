@@ -25,6 +25,13 @@ const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('en-US').format(num);
 };
 
+const brandFooter = `
+  <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+    Questions? Just reply — we read every email.<br>
+    <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+  </p>
+`;
+
 const generateAgentDigestHtml = (name: string, stats: AgentStats): string => {
   const firstName = name.split(' ')[0];
   
@@ -37,38 +44,44 @@ const generateAgentDigestHtml = (name: string, stats: AgentStats): string => {
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
-        <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">📊 Your Weekly Performance Report</h1>
+        <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">Here's how your week looked</h1>
         <p style="color: #666; font-size: 16px; margin-bottom: 24px;">
-          Hi ${firstName}, here's how your listings performed this week.
+          Hi ${firstName}, here's a quick snapshot of your listings.
         </p>
         
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
           <div style="background-color: #eff6ff; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #3b82f6; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalViews)}</p>
+            <p style="color: #2563eb; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalViews)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Total Views</p>
           </div>
-          <div style="background-color: #f0fdf4; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #22c55e; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.newInquiriesThisWeek)}</p>
+          <div style="background-color: #eff6ff; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #2563eb; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.newInquiriesThisWeek)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">New Inquiries</p>
           </div>
-          <div style="background-color: #fef3c7; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #f59e0b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.activeListings)}</p>
+          <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #64748b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.activeListings)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Active Listings</p>
           </div>
-          <div style="background-color: #fce7f3; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #ec4899; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalInquiries)}</p>
+          <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #64748b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalInquiries)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Total Inquiries</p>
           </div>
         </div>
+        
+        <p style="color: #666; font-size: 14px; margin-bottom: 24px;">
+          These numbers are just context — focus on what matters to you.
+        </p>
         
         <a href="https://buywiseisrael.com/agent" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           View Full Dashboard
         </a>
         
-        <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center;">
+        <p style="color: #999; font-size: 12px; margin-top: 32px; text-align: center;">
           You're receiving this weekly digest because you have active listings on BuyWise Israel.<br>
           <a href="https://buywiseisrael.com/agent/settings" style="color: #666;">Manage notification preferences</a>
         </p>
+        
+        ${brandFooter}
       </div>
     </body>
     </html>
@@ -87,38 +100,44 @@ const generateDeveloperDigestHtml = (name: string, stats: DeveloperStats): strin
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
       <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
-        <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">📊 Your Weekly Project Report</h1>
+        <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">Here's how your week looked</h1>
         <p style="color: #666; font-size: 16px; margin-bottom: 24px;">
-          Hi ${firstName}, here's how your projects performed this week.
+          Hi ${firstName}, here's a quick snapshot of your projects.
         </p>
         
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
           <div style="background-color: #eff6ff; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #3b82f6; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalViews)}</p>
+            <p style="color: #2563eb; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalViews)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Total Views</p>
           </div>
-          <div style="background-color: #f0fdf4; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #22c55e; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.newInquiriesThisWeek)}</p>
+          <div style="background-color: #eff6ff; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #2563eb; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.newInquiriesThisWeek)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">New Inquiries</p>
           </div>
-          <div style="background-color: #fef3c7; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #f59e0b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.activeProjects)}</p>
+          <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #64748b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.activeProjects)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Active Projects</p>
           </div>
-          <div style="background-color: #fce7f3; border-radius: 12px; padding: 20px; text-align: center;">
-            <p style="color: #ec4899; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalInquiries)}</p>
+          <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="color: #64748b; font-size: 32px; font-weight: bold; margin: 0;">${formatNumber(stats.totalInquiries)}</p>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0 0;">Total Inquiries</p>
           </div>
         </div>
+        
+        <p style="color: #666; font-size: 14px; margin-bottom: 24px;">
+          These numbers are just context — focus on what matters to you.
+        </p>
         
         <a href="https://buywiseisrael.com/developer" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           View Full Dashboard
         </a>
         
-        <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center;">
+        <p style="color: #999; font-size: 12px; margin-top: 32px; text-align: center;">
           You're receiving this weekly digest because you have active projects on BuyWise Israel.<br>
           <a href="https://buywiseisrael.com/developer/settings" style="color: #666;">Manage notification preferences</a>
         </p>
+        
+        ${brandFooter}
       </div>
     </body>
     </html>
@@ -195,7 +214,7 @@ serve(async (req) => {
             await resend.emails.send({
               from: "BuyWise Israel <hello@buywiseisrael.com>",
               to: [agent.email!],
-              subject: `📊 Your Weekly Report: ${stats.newInquiriesThisWeek} new inquiries, ${formatNumber(stats.totalViews)} views`,
+              subject: `Your week: ${stats.newInquiriesThisWeek} new inquiries, ${formatNumber(stats.totalViews)} views`,
               html,
             });
             
@@ -256,7 +275,7 @@ serve(async (req) => {
             await resend.emails.send({
               from: "BuyWise Israel <hello@buywiseisrael.com>",
               to: [developer.email!],
-              subject: `📊 Your Weekly Report: ${stats.newInquiriesThisWeek} new inquiries, ${formatNumber(stats.totalViews)} views`,
+              subject: `Your week: ${stats.newInquiriesThisWeek} new inquiries, ${formatNumber(stats.totalViews)} views`,
               html,
             });
             

@@ -26,55 +26,71 @@ interface NotificationPayload {
   daysUntilExpiry?: number;
 }
 
+const brandFooter = `
+  <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+    Questions? Just reply — we read every email.<br>
+    <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+  </p>
+`;
+
 const getNotificationContent = (payload: NotificationPayload) => {
   switch (payload.type) {
     case 'project_approved':
       return {
-        subject: `Your project "${payload.projectName}" has been approved!`,
+        subject: `Great news — "${payload.projectName}" is now live`,
         body: `Great news! Your project "${payload.projectName}" has been reviewed and approved. It is now live and visible to potential buyers on our platform.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #22c55e;">🎉 Project Approved!</h1>
-            <p>Great news! Your project <strong>"${payload.projectName}"</strong> has been reviewed and approved.</p>
-            <p>It is now live and visible to potential buyers on BuyWise Israel.</p>
-            <div style="margin-top: 24px; padding: 16px; background-color: #f0fdf4; border-radius: 8px;">
-              <p style="margin: 0; color: #166534;">Your project is now active and ready to receive inquiries!</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Great news — your project is now live</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Your project <strong>"${payload.projectName}"</strong> has been reviewed and approved.</p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">It's now visible to potential buyers on BuyWise Israel.</p>
+            <div style="margin-top: 24px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
+              <p style="margin: 0; color: #2563eb; font-weight: 500;">Your project is active and ready to receive inquiries.</p>
             </div>
-            <p style="margin-top: 24px; color: #6b7280; font-size: 14px;">
-              Log in to your dashboard to view performance metrics.
-            </p>
+            <a href="https://buywiseisrael.com/developer/projects" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 24px;">
+              View Project
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'project_rejected':
       return {
-        subject: `Action needed: Your project "${payload.projectName}" was not approved`,
+        subject: `We couldn't approve "${payload.projectName}" — here's why`,
         body: `Your project "${payload.projectName}" could not be approved at this time.\n\nReason: ${payload.rejectionReason || 'Please contact support for more details.'}\n\nPlease update your project and resubmit for review.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #ef4444;">Project Not Approved</h1>
-            <p>Your project <strong>"${payload.projectName}"</strong> could not be approved at this time.</p>
-            <div style="margin-top: 16px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
-              <p style="margin: 0; font-weight: 600;">Reason:</p>
-              <p style="margin: 8px 0 0 0;">${payload.rejectionReason || 'Please contact support for more details.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We couldn't approve this one — here's why</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">We know this isn't the news you wanted. Your project <strong>"${payload.projectName}"</strong> couldn't be approved at this time.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
+              <p style="margin: 0; font-weight: 600; color: #333;">Reason:</p>
+              <p style="margin: 8px 0 0 0; color: #666;">${payload.rejectionReason || 'Please contact support for more details.'}</p>
             </div>
-            <p style="margin-top: 24px;">Please update your project and resubmit for review.</p>
+            <p style="margin-top: 24px; color: #666; font-size: 14px;">Please update your project and resubmit when you're ready. We're happy to help if you have questions.</p>
+            <a href="https://buywiseisrael.com/developer/projects" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Edit Project
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'changes_requested':
       return {
-        subject: `Changes requested for "${payload.projectName}"`,
+        subject: `Just a few tweaks needed for "${payload.projectName}"`,
         body: `Our team has reviewed your project "${payload.projectName}" and requested some changes before it can be approved.\n\nFeedback: ${payload.message || 'Please review and update your project.'}\n\nPlease make the requested changes and resubmit.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #f59e0b;">Changes Requested</h1>
-            <p>Our team has reviewed your project <strong>"${payload.projectName}"</strong> and requested some changes before it can be approved.</p>
-            <div style="margin-top: 16px; padding: 16px; background-color: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
-              <p style="margin: 0; font-weight: 600;">Feedback:</p>
-              <p style="margin: 8px 0 0 0;">${payload.message || 'Please review and update your project.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a few tweaks needed — we're almost there</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Our team has reviewed your project <strong>"${payload.projectName}"</strong> and requested some small changes before it can go live.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+              <p style="margin: 0; font-weight: 600; color: #333;">Feedback:</p>
+              <p style="margin: 8px 0 0 0; color: #666;">${payload.message || 'Please review and update your project.'}</p>
             </div>
-            <p style="margin-top: 24px;">Please make the requested changes and resubmit for review.</p>
+            <p style="margin-top: 24px; color: #666; font-size: 14px;">Once you've made the changes, resubmit and we'll take another look.</p>
+            <a href="https://buywiseisrael.com/developer/projects" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Edit Project
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
@@ -83,26 +99,34 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `New inquiry for "${payload.projectName}"`,
         body: `You have received a new inquiry for your project "${payload.projectName}".\n\nFrom: ${payload.inquirerName || 'A potential buyer'}${payload.inquirerEmail ? `\nEmail: ${payload.inquirerEmail}` : ''}\n\nLog in to your dashboard to view and respond to this lead.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #3b82f6;">📩 New Lead!</h1>
-            <p>You have received a new inquiry for your project <strong>"${payload.projectName}"</strong>.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">New inquiry received</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Someone is interested in your project <strong>"${payload.projectName}"</strong>.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
-              <p style="margin: 0;"><strong>From:</strong> ${payload.inquirerName || 'A potential buyer'}</p>
-              ${payload.inquirerEmail ? `<p style="margin: 8px 0 0 0;"><strong>Email:</strong> ${payload.inquirerEmail}</p>` : ''}
+              <p style="margin: 0; color: #333;"><strong>From:</strong> ${payload.inquirerName || 'A potential buyer'}</p>
+              ${payload.inquirerEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.inquirerEmail}</p>` : ''}
             </div>
-            <p style="margin-top: 24px;">Log in to your dashboard to view and respond to this lead.</p>
+            <p style="margin-top: 24px; color: #666;">Log in to your dashboard to view and respond to this lead.</p>
+            <a href="https://buywiseisrael.com/developer/leads" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Lead
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'project_expiring':
       return {
-        subject: `Your project "${payload.projectName}" is expiring soon`,
+        subject: `Heads up: "${payload.projectName}" expires in ${payload.daysUntilExpiry} days`,
         body: `Your project "${payload.projectName}" will expire in ${payload.daysUntilExpiry} days.\n\nTo keep your project active and visible to buyers, please renew it from your dashboard.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #f59e0b;">⏰ Project Expiring Soon</h1>
-            <p>Your project <strong>"${payload.projectName}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
-            <p>To keep your project active and visible to buyers, please renew it from your dashboard.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Your project <strong>"${payload.projectName}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
+            <p style="color: #666; font-size: 14px;">To keep your project visible to buyers, you can renew it from your dashboard. No rush — just wanted to make sure you knew.</p>
+            <a href="https://buywiseisrael.com/developer/projects" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 24px;">
+              View Project
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
@@ -111,9 +135,10 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Notification</h1>
-            <p>${payload.message || 'You have a new notification.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
+            <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
+            ${brandFooter}
           </div>
         `,
       };
