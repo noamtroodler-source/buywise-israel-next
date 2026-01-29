@@ -21,6 +21,7 @@ import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { MoreNav } from './MoreNav';
+import { LearnNav } from './LearnNav';
 import { MegaMenu } from './MegaMenu';
 import { NAV_CONFIG } from '@/lib/navigationConfig';
 
@@ -70,12 +71,7 @@ export function Header() {
           <MegaMenu config={NAV_CONFIG.buy} />
           <MegaMenu config={NAV_CONFIG.rent} />
           <MegaMenu config={NAV_CONFIG.projects} />
-          <Link 
-            to="/blog" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Blog
-          </Link>
+          <LearnNav />
           <Link 
             to="/advertise" 
             className="text-base font-medium text-primary hover:text-primary/80 transition-colors"
@@ -386,16 +382,43 @@ export function Header() {
                   </div>
                 </AccordionContent>
               </AccordionItem>
+              {/* Learn Accordion */}
+              <AccordionItem value="learn" className="border-b-0">
+                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
+                  Learn
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="pl-4 space-y-1">
+                    <Link
+                      to="/blog"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      Blog
+                    </Link>
+                    <Link
+                      to="/guides"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      All Guides
+                    </Link>
+                    <Link
+                      to="/tools"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      All Tools
+                    </Link>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
             
             {/* Static nav links */}
-            <Link 
-              to="/blog" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Blog
-            </Link>
             <Link 
               to="/advertise" 
               className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
