@@ -71,12 +71,6 @@ export function Header() {
           <MegaMenu config={NAV_CONFIG.rent} />
           <MegaMenu config={NAV_CONFIG.projects} />
           <Link 
-            to="/areas" 
-            className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Areas
-          </Link>
-          <Link 
             to="/blog" 
             className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -395,13 +389,6 @@ export function Header() {
             </Accordion>
             
             {/* Static nav links */}
-            <Link 
-              to="/areas" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Areas
-            </Link>
             <Link 
               to="/blog" 
               className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
