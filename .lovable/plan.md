@@ -1,137 +1,113 @@
 
-## Email System Integration - What's Left To Do
 
-Your email functions are built and ready, but some aren't connected to your app yet. Here's exactly what needs to happen:
+## Google OAuth User Onboarding - Implementation Plan
 
----
+### The Problem
 
-### Current Status
+When users sign up via Google, they're authenticated but skip the profile onboarding flow entirely:
 
-| Email Type | Function Built | Connected to App | Automated |
-|------------|---------------|------------------|-----------|
-| Verification Code | Yes | Yes | - |
-| Listing Approved/Rejected | Yes | Yes | - |
-| New Inquiry (Property) | Yes | Yes | - |
-| Price Drop Alert | Yes | - | Yes (every 10 min) |
-| Search Matches | Yes | - | Yes (5 min/daily/weekly) |
-| Welcome Email | Yes | **No** | - |
-| Developer Notifications | Yes | **No** | - |
-| Agency Notifications | Yes | **No** | - |
-| Weekly Digest | Yes | - | Yes (Sundays 9 AM) |
+```text
+Email Signup:
+[Sign Up Form] → [justSignedUp = true] → [Buyer Onboarding Wizard] → [Home]
 
----
-
-### What Needs To Be Connected
-
-#### 1. Welcome Emails (after registration)
-
-**Where**: Agent, Developer, and Agency registration success handlers
-
-**Action**: After successful registration, call the welcome email function
-
-**Files to modify**:
-- `src/pages/agent/AgentRegisterWizard.tsx` - after `agentRegistration.mutateAsync()` succeeds
-- `src/pages/developer/DeveloperRegister.tsx` - after developer registration succeeds
-- `src/pages/agency/AgencyRegister.tsx` (if exists) - after agency registration succeeds
-
----
-
-#### 2. Developer Notifications (project approvals)
-
-**Where**: Admin project review hooks
-
-**Action**: When admin approves/rejects/requests changes on a project, send notification to developer
-
-**File to modify**:
-- `src/hooks/useAdminProjects.tsx` - add calls to `send-developer-notification` in:
-  - `useApproveProject` mutation
-  - `useRequestProjectChanges` mutation
-  - `useRejectProject` mutation
-
----
-
-#### 3. Agency Notifications (agent joins)
-
-**Where**: Agent registration flow when using invite code
-
-**Action**: When an agent successfully joins via invite code, notify the agency
-
-**Files to modify**:
-- `src/pages/agent/AgentRegisterWizard.tsx` - after agent joins agency via invite code
-- Could also add to `src/pages/agency/AgencyDashboard.tsx` for when agents leave
-
----
-
-#### 4. Re-enable Email Verification (Optional)
-
-**Where**: Email verification component
-
-**Action**: Your domain is verified now - you can turn real verification back on
-
-**File to modify**:
-- `src/components/auth/EmailVerificationStep.tsx` - change `SKIP_VERIFICATION = false`
-
----
-
-### Implementation Summary
-
-| Task | Priority | Complexity |
-|------|----------|------------|
-| Connect welcome emails | High | Low |
-| Connect developer notifications | High | Low |
-| Connect agency notifications | Medium | Low |
-| Re-enable email verification | Low | Trivial |
-
----
-
-### Technical Details
-
-**How to call an edge function from the frontend:**
-```typescript
-await supabase.functions.invoke('send-welcome-email', {
-  body: {
-    email: 'user@example.com',
-    name: 'User Name',
-    userType: 'agent' // or 'developer', 'agency', 'buyer'
-  }
-});
+Google OAuth:
+[Google Button] → [Redirect to Google] → [Return to /auth with session] → [Home] ❌
+                                                                          └── Onboarding SKIPPED!
 ```
 
-**Developer notification payload:**
-```typescript
-await supabase.functions.invoke('send-developer-notification', {
-  body: {
-    type: 'project_approved', // or 'project_rejected', 'changes_requested'
-    developerId: 'uuid-here',
-    projectId: 'uuid-here',
-    projectName: 'Project Name',
-    message: 'Optional feedback'
-  }
-});
-```
+### Root Cause
 
-**Agency notification payload:**
-```typescript
-await supabase.functions.invoke('send-agency-notification', {
-  body: {
-    type: 'agent_joined',
-    agencyId: 'uuid-here',
-    agentName: 'Agent Name',
-    agentEmail: 'agent@email.com'
-  }
-});
-```
+The `justSignedUp` state is only set in the email/password `handleSubmit` function, but Google OAuth users return already authenticated without triggering this flag.
 
 ---
 
-### Files To Create/Modify
+## The Solution
 
-**Modify (add edge function calls):**
-- `src/pages/agent/AgentRegisterWizard.tsx`
-- `src/pages/developer/DeveloperRegister.tsx`
-- `src/hooks/useAdminProjects.tsx`
+Detect first-time Google OAuth users by checking if:
+1. User is authenticated
+2. No `buyer_profiles` record exists (for buyers)
+3. The user just logged in (first load of Auth page)
 
-**Optional:**
-- `src/components/auth/EmailVerificationStep.tsx` (re-enable verification)
+### Implementation Approach
 
-All the edge functions, templates, and automation are already done. This is just connecting the wires.
+**Option A: Check for new users on Auth page return (Recommended)**
+
+When the Auth page loads with an authenticated user who has no buyer profile, show onboarding. This works regardless of whether they signed up via email or Google.
+
+---
+
+## Implementation Details
+
+### 1. Update Auth.tsx - Detect Google OAuth New Users
+
+**Current Logic (problematic):**
+```typescript
+// Only shows onboarding if justSignedUp === true
+if (justSignedUp && !buyerProfile && !isProfessionalSignup) {
+  setShowOnboarding(true);
+}
+```
+
+**New Logic:**
+```typescript
+// Detect if this is a new user (no buyer profile) who just authenticated
+// Works for both email signup AND Google OAuth
+const isNewUser = user && !buyerProfile && !profileLoading;
+const isOAuthReturn = searchParams.has('code') || searchParams.has('access_token');
+
+useEffect(() => {
+  if (isNewUser && !isProfessionalSignup) {
+    setShowOnboarding(true);
+  }
+}, [isNewUser, isProfessionalSignup]);
+```
+
+### 2. Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/pages/Auth.tsx` | Update user detection logic to handle Google OAuth returns |
+
+### 3. Edge Cases to Handle
+
+- **Returning users who login via Google**: They already have a buyer profile, so no onboarding
+- **Professional signups via Google**: Redirect to registration wizard (already works)
+- **Users who skip onboarding**: Profile page still shows "Set Up Buyer Profile" button
+
+---
+
+## On Password Creation for Google Users
+
+### Best Practice: No Separate Password Required
+
+When users sign up via Google OAuth, they authenticate through Google - no separate password is needed or recommended.
+
+**Why NOT to add password creation:**
+
+| Issue | Explanation |
+|-------|-------------|
+| Security risk | Users may set weak passwords, undermining Google's 2FA |
+| Confusion | "Which password do I use?" |
+| Account sync | If they update one, does the other change? |
+| Support burden | More password reset requests |
+
+**What happens if a Google user wants email login later?**
+They can use "Forgot Password" which will:
+1. Verify their email (same as Google)
+2. Let them create a password
+3. Link both methods to the same account
+
+This is the industry standard (Stripe, Notion, Figma all do this).
+
+---
+
+## Summary
+
+| Task | Complexity |
+|------|------------|
+| Detect Google OAuth new users | Low |
+| Show onboarding wizard for all new buyers | Already exists |
+| Password creation | Not needed (industry best practice) |
+
+**Single file change needed**: `src/pages/Auth.tsx` - update the user detection logic to trigger onboarding for users without a buyer profile, regardless of how they authenticated.
+
