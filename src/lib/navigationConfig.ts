@@ -38,7 +38,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Browse',
         items: [
           { label: 'All Properties for Sale', href: '/listings?status=for_sale', phase: 'explore' },
-          { label: 'New Construction', href: '/projects', phase: 'explore' },
+          { label: 'Browse New Builds', href: '/projects', description: 'Explore new projects →', phase: 'explore' },
           { label: 'Understand Markets', href: '/areas', description: 'Price & trend context', phase: 'understand' },
         ]
       },
