@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.geocode-sold-transaction]
 verify_jwt = false
+
+[functions.send-price-drop-alert]
+verify_jwt = false
+
+[functions.process-search-alerts]
+verify_jwt = false
