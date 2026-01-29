@@ -39,7 +39,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         items: [
           { label: 'All Properties for Sale', href: '/listings?status=for_sale', phase: 'explore' },
           { label: 'New Construction', href: '/projects', phase: 'explore' },
-          { label: 'Browse by Area', href: '/areas', phase: 'explore' },
+          { label: 'Understand Markets', href: '/areas', description: 'Price & trend context', phase: 'understand' },
         ]
       },
       {
@@ -73,7 +73,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         title: 'Browse',
         items: [
           { label: 'All Rentals', href: '/listings?status=for_rent', phase: 'explore' },
-          { label: 'Browse by Area', href: '/areas', phase: 'explore' },
+          { label: 'Market Overview', href: '/areas', description: 'Rental prices by city', phase: 'understand' },
         ]
       },
       {
