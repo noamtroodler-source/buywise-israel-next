@@ -1,41 +1,31 @@
 
 
-## Fix Agent Profile Picture Stretching
+## Rename "New Projects" to "Projects" and Change Yellow Hover to Blue
 
-### Problem
-The agent profile picture on the Agent Detail page appears stretched/distorted because the `AvatarImage` component is missing the `object-cover` CSS class, which ensures images maintain their aspect ratio and crop to fit rather than stretch.
+### Overview
+Two simple changes are needed:
+1. Rename the dropdown option from "New Projects" to just "Projects"
+2. Change the yellow hover/focus color in the Select dropdown to use the blue primary color instead
 
-### Solution
-Add `object-cover` to the base `AvatarImage` component in `src/components/ui/avatar.tsx`. This is the cleanest fix because:
-1. It applies the fix globally to all avatars in the app
-2. Prevents future occurrences of this issue
-3. Aligns with the established design standard mentioned in the codebase
+### Changes
 
-### Implementation
+**File 1: `src/components/home/HeroSplit.tsx`**
 
-**File: `src/components/ui/avatar.tsx`**
+Update line 112 to change the label:
+- Before: `New Projects`
+- After: `Projects`
 
-Update line 22 to add `object-cover` to the default className:
+**File 2: `src/components/ui/select.tsx`**
 
-```tsx
-// Before
-className={cn("aspect-square h-full w-full", className)}
+Update the `SelectItem` component (line 108) to use blue instead of yellow for the hover/focus state:
+- Before: `focus:bg-accent focus:text-accent-foreground`
+- After: `focus:bg-primary/10 focus:text-primary`
 
-// After  
-className={cn("aspect-square h-full w-full object-cover", className)}
-```
+This follows the established color palette standards where primary blue (`bg-primary/10`, `text-primary`) is used for interactive states instead of the yellow accent.
 
 ### Technical Details
-- `object-cover` is a Tailwind CSS utility that sets `object-fit: cover`
-- This makes the image cover its container while maintaining aspect ratio
-- Any overflow is cropped rather than squishing/stretching the image
-- Components that already pass `className="object-cover"` (like `StickyContactCard`) will continue to work fine since the class will just be applied twice (harmless)
-
-### Impact
-This single-line change fixes the avatar display across:
-- Agent Detail page (the reported issue)
-- Admin Agents page
-- Agency leaderboards
-- Project sticky cards
-- Any other component using the Avatar component
+- The yellow color comes from the CSS variable `--accent: 45 100% 51%` (a golden yellow)
+- The blue primary is `--primary: 213 94% 45%` 
+- Using `bg-primary/10` gives a subtle blue tint background, and `text-primary` makes the text blue on focus/hover
+- This change affects all Select dropdowns across the app, ensuring visual consistency
 
