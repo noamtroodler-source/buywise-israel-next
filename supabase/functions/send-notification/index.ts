@@ -4,7 +4,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 type NotificationType = 
@@ -27,55 +27,71 @@ interface NotificationPayload {
   daysUntilExpiry?: number;
 }
 
+const brandFooter = `
+  <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+    Questions? Just reply — we read every email.<br>
+    <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+  </p>
+`;
+
 const getNotificationContent = (payload: NotificationPayload) => {
   switch (payload.type) {
     case 'listing_approved':
       return {
-        subject: `Your listing "${payload.propertyTitle}" has been approved!`,
+        subject: `Great news — "${payload.propertyTitle}" is now live`,
         body: `Great news! Your property listing "${payload.propertyTitle}" has been reviewed and approved. It is now live and visible to potential buyers on our platform.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #22c55e;">🎉 Listing Approved!</h1>
-            <p>Great news! Your property listing <strong>"${payload.propertyTitle}"</strong> has been reviewed and approved.</p>
-            <p>It is now live and visible to potential buyers on BuyWise Israel.</p>
-            <div style="margin-top: 24px; padding: 16px; background-color: #f0fdf4; border-radius: 8px;">
-              <p style="margin: 0; color: #166534;">Your listing is now active and ready to receive inquiries!</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Great news — your listing is now live</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Your property listing <strong>"${payload.propertyTitle}"</strong> has been reviewed and approved.</p>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">It's now visible to potential buyers on BuyWise Israel.</p>
+            <div style="margin-top: 24px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
+              <p style="margin: 0; color: #2563eb; font-weight: 500;">Your listing is active and ready to receive inquiries.</p>
             </div>
-            <p style="margin-top: 24px; color: #6b7280; font-size: 14px;">
-              Log in to your dashboard to view performance metrics.
-            </p>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 24px;">
+              View Listing
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'listing_rejected':
       return {
-        subject: `Action needed: Your listing "${payload.propertyTitle}" was not approved`,
+        subject: `We couldn't approve "${payload.propertyTitle}" — here's why`,
         body: `Your property listing "${payload.propertyTitle}" could not be approved at this time.\n\nReason: ${payload.rejectionReason || 'Please contact support for more details.'}\n\nPlease update your listing and resubmit for review.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #ef4444;">Listing Not Approved</h1>
-            <p>Your property listing <strong>"${payload.propertyTitle}"</strong> could not be approved at this time.</p>
-            <div style="margin-top: 16px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
-              <p style="margin: 0; font-weight: 600;">Reason:</p>
-              <p style="margin: 8px 0 0 0;">${payload.rejectionReason || 'Please contact support for more details.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">We couldn't approve this one — here's why</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">We know this isn't the news you wanted. Your listing <strong>"${payload.propertyTitle}"</strong> couldn't be approved at this time.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #64748b;">
+              <p style="margin: 0; font-weight: 600; color: #333;">Reason:</p>
+              <p style="margin: 8px 0 0 0; color: #666;">${payload.rejectionReason || 'Please contact support for more details.'}</p>
             </div>
-            <p style="margin-top: 24px;">Please update your listing and resubmit for review.</p>
+            <p style="margin-top: 24px; color: #666; font-size: 14px;">Please update your listing and resubmit when you're ready. We're happy to help if you have questions.</p>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Edit Listing
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'changes_requested':
       return {
-        subject: `Changes requested for "${payload.propertyTitle}"`,
+        subject: `Just a few tweaks needed for "${payload.propertyTitle}"`,
         body: `Our team has reviewed your listing "${payload.propertyTitle}" and requested some changes before it can be approved.\n\nFeedback: ${payload.message || 'Please review and update your listing.'}\n\nPlease make the requested changes and resubmit.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #f59e0b;">Changes Requested</h1>
-            <p>Our team has reviewed your listing <strong>"${payload.propertyTitle}"</strong> and requested some changes before it can be approved.</p>
-            <div style="margin-top: 16px; padding: 16px; background-color: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b;">
-              <p style="margin: 0; font-weight: 600;">Feedback:</p>
-              <p style="margin: 8px 0 0 0;">${payload.message || 'Please review and update your listing.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a few tweaks needed — we're almost there</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Our team has reviewed your listing <strong>"${payload.propertyTitle}"</strong> and requested some small changes before it can go live.</p>
+            <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px; border-left: 4px solid #2563eb;">
+              <p style="margin: 0; font-weight: 600; color: #333;">Feedback:</p>
+              <p style="margin: 8px 0 0 0; color: #666;">${payload.message || 'Please review and update your listing.'}</p>
             </div>
-            <p style="margin-top: 24px;">Please make the requested changes and resubmit for review.</p>
+            <p style="margin-top: 24px; color: #666; font-size: 14px;">Once you've made the changes, resubmit and we'll take another look.</p>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              Edit Listing
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
@@ -84,26 +100,35 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: `New inquiry for "${payload.propertyTitle}"`,
         body: `You have received a new ${payload.inquiryType || 'inquiry'} for your property "${payload.propertyTitle}".\n\nFrom: ${payload.inquirerName || 'A potential buyer'}${payload.inquirerEmail ? `\nEmail: ${payload.inquirerEmail}` : ''}\n\nLog in to your dashboard to view and respond to this lead.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #3b82f6;">📩 New Lead!</h1>
-            <p>You have received a new <strong>${payload.inquiryType || 'inquiry'}</strong> for your property <strong>"${payload.propertyTitle}"</strong>.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">New inquiry received</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Someone is interested in your property <strong>"${payload.propertyTitle}"</strong>.</p>
             <div style="margin-top: 16px; padding: 16px; background-color: #eff6ff; border-radius: 8px;">
-              <p style="margin: 0;"><strong>From:</strong> ${payload.inquirerName || 'A potential buyer'}</p>
-              ${payload.inquirerEmail ? `<p style="margin: 8px 0 0 0;"><strong>Email:</strong> ${payload.inquirerEmail}</p>` : ''}
+              <p style="margin: 0; color: #333;"><strong>From:</strong> ${payload.inquirerName || 'A potential buyer'}</p>
+              ${payload.inquirerEmail ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Email:</strong> ${payload.inquirerEmail}</p>` : ''}
+              ${payload.inquiryType ? `<p style="margin: 8px 0 0 0; color: #333;"><strong>Type:</strong> ${payload.inquiryType}</p>` : ''}
             </div>
-            <p style="margin-top: 24px;">Log in to your dashboard to view and respond to this lead.</p>
+            <p style="margin-top: 24px; color: #666;">Log in to your dashboard to view and respond to this lead.</p>
+            <a href="https://buywiseisrael.com/agent/leads" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 16px;">
+              View Lead
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
     case 'listing_expiring':
       return {
-        subject: `Your listing "${payload.propertyTitle}" is expiring soon`,
+        subject: `Heads up: "${payload.propertyTitle}" expires in ${payload.daysUntilExpiry} days`,
         body: `Your property listing "${payload.propertyTitle}" will expire in ${payload.daysUntilExpiry} days.\n\nTo keep your listing active and visible to buyers, please renew it from your dashboard.`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #f59e0b;">⏰ Listing Expiring Soon</h1>
-            <p>Your property listing <strong>"${payload.propertyTitle}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
-            <p>To keep your listing active and visible to buyers, please renew it from your dashboard.</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 16px;">Just a heads up</h1>
+            <p style="color: #333; font-size: 16px; line-height: 1.6;">Your listing <strong>"${payload.propertyTitle}"</strong> will expire in <strong>${payload.daysUntilExpiry} days</strong>.</p>
+            <p style="color: #666; font-size: 14px;">To keep your listing visible to buyers, you can renew it from your dashboard. No rush — just wanted to make sure you knew.</p>
+            <a href="https://buywiseisrael.com/agent/listings" style="display: inline-block; background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin-top: 24px;">
+              View Listing
+            </a>
+            ${brandFooter}
           </div>
         `,
       };
@@ -112,9 +137,10 @@ const getNotificationContent = (payload: NotificationPayload) => {
         subject: 'Notification from BuyWise Israel',
         body: payload.message || 'You have a new notification.',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1>Notification</h1>
-            <p>${payload.message || 'You have a new notification.'}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
+            <h1 style="color: #1a1a1a; font-size: 24px;">Notification</h1>
+            <p style="color: #333; font-size: 16px;">${payload.message || 'You have a new notification.'}</p>
+            ${brandFooter}
           </div>
         `,
       };

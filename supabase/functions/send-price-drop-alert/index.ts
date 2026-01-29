@@ -106,6 +106,7 @@ const handler = async (req: Request): Promise<Response> => {
         continue;
       }
 
+      const firstName = profile.full_name?.split(' ')[0] || 'there';
       const savings = notification.previous_price - notification.new_price;
       const formattedSavings = new Intl.NumberFormat("en-IL", {
         style: "currency",
@@ -119,6 +120,12 @@ const handler = async (req: Request): Promise<Response> => {
         maximumFractionDigits: 0,
       }).format(notification.new_price);
 
+      const formattedPreviousPrice = new Intl.NumberFormat("en-IL", {
+        style: "currency",
+        currency: "ILS",
+        maximumFractionDigits: 0,
+      }).format(notification.previous_price);
+
       const propertyImage = property.images?.[0] || "";
       const propertyUrl = `${Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app")}/property/${property.id}`;
 
@@ -126,7 +133,7 @@ const handler = async (req: Request): Promise<Response> => {
         await resend.emails.send({
           from: "BuyWise Israel <hello@buywiseisrael.com>",
           to: [profile.email],
-          subject: `🔔 Price Drop: ${property.title} is now ${formattedNewPrice}`,
+          subject: `Good news — ${property.title} just dropped in price`,
           html: `
             <!DOCTYPE html>
             <html>
@@ -136,9 +143,9 @@ const handler = async (req: Request): Promise<Response> => {
             </head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
               <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
-                <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">Price Drop Alert! 📉</h1>
+                <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">Good news — a property you saved just dropped in price</h1>
                 <p style="color: #666; font-size: 16px; margin-bottom: 24px;">
-                  Hi ${profile.full_name || "there"}, a property you saved just dropped in price.
+                  Hi ${firstName}, thought you'd want to know about this.
                 </p>
                 
                 <div style="border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden; margin-bottom: 24px;">
@@ -150,13 +157,13 @@ const handler = async (req: Request): Promise<Response> => {
                     </p>
                     
                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                      <span style="font-size: 24px; font-weight: bold; color: #16a34a;">${formattedNewPrice}</span>
-                      <span style="font-size: 16px; color: #999; text-decoration: line-through;">${new Intl.NumberFormat("en-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(notification.previous_price)}</span>
+                      <span style="font-size: 24px; font-weight: bold; color: #2563eb;">${formattedNewPrice}</span>
+                      <span style="font-size: 16px; color: #999; text-decoration: line-through;">${formattedPreviousPrice}</span>
                     </div>
                     
-                    <div style="background-color: #f0fdf4; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-                      <p style="color: #16a34a; font-size: 14px; font-weight: 600; margin: 0;">
-                        You save ${formattedSavings} (${notification.drop_percent}% off)
+                    <div style="background-color: #eff6ff; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                      <p style="color: #2563eb; font-size: 14px; font-weight: 600; margin: 0;">
+                        That's ${formattedSavings} less than before (${notification.drop_percent}% drop)
                       </p>
                     </div>
                     
@@ -166,9 +173,18 @@ const handler = async (req: Request): Promise<Response> => {
                   </div>
                 </div>
                 
-                <p style="color: #999; font-size: 12px; text-align: center;">
+                <p style="color: #666; font-size: 14px; text-align: center; margin-bottom: 24px;">
+                  No rush — it's still there when you're ready.
+                </p>
+                
+                <p style="color: #999; font-size: 12px; text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
                   You're receiving this because you enabled price alerts for this property.<br>
                   <a href="#" style="color: #666;">Manage notification preferences</a>
+                </p>
+                
+                <p style="color: #999; font-size: 12px; text-align: center; margin-top: 16px;">
+                  Questions? Just reply — we read every email.<br>
+                  <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
                 </p>
               </div>
             </body>

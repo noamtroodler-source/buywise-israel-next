@@ -45,6 +45,13 @@ interface Profile {
   notify_search_alerts: boolean;
 }
 
+const brandFooter = `
+  <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+    Questions? Just reply — we read every email.<br>
+    <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+  </p>
+`;
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -183,7 +190,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       // Build email content
-      const alertName = alert.name || "Your Search Alert";
+      const alertName = alert.name || "Your Search";
+      const firstName = profile.full_name?.split(' ')[0] || 'there';
       const baseUrl = Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app") || "";
 
       const propertyCards = matchingProperties.map((p: Property) => {
@@ -217,7 +225,7 @@ const handler = async (req: Request): Promise<Response> => {
         await resend.emails.send({
           from: "BuyWise Israel <hello@buywiseisrael.com>",
           to: [profile.email],
-          subject: `🏠 ${matchingProperties.length} New ${matchingProperties.length === 1 ? "Match" : "Matches"} for "${alertName}"`,
+          subject: `We found ${matchingProperties.length} ${matchingProperties.length === 1 ? "property" : "properties"} that might interest you`,
           html: `
             <!DOCTYPE html>
             <html>
@@ -227,12 +235,16 @@ const handler = async (req: Request): Promise<Response> => {
             </head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
               <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 40px 20px;">
-                <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">New Properties Match Your Search! 🏠</h1>
+                <h1 style="color: #1a1a1a; font-size: 24px; margin-bottom: 8px;">We found something that might interest you</h1>
                 <p style="color: #666; font-size: 16px; margin-bottom: 24px;">
-                  Hi ${profile.full_name || "there"}, we found ${matchingProperties.length} new ${matchingProperties.length === 1 ? "property" : "properties"} matching "<strong>${alertName}</strong>".
+                  Hi ${firstName}, we found ${matchingProperties.length} new ${matchingProperties.length === 1 ? "property" : "properties"} matching "<strong>${alertName}</strong>".
                 </p>
                 
                 ${propertyCards}
+                
+                <p style="color: #666; font-size: 14px; text-align: center; margin: 24px 0;">
+                  Take your time exploring these — no rush.
+                </p>
                 
                 <div style="text-align: center; margin-top: 24px;">
                   <a href="${baseUrl}/search" style="display: inline-block; background-color: #1a1a1a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
@@ -244,6 +256,8 @@ const handler = async (req: Request): Promise<Response> => {
                   You're receiving this ${frequency} alert because you set up a search alert.<br>
                   <a href="${baseUrl}/settings" style="color: #666;">Manage your alerts</a>
                 </p>
+                
+                ${brandFooter}
               </div>
             </body>
             </html>
