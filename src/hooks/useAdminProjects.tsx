@@ -124,7 +124,7 @@ export function useApproveProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-  mutationFn: async ({ id, adminFeedback }: { id: string; adminFeedback?: string }) => {
+    mutationFn: async ({ id, adminFeedback, projectName, developerId }: { id: string; adminFeedback?: string; projectName?: string; developerId?: string }) => {
       const { error } = await supabase
         .from('projects')
         .update({
@@ -136,6 +136,23 @@ export function useApproveProject() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send developer notification
+      if (developerId) {
+        try {
+          await supabase.functions.invoke('send-developer-notification', {
+            body: {
+              type: 'project_approved',
+              developerId,
+              projectId: id,
+              projectName: projectName || 'Your project',
+              message: adminFeedback
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to send developer notification:', notifyError);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
@@ -152,7 +169,7 @@ export function useRequestProjectChanges() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, feedback }: { id: string; feedback: string }) => {
+    mutationFn: async ({ id, feedback, projectName, developerId }: { id: string; feedback: string; projectName?: string; developerId?: string }) => {
       const { error } = await supabase
         .from('projects')
         .update({
@@ -163,6 +180,23 @@ export function useRequestProjectChanges() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send developer notification
+      if (developerId) {
+        try {
+          await supabase.functions.invoke('send-developer-notification', {
+            body: {
+              type: 'changes_requested',
+              developerId,
+              projectId: id,
+              projectName: projectName || 'Your project',
+              message: feedback
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to send developer notification:', notifyError);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
@@ -179,7 +213,7 @@ export function useRejectProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
+    mutationFn: async ({ id, reason, projectName, developerId }: { id: string; reason: string; projectName?: string; developerId?: string }) => {
       const { error } = await supabase
         .from('projects')
         .update({
@@ -191,6 +225,23 @@ export function useRejectProject() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Send developer notification
+      if (developerId) {
+        try {
+          await supabase.functions.invoke('send-developer-notification', {
+            body: {
+              type: 'project_rejected',
+              developerId,
+              projectId: id,
+              projectName: projectName || 'Your project',
+              message: reason
+            }
+          });
+        } catch (notifyError) {
+          console.error('Failed to send developer notification:', notifyError);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-projects'] });

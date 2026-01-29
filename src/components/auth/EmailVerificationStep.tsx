@@ -18,9 +18,8 @@ interface EmailVerificationStepProps {
   disabled?: boolean;
 }
 
-// TEMPORARY: Skip email verification until domain is configured
-// To re-enable: set SKIP_VERIFICATION = false
-const SKIP_VERIFICATION = true;
+// Email verification is now enabled with verified domain
+const SKIP_VERIFICATION = false;
 
 export function EmailVerificationStep({
   email,

@@ -278,6 +278,15 @@ export default function DeveloperRegister() {
         logo_url: formData.logo_url || undefined,
       });
       
+      // Send welcome email
+      try {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: { email: formData.email, name: formData.name, userType: 'developer' }
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+      }
+      
       setShowSuccessDialog(true);
     } catch (error) {
       // Error handled by mutation
