@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Waves, Building, Mountain, Sun } from 'lucide-react';
+import { ArrowRight, Waves, Building, Mountain, Sun, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import city images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -69,6 +70,13 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
 
 export function RegionExplorer() {
   const [activeRegion, setActiveRegion] = useState<Region>('coastal');
+  const [showAllCities, setShowAllCities] = useState(false);
+  const isMobile = useIsMobile();
+
+  // Show only 2 cities on mobile by default, all cities when expanded or on desktop
+  const cities = regions[activeRegion].cities;
+  const displayCities = isMobile && !showAllCities ? cities.slice(0, 2) : cities;
+  const hasMoreCities = isMobile && cities.length > 2;
 
   return (
     <section className="py-10 md:py-14 bg-muted/30">
@@ -81,12 +89,12 @@ export function RegionExplorer() {
           className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6"
         >
           <div>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground">
-            Explore Local Markets
-          </h2>
-          <p className="text-base text-muted-foreground mt-1">
-            Market context and buyer-focused insights for each city.
-          </p>
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground">
+              Explore Local Markets
+            </h2>
+            <p className="text-base text-muted-foreground mt-1">
+              Market context and buyer-focused insights for each city.
+            </p>
           </div>
           <Button variant="outline" asChild>
             <Link to="/areas" className="gap-2">
@@ -104,7 +112,10 @@ export function RegionExplorer() {
             return (
               <button
                 key={region}
-                onClick={() => setActiveRegion(region)}
+                onClick={() => {
+                  setActiveRegion(region);
+                  setShowAllCities(false); // Reset expansion when switching regions
+                }}
                 className={`flex items-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all active:scale-[0.98] ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
@@ -120,19 +131,15 @@ export function RegionExplorer() {
 
         {/* Cities Grid */}
         <AnimatePresence mode="wait">
-          {(() => {
-            const gridClasses = "grid-cols-2 sm:grid-cols-4";
-            
-            return (
-              <motion.div
-                key={activeRegion}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className={`grid gap-3 ${gridClasses}`}
-              >
-            {regions[activeRegion].cities.map((city, index) => (
+          <motion.div
+            key={activeRegion}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+          >
+            {displayCities.map((city, index) => (
               <motion.div
                 key={city.slug}
                 initial={{ opacity: 0, y: 15 }}
@@ -159,11 +166,24 @@ export function RegionExplorer() {
                   </div>
                 </Link>
               </motion.div>
-              ))}
-              </motion.div>
-            );
-          })()}
+            ))}
+          </motion.div>
         </AnimatePresence>
+
+        {/* Show More button on mobile */}
+        {hasMoreCities && (
+          <div className="mt-4 text-center md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllCities(!showAllCities)}
+              className="gap-1.5 text-muted-foreground"
+            >
+              {showAllCities ? 'Show Less' : `Show ${cities.length - 2} More`}
+              <ChevronDown className={`h-4 w-4 transition-transform ${showAllCities ? 'rotate-180' : ''}`} />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

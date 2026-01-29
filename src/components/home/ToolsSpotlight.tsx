@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Calculator, PiggyBank, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const tools = [
   {
@@ -31,6 +32,11 @@ const tools = [
 ];
 
 export function ToolsSpotlight() {
+  const isMobile = useIsMobile();
+  
+  // Show only 2 tools on mobile
+  const displayTools = isMobile ? tools.slice(0, 2) : tools;
+
   return (
     <section className="py-10 md:py-14">
       <div className="container">
@@ -59,7 +65,7 @@ export function ToolsSpotlight() {
 
         {/* Tools Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {tools.map((tool, index) => (
+          {displayTools.map((tool, index) => (
             <motion.div
               key={tool.id}
               initial={{ opacity: 0, y: 15 }}
@@ -84,6 +90,18 @@ export function ToolsSpotlight() {
             </motion.div>
           ))}
         </div>
+
+        {/* Mobile "See All" link */}
+        {isMobile && (
+          <div className="mt-4 text-center">
+            <Button variant="ghost" size="sm" asChild className="gap-1.5 text-muted-foreground">
+              <Link to="/tools">
+                See all tools
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

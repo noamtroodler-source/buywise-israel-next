@@ -185,9 +185,9 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   onError={handleImageError}
                 />
 
-                {/* Progress Bar - Bottom of image, above white content, hover-only */}
+                {/* Progress Bar - Bottom of image, always visible on mobile */}
                 {hasMultipleImages && (
-                  <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                     {images.map((_, index) => (
                       <button
                         key={index}
@@ -282,12 +282,12 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
                   {showShareButton && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       <ShareButton propertyId={property.id} propertyTitle={property.title} />
                     </div>
                   )}
                   {showCompareButton && !showShareButton && compareCategory && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       <CompareButton propertyId={property.id} category={compareCategory} />
                     </div>
                   )}
@@ -383,8 +383,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                        <ChevronRight className="h-5 w-5 text-foreground" />
                      </button>
                     
-                    {/* Progress Bar Indicator - Bottom of image, above white content, hover-only */}
-                    <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Progress Bar Indicator - always visible on mobile */}
+                    <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       {images.map((_, index) => (
                         <button
                           key={index}
@@ -449,12 +449,12 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 </div>
                 <div className="absolute top-3 right-3 flex items-center gap-1.5">
                   {showShareButton && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       <ShareButton propertyId={property.id} propertyTitle={property.title} />
                     </div>
                   )}
                   {showCompareButton && !showShareButton && compareCategory && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                       <CompareButton propertyId={property.id} category={compareCategory} />
                     </div>
                   )}

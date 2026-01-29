@@ -27,7 +27,7 @@ export function FloatingWhatsApp() {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleOpenWhatsApp}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center group"
+          className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#25D366] text-white shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center group"
           aria-label="Chat with us on WhatsApp"
         >
           <MessageCircle className="w-6 h-6 md:w-7 md:h-7 fill-current" />

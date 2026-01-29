@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { FloatingWhatsApp } from '../shared/FloatingWhatsApp';
+import { MobileBottomNav } from './MobileBottomNav';
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,8 +13,12 @@ export function Layout({ children }: LayoutProps) {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">{children}</main>
-      <Footer />
+      {/* Footer has extra padding on mobile to clear bottom nav */}
+      <div className="mb-bottom-nav md:mb-0">
+        <Footer />
+      </div>
       <FloatingWhatsApp />
+      <MobileBottomNav />
     </div>
   );
 }

@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFeaturedSaleProperties, useFeaturedRentalProperties } from '@/hooks/useProperties';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Tab = 'sale' | 'rent';
 
 export function FeaturedShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('sale');
+  const isMobile = useIsMobile();
   
   // Only fetch data for the active tab (conditional fetching for performance)
   const { data: saleProperties, isLoading: loadingSale } = useFeaturedSaleProperties({ 
@@ -23,8 +25,10 @@ export function FeaturedShowcase() {
   const isLoading = activeTab === 'sale' ? loadingSale : loadingRent;
   const viewAllLink = activeTab === 'sale' ? '/listings?status=for_sale' : '/listings?status=for_rent';
 
-  // Take 8 properties for the grid
-  const displayProperties = properties?.slice(0, 8) || [];
+  // Show 4 cards on mobile, 8 on desktop to reduce scroll
+  const maxCards = isMobile ? 4 : 8;
+  const displayProperties = properties?.slice(0, maxCards) || [];
+  const totalCount = properties?.length || 0;
 
   return (
     <section className="py-8 md:py-10 bg-muted/30">
@@ -76,13 +80,13 @@ export function FeaturedShowcase() {
         {/* Loading State */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="aspect-[16/10] rounded-lg" />
+            {[...Array(isMobile ? 4 : 8)].map((_, i) => (
+              <Skeleton key={i} className="aspect-[4/3] sm:aspect-[16/10] rounded-lg" />
             ))}
           </div>
         )}
 
-        {/* Property Grid - 4-column layout */}
+        {/* Property Grid - 4-column layout, compact on mobile */}
         {!isLoading && displayProperties.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
             {displayProperties.map((property) => (
@@ -91,9 +95,22 @@ export function FeaturedShowcase() {
                 property={property} 
                 showShareButton 
                 showCompareButton={false} 
-                maxBadges={1} 
+                maxBadges={1}
+                compact={isMobile}
               />
             ))}
+          </div>
+        )}
+        
+        {/* Mobile "See All" CTA - shows when there are more properties */}
+        {!isLoading && isMobile && totalCount > maxCards && (
+          <div className="mt-4 text-center">
+            <Button variant="outline" asChild className="w-full gap-2">
+              <Link to={viewAllLink}>
+                See All {totalCount} Properties
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         )}
 
