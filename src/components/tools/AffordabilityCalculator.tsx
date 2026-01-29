@@ -91,6 +91,9 @@ const MAX_PTI_ADDITIONAL = 0.50;
 const MAX_LTV_FIRST_HOME = 0.75;
 const MAX_LTV_ADDITIONAL = 0.50;
 
+// Maximum realistic property price display ceiling
+const MAX_DISPLAY_PROPERTY_PRICE = 99900000; // ₪99.9M
+
 function formatNumber(num: number): string {
   return num.toLocaleString('en-IL');
 }
@@ -260,8 +263,8 @@ function AffordabilityCalculatorContent() {
       // New range fields
       monthlyPaymentLow: Math.round(lowRateMonthly),
       monthlyPaymentHigh: Math.round(highRateMonthly),
-      maxPropertyLow: Math.round(maxPropertyAtHighRate),
-      maxPropertyHigh: Math.round(maxPropertyAtLowRate),
+      maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
+      maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
     };
   }, [monthlyIncome, spouseIncome, monthlyDebts, downPayment, interestRate, loanTermYears, employmentType, hasForeignIncome, foreignIncomePercent, selectedBuyerType]);
 
