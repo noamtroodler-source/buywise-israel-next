@@ -1,87 +1,128 @@
 
 
-# Fix: Pre-fill Agent Name from Google OAuth
+# Add Inline Name Editing to Profile Header
 
-## Problem
+## Overview
 
-When users sign up via Google OAuth and then register as agents, the "Full Name" field in the agent registration form starts empty. However, Google provides the user's name in `user.user_metadata.full_name`, which should be used to pre-fill this field for a smoother experience.
+Add a subtle, design-best-practice approach to let users quickly edit their name directly from the "Welcome back, [Name]" header in My Profile. This is helpful when Google OAuth captures the wrong name or users want to adjust it.
 
-## Current State Analysis
+## Design Approach
 
-| User Type | Name Field | Pre-filled? | Source |
-|-----------|-----------|-------------|--------|
-| Buyer | `profiles.full_name` | Yes | DB trigger `handle_new_user` grabs from `user_metadata` |
-| Agent | `agents.name` | **No** | Form starts empty |
-| Agency | `agencies.name` | N/A | Company name, not personal |
-| Developer | `developers.name` | N/A | Company name, not personal |
+A small pencil icon appears on hover next to the name. Clicking it transforms the text into an inline input field with save/cancel buttons. This pattern is:
+- **Non-intrusive**: Icon only shows on hover
+- **Contextual**: Edit happens right where the name appears
+- **Quick**: No need to scroll down to Account Settings
 
-## Solution
+## Visual Mockup
 
-Update `AgentRegister.tsx` to pre-fill the `name` field from `user.user_metadata?.full_name` when available (typically from Google OAuth).
+```
+Before (hover state):
++------------------------------------------+
+|  [Avatar]   Welcome back, John  [✏️]     |
+|             user@email.com               |
++------------------------------------------+
 
-## File to Modify
-
-### `src/pages/agent/AgentRegister.tsx`
-
-**Change 1: Initialize name from user metadata (line 26-36)**
-
-```tsx
-// Before:
-const [formData, setFormData] = useState({
-  name: '',
-  email: user?.email || '',
-  // ...
-});
-
-// After:
-const [formData, setFormData] = useState({
-  name: user?.user_metadata?.full_name || '',
-  email: user?.email || '',
-  // ...
-});
+After clicking edit:
++------------------------------------------+
+|  [Avatar]   [ John Doe_______ ] [✓] [✗]  |
+|             user@email.com               |
++------------------------------------------+
 ```
 
-**Change 2: Add useEffect to update when user loads (around line 24)**
+## Implementation
 
-Because the user might not be available on first render (async auth state), add a `useEffect` to update the name when the user becomes available:
+### File: `src/components/profile/ProfileWelcomeHeader.tsx`
 
+**Step 1: Add state and hooks**
 ```tsx
-// Update name when user loads (for Google OAuth)
-useEffect(() => {
-  if (user?.user_metadata?.full_name && !formData.name) {
-    setFormData(prev => ({ 
-      ...prev, 
-      name: user.user_metadata?.full_name || prev.name 
-    }));
+import { useState } from 'react';
+import { Pencil, Check, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useUpdateProfile } from '@/hooks/useProfile';
+
+// Inside component:
+const [isEditingName, setIsEditingName] = useState(false);
+const [editedName, setEditedName] = useState(fullName || '');
+const updateProfile = useUpdateProfile();
+```
+
+**Step 2: Create save handler**
+```tsx
+const handleSaveName = () => {
+  if (editedName.trim()) {
+    updateProfile.mutate({ full_name: editedName.trim() });
+    setIsEditingName(false);
   }
-}, [user?.user_metadata?.full_name]);
+};
+
+const handleCancelEdit = () => {
+  setEditedName(fullName || '');
+  setIsEditingName(false);
+};
 ```
 
-This mirrors the existing pattern for email (line 28):
+**Step 3: Replace the static h1 with conditional edit UI**
+
+Replace lines 67-69:
 ```tsx
-email: user?.email || '',
+{isEditingName ? (
+  <div className="flex items-center gap-2">
+    <Input
+      value={editedName}
+      onChange={(e) => setEditedName(e.target.value)}
+      className="h-9 text-lg font-semibold max-w-[200px]"
+      autoFocus
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleSaveName();
+        if (e.key === 'Escape') handleCancelEdit();
+      }}
+    />
+    <Button 
+      size="icon" 
+      variant="ghost" 
+      className="h-7 w-7" 
+      onClick={handleSaveName}
+      disabled={updateProfile.isPending}
+    >
+      <Check className="h-4 w-4 text-green-600" />
+    </Button>
+    <Button 
+      size="icon" 
+      variant="ghost" 
+      className="h-7 w-7" 
+      onClick={handleCancelEdit}
+    >
+      <X className="h-4 w-4 text-muted-foreground" />
+    </Button>
+  </div>
+) : (
+  <h1 className="text-2xl font-semibold text-foreground group flex items-center gap-1.5">
+    Welcome back, {firstName}
+    <button
+      onClick={() => setIsEditingName(true)}
+      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+      aria-label="Edit name"
+    >
+      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+    </button>
+  </h1>
+)}
 ```
 
-## Why Only Agents?
+## UX Details
 
-- **Agency/Developer**: The `name` field is for the company/agency name, not a personal name. These should remain empty.
-- **Buyers**: Already handled by the `handle_new_user` database trigger which populates `profiles.full_name` from `user.raw_user_meta_data.full_name`.
+| Aspect | Behavior |
+|--------|----------|
+| Hover | Pencil icon fades in (opacity transition) |
+| Click | Input appears with current full name |
+| Enter key | Saves the name |
+| Escape key | Cancels editing |
+| Blur | Stays in edit mode (user may be moving to buttons) |
+| Success | Toast shows "Profile updated successfully" |
 
-## Result
-
-When a user signs up with Google and registers as an agent:
-- The "Full Name" field will be pre-filled with their Google profile name
-- They can still edit it if needed
-- Email continues to be pre-filled as before
-
-| Scenario | Before | After |
-|----------|--------|-------|
-| Google OAuth → Agent Register | Name field empty | Name pre-filled from Google |
-| Email signup → Agent Register | Name empty (user enters manually) | No change |
-
-## Summary
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/agent/AgentRegister.tsx` | Pre-fill `name` from `user.user_metadata?.full_name` and add useEffect to handle async user loading |
+| `src/components/profile/ProfileWelcomeHeader.tsx` | Add inline name editing with hover-reveal pencil icon |
 
