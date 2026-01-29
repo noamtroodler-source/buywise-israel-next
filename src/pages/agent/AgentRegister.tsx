@@ -24,7 +24,7 @@ export default function AgentRegister() {
   }, [user, loading, navigate]);
 
   const [formData, setFormData] = useState({
-    name: '',
+    name: user?.user_metadata?.full_name || '',
     email: user?.email || '',
     phone: '',
     bio: '',
@@ -34,6 +34,16 @@ export default function AgentRegister() {
     languages: 'Hebrew, English',
     specializations: '',
   });
+
+  // Update name when user loads (for Google OAuth)
+  useEffect(() => {
+    if (user?.user_metadata?.full_name && !formData.name) {
+      setFormData(prev => ({ 
+        ...prev, 
+        name: user.user_metadata?.full_name || prev.name 
+      }));
+    }
+  }, [user?.user_metadata?.full_name]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
