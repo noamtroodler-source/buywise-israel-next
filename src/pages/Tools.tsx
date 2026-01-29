@@ -27,17 +27,58 @@ interface Tool {
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Warm, professional hint to guide users */
+  guidanceHint?: string;
 }
 
-// All tools with their metadata
+// All tools with their metadata and contextual guidance hints
 const allTools: Record<string, Tool> = {
-  mortgage: { id: 'mortgage', label: 'Mortgage Calculator', description: 'Understand real monthly payments under Israeli mortgage rules — before speaking to a bank or broker.', icon: Calculator },
-  totalcost: { id: 'totalcost', label: 'Total Cost Calculator', description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', icon: Receipt },
-  affordability: { id: 'affordability', label: 'Affordability Calculator', description: 'Know what you can realistically buy in Israel — based on income, savings, and local lending limits.', icon: Wallet },
-  investment: { id: 'investment', label: 'Investment Return Calculator', description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', icon: TrendingUp },
-  rentvsbuy: { id: 'rentvsbuy', label: 'Rent vs Buy Calculator', description: 'Compare renting versus buying in Israel — and when ownership makes sense.', icon: Scale },
-  renovation: { id: 'renovation', label: 'Renovation Cost Estimator', description: 'Estimate renovation costs in Israel — beyond how a property looks.', icon: Hammer },
-  documents: { id: 'documents', label: 'Document Checklist', description: "Stay organized through the Israeli buying process — and know what's needed at every step.", icon: ClipboardList },
+  mortgage: { 
+    id: 'mortgage', 
+    label: 'Mortgage Calculator', 
+    description: 'Understand real monthly payments under Israeli mortgage rules — before speaking to a bank or broker.', 
+    icon: Calculator,
+    guidanceHint: 'Most buyers start here',
+  },
+  totalcost: { 
+    id: 'totalcost', 
+    label: 'Total Cost Calculator', 
+    description: 'See the true cost of buying in Israel — taxes, fees, closing costs, and surprises most buyers miss.', 
+    icon: Receipt,
+    guidanceHint: 'Avoid surprises later',
+  },
+  affordability: { 
+    id: 'affordability', 
+    label: 'Affordability Calculator', 
+    description: 'Know what you can realistically buy in Israel — based on income, savings, and local lending limits.', 
+    icon: Wallet,
+    guidanceHint: 'Great first step',
+  },
+  investment: { 
+    id: 'investment', 
+    label: 'Investment Return Calculator', 
+    description: 'Evaluate returns, cash flow, and long-term value — using Israeli market assumptions.', 
+    icon: TrendingUp,
+  },
+  rentvsbuy: { 
+    id: 'rentvsbuy', 
+    label: 'Rent vs Buy Calculator', 
+    description: 'Compare renting versus buying in Israel — and when ownership makes sense.', 
+    icon: Scale,
+  },
+  renovation: { 
+    id: 'renovation', 
+    label: 'Renovation Cost Estimator', 
+    description: 'Estimate renovation costs in Israel — beyond how a property looks.', 
+    icon: Hammer,
+  },
+  documents: { 
+    id: 'documents', 
+    label: 'Document Checklist', 
+    description: "Stay organized through the Israeli buying process — and know what's needed at every step.", 
+    icon: ClipboardList,
+    guidanceHint: 'Keep this open during the process',
+  },
 };
 
 const toolComponents: Record<string, React.ComponentType> = {
@@ -61,8 +102,15 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
       className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col h-full"
       onClick={onClick}
     >
-      <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-        <Icon className="h-5 w-5 text-primary" />
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        {tool.guidanceHint && (
+          <span className="text-xs text-primary font-medium bg-primary/8 px-2 py-1 rounded-full whitespace-nowrap">
+            {tool.guidanceHint}
+          </span>
+        )}
       </div>
       
       <h3 className="font-semibold text-foreground mb-2">
@@ -196,8 +244,11 @@ export default function Tools() {
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                     Property Tools & Calculators
                   </h1>
-                  <p className="text-muted-foreground max-w-xl mx-auto">
-                    Clarity-first tools for buying and renting in <span className="text-primary">Israel</span> — organized by where you are in your journey.
+                  <p className="text-muted-foreground max-w-xl mx-auto mb-4">
+                    Let's figure out what you can afford, what it really costs, and where you stand — together.
+                  </p>
+                  <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto">
+                    These tools are organized by where you are in your journey. Not sure where to start? <span className="text-primary font-medium">The mortgage and affordability calculators</span> are usually the best first step.
                   </p>
                 </motion.div>
               </div>

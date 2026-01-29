@@ -417,7 +417,10 @@ export default function Areas() {
               Explore Areas
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Understand how different housing markets across <span className="text-primary">Israel</span> behave.
+              Each city has its own rhythm, pricing, and lifestyle. Let's find one that fits you.
+            </p>
+            <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto">
+              Browse by region or search for a specific city. Click any area to see real market data, pricing trends, and what to expect.
             </p>
             
             {/* Search Input */}

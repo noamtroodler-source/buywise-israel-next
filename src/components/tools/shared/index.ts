@@ -16,4 +16,5 @@ export { ResultRange, formatCurrencyRange, formatPercentageRange } from './Resul
 export { SourceAttribution } from './SourceAttribution';
 export { ExampleValuesHint } from './ExampleValuesHint';
 export { InlineSignupCard } from './InlineSignupCard';
+export { ToolGuidanceHint, ToolCardHint } from './ToolGuidanceHint';
 export type { ToolSourceConfig } from './SourceAttribution';
