@@ -1,171 +1,150 @@
 
+# Add Listing-Specific Feedback Components to Rentals, Buy, and Projects Pages
 
-# Email Contact Points Audit & Enhancement Plan
+## Overview
 
-## Executive Summary
+Add a dedicated feedback component to each listing page type (rentals, buy, and projects) that asks for listing-specific feedback. The component will be visually distinct but not overpowering — similar to how `ToolFeedback` works on calculator pages with its inline variant.
 
-After a deep audit of the codebase, I've identified **12 key locations** where adding email/contact touchpoints would strengthen the "trusted friend" experience and help users feel supported throughout their journey. Currently, the platform has contact options in the Footer and dedicated Contact page, but many critical user journey moments lack a clear "we're here if you need us" touchpoint.
+## Design Approach
 
-## Current Contact Points (Already Exist)
+Based on the existing `ToolFeedback` component's inline variant, I'll create a new `ListingFeedback` component that:
+- Uses a gradient card style (subtle but noticeable)
+- Has listing-type-specific messaging
+- Links to the contact page for feedback submission
+- Follows the "trusted friend" voice
+- Fits naturally within the listing page layout
 
-| Location | Type | Notes |
-|----------|------|-------|
-| Footer | Email link + Contact page link | `hello@buywiseisrael.com` |
-| Contact Page | Full form + WhatsApp + Email | Well-designed, brand-aligned |
-| Developer Dashboard | Email link in sidebar | For support during pending approval |
-| Agency Dashboard | Email link in sidebar | For support during pending approval |
-| AgentFAQ | Mentions email for homepage exposure | Inline in FAQ answer |
+## Visual Preview
 
-## Gaps Identified - 12 New Touchpoints
+```
++--------------------------------------------------------------------+
+|  [💬]  Have thoughts on our {rental/sale/project} listings?        |
+|        Tell us what you'd like to see — your input shapes what we  |
+|        add next.                                           [→]     |
++--------------------------------------------------------------------+
+```
 
-### Category 1: Dead-End States (Critical)
-These are moments where users hit a wall and have no clear path forward.
+## Placement Strategy
 
-**1. 404 Not Found Page (`src/pages/NotFound.tsx`)**
-- Currently: Generic "page doesn't exist" message with navigation links
-- Missing: No contact option if they're truly lost or think something's wrong
-- Add: Subtle "Still can't find what you need? [Email us] — we're happy to help" footer
+| Page | Placement | Reason |
+|------|-----------|--------|
+| Listings (Rentals) | After the grid, before BackToTopButton | Natural end-of-content position |
+| Listings (Buy) | After the grid, before BackToTopButton | Consistent with rentals |
+| Projects | After the grid, before BackToTopButton | Consistent with other listings |
 
-**2. Property Not Found State (`src/pages/PropertyDetail.tsx`)**
-- Currently: "Property not found or has been removed" with no next step
-- Missing: No way to report if they think it's an error, or ask about similar properties
-- Add: "Think this is a mistake? [Let us know] — or tell us what you're looking for"
+The component will only show when there ARE results (not in empty states — those already have SupportFooter).
 
-**3. Compare Empty State (`src/components/compare/CompareEmptyState.tsx`)**
-- Currently: Instructions on how to compare, browse CTAs
-- Missing: No help option if the feature is confusing
-- Add: Subtle "Not sure what to compare? [Ask us] — we can point you in the right direction"
+## Implementation
 
-### Category 2: High-Friction User Journey Moments
-Moments where users might feel overwhelmed or need guidance.
+### Step 1: Create `ListingFeedback` Component
 
-**4. Guides Page (`src/pages/Guides.tsx`)**
-- Currently: Lists guides, has a "Find My Path" quiz link
-- Missing: No "still have questions after reading?" touchpoint
-- Add: Contact card at bottom: "Read everything but still have questions? We've been there. [Ask us anything]"
+Create a new component that adapts messaging based on listing type:
 
-
-**6. Tools Page (`src/pages/Tools.tsx`)**
-- Currently: Calculator grid with journey phases, disclaimer at bottom
-- Missing: No "need help interpreting results?" option
-- Add: After disclaimer: "Need help understanding your results? [Reach out] — we're happy to walk through it"
-
-### Category 3: Empty/Waiting States
-Moments where users are waiting or have no content yet.
-
-**7. Favorites Empty State (`src/pages/Favorites.tsx`)**
-- Currently: Encourages browsing, shows popular cities
-- Missing: No "not sure what to save?" guidance
-- Add: Small contextual hint: "Not sure where to start? [Tell us your situation] and we'll point you in the right direction"
-
-**8. Agent Dashboard - Pending Approval State (`src/pages/agent/AgentDashboard.tsx`)**
-- Currently: Shows onboarding checklist, pending status
-- Missing: No clear "questions while you wait?" touchpoint
-- Add: Pending approval banner should include: "Questions while you wait? [Email us]"
-
-### Category 4: Profile & Account
-User account management touchpoints.
-
-**9. Profile Page (`src/pages/Profile.tsx`)**
-- Currently: Shows buyer profile, saved items, settings
-- Missing: No "need help with your profile?" or general support link
-- Add: Subtle footer in AccountSection: "Questions about your account? [We're here to help]"
-
-### Category 5: Educational Content Endings
-After consuming educational content.
-
-**10. Individual Guide Pages (`src/pages/guides/*.tsx`)**
-- Currently: Guides end with "Next Chapter" or related content
-- Missing: No "still confused about X?" touchpoint at the end
-- Add: End-of-guide card: "Questions after reading? [Ask us] — we've helped hundreds of buyers just like you"
-
-**11. Blog Post Pages (`src/pages/BlogPost.tsx`)**
-- Currently: Shows author contact card in sidebar
-- Missing: General BuyWise contact for non-author questions
-- Add: After author card or at article end: "Have a question about this topic? [Email us]"
-
-### Category 6: Listing Search Experience
-
-**12. Listings Page - No Results State (within `src/pages/Listings.tsx`)**
-- Currently: Shows message about no matching properties
-- Missing: No "we can help you find alternatives" option
-- Add: "Can't find what you're looking for? [Tell us] what you need — we might know of something coming soon"
-
----
-
-## Implementation Details
-
-### Shared Component: `SupportFooter`
-
-Create a reusable component for consistent styling:
+**File: `src/components/listings/ListingFeedback.tsx`**
 
 ```tsx
-// src/components/shared/SupportFooter.tsx
-interface SupportFooterProps {
-  message: string;
-  linkText?: string;
-  variant?: 'subtle' | 'card' | 'inline';
+import { Link } from 'react-router-dom';
+import { MessageSquare, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface ListingFeedbackProps {
+  listingType: 'rentals' | 'buy' | 'projects';
+  className?: string;
 }
 
-export function SupportFooter({ 
-  message, 
-  linkText = "Email us",
-  variant = 'subtle'
-}: SupportFooterProps) {
-  // Renders a styled contact prompt with mailto link
-  // Uses hello@buywiseisrael.com
-  // Brand-aligned styling (primary blue accents, muted text)
+const FEEDBACK_CONFIG = {
+  rentals: {
+    title: "Have thoughts on our rental listings?",
+    subtitle: "Tell us what you'd like to see — your feedback shapes what we improve next.",
+  },
+  buy: {
+    title: "How are we doing with properties for sale?",
+    subtitle: "Your feedback helps us show what matters most to buyers like you.",
+  },
+  projects: {
+    title: "Thoughts on our new development listings?",
+    subtitle: "Let us know what info would help you evaluate projects better.",
+  },
+};
+
+export function ListingFeedback({ listingType, className }: ListingFeedbackProps) {
+  const config = FEEDBACK_CONFIG[listingType];
+
+  return (
+    <Link
+      to="/contact"
+      className={cn(
+        "group flex items-center justify-center gap-4 py-5 px-6 rounded-xl",
+        "bg-gradient-to-r from-primary/5 to-primary/10",
+        "border border-primary/20 hover:border-primary/40",
+        "hover:from-primary/10 hover:to-primary/15",
+        "transition-all duration-300",
+        className
+      )}
+    >
+      <div className="p-2.5 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors">
+        <MessageSquare className="h-5 w-5 text-primary" />
+      </div>
+      <div className="text-left flex-1">
+        <p className="text-sm font-semibold text-foreground">{config.title}</p>
+        <p className="text-xs text-muted-foreground">{config.subtitle}</p>
+      </div>
+      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+    </Link>
+  );
 }
 ```
 
-### Messaging Voice Guidelines
+### Step 2: Add to Listings.tsx (Rentals & Buy)
 
-All new touchpoints should follow BuyWise Israel's "trusted friend" voice:
-- **Warm, not corporate**: "We're here to help" not "Contact support"
-- **No-pressure**: "Questions? Just ask" not "Need assistance?"
-- **Empathetic**: Acknowledge their situation ("We've been there", "We know it's a lot")
-- **Personal**: "Email us" links to `hello@buywiseisrael.com`, not a generic support address
+Insert the feedback component after the property grid (when results exist), before BackToTopButton.
 
-### Example Copy
+**Location:** After line 230 (after the Load More button section), before the closing `</>` of the results block
 
-| Location | Message |
-|----------|---------|
-| 404 Page | "Still can't find what you need? [Email us] — we'll help you get where you're going." |
-| Property Not Found | "Think this is a mistake? [Let us know]. Or tell us what you're looking for — we're happy to help." |
-| Guides Footer | "Still have questions after reading? That's completely normal. [Ask us anything] — we've helped hundreds of buyers just like you." |
-| Glossary | "Missing a term? [Tell us] and we'll add it to the glossary." |
-| Tools Disclaimer | "Need help interpreting your results? [Reach out] — we're happy to walk through the numbers with you." |
-| Favorites Empty | "Not sure where to start? [Tell us about your situation] and we'll point you in the right direction." |
-| Compare Empty | "Feeling unsure about what to compare? [Ask us] — we can help you figure out what matters most." |
+```tsx
+{/* Listing Feedback - only show when there are results */}
+{properties.length > 0 && (
+  <div className="mt-10 max-w-xl mx-auto">
+    <ListingFeedback listingType={isRentals ? 'rentals' : 'buy'} />
+  </div>
+)}
+```
 
----
+### Step 3: Add to Projects.tsx
+
+Insert the feedback component after the projects grid (when results exist), before BackToTopButton.
+
+**Location:** After line 310 (after the Load More button section), before the closing `</>` of the results block
+
+```tsx
+{/* Listing Feedback - only show when there are results */}
+{projects.length > 0 && (
+  <div className="mt-10 max-w-xl mx-auto">
+    <ListingFeedback listingType="projects" />
+  </div>
+)}
+```
+
+## Messaging Voice
+
+All copy follows BuyWise Israel's "trusted friend" approach:
+- **Conversational**: "Have thoughts on..." not "Provide feedback on..."
+- **Collaborative**: "shapes what we improve" implies partnership
+- **No-pressure**: No strong CTAs, just a gentle invitation
 
 ## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/shared/SupportFooter.tsx` | **NEW** - Reusable contact footer component |
-| `src/pages/NotFound.tsx` | Add contact footer after navigation links |
-| `src/pages/PropertyDetail.tsx` | Add contact option in "not found" state |
-| `src/pages/Guides.tsx` | Add contact card after Tools CTA section |
-| `src/pages/Glossary.tsx` | Add "missing term?" footer after terms list |
-| `src/pages/Tools.tsx` | Add contact line after disclaimer |
-| `src/pages/Favorites.tsx` | Add hint in empty state |
-| `src/pages/Compare.tsx` | Import and use in empty state |
-| `src/components/compare/CompareEmptyState.tsx` | Add contact hint after CTAs |
-| `src/pages/Profile.tsx` | Add support footer in account section |
-| `src/pages/Listings.tsx` | Add contact option in no-results state |
-| `src/pages/agent/AgentDashboard.tsx` | Enhance pending approval state with contact |
-
----
+| `src/components/listings/ListingFeedback.tsx` | **NEW** - Listing-specific feedback component |
+| `src/pages/Listings.tsx` | Add ListingFeedback after results grid |
+| `src/pages/Projects.tsx` | Add ListingFeedback after results grid |
 
 ## Summary
 
-This plan adds 12 strategic contact touchpoints throughout the user journey, focusing on:
-1. Dead-end states where users might feel stuck
-2. High-friction moments where guidance is valuable
-3. Empty/waiting states where proactive support builds trust
-4. Educational content endings where questions naturally arise
-
-All additions use the shared `SupportFooter` component for consistency and follow the "trusted friend" voice that defines BuyWise Israel's brand identity.
-
+This adds a subtle but visible feedback prompt at the end of each listing page that:
+1. Uses listing-type-specific messaging
+2. Links to the contact page for easy submission
+3. Matches the visual style of existing ToolFeedback components
+4. Only appears when there are results (empty states already have SupportFooter)
+5. Stays centered and appropriately sized (max-w-xl) so it doesn't dominate the page
