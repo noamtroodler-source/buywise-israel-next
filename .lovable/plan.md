@@ -1,272 +1,130 @@
 
-# Comprehensive Mobile Experience Optimization
+# Mobile Horizontal Carousel Implementation
 
-## ✅ ALL PHASES IMPLEMENTED
+## Overview
+Convert the homepage property and project sections from vertical grid layouts to **single-item horizontal carousels** on mobile, matching Zillow's mobile homepage pattern where users swipe left/right through listings.
 
-### Phase 1: Homepage Mobile Optimization ✅
-- ✅ **FeaturedShowcase**: Limited to 4 cards on mobile (was 8), with "See All X Properties" CTA
-- ✅ **ThreePillars**: Converted to horizontal swipeable carousel on mobile
-- ✅ **RegionExplorer**: Shows 2 cities per region on mobile with "Show More" button
-- ✅ **ToolsSpotlight**: Shows 2 tools on mobile with "See all tools" link
+## What Changes
 
-### Phase 2: Mobile Navigation Enhancement ✅
-- ✅ **MobileBottomNav**: Persistent bottom nav with Home, Search, Saved, Menu
-- ✅ **FloatingWhatsApp**: Repositioned above bottom nav on mobile
-- ✅ **Footer**: Added bottom margin to clear the nav bar
+### 1. FeaturedShowcase.tsx (For Sale & For Rent Properties)
+**Current mobile behavior:** 4 cards displayed in a vertical single-column grid
+**New mobile behavior:** 1 card visible at a time, horizontally scrollable to see all 8
 
-### Phase 3: Property Card Touch Optimization ✅
-- ✅ **Action Buttons**: Share/save buttons now always visible on mobile (not hover-only)
-- ✅ **Progress Bar Indicators**: Image dots always visible on mobile for carousel awareness
-- ✅ **Compact Mode**: Used on mobile homepage for denser, faster-scanning cards
-- ✅ **Touch Swipe**: Added swipe gesture support for image carousels via `useTouchSwipe` hook
+Changes:
+- Add Embla carousel for mobile view only
+- Keep the existing grid layout for desktop (sm and up)
+- Show dot indicators below the carousel to show position (1 of 8)
+- Full-width card with proper padding
+- Smooth snap-to-card scrolling
 
-### Phase 4: Filter Experience ✅
-- ✅ **Mobile Filter Sheet**: Full-screen sheet with sticky header and fixed bottom action bar
-- ✅ **Larger Touch Targets**: Enhanced button sizes (h-12) for easier tapping
-- ✅ **Safe Area Support**: Bottom action bar respects notched phones (`pb-safe`)
+### 2. ProjectsHighlight.tsx (New Developments)
+**Current mobile behavior:** 3 project cards stacked vertically in bento layout
+**New mobile behavior:** 1 project visible at a time, horizontally scrollable
 
-### Phase 5: Performance & Polish ✅
-- ✅ **Pull-to-Refresh**: Native-feeling refresh gesture on Listings page via `PullToRefresh` component
-- ✅ **Mobile Skeleton Optimization**: Compact aspect ratios on mobile loading states
+Changes:
+- Wrap projects in Embla carousel for mobile only
+- Keep the bento grid layout for desktop (lg and up)
+- Show all available projects (currently 3-6) in the carousel
+- Include dot indicators for position awareness
 
-### New Hooks & Components Created
-- ✅ `src/hooks/useTouchSwipe.tsx` - Touch gesture detection for image carousels
-- ✅ `src/components/shared/PullToRefresh.tsx` - Native pull-to-refresh UX
-- ✅ `src/components/layout/MobileBottomNav.tsx` - Persistent bottom navigation
+### 3. Shared Carousel Indicator Component
+Create a reusable dot indicator component that shows:
+- Current position (highlighted dot)
+- Total items (all dots)
+- Compact styling that doesn't take much space
 
-### CSS Utilities Added
-- ✅ `.pb-safe` - Safe area insets for notched phones
-- ✅ `.mb-bottom-nav` - Bottom margin for nav clearance
-- ✅ `.scrollbar-hide` - Hidden scrollbars for horizontal carousels
+## Technical Approach
 
----
+### Mobile Detection
+Use the existing `useIsMobile()` hook to conditionally render:
+- **Mobile:** Embla horizontal carousel with single-item basis
+- **Desktop:** Existing grid layout
 
-## Current State Analysis
-
-After extensive codebase review, I found that your platform has **foundational mobile responsiveness** but lacks the **polish and intentional design** that creates a truly great mobile experience. Here's what I discovered:
-
-### What's Already Working
-- Responsive grids (`grid-cols-1 sm:grid-cols-2`)
-- Touch-friendly buttons (44px minimum targets in filters)
-- Mobile menu with accordion navigation
-- Mobile contact bars on property/project detail pages
-- Back-to-top button with mobile offset
-- Floating WhatsApp button
-
-### Critical Issues Identified
-
-**1. Homepage Content Overload**
-- All 9 sections display fully on mobile: Hero + FeaturedShowcase (8 cards) + ProjectsHighlight + PlatformPromise + ThreePillars + RegionExplorer + ToolsSpotlight + TrustStrip + FinalCTA
-- This creates **excessive scrolling** with no visual breaks or hierarchy
-- Property cards in FeaturedShowcase show 8 cards in a single-column layout = very long scroll
-
-**2. Property Cards Not Optimized for Mobile**
-- Full-width cards with 16:10 aspect ratio are tall
-- Image carousel arrows show on hover (doesn't work on touch)
-- Share buttons hidden until hover (inaccessible on mobile)
-- Days-on-market labels add extra lines
-
-**3. No Mobile-First Navigation Patterns**
-- No bottom navigation bar for quick access
-- Users must scroll all the way up to access navigation
-- Header hamburger menu requires extra tap to access key pages
-
-**4. Filter Bar Usability**
-- Horizontal scroll of filter chips works but can be confusing
-- No visual indication of more filters to the right
-- Popover filters take full width but content is cramped
-
-**5. Missing Mobile-Specific Affordances**
-- No swipe gestures for image carousels on cards
-- No pull-to-refresh pattern
-- No skeleton loading states optimized for mobile
-
----
-
-## Strategic Mobile Improvements
-
-### Phase 1: Homepage Mobile Optimization (High Impact)
-
-**1.1 Reduce Property Card Count on Mobile**
-- Show **4 cards max** (not 8) on mobile homepage
-- Add "See All X Properties" button
-- Reduces scroll length by ~50%
-
-**1.2 Collapse Sections with "Show More"**
-- RegionExplorer: Show 2 cities per region on mobile, with "Show more" button
-- ThreePillars: Convert to horizontal swipeable carousel on mobile
-- ToolsSpotlight: Show 2 tools with "See all tools" link
-
-**1.3 Mobile-Optimized Property Card**
-- More compact 4:3 aspect ratio (already used in compact mode)
-- Always-visible action buttons (not hover-dependent)
-- Swipe detection for image carousel
-- Remove redundant badges on mobile to reduce visual noise
-
-**1.4 Visual Breathing Room**
-- Increase spacing between sections on mobile
-- Add subtle section dividers
-- Reduce vertical padding in less important sections
-
-### Phase 2: Mobile Navigation Enhancement (High Impact)
-
-**2.1 Bottom Navigation Bar**
-Create a persistent bottom nav with 4-5 key actions:
+### Carousel Configuration
+```typescript
+useEmblaCarousel({
+  align: 'start',
+  loop: false,
+  skipSnaps: false,
+  containScroll: 'trimSnaps', // Prevents overscroll
+})
 ```
-[ Home ] [ Search ] [ Favorites ] [ Menu ]
+
+### Card Sizing for Mobile Carousel
+- `basis-[calc(100%-2rem)]` - Nearly full width with some peek of next card
+- This provides visual affordance that more content exists
+- Slight gap between cards for clear separation
+
+### Dot Indicators
+Position below the carousel:
+```tsx
+<div className="flex justify-center gap-1.5 mt-3 md:hidden">
+  {items.map((_, index) => (
+    <button
+      key={index}
+      onClick={() => emblaApi?.scrollTo(index)}
+      className={cn(
+        "w-2 h-2 rounded-full transition-colors",
+        index === selectedIndex ? "bg-primary" : "bg-muted-foreground/30"
+      )}
+    />
+  ))}
+</div>
 ```
-- Fixed at bottom on mobile only (`md:hidden`)
-- Highlights current section
-- Quick access to most-used features
-- Clears when scrolling down, appears when scrolling up
 
-**2.2 Floating Action Button (FAB) Refinement**
-- Move WhatsApp button to not conflict with bottom nav
-- Combine with "Contact" on property pages
-
-### Phase 3: Property Card Touch Optimization
-
-**3.1 Touch-Friendly Image Carousel**
-- Add swipe gesture support using touch events
-- Show dot indicators always (not just on hover)
-- Remove hover-only arrow buttons OR make them always visible
-
-**3.2 Action Button Visibility**
-- Make share/save buttons always visible on mobile
-- Use smaller, more compact icon buttons
-- Position in consistent locations
-
-**3.3 Compact Card Variant**
-- Use compact mode by default on mobile homepage
-- Keeps information density but reduces scroll
-
-### Phase 4: Filter Experience
-
-**4.1 Mobile Filter Sheet**
-- Full-screen sheet for all filters on mobile
-- Large, easy-to-tap options
-- Clear visual hierarchy
-- "X results" preview at bottom
-
-**4.2 Active Filter Chips**
-- Show active filters as removable chips below the filter bar
-- Quick clear-all option
-
-### Phase 5: Performance & Polish
-
-**5.1 Skeleton Loading States**
-- Mobile-optimized skeleton layouts
-- Faster perceived loading
-
-**5.2 Pull-to-Refresh**
-- Native-feeling refresh gesture on listings
-
-**5.3 Haptic Feedback**
-- Add subtle vibration on key interactions (where supported)
-
----
-
-## Technical Implementation Details
-
-### New Components to Create
-
-| Component | Purpose |
-|-----------|---------|
-| `MobileBottomNav.tsx` | Persistent bottom navigation bar |
-| `MobilePropertyCard.tsx` | Touch-optimized property card variant |
-| `SwipeableCarousel.tsx` | Touch gesture image carousel |
-| `MobileSectionCollapse.tsx` | Reusable "Show more" section wrapper |
-| `MobileFilterSheet.tsx` | Full-screen filter experience |
-
-### Files to Modify
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `Layout.tsx` | Add MobileBottomNav, adjust footer padding |
-| `FeaturedShowcase.tsx` | Limit cards on mobile, use compact variant |
-| `ProjectsHighlight.tsx` | Optimize mobile layout |
-| `RegionExplorer.tsx` | Limit cities shown on mobile |
-| `ThreePillars.tsx` | Convert to swipeable carousel on mobile |
-| `ToolsSpotlight.tsx` | Limit tools shown on mobile |
-| `PropertyCard.tsx` | Touch-optimized carousel, always-visible actions |
-| `Listings.tsx` | Adjust grid gap, add mobile filter sheet |
-| `index.css` | Mobile-specific utilities |
+| `src/components/home/FeaturedShowcase.tsx` | Add conditional Embla carousel for mobile, keep grid for desktop |
+| `src/components/home/ProjectsHighlight.tsx` | Add conditional Embla carousel for mobile, keep bento for desktop |
 
-### Key CSS Additions
+## Visual Result
 
-```css
-/* Mobile-specific utilities */
-@layer utilities {
-  /* Safe area insets for notched phones */
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  
-  /* Bottom nav offset */
-  .mb-bottom-nav {
-    margin-bottom: 4.5rem; /* 72px for bottom nav */
-  }
-  
-  /* Hide scrollbar on mobile carousels */
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
+### Mobile View (< 768px)
+```
+┌─────────────────────────────┐
+│  Properties        For Sale │ For Rent
+├─────────────────────────────┤
+│ ┌─────────────────────────┐ │
+│ │                         │ │
+│ │    Property Image       │ │ ← Swipe left/right
+│ │                         │ │
+│ │  $450,000               │ │
+│ │  3 bed • 2 bath         │ │
+│ │  Tel Aviv, Israel       │ │
+│ └─────────────────────────┘ │
+│       ● ○ ○ ○ ○ ○ ○ ○       │ ← Position dots
+│                             │
+│   [ View All Properties ]   │
+└─────────────────────────────┘
 ```
 
-### Bottom Navigation Structure
-
-```tsx
-// Fixed bottom nav - 4 items
-<nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border z-50 md:hidden pb-safe">
-  <div className="flex items-center justify-around h-16">
-    <NavItem icon={Home} label="Home" to="/" />
-    <NavItem icon={Search} label="Search" to="/listings" />
-    <NavItem icon={Heart} label="Saved" to="/favorites" badge={favoriteCount} />
-    <NavItem icon={Menu} label="Menu" onClick={openMenu} />
-  </div>
-</nav>
+### Desktop View (unchanged)
+```
+┌─────────────────────────────────────────────────────────┐
+│  Properties                          For Sale │ For Rent
+├─────────────────────────────────────────────────────────┤
+│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
+│ │Card1│ │Card2│ │Card3│ │Card4│ │Card5│ │Card6│ │Card7││
+│ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
+└─────────────────────────────────────────────────────────┘
 ```
 
----
+## Key Implementation Details
 
-## Implementation Priority
+1. **Preserve Touch Swipe:** The existing `useTouchSwipe` hook on PropertyCard for image swiping will still work - horizontal carousel scrolling uses different touch handling
 
-| Priority | Change | Impact | Effort |
-|----------|--------|--------|--------|
-| 1 | Limit homepage property cards to 4 on mobile | High | Low |
-| 2 | Add bottom navigation bar | High | Medium |
-| 3 | Make property card actions always visible on mobile | High | Low |
-| 4 | Add touch swipe to image carousels | Medium | Medium |
-| 5 | Collapse sections with "Show more" on mobile | Medium | Medium |
-| 6 | Full-screen mobile filter sheet | Medium | Medium |
-| 7 | Mobile-specific section spacing | Medium | Low |
-| 8 | Pull-to-refresh pattern | Low | Medium |
+2. **Performance:** Only one render approach at a time (carousel OR grid) using conditional rendering, not CSS hiding
 
----
+3. **Loading States:** Show single skeleton card on mobile instead of 4
 
-## Expected Outcomes
+4. **"Peek" Effect:** Show a sliver of the next card to indicate scrollability (similar to Zillow)
 
-**Before:**
-- Endless scrolling through 8+ property cards
-- Hover-dependent interactions unusable on touch
-- No quick navigation without scrolling to top
-- Cramped filter experience
+5. **Accessibility:** Dots are clickable buttons with proper ARIA labels
 
-**After:**
-- Focused 4-card showcase with clear "See All" action
-- Touch-first interactions throughout
-- Persistent bottom nav for instant access to key pages
-- Full-screen, spacious filter experience
-- Native app-like feel on mobile browsers
-
----
-
-## Mobile Design Principles Applied
-
-1. **Content Prioritization**: Show less, but make it count
-2. **Touch-First**: Design for fingers, not cursors
-3. **Persistent Navigation**: Users should never feel lost
-4. **Visual Hierarchy**: Clear sections with breathing room
-5. **Performance**: Fewer cards = faster load = better experience
-6. **Native Feel**: Bottom nav, swipe gestures, pull-to-refresh
+## Expected Outcome
+- Dramatically reduced scroll length on mobile homepage
+- Intuitive swipe-to-browse experience matching Zillow's pattern
+- Clear visual indicator of how many listings are available
+- Preserved desktop experience (no changes to grid layouts)
