@@ -21,12 +21,17 @@ import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function Projects() {
   const [filters, setFilters] = useState<ProjectFiltersType>({});
   const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const filterBarRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Use paginated projects hook
   const { 
@@ -50,6 +55,21 @@ export default function Projects() {
       hasTrackedInitialSearch.current = true;
     }
   }, [trackSearchStart]);
+
+  // Sticky filter bar detection
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleScroll = () => {
+      if (filterBarRef.current) {
+        const rect = filterBarRef.current.getBoundingClientRect();
+        setIsSticky(rect.top <= 64); // 64px is header height
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
 
   // Track search results when data changes
   useEffect(() => {
@@ -159,8 +179,17 @@ export default function Projects() {
       <div className="container py-6">
         <div className="space-y-6">
 
-          {/* Filters */}
-          <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
+          {/* Filters - Sticky on mobile */}
+          <div 
+            ref={filterBarRef}
+            className={cn(
+              "transition-all duration-200",
+              isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
+              isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
+            )}
+          >
+            <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />
+          </div>
 
           {/* Results Count */}
           {!isLoading && (

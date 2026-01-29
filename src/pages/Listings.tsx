@@ -6,6 +6,7 @@ import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
+import { QuickFilterChips } from '@/components/filters/QuickFilterChips';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
@@ -22,6 +24,8 @@ import { useEventTracking } from '@/hooks/useEventTracking';
 export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const filterBarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
   // Get listing status from URL, default to for_sale
@@ -112,6 +116,21 @@ export default function Listings() {
   }, [isLoading, properties, filters, totalCount, listingStatus, trackSearch]);
 
 
+  // Sticky filter bar detection
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    const handleScroll = () => {
+      if (filterBarRef.current) {
+        const rect = filterBarRef.current.getBoundingClientRect();
+        setIsSticky(rect.top <= 64); // 64px is header height
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
+
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
@@ -185,8 +204,15 @@ export default function Listings() {
           </Alert>
         )}
 
-        {/* Filters */}
-        <div className="mb-6 md:mb-8">
+        {/* Filters - Sticky on mobile */}
+        <div 
+          ref={filterBarRef}
+          className={cn(
+            "mb-6 md:mb-8 transition-all duration-200",
+            isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
+            isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
+          )}
+        >
           <PropertyFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
@@ -197,6 +223,13 @@ export default function Listings() {
             onSoldToggle={handleSoldToggle}
             previewCount={totalCount}
             isCountLoading={isFetching}
+          />
+          
+          {/* Quick Filter Chips - Mobile only */}
+          <QuickFilterChips
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            listingType={isRentals ? 'for_rent' : 'for_sale'}
           />
         </div>
 
