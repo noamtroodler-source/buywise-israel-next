@@ -1,13 +1,15 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Mail } from 'lucide-react';
+import { MessageCircle, Mail, Share2, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { cn } from '@/lib/utils';
 
 interface Agent {
   id?: string;
@@ -155,20 +157,43 @@ export function StickyContactCard({
   );
 }
 
-// Mobile version - fixed bottom bar
+// Mobile version - fixed bottom bar with enhanced actions
 interface MobileContactBarProps {
   agent?: Agent | null;
   propertyId?: string;
   propertyTitle: string;
+  price?: number;
+  isSaved?: boolean;
+  onSave?: () => void;
+  onShare?: () => void;
 }
 
-export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileContactBarProps) {
+export function MobileContactBar({ 
+  agent, 
+  propertyId, 
+  propertyTitle,
+  price,
+  isSaved,
+  onSave,
+  onShare,
+}: MobileContactBarProps) {
   const { user } = useAuth();
+  const [isVisible, setIsVisible] = useState(false);
 
   const whatsappMessage = `Hi, I'm interested in: ${propertyTitle}`;
   const whatsappUrl = agent?.phone 
     ? buildWhatsAppUrl(agent.phone, whatsappMessage)
     : '';
+
+  // Show bar after scrolling past hero section
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleWhatsAppClick = () => {
     if (propertyId && agent?.id) {
@@ -190,36 +215,83 @@ export function MobileContactBar({ agent, propertyId, propertyTitle }: MobileCon
     }
   };
 
-  if (agent?.phone && whatsappUrl) {
-    return (
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50 md:hidden">
-        <div className="max-w-lg mx-auto">
-          <Button 
-            className="w-full gap-2" 
-            size="lg"
-            onClick={handleWhatsAppClick}
-          >
-            <MessageCircle className="h-5 w-5" />
-            WhatsApp
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const formatCompactPrice = (value: number) => {
+    if (value >= 1000000) {
+      return `₪${(value / 1000000).toFixed(1)}M`;
+    }
+    if (value >= 1000) {
+      return `₪${Math.round(value / 1000)}K`;
+    }
+    return `₪${value}`;
+  };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4 z-50 md:hidden">
+    <motion.div 
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ 
+        y: isVisible ? 0 : 100, 
+        opacity: isVisible ? 1 : 0 
+      }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-3 z-50 md:hidden"
+    >
       <div className="max-w-lg mx-auto">
-        <Button 
-          className="w-full gap-2" 
-          size="lg"
-          onClick={handleScrollToContact}
-        >
-          <MessageCircle className="h-5 w-5" />
-          Contact Agent
-        </Button>
+        {/* Price display */}
+        {price && (
+          <div className="text-center mb-2">
+            <span className="text-lg font-bold text-foreground">{formatCompactPrice(price)}</span>
+          </div>
+        )}
+        
+        {/* Action buttons row */}
+        <div className="flex items-center gap-2">
+          {/* Share button */}
+          {onShare && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onShare}
+              className="flex-shrink-0"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+          )}
+          
+          {/* Save button */}
+          {onSave && (
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={onSave}
+              className="flex-shrink-0"
+            >
+              <Heart className={cn("h-4 w-4", isSaved && "fill-primary text-primary")} />
+            </Button>
+          )}
+          
+          {/* Main CTA */}
+          {agent?.phone && whatsappUrl ? (
+            <Button 
+              className="flex-1 gap-2" 
+              size="lg"
+              onClick={handleWhatsAppClick}
+            >
+              <MessageCircle className="h-5 w-5" />
+              WhatsApp
+            </Button>
+          ) : (
+            <Button 
+              className="flex-1 gap-2" 
+              size="lg"
+              onClick={handleScrollToContact}
+            >
+              <MessageCircle className="h-5 w-5" />
+              Contact Agent
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
