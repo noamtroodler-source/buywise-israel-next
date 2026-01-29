@@ -4,6 +4,7 @@ import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuideCard } from '@/components/guides';
 import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 
 import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
 import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
@@ -198,7 +199,7 @@ export default function Guides() {
         </section>
 
         {/* Tools CTA */}
-        <section className="container pb-16">
+        <section className="container pb-10">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -220,6 +221,22 @@ export default function Guides() {
                 </Link>
               </div>
             </div>
+          </motion.div>
+        </section>
+
+        {/* Support Footer */}
+        <section className="container pb-16">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="max-w-xl mx-auto"
+          >
+            <SupportFooter 
+              message="Still have questions after reading? That's completely normal. [Ask us anything] — we've helped hundreds of buyers just like you."
+              linkText="Ask us anything"
+              variant="card"
+            />
           </motion.div>
         </section>
       </div>

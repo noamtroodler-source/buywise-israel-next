@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, MapPin, BookOpen, Calculator, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SupportFooter } from "@/components/shared/SupportFooter";
 
 const NotFound = () => {
   const location = useLocation();
@@ -66,6 +67,14 @@ const NotFound = () => {
             </Link>
           </div>
         </div>
+
+        {/* Contact Support */}
+        <SupportFooter 
+          message="Still can't find what you need? [Email us] — we'll help you get where you're going."
+          linkText="Email us"
+          variant="subtle"
+          className="mt-8"
+        />
       </div>
     </div>
   );

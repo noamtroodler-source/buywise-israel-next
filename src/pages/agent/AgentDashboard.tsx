@@ -350,6 +350,13 @@ export default function AgentDashboard() {
               <AlertTitle className="text-foreground">License Verification Pending</AlertTitle>
               <AlertDescription className="text-muted-foreground">
                 Your agent license is currently under review. You can create draft listings, but you won't be able to submit them for publication until your account is verified. This typically takes 24-48 hours.
+                <br />
+                <a 
+                  href="mailto:hello@buywiseisrael.com" 
+                  className="text-primary hover:underline font-medium mt-2 inline-block"
+                >
+                  Questions while you wait? Email us →
+                </a>
               </AlertDescription>
             </Alert>
           )}

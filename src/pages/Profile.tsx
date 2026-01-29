@@ -13,6 +13,7 @@ import { AlertsCompact } from '@/components/profile/AlertsCompact';
 import { SavedPropertiesPreview } from '@/components/profile/SavedPropertiesPreview';
 import { SavedCalculationsCompact } from '@/components/profile/SavedCalculationsCompact';
 import { RecentlyViewedRow } from '@/components/profile/RecentlyViewedRow';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -56,6 +57,13 @@ export default function Profile() {
             <MortgageSection />
             <LocationsSection />
             <AccountSection />
+            
+            {/* Support Footer */}
+            <SupportFooter 
+              message="Questions about your account? [We're here to help]."
+              linkText="We're here to help"
+              variant="subtle"
+            />
           </div>
 
           {/* Right Column - Activity & Saved */}

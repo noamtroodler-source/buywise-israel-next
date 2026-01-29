@@ -17,6 +17,7 @@ import { CompareBar } from '@/components/property/CompareBar';
 import { useCompare } from '@/contexts/CompareContext';
 import { useAuth } from '@/hooks/useAuth';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
@@ -158,6 +159,14 @@ export default function Favorites() {
                 </Link>
               </Button>
             </div>
+
+            {/* Support Footer */}
+            <SupportFooter 
+              message="Not sure where to start? [Tell us about your situation] and we'll point you in the right direction."
+              linkText="Tell us about your situation"
+              variant="subtle"
+              className="mt-6"
+            />
           </motion.div>
         ) : (
           <motion.div
