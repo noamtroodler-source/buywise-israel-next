@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Waves, Building, Mountain, Sun, ChevronDown } from 'lucide-react';
+import { ArrowRight, Waves, Building, Mountain, Sun } from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import city images
@@ -70,13 +72,46 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
 
 export function RegionExplorer() {
   const [activeRegion, setActiveRegion] = useState<Region>('coastal');
-  const [showAllCities, setShowAllCities] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const isMobile = useIsMobile();
 
-  // Show only 2 cities on mobile by default, all cities when expanded or on desktop
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: true,
+    skipSnaps: false,
+    containScroll: 'trimSnaps',
+  });
+
   const cities = regions[activeRegion].cities;
-  const displayCities = isMobile && !showAllCities ? cities.slice(0, 2) : cities;
-  const hasMoreCities = isMobile && cities.length > 2;
+
+  // Handle carousel index changes
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  // Reset carousel when region changes
+  useEffect(() => {
+    if (emblaApi) {
+      emblaApi.scrollTo(0);
+      setSelectedIndex(0);
+    }
+  }, [activeRegion, emblaApi]);
+
+  const scrollTo = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
 
   return (
     <section className="py-10 md:py-14 bg-muted/30">
@@ -112,10 +147,7 @@ export function RegionExplorer() {
             return (
               <button
                 key={region}
-                onClick={() => {
-                  setActiveRegion(region);
-                  setShowAllCities(false); // Reset expansion when switching regions
-                }}
+                onClick={() => setActiveRegion(region)}
                 className={`flex items-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all active:scale-[0.98] ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
@@ -129,60 +161,99 @@ export function RegionExplorer() {
           })}
         </div>
 
-        {/* Cities Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeRegion}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
-          >
-            {displayCities.map((city, index) => (
+        {/* Mobile: Horizontal Carousel */}
+        {isMobile && (
+          <div className="sm:hidden">
+            <AnimatePresence mode="wait">
               <motion.div
-                key={city.slug}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
+                key={activeRegion}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <Link
-                  to={`/areas/${city.slug}`}
-                  className="group block relative overflow-hidden rounded-lg aspect-[3/2] bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
-                >
-                  <img
-                    src={city.image}
-                    alt={city.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <h3 className="text-lg font-bold text-white">
-                      {city.name}
-                    </h3>
-                    <p className="text-sm text-white/80">
-                      Explore properties
-                    </p>
+                <div className="overflow-hidden" ref={emblaRef}>
+                  <div className="flex">
+                    {cities.map((city, index) => (
+                      <div 
+                        key={city.slug} 
+                        className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+                      >
+                        <Link
+                          to={`/areas/${city.slug}`}
+                          className="group block relative overflow-hidden rounded-lg aspect-[3/2] bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
+                        >
+                          <img
+                            src={city.image}
+                            alt={city.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
+                          <div className="absolute bottom-0 left-0 right-0 p-3">
+                            <h3 className="text-lg font-bold text-white">
+                              {city.name}
+                            </h3>
+                            <p className="text-sm text-white/80">
+                              Explore properties
+                            </p>
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
                   </div>
-                </Link>
+                </div>
+                <CarouselDots 
+                  total={cities.length} 
+                  current={selectedIndex} 
+                  onDotClick={scrollTo}
+                  className="mt-4"
+                />
               </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Show More button on mobile */}
-        {hasMoreCities && (
-          <div className="mt-4 text-center md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAllCities(!showAllCities)}
-              className="gap-1.5 text-muted-foreground"
-            >
-              {showAllCities ? 'Show Less' : `Show ${cities.length - 2} More`}
-              <ChevronDown className={`h-4 w-4 transition-transform ${showAllCities ? 'rotate-180' : ''}`} />
-            </Button>
+            </AnimatePresence>
           </div>
+        )}
+
+        {/* Desktop: Cities Grid */}
+        {!isMobile && (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeRegion}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="hidden sm:grid sm:grid-cols-4 gap-3"
+            >
+              {cities.map((city, index) => (
+                <motion.div
+                  key={city.slug}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <Link
+                    to={`/areas/${city.slug}`}
+                    className="group block relative overflow-hidden rounded-lg aspect-[3/2] bg-card shadow-card hover:shadow-card-hover transition-all duration-300"
+                  >
+                    <img
+                      src={city.image}
+                      alt={city.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <h3 className="text-lg font-bold text-white">
+                        {city.name}
+                      </h3>
+                      <p className="text-sm text-white/80">
+                        Explore properties
+                      </p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </section>
