@@ -53,6 +53,7 @@ import { PerformanceMonitorTab } from '@/components/admin/analytics/PerformanceM
 import { ExperimentResultsTab } from '@/components/admin/analytics/ExperimentResultsTab';
 import { ShareAnalyticsTab } from '@/components/admin/analytics/ShareAnalyticsTab';
 import { BuyerInsightsTab } from '@/components/admin/analytics/BuyerInsightsTab';
+import { ExecutiveDashboardTab } from '@/components/admin/analytics/ExecutiveDashboardTab';
 
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState('30');
@@ -133,8 +134,11 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Tabbed Analytics - Premium Styling */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="executive" className="space-y-4">
         <TabsList className="bg-muted/50 p-1 rounded-xl flex-wrap h-auto gap-1">
+          <TabsTrigger value="executive" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Activity className="h-3.5 w-3.5 mr-1.5" />Executive
+          </TabsTrigger>
           <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Overview</TabsTrigger>
           <TabsTrigger value="behavior" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Activity className="h-3.5 w-3.5 mr-1.5" />User Behavior
@@ -173,6 +177,10 @@ export default function AdminAnalytics() {
             <UserCheck className="h-3.5 w-3.5 mr-1.5" />Buyer Insights
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="executive" className="space-y-6">
+          <ExecutiveDashboardTab dateRange={days} />
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-6">
           <DataHealthCard />
