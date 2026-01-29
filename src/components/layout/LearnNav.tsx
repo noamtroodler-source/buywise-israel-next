@@ -7,7 +7,6 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { BookOpen, Calculator, FileText } from "lucide-react";
 
 export function LearnNav() {
   return (
@@ -20,24 +19,21 @@ export function LearnNav() {
             Learn
           </NavigationMenuTrigger>
           <NavigationMenuContent className="md:left-auto md:right-0">
-            <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[200px]">
+            <div className="rounded-xl border bg-popover text-popover-foreground shadow-xl overflow-hidden w-[180px]">
               <div className="p-3">
                 <ul className="space-y-1">
                   <li>
                     <NavigationMenuLink asChild>
                       <Link
                         to="/blog"
-                        className="group flex items-start gap-3 rounded-md px-2 py-2 hover:bg-accent transition-colors"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <FileText className="h-4 w-4 mt-0.5 text-muted-foreground group-hover:text-accent-foreground" />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                            Blog
-                          </span>
-                          <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
-                            Latest articles & insights
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          Blog
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Latest articles & insights
+                        </span>
                       </Link>
                     </NavigationMenuLink>
                   </li>
@@ -45,17 +41,14 @@ export function LearnNav() {
                     <NavigationMenuLink asChild>
                       <Link
                         to="/guides"
-                        className="group flex items-start gap-3 rounded-md px-2 py-2 hover:bg-accent transition-colors"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground group-hover:text-accent-foreground" />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                            All Guides
-                          </span>
-                          <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
-                            Step-by-step buying guides
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          All Guides
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Step-by-step buying guides
+                        </span>
                       </Link>
                     </NavigationMenuLink>
                   </li>
@@ -63,17 +56,14 @@ export function LearnNav() {
                     <NavigationMenuLink asChild>
                       <Link
                         to="/tools"
-                        className="group flex items-start gap-3 rounded-md px-2 py-2 hover:bg-accent transition-colors"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <Calculator className="h-4 w-4 mt-0.5 text-muted-foreground group-hover:text-accent-foreground" />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
-                            All Tools
-                          </span>
-                          <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
-                            Calculators & checklists
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          All Tools
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Calculators & checklists
+                        </span>
                       </Link>
                     </NavigationMenuLink>
                   </li>
