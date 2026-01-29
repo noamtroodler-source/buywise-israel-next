@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, Briefcase, ArrowRight, Loader2 } from 'lucide-react';
+import { LogOut, Shield, Briefcase, ArrowRight, Loader2, Pencil, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ProfileCompletionRing } from './ProfileCompletionRing';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
+import { useUpdateProfile } from '@/hooks/useProfile';
 
 interface ProfileWelcomeHeaderProps {
   fullName: string | null;
@@ -22,8 +25,24 @@ export function ProfileWelcomeHeader({
 }: ProfileWelcomeHeaderProps) {
   const navigate = useNavigate();
   const { percentage, nextIncomplete, insight, isLoading } = useProfileCompletion();
+  const updateProfile = useUpdateProfile();
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(fullName || '');
 
   const firstName = fullName?.split(' ')[0] || 'there';
+  
+  const handleSaveName = () => {
+    if (editedName.trim()) {
+      updateProfile.mutate({ full_name: editedName.trim() });
+      setIsEditingName(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedName(fullName || '');
+    setIsEditingName(false);
+  };
   const initials = fullName
     ? fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : email?.[0]?.toUpperCase() || 'U';
@@ -64,9 +83,48 @@ export function ProfileWelcomeHeader({
             </AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              Welcome back, {firstName}
-            </h1>
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="h-9 text-lg font-semibold max-w-[200px]"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-7 w-7" 
+                  onClick={handleSaveName}
+                  disabled={updateProfile.isPending}
+                >
+                  <Check className="h-4 w-4 text-primary" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-7 w-7" 
+                  onClick={handleCancelEdit}
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <h1 className="text-2xl font-semibold text-foreground group flex items-center gap-1.5">
+                Welcome back, {firstName}
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                  aria-label="Edit name"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              </h1>
+            )}
             <p className="text-sm text-muted-foreground">{email}</p>
           </div>
         </div>
