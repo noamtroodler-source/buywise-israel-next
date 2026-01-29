@@ -1,109 +1,80 @@
 
 
-# Move Listing Feedback to Individual Detail Pages
+# Auto-Fill Contact Form for Logged-In Users
 
-## Summary
+## Overview
 
-Move the `ListingFeedback` component from the main listing grid pages (`Listings.tsx` and `Projects.tsx`) to each individual property/project detail page. This places the feedback prompt where users are most engaged — after viewing a specific listing.
+Pre-populate the name and email fields on the Contact page for authenticated users using their profile and auth data.
 
-## Current State vs. Requested Change
+## Current State
 
-| Current Location | New Location |
-|------------------|--------------|
-| `Listings.tsx` (after grid of all rentals/buy) | `PropertyDetail.tsx` (each individual property page) |
-| `Projects.tsx` (after grid of all projects) | `ProjectDetail.tsx` (each individual project page) |
+The Contact page (`src/pages/Contact.tsx`) has a form with:
+- `name` field (empty by default)
+- `email` field (empty by default)
+- `category` dropdown
+- `message` textarea
 
-## Placement Strategy
+## Implementation
 
-### PropertyDetail.tsx (Rentals & Buy)
-**Location**: After `PropertyNextSteps`, before the closing of the main content column
+### Data Sources
 
-The feedback prompt will appear after the user has seen:
-1. Hero images
-2. Quick summary (price, beds, baths)
-3. Description
-4. Value snapshot & cost breakdown
-5. Location map
-6. Next steps CTAs
-7. **→ Listing Feedback (NEW)**
+| Field | Source | Hook |
+|-------|--------|------|
+| Name | `profile.full_name` | `useProfile()` |
+| Email | `user.email` | `useAuth()` |
 
-Then Similar Properties follows outside the grid.
+### Code Changes
 
-### ProjectDetail.tsx (New Construction)
-**Location**: After `ProjectNextSteps`, before `ProjectFAQ`
+**File: `src/pages/Contact.tsx`**
 
-The feedback prompt will appear after:
-1. Hero images
-2. Quick summary
-3. Description & amenities
-4. Floor plans
-5. Cost breakdown
-6. Timeline
-7. Location
-8. Next steps CTAs
-9. **→ Listing Feedback (NEW)**
+1. **Import hooks** at the top:
+```tsx
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+```
 
-Then FAQ, Agent Card, and Developer Card follow.
+2. **Add hooks** inside the component:
+```tsx
+const { user } = useAuth();
+const { data: profile } = useProfile();
+```
 
-## Dynamic Type Detection
+3. **Add useEffect** to pre-fill form when data loads:
+```tsx
+import { useState, useEffect } from "react";
 
-The `ListingFeedback` component already supports three types: `rentals`, `buy`, `projects`.
+// Inside component, after hooks:
+useEffect(() => {
+  if (profile?.full_name || user?.email) {
+    setFormData(prev => ({
+      ...prev,
+      name: prev.name || profile?.full_name || '',
+      email: prev.email || user?.email || '',
+    }));
+  }
+}, [profile?.full_name, user?.email]);
+```
 
-For **PropertyDetail.tsx**, I'll detect the listing type from `property.listing_status`:
-- `for_rent` → `listingType="rentals"`
-- `for_sale` or `sold` → `listingType="buy"`
+The logic uses `prev.name || ...` to ensure:
+- If user has already typed something, don't overwrite it
+- Only auto-fill if the field is empty
+- Gracefully handle async loading of profile/user data
 
-For **ProjectDetail.tsx**:
-- Always `listingType="projects"`
+## User Experience
+
+| User Type | Behavior |
+|-----------|----------|
+| Guest | Form starts empty (current behavior) |
+| Logged in, has profile | Name and email pre-filled |
+| Logged in, no profile name | Email pre-filled, name empty |
 
 ## Files to Modify
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/pages/Listings.tsx` | **REMOVE** ListingFeedback import and usage |
-| `src/pages/Projects.tsx` | **REMOVE** ListingFeedback import and usage |
-| `src/pages/PropertyDetail.tsx` | **ADD** ListingFeedback after PropertyNextSteps |
-| `src/pages/ProjectDetail.tsx` | **ADD** ListingFeedback after ProjectNextSteps |
+| `src/pages/Contact.tsx` | Add useAuth, useProfile hooks and useEffect for auto-fill |
 
-## Code Changes
+## Summary
 
-### PropertyDetail.tsx Addition
-```tsx
-import { ListingFeedback } from '@/components/listings/ListingFeedback';
-
-// After PropertyNextSteps (around line 244):
-<PropertyNextSteps 
-  cityName={property.city}
-  citySlug={citySlug}
-  propertyPrice={property.price}
-  listingStatus={property.listing_status}
-/>
-
-{/* Listing Feedback */}
-<ListingFeedback 
-  listingType={property.listing_status === 'for_rent' ? 'rentals' : 'buy'} 
-/>
-```
-
-### ProjectDetail.tsx Addition
-```tsx
-import { ListingFeedback } from '@/components/listings/ListingFeedback';
-
-// After ProjectNextSteps (around line 136):
-<ProjectNextSteps 
-  cityName={project.city}
-  citySlug={citySlug}
-  projectPrice={project.price_from || undefined}
-/>
-
-{/* Listing Feedback */}
-<ListingFeedback listingType="projects" />
-
-{/* FAQ Section */}
-<ProjectFAQ />
-```
-
-## Visual Result
-
-On each individual listing page, users will see the feedback prompt (matching the screenshot reference) positioned naturally after the "Next Steps" section — inviting them to share thoughts on that specific type of listing while they're actively engaged with the content.
+Simple enhancement that makes the contact form friendlier for logged-in users by eliminating redundant data entry. The implementation respects user input (won't overwrite if they've started typing) and handles the async nature of profile data loading.
 
