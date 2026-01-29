@@ -708,14 +708,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
         </div>
       </div>
 
-      {/* More Filters Sheet */}
+      {/* More Filters Sheet - Full screen on mobile */}
       <Sheet open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-xl">More Filters</SheetTitle>
-          </SheetHeader>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+          <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
+            <SheetHeader className="text-left">
+              <SheetTitle className="text-xl">More Filters</SheetTitle>
+            </SheetHeader>
+          </div>
           
-          <div className="space-y-6 py-2">
+          <div className="px-4 pb-32 space-y-6 py-2">
             {/* New Listings / Days on Market */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary">
@@ -1038,18 +1040,19 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </div>
             )}
           </div>
-
-          {/* Footer */}
-          <div className="flex gap-3 pt-4 border-t">
+          
+          {/* Fixed bottom action bar - sticky at bottom */}
+          <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-0 sm:w-full sm:max-w-md bg-background border-t border-border p-4 pb-safe flex gap-3 z-20">
             <Button 
               variant="outline" 
-              className="flex-1 rounded-full"
+              className="flex-1 rounded-full h-12"
               onClick={resetMoreFilters}
             >
+              <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
             <Button 
-              className="flex-1 rounded-full bg-primary"
+              className="flex-1 rounded-full h-12 bg-primary"
               onClick={() => setMoreFiltersOpen(false)}
             >
               {countLoading ? (
