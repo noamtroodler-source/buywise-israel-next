@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, X, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,10 @@ export function BlogFilters({
   sortBy,
   onSortChange,
 }: BlogFiltersProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(false);
+
   const handleAudienceToggle = (audience: BlogAudience) => {
     if (selectedAudiences.includes(audience)) {
       onAudienceChange(selectedAudiences.filter(a => a !== audience));
@@ -61,6 +66,32 @@ export function BlogFilters({
     (selectedCategory ? 1 : 0) + 
     (selectedCity ? 1 : 0) + 
     selectedAudiences.length;
+
+  // Check scroll position to show/hide gradients
+  const checkScrollPosition = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftGradient(scrollLeft > 10);
+    setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    // Initial check
+    checkScrollPosition();
+    
+    container.addEventListener('scroll', checkScrollPosition);
+    window.addEventListener('resize', checkScrollPosition);
+    
+    return () => {
+      container.removeEventListener('scroll', checkScrollPosition);
+      window.removeEventListener('resize', checkScrollPosition);
+    };
+  }, [categories]);
 
   return (
     <div className="space-y-4">
@@ -161,15 +192,35 @@ export function BlogFilters({
         </div>
       </div>
 
-      {/* Category Pills */}
-      <ScrollArea className="w-full">
-        <div className="flex gap-2 pb-2">
+      {/* Category Pills with Fade Gradients */}
+      <div className="relative">
+        {/* Left fade gradient */}
+        <div 
+          className={cn(
+            "absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none transition-opacity duration-200",
+            showLeftGradient ? "opacity-100" : "opacity-0"
+          )}
+        />
+        
+        {/* Right fade gradient */}
+        <div 
+          className={cn(
+            "absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none transition-opacity duration-200",
+            showRightGradient ? "opacity-100" : "opacity-0"
+          )}
+        />
+
+        <div 
+          ref={scrollContainerRef}
+          className="flex gap-2 pb-2 overflow-x-auto scrollbar-hide"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           <Button
             variant={!selectedCategory ? 'default' : 'outline'}
             size="sm"
             onClick={() => onCategoryChange(null)}
             className={cn(
-              "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all",
+              "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all flex-shrink-0",
               !selectedCategory 
                 ? "bg-primary text-primary-foreground shadow-lg" 
                 : "bg-background hover:bg-accent border-border/50 hover:border-primary/50"
@@ -184,7 +235,7 @@ export function BlogFilters({
               size="sm"
               onClick={() => onCategoryChange(category.slug)}
               className={cn(
-                "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all",
+                "rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all flex-shrink-0",
                 selectedCategory === category.slug 
                   ? "bg-primary text-primary-foreground shadow-lg" 
                   : "bg-background hover:bg-accent border-border/50 hover:border-primary/50"
@@ -194,8 +245,7 @@ export function BlogFilters({
             </Button>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" className="invisible" />
-      </ScrollArea>
+      </div>
 
       {/* Active Filters */}
       {activeFilterCount > 0 && (
