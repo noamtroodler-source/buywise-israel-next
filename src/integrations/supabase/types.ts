@@ -1354,6 +1354,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_reveals: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_hint: string | null
+          reveal_type: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_hint?: string | null
+          reveal_type: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_hint?: string | null
+          reveal_type?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           category: string
