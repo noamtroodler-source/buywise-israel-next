@@ -161,9 +161,9 @@ export function RegionExplorer() {
           })}
         </div>
 
-        {/* Mobile: Horizontal Carousel */}
+        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
         {isMobile && (
-          <div className="sm:hidden">
+          <div className="sm:hidden -mx-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeRegion}
@@ -172,12 +172,12 @@ export function RegionExplorer() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="overflow-hidden" ref={emblaRef}>
+                <div className="overflow-hidden px-4" ref={emblaRef}>
                   <div className="flex">
                     {cities.map((city, index) => (
                       <div 
                         key={city.slug} 
-                        className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+                        className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
                       >
                         <Link
                           to={`/areas/${city.slug}`}
@@ -202,12 +202,14 @@ export function RegionExplorer() {
                     ))}
                   </div>
                 </div>
-                <CarouselDots 
-                  total={cities.length} 
-                  current={selectedIndex} 
-                  onDotClick={scrollTo}
-                  className="mt-4"
-                />
+                <div className="px-4">
+                  <CarouselDots 
+                    total={cities.length} 
+                    current={selectedIndex} 
+                    onDotClick={scrollTo}
+                    className="mt-4"
+                  />
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>

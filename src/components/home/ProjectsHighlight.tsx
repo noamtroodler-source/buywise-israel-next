@@ -115,15 +115,15 @@ export function ProjectsHighlight() {
           </Button>
         </div>
 
-        {/* Mobile: Horizontal Carousel */}
+        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
         {isMobile && (
-          <div className="lg:hidden animate-fade-in">
-            <div className="overflow-hidden" ref={emblaRef}>
+          <div className="lg:hidden animate-fade-in -mx-4">
+            <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProjects.map((project) => (
                   <div 
                     key={project.id} 
-                    className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+                    className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
                   >
                     <Link
                       to={`/projects/${project.slug}`}
@@ -175,12 +175,14 @@ export function ProjectsHighlight() {
               </div>
             </div>
             {/* Dot Indicators */}
-            <CarouselDots 
-              total={displayProjects.length} 
-              current={selectedIndex} 
-              onDotClick={scrollTo}
-              className="mt-4"
-            />
+            <div className="px-4">
+              <CarouselDots 
+                total={displayProjects.length} 
+                current={selectedIndex} 
+                onDotClick={scrollTo}
+                className="mt-4"
+              />
+            </div>
           </div>
         )}
 

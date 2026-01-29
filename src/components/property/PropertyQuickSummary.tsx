@@ -323,11 +323,11 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
         </div>
 
         {/* Quick Facts Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
           {/* Year Built */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-help">
                 <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
@@ -345,7 +345,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           {/* Floor */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-help">
                 <Layers className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getFloorDisplay()}</p>
@@ -360,7 +360,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
           {/* Price per sqm */}
           {pricePerSqm && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
               <DollarSign className="h-5 w-5 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
@@ -373,7 +373,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
           {/* Lot Size (only for houses) */}
           {property.lot_size_sqm && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
               <Trees className="h-5 w-5 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{formatArea(property.lot_size_sqm)}</p>
@@ -385,7 +385,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           {/* Parking */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-help">
                 <Car className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getParkingDisplay()}</p>
@@ -399,7 +399,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           </Tooltip>
 
           {/* Condition */}
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+          <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
             <Wrench className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{getConditionDisplay()}</p>
@@ -410,7 +410,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           {/* Entry Date */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-help">
+              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50 cursor-help">
                 <CalendarCheck className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getEntryDateDisplay()}</p>

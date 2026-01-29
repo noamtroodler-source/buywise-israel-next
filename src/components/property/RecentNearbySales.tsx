@@ -202,14 +202,14 @@ export function RecentNearbySales({
         {isMobile ? (
           <div className="space-y-3">
             <div className="overflow-hidden -mx-4" ref={emblaRef}>
-              <div className="flex">
+              <div className="flex px-4">
                 {comps.map((comp) => {
                   const comparison = getComparison(comp.price_per_sqm);
                   
                   return (
                     <div 
                       key={comp.id} 
-                      className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-4"
+                      className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-0"
                     >
                       <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                         <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">

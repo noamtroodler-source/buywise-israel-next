@@ -124,7 +124,7 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
 
         {/* Main Image */}
         <div 
-          className="relative aspect-[16/10] rounded-xl overflow-hidden bg-muted cursor-pointer group"
+          className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group"
           onClick={handleImageClick}
         >
           <img

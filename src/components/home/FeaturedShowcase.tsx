@@ -132,15 +132,15 @@ export function FeaturedShowcase() {
           </>
         )}
 
-        {/* Mobile: Horizontal Carousel */}
+        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
         {!isLoading && isMobile && displayProperties.length > 0 && (
-          <div className="sm:hidden animate-fade-in">
-            <div className="overflow-hidden" ref={emblaRef}>
+          <div className="sm:hidden animate-fade-in -mx-4">
+            <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProperties.map((property, index) => (
                   <div 
                     key={property.id} 
-                    className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+                    className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
                   >
                     <PropertyCard 
                       property={property} 
@@ -154,12 +154,14 @@ export function FeaturedShowcase() {
               </div>
             </div>
             {/* Dot Indicators */}
-            <CarouselDots 
-              total={displayProperties.length} 
-              current={selectedIndex} 
-              onDotClick={scrollTo}
-              className="mt-4"
-            />
+            <div className="px-4">
+              <CarouselDots 
+                total={displayProperties.length} 
+                current={selectedIndex} 
+                onDotClick={scrollTo}
+                className="mt-4"
+              />
+            </div>
           </div>
         )}
 

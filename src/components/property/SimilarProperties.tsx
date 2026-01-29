@@ -83,21 +83,23 @@ export function SimilarProperties({ currentProperty }: SimilarPropertiesProps) {
         </div>
       </div>
 
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex -ml-4">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4">
-                <Skeleton className="h-[320px] w-full rounded-xl" />
-              </div>
-            ))
-          ) : (
-            properties?.map((property) => (
-              <div key={property.id} className="min-w-0 shrink-0 grow-0 basis-full md:basis-1/2 lg:basis-1/4 pl-4">
-                <PropertyCard property={property} showCompareButton={false} />
-              </div>
-            ))
-          )}
+      <div className="-mx-4 md:mx-0">
+        <div className="overflow-hidden px-4 md:px-0" ref={emblaRef}>
+          <div className="flex -ml-4">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="min-w-0 shrink-0 grow-0 basis-[calc(100%-2rem)] md:basis-1/2 lg:basis-1/4 pl-4">
+                  <Skeleton className="h-[320px] w-full rounded-xl" />
+                </div>
+              ))
+            ) : (
+              properties?.map((property) => (
+                <div key={property.id} className="min-w-0 shrink-0 grow-0 basis-[calc(100%-2rem)] md:basis-1/2 lg:basis-1/4 pl-4">
+                  <PropertyCard property={property} showCompareButton={false} />
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
