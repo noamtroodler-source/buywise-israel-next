@@ -1,128 +1,216 @@
 
-
-# Add Inline Name Editing to Profile Header
+# Email Templates Redesign: BuyWise Israel Brand Alignment
 
 ## Overview
 
-Add a subtle, design-best-practice approach to let users quickly edit their name directly from the "Welcome back, [Name]" header in My Profile. This is helpful when Google OAuth captures the wrong name or users want to adjust it.
+A comprehensive overhaul of all 8 email templates to align with BuyWise Israel's brand identity — the "trusted friend" voice that emphasizes clarity, confidence, transparency, and zero pressure.
 
-## Design Approach
+## Current Issues Identified
 
-A small pencil icon appears on hover next to the name. Clicking it transforms the text into an inline input field with save/cancel buttons. This pattern is:
-- **Non-intrusive**: Icon only shows on hover
-- **Contextual**: Edit happens right where the name appears
-- **Quick**: No need to scroll down to Account Settings
+### Design Inconsistencies
+| Issue | Affected Emails |
+|-------|-----------------|
+| Uses green (#22c55e, #16a34a) for success/savings — violates blue-only palette | Price Drop Alert, Agency Notifications, Developer Notifications, Agent Notifications |
+| Uses orange (#f59e0b), pink (#ec4899) in stats cards | Weekly Digest |
+| Uses red (#ef4444) for rejections | Developer & Agent Notifications |
+| Missing consistent header/footer | All emails |
+| Inconsistent greeting styles ("Hi there" vs "Hi ${name}") | Various |
+| Generic sign-off "— The BuyWise Israel Team" | All |
 
-## Visual Mockup
+### Messaging Issues
+| Issue | Affected Emails |
+|-------|-----------------|
+| Too transactional, not conversational | Verification Email, Price Drop Alert |
+| Missing brand affirmation messaging | All |
+| No "trusted friend" warmth | Notification emails |
+| Footer lacks personality | All |
+| CTA buttons feel impersonal | All |
 
-```
-Before (hover state):
+## Brand Voice Reference (from Principles page)
+
+**Core Identity:**
+- "Clarity Before Commitment. Confidence Before Action."
+- "Taking time to understand is not a delay — it's how confident decisions are made."
+- "Trust Before Conversion" — educate and clarify first
+- "Your Timeline, Not Ours" — no pressure
+- "Transparency as a Feature"
+
+**Relationship with professionals:**
+- "Pro-Agent. Pro-Professional. Anti-Pressure."
+- Our role is to "prepare you for them"
+
+## Implementation: Files to Modify
+
+### 1. `supabase/functions/send-welcome-email/index.ts`
+
+**Current issues:**
+- Good structure but messaging could be warmer
+- Uses generic feature lists
+
+**Changes:**
+- Warm up opening: "We're glad you're here" → "Welcome to your corner of clarity"
+- Buyer email: Emphasize "no pressure, explore at your own pace"
+- Agent/Developer/Agency: Add reassurance about the review process, soften "pending approval" language
+- Update footer: "We're here when you need us — just reply" feels more like a friend
+
+### 2. `supabase/functions/send-price-drop-alert/index.ts`
+
+**Current issues:**
+- Uses green (#16a34a) for new price and savings — needs primary blue
+- "Price Drop Alert! 📉" is transactional
+- "You save ${formattedSavings}" feels salesy
+
+**Changes:**
+- Replace green with primary blue (#2563eb) for price highlight
+- Soften headline: "Good news — a property you saved just dropped in price"
+- Reframe savings: "That's ${formattedSavings} less than before" (factual, not pushy)
+- Add context: "No rush — it's still there when you're ready"
+
+### 3. `supabase/functions/send-digest-email/index.ts`
+
+**Current issues:**
+- Uses multicolor stat cards (blue, green, orange, pink)
+- Generic "Weekly Performance Report" headline
+- Missing warmth
+
+**Changes:**
+- Standardize all stat card backgrounds to blue tints (primary/10, primary/5)
+- Soften headline: "Here's how your week looked"
+- Add context: "These numbers are just context — focus on what matters to you"
+- Make footer conversational
+
+### 4. `supabase/functions/send-verification-email/index.ts`
+
+**Current issues:**
+- Very functional, no brand personality
+- "🔐 Email Verification" is cold
+
+**Changes:**
+- Warm headline: "Almost there — let's verify your email"
+- Add context: "This helps us keep your account secure"
+- Softer expiry message: "This code is valid for 10 minutes — no rush"
+
+### 5. `supabase/functions/send-agency-notification/index.ts`
+
+**Current issues:**
+- Uses green (#22c55e) for "agent joined" success
+- Very transactional messaging
+- No brand voice
+
+**Changes:**
+- Replace green backgrounds with blue tints
+- Warm up messaging: "Great news" → "Something good just happened"
+- Agent left: Remove emoji, soften to "Just a heads up" tone
+- Add consistent footer
+
+### 6. `supabase/functions/send-developer-notification/index.ts`
+
+**Current issues:**
+- Uses red (#ef4444) for rejections
+- Uses orange (#f59e0b) for change requests
+- Missing empathy in rejection message
+
+**Changes:**
+- Replace red with softer blue-gray for "not approved"
+- Replace orange with blue for "changes requested"
+- Rejection: Add empathy — "We know this isn't the news you wanted"
+- Changes requested: "Just a few tweaks needed — we're almost there"
+
+### 7. `supabase/functions/send-notification/index.ts` (Agent notifications)
+
+**Current issues:**
+- Same color issues as developer notifications
+- Generic messaging
+
+**Changes:**
+- Same color standardization (blue palette)
+- Warmer messaging throughout
+
+### 8. `supabase/functions/process-search-alerts/index.ts`
+
+**Current issues:**
+- Good but could be warmer
+- "New Properties Match Your Search! 🏠" is generic
+
+**Changes:**
+- Soften headline: "We found something that might interest you"
+- Add no-pressure messaging: "Take your time exploring these"
+- Make footer more conversational
+
+## Shared Design System to Apply
+
+### Color Palette (blue-only per brand standards)
+| Use Case | Current | New |
+|----------|---------|-----|
+| Primary CTA | `#2563eb` | `#2563eb` (keep) |
+| Success/Positive | `#22c55e` / `#16a34a` | `#2563eb` (primary blue) |
+| Warning/Attention | `#f59e0b` | `#64748b` (slate) with blue accent |
+| Error/Rejection | `#ef4444` | `#64748b` (neutral gray) with empathetic copy |
+| Info cards | Various colors | `#eff6ff` (blue-50) consistently |
+
+### Consistent Email Structure
+```text
 +------------------------------------------+
-|  [Avatar]   Welcome back, John  [✏️]     |
-|             user@email.com               |
+|  [BuyWise Israel wordmark - optional]    |
+|                                          |
+|  Warm, personal greeting                 |
+|  "Hi {firstName}," or "Hey {firstName}," |
+|                                          |
+|  Core message (conversational)           |
+|                                          |
+|  [Info card with blue tint]              |
+|                                          |
+|  [Primary CTA button - #2563eb]          |
+|                                          |
+|  "No rush — we're here when you need us" |
+|                                          |
+|  ─────────────────────────────────────── |
+|  Questions? Just reply to this email.    |
+|  We read every one.                      |
+|                                          |
+|  — Your friends at BuyWise Israel        |
 +------------------------------------------+
-
-After clicking edit:
-+------------------------------------------+
-|  [Avatar]   [ John Doe_______ ] [✓] [✗]  |
-|             user@email.com               |
-+------------------------------------------+
 ```
 
-## Implementation
-
-### File: `src/components/profile/ProfileWelcomeHeader.tsx`
-
-**Step 1: Add state and hooks**
-```tsx
-import { useState } from 'react';
-import { Pencil, Check, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { useUpdateProfile } from '@/hooks/useProfile';
-
-// Inside component:
-const [isEditingName, setIsEditingName] = useState(false);
-const [editedName, setEditedName] = useState(fullName || '');
-const updateProfile = useUpdateProfile();
+### Footer Template
+```html
+<p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+  Questions? Just reply — we read every email.<br>
+  <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
+</p>
 ```
 
-**Step 2: Create save handler**
-```tsx
-const handleSaveName = () => {
-  if (editedName.trim()) {
-    updateProfile.mutate({ full_name: editedName.trim() });
-    setIsEditingName(false);
-  }
-};
+## Messaging Rewrites Summary
 
-const handleCancelEdit = () => {
-  setEditedName(fullName || '');
-  setIsEditingName(false);
-};
-```
+### Welcome Emails
+| User Type | Before | After |
+|-----------|--------|-------|
+| Buyer | "We're thrilled to have you join us" | "Welcome to your corner of clarity. We built BuyWise for people exactly like you — navigating a new market, asking good questions, and taking your time." |
+| Agent | "Your profile is now pending approval" | "You've taken the first step. Our team will review your registration (usually 1-2 business days) — we'll let you know as soon as you're approved." |
 
-**Step 3: Replace the static h1 with conditional edit UI**
+### Alert Emails
+| Type | Before | After |
+|------|--------|-------|
+| Price Drop | "Price Drop Alert! 📉" | "Good news — a property you saved just dropped in price" |
+| Search Alert | "New Properties Match Your Search! 🏠" | "We found something that might interest you" |
 
-Replace lines 67-69:
-```tsx
-{isEditingName ? (
-  <div className="flex items-center gap-2">
-    <Input
-      value={editedName}
-      onChange={(e) => setEditedName(e.target.value)}
-      className="h-9 text-lg font-semibold max-w-[200px]"
-      autoFocus
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') handleSaveName();
-        if (e.key === 'Escape') handleCancelEdit();
-      }}
-    />
-    <Button 
-      size="icon" 
-      variant="ghost" 
-      className="h-7 w-7" 
-      onClick={handleSaveName}
-      disabled={updateProfile.isPending}
-    >
-      <Check className="h-4 w-4 text-green-600" />
-    </Button>
-    <Button 
-      size="icon" 
-      variant="ghost" 
-      className="h-7 w-7" 
-      onClick={handleCancelEdit}
-    >
-      <X className="h-4 w-4 text-muted-foreground" />
-    </Button>
-  </div>
-) : (
-  <h1 className="text-2xl font-semibold text-foreground group flex items-center gap-1.5">
-    Welcome back, {firstName}
-    <button
-      onClick={() => setIsEditingName(true)}
-      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-      aria-label="Edit name"
-    >
-      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-    </button>
-  </h1>
-)}
-```
+### Notification Emails
+| Type | Before | After |
+|------|--------|-------|
+| Project Approved | "🎉 Project Approved!" | "Great news — your project is now live" |
+| Changes Requested | "Changes Requested" | "Just a few tweaks needed — we're almost there" |
+| Project Rejected | "Project Not Approved" | "We couldn't approve this one — here's why" |
 
-## UX Details
+## Files Summary
 
-| Aspect | Behavior |
-|--------|----------|
-| Hover | Pencil icon fades in (opacity transition) |
-| Click | Input appears with current full name |
-| Enter key | Saves the name |
-| Escape key | Cancels editing |
-| Blur | Stays in edit mode (user may be moving to buttons) |
-| Success | Toast shows "Profile updated successfully" |
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/profile/ProfileWelcomeHeader.tsx` | Add inline name editing with hover-reveal pencil icon |
+| File | Changes |
+|------|---------|
+| `supabase/functions/send-welcome-email/index.ts` | Warmer messaging, no-pressure language |
+| `supabase/functions/send-price-drop-alert/index.ts` | Blue palette, softer framing |
+| `supabase/functions/send-digest-email/index.ts` | Blue-only stats cards, conversational tone |
+| `supabase/functions/send-verification-email/index.ts` | Friendly verification messaging |
+| `supabase/functions/send-agency-notification/index.ts` | Blue palette, warmer tone |
+| `supabase/functions/send-developer-notification/index.ts` | Blue palette, empathetic rejections |
+| `supabase/functions/send-notification/index.ts` | Blue palette, consistent with others |
+| `supabase/functions/process-search-alerts/index.ts` | No-pressure messaging |
 
