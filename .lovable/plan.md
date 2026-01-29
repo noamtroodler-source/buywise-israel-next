@@ -1,152 +1,221 @@
 
 
-# Simplify Mobile Filter UI
+# Mobile Spacing Optimization - Zillow-Style Edge-to-Edge Layout
 
 ## Overview
-Streamline the mobile filter experience across all listing pages (Properties for Sale, Rentals, Projects) by consolidating most filters behind a single "Filters" button that opens a full-screen sheet, leaving only the essential City filter visible by default.
+Optimize mobile layouts across the app to maximize screen real estate by implementing Zillow-style edge-to-edge content presentation with strategic, tighter padding. This follows mobile-first best practices where content stretches closer to screen edges while maintaining appropriate breathing room.
 
 ---
 
-## Current State
+## Current Issues
 
-Currently on mobile, the listings pages show multiple filter buttons that wrap to multiple rows:
-- Active/Sold toggle (for_sale only)
-- City
-- Price
-- Beds/Baths
-- Type
-- More Filters
-- Sort dropdown
-- Create Alert button
-- Quick Filter Chips row
-
-This creates visual clutter and requires scrolling to access all options.
+| Issue | Current State | Best Practice |
+|-------|--------------|---------------|
+| Container padding | 32px (2rem) on all sides | 16px on mobile, 32px on desktop |
+| Detail page images | Inset with padding | Edge-to-edge hero images |
+| Carousel items | Inconsistent edge alignment | Peek effect with edge-hugging cards |
+| Filter bars | Mixed negative margin hacks | Consistent full-width on mobile |
+| Content sections | Uniform container padding | Section-specific spacing |
 
 ---
 
-## Proposed Mobile Layout
+## Implementation Plan
 
-| Element | Visibility | Location |
-|---------|-----------|----------|
-| Active/Sold toggle | Always visible | Left side |
-| City | Always visible | Inline |
-| **Filters** button | Always visible | Inline (opens full-screen sheet) |
-| Sort | Always visible | Right side |
-| Alert button | Always visible | Right side |
-| Quick Filter Chips | Below filter bar | Unchanged |
+### Phase 1: Tailwind Container Configuration
 
-**Total visible elements**: 4-5 buttons in a single row (vs. current 6+ that wrap)
+**File: `tailwind.config.ts`**
 
----
+Update container padding to be responsive:
 
-## Changes Required
-
-### 1. PropertyFilters.tsx - Mobile Layout
-
-**Wrap desktop filter buttons in mobile conditional rendering:**
-
-```tsx
-// Desktop: Show all individual filter popovers
-{!isMobile && (
-  <>
-    {/* Price, Beds/Baths, Type buttons */}
-  </>
-)}
-
-// Mobile: Single "Filters" button that opens full-screen sheet
-{isMobile && (
-  <Button onClick={() => setMobileFiltersOpen(true)}>
-    <SlidersHorizontal />
-    {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
-  </Button>
-)}
+```ts
+container: {
+  center: true,
+  padding: {
+    DEFAULT: "1rem",     // 16px on mobile
+    sm: "1.5rem",        // 24px on small screens
+    md: "2rem",          // 32px on medium+
+    lg: "2rem",
+    xl: "2rem",
+    "2xl": "2rem",
+  },
+  screens: {
+    "2xl": "1400px",
+  },
+},
 ```
 
-**Elements that remain visible on mobile:**
-- Active/Sold toggle (unchanged)
-- City filter popover (unchanged) 
-- New consolidated "Filters" button (replaces Price, Beds/Baths, Type, More Filters)
-- Sort dropdown (unchanged)
-- Alert button (unchanged)
-
-### 2. MobileFilterSheet.tsx - Enhancements
-
-Add missing filter sections from "More Filters" to ensure feature parity:
-- Bathrooms selector
-- Rental-specific filters (availability, pets policy)
-- Parking, Year Built, Floor range
-- Condition
-
-### 3. ProjectFilters.tsx - Mobile Layout
-
-Apply same pattern:
-- Show City, new "Filters" button, Sort, Alert
-- Hide Status, Beds/Baths, Price, Developer, Year filter buttons on mobile
-- Move all hidden filters into a ProjectMobileFilterSheet
-
-### 4. New: ProjectMobileFilterSheet.tsx
-
-Create a project-specific mobile filter sheet containing:
-- Status
-- Price Range
-- Beds/Baths
-- Completion Year
-- Developer
+This single change reduces mobile padding from 32px to 16px across the entire app.
 
 ---
 
-## Technical Details
+### Phase 2: Edge-to-Edge Hero Images (Detail Pages)
 
-### Active Filter Count Badge
+**File: `src/pages/PropertyDetail.tsx`**
 
-Display count of active filters on the mobile "Filters" button:
+Make hero image break out of container on mobile:
 
 ```tsx
-const activeFilterCount = useMemo(() => {
-  let count = 0;
-  if (filters.min_price || filters.max_price) count++;
-  if (filters.min_rooms || filters.min_bathrooms) count++;
-  if (filters.property_types?.length) count++;
-  if (filters.min_size || filters.max_size) count++;
-  if (filters.features?.length) count++;
-  if (filters.max_days_listed) count++;
-  // Rental-specific
-  if (filters.available_now || filters.available_by) count++;
-  if (filters.allows_pets?.length) count++;
-  return count;
-}, [filters]);
-```
-
-### Sheet Content Structure
-
-The MobileFilterSheet already has sections for:
-- Location (city search)
-- Price Range (slider)
-- Rooms
-- Property Type
-- Amenities
-- Size
-- Listing Age
-
-Additional sections to add:
-- Bathrooms
-- Rental-specific (conditionally rendered)
-- Parking
-- Floor range
-- Year built
-
-### CSS/Layout
-
-Mobile filter bar will use:
-```tsx
-<div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-  {showSoldToggle && <ActiveSoldToggle />}
-  <CityPopover />
-  <FiltersButton /> {/* NEW - opens full sheet */}
-  <div className="flex-1" /> {/* Spacer */}
-  <SortDropdown />
-  <AlertButton />
+{/* Hero - Edge-to-edge on mobile */}
+<div id="section-photos" className="-mx-4 md:mx-0">
+  <PropertyHero ... />
 </div>
+```
+
+**File: `src/components/property/PropertyHero.tsx`**
+
+Adjust image container for mobile edge-to-edge:
+
+```tsx
+<div className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group">
+  {/* Remove rounded corners on mobile for flush edge look */}
+```
+
+Same pattern for:
+- `src/pages/ProjectDetail.tsx`
+- `src/components/project/ProjectHero.tsx`
+
+---
+
+### Phase 3: Mobile-Optimized Content Sections
+
+**File: `src/index.css`**
+
+Add utility class for sections that should be edge-to-edge:
+
+```css
+@layer utilities {
+  /* Edge-to-edge on mobile, respects container on desktop */
+  .mobile-full-bleed {
+    @apply -mx-4 px-4 md:mx-0 md:px-0;
+  }
+  
+  /* Edge-to-edge without inner padding */
+  .mobile-edge-to-edge {
+    @apply -mx-4 md:mx-0;
+  }
+}
+```
+
+---
+
+### Phase 4: Carousel Edge Optimization
+
+**File: `src/components/home/FeaturedShowcase.tsx`**
+
+Update mobile carousel to hug edges:
+
+```tsx
+{/* Mobile: Horizontal Carousel - Edge-to-edge */}
+{!isLoading && isMobile && displayProperties.length > 0 && (
+  <div className="sm:hidden animate-fade-in -mx-4">
+    <div className="overflow-hidden px-4" ref={emblaRef}>
+      <div className="flex">
+        {displayProperties.map((property, index) => (
+          <div 
+            key={property.id} 
+            className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
+          >
+            <PropertyCard ... />
+          </div>
+        ))}
+      </div>
+    </div>
+    {/* Dots stay within container */}
+    <div className="px-4">
+      <CarouselDots ... />
+    </div>
+  </div>
+)}
+```
+
+Apply same pattern to:
+- `src/components/home/ProjectsHighlight.tsx`
+- `src/components/home/RegionExplorer.tsx`
+- `src/components/property/SimilarProperties.tsx`
+- `src/components/property/RecentNearbySales.tsx`
+
+---
+
+### Phase 5: Listing Page Grid Optimization
+
+**File: `src/pages/Listings.tsx`**
+
+Tighten grid gaps on mobile:
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-fade-in">
+```
+
+**File: `src/pages/Projects.tsx`**
+
+Same grid gap optimization for project listings.
+
+---
+
+### Phase 6: Filter Bar Consistency
+
+**Files: `src/components/filters/PropertyFilters.tsx`, `ProjectFilters.tsx`**
+
+Ensure filter bars extend full width on mobile:
+
+```tsx
+<div 
+  ref={filterBarRef}
+  className={cn(
+    "mb-4 md:mb-8 transition-all duration-200",
+    isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
+    isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
+  )}
+>
+```
+
+---
+
+### Phase 7: Mobile Contact Bar Safe Areas
+
+**File: `src/components/property/StickyContactCard.tsx`**
+
+Ensure proper edge-to-edge with safe padding:
+
+```tsx
+<motion.div 
+  className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 md:hidden pb-safe"
+>
+  <div className="max-w-lg mx-auto">
+    {/* Content */}
+  </div>
+</motion.div>
+```
+
+---
+
+### Phase 8: Quick Facts Grid Tightening
+
+**File: `src/components/property/PropertyQuickSummary.tsx`**
+
+Reduce padding in stat cards on mobile:
+
+```tsx
+<div className="flex items-center gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
+```
+
+---
+
+## Visual Comparison
+
+### Before (Current)
+```
+|    32px    |  Content  |    32px    |
+```
+
+### After (Optimized)
+```
+| 16px | ========= Content ========= | 16px |
+```
+
+### Edge-to-Edge Sections (Hero, Carousels)
+```
+|========= Full Width Content ==========|
 ```
 
 ---
@@ -155,26 +224,36 @@ Mobile filter bar will use:
 
 | File | Changes |
 |------|---------|
-| `src/components/filters/PropertyFilters.tsx` | Conditionally hide Price/Beds/Type buttons on mobile, add "Filters" button that opens MobileFilterSheet |
-| `src/components/filters/MobileFilterSheet.tsx` | Add bathroom section, rental-specific filters, ensure all "More Filters" options are included |
-| `src/components/filters/ProjectFilters.tsx` | Same pattern - hide individual filters on mobile, add unified "Filters" button |
-| `src/components/filters/ProjectMobileFilterSheet.tsx` | **New file** - Full-screen filter sheet for Projects page |
+| `tailwind.config.ts` | Responsive container padding |
+| `src/index.css` | Add mobile utility classes |
+| `src/pages/PropertyDetail.tsx` | Edge-to-edge hero |
+| `src/pages/ProjectDetail.tsx` | Edge-to-edge hero |
+| `src/components/property/PropertyHero.tsx` | Remove mobile border radius |
+| `src/components/project/ProjectHero.tsx` | Remove mobile border radius |
+| `src/components/home/FeaturedShowcase.tsx` | Edge-hugging carousel |
+| `src/components/home/ProjectsHighlight.tsx` | Edge-hugging carousel |
+| `src/components/home/RegionExplorer.tsx` | Edge-hugging carousel |
+| `src/components/property/SimilarProperties.tsx` | Edge-hugging carousel |
+| `src/components/property/RecentNearbySales.tsx` | Edge-hugging carousel |
+| `src/components/property/PropertyQuickSummary.tsx` | Tighter mobile padding |
+| `src/pages/Listings.tsx` | Tighter grid gaps |
+| `src/pages/Projects.tsx` | Tighter grid gaps |
+| `src/components/filters/PropertyFilters.tsx` | Consistent full-width |
 
 ---
 
-## User Experience
+## Best Practices Applied
 
-**Before**: User sees 6+ buttons, potentially wrapping to 3 rows, must tap multiple times to access different filters
-
-**After**: 
-1. User sees clean single row: `[Active/Sold] [City v] [Filters (2)] ... [Sort v] [Bell]`
-2. Tapping "Filters" opens full-screen sheet with ALL filter options
-3. Quick Filter Chips below provide one-tap presets (unchanged)
-4. More screen space for actual listings
+1. **Touch Targets**: Maintain minimum 44px touch targets (iOS HIG)
+2. **Breathing Room**: 16px edge padding prevents content from feeling cramped
+3. **Visual Hierarchy**: Hero images edge-to-edge create immersive experience
+4. **Consistency**: Same spacing patterns across all listing pages
+5. **Performance**: No new components, just CSS optimizations
+6. **Safe Areas**: Proper handling of notches and home indicators
 
 ---
 
 ## Summary
 
-This change reduces cognitive load on mobile by consolidating 4-5 filter buttons into 1, while maintaining full filter functionality through the existing MobileFilterSheet pattern. The City filter remains separate since it's the most commonly used filter and benefits from quick access.
+This optimization reduces mobile container padding from 32px to 16px and implements strategic edge-to-edge sections for hero images and carousels. The result is a more Zillow-like experience that maximizes screen real estate while maintaining good spacing principles.
 
