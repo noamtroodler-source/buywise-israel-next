@@ -6,6 +6,7 @@ import { Property } from '@/types/database';
 import { useCallback } from 'react';
 import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
+import { triggerHaptic } from './useHapticFeedback';
 
 const GUEST_FAVORITES_KEY = 'buywise_guest_favorites';
 
@@ -196,6 +197,9 @@ export function useFavorites() {
   });
 
   const toggleFavorite = useCallback((propertyId: string, currentPrice?: number) => {
+    // Trigger haptic feedback on toggle
+    triggerHaptic('light');
+    
     if (favoriteIds.includes(propertyId)) {
       removeFavorite.mutate(propertyId);
     } else {

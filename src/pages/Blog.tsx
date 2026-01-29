@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -9,6 +9,9 @@ import { BlogCard } from '@/components/blog/BlogCard';
 import { BlogCTA } from '@/components/blog/BlogCTA';
 import { BlogSortOption, BlogAudience } from '@/types/content';
 import { useSearchParams } from 'react-router-dom';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Debounce hook for search
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -29,6 +32,8 @@ function useDebounceValue<T>(value: T, delay: number): T {
 
 export default function Blog() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
   
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +56,11 @@ export default function Blog() {
   });
   
   const { isArticleSaved, toggleSave } = useSavedArticles();
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['blog-posts'] });
+  }, [queryClient]);
 
   const handleCategoryFilter = (slug: string | null) => {
     if (slug) {
@@ -118,24 +128,26 @@ export default function Blog() {
               </p>
             </div>
           ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {posts.length} article{posts.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {posts.map((post, index) => (
-                  <BlogCard
-                    key={post.id}
-                    post={post}
-                    index={index}
-                    isSaved={isArticleSaved(post.id)}
-                    onToggleSave={toggleSave}
-                  />
-                ))}
-              </div>
-            </>
+            <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {posts.length} article{posts.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {posts.map((post, index) => (
+                    <BlogCard
+                      key={post.id}
+                      post={post}
+                      index={index}
+                      isSaved={isArticleSaved(post.id)}
+                      onToggleSave={toggleSave}
+                    />
+                  ))}
+                </div>
+              </>
+            </PullToRefresh>
           )}
         </motion.div>
       </div>
