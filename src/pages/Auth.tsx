@@ -151,7 +151,7 @@ export default function Auth() {
   useEffect(() => {
     if (user && !loading && !profileLoading) {
       // If professional signup, redirect to registration page
-      if (justSignedUp && isProfessionalSignup) {
+      if (isProfessionalSignup) {
         const redirectUrl = inviteCode 
           ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
           : config.redirectTo;
@@ -159,14 +159,15 @@ export default function Auth() {
         return;
       }
       
-      // Regular buyer flow
-      if (justSignedUp && !buyerProfile && !isProfessionalSignup) {
+      // Regular buyer flow - detect new users (no buyer profile) regardless of signup method
+      // This works for both email signup AND Google OAuth
+      if (!buyerProfile && !isProfessionalSignup) {
         setShowOnboarding(true);
-      } else if (!showOnboarding && !showPostSignupSuggestions && !isProfessionalSignup) {
+      } else if (!showOnboarding && !showPostSignupSuggestions) {
         navigate('/');
       }
     }
-  }, [user, loading, profileLoading, buyerProfile, justSignedUp, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo, inviteCode]);
+  }, [user, loading, profileLoading, buyerProfile, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo, inviteCode]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
