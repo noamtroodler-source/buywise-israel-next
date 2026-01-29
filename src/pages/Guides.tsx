@@ -1,10 +1,14 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuideCard } from '@/components/guides';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
 import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
@@ -101,7 +105,68 @@ const totalReadingTime = guidesArray.reduce((sum, g) => sum + g.readingTime, 0);
 // Journey phase order
 const phaseOrder = ['understand', 'explore', 'check', 'move_forward'];
 
+interface GuidesCarouselProps {
+  guides: Guide[];
+  phaseIndex: number;
+}
+
+function GuidesCarousel({ guides, phaseIndex }: GuidesCarouselProps) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: true,
+    skipSnaps: false,
+    containScroll: 'trimSnaps',
+  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  const scrollTo = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
+
+  return (
+    <div>
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex">
+          {guides.map((guide, index) => (
+            <div 
+              key={guide.slug} 
+              className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+            >
+              <GuideCard 
+                guide={guide} 
+                index={phaseIndex * 3 + index} 
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <CarouselDots 
+        total={guides.length} 
+        current={selectedIndex} 
+        onDotClick={scrollTo}
+        className="mt-4"
+      />
+    </div>
+  );
+}
+
 export default function Guides() {
+  const isMobile = useIsMobile();
+
   return (
     <Layout>
       <div className="min-h-screen bg-background">
@@ -158,15 +223,21 @@ export default function Guides() {
                   </p>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {phaseGuides.map((guide, index) => (
-                    <GuideCard 
-                      key={guide.slug} 
-                      guide={guide} 
-                      index={phaseIndex * 3 + index} 
-                    />
-                  ))}
-                </div>
+                {/* Mobile: Carousel */}
+                {isMobile ? (
+                  <GuidesCarousel guides={phaseGuides} phaseIndex={phaseIndex} />
+                ) : (
+                  /* Desktop: Grid */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {phaseGuides.map((guide, index) => (
+                      <GuideCard 
+                        key={guide.slug} 
+                        guide={guide} 
+                        index={phaseIndex * 3 + index} 
+                      />
+                    ))}
+                  </div>
+                )}
               </motion.div>
             );
           })}

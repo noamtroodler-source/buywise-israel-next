@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
   Hammer, ClipboardList, ArrowRight, ArrowLeft
@@ -8,6 +9,7 @@ import {
 import { Layout } from '@/components/layout/Layout';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { Button } from '@/components/ui/button';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
@@ -17,6 +19,7 @@ import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnC
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface Tool {
@@ -55,7 +58,7 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   
   return (
     <div 
-      className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col"
+      className="group bg-card border border-border rounded-xl p-5 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer flex flex-col h-full"
       onClick={onClick}
     >
       <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
@@ -80,9 +83,70 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   );
 }
 
+interface ToolsCarouselProps {
+  tools: Tool[];
+  phaseKey: string;
+  onToolClick: (toolId: string) => void;
+}
+
+function ToolsCarousel({ tools, phaseKey, onToolClick }: ToolsCarouselProps) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: true,
+    skipSnaps: false,
+    containScroll: 'trimSnaps',
+  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  const scrollTo = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
+
+  return (
+    <div>
+      <div className="overflow-hidden" ref={emblaRef}>
+        <div className="flex">
+          {tools.map((tool, index) => (
+            <div 
+              key={tool.id} 
+              className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-0"
+            >
+              <ToolCard 
+                tool={tool} 
+                onClick={() => onToolClick(tool.id)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <CarouselDots 
+        total={tools.length} 
+        current={selectedIndex} 
+        onDotClick={scrollTo}
+        className="mt-4"
+      />
+    </div>
+  );
+}
+
 export default function Tools() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const toolParam = searchParams.get('tool');
@@ -94,6 +158,10 @@ export default function Tools() {
   }, [searchParams]);
 
   const ActiveComponent = activeTool ? toolComponents[activeTool] : null;
+
+  const handleToolClick = (toolId: string) => {
+    setSearchParams({ tool: toolId });
+  };
 
   return (
     <Layout>
@@ -170,21 +238,31 @@ export default function Tools() {
                       </p>
                     </div>
                     
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {phaseTools.map((tool, index) => (
-                        <motion.div
-                          key={tool.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.05 * (phaseIndex + index) }}
-                        >
-                          <ToolCard 
-                            tool={tool} 
-                            onClick={() => setSearchParams({ tool: tool.id })}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
+                    {/* Mobile: Carousel */}
+                    {isMobile ? (
+                      <ToolsCarousel 
+                        tools={phaseTools} 
+                        phaseKey={phaseKey}
+                        onToolClick={handleToolClick}
+                      />
+                    ) : (
+                      /* Desktop: Grid */
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {phaseTools.map((tool, index) => (
+                          <motion.div
+                            key={tool.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 * (phaseIndex + index) }}
+                          >
+                            <ToolCard 
+                              tool={tool} 
+                              onClick={() => handleToolClick(tool.id)}
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </motion.section>
                 );
               })}
