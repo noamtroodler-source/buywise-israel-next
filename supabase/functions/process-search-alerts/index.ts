@@ -215,7 +215,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       try {
         await resend.emails.send({
-          from: "BuyWise Israel <notifications@resend.dev>",
+          from: "BuyWise Israel <hello@buywiseisrael.com>",
           to: [profile.email],
           subject: `🏠 ${matchingProperties.length} New ${matchingProperties.length === 1 ? "Match" : "Matches"} for "${alertName}"`,
           html: `
