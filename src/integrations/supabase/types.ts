@@ -2511,6 +2511,7 @@ export type Database = {
         Row: {
           created_at: string | null
           drop_percent: number
+          email_sent_at: string | null
           id: string
           is_read: boolean | null
           new_price: number
@@ -2521,6 +2522,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           drop_percent: number
+          email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
           new_price: number
@@ -2531,6 +2533,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           drop_percent?: number
+          email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
           new_price?: number
@@ -2594,6 +2597,10 @@ export type Database = {
           full_name: string | null
           id: string
           is_banned: boolean | null
+          notify_email: boolean | null
+          notify_price_drops: boolean | null
+          notify_recommendations: boolean | null
+          notify_search_alerts: boolean | null
           phone: string | null
           updated_at: string
         }
@@ -2608,6 +2615,10 @@ export type Database = {
           full_name?: string | null
           id: string
           is_banned?: boolean | null
+          notify_email?: boolean | null
+          notify_price_drops?: boolean | null
+          notify_recommendations?: boolean | null
+          notify_search_alerts?: boolean | null
           phone?: string | null
           updated_at?: string
         }
@@ -2622,6 +2633,10 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_banned?: boolean | null
+          notify_email?: boolean | null
+          notify_price_drops?: boolean | null
+          notify_recommendations?: boolean | null
+          notify_search_alerts?: boolean | null
           phone?: string | null
           updated_at?: string
         }
@@ -3523,6 +3538,8 @@ export type Database = {
           frequency: string
           id: string
           is_active: boolean | null
+          last_checked_at: string | null
+          last_sent_at: string | null
           listing_type: string
           name: string | null
           notify_email: boolean | null
@@ -3538,6 +3555,8 @@ export type Database = {
           frequency?: string
           id?: string
           is_active?: boolean | null
+          last_checked_at?: string | null
+          last_sent_at?: string | null
           listing_type?: string
           name?: string | null
           notify_email?: boolean | null
@@ -3553,6 +3572,8 @@ export type Database = {
           frequency?: string
           id?: string
           is_active?: boolean | null
+          last_checked_at?: string | null
+          last_sent_at?: string | null
           listing_type?: string
           name?: string | null
           notify_email?: boolean | null

@@ -18,6 +18,10 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  notify_email: boolean;
+  notify_price_drops: boolean;
+  notify_search_alerts: boolean;
+  notify_recommendations: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -160,6 +164,8 @@ export interface SearchAlert {
   notify_sms: boolean;
   phone: string | null;
   is_active: boolean;
+  last_sent_at: string | null;
+  last_checked_at: string | null;
   created_at: string;
   updated_at: string;
 }
