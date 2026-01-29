@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -15,6 +15,7 @@ import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
 import { PostSignupSuggestions } from '@/components/onboarding/PostSignupSuggestions';
 import { PasswordStrengthInput } from '@/components/auth/PasswordStrengthInput';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Shield, Loader2, Mail, User, Building2, Landmark, Bell, Calculator, Heart, Scale, type LucideIcon } from 'lucide-react';
 
@@ -148,6 +149,9 @@ export default function Auth() {
     }
   }, [user, loading, isProfessionalSignup, config.redirectTo, navigate, inviteCode]);
 
+  // Track if we've already sent welcome email to prevent duplicates
+  const welcomeEmailSentRef = useRef(false);
+
   useEffect(() => {
     if (user && !loading && !profileLoading) {
       // If professional signup, redirect to registration page
@@ -162,6 +166,14 @@ export default function Auth() {
       // Regular buyer flow - detect new users (no buyer profile) regardless of signup method
       // This works for both email signup AND Google OAuth
       if (!buyerProfile && !isProfessionalSignup) {
+        // Send welcome email for new buyer signups (only once)
+        if (!welcomeEmailSentRef.current) {
+          welcomeEmailSentRef.current = true;
+          const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'there';
+          supabase.functions.invoke('send-welcome-email', {
+            body: { email: user.email, name: userName, userType: 'buyer' }
+          }).catch((err) => console.error('Failed to send welcome email:', err));
+        }
         setShowOnboarding(true);
       } else if (!showOnboarding && !showPostSignupSuggestions) {
         navigate('/');
