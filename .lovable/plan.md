@@ -1,40 +1,48 @@
 
-# Fix: Affordability Calculator Range Text Wrapping
+
+# Cap Maximum Display Values in Affordability Calculator
 
 ## Problem
-The maximum budget range display (e.g., "₪2.3M – ₪2.6M") in the Affordability Calculator wraps to two lines when values have multiple decimal digits. This happens because the browser treats the space around the en-dash (` – `) as a valid line break point.
+
+When users enter unrealistically high income values (like ₪7,000,000/month), the calculator displays absurdly large property prices like "₪742.9M – ₪800M". This is unrealistic - essentially nobody buys properties for hundreds of millions of shekels.
 
 ## Solution
-Add `whitespace-nowrap` to the motion.p element displaying the hero range value to prevent text from wrapping regardless of container width.
 
-## File to Modify
+Cap the maximum property price range at **₪99.9 million** (or ~$27.75M USD equivalent). This is a sensible ceiling for the Israeli residential market - anything above this is ultra-luxury territory that doesn't need calculator precision.
 
-### `src/components/tools/AffordabilityCalculator.tsx`
+### Implementation
 
-**Line 386-388** - Add `whitespace-nowrap` class:
+**File: `src/components/tools/AffordabilityCalculator.tsx`**
 
-```tsx
-// Before:
-<motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary">
-  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
-</motion.p>
+Add a constant for the maximum displayable property price and apply it when calculating the range values:
 
-// After:
-<motion.p key={calculations.maxPropertyPrice} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-4xl md:text-5xl font-bold text-primary whitespace-nowrap">
-  {formatCurrencyRange(calculations.maxPropertyLow, calculations.maxPropertyHigh, currencySymbol)}
-</motion.p>
+```typescript
+// Add near other constants (line ~88)
+const MAX_DISPLAY_PROPERTY_PRICE = 99900000; // ₪99.9M ceiling
+
+// In the calculations useMemo (around lines 263-264), cap the values:
+maxPropertyLow: Math.round(Math.min(maxPropertyAtHighRate, MAX_DISPLAY_PROPERTY_PRICE)),
+maxPropertyHigh: Math.round(Math.min(maxPropertyAtLowRate, MAX_DISPLAY_PROPERTY_PRICE)),
 ```
 
-## Additional Consideration
+This ensures:
+- The hero range display never shows values like "₪742.9M"
+- Maximum display is "₪99.9M" even if calculations go higher
+- Other derived values (max loan, monthly payment, etc.) also get naturally capped since they're calculated from capped property prices
 
-For very large numbers (e.g., "$10.5M – $12.8M" in USD mode), we should also consider:
-1. Reducing font size on smaller screens if needed via responsive classes
-2. Updating the shared `ResultRange` component to include `whitespace-nowrap` by default for the `hero` variant
+### Why Not Cap in `formatCurrencyRange`?
 
-I'll add `whitespace-nowrap` to ensure the range always stays on one line, and include responsive font sizing to handle edge cases with very large numbers.
+The formatting function is shared across the app. Capping there would affect other legitimate displays. The cap should be applied at the **calculation level** for this specific calculator where unrealistic values don't make sense.
 
-## Changes Summary
+### Edge Cases
+
+- **Very high incomes**: Will see "₪99.9M – ₪99.9M" (both values hit the cap)
+- **USD mode**: The ₪99.9M cap translates to ~$27.75M which is also reasonable
+- **Other calculators**: Unaffected - they use the shared `formatCurrencyRange` without modification
+
+## Files to Modify
+
 | File | Change |
 |------|--------|
-| `src/components/tools/AffordabilityCalculator.tsx` | Add `whitespace-nowrap` to hero range display |
-| `src/components/tools/shared/ResultRange.tsx` | Add `whitespace-nowrap` to hero variant for consistency across all calculators |
+| `src/components/tools/AffordabilityCalculator.tsx` | Add `MAX_DISPLAY_PROPERTY_PRICE` constant and apply cap to `maxPropertyLow` and `maxPropertyHigh` calculations |
+
