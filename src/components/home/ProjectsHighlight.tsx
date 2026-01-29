@@ -100,8 +100,8 @@ export function ProjectsHighlight() {
               
               {/* Action Buttons - Top Right */}
               <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                {/* Share - visible on hover */}
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {/* Share - visible on mobile, hover-only on desktop */}
+                <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                   <ProjectShareButton
                     projectSlug={mainProject.slug}
                     projectName={mainProject.name}
@@ -155,8 +155,8 @@ export function ProjectsHighlight() {
                 
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-2 right-2 flex gap-1.5 z-10">
-                  {/* Share - visible on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  {/* Share - visible on mobile, hover-only on desktop */}
+                  <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
                     <ProjectShareButton
                       projectSlug={project.slug}
                       projectName={project.name}
