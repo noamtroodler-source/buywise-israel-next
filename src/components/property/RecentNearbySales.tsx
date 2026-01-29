@@ -1,14 +1,17 @@
+import { useState, useCallback, useEffect } from 'react';
 import { MapPin, Home, TrendingUp, Calendar, BarChart3, Building2, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import useEmblaCarousel from 'embla-carousel-react';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { CarouselDots } from '@/components/shared/CarouselDots';
 import { format } from 'date-fns';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
-
 interface RecentNearbySalesProps {
   latitude: number | null;
   longitude: number | null;
@@ -27,6 +30,36 @@ export function RecentNearbySales({
   propertySizeSqm,
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
+  const isMobile = useIsMobile();
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  
+  // Embla carousel setup for mobile
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    loop: true,
+    skipSnaps: false,
+    containScroll: 'trimSnaps',
+  });
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  const scrollTo = useCallback((index: number) => {
+    if (!emblaApi) return;
+    emblaApi.scrollTo(index);
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
   const { data: comps, isLoading, error } = useNearbySoldComps(
     latitude,
     longitude,
@@ -165,122 +198,209 @@ export function RecentNearbySales({
           </Tooltip>
         </div>
 
-        {/* Comp cards */}
-        <div className="space-y-3">
-          {comps.map((comp) => {
-            const comparison = getComparison(comp.price_per_sqm);
+        {/* Comp cards - Mobile Carousel */}
+        {isMobile ? (
+          <div className="space-y-3">
+            <div className="overflow-hidden -mx-4" ref={emblaRef}>
+              <div className="flex">
+                {comps.map((comp) => {
+                  const comparison = getComparison(comp.price_per_sqm);
+                  
+                  return (
+                    <div 
+                      key={comp.id} 
+                      className="flex-[0_0_calc(100%-1.5rem)] min-w-0 pl-4 first:pl-4"
+                    >
+                      <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Home className="h-5 w-5 text-primary" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-foreground">
+                              {comp.rooms ? `${comp.rooms}BR` : 'Apartment'}
+                              {comp.size_sqm ? `, ${comp.size_sqm}m²` : ''}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              sold for
+                            </span>
+                            <span className="font-bold text-primary">
+                              {formatPrice(comp.sold_price, 'ILS')}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {comp.is_same_building ? (
+                                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                  Same building
+                                </Badge>
+                              ) : (
+                                <span>{formatDistance(comp.distance_meters)}</span>
+                              )}
+                            </span>
+
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatSoldDate(comp.sold_date)}
+                            </span>
+
+                            {comp.price_per_sqm && (
+                              <span className="flex items-center gap-1">
+                                <BarChart3 className="h-3 w-3" />
+                                {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                              </span>
+                            )}
+                          </div>
+
+                          {comparison !== null && Math.abs(comparison) > 5 && (
+                            <div className="mt-2">
+                              <Badge 
+                                variant="secondary"
+                                className="text-xs bg-primary/10 text-primary"
+                              >
+                                {comparison > 0 
+                                  ? `Listing is ${comparison.toFixed(0)}% above this sale`
+                                  : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
+                                }
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             
-            return (
-              <div
-                key={comp.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
-              >
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Home className="h-5 w-5 text-primary" />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-foreground">
-                      {comp.rooms ? `${comp.rooms}BR` : 'Apartment'}
-                      {comp.size_sqm ? `, ${comp.size_sqm}m²` : ''}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      sold for
-                    </span>
-                    <span className="font-bold text-primary">
-                      {formatPrice(comp.sold_price, 'ILS')}
-                    </span>
+            {/* Carousel dots */}
+            <CarouselDots 
+              total={comps.length} 
+              current={selectedIndex} 
+              onDotClick={scrollTo}
+            />
+          </div>
+        ) : (
+          /* Desktop - vertical stacked cards */
+          <div className="space-y-3">
+            {comps.map((comp) => {
+              const comparison = getComparison(comp.price_per_sqm);
+              
+              return (
+                <div
+                  key={comp.id}
+                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Home className="h-5 w-5 text-primary" />
                   </div>
                   
-                  <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
-                    {/* Distance with tooltip */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="flex items-center gap-1 cursor-help">
-                          <MapPin className="h-3 w-3" />
-                          {comp.is_same_building ? (
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0">
-                              Same building
-                            </Badge>
-                          ) : (
-                            <span className="border-b border-dotted border-muted-foreground/50">
-                              {formatDistance(comp.distance_meters)}
-                            </span>
-                          )}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-xs">
-                        <p className="font-medium mb-1">{comp.is_same_building ? 'Same Building' : 'Nearby Sale'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {comp.is_same_building 
-                            ? 'This sale occurred in the same building. Most relevant for direct price comparison.'
-                            : `This property sold ${Math.round(comp.distance_meters)} meters from this listing. Similar location factors should apply.`
-                          }
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    {/* Date */}
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatSoldDate(comp.sold_date)}
-                    </span>
-
-                    {/* Price per sqm with tooltip */}
-                    {comp.price_per_sqm && (
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-foreground">
+                        {comp.rooms ? `${comp.rooms}BR` : 'Apartment'}
+                        {comp.size_sqm ? `, ${comp.size_sqm}m²` : ''}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        sold for
+                      </span>
+                      <span className="font-bold text-primary">
+                        {formatPrice(comp.sold_price, 'ILS')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
+                      {/* Distance with tooltip */}
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
-                            <BarChart3 className="h-3 w-3" />
-                            {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                          <span className="flex items-center gap-1 cursor-help">
+                            <MapPin className="h-3 w-3" />
+                            {comp.is_same_building ? (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                                Same building
+                              </Badge>
+                            ) : (
+                              <span className="border-b border-dotted border-muted-foreground/50">
+                                {formatDistance(comp.distance_meters)}
+                              </span>
+                            )}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
-                          <p className="font-medium mb-1">Price per Square Meter</p>
+                          <p className="font-medium mb-1">{comp.is_same_building ? 'Same Building' : 'Nearby Sale'}</p>
                           <p className="text-xs text-muted-foreground">
-                            The actual sold price divided by property size. Use this to compare value across different-sized properties.
+                            {comp.is_same_building 
+                              ? 'This sale occurred in the same building. Most relevant for direct price comparison.'
+                              : `This property sold ${Math.round(comp.distance_meters)} meters from this listing. Similar location factors should apply.`
+                            }
                           </p>
                         </TooltipContent>
                       </Tooltip>
+
+                      {/* Date */}
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formatSoldDate(comp.sold_date)}
+                      </span>
+
+                      {/* Price per sqm with tooltip */}
+                      {comp.price_per_sqm && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center gap-1 cursor-help border-b border-dotted border-muted-foreground/50">
+                              <BarChart3 className="h-3 w-3" />
+                              {formatPrice(comp.price_per_sqm, 'ILS')}/m²
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="font-medium mb-1">Price per Square Meter</p>
+                            <p className="text-xs text-muted-foreground">
+                              The actual sold price divided by property size. Use this to compare value across different-sized properties.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
+
+                    {/* Comparison badge with tooltip */}
+                    {comparison !== null && Math.abs(comparison) > 5 && (
+                      <div className="mt-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              variant="secondary"
+                              className={cn(
+                                "text-xs cursor-help",
+                                "bg-primary/10 text-primary hover:bg-primary/15"
+                              )}
+                            >
+                              {comparison > 0 
+                                ? `Listing is ${comparison.toFixed(0)}% above this sale`
+                                : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
+                              }
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="font-medium mb-1">Price per m² Comparison</p>
+                            <p className="text-xs text-muted-foreground">
+                              {comparison > 0 
+                                ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
+                                : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
+                              }
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     )}
                   </div>
-
-                  {/* Comparison badge with tooltip */}
-                  {comparison !== null && Math.abs(comparison) > 5 && (
-                    <div className="mt-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            variant="secondary"
-                            className={cn(
-                              "text-xs cursor-help",
-                              "bg-primary/10 text-primary hover:bg-primary/15"
-                            )}
-                          >
-                            {comparison > 0 
-                              ? `Listing is ${comparison.toFixed(0)}% above this sale`
-                              : `Listing is ${Math.abs(comparison).toFixed(0)}% below this sale`
-                            }
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs">
-                          <p className="font-medium mb-1">Price per m² Comparison</p>
-                          <p className="text-xs text-muted-foreground">
-                            {comparison > 0 
-                              ? "This listing's price per sqm is higher than what this nearby property sold for. Could indicate premium features or room for negotiation."
-                              : "This listing's price per sqm is below recent comparable sales—potentially good value or motivated seller."
-                            }
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Source attribution footer */}
         <div className="flex items-center justify-center gap-2 pt-3 border-t border-border/50">
