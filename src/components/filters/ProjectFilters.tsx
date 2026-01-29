@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link } from 'react-router-dom';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ProjectMobileFilterSheet } from '@/components/filters/ProjectMobileFilterSheet';
 
 export interface ProjectFiltersType {
   city?: string;
@@ -67,15 +69,28 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
   const [developerOpen, setDeveloperOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [developerSearch, setDeveloperSearch] = useState('');
   
   const { data: cities } = useCities();
   const { data: developers } = useDevelopers();
   const { currency, exchangeRate } = usePreferences();
+  const isMobile = useIsMobile();
   
   // Dynamic count for Apply buttons - shows preview of matching results
   const { data: previewCount, isFetching: countLoading } = useProjectCount(filters);
+
+  // Count active filters for mobile badge (excluding city, sort)
+  const mobileActiveFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.status) count++;
+    if (filters.min_price || filters.max_price) count++;
+    if (filters.min_rooms || filters.min_bathrooms) count++;
+    if (filters.completion_year) count++;
+    if (filters.developer_id) count++;
+    return count;
+  }, [filters]);
 
   const filteredDevelopers = developers?.filter(dev => 
     dev.name.toLowerCase().includes(developerSearch.toLowerCase())
@@ -194,7 +209,20 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
         </PopoverContent>
       </Popover>
 
-      {/* Status Filter */}
+      {/* Mobile: Consolidated Filters Button */}
+      {isMobile && (
+        <Button 
+          variant="outline"
+          className={cn(filterButtonBase, mobileActiveFilterCount > 0 && "border-primary/50")}
+          onClick={() => setMobileFiltersOpen(true)}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>{mobileActiveFilterCount > 0 ? `Filters (${mobileActiveFilterCount})` : 'Filters'}</span>
+        </Button>
+      )}
+
+      {/* Desktop: Status Filter */}
+      {!isMobile && (
       <Popover open={statusOpen} onOpenChange={setStatusOpen}>
         <PopoverTrigger asChild>
           <Button 
@@ -243,8 +271,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
-      {/* Beds/Baths Combined Filter */}
+      {/* Desktop: Beds/Baths Combined Filter */}
+      {!isMobile && (
       <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
         <PopoverTrigger asChild>
           <Button 
@@ -379,8 +409,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </TooltipProvider>
         </PopoverContent>
       </Popover>
+      )}
 
-      {/* Price Filter */}
+      {/* Desktop: Price Filter */}
+      {!isMobile && (
       <Popover open={priceOpen} onOpenChange={setPriceOpen}>
         <PopoverTrigger asChild>
           <Button 
@@ -431,8 +463,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
-      {/* Completion Year Filter */}
+      {/* Desktop: Completion Year Filter */}
+      {!isMobile && (
       <Popover open={yearOpen} onOpenChange={setYearOpen}>
         <PopoverTrigger asChild>
           <Button 
@@ -480,8 +514,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
-      {/* Developer Filter */}
+      {/* Desktop: Developer Filter */}
+      {!isMobile && (
       <Popover open={developerOpen} onOpenChange={setDeveloperOpen}>
         <PopoverTrigger asChild>
           <Button 
@@ -556,6 +592,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </div>
         </PopoverContent>
       </Popover>
+      )}
 
       {/* Clear All Filters - Only shown when filters are active */}
       {hasActiveFilters && (
@@ -617,6 +654,20 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           </Button>
         )}
       </div>
+
+      {/* Mobile Filters Sheet */}
+      <ProjectMobileFilterSheet
+        open={mobileFiltersOpen}
+        onOpenChange={setMobileFiltersOpen}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        cities={cities || []}
+        developers={developers}
+        previewCount={previewCount}
+        isCountLoading={countLoading}
+        currency={currency}
+        exchangeRate={exchangeRate}
+      />
     </div>
   );
 }

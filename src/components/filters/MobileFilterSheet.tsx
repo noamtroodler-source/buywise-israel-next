@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2 } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -43,6 +43,26 @@ const AMENITIES = [
   { value: 'safe_room', label: 'Safe Room' },
   { value: 'sea_view', label: 'Sea View' },
 ];
+
+const DAYS_ON_MARKET_OPTIONS = [
+  { value: undefined, label: 'Any' },
+  { value: 1, label: '24 Hours' },
+  { value: 7, label: '7 Days' },
+  { value: 30, label: '30 Days' },
+];
+
+const AVAILABILITY_OPTIONS = [
+  { value: 'any', label: 'Any Time' },
+  { value: 'now', label: 'Available Now' },
+  { value: '30', label: 'Within 30 Days' },
+  { value: '60', label: 'Within 60 Days' },
+];
+
+const PET_OPTIONS = [
+  { value: 'cats', label: 'Cats OK', Icon: Cat },
+  { value: 'dogs', label: 'Dogs OK', Icon: Dog },
+  { value: 'all', label: 'All Pets', Icon: PawPrint },
+] as const;
 
 export function MobileFilterSheet({
   open,
@@ -201,6 +221,41 @@ export function MobileFilterSheet({
               </div>
             </section>
 
+            {/* Bathrooms Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Bath className="h-4 w-4 text-primary" />
+                Bathrooms
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                    !filters.min_bathrooms 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted hover:bg-muted/80"
+                  )}
+                  onClick={() => updateFilter('min_bathrooms', undefined)}
+                >
+                  Any
+                </button>
+                {[1, 1.5, 2, 3, 4].map(num => (
+                  <button
+                    key={num}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      filters.min_bathrooms === num 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => updateFilter('min_bathrooms', filters.min_bathrooms === num ? undefined : num)}
+                  >
+                    {num}+
+                  </button>
+                ))}
+              </div>
+            </section>
+
             {/* Property Type Section */}
             <section className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
@@ -283,16 +338,14 @@ export function MobileFilterSheet({
               </div>
             </section>
 
-            {/* New Listings */}
+            {/* Listing Age */}
             <section className="space-y-3">
-              <h3 className="font-semibold">Listing Age</h3>
+              <h3 className="font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Listing Age
+              </h3>
               <div className="flex flex-wrap gap-2">
-                {[
-                  { value: undefined, label: 'Any' },
-                  { value: 1, label: '24 Hours' },
-                  { value: 7, label: '7 Days' },
-                  { value: 30, label: '30 Days' },
-                ].map(option => (
+                {DAYS_ON_MARKET_OPTIONS.map(option => (
                   <button
                     key={option.label}
                     className={cn(
@@ -308,6 +361,151 @@ export function MobileFilterSheet({
                 ))}
               </div>
             </section>
+
+            {/* Parking Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Car className="h-4 w-4 text-primary" />
+                Parking
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                    !filters.min_parking 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-muted hover:bg-muted/80"
+                  )}
+                  onClick={() => updateFilter('min_parking', undefined)}
+                >
+                  Any
+                </button>
+                {[1, 2, 3].map(num => (
+                  <button
+                    key={num}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      filters.min_parking === num 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => updateFilter('min_parking', filters.min_parking === num ? undefined : num)}
+                  >
+                    {num}+
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Floor Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                Floor
+              </h3>
+              <div className="flex gap-3">
+                <Input
+                  type="number"
+                  placeholder="Min"
+                  value={filters.min_floor ?? ''}
+                  onChange={(e) => updateFilter('min_floor', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="rounded-xl"
+                />
+                <Input
+                  type="number"
+                  placeholder="Max"
+                  value={filters.max_floor ?? ''}
+                  onChange={(e) => updateFilter('max_floor', e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="rounded-xl"
+                />
+              </div>
+            </section>
+
+            {/* Rental-specific: Availability & Pets */}
+            {listingType === 'for_rent' && (
+              <>
+                {/* Availability Section */}
+                <section className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <CalendarCheck className="h-4 w-4 text-primary" />
+                    Availability
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {AVAILABILITY_OPTIONS.map(option => {
+                      const isSelected = option.value === 'any' 
+                        ? (!filters.available_now && !filters.available_by)
+                        : option.value === 'now' 
+                          ? filters.available_now 
+                          : false;
+                      return (
+                        <button
+                          key={option.value}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                            isSelected
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted hover:bg-muted/80"
+                          )}
+                          onClick={() => {
+                            if (option.value === 'any') {
+                              updateFilter('available_now', undefined);
+                              updateFilter('available_by', undefined);
+                            } else if (option.value === 'now') {
+                              updateFilter('available_now', true);
+                              updateFilter('available_by', undefined);
+                            } else {
+                              const days = parseInt(option.value);
+                              const date = new Date();
+                              date.setDate(date.getDate() + days);
+                              updateFilter('available_now', undefined);
+                              updateFilter('available_by', date.toISOString().split('T')[0]);
+                            }
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+
+                {/* Pet Policy Section */}
+                <section className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <PawPrint className="h-4 w-4 text-primary" />
+                    Pet Policy
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {PET_OPTIONS.map(option => {
+                      const isSelected = filters.allows_pets?.includes(option.value) || false;
+                      const Icon = option.Icon;
+                      return (
+                        <button
+                          key={option.value}
+                          className={cn(
+                            "px-3 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+                            isSelected
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted hover:bg-muted/80"
+                          )}
+                          onClick={() => {
+                            const current = filters.allows_pets || [];
+                            if (isSelected) {
+                              updateFilter('allows_pets', current.filter(p => p !== option.value));
+                            } else {
+                              updateFilter('allows_pets', [...current, option.value]);
+                            }
+                          }}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         </ScrollArea>
 
