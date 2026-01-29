@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 
@@ -316,6 +317,14 @@ export default function Listings() {
                 </Button>
               </div>
             </div>
+
+            {/* Support Footer */}
+            <SupportFooter 
+              message="Can't find what you're looking for? [Tell us] what you need — we might know of something coming soon."
+              linkText="Tell us"
+              variant="subtle"
+              className="mt-6"
+            />
           </div>
         )}
       </div>

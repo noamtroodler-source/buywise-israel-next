@@ -19,6 +19,7 @@ import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { RecentNearbySales } from '@/components/property/RecentNearbySales';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -98,9 +99,15 @@ export default function PropertyDetail() {
   if (!property) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
+        <div className="container py-16 text-center max-w-lg mx-auto">
           <h1 className="text-2xl font-bold text-foreground">Property not found</h1>
           <p className="text-muted-foreground mt-2">The property you're looking for doesn't exist or has been removed.</p>
+          <SupportFooter 
+            message="Think this is a mistake? [Let us know]. Or tell us what you're looking for — we're happy to help."
+            linkText="Let us know"
+            variant="subtle"
+            className="mt-8"
+          />
         </div>
       </Layout>
     );

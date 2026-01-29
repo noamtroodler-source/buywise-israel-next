@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 import { Button } from '@/components/ui/button';
 import { MortgageCalculator } from '@/components/tools/MortgageCalculator';
 import AffordabilityCalculator from '@/components/tools/AffordabilityCalculator';
@@ -193,7 +194,7 @@ export default function Tools() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="mt-12 max-w-2xl mx-auto"
+                className="mt-12 max-w-2xl mx-auto space-y-4"
               >
                 <div className="p-4 rounded-xl bg-muted/50 text-center">
                   <p className="text-xs text-muted-foreground">
@@ -201,6 +202,14 @@ export default function Tools() {
                     Consult with a financial advisor or mortgage professional for personalized advice.
                   </p>
                 </div>
+
+                {/* Support Footer */}
+                <SupportFooter 
+                  message="Need help interpreting your results? [Reach out] — we're happy to walk through the numbers with you."
+                  linkText="Reach out"
+                  variant="inline"
+                  className="text-center"
+                />
               </motion.div>
             </div>
           </>

@@ -4,6 +4,7 @@ import { GitCompareArrows, ArrowRight, Lightbulb, TrendingUp, Home, Building2 } 
 import { Button } from '@/components/ui/button';
 import { useProperties } from '@/hooks/useProperties';
 import { CompareCategory } from '@/contexts/CompareContext';
+import { SupportFooter } from '@/components/shared/SupportFooter';
 
 interface CompareEmptyStateProps {
   category?: CompareCategory | null;
@@ -163,6 +164,14 @@ export function CompareEmptyState({ category }: CompareEmptyStateProps) {
             </Link>
           </Button>
         </div>
+
+        {/* Support Footer */}
+        <SupportFooter 
+          message="Feeling unsure about what to compare? [Ask us] — we can help you figure out what matters most."
+          linkText="Ask us"
+          variant="subtle"
+          className="mt-6"
+        />
       </motion.div>
     </div>
   );
