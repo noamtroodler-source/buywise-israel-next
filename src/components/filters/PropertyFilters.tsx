@@ -14,6 +14,8 @@ import { matchCities } from '@/lib/utils/cityMatcher';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
@@ -102,12 +104,30 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [typeOpen, setTypeOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   
   const { data: cities } = useCities();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
+  const isMobile = useIsMobile();
+  
+  // Count active filters for mobile badge (excluding city, sort, listing_status)
+  const mobileActiveFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.min_price || filters.max_price) count++;
+    if (filters.min_rooms || filters.min_bathrooms) count++;
+    if (filters.property_types?.length) count++;
+    if (filters.min_size || filters.max_size) count++;
+    if (filters.features?.length) count++;
+    if (filters.max_days_listed) count++;
+    if (filters.min_parking) count++;
+    if (filters.min_floor || filters.max_floor) count++;
+    if (filters.available_now || filters.available_by) count++;
+    if (filters.allows_pets?.length) count++;
+    return count;
+  }, [filters]);
   
   // Use passed count from parent instead of separate query
   const countLoading = isCountLoading;
@@ -372,7 +392,20 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </PopoverContent>
         </Popover>
 
-        {/* Price Filter */}
+        {/* Mobile: Consolidated Filters Button */}
+        {isMobile && (
+          <Button 
+            variant="outline"
+            className={cn(filterButtonBase, mobileActiveFilterCount > 0 && "border-primary/50")}
+            onClick={() => setMobileFiltersOpen(true)}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            <span>{mobileActiveFilterCount > 0 ? `Filters (${mobileActiveFilterCount})` : 'Filters'}</span>
+          </Button>
+        )}
+
+        {/* Desktop: Price Filter */}
+        {!isMobile && (
         <Popover open={priceOpen} onOpenChange={setPriceOpen}>
           <PopoverTrigger asChild>
             <Button 
@@ -424,8 +457,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </div>
           </PopoverContent>
         </Popover>
+        )}
 
-        {/* Beds/Baths Combined Filter */}
+        {/* Desktop: Beds/Baths Combined Filter */}
+        {!isMobile && (
         <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
           <PopoverTrigger asChild>
             <Button 
@@ -561,8 +596,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </div>
           </PopoverContent>
         </Popover>
+        )}
 
-        {/* Type Filter */}
+        {/* Desktop: Type Filter */}
+        {!isMobile && (
         <Popover open={typeOpen} onOpenChange={setTypeOpen}>
           <PopoverTrigger asChild>
             <Button 
@@ -628,8 +665,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </div>
           </PopoverContent>
         </Popover>
+        )}
 
-        {/* More Filters Button */}
+        {/* Desktop: More Filters Button */}
+        {!isMobile && (
         <Button 
           variant="outline"
           className={cn(filterButtonBase, moreFiltersOpen && filterButtonActive)}
@@ -638,6 +677,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           <SlidersHorizontal className="h-4 w-4" />
           <span>More Filters</span>
         </Button>
+        )}
 
         {/* Clear All Filters - Only shown when filters are active */}
         {hasActiveFilters && (
@@ -1063,6 +1103,20 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Mobile Filters Sheet */}
+      <MobileFilterSheet
+        open={mobileFiltersOpen}
+        onOpenChange={setMobileFiltersOpen}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        listingType={listingType}
+        cities={cities || []}
+        previewCount={previewCount}
+        isCountLoading={isCountLoading}
+        currency={currency}
+        exchangeRate={exchangeRate}
+      />
     </TooltipProvider>
   );
 }
