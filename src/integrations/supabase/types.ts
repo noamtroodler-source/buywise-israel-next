@@ -1318,6 +1318,42 @@ export type Database = {
         }
         Relationships: []
       }
+      comparison_sessions: {
+        Row: {
+          comparison_criteria: Json | null
+          comparison_duration_ms: number | null
+          created_at: string | null
+          id: string
+          outcome: string | null
+          property_ids: string[]
+          session_id: string
+          user_id: string | null
+          winner_property_id: string | null
+        }
+        Insert: {
+          comparison_criteria?: Json | null
+          comparison_duration_ms?: number | null
+          created_at?: string | null
+          id?: string
+          outcome?: string | null
+          property_ids: string[]
+          session_id: string
+          user_id?: string | null
+          winner_property_id?: string | null
+        }
+        Update: {
+          comparison_criteria?: Json | null
+          comparison_duration_ms?: number | null
+          created_at?: string | null
+          id?: string
+          outcome?: string | null
+          property_ids?: string[]
+          session_id?: string
+          user_id?: string | null
+          winner_property_id?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           category: string
@@ -1769,6 +1805,42 @@ export type Database = {
           is_enabled?: boolean | null
           label?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      funnel_exit_feedback: {
+        Row: {
+          created_at: string | null
+          exit_reason: string | null
+          feedback_text: string | null
+          funnel_step: string | null
+          funnel_type: string
+          id: string
+          page_path: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          exit_reason?: string | null
+          feedback_text?: string | null
+          funnel_step?: string | null
+          funnel_type: string
+          id?: string
+          page_path?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          exit_reason?: string | null
+          feedback_text?: string | null
+          funnel_step?: string | null
+          funnel_type?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -2511,34 +2583,49 @@ export type Database = {
         Row: {
           created_at: string | null
           drop_percent: number
+          email_opened_at: string | null
           email_sent_at: string | null
           id: string
           is_read: boolean | null
+          link_clicked_at: string | null
           new_price: number
           previous_price: number
           property_id: string
+          resulted_in_inquiry: boolean | null
+          resulted_in_save: boolean | null
+          tracking_token: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           drop_percent: number
+          email_opened_at?: string | null
           email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
+          link_clicked_at?: string | null
           new_price: number
           previous_price: number
           property_id: string
+          resulted_in_inquiry?: boolean | null
+          resulted_in_save?: boolean | null
+          tracking_token?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           drop_percent?: number
+          email_opened_at?: string | null
           email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
+          link_clicked_at?: string | null
           new_price?: number
           previous_price?: number
           property_id?: string
+          resulted_in_inquiry?: boolean | null
+          resulted_in_save?: boolean | null
+          tracking_token?: string | null
           user_id?: string
         }
         Relationships: []
@@ -4046,6 +4133,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journeys: {
+        Row: {
+          created_at: string | null
+          days_since_first_visit: number | null
+          first_touch_campaign: string | null
+          first_touch_medium: string | null
+          first_touch_source: string | null
+          id: string
+          journey_stage: string | null
+          key_milestones: Json | null
+          last_touch_medium: string | null
+          last_touch_source: string | null
+          total_page_views: number | null
+          total_sessions: number | null
+          touchpoint_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_since_first_visit?: number | null
+          first_touch_campaign?: string | null
+          first_touch_medium?: string | null
+          first_touch_source?: string | null
+          id?: string
+          journey_stage?: string | null
+          key_milestones?: Json | null
+          last_touch_medium?: string | null
+          last_touch_source?: string | null
+          total_page_views?: number | null
+          total_sessions?: number | null
+          touchpoint_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_since_first_visit?: number | null
+          first_touch_campaign?: string | null
+          first_touch_medium?: string | null
+          first_touch_source?: string | null
+          id?: string
+          journey_stage?: string | null
+          key_milestones?: Json | null
+          last_touch_medium?: string | null
+          last_touch_source?: string | null
+          total_page_views?: number | null
+          total_sessions?: number | null
+          touchpoint_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_milestones: {
         Row: {
           first_reached_at: string
@@ -4167,6 +4308,7 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_journey_stage: { Args: { milestones: Json }; Returns: string }
       can_agent_view_profile: {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
