@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { Building, MapPin, Calendar, Loader2, Home, TrendingDown } from 'lucide-react';
@@ -18,11 +18,13 @@ import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Projects() {
   const [filters, setFilters] = useState<ProjectFiltersType>({});
@@ -32,6 +34,7 @@ export default function Projects() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
 
   // Use paginated projects hook
   const { 
@@ -162,6 +165,11 @@ export default function Projects() {
     return Math.round(((originalPrice - project.price_from) / originalPrice) * 100);
   };
 
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['projects'] });
+  }, [queryClient]);
+
   return (
     <Layout>
       {/* Page Header */}
@@ -216,8 +224,9 @@ export default function Projects() {
             </div>
           ) : (
             <>
-              <ListingsGrid isFetching={isFetching && !isLoading}>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
+                <ListingsGrid isFetching={isFetching && !isLoading}>
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {projects.map((project) => (
                     <div key={project.id} className="animate-fade-in">
                       <Link to={`/projects/${project.slug}`} onClick={() => handleProjectClick(project.id)}>
@@ -318,6 +327,7 @@ export default function Projects() {
                   ))}
                 </div>
               </ListingsGrid>
+            </PullToRefresh>
 
               {/* Load More Button */}
               {hasNextPage && (

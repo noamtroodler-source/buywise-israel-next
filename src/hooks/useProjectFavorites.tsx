@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { useCallback } from 'react';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
+import { triggerHaptic } from './useHapticFeedback';
 
 export function useProjectFavorites() {
   const { user } = useAuth();
@@ -148,6 +149,9 @@ export function useProjectFavorites() {
   });
 
   const toggleProjectFavorite = useCallback((projectId: string) => {
+    // Trigger haptic feedback on toggle
+    triggerHaptic('light');
+    
     if (projectFavoriteIds.includes(projectId)) {
       removeProjectFavorite.mutate(projectId);
     } else {

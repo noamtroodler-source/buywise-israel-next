@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, Calculator, ArrowRight, Loader2, Bell, BellOff, Building, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -18,6 +18,9 @@ import { useCompare } from '@/contexts/CompareContext';
 import { useAuth } from '@/hooks/useAuth';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { PullToRefresh } from '@/components/shared/PullToRefresh';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useQueryClient } from '@tanstack/react-query';
 
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
@@ -28,6 +31,16 @@ export default function Favorites() {
   const { compareCategory } = useCompare();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'buy' | 'rent' | 'projects'>('buy');
+  const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+      queryClient.invalidateQueries({ queryKey: ['project-favorites'] }),
+    ]);
+  }, [queryClient]);
 
   // Separate properties by listing status
   const buyProperties = favorites.filter((f: any) => 
@@ -169,11 +182,12 @@ export default function Favorites() {
             />
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
+          <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
             {/* Guest Signup Banner */}
             {!user && totalFavorites > 0 && (
               <GuestSignupNudge
@@ -434,6 +448,7 @@ export default function Favorites() {
               </TabsContent>
             </Tabs>
           </motion.div>
+        </PullToRefresh>
         )}
       </div>
 
