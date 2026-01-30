@@ -20,7 +20,7 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
           Developer
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-3 md:p-6 space-y-4">
         {/* Developer Info */}
         <div className="flex items-start gap-4">
           <Link to={`/developers/${developer.slug}`} className="shrink-0">

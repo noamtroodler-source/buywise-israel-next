@@ -242,9 +242,9 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-2">
             {unitGroups.map((group) => (
-              <div key={group.type} className="p-4 rounded-lg border border-border bg-muted/20">
+              <div key={group.type} className="p-3 rounded-lg border border-border bg-muted/20">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h4 className="font-semibold">{group.type}</h4>

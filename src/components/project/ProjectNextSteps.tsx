@@ -44,9 +44,9 @@ export function ProjectNextSteps({ cityName, citySlug, projectPrice }: ProjectNe
         {nextSteps.map((step, index) => (
           <Link key={index} to={step.to}>
             <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
-              <CardContent className="p-4 flex items-start gap-4">
-                <div className="p-2.5 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors">
-                  <step.icon className="h-5 w-5 text-primary" />
+              <CardContent className="p-3 md:p-4 flex items-start gap-3 md:gap-4">
+                <div className="p-2 md:p-2.5 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors shrink-0">
+                  <step.icon className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium group-hover:text-primary transition-colors">

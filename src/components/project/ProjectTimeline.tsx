@@ -2,6 +2,7 @@ import { Calendar, Check, Circle, ChevronDown, Wallet, Shield, Building } from '
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Project } from '@/types/projects';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ProjectTimelineProps {
   project: Project & { construction_progress_percent?: number };
@@ -18,6 +19,7 @@ const stages = [
 
 export function ProjectTimeline({ project }: ProjectTimelineProps) {
   const progress = project.construction_progress_percent || 0;
+  const isMobile = useIsMobile();
   
   const getCurrentStageIndex = () => {
     return stages.findIndex(stage => stage.status === project.status);
@@ -35,6 +37,104 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
       year: 'numeric' 
     });
   };
+
+  // Mobile vertical timeline
+  const renderMobileTimeline = () => (
+    <div className="space-y-1">
+      {stages.map((stage, index) => {
+        const isCompleted = index < currentStageIndex;
+        const isCurrent = index === currentStageIndex;
+        const showDeliveryDate = stage.status === 'delivery' && project.completion_date;
+        
+        return (
+          <div 
+            key={index}
+            className={`flex items-center gap-3 py-2 px-3 rounded-lg transition-colors ${
+              isCurrent 
+                ? 'bg-primary/10 border border-primary/20' 
+                : isCompleted 
+                  ? 'bg-muted/30' 
+                  : ''
+            }`}
+          >
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+              isCompleted 
+                ? 'bg-primary text-primary-foreground' 
+                : isCurrent 
+                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' 
+                  : 'bg-muted text-muted-foreground'
+            }`}>
+              {isCompleted ? (
+                <Check className="h-3.5 w-3.5" />
+              ) : (
+                <Circle className="h-2.5 w-2.5" fill={isCurrent ? 'currentColor' : 'none'} />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className={`text-sm ${isCurrent ? 'text-primary font-medium' : isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {stage.name}
+                {showDeliveryDate && (
+                  <span className="text-muted-foreground font-normal"> (Est. {formatDate(project.completion_date)})</span>
+                )}
+              </span>
+            </div>
+            {isCurrent && (
+              <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+                Current
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Desktop horizontal timeline
+  const renderDesktopTimeline = () => (
+    <div className="relative">
+      {/* Progress Line */}
+      <div className="absolute top-4 left-4 right-4 h-0.5 bg-border">
+        <div 
+          className="absolute inset-y-0 left-0 bg-primary transition-all duration-500"
+          style={{ width: `${stageProgress}%` }}
+        />
+      </div>
+      
+      {/* Stage Dots */}
+      <div className="relative flex justify-between px-0">
+        {stages.map((stage, index) => {
+          const isCompleted = index < currentStageIndex;
+          const isCurrent = index === currentStageIndex;
+          
+          return (
+            <div key={index} className="flex flex-col items-center" style={{ width: '16.66%' }}>
+              <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
+                isCompleted 
+                  ? 'bg-primary text-primary-foreground' 
+                  : isCurrent 
+                    ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' 
+                    : 'bg-muted text-muted-foreground'
+              }`}>
+                {isCompleted ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Circle className="h-3 w-3" fill={isCurrent ? 'currentColor' : 'none'} />
+                )}
+              </div>
+              <span className={`text-xs mt-2 text-center ${
+                isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
+              }`}>
+                {stage.name}
+              </span>
+              {isCurrent && (
+                <span className="text-[10px] text-primary mt-0.5">Current</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
     <Card>
@@ -57,50 +157,8 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
           </div>
         </div>
 
-        {/* Compact Horizontal Timeline */}
-        <div className="relative">
-          {/* Progress Line */}
-          <div className="absolute top-4 left-4 right-4 h-0.5 bg-border">
-            <div 
-              className="absolute inset-y-0 left-0 bg-primary transition-all duration-500"
-              style={{ width: `${stageProgress}%` }}
-            />
-          </div>
-          
-          {/* Stage Dots */}
-          <div className="relative flex justify-between px-0">
-            {stages.map((stage, index) => {
-              const isCompleted = index < currentStageIndex;
-              const isCurrent = index === currentStageIndex;
-              
-              return (
-                <div key={index} className="flex flex-col items-center" style={{ width: '16.66%' }}>
-                  <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
-                    isCompleted 
-                      ? 'bg-primary text-primary-foreground' 
-                      : isCurrent 
-                        ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' 
-                        : 'bg-muted text-muted-foreground'
-                  }`}>
-                    {isCompleted ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Circle className="h-3 w-3" fill={isCurrent ? 'currentColor' : 'none'} />
-                    )}
-                  </div>
-                  <span className={`text-xs mt-2 text-center ${
-                    isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
-                  }`}>
-                    {stage.name}
-                  </span>
-                  {isCurrent && (
-                    <span className="text-[10px] text-primary mt-0.5">Current</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {/* Timeline - Vertical on mobile, horizontal on desktop */}
+        {isMobile ? renderMobileTimeline() : renderDesktopTimeline()}
 
         {/* Progress Summary */}
         <div className="flex items-center justify-center pt-2">
