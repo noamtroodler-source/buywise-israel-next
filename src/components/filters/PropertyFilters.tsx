@@ -406,6 +406,16 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
+          {/* Mobile: Create Alert Button inline */}
+          {isMobile && onCreateAlert && (
+            <Button 
+              onClick={handleCreateAlertClick}
+              className="h-11 w-11 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm p-0 shrink-0"
+            >
+              <Bell className="h-4 w-4" />
+            </Button>
+          )}
+
           {/* Desktop: Price Filter */}
           {!isMobile && (
           <Popover open={priceOpen} onOpenChange={setPriceOpen}>
@@ -677,14 +687,14 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             <div className="h-6 w-px bg-border/60" />
           )}
 
-          {/* Create Alert Button */}
-          {onCreateAlert && (
+          {/* Create Alert Button - Desktop only */}
+          {onCreateAlert && !isMobile && (
             <Button 
               onClick={handleCreateAlertClick}
               className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
             >
               <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">Create Alert</span>
+              <span>Create Alert</span>
             </Button>
           )}
         </div>
