@@ -273,8 +273,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       <div className="space-y-3">
         {/* Row 1: Main Filters */}
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Active/Sold Toggle - Only shown on for_sale listings */}
-          {showSoldToggle && (
+          {/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY */}
+          {showSoldToggle && !isMobile && (
             <div className="flex items-center rounded-full border border-border/60 bg-background shadow-sm overflow-hidden mr-1">
               <button
                 className={cn(
@@ -1058,6 +1058,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
         isCountLoading={isCountLoading}
         currency={currency}
         exchangeRate={exchangeRate}
+        showSoldToggle={showSoldToggle}
+        isSoldView={isSoldView}
+        onSoldToggle={onSoldToggle}
       />
     </TooltipProvider>
   );
