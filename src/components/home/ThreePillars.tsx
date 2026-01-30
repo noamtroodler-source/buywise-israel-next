@@ -27,7 +27,7 @@ const pillars = [
     icon: MessageCircle,
     title: 'Decide',
     subtitle: 'Move forward with confidence',
-    description: 'Use clarity tools to evaluate affordability, compare scenarios, and decide when — and how — to move forward.',
+    description: 'Use clarity tools to compare scenarios, slow down decisions, and move forward — or wait — with confidence.',
     gradient: 'from-primary/5 to-muted/50',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
