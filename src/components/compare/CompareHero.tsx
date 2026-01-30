@@ -59,78 +59,80 @@ export function CompareHero({
 
   return (
     <div className="bg-gradient-to-b from-primary/5 via-primary/3 to-background border-b border-border/50">
-      <div className="container py-8 md:py-12 space-y-6">
+      <div className="container py-4 md:py-8 space-y-4 md:space-y-6">
         {/* Back Link */}
         <Link 
           to={getBackLink()} 
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          {getBackLabel()}
+          <span className="hidden sm:inline">{getBackLabel()}</span>
+          <span className="sm:hidden">Back</span>
         </Link>
 
         {/* Title Section */}
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+        <div className="space-y-1 md:space-y-2">
+          <h1 className="text-2xl md:text-4xl font-bold tracking-tight">
             {getTitle()}
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm md:text-lg">
             {getSubtitle()}
           </p>
         </div>
 
         {/* Actions Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+        <div className="flex flex-col gap-3 pt-1 md:pt-2">
           {/* Property Count Indicator */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               {Array.from({ length: maxProperties }).map((_, i) => (
                 <div
                   key={i}
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                  className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full transition-colors ${
                     i < propertyCount ? 'bg-primary' : 'bg-muted-foreground/30'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-xs md:text-sm font-medium text-muted-foreground">
               {propertyCount} of {maxProperties} {getItemLabel()}
             </span>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Investor View Toggle - only show for sales (not rentals or projects) */}
             {!isRental && !isProject && onInvestorViewChange && (
-              <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-border/50">
-                <TrendingUp className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 border border-border/50">
+                <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
                 <Label 
                   htmlFor="investor-view" 
-                  className="text-sm font-medium cursor-pointer select-none"
+                  className="text-xs md:text-sm font-medium cursor-pointer select-none"
                 >
-                  Investor View
+                  Investor
                 </Label>
                 <Switch
                   id="investor-view"
                   checked={investorView ?? false}
                   onCheckedChange={onInvestorViewChange}
+                  className="scale-90 md:scale-100"
                 />
               </div>
             )}
 
-            <Button variant="outline" size="sm" onClick={onShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
+            <Button variant="outline" size="sm" onClick={onShare} className="h-8 md:h-9 text-xs md:text-sm">
+              <Share2 className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden sm:inline">Share</span>
             </Button>
 
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={onClearAll}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-destructive h-8 md:h-9 text-xs md:text-sm"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All
+              <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+              <span className="hidden sm:inline">Clear All</span>
             </Button>
           </div>
         </div>
