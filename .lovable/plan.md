@@ -1,169 +1,168 @@
 
+## Complete Mobile Redesign of Compare Pages
 
-## Simplify Mobile Filters: City + Filters Only
+### Current Problems (Visible in Screenshots)
 
-### Current Issue
-The mobile view shows three elements on the first row:
-- Active/Sold toggle
-- City dropdown  
-- Filters button
+1. **Overlapping Text in Comparison Tables** - The CSS Grid layout with fixed `minmax(120px, 160px)` label column causes values to overlap when comparing 3 properties on mobile
+2. **Price values running together** - "₪5,400,000₪2,083,742₪..." are overlapping
+3. **Cramped layout** - The table tries to fit all 3 properties side-by-side on a 375px screen
+4. **No mobile-optimized design** - Same desktop table layout used on all devices
 
-This takes up significant horizontal space and the Active/Sold toggle isn't used as frequently.
+---
 
-### Proposed Solution
-Streamline mobile to show only **City** and **Filters** buttons:
-- Hide the Active/Sold toggle on mobile
-- Default to "Active" listings
-- Add the Active/Sold toggle **inside** the Mobile Filter Sheet so users can switch to Sold from there
+### Solution: Mobile-First Comparison Layout
+
+**On Mobile (<768px):** Switch from side-by-side table to a **stacked card approach** where each metric shows all properties vertically. This is a proven pattern used by major comparison tools (Google Shopping, etc.)
+
+**Desktop (>=768px):** Keep the existing side-by-side table layout
+
+---
+
+### Visual Design (Mobile)
 
 ```text
-Current Mobile:
-┌──────────────────────────────────────────┐
-│ [Active|Sold] [📍 City ▾] [⚙ Filters]   │
-│ [↕ Newest Listings ▾]              [🔔]  │
-└──────────────────────────────────────────┘
-
-Proposed Mobile:
-┌──────────────────────────────────────────┐
-│       [📍 City ▾]    [⚙ Filters]        │
-│ [↕ Newest Listings ▾]              [🔔]  │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│ 🏠 Core Details                     │
+├─────────────────────────────────────┤
+│                                     │
+│ Price                               │
+│ ┌─────────────────────────────────┐ │
+│ │ 🏆 Property 1        ₪2,083,742 │ │
+│ │    Property 2        ₪5,400,000 │ │
+│ │    Property 3        ₪4,500,000 │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ Size                                │
+│ ┌─────────────────────────────────┐ │
+│ │ 🏆 Property 3             236m² │ │
+│ │    Property 2             106m² │ │
+│ │    Property 1              81m² │ │
+│ └─────────────────────────────────┘ │
+│                                     │
+│ Bedrooms                            │
+│ ┌─────────────────────────────────┐ │
+│ │ 🏆 Property 3                 6 │ │
+│ │    Property 2                 4 │ │
+│ │    Property 1                 3 │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
 ```
+
+**Key Features:**
+- Each metric is a full-width row
+- Properties are listed vertically under each metric
+- Winner is highlighted with a badge/accent
+- Clear, readable spacing with no overlap
 
 ---
 
 ## Technical Implementation
 
-### Files to Modify
+### File 1: `src/components/compare/CompareSection.tsx`
 
-1. **`src/components/filters/PropertyFilters.tsx`**
-2. **`src/components/filters/MobileFilterSheet.tsx`**
+**Changes:**
+1. Add `useIsMobile` hook
+2. Create two render paths:
+   - **Mobile**: Stacked vertical cards per metric
+   - **Desktop**: Keep existing CSS Grid table
 
----
-
-### Change 1: Hide Active/Sold Toggle on Mobile
-
-**File:** `src/components/filters/PropertyFilters.tsx`
-
-**Location:** Lines 277-302
-
-Add `!isMobile` condition to the Active/Sold toggle render:
-
+**Mobile Layout Structure:**
 ```tsx
-{/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY */}
-{showSoldToggle && !isMobile && (
-  <div className="flex items-center rounded-full border border-border/60 ...">
-    {/* Active and Sold buttons */}
+{isMobile ? (
+  <div className="divide-y divide-border">
+    {rows.map((row) => (
+      <div className="py-4 px-4 space-y-2">
+        {/* Metric Label */}
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          {row.icon && <row.icon className="h-4 w-4" />}
+          <span>{row.label}</span>
+          {row.tooltip && <HelpCircle />}
+        </div>
+        
+        {/* Property Values - Stacked */}
+        <div className="space-y-2">
+          {properties.map((property) => (
+            <div className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
+              <span className="text-sm font-medium truncate max-w-[50%]">
+                {property.title || property.name}
+              </span>
+              <span className={cn(
+                "text-sm font-semibold",
+                isBest && "text-primary"
+              )}>
+                {row.getValue(property)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
   </div>
+) : (
+  // Existing desktop grid layout
 )}
 ```
 
 ---
 
-### Change 2: Add Active/Sold Toggle to MobileFilterSheet
+### File 2: `src/components/compare/CompareQuickInsights.tsx`
 
-**File:** `src/components/filters/MobileFilterSheet.tsx`
-
-**Props Update:** Add new props to receive sold toggle state and callback:
-
-```tsx
-interface MobileFilterSheetProps {
-  // ... existing props
-  showSoldToggle?: boolean;
-  isSoldView?: boolean;
-  onSoldToggle?: (sold: boolean) => void;
-}
-```
-
-**UI Update:** Add a new "Listing Status" section at the top of the filter sheet (before Location):
-
-```tsx
-{/* Listing Status Section - Only for for_sale */}
-{showSoldToggle && (
-  <section className="space-y-3">
-    <h3 className="font-semibold flex items-center gap-2">
-      <Building2 className="h-4 w-4 text-primary" />
-      Listing Status
-    </h3>
-    <div className="flex gap-2">
-      <button
-        className={cn(
-          "flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all",
-          !isSoldView 
-            ? "bg-primary text-primary-foreground" 
-            : "bg-muted hover:bg-muted/80"
-        )}
-        onClick={() => onSoldToggle?.(false)}
-      >
-        Active Listings
-      </button>
-      <button
-        className={cn(
-          "flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all",
-          isSoldView 
-            ? "bg-primary text-primary-foreground" 
-            : "bg-muted hover:bg-muted/80"
-        )}
-        onClick={() => onSoldToggle?.(true)}
-      >
-        Sold Properties
-      </button>
-    </div>
-  </section>
-)}
-```
+**Changes:**
+- Make grid responsive: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`
+- Each insight card takes full width on mobile
 
 ---
 
-### Change 3: Pass Props to MobileFilterSheet
+### File 3: `src/components/compare/ComparePropertyCard.tsx` & `CompareProjectCard.tsx`
 
-**File:** `src/components/filters/PropertyFilters.tsx`
-
-**Location:** Lines 1050-1061
-
-Add the new props when rendering MobileFilterSheet:
-
-```tsx
-<MobileFilterSheet
-  open={mobileFiltersOpen}
-  onOpenChange={setMobileFiltersOpen}
-  filters={filters}
-  onFiltersChange={onFiltersChange}
-  listingType={listingType}
-  cities={cities || []}
-  previewCount={previewCount}
-  isCountLoading={isCountLoading}
-  currency={currency}
-  exchangeRate={exchangeRate}
-  showSoldToggle={showSoldToggle}
-  isSoldView={isSoldView}
-  onSoldToggle={onSoldToggle}
-/>
-```
+**Mobile Optimizations:**
+- Cards are already responsive with `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+- No major changes needed, just ensure proper spacing
 
 ---
 
-### Visual Result
+### File 4: `src/components/compare/CompareHero.tsx`
 
-**Mobile Row 1:**
-```text
-┌─────────────────────────────────────┐
-│    [📍 City ▾]    [⚙ Filters (2)]  │
-└─────────────────────────────────────┘
-```
+**Changes:**
+- Stack action buttons vertically on mobile
+- Reduce padding
+- Keep title and subtitle readable
 
-**Inside Filter Sheet (new section at top):**
-```text
-┌─────────────────────────────────────┐
-│ 🏢 Listing Status                   │
-│ ┌───────────────┐ ┌───────────────┐ │
-│ │ Active ●      │ │ Sold          │ │
-│ └───────────────┘ └───────────────┘ │
-│                                     │
-│ 📍 Location                         │
-│ ...                                 │
-└─────────────────────────────────────┘
-```
+---
 
-This keeps the mobile interface clean while still giving users full access to switch between Active/Sold views when they need it.
+### File 5: `src/components/compare/CompareWinnerSummary.tsx`
 
+**Changes:**
+- Ensure winner pills wrap properly on mobile
+- Stack CTA buttons vertically on mobile (already done with `flex-col sm:flex-row`)
+
+---
+
+### File 6: `src/pages/Compare.tsx` & `CompareProjects.tsx`
+
+**Changes:**
+- Reduce container padding on mobile (`py-4 md:py-8`)
+- Reduce gap between sections (`space-y-4 md:space-y-8`)
+
+---
+
+## Summary of Key Changes
+
+| Component | Mobile Change |
+|-----------|---------------|
+| `CompareSection` | Switch from horizontal grid to vertical stacked cards per metric |
+| `CompareQuickInsights` | Single column layout |
+| `CompareHero` | Stack actions, reduce padding |
+| `CompareWinnerSummary` | Already responsive, minor spacing tweaks |
+| `Compare.tsx` | Reduce spacing on mobile |
+| `CompareProjects.tsx` | Reduce spacing on mobile |
+
+---
+
+## Files to Modify
+
+1. `src/components/compare/CompareSection.tsx` - Main layout transformation
+2. `src/components/compare/CompareQuickInsights.tsx` - Grid responsiveness
+3. `src/components/compare/CompareHero.tsx` - Hero spacing
+4. `src/pages/Compare.tsx` - Page spacing
+5. `src/pages/CompareProjects.tsx` - Page spacing (same treatment)
