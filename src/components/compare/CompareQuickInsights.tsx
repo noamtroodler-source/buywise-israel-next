@@ -110,6 +110,13 @@ export function CompareQuickInsights({
     }
   }
 
+  // Responsive grid columns based on insight count
+  const getGridClasses = () => {
+    if (insights.length <= 2) return 'grid-cols-1 sm:grid-cols-2';
+    if (insights.length === 3) return 'grid-cols-1 sm:grid-cols-3';
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -122,7 +129,7 @@ export function CompareQuickInsights({
         <span className="text-sm font-semibold text-primary">Quick Insights</span>
       </div>
       
-      <div className={`grid grid-cols-1 gap-3 ${insights.length <= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
+      <div className={`grid gap-3 ${getGridClasses()}`}>
         {insights.map((insight, index) => (
           <div 
             key={index}
@@ -131,7 +138,7 @@ export function CompareQuickInsights({
             <div className="shrink-0 w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <insight.icon className="h-4 w-4 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-xs text-muted-foreground">{insight.label}</div>
               <div className="text-sm font-semibold truncate">{insight.value}</div>
               <div className="text-xs text-muted-foreground truncate">{insight.propertyTitle}</div>

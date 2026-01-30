@@ -381,7 +381,7 @@ export default function CompareProjects() {
         category="projects"
       />
 
-      <div className="container py-8 space-y-8">
+      <div className="container py-4 md:py-8 space-y-4 md:space-y-8">
         {/* Guest Session Warning */}
         {!user && projects.length > 0 && (
           <GuestSignupNudge
@@ -415,7 +415,7 @@ export default function CompareProjects() {
         />
 
         {/* Comparison Sections */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <CompareSection
             title="Project Overview"
             icon={Building}
