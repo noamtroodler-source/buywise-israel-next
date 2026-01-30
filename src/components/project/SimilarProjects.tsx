@@ -82,20 +82,20 @@ export function SimilarProjects({ currentProject }: SimilarProjectsProps) {
       transition={{ duration: 0.4, delay: 0.3 }}
       className="mt-12"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Similar New Projects</h2>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">Similar New Projects</h2>
+          <p className="text-muted-foreground text-sm mt-0.5 md:mt-1">
             Other developments in {currentProject?.city}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={scrollPrev}
             disabled={!canScrollPrev}
-            className="h-9 w-9"
+            className="h-8 w-8 md:h-9 md:w-9"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -104,14 +104,15 @@ export function SimilarProjects({ currentProject }: SimilarProjectsProps) {
             size="icon"
             onClick={scrollNext}
             disabled={!canScrollNext}
-            className="h-9 w-9"
+            className="h-8 w-8 md:h-9 md:w-9"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="overflow-hidden" ref={emblaRef}>
+      {/* Edge-to-edge carousel on mobile */}
+      <div className="-mx-4 md:mx-0 px-4 md:px-0 overflow-hidden" ref={emblaRef}>
         <div className="flex -ml-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (

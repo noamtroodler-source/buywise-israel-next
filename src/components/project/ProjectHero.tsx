@@ -196,9 +196,9 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
           </div>
         </div>
 
-        {/* Thumbnail Strip */}
+        {/* Thumbnail Strip - Hidden on mobile, dots are sufficient */}
         {images.length > 1 && (
-          <div className="overflow-hidden" ref={emblaRef}>
+          <div className="hidden md:block overflow-hidden" ref={emblaRef}>
             <div className="flex gap-2">
               {images.map((image, index) => (
                 <button

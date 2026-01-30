@@ -115,10 +115,10 @@ export function ProjectQuickSummary({
         </span>
       </div>
 
-      {/* Key Stats Bar */}
-      <div className="flex flex-wrap gap-6 py-4 border-y border-border">
+      {/* Key Stats Bar - 2-column grid on mobile, flex on larger */}
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 py-3 sm:py-4 border-y border-border">
         <div className="text-center">
-          <p className="text-xl font-semibold">
+          <p className="text-lg sm:text-xl font-semibold">
             {project.available_units 
               ? `${project.available_units}/${project.total_units || 0}` 
               : project.total_units || 0}
@@ -128,7 +128,7 @@ export function ProjectQuickSummary({
           </p>
         </div>
         <div className="text-center">
-          <p className="text-xl font-semibold">
+          <p className="text-lg sm:text-xl font-semibold">
             {project.completion_date 
               ? new Date(project.completion_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
               : 'TBD'}
@@ -137,12 +137,12 @@ export function ProjectQuickSummary({
         </div>
         {project.construction_progress_percent !== undefined && project.construction_progress_percent > 0 && (
           <div className="text-center">
-            <p className="text-xl font-semibold">{project.construction_progress_percent}%</p>
+            <p className="text-lg sm:text-xl font-semibold">{project.construction_progress_percent}%</p>
             <p className="text-xs text-muted-foreground">Progress</p>
           </div>
         )}
-        <div className="text-center">
-          <Badge variant="secondary" className="font-medium">
+        <div className="text-center flex items-center justify-center">
+          <Badge variant="secondary" className="font-medium text-xs sm:text-sm">
             {getStatusLabel(project.status || 'planning')}
           </Badge>
         </div>

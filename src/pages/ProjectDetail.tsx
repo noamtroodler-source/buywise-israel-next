@@ -78,17 +78,17 @@ export default function ProjectDetail() {
         jsonLd={jsonLd}
       />
       <div className="min-h-screen pb-24 lg:pb-8">
-        <div className="container py-6">
+        <div className="container py-4 md:py-6">
           {/* Breadcrumb Navigation */}
           <ProjectBreadcrumb projectName={project.name} city={project.city} />
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid gap-8 lg:grid-cols-3 mt-6"
+            className="grid gap-4 md:gap-8 lg:grid-cols-3 mt-4 md:mt-6"
           >
             {/* Left Column - Main Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4 md:space-y-8">
             {/* Hero - Edge-to-edge on mobile */}
             <div className="-mx-4 md:mx-0">
               <ProjectHero project={project} />
