@@ -1,76 +1,75 @@
 
+## Reorganize Mobile Filters for Better Layout
 
-## Swap Mobile Order: Show Inputs First, Results Second
+### Current Issue
+The filter elements wrap awkwardly on mobile:
+- Row 1: Active/Sold toggle + City button
+- Row 2: Filters button (alone, wasted space)
+- Row 3: Sort dropdown + Alert bell
 
-### Current Behavior
-On mobile view, the tools currently show:
-1. **Results** (right column) - appears first
-2. **Inputs** (left column) - appears second
+### Proposed Solution
+Reorganize into a cleaner two-row layout:
 
-### Requested Change
-Swap the mobile order so it shows:
-1. **Inputs** (left column) - appears first
-2. **Results** (right column) - appears second
+```text
+Row 1:  [ Active | Sold ]  [ City ▾ ]  [ Filters ]
+Row 2:  [ ↕ Newest Listings ▾ ]       [ 🔔 ]
+```
 
-This makes more sense for user flow on mobile - users should see and interact with inputs before seeing results.
+**Key changes:**
+1. Keep Active/Sold toggle, City, and Filters button on the same row
+2. Move Sort and Alert to a dedicated second row with space-between alignment
+3. All elements in Row 1 stay compact and fit naturally
 
 ---
 
 ## Technical Implementation
 
 ### File to Modify
-- `src/components/tools/shared/ToolLayout.tsx`
+- `src/components/filters/PropertyFilters.tsx`
 
-### Change Required (Lines 98-105)
-Swap the `order` classes for mobile view:
+### Changes Required
 
-**Current:**
+**1. Restructure the wrapper container (Line 273)**
+
+Change from a single `flex-wrap` container to a structured two-row layout for mobile:
+
 ```tsx
-{/* Left Column - Inputs */}
-<div className="flex flex-col order-2 lg:order-1">
-  {leftColumn}
-</div>
-
-{/* Right Column - Results */}
-<div className="flex flex-col order-1 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-  {rightColumn}
+<div className="space-y-3">
+  {/* Row 1: Main Filters */}
+  <div className="flex flex-wrap gap-2 items-center">
+    {/* Active/Sold Toggle */}
+    {/* City Filter */}
+    {/* Mobile Filters Button */}
+    {/* Desktop-only filters: Price, Beds/Baths, Type, More */}
+    {/* Clear button - desktop only */}
+  </div>
+  
+  {/* Row 2: Sort & Alert */}
+  <div className="flex items-center justify-between">
+    {/* Sort dropdown */}
+    {/* Alert button */}
+  </div>
 </div>
 ```
 
-**Updated:**
-```tsx
-{/* Left Column - Inputs */}
-<div className="flex flex-col order-1 lg:order-1">
-  {leftColumn}
-</div>
+**2. Move Sort & Alert section outside the main flex row**
 
-{/* Right Column - Results */}
-<div className="flex flex-col order-2 lg:order-2 lg:sticky lg:top-6 lg:self-start">
-  {rightColumn}
-</div>
+Extract the Sort & Alert section (currently lines 696-748) from the main flex container into its own row that uses `justify-between` for proper spacing.
+
+**3. Make Clear button desktop-only**
+
+Add `hidden sm:flex` to the Clear Filters button so it doesn't take up mobile space (mobile users can clear from the filter sheet).
+
+### Visual Result
+
+```text
+┌─────────────────────────────────────────┐
+│ [Active|Sold] [📍 City ▾] [⚙ Filters]  │  ← Row 1: compact
+│ [↕ Newest Listings ▾]              [🔔] │  ← Row 2: full width
+└─────────────────────────────────────────┘
 ```
 
-Since `order-1` and `lg:order-1` are the same (and `order-2` / `lg:order-2`), we can simplify:
-
-```tsx
-{/* Left Column - Inputs */}
-<div className="flex flex-col">
-  {leftColumn}
-</div>
-
-{/* Right Column - Results */}
-<div className="flex flex-col lg:sticky lg:top-6 lg:self-start">
-  {rightColumn}
-</div>
-```
-
-### Scope
-This single change in `ToolLayout.tsx` will automatically apply to **all 7 tools** that use this shared layout:
-- Mortgage Calculator
-- Total Cost Calculator
-- Affordability Calculator
-- Investment Return Calculator
-- Rent vs Buy Calculator
-- Renovation Cost Estimator
-- Document Checklist Tool
-
+This creates a cleaner, more organized mobile layout where:
+- All filter controls are on the first row
+- Sort and Alert have their own dedicated row with proper spacing
+- No awkward wrapping or lonely buttons
