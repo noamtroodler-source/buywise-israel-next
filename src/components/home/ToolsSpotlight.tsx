@@ -52,7 +52,7 @@ export function ToolsSpotlight() {
               Plan before you commit
             </h2>
             <p className="text-base text-muted-foreground mt-1">
-              Free calculators built for Israel
+              Tools designed to prevent costly surprises — built specifically for Israel.
             </p>
           </div>
           <Button variant="outline" asChild>
