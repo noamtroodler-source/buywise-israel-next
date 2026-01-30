@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { useBlogPosts, useBlogCategories, useBlogCities } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
 import { BlogFilters } from '@/components/blog/BlogFilters';
@@ -72,6 +73,12 @@ export default function Blog() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Real Estate Guides & Articles | BuyWise Israel"
+        description="Learn about buying property in Israel with guides, market insights, and honest answers for international buyers. Expert advice on taxes, mortgages, and more."
+        canonicalUrl="https://buywiseisrael.com/blog"
+      />
+      
       {/* Compact Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b border-border/50">
         <div className="container py-10 md:py-14">

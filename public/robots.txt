@@ -1,3 +1,5 @@
+# BuyWise Israel robots.txt
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +14,18 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://buywiseisrael.com/sitemap.xml
+
+# Disallow admin and protected routes
+Disallow: /admin/
+Disallow: /agent/
+Disallow: /agency/
+Disallow: /developer/
+Disallow: /profile/
+
+# Allow crawlers to see public professional pages
+Allow: /agents/
+Allow: /agencies/
+Allow: /developers/

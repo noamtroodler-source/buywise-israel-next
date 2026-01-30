@@ -7,6 +7,7 @@ import {
   Hammer, ClipboardList, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { CarouselDots } from '@/components/shared/CarouselDots';
@@ -213,6 +214,12 @@ export default function Tools() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Property Calculators & Tools | BuyWise Israel"
+        description="Free calculators for Israeli real estate: mortgage calculator, affordability check, true cost breakdown, rent vs buy analysis, and more. Built for international buyers."
+        canonicalUrl="https://buywiseisrael.com/tools"
+      />
+      
       <div className="min-h-screen bg-background">
         {activeTool ? (
           <div className="container py-6">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Lightbulb, Send, Mail, MessageCircle, Clock, Heart, Sparkles, Users } from "lucide-react";
+import { SEOHead } from "@/components/seo/SEOHead";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,6 +123,12 @@ const Contact = () => {
 
   return (
     <Layout>
+      <SEOHead
+        title="Contact Us | BuyWise Israel"
+        description="Get in touch with BuyWise Israel. Have questions about buying property in Israel? We're here to help with honest answers and guidance."
+        canonicalUrl="https://buywiseisrael.com/contact"
+      />
+      
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 bg-gradient-to-b from-primary/5 via-background to-background">
         <div className="container px-4 mx-auto">

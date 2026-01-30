@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -356,15 +356,26 @@ export default function Auth() {
                     ) : (
                       'Sign In'
                     )}
-                  </Button>
+                    </Button>
 
-                  {activeTab === 'signup' && (
-                    <p className="text-xs text-center text-muted-foreground pt-2">
-                      <Shield className="inline h-3 w-3 mr-1" />
-                      Your data is encrypted and securely stored
-                    </p>
-                  )}
-                </form>
+                    {activeTab === 'signin' && (
+                      <div className="text-center pt-2">
+                        <Link 
+                          to="/forgot-password" 
+                          className="text-sm text-primary hover:underline"
+                        >
+                          Forgot your password?
+                        </Link>
+                      </div>
+                    )}
+
+                    {activeTab === 'signup' && (
+                      <p className="text-xs text-center text-muted-foreground pt-2">
+                        <Shield className="inline h-3 w-3 mr-1" />
+                        Your data is encrypted and securely stored
+                      </p>
+                    )}
+                  </form>
               </Form>
             </Tabs>
           </CardContent>

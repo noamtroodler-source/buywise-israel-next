@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Search, Building, Star, Heart, Trees, Sun, MapPin } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
@@ -405,6 +406,12 @@ export default function Areas() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Explore Cities & Neighborhoods in Israel | BuyWise Israel"
+        description="Discover Israel's cities and neighborhoods. Compare prices, learn about communities, and find the perfect area for your property search."
+        canonicalUrl="https://buywiseisrael.com/areas"
+      />
+      
       {/* Hero Header */}
       <div className="bg-gradient-to-b from-primary/5 via-primary/5 to-transparent">
         <div className="container pt-8 pb-6">

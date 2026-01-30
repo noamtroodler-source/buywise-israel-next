@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, Calculator, ArrowRight, Bell, BellOff, Building, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,13 @@ export default function Favorites() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Saved Properties | BuyWise Israel"
+        description="View and compare your saved properties. Get price drop alerts and manage your favorites across devices."
+        canonicalUrl="https://buywiseisrael.com/favorites"
+        noindex={true}
+      />
+      
       {/* Gradient Header */}
       <section className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
         <div className="container py-8 md:py-10 text-center">
