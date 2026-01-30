@@ -90,97 +90,137 @@ export function CompareBar() {
           isMobile ? 'bottom-16 pb-safe' : 'bottom-0'
         }`}
       >
-        <div className="container py-3 flex items-center justify-between gap-4">
-          {/* Left side - icon + items */}
-          <div className="flex items-center gap-4 overflow-hidden">
-            <div className="flex items-center gap-2 text-sm font-medium shrink-0">
-              {compareCategory === 'projects' ? (
-                <Building className="h-4 w-4 text-primary" />
-              ) : (
-                <GitCompare className="h-4 w-4 text-primary" />
-              )}
-              <span className="hidden sm:inline">{compareIds.length} {getCategoryLabel()}</span>
+        {/* Mobile: Minimal compact bar */}
+        {isMobile ? (
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                {compareCategory === 'projects' ? (
+                  <Building className="h-5 w-5 text-primary" />
+                ) : (
+                  <GitCompare className="h-5 w-5 text-primary" />
+                )}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-foreground">
+                  {compareIds.length} selected
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {getCategoryLabel()}
+                </span>
+              </div>
             </div>
-
-            {/* Item chips */}
-            <div className="flex items-center gap-2 overflow-x-auto">
-              {compareCategory === 'projects' ? (
-                projects.map((project) => (
-                  <div 
-                    key={project.id}
-                    className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
-                  >
-                    <PropertyThumbnail
-                      src={project.images?.[0]}
-                      alt={project.name}
-                      className="w-8 h-8 rounded"
-                      type="project"
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-medium truncate max-w-[120px]">{project.name}</span>
-                      <span className="text-xs text-primary font-medium">
-                        {project.price_from ? formatPrice(project.price_from) : 'TBD'}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => removeFromCompare(project.id)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))
-              ) : (
-                properties.map((property) => (
-                  <div 
-                    key={property.id}
-                    className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
-                  >
-                    <PropertyThumbnail
-                      src={property.images?.[0]}
-                      alt={property.title}
-                      className="w-8 h-8 rounded"
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-medium truncate max-w-[120px]">{property.title}</span>
-                      <span className="text-xs text-primary font-medium">
-                        {formatPrice(property.price, property.currency)}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
-                      onClick={() => removeFromCompare(property.id)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))
-              )}
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCompare}
+                className="text-muted-foreground h-9 px-3"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button asChild size="sm" disabled={compareIds.length < 2} className="h-9 px-4">
+                <Link to={getCompareLink()}>
+                  Compare
+                </Link>
+              </Button>
             </div>
           </div>
+        ) : (
+          /* Desktop: Full bar with thumbnails */
+          <div className="container py-3 flex items-center justify-between gap-4">
+            {/* Left side - icon + items */}
+            <div className="flex items-center gap-4 overflow-hidden">
+              <div className="flex items-center gap-2 text-sm font-medium shrink-0">
+                {compareCategory === 'projects' ? (
+                  <Building className="h-4 w-4 text-primary" />
+                ) : (
+                  <GitCompare className="h-4 w-4 text-primary" />
+                )}
+                <span>{compareIds.length} {getCategoryLabel()}</span>
+              </div>
 
-          {/* Right side - actions */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearCompare}
-              className="text-muted-foreground"
-            >
-              <X className="h-4 w-4 mr-1" />
-              Clear
-            </Button>
-            <Button asChild size="sm" disabled={compareIds.length < 2}>
-              <Link to={getCompareLink()}>
-                Compare Now
-              </Link>
-            </Button>
+              {/* Item chips */}
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {compareCategory === 'projects' ? (
+                  projects.map((project) => (
+                    <div 
+                      key={project.id}
+                      className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
+                    >
+                      <PropertyThumbnail
+                        src={project.images?.[0]}
+                        alt={project.name}
+                        className="w-8 h-8 rounded"
+                        type="project"
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-medium truncate max-w-[120px]">{project.name}</span>
+                        <span className="text-xs text-primary font-medium">
+                          {project.price_from ? formatPrice(project.price_from) : 'TBD'}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={() => removeFromCompare(project.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  properties.map((property) => (
+                    <div 
+                      key={property.id}
+                      className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5 shrink-0"
+                    >
+                      <PropertyThumbnail
+                        src={property.images?.[0]}
+                        alt={property.title}
+                        className="w-8 h-8 rounded"
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-medium truncate max-w-[120px]">{property.title}</span>
+                        <span className="text-xs text-primary font-medium">
+                          {formatPrice(property.price, property.currency)}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-foreground shrink-0"
+                        onClick={() => removeFromCompare(property.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Right side - actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCompare}
+                className="text-muted-foreground"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Clear
+              </Button>
+              <Button asChild size="sm" disabled={compareIds.length < 2}>
+                <Link to={getCompareLink()}>
+                  Compare Now
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </motion.div>
     </AnimatePresence>
   );
