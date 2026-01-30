@@ -17,7 +17,7 @@ const tools = [
     id: 'totalcost',
     icon: PiggyBank,
     title: 'Total Cost Calculator',
-    description: 'See the true cost of buying — taxes, fees, and closing costs included.',
+    description: 'See the full picture before emotions get involved.',
     link: '/tools?tool=totalcost',
     color: 'bg-primary/10 text-primary',
   },
