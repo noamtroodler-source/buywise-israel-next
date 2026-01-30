@@ -18,7 +18,7 @@ const pillars = [
     icon: BarChart3,
     title: 'Understand',
     subtitle: 'See the full picture',
-    description: 'Every listing includes market context, true costs, and neighborhood insights — not just photos and price.',
+    description: 'See true costs, market context, and location trade-offs — so there are no surprises later.',
     gradient: 'from-muted to-muted/50',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
