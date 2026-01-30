@@ -123,28 +123,34 @@ export function HeroSplit() {
               </form>
             </motion.div>
 
-            {/* Trust Indicators - Optimized for mobile wrapping */}
+            {/* Trust Indicators - Pyramid layout on mobile */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 md:pt-2"
+              className="pt-1 md:pt-2"
             >
-              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                <House className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
-                <span className="text-white/70">For Sale</span>
-              </span>
-              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                <KeyRound className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
-                <span className="text-white/70">Rentals</span>
-              </span>
-              <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                <HardHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                <span className="font-medium">{stats?.projectsCount ?? 15}+</span>
-                <span className="text-white/70">Projects</span>
-              </span>
+              <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3">
+                {/* Top row on mobile / inline on desktop */}
+                <div className="flex items-center justify-center gap-2 sm:gap-3">
+                  <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                    <House className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                    <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
+                    <span className="text-white/70">For Sale</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                    <KeyRound className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                    <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
+                    <span className="text-white/70">Rentals</span>
+                  </span>
+                </div>
+                {/* Bottom centered on mobile / inline on desktop */}
+                <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
+                  <HardHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
+                  <span className="font-medium">{stats?.projectsCount ?? 15}+</span>
+                  <span className="text-white/70">Projects</span>
+                </span>
+              </div>
             </motion.div>
           </motion.div>
         </div>
