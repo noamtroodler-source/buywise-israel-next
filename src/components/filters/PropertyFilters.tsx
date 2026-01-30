@@ -270,322 +270,120 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
   return (
     <TooltipProvider>
-      <div className="flex flex-wrap gap-2 items-center">
-        {/* Active/Sold Toggle - Only shown on for_sale listings */}
-        {showSoldToggle && (
-          <div className="flex items-center rounded-full border border-border/60 bg-background shadow-sm overflow-hidden mr-1">
-            <button
-              className={cn(
-                "px-4 py-2.5 text-sm font-medium transition-all",
-                !isSoldView 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-              )}
-              onClick={() => onSoldToggle?.(false)}
-            >
-              Active
-            </button>
-            <button
-              className={cn(
-                "px-4 py-2.5 text-sm font-medium transition-all",
-                isSoldView 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-              )}
-              onClick={() => onSoldToggle?.(true)}
-            >
-              Sold
-            </button>
-          </div>
-        )}
-
-        {/* City Filter */}
-        <Popover open={cityOpen} onOpenChange={setCityOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
-            >
-              <MapPin className="h-4 w-4" />
-              <span>{filters.city || 'City'}</span>
-              {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Location</h3>
-                {filters.city && (
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        city: undefined,
-                      });
-                    }}
-                  >
-                    Clear
-                  </button>
+      <div className="space-y-3">
+        {/* Row 1: Main Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Active/Sold Toggle - Only shown on for_sale listings */}
+          {showSoldToggle && (
+            <div className="flex items-center rounded-full border border-border/60 bg-background shadow-sm overflow-hidden mr-1">
+              <button
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium transition-all",
+                  !isSoldView 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
                 )}
-              </div>
-              
-              {/* City Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">City</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search city..."
-                    value={citySearch}
-                    onChange={(e) => setCitySearch(e.target.value)}
-                    className="pl-10 rounded-lg"
-                  />
-                </div>
+                onClick={() => onSoldToggle?.(false)}
+              >
+                Active
+              </button>
+              <button
+                className={cn(
+                  "px-4 py-2.5 text-sm font-medium transition-all",
+                  isSoldView 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                )}
+                onClick={() => onSoldToggle?.(true)}
+              >
+                Sold
+              </button>
+            </div>
+          )}
 
-                <div className="max-h-[150px] overflow-y-auto space-y-1">
-                  {filteredCities?.map(city => (
-                    <button
-                      key={city.id}
-                      className={cn(
-                        "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
-                        filters.city === city.name 
-                          ? "bg-primary text-primary-foreground font-medium" 
-                          : "hover:bg-muted"
-                      )}
+          {/* City Filter */}
+          <Popover open={cityOpen} onOpenChange={setCityOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(filterButtonBase, filters.city && "border-primary/50", cityOpen && filterButtonActive)}
+              >
+                <MapPin className="h-4 w-4" />
+                <span>{filters.city || 'City'}</span>
+                {cityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start">
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Location</h3>
+                  {filters.city && (
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         onFiltersChange({
                           ...filters,
-                          city: city.name,
-                          neighborhoods: undefined,
+                          city: undefined,
                         });
-                        setCityOpen(false);
-                        setCitySearch('');
                       }}
                     >
-                      {city.name}
+                      Clear
                     </button>
-                  ))}
+                  )}
                 </div>
-              </div>
+                
+                {/* City Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">City</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search city..."
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      className="pl-10 rounded-lg"
+                    />
+                  </div>
 
-
-              <Link 
-                to="/tools" 
-                className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
-              >
-                Not sure where to look? <ArrowRight className="h-4 w-4" />
-              </Link>
-
-              <Button 
-                className="w-full"
-                onClick={() => {
-                  setCityOpen(false);
-                }}
-              >
-                {countLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
-
-        {/* Mobile: Consolidated Filters Button */}
-        {isMobile && (
-          <Button 
-            variant="outline"
-            className={cn(filterButtonBase, mobileActiveFilterCount > 0 && "border-primary/50")}
-            onClick={() => setMobileFiltersOpen(true)}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>{mobileActiveFilterCount > 0 ? `Filters (${mobileActiveFilterCount})` : 'Filters'}</span>
-          </Button>
-        )}
-
-        {/* Desktop: Price Filter */}
-        {!isMobile && (
-        <Popover open={priceOpen} onOpenChange={setPriceOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className={cn(filterButtonBase, priceOpen && filterButtonActive)}
-            >
-              <DollarSign className="h-4 w-4" />
-              <span>Price</span>
-              {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Price Range</h3>
-                {(filters.min_price || filters.max_price) && (
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      updateFilter('min_price', undefined);
-                      updateFilter('max_price', undefined);
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              
-              <PriceRangeSlider
-                minValue={filters.min_price}
-                maxValue={filters.max_price}
-                onRangeChange={(min, max) => {
-                  // single update to avoid stale-props overwriting
-                  onFiltersChange({ ...filters, min_price: min, max_price: max });
-                }}
-                baseMin={0}
-                baseMax={listingType === 'for_rent' ? 30000 : 10000000}
-                baseStep={listingType === 'for_rent' ? 500 : 50000}
-                currency={currency}
-                exchangeRate={exchangeRate}
-              />
-
-              <Link 
-                to="/tools" 
-                className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
-              >
-                Not sure how much you can afford? <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </PopoverContent>
-        </Popover>
-        )}
-
-        {/* Desktop: Beds/Baths Combined Filter */}
-        {!isMobile && (
-        <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              className={cn(filterButtonBase, bedsAndBathsOpen && filterButtonActive)}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              <span>
-                {filters.min_rooms || filters.min_bathrooms
-                  ? `${filters.min_rooms ? `${filters.min_rooms}+ rm` : ''}${filters.min_rooms && filters.min_bathrooms ? ', ' : ''}${filters.min_bathrooms ? `${filters.min_bathrooms}+ ba` : ''}`
-                  : 'Beds/Baths'}
-              </span>
-              {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
-            <div className="p-4 space-y-5">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Beds / Baths</h3>
-                {(filters.min_rooms || filters.min_bathrooms) && (
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        min_rooms: undefined,
-                        min_bathrooms: undefined
-                      });
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-
-              {/* Rooms Section */}
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">Rooms</span>
-                  <TooltipProvider delayDuration={400}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          type="button" 
-                          className="cursor-help"
-                          tabIndex={-1}
-                          aria-label="Rooms info"
-                          onFocus={(e) => e.currentTarget.blur()}
-                        >
-                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-[250px]">
-                        <p className="text-sm">In Israel, rooms = bedrooms + living areas. A "4-room" apt typically has 3 bedrooms.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="max-h-[150px] overflow-y-auto space-y-1">
+                    {filteredCities?.map(city => (
+                      <button
+                        key={city.id}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm rounded-lg transition-colors",
+                          filters.city === city.name 
+                            ? "bg-primary text-primary-foreground font-medium" 
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => {
+                          onFiltersChange({
+                            ...filters,
+                            city: city.name,
+                            neighborhoods: undefined,
+                          });
+                          setCityOpen(false);
+                          setCitySearch('');
+                        }}
+                      >
+                        {city.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    className={cn(
-                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
-                      !filters.min_rooms
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('min_rooms', undefined)}
-                  >
-                    Any
-                  </button>
-                  {[2, 3, 4, 5, 6, 7].map(num => (
-                    <button
-                      key={num}
-                      className={cn(
-                        "h-9 w-10 rounded-lg border text-sm font-medium transition-all",
-                        filters.min_rooms === num 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "border-border hover:bg-muted"
-                      )}
-                      onClick={() => updateFilter('min_rooms', filters.min_rooms === num ? undefined : num)}
-                    >
-                      {num}{num === 7 ? '+' : '+'}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Bathrooms Section */}
-              <div className="space-y-2.5">
-                <span className="font-medium text-sm">Bathrooms</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    className={cn(
-                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
-                      !filters.min_bathrooms
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('min_bathrooms', undefined)}
-                  >
-                    Any
-                  </button>
-                  {[1, 1.5, 2, 3, 4].map(num => (
-                    <button
-                      key={num}
-                      className={cn(
-                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
-                        filters.min_bathrooms === num 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "border-border hover:bg-muted"
-                      )}
-                      onClick={() => updateFilter('min_bathrooms', filters.min_bathrooms === num ? undefined : num)}
-                    >
-                      {num}+
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Apply Button */}
-              <div className="pt-2 border-t">
+                <Link 
+                  to="/tools" 
+                  className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+                >
+                  Not sure where to look? <ArrowRight className="h-4 w-4" />
+                </Link>
+
                 <Button 
                   className="w-full"
-                  onClick={() => setBedsAndBathsOpen(false)}
+                  onClick={() => {
+                    setCityOpen(false);
+                  }}
                 >
                   {countLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -593,107 +391,251 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
                 </Button>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-        )}
+            </PopoverContent>
+          </Popover>
 
-        {/* Desktop: Type Filter */}
-        {!isMobile && (
-        <Popover open={typeOpen} onOpenChange={setTypeOpen}>
-          <PopoverTrigger asChild>
+          {/* Mobile: Consolidated Filters Button */}
+          {isMobile && (
             <Button 
-              variant="outline" 
-              className={cn(filterButtonBase, typeOpen && filterButtonActive)}
+              variant="outline"
+              className={cn(filterButtonBase, mobileActiveFilterCount > 0 && "border-primary/50")}
+              onClick={() => setMobileFiltersOpen(true)}
             >
-              <Building2 className="h-4 w-4" />
-              <span>
-                {filters.property_types && filters.property_types.length > 0
-                  ? filters.property_types.length === 1
-                    ? PROPERTY_TYPES.find(t => t.value === filters.property_types![0])?.label
-                    : `${filters.property_types.length} Types`
-                  : 'Type'}
-              </span>
-              {typeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>{mobileActiveFilterCount > 0 ? `Filters (${mobileActiveFilterCount})` : 'Filters'}</span>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
-            <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Property Type</h3>
-                {filters.property_types && filters.property_types.length > 0 && (
-                  <button 
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                    onClick={() => updateFilter('property_types', undefined)}
-                  >
-                    Clear
-                  </button>
-                )}
+          )}
+
+          {/* Desktop: Price Filter */}
+          {!isMobile && (
+          <Popover open={priceOpen} onOpenChange={setPriceOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(filterButtonBase, priceOpen && filterButtonActive)}
+              >
+                <DollarSign className="h-4 w-4" />
+                <span>Price</span>
+                {priceOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[340px] p-0 bg-background border shadow-xl z-50" align="start">
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Price Range</h3>
+                  {(filters.min_price || filters.max_price) && (
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        updateFilter('min_price', undefined);
+                        updateFilter('max_price', undefined);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                
+                <PriceRangeSlider
+                  minValue={filters.min_price}
+                  maxValue={filters.max_price}
+                  onRangeChange={(min, max) => {
+                    // single update to avoid stale-props overwriting
+                    onFiltersChange({ ...filters, min_price: min, max_price: max });
+                  }}
+                  baseMin={0}
+                  baseMax={listingType === 'for_rent' ? 30000 : 10000000}
+                  baseStep={listingType === 'for_rent' ? 500 : 50000}
+                  currency={currency}
+                  exchangeRate={exchangeRate}
+                />
+
+                <Link 
+                  to="/tools" 
+                  className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+                >
+                  Not sure how much you can afford? <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-              
-              <div className="space-y-1">
-                {PROPERTY_TYPES.map(type => {
-                  const isSelected = filters.property_types?.includes(type.value) || false;
-                  return (
+            </PopoverContent>
+          </Popover>
+          )}
+
+          {/* Desktop: Beds/Baths Combined Filter */}
+          {!isMobile && (
+          <Popover open={bedsAndBathsOpen} onOpenChange={setBedsAndBathsOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(filterButtonBase, bedsAndBathsOpen && filterButtonActive)}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span>Beds / Baths</span>
+                {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+              <div className="p-4 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Rooms & Bathrooms</h3>
+                  {(filters.min_rooms || filters.min_bathrooms) && (
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        updateFilter('min_rooms', undefined);
+                        updateFilter('min_bathrooms', undefined);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Rooms */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Rooms</Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[250px]">
+                        <p className="text-sm">In Israel, "rooms" includes living areas. A 3-room apartment typically has 2 bedrooms + a living room.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="flex gap-2">
+                    {[undefined, 2, 3, 4, 5].map(num => (
+                      <button
+                        key={num ?? 'any'}
+                        className={cn(
+                          "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                          filters.min_rooms === num 
+                            ? "bg-primary text-primary-foreground" 
+                            : "border border-border hover:bg-muted"
+                        )}
+                        onClick={() => updateFilter('min_rooms', num)}
+                      >
+                        {num ?? 'Any'}
+                        {num && '+'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bathrooms */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Bathrooms</Label>
+                  <div className="flex gap-2">
+                    {[undefined, 1, 2, 3].map(num => (
+                      <button
+                        key={num ?? 'any'}
+                        className={cn(
+                          "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                          filters.min_bathrooms === num 
+                            ? "bg-primary text-primary-foreground" 
+                            : "border border-border hover:bg-muted"
+                        )}
+                        onClick={() => updateFilter('min_bathrooms', num)}
+                      >
+                        {num ?? 'Any'}
+                        {num && '+'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          )}
+
+          {/* Desktop: Property Type */}
+          {!isMobile && (
+          <Popover open={typeOpen} onOpenChange={setTypeOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                className={cn(filterButtonBase, typeOpen && filterButtonActive)}
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Type</span>
+                {typeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start">
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Property Type</h3>
+                  {filters.property_types?.length && (
+                    <button 
+                      className="text-sm text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        updateFilter('property_types', undefined);
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {PROPERTY_TYPES.map(type => (
                     <button
                       key={type.value}
-                      className="w-full flex items-center gap-3 px-2 py-2.5 text-sm rounded-lg hover:bg-muted transition-colors"
+                      className={cn(
+                        "px-4 h-9 rounded-full text-sm font-medium transition-all",
+                        filters.property_types?.includes(type.value) 
+                          ? "bg-primary text-primary-foreground" 
+                          : "border border-border hover:bg-muted"
+                      )}
                       onClick={() => {
-                        const currentTypes = filters.property_types || [];
-                        if (isSelected) {
-                          updateFilter('property_types', currentTypes.filter(t => t !== type.value));
+                        const current = filters.property_types || [];
+                        if (current.includes(type.value)) {
+                          updateFilter('property_types', current.filter(t => t !== type.value));
                         } else {
-                          updateFilter('property_types', [...currentTypes, type.value]);
+                          updateFilter('property_types', [...current, type.value]);
                         }
                       }}
                     >
-                      <div className={cn(
-                        "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors",
-                        isSelected 
-                          ? "border-primary bg-primary" 
-                          : "border-border"
-                      )}>
-                        {isSelected && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        )}
-                      </div>
-                      <span>{type.label}</span>
+                      {type.label}
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-        )}
+            </PopoverContent>
+          </Popover>
+          )}
 
-        {/* Desktop: More Filters Button */}
-        {!isMobile && (
-        <Button 
-          variant="outline"
-          className={cn(filterButtonBase, moreFiltersOpen && filterButtonActive)}
-          onClick={() => setMoreFiltersOpen(true)}
-        >
-          <SlidersHorizontal className="h-4 w-4" />
-          <span>More Filters</span>
-        </Button>
-        )}
+          {/* Desktop: More Filters */}
+          {!isMobile && (
+            <Button 
+              variant="outline"
+              className={cn(filterButtonBase)}
+              onClick={() => setMoreFiltersOpen(true)}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span>More</span>
+            </Button>
+          )}
 
-        {/* Clear All Filters - Only shown when filters are active */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
-            onClick={clearAllFilters}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Clear</span>
-          </Button>
-        )}
+          {/* Clear All Filters - Desktop only */}
+          {hasActiveFilters && !isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={clearAllFilters}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Clear</span>
+            </Button>
+          )}
+        </div>
 
-        {/* Sort & Alert Section */}
-        <div className="flex items-center gap-3">
+        {/* Row 2: Sort & Alert - Mobile uses justify-between, desktop stays inline */}
+        <div className={cn(
+          "flex items-center",
+          isMobile ? "justify-between" : "gap-3"
+        )}>
           {/* Sort */}
           <div className="flex items-center gap-1">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
@@ -707,7 +649,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
+              <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="start">
                 {SORT_OPTIONS.map(option => (
                   <button
                     key={option.value}
@@ -730,8 +672,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Popover>
           </div>
 
-          {/* Subtle Separator */}
-          {onCreateAlert && (
+          {/* Subtle Separator - Desktop only */}
+          {onCreateAlert && !isMobile && (
             <div className="h-6 w-px bg-border/60" />
           )}
 
