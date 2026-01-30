@@ -176,7 +176,7 @@ export default function PropertyDetail() {
                 title="AI Value Snapshot"
                 icon={<BarChart3 className="h-5 w-5" />}
                 summary={`${formatPrice(property.price, 'ILS')} • ${property.city}`}
-                defaultOpen={false}
+                alwaysStartClosed
               >
                 <PropertyValueSnapshot 
                   price={property.price}
@@ -228,7 +228,7 @@ export default function PropertyDetail() {
                   title="Cost Breakdown"
                   icon={<Calculator className="h-5 w-5" />}
                   summary="Upfront costs & monthly expenses"
-                  defaultOpen={false}
+                  alwaysStartClosed
                 >
                   <PropertyCostBreakdown 
                     price={property.price}
@@ -258,7 +258,7 @@ export default function PropertyDetail() {
                 title="Location"
                 icon={<MapPin className="h-5 w-5" />}
                 summary={`${property.neighborhood || ''} ${property.city}`.trim()}
-                defaultOpen={false}
+                alwaysStartClosed
               >
                 <GoogleMapsProvider>
                   <PropertyLocation 
