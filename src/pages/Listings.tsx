@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/database';
@@ -183,8 +184,36 @@ export default function Listings() {
 
   const pageContent = getPageContent();
 
+  // SEO metadata based on listing type
+  const getSeoData = () => {
+    if (isRentals) {
+      return {
+        title: 'Long-term Rentals in Israel | BuyWise Israel',
+        description: 'Find long-term rental apartments and houses in Israel. Browse rentals in Tel Aviv, Jerusalem, Herzliya, and more with transparent pricing.',
+      };
+    }
+    if (isSoldView) {
+      return {
+        title: 'Recently Sold Properties in Israel | BuyWise Israel',
+        description: 'Research recently sold properties in Israel to understand market prices and realistic valuations in your target areas.',
+      };
+    }
+    return {
+      title: 'Properties for Sale in Israel | BuyWise Israel',
+      description: 'Search apartments, houses, and penthouses for sale in Israel. Find properties in Tel Aviv, Jerusalem, Herzliya, and more with honest pricing.',
+    };
+  };
+
+  const seoData = getSeoData();
+
   return (
     <Layout>
+      <SEOHead
+        title={seoData.title}
+        description={seoData.description}
+        canonicalUrl="https://buywiseisrael.com/listings"
+      />
+      
       {/* Page Header */}
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
         <div className="container py-6 md:py-10">

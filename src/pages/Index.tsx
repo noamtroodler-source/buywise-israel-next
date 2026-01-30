@@ -1,4 +1,5 @@
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { HeroSplit } from '@/components/home/HeroSplit';
 import { PlatformPromise } from '@/components/home/PlatformPromise';
 import { ThreePillars } from '@/components/home/ThreePillars';
@@ -12,6 +13,12 @@ import { FinalCTA } from '@/components/home/FinalCTA';
 const Index = () => {
   return (
     <Layout>
+      <SEOHead
+        title="BuyWise Israel - Property Search for English Speakers"
+        description="Find your perfect property in Israel. Search apartments, houses, and new developments with tools built for international buyers. Transparent pricing, honest guidance."
+        canonicalUrl="https://buywiseisrael.com"
+      />
+      
       {/* 1. Cinematic Hero with Integrated Search */}
       <HeroSplit />
       

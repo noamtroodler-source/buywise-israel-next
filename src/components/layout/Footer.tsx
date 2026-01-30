@@ -109,10 +109,19 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-border">
-          <p className="text-sm text-muted-foreground text-center">
+        <div className="mt-8 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} BuyWise Israel. All rights reserved.
           </p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="text-border">•</span>
+            <Link to="/terms" className="hover:text-foreground transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

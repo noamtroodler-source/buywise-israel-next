@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Calculator, Sparkles } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { GuideCard } from '@/components/guides';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
@@ -169,6 +170,12 @@ export default function Guides() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Buying Guides for Israel | BuyWise Israel"
+        description="Comprehensive guides for buying property in Israel. Learn about taxes, mortgages, legal process, and what international buyers need to know."
+        canonicalUrl="https://buywiseisrael.com/guides"
+      />
+      
       <div className="min-h-screen bg-background">
         {/* Hero Section */}
         <section className="relative overflow-hidden">

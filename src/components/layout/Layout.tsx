@@ -3,6 +3,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { FloatingWhatsApp } from '../shared/FloatingWhatsApp';
 import { MobileBottomNav } from './MobileBottomNav';
+import { CookieConsentBanner } from '../shared/CookieConsentBanner';
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,6 +20,7 @@ export function Layout({ children }: LayoutProps) {
       </div>
       <FloatingWhatsApp />
       <MobileBottomNav />
+      <CookieConsentBanner />
     </div>
   );
 }

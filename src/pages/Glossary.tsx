@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Search, Book, Filter, Star, StarOff, ChevronDown, Volume2, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -93,6 +94,12 @@ export default function Glossary() {
 
   return (
     <Layout>
+      <SEOHead
+        title="Hebrew Real Estate Terms Glossary | BuyWise Israel"
+        description="Learn essential Hebrew real estate terms for buying property in Israel. Definitions, translations, and pro tips for international buyers."
+        canonicalUrl="https://buywiseisrael.com/glossary"
+      />
+      
       <div className="container py-8 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

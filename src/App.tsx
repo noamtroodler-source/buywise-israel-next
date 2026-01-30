@@ -46,6 +46,14 @@ const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 
+// Legal pages
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
+
+// Auth pages
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+
 // Guides - lazy load
 const Guides = lazy(() => import("./pages/Guides"));
 const BuyingPropertyGuide = lazy(() => import("./pages/guides/BuyingPropertyGuide"));
@@ -201,6 +209,14 @@ const App = () => (
                         <Route path="/for-agents" element={<ForAgents />} />
                         <Route path="/for-developers" element={<ForDevelopers />} />
                         <Route path="/advertise" element={<Advertise />} />
+                        
+                        {/* Legal pages */}
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/terms" element={<TermsOfService />} />
+                        
+                        {/* Auth pages */}
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
                         
                         {/* Protected user routes */}
                         <Route path="/profile" element={

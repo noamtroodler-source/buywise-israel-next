@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { Building, MapPin, Calendar, Loader2, Home, TrendingDown, Bell, RotateCcw, Compass, BookOpen } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { SEOHead } from '@/components/seo/SEOHead';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -174,6 +175,12 @@ export default function Projects() {
 
   return (
     <Layout>
+      <SEOHead
+        title="New Development Projects in Israel | BuyWise Israel"
+        description="Explore new construction projects and off-plan developments in Israel. Find new apartments and buildings with timelines, pricing, and developer information."
+        canonicalUrl="https://buywiseisrael.com/projects"
+      />
+      
       {/* Page Header */}
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
         <div className="container py-8 md:py-10 text-center">
