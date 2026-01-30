@@ -23,6 +23,9 @@ interface MobileFilterSheetProps {
   isCountLoading?: boolean;
   currency: string;
   exchangeRate: number;
+  showSoldToggle?: boolean;
+  isSoldView?: boolean;
+  onSoldToggle?: (showSold: boolean) => void;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -75,6 +78,9 @@ export function MobileFilterSheet({
   isCountLoading,
   currency,
   exchangeRate,
+  showSoldToggle,
+  isSoldView,
+  onSoldToggle,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
 
@@ -136,6 +142,40 @@ export function MobileFilterSheet({
         
         <ScrollArea className="h-[calc(90vh-140px)]">
           <div className="px-4 py-4 space-y-6">
+            {/* Listing Status Section - Only for for_sale */}
+            {showSoldToggle && (
+              <section className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Listing Status
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    className={cn(
+                      "flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all",
+                      !isSoldView 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => onSoldToggle?.(false)}
+                  >
+                    Active Listings
+                  </button>
+                  <button
+                    className={cn(
+                      "flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all",
+                      isSoldView 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => onSoldToggle?.(true)}
+                  >
+                    Sold Properties
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* Location Section */}
             <section className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
