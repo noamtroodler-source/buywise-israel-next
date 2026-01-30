@@ -25,7 +25,7 @@ const tools = [
     id: 'rentvsbuy',
     icon: Home,
     title: 'Rent vs Buy',
-    description: 'Compare the long-term costs of renting versus buying in Israel.',
+    description: 'Pressure-free comparisons for long-term thinking.',
     link: '/tools?tool=rentvsbuy',
     color: 'bg-primary/10 text-primary',
   },
