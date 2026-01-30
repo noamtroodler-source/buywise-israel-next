@@ -1,170 +1,69 @@
 
-## Mobile-First Project Pages Optimization
+## Fix Currency Range Overflow on Mobile Tools
 
-### Current Issues Identified
+### The Problem
 
-After analyzing `ProjectDetail.tsx`, `Projects.tsx`, and related components, these mobile issues need to be addressed:
+The screenshot shows `₪99.9M – ₪99.9M` displayed in the "Your Maximum Budget" hero result. This happens when both the low and high values of the range hit the ₪99.9M cap. The text overflows the card on mobile devices.
 
-1. **ProjectDetail.tsx Container Padding**
-   - Uses `py-6` and `container` which adds too much padding on mobile
-   - The `grid gap-8` creates excessive spacing between sections on small screens
-
-2. **ProjectHero.tsx Thumbnail Strip**
-   - The thumbnail strip with 80px thumbnails can overflow on mobile
-   - No edge-to-edge styling applied consistently
-
-3. **ProjectTimeline.tsx Horizontal Timeline**
-   - 6 stages with labels in a horizontal row causes text to overlap/truncate on mobile
-   - Fixed width percentages (`16.66%`) don't account for narrow screens
-
-4. **ProjectQuickSummary.tsx Stats Bar**
-   - `flex flex-wrap gap-6` can cause awkward wrapping on mobile
-   - Stats displayed horizontally may not fit well
-
-5. **ProjectFloorPlans.tsx Mobile Cards**
-   - Already has mobile cards, but needs tighter padding
-   - Floor Plan button placement could be improved
-
-6. **ProjectNextSteps.tsx Grid**
-   - Uses `sm:grid-cols-3` which stacks on mobile, but cards have excessive padding
-
-7. **SimilarProjects.tsx Carousel**
-   - `basis-full` on mobile is good, but navigation buttons could be better positioned
-
-8. **General Spacing**
-   - Section spacing (`space-y-8`) is too generous for mobile screens
+**Two issues:**
+1. **Redundant display**: Showing `X – X` when both values are identical looks incorrect
+2. **Text overflow**: Long currency ranges can overflow their container on narrow screens
 
 ---
 
-### Technical Implementation
+### Solution
 
-#### File 1: `src/pages/ProjectDetail.tsx`
-
-**Changes:**
-- Reduce container padding: `py-4 md:py-6`
-- Reduce grid gap: `gap-4 md:gap-8`
-- Reduce section spacing within main column: `space-y-4 md:space-y-8`
-- Apply mobile edge-to-edge for key sections
-
+**1. Update `formatCurrencyRange` function** to return a single value when low equals high:
 ```tsx
-// Line 81: Change py-6 to py-4 md:py-6
-<div className="container py-4 md:py-6">
-
-// Line 88: Change gap-8 to gap-4 md:gap-8
-<motion.div ... className="grid gap-4 md:gap-8 lg:grid-cols-3 mt-4 md:mt-6">
-
-// Line 91: Change space-y-8 to space-y-4 md:space-y-8
-<div className="lg:col-span-2 space-y-4 md:space-y-8">
+// If values are the same, show single value (not redundant range)
+if (low === high || Math.abs(low - high) < 1) {
+  return `${currencySymbol}${formatCompact(low)}`;
+}
+return `${currencySymbol}${formatCompact(low)} – ${currencySymbol}${formatCompact(high)}`;
 ```
 
----
+**2. Apply same logic to `ResultRange` component** for consistent behavior across all variants
 
-#### File 2: `src/components/project/ProjectTimeline.tsx`
-
-**Changes:**
-- On mobile, convert horizontal timeline to a compact vertical list
-- Use `useIsMobile` hook to conditionally render
-- Show only current stage prominently with previous/next indicators
-
-**Mobile Layout:**
-```text
-┌─────────────────────────────────────┐
-│ ✓ Pre-Sale                          │
-├─────────────────────────────────────┤
-│ ● Foundation ← Current (45%)        │
-├─────────────────────────────────────┤
-│ ○ Structure                         │
-│ ○ Finishing                         │
-│ ○ Delivery (Est. Dec 2025)          │
-└─────────────────────────────────────┘
+**3. Add responsive text sizing** to the hero display in `AffordabilityCalculator.tsx`:
+```tsx
+// Change from fixed text-4xl md:text-5xl to responsive scaling
+className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary"
 ```
 
----
-
-#### File 3: `src/components/project/ProjectQuickSummary.tsx`
-
-**Changes:**
-- Make stats grid use fixed 2 columns on mobile: `grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6`
-- Reduce font sizes on mobile for better fit
-- Tighter border padding
-
----
-
-#### File 4: `src/components/project/ProjectHero.tsx`
-
-**Changes:**
-- Hide thumbnail strip on mobile (dots are sufficient)
-- Ensure back button has proper mobile styling
-- The main image and gallery are already good
-
----
-
-#### File 5: `src/components/project/ProjectNextSteps.tsx`
-
-**Changes:**
-- Reduce card padding on mobile: `p-3 md:p-4`
-- Icon container slightly smaller on mobile
-- Already stacks correctly with `sm:grid-cols-3`
-
----
-
-#### File 6: `src/components/project/ProjectFloorPlans.tsx`
-
-**Changes:**
-- Reduce mobile card padding: `p-3 md:p-4`
-- Make Floor Plan button more compact
-- Reduce inner grid spacing
-
----
-
-#### File 7: `src/components/project/ProjectCostBreakdown.tsx`
-
-**Changes:**
-- Ensure collapsibles start closed on mobile
-- Reduce section header sizes
-- The component already has good mobile structure
-
----
-
-#### File 8: `src/components/project/SimilarProjects.tsx`
-
-**Changes:**
-- Use edge-to-edge carousel on mobile: `-mx-4 px-4` with `overflow-visible`
-- Reduce header spacing on mobile
-- Make navigation buttons always visible on mobile
-
----
-
-#### File 9: `src/components/project/ProjectDeveloperCard.tsx` and `ProjectAgentCard.tsx`
-
-**Changes:**
-- Reduce card content padding on mobile: `p-3 md:p-4`
-- Ensure buttons stack properly
-
----
-
-### Summary of Key Changes
-
-| Component | Mobile Change |
-|-----------|---------------|
-| `ProjectDetail.tsx` | Reduce container padding & section gaps |
-| `ProjectTimeline.tsx` | Vertical compact timeline on mobile |
-| `ProjectQuickSummary.tsx` | 2-column grid for stats |
-| `ProjectHero.tsx` | Hide thumbnail strip on mobile |
-| `ProjectNextSteps.tsx` | Tighter card padding |
-| `ProjectFloorPlans.tsx` | Compact mobile cards |
-| `SimilarProjects.tsx` | Edge-to-edge carousel styling |
-| `ProjectDeveloperCard.tsx` | Reduced padding |
+**4. Audit other calculators** that use `formatCurrencyRange` for the same pattern
 
 ---
 
 ### Files to Modify
 
-1. `src/pages/ProjectDetail.tsx` - Page-level spacing
-2. `src/components/project/ProjectTimeline.tsx` - Mobile vertical timeline
-3. `src/components/project/ProjectQuickSummary.tsx` - Stats grid layout
-4. `src/components/project/ProjectHero.tsx` - Hide thumbnails on mobile
-5. `src/components/project/ProjectNextSteps.tsx` - Card padding
-6. `src/components/project/ProjectFloorPlans.tsx` - Mobile card optimization
-7. `src/components/project/SimilarProjects.tsx` - Carousel mobile styling
-8. `src/components/project/ProjectDeveloperCard.tsx` - Padding reduction
+1. **`src/components/tools/shared/ResultRange.tsx`**
+   - Update `formatCurrencyRange` to handle equal values
+   - Update `ResultRange` component with same logic
+   - Reduce hero variant text size on mobile: `text-3xl sm:text-4xl md:text-5xl`
+
+2. **`src/components/tools/AffordabilityCalculator.tsx`**
+   - Update hero text size class: `text-3xl sm:text-4xl md:text-5xl`
+
+3. **`src/components/tools/MortgageCalculator.tsx`**
+   - Update hero text size class for consistency
+
+---
+
+### Expected Behavior After Fix
+
+| Condition | Before | After |
+|-----------|--------|-------|
+| Range: ₪2.5M – ₪3.1M | `₪2.5M – ₪3.1M` | `₪2.5M – ₪3.1M` (no change) |
+| Same value: ₪99.9M – ₪99.9M | `₪99.9M – ₪99.9M` | `₪99.9M` (single value) |
+| Close values: ₪2,500,000 – ₪2,500,100 | `₪2.5M – ₪2.5M` | `₪2.5M` (single value) |
+
+---
+
+### Technical Details
+
+The check `Math.abs(low - high) < 1` handles floating-point edge cases where values are essentially equal but not exactly identical due to calculation rounding.
+
+The responsive text sizing progression:
+- Mobile (<640px): `text-3xl` = 1.875rem (30px)
+- Small tablet (≥640px): `text-4xl` = 2.25rem (36px) 
+- Desktop (≥768px): `text-5xl` = 3rem (48px)
