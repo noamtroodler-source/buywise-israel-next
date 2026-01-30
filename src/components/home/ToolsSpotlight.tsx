@@ -9,7 +9,7 @@ const tools = [
     id: 'mortgage',
     icon: Calculator,
     title: 'Mortgage Calculator',
-    description: 'Calculate monthly payments with Israeli bank rates and track types.',
+    description: 'Understand monthly reality — not optimistic estimates.',
     link: '/tools?tool=mortgage',
     color: 'bg-primary/10 text-primary',
   },
