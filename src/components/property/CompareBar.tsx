@@ -7,7 +7,7 @@ import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Property } from '@/types/database';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-
+import { useIsMobile } from '@/hooks/use-mobile';
 interface ProjectData {
   id: string;
   name: string;
@@ -21,7 +21,7 @@ export function CompareBar() {
   const { compareIds, compareCategory, removeFromCompare, clearCompare } = useCompare();
   const [properties, setProperties] = useState<Property[]>([]);
   const [projects, setProjects] = useState<ProjectData[]>([]);
-
+  const isMobile = useIsMobile();
   useEffect(() => {
     async function fetchItems() {
       if (compareIds.length === 0) {
@@ -86,7 +86,9 @@ export function CompareBar() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg"
+        className={`fixed left-0 right-0 z-50 bg-card border-t border-border shadow-lg ${
+          isMobile ? 'bottom-16 pb-safe' : 'bottom-0'
+        }`}
       >
         <div className="container py-3 flex items-center justify-between gap-4">
           {/* Left side - icon + items */}
