@@ -9,7 +9,7 @@ const pillars = [
     icon: Search,
     title: 'Discover',
     subtitle: 'Find properties your way',
-    description: 'Browse verified listings in English with filters built for international buyers. No Hebrew required.',
+    description: 'Browse verified listings in English, designed for international buyers — without needing local knowledge or fast decisions.',
     gradient: 'from-primary/10 to-primary/5',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
