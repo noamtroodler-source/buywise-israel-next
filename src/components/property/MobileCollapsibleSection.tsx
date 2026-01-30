@@ -12,6 +12,8 @@ interface MobileCollapsibleSectionProps {
   summary?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
+  /** If true, always starts closed ignoring session storage */
+  alwaysStartClosed?: boolean;
   className?: string;
 }
 
@@ -22,13 +24,17 @@ export function MobileCollapsibleSection({
   summary,
   children,
   defaultOpen = false,
+  alwaysStartClosed = false,
   className,
 }: MobileCollapsibleSectionProps) {
   const isMobile = useIsMobile();
   const storageKey = `section_expanded_${id}`;
   
-  // Initialize state from session storage
+  // Initialize state - if alwaysStartClosed, ignore session storage
   const [isOpen, setIsOpen] = useState(() => {
+    if (alwaysStartClosed) {
+      return false;
+    }
     return safeSessionGet(storageKey, defaultOpen);
   });
 
