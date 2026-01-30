@@ -72,7 +72,10 @@ export function ResultRange({
 }: ResultRangeProps) {
   const lowFormatted = formatValue(low, format, currencySymbol);
   const highFormatted = formatValue(high, format, currencySymbol);
-  const rangeText = `${lowFormatted} – ${highFormatted}`;
+  
+  // If values are essentially the same, show single value (not redundant range)
+  const isSameValue = low === high || Math.abs(low - high) < 1;
+  const rangeText = isSameValue ? lowFormatted : `${lowFormatted} – ${highFormatted}`;
   
   const content = (
     <div className={cn(
@@ -119,7 +122,7 @@ export function ResultRange({
           animate={{ opacity: 1, scale: 1 }}
           className={cn(
             "font-semibold tracking-tight",
-            variant === 'hero' && 'text-4xl md:text-5xl text-primary whitespace-nowrap',
+            variant === 'hero' && 'text-3xl sm:text-4xl md:text-5xl text-primary whitespace-nowrap',
             variant === 'stat' && 'text-lg mt-0.5',
             variant === 'inline' && 'text-base'
           )}
@@ -129,7 +132,7 @@ export function ResultRange({
       ) : (
         <p className={cn(
           "font-semibold tracking-tight",
-          variant === 'hero' && 'text-4xl md:text-5xl text-primary whitespace-nowrap',
+          variant === 'hero' && 'text-3xl sm:text-4xl md:text-5xl text-primary whitespace-nowrap',
           variant === 'stat' && 'text-lg mt-0.5',
           variant === 'inline' && 'text-base'
         )}>
@@ -171,6 +174,11 @@ export function formatCurrencyRange(
     }
     return Math.round(value).toLocaleString();
   };
+  
+  // If values are essentially the same, show single value (not redundant range)
+  if (low === high || Math.abs(low - high) < 1) {
+    return `${currencySymbol}${formatCompact(low)}`;
+  }
   
   return `${currencySymbol}${formatCompact(low)} – ${currencySymbol}${formatCompact(high)}`;
 }
