@@ -1,259 +1,308 @@
 
+# Launch Readiness Implementation Plan
 
-# Mobile Spacing Optimization - Zillow-Style Edge-to-Edge Layout
+This plan addresses all critical items you identified for launch readiness. I'll organize them by priority and implement each systematically.
+
+---
 
 ## Overview
-Optimize mobile layouts across the app to maximize screen real estate by implementing Zillow-style edge-to-edge content presentation with strategic, tighter padding. This follows mobile-first best practices where content stretches closer to screen edges while maintaining appropriate breathing room.
+
+| Item | Priority | Status | Work Required |
+|------|----------|--------|---------------|
+| Privacy Policy page | Critical | Missing | Create new page |
+| Terms of Service page | Critical | Missing | Create new page |
+| Cookie consent banner | Critical | Missing | Create component + storage |
+| Password reset flow | High | Missing | Add forgot password UI |
+| Email unsubscribe landing | Medium | Partial | Links exist, verify UX |
+| SEO meta tags | Done | 7 pages use SEOHead | Add to remaining pages |
+| Image optimization | Medium | Raw URLs | Document CDN usage |
+| Sitemap.xml | Not found | Missing | Create dynamic sitemap |
+| robots.txt | Found | Basic version exists | Enhance with sitemap URL |
 
 ---
 
-## Current Issues
+## Phase 1: Legal Compliance Pages (Critical)
 
-| Issue | Current State | Best Practice |
-|-------|--------------|---------------|
-| Container padding | 32px (2rem) on all sides | 16px on mobile, 32px on desktop |
-| Detail page images | Inset with padding | Edge-to-edge hero images |
-| Carousel items | Inconsistent edge alignment | Peek effect with edge-hugging cards |
-| Filter bars | Mixed negative margin hacks | Consistent full-width on mobile |
-| Content sections | Uniform container padding | Section-specific spacing |
+### 1.1 Privacy Policy Page
+**Route:** `/privacy`
 
----
+Create a comprehensive privacy policy covering:
+- Data collection (personal info, usage data, cookies)
+- How data is used (account management, communications, analytics)
+- Third-party services (Supabase, Resend, Google Maps)
+- User rights (access, deletion, export)
+- Cookie policy details
+- Contact information for privacy inquiries
 
-## Implementation Plan
+**Technical approach:**
+- New file: `src/pages/PrivacyPolicy.tsx`
+- Reusable legal page layout with table of contents
+- Last updated date
+- Add to routes in `App.tsx`
+- Add to footer navigation
 
-### Phase 1: Tailwind Container Configuration
+### 1.2 Terms of Service Page
+**Route:** `/terms`
 
-**File: `tailwind.config.ts`**
+Create terms covering:
+- Acceptance of terms
+- User accounts and responsibilities
+- Prohibited activities
+- Intellectual property
+- Disclaimer of warranties
+- Limitation of liability
+- Governing law (Israel)
+- Contact information
 
-Update container padding to be responsive:
+**Technical approach:**
+- New file: `src/pages/TermsOfService.tsx`
+- Same layout pattern as Privacy Policy
+- Add to routes in `App.tsx`
+- Add to footer navigation
 
-```ts
-container: {
-  center: true,
-  padding: {
-    DEFAULT: "1rem",     // 16px on mobile
-    sm: "1.5rem",        // 24px on small screens
-    md: "2rem",          // 32px on medium+
-    lg: "2rem",
-    xl: "2rem",
-    "2xl": "2rem",
-  },
-  screens: {
-    "2xl": "1400px",
-  },
-},
-```
+### 1.3 Cookie Consent Banner
+**Component:** `CookieConsentBanner`
 
-This single change reduces mobile padding from 32px to 16px across the entire app.
+GDPR-compliant cookie consent with:
+- Clear explanation of cookie usage
+- Accept/Decline options
+- Link to privacy policy
+- Persistent storage of user preference
+- Non-intrusive but visible design
 
----
-
-### Phase 2: Edge-to-Edge Hero Images (Detail Pages)
-
-**File: `src/pages/PropertyDetail.tsx`**
-
-Make hero image break out of container on mobile:
-
-```tsx
-{/* Hero - Edge-to-edge on mobile */}
-<div id="section-photos" className="-mx-4 md:mx-0">
-  <PropertyHero ... />
-</div>
-```
-
-**File: `src/components/property/PropertyHero.tsx`**
-
-Adjust image container for mobile edge-to-edge:
-
-```tsx
-<div className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group">
-  {/* Remove rounded corners on mobile for flush edge look */}
-```
-
-Same pattern for:
-- `src/pages/ProjectDetail.tsx`
-- `src/components/project/ProjectHero.tsx`
+**Technical approach:**
+- New component: `src/components/shared/CookieConsentBanner.tsx`
+- Use localStorage for consent preference
+- Add to Layout.tsx (render at bottom)
+- Respect user's choice for analytics cookies
 
 ---
 
-### Phase 3: Mobile-Optimized Content Sections
+## Phase 2: Authentication Improvements (High Priority)
 
-**File: `src/index.css`**
+### 2.1 Password Reset Flow
+Currently missing the "Forgot Password" UI flow.
 
-Add utility class for sections that should be edge-to-edge:
+**Components to add:**
+1. **ForgotPasswordForm** - Email input to request reset
+2. **ResetPasswordPage** - Form to set new password after clicking email link
 
-```css
-@layer utilities {
-  /* Edge-to-edge on mobile, respects container on desktop */
-  .mobile-full-bleed {
-    @apply -mx-4 px-4 md:mx-0 md:px-0;
-  }
-  
-  /* Edge-to-edge without inner padding */
-  .mobile-edge-to-edge {
-    @apply -mx-4 md:mx-0;
-  }
-}
-```
+**Technical approach:**
+- Add "Forgot password?" link on Auth.tsx signin form
+- Create `src/pages/ForgotPassword.tsx` with email form
+- Create `src/pages/ResetPassword.tsx` for password update
+- Use Supabase's `resetPasswordForEmail()` and password update APIs
+- Add routes in App.tsx
 
----
-
-### Phase 4: Carousel Edge Optimization
-
-**File: `src/components/home/FeaturedShowcase.tsx`**
-
-Update mobile carousel to hug edges:
-
-```tsx
-{/* Mobile: Horizontal Carousel - Edge-to-edge */}
-{!isLoading && isMobile && displayProperties.length > 0 && (
-  <div className="sm:hidden animate-fade-in -mx-4">
-    <div className="overflow-hidden px-4" ref={emblaRef}>
-      <div className="flex">
-        {displayProperties.map((property, index) => (
-          <div 
-            key={property.id} 
-            className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
-          >
-            <PropertyCard ... />
-          </div>
-        ))}
-      </div>
-    </div>
-    {/* Dots stay within container */}
-    <div className="px-4">
-      <CarouselDots ... />
-    </div>
-  </div>
-)}
-```
-
-Apply same pattern to:
-- `src/components/home/ProjectsHighlight.tsx`
-- `src/components/home/RegionExplorer.tsx`
-- `src/components/property/SimilarProperties.tsx`
-- `src/components/property/RecentNearbySales.tsx`
-
----
-
-### Phase 5: Listing Page Grid Optimization
-
-**File: `src/pages/Listings.tsx`**
-
-Tighten grid gaps on mobile:
-
-```tsx
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-fade-in">
-```
-
-**File: `src/pages/Projects.tsx`**
-
-Same grid gap optimization for project listings.
-
----
-
-### Phase 6: Filter Bar Consistency
-
-**Files: `src/components/filters/PropertyFilters.tsx`, `ProjectFilters.tsx`**
-
-Ensure filter bars extend full width on mobile:
-
-```tsx
-<div 
-  ref={filterBarRef}
-  className={cn(
-    "mb-4 md:mb-8 transition-all duration-200",
-    isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
-    isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
-  )}
->
+**User flow:**
+```text
+Auth Page → "Forgot password?" → Enter email → Check inbox → Click link → Reset password → Success → Login
 ```
 
 ---
 
-### Phase 7: Mobile Contact Bar Safe Areas
+## Phase 3: Email Unsubscribe Verification (Medium Priority)
 
-**File: `src/components/property/StickyContactCard.tsx`**
+### Current State
+- Digest emails link to `/agent/settings` and `/developer/settings`
+- These settings pages exist but need verification
 
-Ensure proper edge-to-edge with safe padding:
+**What to verify:**
+1. Agent settings page has email notification toggle
+2. Developer settings page has email notification toggle
+3. Buyer profile has notification preferences
 
-```tsx
-<motion.div 
-  className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 md:hidden pb-safe"
->
-  <div className="max-w-lg mx-auto">
-    {/* Content */}
-  </div>
-</motion.div>
+**Technical approach:**
+- Review `AgentSettings.tsx` and `DeveloperSettings.tsx`
+- Ensure `notify_email` toggle is prominent and functional
+- Add inline confirmation when toggling off notifications
+
+---
+
+## Phase 4: SEO Completeness
+
+### 4.1 Pages Using SEOHead (Already Done)
+- PropertyDetail.tsx
+- ProjectDetail.tsx
+- AreaDetail.tsx
+- AgentDetail.tsx
+- DeveloperDetail.tsx
+- AgencyDetail.tsx
+- BlogPost.tsx
+
+### 4.2 Pages Needing SEOHead
+Add static SEO metadata to these pages:
+
+| Page | Title Pattern |
+|------|---------------|
+| Index.tsx | "BuyWise Israel - Property Search for English Speakers" |
+| Listings.tsx | "Properties for Sale/Rent in Israel | BuyWise Israel" |
+| Projects.tsx | "New Development Projects in Israel | BuyWise Israel" |
+| Blog.tsx | "Real Estate Guides & Articles | BuyWise Israel" |
+| Areas.tsx | "Explore Cities & Neighborhoods | BuyWise Israel" |
+| Tools.tsx | "Property Calculators & Tools | BuyWise Israel" |
+| Guides.tsx | "Buying Guides for Israel | BuyWise Israel" |
+| Favorites.tsx | "Saved Properties | BuyWise Israel" |
+| Contact.tsx | "Contact Us | BuyWise Israel" |
+| Glossary.tsx | "Hebrew Real Estate Terms | BuyWise Israel" |
+
+### 4.3 Sitemap Generation
+Create a dynamic sitemap at `/sitemap.xml`
+
+**Technical approach:**
+- Create edge function: `supabase/functions/generate-sitemap/index.ts`
+- Query database for all published properties, projects, areas, blog posts
+- Generate XML sitemap with proper URLs and lastmod dates
+- Add cron job to regenerate periodically (or on-demand)
+
+Alternatively, create a static sitemap for core pages and use a separate edge function for dynamic content.
+
+### 4.4 Enhance robots.txt
+Update `public/robots.txt` to include:
+
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://buywiseisrael.com/sitemap.xml
+
+# Disallow admin and protected routes
+Disallow: /admin/
+Disallow: /agent/
+Disallow: /agency/
+Disallow: /developer/
+Disallow: /profile/
 ```
 
 ---
 
-### Phase 8: Quick Facts Grid Tightening
+## Phase 5: Image Optimization Note
 
-**File: `src/components/property/PropertyQuickSummary.tsx`**
+### Current State
+Images are served directly from Supabase Storage URLs.
 
-Reduce padding in stat cards on mobile:
+### Recommendation
+Supabase Storage supports image transformations via URL parameters:
+- `?width=800` - resize to width
+- `?height=600` - resize to height
+- `?quality=80` - JPEG quality
 
-```tsx
-<div className="flex items-center gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
-```
+**Implementation approach:**
+- Create utility function: `src/lib/imageUtils.ts`
+- Add responsive image helpers for property cards
+- Update PropertyThumbnail component to use optimized URLs
+
+---
+
+## Implementation Order
+
+### Session 1: Legal Pages (Critical)
+1. Create `src/pages/legal/PrivacyPolicy.tsx`
+2. Create `src/pages/legal/TermsOfService.tsx`
+3. Update `App.tsx` with routes
+4. Update Footer with legal links
+5. Create `CookieConsentBanner.tsx`
+6. Add banner to Layout
+
+### Session 2: Password Reset Flow (High)
+1. Add "Forgot password?" link to Auth.tsx
+2. Create `src/pages/ForgotPassword.tsx`
+3. Create `src/pages/ResetPassword.tsx`
+4. Add routes to App.tsx
+5. Test end-to-end
+
+### Session 3: SEO Enhancements
+1. Add SEOHead to 10 remaining pages
+2. Update robots.txt
+3. Create sitemap edge function
+4. Deploy and verify
+
+### Session 4: End-to-End Testing
+After implementation, verify all flows:
+
+**Buyer Flows:**
+- [ ] Sign up with email → verify email → onboarding → home
+- [ ] Sign up with Google → onboarding → home
+- [ ] Sign in with email
+- [ ] Forgot password → reset → sign in
+- [ ] Save property → view favorites
+- [ ] Create search alert
+- [ ] Contact form submission
+
+**Agent Flows:**
+- [ ] Sign up → email verification → agent registration → pending
+- [ ] Sign in → dashboard
+- [ ] Create listing → preview → publish
+- [ ] Receive inquiry notification
+
+**Developer Flows:**
+- [ ] Sign up → developer registration → pending
+- [ ] Sign in → dashboard
+- [ ] Create project → publish
+
+**Cookie/Legal:**
+- [ ] First visit shows cookie banner
+- [ ] Accept cookies → banner dismissed, preference saved
+- [ ] Return visit → no banner
+- [ ] Privacy and Terms pages accessible
 
 ---
 
-## Visual Comparison
+## Files to Create
 
-### Before (Current)
-```
-|    32px    |  Content  |    32px    |
-```
+```text
+src/pages/legal/
+  ├── PrivacyPolicy.tsx
+  └── TermsOfService.tsx
 
-### After (Optimized)
-```
-| 16px | ========= Content ========= | 16px |
-```
+src/pages/
+  ├── ForgotPassword.tsx
+  └── ResetPassword.tsx
 
-### Edge-to-Edge Sections (Hero, Carousels)
-```
-|========= Full Width Content ==========|
-```
+src/components/shared/
+  └── CookieConsentBanner.tsx
 
----
+src/lib/
+  └── imageUtils.ts
+
+supabase/functions/
+  └── generate-sitemap/
+      └── index.ts
+```
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `tailwind.config.ts` | Responsive container padding |
-| `src/index.css` | Add mobile utility classes |
-| `src/pages/PropertyDetail.tsx` | Edge-to-edge hero |
-| `src/pages/ProjectDetail.tsx` | Edge-to-edge hero |
-| `src/components/property/PropertyHero.tsx` | Remove mobile border radius |
-| `src/components/project/ProjectHero.tsx` | Remove mobile border radius |
-| `src/components/home/FeaturedShowcase.tsx` | Edge-hugging carousel |
-| `src/components/home/ProjectsHighlight.tsx` | Edge-hugging carousel |
-| `src/components/home/RegionExplorer.tsx` | Edge-hugging carousel |
-| `src/components/property/SimilarProperties.tsx` | Edge-hugging carousel |
-| `src/components/property/RecentNearbySales.tsx` | Edge-hugging carousel |
-| `src/components/property/PropertyQuickSummary.tsx` | Tighter mobile padding |
-| `src/pages/Listings.tsx` | Tighter grid gaps |
-| `src/pages/Projects.tsx` | Tighter grid gaps |
-| `src/components/filters/PropertyFilters.tsx` | Consistent full-width |
+```text
+src/App.tsx                    # Add new routes
+src/components/layout/Layout.tsx   # Add CookieConsentBanner
+src/components/layout/Footer.tsx   # Add Privacy/Terms links
+src/pages/Auth.tsx             # Add forgot password link
+public/robots.txt              # Add sitemap and disallow rules
+
+# Add SEOHead to:
+src/pages/Index.tsx
+src/pages/Listings.tsx
+src/pages/Projects.tsx
+src/pages/Blog.tsx
+src/pages/Areas.tsx
+src/pages/Tools.tsx
+src/pages/Guides.tsx
+src/pages/Favorites.tsx
+src/pages/Contact.tsx
+src/pages/Glossary.tsx
+```
 
 ---
 
-## Best Practices Applied
+## Estimated Effort
 
-1. **Touch Targets**: Maintain minimum 44px touch targets (iOS HIG)
-2. **Breathing Room**: 16px edge padding prevents content from feeling cramped
-3. **Visual Hierarchy**: Hero images edge-to-edge create immersive experience
-4. **Consistency**: Same spacing patterns across all listing pages
-5. **Performance**: No new components, just CSS optimizations
-6. **Safe Areas**: Proper handling of notches and home indicators
+| Phase | Time Estimate |
+|-------|---------------|
+| Legal pages + cookie banner | 30-40 min |
+| Password reset flow | 20-30 min |
+| SEO meta tags (10 pages) | 15-20 min |
+| Sitemap + robots.txt | 15-20 min |
+| E2E testing | 20-30 min |
+| **Total** | **~2 hours** |
 
----
-
-## Summary
-
-This optimization reduces mobile container padding from 32px to 16px and implements strategic edge-to-edge sections for hero images and carousels. The result is a more Zillow-like experience that maximizes screen real estate while maintaining good spacing principles.
-
+Ready to implement once approved.
