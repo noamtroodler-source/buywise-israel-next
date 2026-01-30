@@ -10,7 +10,7 @@ export function SavedCalculationsCompact() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
         <div className="flex items-center gap-2 mb-3">
           <Calculator className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Saved Calculations</span>
@@ -60,7 +60,7 @@ export function SavedCalculationsCompact() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-3 md:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Calculator className="h-4 w-4 text-primary" />

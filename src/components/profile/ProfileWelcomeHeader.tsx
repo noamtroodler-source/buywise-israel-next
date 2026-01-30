@@ -76,9 +76,9 @@ export function ProfileWelcomeHeader({
 
       {/* Main Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-14 w-14 border-2 border-primary/20">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+        <div className="flex items-center gap-3 md:gap-4">
+          <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-primary/20">
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-base md:text-lg">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -114,7 +114,7 @@ export function ProfileWelcomeHeader({
                 </Button>
               </div>
             ) : (
-              <h1 className="text-2xl font-semibold text-foreground group flex items-center gap-1.5">
+              <h1 className="text-xl md:text-2xl font-semibold text-foreground group flex items-center gap-1.5">
                 Welcome back, {firstName}
                 <button
                   onClick={() => setIsEditingName(true)}
@@ -135,7 +135,7 @@ export function ProfileWelcomeHeader({
       </div>
 
       {/* Progress Card */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl bg-muted/40 border border-border">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl bg-muted/40 border border-border">
         {isLoading ? (
           <div className="flex items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

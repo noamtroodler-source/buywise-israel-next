@@ -28,9 +28,9 @@ export function ProfileSection({
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className={className}>
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <CollapsibleTrigger asChild>
-          <button className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+          <button className="flex items-center justify-between w-full p-3 md:p-4 text-left hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-2.5 md:gap-3">
+              <div className="h-8 w-8 md:h-9 md:w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 {icon}
               </div>
               <div>
@@ -61,7 +61,7 @@ export function ProfileSection({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="px-4 pb-4 border-t border-border pt-4">
+          <div className="px-3 pb-3 md:px-4 md:pb-4 border-t border-border pt-3 md:pt-4">
             {children}
           </div>
         </CollapsibleContent>
