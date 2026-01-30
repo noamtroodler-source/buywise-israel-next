@@ -11,7 +11,7 @@ export function SavedPropertiesPreview() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
         <div className="flex items-center justify-between mb-3">
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-16" />
@@ -29,7 +29,7 @@ export function SavedPropertiesPreview() {
   const totalCount = favoriteProperties.length;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="rounded-xl border border-border bg-card p-3 md:p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="h-4 w-4 text-primary" />

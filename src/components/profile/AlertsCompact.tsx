@@ -13,7 +13,7 @@ export function AlertsCompact() {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
         <div className="flex items-center gap-2 mb-3">
           <Bell className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Search Alerts</span>
@@ -27,7 +27,7 @@ export function AlertsCompact() {
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-3 md:p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Bell className="h-4 w-4 text-primary" />
