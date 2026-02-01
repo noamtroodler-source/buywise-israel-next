@@ -5,6 +5,8 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { useProjectViewTracking } from '@/hooks/useProjectViewTracking';
+import { useAuth } from '@/hooks/useAuth';
+import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import {
@@ -35,6 +37,11 @@ export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: project, isLoading, error } = useProject(slug || '');
   const { data: units = [] } = useProjectUnits(project?.id || '');
+  const { user } = useAuth();
+  const { data: buyerProfile } = useBuyerProfile();
+  
+  // Derive buyer type from profile for personalization
+  const derivedBuyerType = buyerProfile ? getEffectiveBuyerType(buyerProfile) : null;
 
   // Track project views
   useProjectViewTracking(project?.id);
@@ -114,6 +121,9 @@ export default function ProjectDetail() {
                 hasPaymentSchedule={true}
                 hasBankGuarantee={true}
                 deliveryYear={project.completion_date ? new Date(project.completion_date).getFullYear() : undefined}
+                buyerType={derivedBuyerType?.taxType}
+                residencyStatus={buyerProfile?.residency_status}
+                purchasePurpose={buyerProfile?.purchase_purpose === 'undecided' ? undefined : buyerProfile?.purchase_purpose}
               />
               
               {/* Cost Breakdown with buyer protections integrated */}

@@ -3361,6 +3361,7 @@ export type Database = {
       property_questions: {
         Row: {
           applies_to: Json | null
+          buyer_relevance: Json | null
           category: string
           created_at: string | null
           id: string
@@ -3371,6 +3372,7 @@ export type Database = {
         }
         Insert: {
           applies_to?: Json | null
+          buyer_relevance?: Json | null
           category: string
           created_at?: string | null
           id?: string
@@ -3381,6 +3383,7 @@ export type Database = {
         }
         Update: {
           applies_to?: Json | null
+          buyer_relevance?: Json | null
           category?: string
           created_at?: string | null
           id?: string
