@@ -1,10 +1,20 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Calculator, PiggyBank, Home } from 'lucide-react';
+import { ArrowRight, Calculator, PiggyBank, Home, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const tools = [
+  {
+    id: 'readiness',
+    icon: Compass,
+    title: 'Readiness Check',
+    description: 'Not sure where to start? Find out what to focus on.',
+    link: '/tools?tool=readiness',
+    color: 'bg-primary/10 text-primary',
+    badge: 'Start here',
+  },
   {
     id: 'mortgage',
     icon: Calculator,
@@ -64,7 +74,7 @@ export function ToolsSpotlight() {
         </motion.div>
 
         {/* Tools Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {displayTools.map((tool, index) => (
             <motion.div
               key={tool.id}
@@ -77,8 +87,15 @@ export function ToolsSpotlight() {
                 to={tool.link}
                 className="group block h-full p-5 rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className={`w-11 h-11 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
-                  <tool.icon className="w-5 h-5" />
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`w-11 h-11 rounded-lg ${tool.color} flex items-center justify-center`}>
+                    <tool.icon className="w-5 h-5" />
+                  </div>
+                  {'badge' in tool && tool.badge && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                      {tool.badge}
+                    </Badge>
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                   {tool.title}

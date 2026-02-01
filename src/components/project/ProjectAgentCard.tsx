@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { trackProjectInquiry } from '@/hooks/useProjectInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
+import { PermissionStatement } from '@/components/shared/PermissionStatement';
 
 interface RepresentingAgent {
   id: string;
@@ -163,6 +164,14 @@ export function ProjectAgentCard({ agent, projectName, projectId, developerId }:
           View Agent Profile
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
+
+        {/* Permission Statement */}
+        <PermissionStatement 
+          variant="inline"
+          showSaveButton={false}
+          guideLink="/guides/new-vs-resale"
+          guideLinkText="Read the guide first"
+        />
       </CardContent>
     </Card>
   );

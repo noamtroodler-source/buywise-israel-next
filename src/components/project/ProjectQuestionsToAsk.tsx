@@ -1,19 +1,33 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, ChevronDown, ChevronUp, Copy, Check, HelpCircle } from 'lucide-react';
+import { Building2, ChevronDown, ChevronUp, Copy, Check, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { usePropertyQuestions, PropertyContext } from '@/hooks/usePropertyQuestions';
+import { useProjectQuestions, ProjectContext } from '@/hooks/usePropertyQuestions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-interface PropertyQuestionsToAskProps {
-  context: PropertyContext;
+interface ProjectQuestionsToAskProps {
+  hasPaymentSchedule: boolean;
+  hasBankGuarantee: boolean;
+  deliveryYear?: number;
   className?: string;
 }
 
-export function PropertyQuestionsToAsk({ context, className }: PropertyQuestionsToAskProps) {
-  const { questions, isLoading } = usePropertyQuestions(context);
+export function ProjectQuestionsToAsk({ 
+  hasPaymentSchedule, 
+  hasBankGuarantee, 
+  deliveryYear,
+  className 
+}: ProjectQuestionsToAskProps) {
+  const context: ProjectContext = {
+    isNewConstruction: true,
+    hasPaymentSchedule,
+    hasBankGuarantee,
+    deliveryYear,
+  };
+
+  const { questions, isLoading } = useProjectQuestions(context);
   const [isExpanded, setIsExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -65,12 +79,12 @@ export function PropertyQuestionsToAsk({ context, className }: PropertyQuestions
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <MessageCircle className="h-4 w-4 text-primary" />
+                <Building2 className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg">Questions to Ask</CardTitle>
+                <CardTitle className="text-lg">Questions to Ask the Developer</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Before speaking with the agent, consider asking:
+                  Before committing, make sure you understand:
                 </p>
               </div>
             </div>
@@ -152,7 +166,7 @@ export function PropertyQuestionsToAsk({ context, className }: PropertyQuestions
           {/* Warm, non-pushy message */}
           <div className="pt-2 border-t border-border/50">
             <p className="text-xs text-muted-foreground text-center italic">
-              Take your time — there's no rush to ask everything at once.
+              New construction requires careful due diligence — take your time.
             </p>
           </div>
         </CardContent>
