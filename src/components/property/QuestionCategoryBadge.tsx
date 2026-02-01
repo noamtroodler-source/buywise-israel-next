@@ -23,32 +23,32 @@ const categoryConfig: Record<QuestionCategory, {
   pricing: {
     label: 'Cost',
     icon: DollarSign,
-    className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    className: 'bg-primary/10 text-primary',
   },
   legal: {
     label: 'Legal',
     icon: Scale,
-    className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    className: 'bg-muted text-muted-foreground',
   },
   building: {
     label: 'Building',
     icon: Building,
-    className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+    className: 'bg-primary/5 text-primary/80',
   },
   construction: {
     label: 'Construction',
     icon: HardHat,
-    className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    className: 'bg-muted text-foreground/70',
   },
   neighborhood: {
     label: 'Area',
     icon: MapPin,
-    className: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    className: 'bg-primary/10 text-primary',
   },
   rental: {
     label: 'Rental',
     icon: Home,
-    className: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
+    className: 'bg-muted text-muted-foreground',
   },
 };
 
