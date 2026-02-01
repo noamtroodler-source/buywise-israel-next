@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, ChevronDown, ChevronUp, Copy, Check, HelpCircle } from 'lucide-react';
+import { Building2, ChevronDown, ChevronUp, Copy, Check, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProjectQuestions, ProjectContext } from '@/hooks/usePropertyQuestions';
+import { useAuth } from '@/hooks/useAuth';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
+import { getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BuyerType } from '@/lib/calculations/purchaseTax';
 
 interface ProjectQuestionsToAskProps {
   hasPaymentSchedule: boolean;
   hasBankGuarantee: boolean;
   deliveryYear?: number;
+  // Buyer context
+  buyerType?: BuyerType;
+  residencyStatus?: 'israeli_resident' | 'oleh_hadash' | 'non_resident';
+  purchasePurpose?: 'primary_residence' | 'investment' | 'vacation_home';
   className?: string;
 }
 
@@ -18,22 +26,34 @@ export function ProjectQuestionsToAsk({
   hasPaymentSchedule, 
   hasBankGuarantee, 
   deliveryYear,
+  buyerType,
+  residencyStatus,
+  purchasePurpose,
   className 
 }: ProjectQuestionsToAskProps) {
+  const { user } = useAuth();
+  
   const context: ProjectContext = {
     isNewConstruction: true,
     hasPaymentSchedule,
     hasBankGuarantee,
     deliveryYear,
+    buyerType,
+    residencyStatus,
+    purchasePurpose,
+    isAuthenticated: !!user,
   };
 
-  const { questions, isLoading } = useProjectQuestions(context);
+  const { questions, isLoading, isPersonalized } = useProjectQuestions(context);
   const [isExpanded, setIsExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Show first 3 questions, rest on expand
   const visibleQuestions = isExpanded ? questions : questions.slice(0, 3);
   const hasMoreQuestions = questions.length > 3;
+
+  // Get buyer type label for personalization badge
+  const buyerTypeLabel = buyerType ? getBuyerTypeLabel(buyerType) : null;
 
   const handleCopyAll = () => {
     const allQuestions = questions
@@ -98,6 +118,24 @@ export function ProjectQuestionsToAsk({
               Copy all
             </Button>
           </div>
+          
+          {/* Personalization Badge - only for authenticated users with buyer type */}
+          {isPersonalized && buyerTypeLabel && (
+            <div className="flex items-center gap-1.5 text-xs mt-2 pl-11">
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                Personalized for{' '}
+                <span className="font-medium text-foreground">{buyerTypeLabel}</span>
+              </span>
+            </div>
+          )}
+          
+          {/* Guest indicator */}
+          {!user && (
+            <p className="text-xs text-muted-foreground mt-2 pl-11">
+              Questions for first-time buyers
+            </p>
+          )}
         </CardHeader>
         
         <CardContent className="pt-0 space-y-4">
@@ -163,11 +201,21 @@ export function ProjectQuestionsToAsk({
             </Button>
           )}
 
-          {/* Warm, non-pushy message */}
+          {/* Footer: Guest nudge or reassuring message */}
           <div className="pt-2 border-t border-border/50">
-            <p className="text-xs text-muted-foreground text-center italic">
-              New construction requires careful due diligence — take your time.
-            </p>
+            {!user ? (
+              <GuestSignupNudge
+                variant="inline"
+                icon={Sparkles}
+                message="Get questions tailored to your buyer type —"
+                ctaText="Sign up free"
+                intent="questions_personalization"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center italic">
+                New construction requires careful due diligence — take your time.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

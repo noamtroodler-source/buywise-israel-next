@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { usePropertyViewTracking } from '@/hooks/usePropertyViewTracking';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
+import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
@@ -35,9 +36,13 @@ export default function PropertyDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: property, isLoading } = useProperty(id || '');
   const { user } = useAuth();
+  const { data: buyerProfile } = useBuyerProfile();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addToRecentlyViewed } = useRecentlyViewed();
   const formatPrice = useFormatPrice();
+  
+  // Derive buyer type from profile for personalization
+  const derivedBuyerType = buyerProfile ? getEffectiveBuyerType(buyerProfile) : null;
   
   // Track property view in database (for agent analytics)
   usePropertyViewTracking(property?.id);
@@ -228,6 +233,11 @@ export default function PropertyDetail() {
                   ...(!property.size_sqm ? ['size_sqm'] : []),
                   ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
                 ],
+                // Buyer personalization context
+                buyerType: derivedBuyerType?.taxType,
+                residencyStatus: buyerProfile?.residency_status,
+                purchasePurpose: buyerProfile?.purchase_purpose === 'undecided' ? undefined : buyerProfile?.purchase_purpose,
+                isAuthenticated: !!user,
               }}
             />
 

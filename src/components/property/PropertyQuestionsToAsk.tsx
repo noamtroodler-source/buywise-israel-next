@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, ChevronDown, ChevronUp, Copy, Check, HelpCircle } from 'lucide-react';
+import { MessageCircle, ChevronDown, ChevronUp, Copy, Check, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePropertyQuestions, PropertyContext } from '@/hooks/usePropertyQuestions';
+import { useAuth } from '@/hooks/useAuth';
+import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
+import { getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -13,13 +16,20 @@ interface PropertyQuestionsToAskProps {
 }
 
 export function PropertyQuestionsToAsk({ context, className }: PropertyQuestionsToAskProps) {
-  const { questions, isLoading } = usePropertyQuestions(context);
+  const { questions, isLoading, isPersonalized } = usePropertyQuestions(context);
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Show first 3 questions, rest on expand
   const visibleQuestions = isExpanded ? questions : questions.slice(0, 3);
   const hasMoreQuestions = questions.length > 3;
+
+  // Get buyer type label for personalization badge
+  const buyerTypeLabel = context.buyerType ? getBuyerTypeLabel(context.buyerType) : null;
+  
+  // Determine if this is a rental listing
+  const isRental = context.listingStatus === 'for_rent';
 
   const handleCopyAll = () => {
     const allQuestions = questions
@@ -68,9 +78,14 @@ export function PropertyQuestionsToAsk({ context, className }: PropertyQuestions
                 <MessageCircle className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-lg">Questions to Ask</CardTitle>
+                <CardTitle className="text-lg">
+                  {isRental ? 'Questions to Ask the Landlord' : 'Questions to Ask'}
+                </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Before speaking with the agent, consider asking:
+                  {isRental 
+                    ? 'Before signing a lease, consider asking:'
+                    : 'Before speaking with the agent, consider asking:'
+                  }
                 </p>
               </div>
             </div>
@@ -84,6 +99,24 @@ export function PropertyQuestionsToAsk({ context, className }: PropertyQuestions
               Copy all
             </Button>
           </div>
+          
+          {/* Personalization Badge - only for authenticated users with buyer type */}
+          {isPersonalized && buyerTypeLabel && (
+            <div className="flex items-center gap-1.5 text-xs mt-2 pl-11">
+              <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                Personalized for{' '}
+                <span className="font-medium text-foreground">{buyerTypeLabel}</span>
+              </span>
+            </div>
+          )}
+          
+          {/* Guest indicator */}
+          {!user && (
+            <p className="text-xs text-muted-foreground mt-2 pl-11">
+              Questions for first-time {isRental ? 'renters' : 'buyers'}
+            </p>
+          )}
         </CardHeader>
         
         <CardContent className="pt-0 space-y-4">
@@ -149,11 +182,24 @@ export function PropertyQuestionsToAsk({ context, className }: PropertyQuestions
             </Button>
           )}
 
-          {/* Warm, non-pushy message */}
+          {/* Footer: Guest nudge or reassuring message */}
           <div className="pt-2 border-t border-border/50">
-            <p className="text-xs text-muted-foreground text-center italic">
-              Take your time — there's no rush to ask everything at once.
-            </p>
+            {!user ? (
+              <GuestSignupNudge
+                variant="inline"
+                icon={Sparkles}
+                message="Get questions tailored to your buyer type —"
+                ctaText="Sign up free"
+                intent="questions_personalization"
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground text-center italic">
+                {isRental 
+                  ? "Renting is a big commitment — take time to understand the terms."
+                  : "Take your time — there's no rush to ask everything at once."
+                }
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
