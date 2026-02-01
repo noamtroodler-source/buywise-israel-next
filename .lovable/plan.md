@@ -1,68 +1,93 @@
 
-# Fix Hero Headline Line Breaking
+# Fix Hero Headline Width Overflow
 
 ## Problem
-The headline "Navigate Israel Real Estate" is wrapping awkwardly at medium viewport widths, causing "Estate" to appear on its own line (3 lines total instead of 2 clean lines).
+The headline "Navigate Israel Real Estate" is extending past the search box width because:
+1. Large font size at `lg:text-5xl` (48px) combined with `whitespace-nowrap` creates a very wide line
+2. The parent container is constrained to `max-w-xl` (576px)
+3. At large viewport widths, the headline text overflows this constraint
 
-**Current (broken):**
-```
-Navigate Israel Real
-Estate
-— With Clarity
-```
+## Solution Strategy
 
-**Desired (from reference):**
-```
-Navigate Israel Real Estate
-— With Clarity
-```
+**Best Practice Approach:** Rather than fighting the typography, we should adjust the headline sizing to naturally fit within the same visual width as the search box. There are two strategic options:
 
-## Solution
+### Option A: Reduce Maximum Font Size (Recommended)
+Scale down the largest font size so the headline naturally fits within the container width. This is the cleanest solution that maintains the design intent.
 
 **File:** `src/components/home/HeroSplit.tsx`
 
-### Changes to line 70-73:
-
-```tsx
-{/* Headline */}
-<h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-  <span className="whitespace-nowrap">Navigate <span className="text-primary">Israel</span> Real Estate</span>
-  <span className="block">— With Clarity</span>
-</h1>
-```
-
-### What this does:
-1. **Wraps the first line in `whitespace-nowrap`** - This prevents "Navigate Israel Real Estate" from breaking mid-phrase. The entire first line will either fit or the whole thing will wrap to a smaller font size.
-
-2. **Keeps `span className="block"` for the second line** - This ensures "— With Clarity" always appears on its own line below.
-
-### Alternative approach (if viewport is too narrow):
-If `whitespace-nowrap` causes overflow on very small screens, we could instead use a responsive approach:
-
-```tsx
-<h1 className="text-[1.4rem] sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-  Navigate <span className="text-primary">Israel</span> Real Estate
-  <span className="block">— With Clarity</span>
-</h1>
-```
-
-This slightly reduces the base font size (from `text-2xl` / 1.5rem to `text-[1.4rem]`) so the phrase fits on one line at mobile widths.
-
-### Recommended: Combination approach
-Use `whitespace-nowrap` for the first phrase to ensure it never breaks awkwardly, combined with a slightly adjusted mobile font size to ensure it fits:
-
+**Current (line 70):**
 ```tsx
 <h1 className="text-[1.35rem] sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-  <span className="inline sm:whitespace-nowrap">Navigate <span className="text-primary">Israel</span> Real Estate</span>
-  <span className="block">— With Clarity</span>
-</h1>
 ```
 
-- On mobile (`sm` and below): Allows natural wrapping but with smaller text
-- On `sm` and up: `whitespace-nowrap` keeps "Navigate Israel Real Estate" on one line
+**New:**
+```tsx
+<h1 className="text-[1.35rem] sm:text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-white leading-[1.1] tracking-tight">
+```
+
+This reduces `lg:text-5xl` (48px / 3rem) to `lg:text-[2.75rem]` (44px), which should fit "Navigate Israel Real Estate" within the `max-w-xl` container while still being impactful.
+
+### Option B: Allow Strategic Line Breaking (Alternative)
+Remove `whitespace-nowrap` and instead let the text wrap naturally but control where it breaks. This would mean accepting a 3-line headline on some viewports but with cleaner containment.
+
+---
+
+## Recommended Implementation: Option A with Refinement
+
+**Changes to `src/components/home/HeroSplit.tsx`:**
+
+### 1. Adjust font sizing (line 70)
+```tsx
+// Before
+<h1 className="text-[1.35rem] sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
+
+// After - reduce lg size to fit within container
+<h1 className="text-[1.35rem] sm:text-3xl md:text-[2.25rem] lg:text-[2.75rem] font-bold text-white leading-[1.1] tracking-tight">
+```
+
+This creates a smoother size progression:
+- Mobile: 1.35rem (21.6px)
+- `sm`: 1.875rem (30px) - text-3xl
+- `md`: 2.25rem (36px) - custom
+- `lg`: 2.75rem (44px) - custom (down from 48px)
+
+### 2. Remove whitespace-nowrap (safer containment)
+Since we're reducing the font size to fit, we can also remove the `whitespace-nowrap` as a safety measure. If the text does need to wrap at edge cases, it will do so gracefully:
+
+```tsx
+// Before
+<span className="inline sm:whitespace-nowrap">Navigate <span className="text-primary">Israel</span> Real Estate</span>
+
+// After - remove the wrapper span entirely, just use the text inline
+Navigate <span className="text-primary">Israel</span> Real Estate
+```
+
+---
+
+## Technical Rationale
+
+**Why reduce font size instead of widening the container?**
+- The `max-w-xl` container width is intentional - it keeps the search box at a comfortable, scannable width
+- Widening would make the search box too stretched on large screens
+- A slightly smaller headline still has strong visual impact while respecting layout constraints
+
+**Why remove whitespace-nowrap?**
+- With the reduced font size, the text should fit naturally
+- If edge cases occur, natural wrapping is better than overflow
+- Reduces CSS complexity
+
+---
 
 ## Files Modified
 
 | File | Change |
 |------|--------|
-| `src/components/home/HeroSplit.tsx` | Add `whitespace-nowrap` wrapper and adjust mobile font size |
+| `src/components/home/HeroSplit.tsx` | Reduce headline font sizes and remove whitespace-nowrap wrapper |
+
+---
+
+## Visual Result
+- Headline will align with or be slightly shorter than the search box width
+- Maintains strong visual hierarchy
+- Clean, professional appearance at all viewport widths
