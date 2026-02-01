@@ -72,7 +72,7 @@ export function HeroSplit() {
               style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
             >
               Navigate <span className="text-primary">Israel</span> Real Estate
-              <span className="block mt-2 sm:mt-3">— With Clarity</span>
+              <span className="block mt-2 sm:mt-3">With Clarity</span>
             </h1>
 
             {/* Subheadline */}
