@@ -21,6 +21,8 @@ interface PropertyQuestion {
   applies_to: {
     listing_status?: string[];
     property_type?: string[];
+    is_new_construction?: boolean; // Only show on project pages
+    is_resale?: boolean; // Only show on resale property pages
     conditions?: {
       year_built_before?: number;
       has_vaad_bayit?: boolean;
@@ -48,6 +50,7 @@ export interface PropertyContext {
   daysOnMarket: number;
   priceReduced: boolean;
   missingFields: string[];
+  isNewConstruction?: boolean; // Is this a new construction project or resale?
   
   // Buyer context (optional - only for authenticated users with profiles)
   buyerType?: BuyerType;
@@ -62,9 +65,20 @@ function matchesPropertyConditions(
 ): boolean {
   const appliesTo = question.applies_to;
   
-  // If no applies_to, it applies to everything
+  // If no applies_to, it applies to everything (universal question)
   if (!appliesTo || Object.keys(appliesTo).length === 0) {
     return true;
+  }
+
+  // CRITICAL: Check new construction vs resale filter FIRST
+  // Questions marked is_new_construction should ONLY appear on project pages
+  if (appliesTo.is_new_construction === true && !context.isNewConstruction) {
+    return false;
+  }
+  
+  // Questions marked is_resale should ONLY appear on resale property pages
+  if (appliesTo.is_resale === true && context.isNewConstruction) {
+    return false;
   }
 
   // Check listing_status filter
@@ -281,10 +295,30 @@ export function useProjectQuestions(context: ProjectContext) {
   const { filteredQuestions, isPersonalized } = useMemo(() => {
     const allQuestions = query.data || [];
     
-    // Filter for construction-related questions
-    const projectFiltered = allQuestions.filter(q => 
-      q.category === 'construction' || q.category === 'pricing' || q.category === 'legal'
-    );
+    // Filter for project-appropriate questions:
+    // 1. Include questions marked for new construction
+    // 2. Include universal questions (no is_resale or is_new_construction flag)
+    // 3. Exclude questions marked specifically for resale
+    // 4. Focus on construction, pricing, and legal categories
+    const projectFiltered = allQuestions.filter(q => {
+      // Exclude resale-only questions
+      if (q.applies_to?.is_resale === true) {
+        return false;
+      }
+      
+      // Include new construction questions
+      if (q.applies_to?.is_new_construction === true) {
+        return true;
+      }
+      
+      // Include universal questions in relevant categories
+      if (q.category === 'construction' || q.category === 'pricing' || q.category === 'legal') {
+        // Only if no resale flag
+        return !q.applies_to?.is_resale;
+      }
+      
+      return false;
+    });
     
     // Score questions for projects
     const scored = projectFiltered.map(q => {

@@ -233,6 +233,7 @@ export default function PropertyDetail() {
                   ...(!property.size_sqm ? ['size_sqm'] : []),
                   ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
                 ],
+                isNewConstruction: false, // This is a resale property page, not new construction
                 // Buyer personalization context
                 buyerType: derivedBuyerType?.taxType,
                 residencyStatus: buyerProfile?.residency_status,
