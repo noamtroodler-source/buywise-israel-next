@@ -12,3 +12,4 @@ export { ProjectBreadcrumb } from './ProjectBreadcrumb';
 export { ProjectQuickSummary } from './ProjectQuickSummary';
 export { ProjectDescription } from './ProjectDescription';
 export { ProjectNextSteps } from './ProjectNextSteps';
+export { ProjectQuestionsToAsk } from './ProjectQuestionsToAsk';

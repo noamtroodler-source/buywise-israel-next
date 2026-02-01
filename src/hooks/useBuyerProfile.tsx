@@ -13,6 +13,13 @@ export interface MortgagePreferencesJson {
   assumed_rate: number;
 }
 
+export interface ReadinessSnapshot {
+  stage: 'curious' | 'learning' | 'searching' | 'ready';
+  completed_at: string;
+  confidence_checks: Record<string, boolean>;
+  gaps_identified: string[];
+}
+
 export interface BuyerProfile {
   id: string;
   user_id: string;
@@ -40,6 +47,8 @@ export interface BuyerProfile {
   purchase_timeline?: 'immediate' | '1_3_months' | '3_6_months' | '6_12_months' | 'flexible' | null;
   budget_min?: number | null;
   budget_max?: number | null;
+  // Readiness snapshot from tool
+  readiness_snapshot?: ReadinessSnapshot | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +60,7 @@ function parseBuyerProfile(data: unknown): BuyerProfile | null {
   return {
     ...raw,
     mortgage_preferences: raw.mortgage_preferences as MortgagePreferencesJson | null,
+    readiness_snapshot: raw.readiness_snapshot as ReadinessSnapshot | null,
   } as BuyerProfile;
 }
 

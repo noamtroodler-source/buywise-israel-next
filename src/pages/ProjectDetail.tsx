@@ -22,6 +22,7 @@ import {
   ProjectQuickSummary,
   ProjectDescription,
   ProjectNextSteps,
+  ProjectQuestionsToAsk,
 } from '@/components/project';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -103,6 +104,13 @@ export default function ProjectDetail() {
               <ProjectDescription 
                 description={project.description} 
                 amenities={project.amenities}
+              />
+              
+              {/* Questions to Ask the Developer */}
+              <ProjectQuestionsToAsk 
+                hasPaymentSchedule={true}
+                hasBankGuarantee={true}
+                deliveryYear={project.completion_date ? new Date(project.completion_date).getFullYear() : undefined}
               />
               
               {/* Floor Plans - What's available */}

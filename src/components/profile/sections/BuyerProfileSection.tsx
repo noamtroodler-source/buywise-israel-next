@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { User, Pencil, Loader2 } from 'lucide-react';
+import { User, Pencil, Loader2, Compass, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProfileSection } from '../ProfileSection';
-import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel } from '@/hooks/useBuyerProfile';
+import { useBuyerProfile, getBuyerTaxCategory, getBuyerCategoryLabel, ReadinessSnapshot } from '@/hooks/useBuyerProfile';
 import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
+import { Link } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 
 export function BuyerProfileSection() {
   const { data: profile, isLoading } = useBuyerProfile();
@@ -20,6 +22,26 @@ export function BuyerProfileSection() {
       case 'oleh_hadash': return 'Oleh Hadash';
       case 'non_resident': return 'Non-Resident / Foreign';
       default: return 'Not set';
+    }
+  };
+
+  const getStageLabel = (stage: ReadinessSnapshot['stage']) => {
+    switch (stage) {
+      case 'curious': return 'Just curious';
+      case 'learning': return 'Starting to get serious';
+      case 'searching': return 'Actively searching';
+      case 'ready': return 'Ready to act';
+      default: return 'Unknown';
+    }
+  };
+
+  const getStageEmoji = (stage: ReadinessSnapshot['stage']) => {
+    switch (stage) {
+      case 'curious': return '🌱';
+      case 'learning': return '📚';
+      case 'searching': return '🔍';
+      case 'ready': return '✅';
+      default: return '📍';
     }
   };
 
@@ -93,6 +115,62 @@ export function BuyerProfileSection() {
               <Pencil className="h-3.5 w-3.5 mr-1.5" />
               Edit Profile
             </Button>
+
+            {/* Journey Status from Readiness Check */}
+            {profile.readiness_snapshot && (
+              <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Compass className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Your Journey Status</span>
+                </div>
+                <p className="text-sm text-foreground">
+                  {getStageEmoji(profile.readiness_snapshot.stage)} {getStageLabel(profile.readiness_snapshot.stage)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Last checked: {formatDistanceToNow(new Date(profile.readiness_snapshot.completed_at), { addSuffix: true })}
+                </p>
+                {profile.readiness_snapshot.gaps_identified.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {profile.readiness_snapshot.gaps_identified.length} area{profile.readiness_snapshot.gaps_identified.length !== 1 ? 's' : ''} to explore
+                  </p>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full mt-2 text-xs"
+                  asChild
+                >
+                  <Link to="/tools?tool=readiness">
+                    Retake Readiness Check
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+
+            {/* Prompt to take readiness check if not done */}
+            {!profile.readiness_snapshot && (
+              <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Compass className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">Not sure where you are?</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Take a quick readiness check to understand your journey stage.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-xs"
+                  asChild
+                >
+                  <Link to="/tools?tool=readiness">
+                    Take Readiness Check
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </ProfileSection>
