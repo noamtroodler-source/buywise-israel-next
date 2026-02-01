@@ -19,32 +19,61 @@ import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossar
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Map terms to journey stages based on category and usage context
+// This spreads terms across all 4 stages more evenly
 function getTermJourneyStage(term: GlossaryTerm): string {
   const category = term.category || 'general';
   const context = (term.usage_context || '').toLowerCase();
+  const englishTerm = (term.english_term || '').toLowerCase();
+  const hebrewTerm = term.hebrew_term || '';
   
-  // Before You Start: basic terms, general legal concepts
-  if (category === 'general' || context.includes('basic') || context.includes('start')) {
+  // Keywords that indicate journey stages
+  const beforeStartKeywords = ['tabu', 'registry', 'ownership', 'basic', 'start', 'general', 'property type'];
+  const duringResearchKeywords = ['listing', 'viewing', 'search', 'room', 'floor', 'size', 'sqm', 'arnona', 'area'];
+  const makingOfferKeywords = ['contract', 'offer', 'negotiat', 'lawyer', 'sign', 'agreement', 'warning', 'caveat'];
+  const closingKeywords = ['closing', 'registration', 'after', 'payment', 'transfer', 'final'];
+  
+  // Check context + english term for keywords
+  const searchText = `${context} ${englishTerm}`;
+  
+  // Before You Start: foundational terms everyone should understand first
+  // Include basic legal concepts like Tabu, land registry, ownership basics
+  if (beforeStartKeywords.some(k => searchText.includes(k)) || category === 'general') {
     return 'before_start';
   }
   
-  // During Research: property terms, listings, viewings
-  if (category === 'property' || context.includes('listing') || context.includes('viewing') || context.includes('search')) {
-    return 'during_research';
-  }
-  
-  // Making an Offer: contract, negotiation, legal
-  if (category === 'legal' || context.includes('contract') || context.includes('offer') || context.includes('negotiat')) {
-    return 'making_offer';
-  }
-  
-  // Closing & After: registration, tax, mortgage finalization
-  if (category === 'tax' || category === 'mortgage' || context.includes('closing') || context.includes('registration') || context.includes('after')) {
+  // Closing & After: tax and final mortgage terms
+  if (category === 'tax' || closingKeywords.some(k => searchText.includes(k))) {
     return 'closing_after';
   }
   
-  // Default based on category
-  if (category === 'process') return 'making_offer';
+  // Making an Offer: contract, legal, negotiation terms  
+  if (makingOfferKeywords.some(k => searchText.includes(k)) || category === 'process') {
+    return 'making_offer';
+  }
+  
+  // During Research: property, listings, viewings, mortgage basics
+  if (duringResearchKeywords.some(k => searchText.includes(k)) || category === 'property') {
+    return 'during_research';
+  }
+  
+  // Default: spread remaining terms based on category
+  // Mortgage terms: split between research (learning) and closing (finalizing)
+  if (category === 'mortgage') {
+    // Basic mortgage concepts go to research, closing-related go to closing
+    if (context.includes('choos') || context.includes('select') || context.includes('buying')) {
+      return 'during_research';
+    }
+    return 'closing_after';
+  }
+  
+  // Legal terms: spread between before_start (basics) and making_offer (contracts)
+  if (category === 'legal') {
+    // Registry/ownership basics go to before_start
+    if (searchText.includes('registry') || searchText.includes('ownership') || searchText.includes('tabu')) {
+      return 'before_start';
+    }
+    return 'making_offer';
+  }
   
   return 'during_research';
 }
