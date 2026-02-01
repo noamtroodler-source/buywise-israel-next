@@ -15,20 +15,43 @@ export interface CityAnchor {
   created_at: string;
 }
 
+// Normalize city name to slug format for matching
+function normalizeToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[''`]/g, '') // Remove apostrophes
+    .replace(/\s+/g, '-')  // Replace spaces with dashes
+    .replace(/[^a-z0-9-]/g, ''); // Remove other special chars
+}
+
 export function useCityAnchors(cityName: string | undefined) {
   return useQuery({
     queryKey: ['city-anchors', cityName],
     queryFn: async () => {
       if (!cityName) return [];
       
-      // First get city_id by name (case-insensitive)
-      const { data: cityData, error: cityError } = await supabase
+      // Try matching by exact name first (case-insensitive)
+      let { data: cityData, error: cityError } = await supabase
         .from('cities')
         .select('id')
         .ilike('name', cityName)
-        .single();
+        .maybeSingle();
       
-      if (cityError || !cityData) {
+      // If no match, try matching by slug (handles variations like "Modiin" vs "Modi'in")
+      if (!cityData) {
+        const normalizedSlug = normalizeToSlug(cityName);
+        const { data: slugMatch, error: slugError } = await supabase
+          .from('cities')
+          .select('id')
+          .eq('slug', normalizedSlug)
+          .maybeSingle();
+        
+        if (slugMatch) {
+          cityData = slugMatch;
+        }
+      }
+      
+      if (!cityData) {
         return [];
       }
 
