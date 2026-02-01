@@ -39,7 +39,6 @@ export const NAV_CONFIG: Record<string, NavSection> = {
         items: [
           { label: 'All Properties for Sale', href: '/listings?status=for_sale', phase: 'explore' },
           { label: 'New Projects', href: '/projects', description: 'Off-plan & new builds', phase: 'explore' },
-          { label: 'Browse Developers', href: '/developers', description: 'Developer profiles', phase: 'explore' },
           { label: 'Understand Markets', href: '/areas', description: 'Price & trend context', phase: 'understand' },
         ]
       },
