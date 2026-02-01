@@ -69,7 +69,7 @@ export function HeroSplit() {
             {/* Headline */}
             <h1 className="text-[1.35rem] sm:text-3xl md:text-[2.25rem] lg:text-[2.75rem] font-bold text-white leading-tight tracking-tight">
               Navigate <span className="text-primary">Israel</span> Real Estate
-              <span className="block mt-1 sm:mt-2">— With Clarity</span>
+              <span className="block mt-2 sm:mt-3">— With Clarity</span>
             </h1>
 
             {/* Subheadline */}
