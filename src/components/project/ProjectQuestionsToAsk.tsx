@@ -235,7 +235,7 @@ export function ProjectQuestionsToAsk({
                 variant="inline"
                 icon={Sparkles}
                 message="Get questions tailored to your buyer type —"
-                ctaText="Sign up free"
+                ctaText="Create free account"
                 intent="questions_personalization"
               />
             ) : (

@@ -123,9 +123,9 @@ export function useFavorites() {
       } else {
         // Guest updates are reactive via context - no invalidation needed
         toast.success('Property saved to favorites', {
-          description: 'Saved to this browser only. Sign up free to keep across devices.',
+          description: 'Saved to this browser only. Create an account to keep across devices.',
           action: {
-            label: 'Sign up',
+            label: 'Create account',
             onClick: () => window.location.href = '/auth?tab=signup',
           },
         });

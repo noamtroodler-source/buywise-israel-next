@@ -121,11 +121,14 @@ export function HeroSplit() {
                   </Button>
                 </div>
                 
-                {/* First time? Entry point */}
-                <p className="text-sm text-white/70 text-center mt-3">
+                {/* First time? Entry point - styled for white background */}
+                <p className="text-xs sm:text-sm text-muted-foreground text-center mt-3">
                   First time buying in Israel?{' '}
-                  <Link to="/guides/buying-in-israel" className="text-white underline underline-offset-2 hover:no-underline">
-                    Start with our guide
+                  <Link 
+                    to="/guides/buying-in-israel" 
+                    className="text-primary font-medium hover:underline underline-offset-2"
+                  >
+                    Start with our guide →
                   </Link>
                 </p>
               </form>

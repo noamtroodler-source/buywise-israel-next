@@ -39,7 +39,7 @@ export function InlineSignupCard({ className }: InlineSignupCardProps) {
         to="/auth?tab=signup&intent=save_calculation"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
       >
-        Sign up free
+        Create free account
         <ArrowRight className="h-3.5 w-3.5" />
       </Link>
     </div>

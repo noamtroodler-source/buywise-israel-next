@@ -19,7 +19,7 @@ interface GuestSignupNudgeProps {
 export function GuestSignupNudge({
   icon: Icon = Lightbulb,
   message,
-  ctaText = 'Sign up free',
+  ctaText = 'Create free account',
   variant = 'banner',
   intent,
   className,

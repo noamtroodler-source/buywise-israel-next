@@ -78,7 +78,7 @@ export function SaveResultsPrompt({ show, calculatorName, onDismiss, resultSumma
               className="flex-1 gap-1.5"
             >
               <User className="h-3.5 w-3.5" />
-              Sign Up Free
+              Create Free Account
             </Button>
             <Button 
               size="sm" 
