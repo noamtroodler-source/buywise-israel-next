@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Mail, Share2, Heart } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,8 @@ interface StickyContactCardProps {
   propertyTitle: string;
   className?: string;
   onContactClick?: () => void;
+  onSave?: () => void;
+  isSaved?: boolean;
 }
 
 export function StickyContactCard({ 
@@ -34,6 +37,8 @@ export function StickyContactCard({
   propertyTitle, 
   className = '', 
   onContactClick,
+  onSave,
+  isSaved,
 }: StickyContactCardProps) {
   const { user } = useAuth();
 
@@ -140,7 +145,6 @@ export function StickyContactCard({
             <Mail className="h-4 w-4" />
             Email
           </Button>
-          
 
           {!agent && (
             <Button 
@@ -151,6 +155,37 @@ export function StickyContactCard({
               Contact Agent
             </Button>
           )}
+
+          {/* Permission to Slow Down */}
+          <div className="pt-3 border-t border-border/50 mt-3">
+            <p className="text-xs text-muted-foreground text-center mb-2">
+              Not ready to reach out?
+            </p>
+            <div className="flex gap-2">
+              {onSave && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex-1 text-xs" 
+                  onClick={onSave}
+                >
+                  <Heart className={cn("h-3.5 w-3.5 mr-1", isSaved && "fill-primary text-primary")} />
+                  {isSaved ? 'Saved' : 'Save'}
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn("text-xs", onSave ? "flex-1" : "w-full")} 
+                asChild
+              >
+                <Link to="/guides/talking-to-professionals">
+                  <BookOpen className="h-3.5 w-3.5 mr-1" />
+                  Prepare first
+                </Link>
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -235,10 +270,10 @@ export function MobileContactBar({
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 md:hidden pb-safe"
     >
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto space-y-2">
         {/* Price display */}
         {price && (
-          <div className="text-center mb-2">
+          <div className="text-center">
             <span className="text-lg font-bold text-foreground">{formatCompactPrice(price)}</span>
           </div>
         )}
@@ -290,6 +325,33 @@ export function MobileContactBar({
             </Button>
           )}
         </div>
+
+        {/* Permission to Slow Down - Collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger className="w-full text-center py-1">
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              Not ready? That's okay
+              <ChevronDown className="h-3 w-3" />
+            </span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2 space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              Take your time. There's no rush.
+            </p>
+            <div className="flex gap-2">
+              {onSave && (
+                <Button variant="outline" size="sm" className="flex-1" onClick={onSave}>
+                  Save for later
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className={cn(onSave ? "flex-1" : "w-full")} asChild>
+                <Link to="/guides/talking-to-professionals">
+                  Prepare first
+                </Link>
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </motion.div>
   );

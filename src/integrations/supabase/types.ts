@@ -726,6 +726,7 @@ export type Database = {
           property_type_preferences: string[] | null
           purchase_purpose: string
           purchase_timeline: string | null
+          readiness_snapshot: Json | null
           rental_budget: number | null
           residency_status: string
           saved_locations: Json | null
@@ -750,6 +751,7 @@ export type Database = {
           property_type_preferences?: string[] | null
           purchase_purpose?: string
           purchase_timeline?: string | null
+          readiness_snapshot?: Json | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
@@ -774,6 +776,7 @@ export type Database = {
           property_type_preferences?: string[] | null
           purchase_purpose?: string
           purchase_timeline?: string | null
+          readiness_snapshot?: Json | null
           rental_budget?: number | null
           residency_status?: string
           saved_locations?: Json | null
@@ -3354,6 +3357,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      property_questions: {
+        Row: {
+          applies_to: Json | null
+          category: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          priority: number | null
+          question_text: string
+          why_it_matters: string
+        }
+        Insert: {
+          applies_to?: Json | null
+          category: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          question_text: string
+          why_it_matters: string
+        }
+        Update: {
+          applies_to?: Json | null
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          priority?: number | null
+          question_text?: string
+          why_it_matters?: string
+        }
+        Relationships: []
       }
       property_views: {
         Row: {

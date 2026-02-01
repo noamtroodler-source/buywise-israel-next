@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, BookOpen } from 'lucide-react';
+import { Search, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function FinalCTA() {
@@ -21,10 +21,10 @@ export function FinalCTA() {
           className="max-w-2xl mx-auto text-center space-y-4"
         >
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-            Ready to start exploring?
+            No pressure. No rush.
           </h2>
           <p className="text-base md:text-lg text-muted-foreground">
-            Find properties, understand costs, and move forward with confidence.
+            Whether you're ready to search or just want to understand the market, we're here when you need us.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -35,12 +35,16 @@ export function FinalCTA() {
               </Link>
             </Button>
             <Button variant="outline" asChild className="gap-2">
-              <Link to="/guides">
+              <Link to="/guides/buying-in-israel">
                 <BookOpen className="h-4 w-4" />
-                Browse Guides
+                Start with the guide
               </Link>
             </Button>
           </div>
+
+          <p className="text-sm text-muted-foreground mt-4">
+            If you're not ready, that's fine. We'll still be here.
+          </p>
         </motion.div>
       </div>
     </section>
