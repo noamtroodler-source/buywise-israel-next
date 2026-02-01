@@ -120,23 +120,12 @@ export function HeroSplit() {
                     </SelectContent>
                   </Select>
 
-                  {/* Search Button */}
+                {/* Search Button */}
                   <Button type="submit" className="h-11 px-6 gap-2 rounded-lg">
                     <Search className="h-4 w-4" />
                     <span className="hidden sm:inline">Search</span>
                   </Button>
                 </div>
-                
-                {/* First time? Entry point - styled for white background */}
-                <p className="text-xs sm:text-sm text-muted-foreground text-center mt-3">
-                  First time buying in Israel?{' '}
-                  <Link 
-                    to="/guides/buying-in-israel" 
-                    className="text-primary font-medium hover:underline underline-offset-2"
-                  >
-                    Start with our guide →
-                  </Link>
-                </p>
               </form>
             </motion.div>
 
