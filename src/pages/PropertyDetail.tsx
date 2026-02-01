@@ -164,22 +164,6 @@ export default function PropertyDetail() {
             {/* Description */}
             <PropertyDescription description={property.description} />
 
-            {/* Questions to Ask */}
-            <PropertyQuestionsToAsk 
-              context={{
-                listingStatus: property.listing_status,
-                propertyType: property.property_type,
-                yearBuilt: property.year_built || undefined,
-                hasVaadBayit: !!property.vaad_bayit_monthly,
-                hasParking: !!(property as any).parking_spots,
-                daysOnMarket,
-                priceReduced: !!(property as any).original_price,
-                missingFields: [
-                  ...(!property.size_sqm ? ['size_sqm'] : []),
-                  ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
-                ],
-              }}
-            />
             {/* Value Snapshot - Collapsible on mobile */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -229,6 +213,23 @@ export default function PropertyDetail() {
                 />
               </motion.div>
             )}
+
+            {/* Questions to Ask - Right before cost breakdown */}
+            <PropertyQuestionsToAsk 
+              context={{
+                listingStatus: property.listing_status,
+                propertyType: property.property_type,
+                yearBuilt: property.year_built || undefined,
+                hasVaadBayit: !!property.vaad_bayit_monthly,
+                hasParking: !!(property as any).parking_spots,
+                daysOnMarket,
+                priceReduced: !!(property as any).original_price,
+                missingFields: [
+                  ...(!property.size_sqm ? ['size_sqm'] : []),
+                  ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
+                ],
+              }}
+            />
 
             {/* Cost Breakdown - Collapsible on mobile */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (
