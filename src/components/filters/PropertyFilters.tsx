@@ -270,8 +270,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
 
   return (
     <TooltipProvider>
-      <div className="space-y-3">
-        {/* Row 1: Main Filters */}
+      <>
+        {/* Main Filters Row - Single row on desktop */}
         <div className="flex flex-wrap gap-2 items-center">
           {/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY */}
           {showSoldToggle && !isMobile && (
@@ -639,66 +639,105 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               <span>Clear</span>
             </Button>
           )}
-        </div>
 
-        {/* Row 2: Sort & Alert - Mobile uses justify-between, desktop stays inline */}
-        <div className={cn(
-          "flex items-center",
-          isMobile ? "justify-between" : "gap-3"
-        )}>
-          {/* Sort */}
-          <div className="flex items-center gap-1">
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-            <Popover open={sortOpen} onOpenChange={setSortOpen}>
-              <PopoverTrigger asChild>
+          {/* Desktop: Sort & Create Alert pushed to the right */}
+          {!isMobile && (
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Sort */}
+              <div className="flex items-center gap-1">
+                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                <Popover open={sortOpen} onOpenChange={setSortOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
+                    >
+                      <span>{getSortLabel()}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
+                    {SORT_OPTIONS.map(option => (
+                      <button
+                        key={option.value}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                          filters.sort_by === option.value 
+                            ? "bg-primary/10 text-primary font-medium" 
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => {
+                          updateFilter('sort_by', option.value);
+                          setSortOpen(false);
+                        }}
+                      >
+                        {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                        <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Subtle Separator */}
+              {onCreateAlert && (
+                <div className="h-6 w-px bg-border/60" />
+              )}
+
+              {/* Create Alert Button */}
+              {onCreateAlert && (
                 <Button 
-                  variant="ghost" 
-                  className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
+                  onClick={handleCreateAlertClick}
+                  className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
                 >
-                  <span>{getSortLabel()}</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <Bell className="h-4 w-4" />
+                  <span>Create Alert</span>
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="start">
-                {SORT_OPTIONS.map(option => (
-                  <button
-                    key={option.value}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
-                      filters.sort_by === option.value 
-                        ? "bg-primary/10 text-primary font-medium" 
-                        : "hover:bg-muted"
-                    )}
-                    onClick={() => {
-                      updateFilter('sort_by', option.value);
-                      setSortOpen(false);
-                    }}
-                  >
-                    {filters.sort_by === option.value && <Check className="h-4 w-4" />}
-                    <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
-                  </button>
-                ))}
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Subtle Separator - Desktop only */}
-          {onCreateAlert && !isMobile && (
-            <div className="h-6 w-px bg-border/60" />
-          )}
-
-          {/* Create Alert Button - Desktop only */}
-          {onCreateAlert && !isMobile && (
-            <Button 
-              onClick={handleCreateAlertClick}
-              className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
-            >
-              <Bell className="h-4 w-4" />
-              <span>Create Alert</span>
-            </Button>
+              )}
+            </div>
           )}
         </div>
-      </div>
+
+        {/* Mobile: Sort on its own row */}
+        {isMobile && (
+          <div className="flex items-center mt-3">
+            <div className="flex items-center gap-1">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <Popover open={sortOpen} onOpenChange={setSortOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
+                  >
+                    <span>{getSortLabel()}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="start">
+                  {SORT_OPTIONS.map(option => (
+                    <button
+                      key={option.value}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                        filters.sort_by === option.value 
+                          ? "bg-primary/10 text-primary font-medium" 
+                          : "hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        updateFilter('sort_by', option.value);
+                        setSortOpen(false);
+                      }}
+                    >
+                      {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                      <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        )}
+      </>
 
       {/* More Filters Sheet - Full screen on mobile */}
       <Sheet open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
