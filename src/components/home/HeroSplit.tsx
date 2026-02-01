@@ -76,7 +76,10 @@ export function HeroSplit() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-sm sm:text-base md:text-lg text-white/80 max-w-lg leading-relaxed">
+            <p 
+              className="text-sm sm:text-base md:text-lg text-white/80 max-w-lg leading-relaxed"
+              style={{ textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}
+            >
               Built for internationals—transparent costs, market insights, and local context in English. Finally.
             </p>
 
