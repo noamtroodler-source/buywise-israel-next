@@ -392,37 +392,33 @@ export function RecentNearbySales({
           </Tooltip>
         </div>
 
-        {/* Market Verdict Summary */}
+        {/* Compact Market Verdict - inline badge */}
         {avgComparison !== null && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="flex items-center gap-1.5 flex-1">
-              {avgComparison >= -5 && avgComparison <= 10 ? (
-                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
-                  Priced in line with recent sales
-                </Badge>
-              ) : avgComparison > 10 && avgComparison <= 20 ? (
-                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
-                  Above average for this area (+{avgComparison.toFixed(0)}%)
-                </Badge>
-              ) : avgComparison > 20 ? (
-                <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/15">
-                  Significantly above market (+{avgComparison.toFixed(0)}%)
-                </Badge>
-              ) : avgComparison < -5 ? (
-                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
-                  Below average — potential value ({avgComparison.toFixed(0)}%)
-                </Badge>
-              ) : null}
-            </div>
+          <div className="flex items-center gap-2">
+            {avgComparison >= -5 && avgComparison <= 10 ? (
+              <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                Priced in line with recent sales
+              </Badge>
+            ) : avgComparison > 10 && avgComparison <= 20 ? (
+              <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
+                Above average for this area (+{avgComparison.toFixed(0)}%)
+              </Badge>
+            ) : avgComparison > 20 ? (
+              <Badge className="bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/15">
+                Significantly above market (+{avgComparison.toFixed(0)}%)
+              </Badge>
+            ) : avgComparison < -5 ? (
+              <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
+                Below average — potential value ({avgComparison.toFixed(0)}%)
+              </Badge>
+            ) : null}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help shrink-0" />
+                <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
               </TooltipTrigger>
-              <TooltipContent side="left" className="max-w-xs">
-                <p className="font-medium mb-1">Price Comparison</p>
-                <p className="text-xs text-muted-foreground">
-                  Based on {comps.length} nearby sale{comps.length > 1 ? 's' : ''} in the last 24 months, 
-                  comparing price per sqm.
+              <TooltipContent side="right" className="max-w-xs">
+                <p className="text-xs">
+                  Based on {comps.length} nearby sale{comps.length > 1 ? 's' : ''} comparing price/m².
                 </p>
               </TooltipContent>
             </Tooltip>
