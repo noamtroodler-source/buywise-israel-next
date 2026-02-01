@@ -106,9 +106,9 @@ export function useProjectFavorites() {
       } else {
         // Guest updates are reactive via context - no invalidation needed
         toast.success('Project saved to favorites', {
-          description: 'Saved to this browser only. Sign up free to keep across devices.',
+          description: 'Saved to this browser only. Create an account to keep across devices.',
           action: {
-            label: 'Sign up',
+            label: 'Create account',
             onClick: () => window.location.href = '/auth?tab=signup',
           },
         });
