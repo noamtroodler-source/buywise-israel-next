@@ -109,7 +109,6 @@ const menuSections = [
     links: [
       { label: 'About', to: '/about' },
       { label: 'Contact', to: '/contact' },
-      { label: 'Advertise', to: '/advertise' },
     ],
   },
 ];
@@ -220,7 +219,7 @@ export function MobileBottomNav() {
                   <SheetClose asChild>
                     <Link to="/auth?tab=signup">
                       <Button className="w-full" size="lg">
-                        Sign Up Free
+                        Create Free Account
                       </Button>
                     </Link>
                   </SheetClose>

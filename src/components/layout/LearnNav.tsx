@@ -67,6 +67,21 @@ export function LearnNav() {
                       </Link>
                     </NavigationMenuLink>
                   </li>
+                  <li>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to="/glossary"
+                        className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
+                      >
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                          Hebrew Glossary
+                        </span>
+                        <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
+                          Key terms explained
+                        </span>
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
                 </ul>
               </div>
             </div>

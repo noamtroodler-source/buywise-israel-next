@@ -70,14 +70,7 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-6">
           <MegaMenu config={NAV_CONFIG.buy} />
           <MegaMenu config={NAV_CONFIG.rent} />
-          <MegaMenu config={NAV_CONFIG.projects} />
           <LearnNav />
-          <Link 
-            to="/advertise" 
-            className="text-base font-medium text-primary hover:text-primary/80 transition-colors"
-          >
-            Advertise
-          </Link>
           <MoreNav />
         </nav>
 
@@ -173,7 +166,7 @@ export function Header() {
                 <Link to="/auth">Sign In</Link>
               </Button>
               <Button asChild>
-                <Link to="/auth?tab=signup">Sign Up</Link>
+                <Link to="/auth?tab=signup">Create Free Account</Link>
               </Button>
             </div>
           )}
@@ -354,34 +347,6 @@ export function Header() {
                 </AccordionContent>
               </AccordionItem>
               
-              {/* Projects Accordion */}
-              <AccordionItem value="projects" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
-                  Projects
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="pl-4 space-y-1">
-                    {NAV_CONFIG.projects.columns.map((column) => (
-                      <div key={column.title} className="mb-2">
-                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {column.title}
-                        </p>
-                        {column.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
               {/* Learn Accordion */}
               <AccordionItem value="learn" className="border-b-0">
                 <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
@@ -413,19 +378,20 @@ export function Header() {
                       <ChevronRight className="h-3 w-3 text-muted-foreground" />
                       All Tools
                     </Link>
+                    <Link
+                      to="/glossary"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      Hebrew Glossary
+                    </Link>
                   </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
             
             {/* Static nav links */}
-            <Link 
-              to="/advertise" 
-              className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Advertise
-            </Link>
             <Link 
               to="/about" 
               className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
@@ -477,7 +443,7 @@ export function Header() {
                   className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Sign Up
+                  Create Free Account
                 </Link>
               </>
             )}

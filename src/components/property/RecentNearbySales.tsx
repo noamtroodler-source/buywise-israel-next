@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { MapPin, Home, TrendingUp, Calendar, BarChart3, Building2, ShieldCheck, ChevronDown } from 'lucide-react';
+import { MapPin, Home, TrendingUp, Calendar, BarChart3, Building2, ShieldCheck, ChevronDown, Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useNearbySoldComps } from '@/hooks/useNearbySoldComps';
@@ -285,6 +285,21 @@ export function RecentNearbySales({
     return diff;
   };
 
+  // Calculate average comparison across all comps for the verdict
+  const calculateAverageComparison = (): number | null => {
+    if (!propertyPrice || !propertySizeSqm || !comps || comps.length === 0) return null;
+    
+    const listingPriceSqm = propertyPrice / propertySizeSqm;
+    const comparisons = comps
+      .filter(c => c.price_per_sqm)
+      .map(c => ((listingPriceSqm - c.price_per_sqm!) / c.price_per_sqm!) * 100);
+    
+    if (comparisons.length === 0) return null;
+    return comparisons.reduce((a, b) => a + b, 0) / comparisons.length;
+  };
+
+  const avgComparison = calculateAverageComparison();
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -376,6 +391,43 @@ export function RecentNearbySales({
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {/* Market Verdict Summary */}
+        {avgComparison !== null && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+            <div className="flex items-center gap-1.5 flex-1">
+              {avgComparison >= -5 && avgComparison <= 10 ? (
+                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
+                  Priced in line with recent sales
+                </Badge>
+              ) : avgComparison > 10 && avgComparison <= 20 ? (
+                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/15">
+                  Above average for this area (+{avgComparison.toFixed(0)}%)
+                </Badge>
+              ) : avgComparison > 20 ? (
+                <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/15">
+                  Significantly above market (+{avgComparison.toFixed(0)}%)
+                </Badge>
+              ) : avgComparison < -5 ? (
+                <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15">
+                  Below average — potential value ({avgComparison.toFixed(0)}%)
+                </Badge>
+              ) : null}
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help shrink-0" />
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <p className="font-medium mb-1">Price Comparison</p>
+                <p className="text-xs text-muted-foreground">
+                  Based on {comps.length} nearby sale{comps.length > 1 ? 's' : ''} in the last 24 months, 
+                  comparing price per sqm.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
 
         {/* Comp cards - Mobile Carousel */}
         {isMobile ? (
