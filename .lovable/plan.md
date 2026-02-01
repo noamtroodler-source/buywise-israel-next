@@ -1,416 +1,237 @@
 
-# Personalized "Questions to Ask" System
+# BuyWise Israel Pre-Launch Implementation Plan
 
 ## Overview
 
-This plan implements a comprehensive personalization system for the "Questions to Ask" feature that tailors questions based on:
-
-1. **Buyer/Renter Profile** - first-time buyer, oleh hadash, investor, upgrader, renter, etc.
-2. **Property Context** - listing type, property conditions, age, price movements
-3. **User Authentication State** - signed-in vs. guest users
-
-The implementation follows existing design patterns (PersonalizationHeader, GuestAssumptionsBanner, deriveEffectiveBuyerType) to ensure visual and architectural consistency.
+This plan addresses all critical and high-priority items identified in the pre-launch audit. I'll implement these changes systematically to ensure the platform is launch-ready.
 
 ---
 
-## Current State Analysis
+## Phase 1: Critical Fixes (Must Complete Before Launch)
 
-### What Exists Today
-- `property_questions` table with `applies_to` JSONB for property-based filtering
-- `usePropertyQuestions` hook filters by listing_status, property_type, and conditions
-- `PropertyQuestionsToAsk` and `ProjectQuestionsToAsk` components display questions
-- `buyer_profiles` table with full buyer dimensions (residency_status, is_first_property, buyer_entity, is_upgrading, etc.)
-- `deriveEffectiveBuyerType()` function that maps profile to buyer types (first_time, oleh, investor, upgrader, foreign, company)
-- `useBuyerProfile()` hook for fetching authenticated user's profile
-- `GuestSignupNudge` and `GuestAssumptionsBanner` patterns for guest/authenticated differentiation
+### 1.1 Create OG Image for Social Sharing
 
-### What's Missing
-- No `buyer_relevance` metadata on questions
-- No buyer-specific questions in the database
-- No buyer profile integration in the questions hook
-- No differentiated UI for authenticated vs. guest users in Questions components
+**Problem:** The `index.html` references `og-image.png` at `https://buywiseisrael.com/og-image.png`, but no such file exists in the `/public` folder. When users share links on WhatsApp, LinkedIn, or Twitter, they'll see a broken or missing image.
+
+**Solution:**
+- Create a professional 1200×630px OG image using the generate-hero-image edge function
+- Add the image to the `/public` folder
+- Ensure both OG and Twitter meta tags reference the correct local path
+
+**Files to create/modify:**
+- `public/og-image.png` (new)
+- `index.html` (update meta tags to use relative path)
 
 ---
 
-## Database Changes
+### 1.2 Add PWA Manifest & App Icons
 
-### 1. Add `buyer_relevance` Column to `property_questions`
+**Problem:** No `manifest.json` exists, which means:
+- Users can't "install" the site as an app on their phones
+- No Apple touch icons for iOS home screen
+- Missing theme colors for browser UI
+
+**Solution:**
+- Create `public/manifest.json` with BuyWise branding
+- Add Apple touch icons (180×180)
+- Link manifest in `index.html`
+- Add theme-color meta tag
+
+**Files to create/modify:**
+- `public/manifest.json` (new)
+- `public/apple-touch-icon.png` (new - generated)
+- `index.html` (add manifest link and theme-color)
+
+---
+
+### 1.3 Fix Rental Questions Targeting
+
+**Problem:** From the database analysis:
+- Rental category has 28 questions but **0** have `is_resale` or `is_new_construction` flags
+- This means rental questions could appear on ANY page type
+
+**Solution:**
+- Update rental questions to properly target `listing_status: ["for_rent"]` 
+- Ensure rental-specific questions like "Is subletting allowed?" and "How is rent indexed?" only show on rental listings
+- Add buyer_relevance targeting for renter personas
+
+**Database updates:**
+- Update `applies_to` JSONB for all 28 rental questions to include proper listing_status targeting
+
+---
+
+## Phase 2: High Priority Improvements
+
+### 2.1 Google Analytics Integration
+
+**Problem:** No analytics tracking is set up. You have internal tracking (performance_metrics, user_events) but no external analytics for:
+- Marketing attribution
+- Conversion tracking
+- Traffic source analysis
+
+**Solution:**
+- Add Google Analytics 4 (GA4) script to `index.html`
+- Create a reusable analytics hook for page views and events
+- Track key conversions (signups, inquiries, property views)
+
+**Files to create/modify:**
+- `index.html` (add GA4 script)
+- `src/lib/analytics.ts` (new - analytics helper functions)
+- `src/hooks/usePageTracking.ts` (new - route change tracking)
+
+**Note:** This requires you to provide a Google Analytics Measurement ID (G-XXXXXXXXXX). I'll set up the infrastructure, and you can add your ID later.
+
+---
+
+### 2.2 Enhanced Error Boundary with Reporting
+
+**Current State:** The ErrorBoundary exists and looks good, but it:
+- Only logs to console
+- Doesn't report errors to your `client_errors` table
+- Doesn't capture stack traces
+
+**Solution:**
+- Enhance ErrorBoundary to report errors to Supabase `client_errors` table
+- Add session context for debugging
+- Include user-friendly error messages
+
+**Files to modify:**
+- `src/components/shared/ErrorBoundary.tsx`
+
+---
+
+### 2.3 Email Function Verification
+
+**Current State:** All 8 email functions exist:
+- send-welcome-email ✅
+- send-verification-email ✅
+- send-price-drop-alert ✅
+- send-digest-email ✅
+- process-search-alerts ✅
+- send-agency-notification ✅
+- send-developer-notification ✅
+- send-notification ✅
+
+**Verification Plan:**
+- Test each function with the curl_edge_functions tool
+- Verify RESEND_API_KEY is configured (it is ✅)
+- Confirm email templates match brand guidelines
+
+---
+
+## Phase 3: Polish & Optimization
+
+### 3.1 Security Hardening
+
+**Linter Findings:**
+1. **Leaked Password Protection Disabled** - Recommend enabling in Cloud settings
+2. **One Permissive RLS Policy** - Already resolved per security scan (price_drop_notifications)
+
+**Action:** Document these for you to enable via Cloud settings (cannot be done via code)
+
+---
+
+### 3.2 Questions Data Quality
+
+**Current Distribution:**
+```text
+Category        | Total | New Construction | Resale Only
+construction    | 19    | 17               | 2
+pricing         | 22    | 0                | 7  
+building        | 20    | 0                | 5  
+rental          | 28    | 0                | 0   ← NEEDS FIXING
+legal           | 26    | 3                | 3
+neighborhood    | 4     | 0                | 1
+```
+
+**Fix:** Update rental questions to have proper targeting so they ONLY appear on for_rent listings.
+
+---
+
+## Technical Implementation Details
+
+### Database Updates
 
 ```sql
-ALTER TABLE property_questions 
-ADD COLUMN buyer_relevance JSONB DEFAULT NULL;
-
-COMMENT ON COLUMN property_questions.buyer_relevance IS 
-'Buyer type targeting: buyer_types (array), residency_status (array), purchase_purpose (array), is_universal (bool)';
+-- Fix rental questions targeting
+UPDATE property_questions 
+SET applies_to = jsonb_set(
+  COALESCE(applies_to, '{}'::jsonb),
+  '{listing_status}',
+  '["for_rent"]'::jsonb
+)
+WHERE category = 'rental' 
+AND is_active = true;
 ```
 
-**Schema for `buyer_relevance` JSONB:**
+### PWA Manifest Structure
+
 ```json
 {
-  "buyer_types": ["first_time", "oleh", "upgrader", "investor", "foreign", "company"],
-  "residency_status": ["israeli_resident", "oleh_hadash", "non_resident"],
-  "purchase_purpose": ["primary_residence", "investment", "vacation_home"],
-  "is_universal": false
+  "name": "BuyWise Israel",
+  "short_name": "BuyWise",
+  "description": "Navigate Israeli real estate with clarity",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [...]
 }
 ```
 
-### 2. Seed Buyer-Specific Questions
+### Google Analytics Setup
 
-New questions will be inserted for different buyer personas:
-
-| Question | Buyer Types | Category |
-|----------|-------------|----------|
-| "What purchase tax (mas rechisha) will I owe on this property?" | first_time, upgrader | pricing |
-| "Am I eligible for the reduced oleh tax rate, and what documentation is needed?" | oleh | pricing |
-| "Will purchasing this property affect my first-apartment tax exemption?" | upgrader | legal |
-| "What's the expected rental yield for this property?" | investor | pricing |
-| "Can I rent this property out while living abroad?" | investor, foreign | legal |
-| "What are the capital gains tax implications if I sell within 4 years?" | investor, upgrader | legal |
-| "What's the landlord's policy on lease renewal and rent increases?" | renter | rental |
-| "Is the landlord open to a longer lease term for stability?" | renter | rental |
-| "What happens to my deposit if the landlord sells the property?" | renter | rental |
-
-Existing universal questions will be updated with `"is_universal": true`.
-
----
-
-## Hook Enhancements
-
-### File: `src/hooks/usePropertyQuestions.ts`
-
-**New Types:**
-```typescript
-// Extended question interface with buyer relevance
-interface PropertyQuestion {
-  id: string;
-  question_text: string;
-  why_it_matters: string;
-  category: string;
-  applies_to: {...} | null;
-  priority: number;
-  buyer_relevance: {
-    buyer_types?: string[];
-    residency_status?: string[];
-    purchase_purpose?: string[];
-    is_universal?: boolean;
-  } | null;
-}
-
-// Extended context with buyer info
-export interface PropertyContext {
-  // Existing property fields
-  listingStatus: ListingStatus;
-  propertyType?: PropertyType | string;
-  yearBuilt?: number;
-  hasVaadBayit: boolean;
-  hasParking: boolean;
-  daysOnMarket: number;
-  priceReduced: boolean;
-  missingFields: string[];
-  
-  // NEW: Buyer context
-  buyerType?: BuyerType; // from deriveEffectiveBuyerType
-  residencyStatus?: 'israeli_resident' | 'oleh_hadash' | 'non_resident';
-  purchasePurpose?: 'primary_residence' | 'investment' | 'vacation_home';
-  isAuthenticated: boolean;
-}
-```
-
-**New Scoring Algorithm:**
-```typescript
-function calculateRelevanceScore(
-  question: PropertyQuestion, 
-  context: PropertyContext
-): number {
-  let score = question.priority || 50;
-  
-  // PROPERTY MATCH BONUS (+20 max)
-  if (matchesPropertyConditions(question, context)) {
-    score += 20;
-  }
-  
-  // BUYER TYPE MATCH BONUS (+25 max) - only for authenticated users
-  if (context.isAuthenticated && context.buyerType) {
-    const buyerRelevance = question.buyer_relevance;
-    
-    if (buyerRelevance?.is_universal) {
-      score += 10; // Universal questions get moderate boost
-    } else if (buyerRelevance?.buyer_types?.includes(context.buyerType)) {
-      score += 25; // Direct buyer type match
-    }
-    
-    // Residency match
-    if (context.residencyStatus && 
-        buyerRelevance?.residency_status?.includes(context.residencyStatus)) {
-      score += 10;
-    }
-  } else {
-    // Guest users: prioritize universal and first-time questions
-    if (question.buyer_relevance?.is_universal) {
-      score += 15;
-    }
-    if (question.buyer_relevance?.buyer_types?.includes('first_time')) {
-      score += 10;
-    }
-  }
-  
-  return score;
-}
-```
-
-**Updated Hook Return:**
-```typescript
-export function usePropertyQuestions(context: PropertyContext) {
-  const query = useQuery({...});
-
-  const filteredQuestions = useMemo(() => {
-    return (query.data || [])
-      .filter(q => matchesConditions(q, context))
-      .map(q => ({
-        ...q,
-        relevanceScore: calculateRelevanceScore(q, context),
-      }))
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, 8);
-  }, [query.data, context]);
-
-  return {
-    questions: filteredQuestions,
-    isLoading: query.isLoading,
-    error: query.error,
-    isPersonalized: context.isAuthenticated && !!context.buyerType,
-  };
-}
+```html
+<!-- GA4 Script -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 ```
 
 ---
 
-## Component Updates
+## Implementation Order
 
-### File: `src/components/property/PropertyQuestionsToAsk.tsx`
-
-**New Props Interface:**
-```typescript
-interface PropertyQuestionsToAskProps {
-  context: PropertyContext;
-  className?: string;
-}
-```
-
-**UI Changes:**
-
-1. **Header Personalization Badge** (for authenticated users with profile):
-```tsx
-// After the title, show personalization indicator
-{isPersonalized && (
-  <div className="flex items-center gap-1.5 text-xs">
-    <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-    <span className="text-muted-foreground">
-      Personalized for{' '}
-      <span className="font-medium text-foreground">{buyerTypeLabel}</span>
-    </span>
-  </div>
-)}
-```
-
-2. **Guest Nudge Footer** (for non-authenticated users):
-```tsx
-{!user && (
-  <div className="pt-3 border-t border-border/50">
-    <GuestSignupNudge
-      variant="inline"
-      icon={Sparkles}
-      message="Get questions tailored to your buyer type —"
-      ctaText="Sign up free"
-      intent="questions_personalization"
-    />
-  </div>
-)}
-```
-
-3. **Renter-Specific Messaging** (when listing is for_rent):
-```tsx
-// Replace footer message for rentals
-<p className="text-xs text-muted-foreground text-center italic">
-  {context.listingStatus === 'for_rent' 
-    ? "Renting is a big commitment — take time to understand the terms."
-    : "Take your time — there's no rush to ask everything at once."}
-</p>
-```
-
-### File: `src/components/project/ProjectQuestionsToAsk.tsx`
-
-Similar updates with project-specific messaging and context.
+1. **OG Image** - Create and add to public folder
+2. **PWA Manifest** - Create manifest.json with icons
+3. **Update index.html** - Add manifest link, theme-color, fix OG paths
+4. **Fix Rental Questions** - Database update for targeting
+5. **Google Analytics** - Add tracking infrastructure (placeholder ID)
+6. **Enhance ErrorBoundary** - Add Supabase error reporting
+7. **Test Email Functions** - Verify all 8 functions work
 
 ---
 
-## Page Integration Updates
+## Post-Implementation Checklist
 
-### File: `src/pages/PropertyDetail.tsx`
+After I implement these changes:
 
-**Pass buyer context to PropertyQuestionsToAsk:**
-```tsx
-import { useBuyerProfile, profileToDimensions, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
-import { useAuth } from '@/hooks/useAuth';
-
-// Inside component:
-const { user } = useAuth();
-const { data: buyerProfile } = useBuyerProfile();
-const derivedBuyerType = buyerProfile ? getEffectiveBuyerType(buyerProfile) : null;
-
-// In JSX:
-<PropertyQuestionsToAsk 
-  context={{
-    listingStatus: property.listing_status,
-    propertyType: property.property_type,
-    yearBuilt: property.year_built || undefined,
-    hasVaadBayit: !!property.vaad_bayit_monthly,
-    hasParking: !!(property as any).parking_spots,
-    daysOnMarket,
-    priceReduced: !!(property as any).original_price,
-    missingFields: [...],
-    // NEW buyer context
-    buyerType: derivedBuyerType?.taxType,
-    residencyStatus: buyerProfile?.residency_status,
-    purchasePurpose: buyerProfile?.purchase_purpose,
-    isAuthenticated: !!user,
-  }}
-/>
-```
-
-### File: `src/pages/ProjectDetail.tsx`
-
-Similar integration for projects.
+- [ ] You provide Google Analytics Measurement ID (G-XXXXXXXXXX)
+- [ ] Enable leaked password protection in Cloud settings
+- [ ] Test complete user journey: browse → signup → save → inquire
+- [ ] Share a link on WhatsApp to verify OG image appears
+- [ ] Test "Add to Home Screen" on iOS/Android
+- [ ] Run Lighthouse audit (target: 90+ scores)
 
 ---
 
-## Visual Design
+## Files Summary
 
-### Authenticated User with Profile
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ 💬 Questions to Ask                                [Copy all]   │
-│ ─────────────────────────────────────────────────────────────── │
-│ ✓ Personalized for Oleh Hadash                                  │
-│                                                                 │
-│ 1. "Am I eligible for the reduced oleh tax rate?"              │
-│    💡 Olim get 0.5% tax rate up to ₪6M for 7 years             │
-│                                                                 │
-│ 2. "Has the price been reduced since listing?"                 │
-│    💡 Price history reveals seller motivation                   │
-│                                                                 │
-│ [Show 3 more questions]                                        │
-│ ─────────────────────────────────────────────────────────────── │
-│ Take your time — there's no rush to ask everything at once.    │
-└────────────────────────────────────────────────────────────────┘
-```
+**New Files:**
+- `public/manifest.json`
+- `public/apple-touch-icon.png` (placeholder/generated)
+- `public/og-image.png` (placeholder/generated)
+- `src/lib/analytics.ts`
+- `src/hooks/usePageTracking.ts`
 
-### Guest User
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ 💬 Questions to Ask                                [Copy all]   │
-│ ─────────────────────────────────────────────────────────────── │
-│ Questions for first-time buyers                                 │
-│                                                                 │
-│ 1. "Has the price been reduced since listing?"                 │
-│    💡 Price history reveals seller motivation                   │
-│                                                                 │
-│ 2. "Are there any issues with the Tabu registration?"          │
-│    💡 Registration issues can delay closing                     │
-│                                                                 │
-│ [Show 3 more questions]                                        │
-│ ─────────────────────────────────────────────────────────────── │
-│ ✨ Get questions tailored to your buyer type — Sign up free →  │
-└────────────────────────────────────────────────────────────────┘
-```
+**Modified Files:**
+- `index.html`
+- `src/components/shared/ErrorBoundary.tsx`
+- `src/App.tsx` (add page tracking)
 
-### Renter (For Rent Listings)
-```text
-┌────────────────────────────────────────────────────────────────┐
-│ 💬 Questions to Ask the Landlord                   [Copy all]   │
-│ ─────────────────────────────────────────────────────────────── │
-│ Before signing a lease, consider asking:                        │
-│                                                                 │
-│ 1. "How is the rent indexed? (Madad / CPI linkage)"            │
-│    💡 Indexed rent can increase significantly over time         │
-│                                                                 │
-│ 2. "What's the landlord's policy on lease renewal?"            │
-│    💡 Knowing renewal terms helps plan your stay                │
-│                                                                 │
-│ ─────────────────────────────────────────────────────────────── │
-│ Renting is a big commitment — take time to understand terms.   │
-└────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Implementation Files Summary
-
-| File | Action | Purpose |
-|------|--------|---------|
-| **Database Migration** | CREATE | Add `buyer_relevance` column + seed buyer-specific questions |
-| `src/hooks/usePropertyQuestions.ts` | MODIFY | Add buyer context, scoring algorithm, `isPersonalized` flag |
-| `src/components/property/PropertyQuestionsToAsk.tsx` | MODIFY | Add personalization badge, guest nudge, renter messaging |
-| `src/components/project/ProjectQuestionsToAsk.tsx` | MODIFY | Same treatment for projects |
-| `src/pages/PropertyDetail.tsx` | MODIFY | Pass buyer context from useBuyerProfile |
-| `src/pages/ProjectDetail.tsx` | MODIFY | Pass buyer context for projects |
-
----
-
-## Question Data (To Be Seeded)
-
-### Buyer-Type Specific Questions
-
-**First-Time Buyers:**
-- "What purchase tax (mas rechisha) will I owe on this property?" → first-time, upgrader
-- "Is the building's reserve fund sufficient for upcoming maintenance?" → first-time (they're new to this)
-
-**Oleh Hadash:**
-- "Am I eligible for the reduced oleh tax rate, and what documentation is needed?" → oleh only
-- "Can I complete the purchase with an Israeli lawyer who speaks English?" → oleh
-
-**Investors:**
-- "What's the expected rental yield for this property?" → investor
-- "Are there any rental restrictions or HOA rules about short-term rentals?" → investor
-- "What are the capital gains tax implications if I sell within 4 years?" → investor
-
-**Foreign Buyers:**
-- "Can I complete the purchase remotely, or do I need to be in Israel?" → foreign
-- "Will I need to open an Israeli bank account?" → foreign
-
-**Upgraders:**
-- "Will purchasing this property affect my first-apartment tax exemption?" → upgrader
-- "What's the timeline if I need to sell my current property first?" → upgrader
-
-**Renters:**
-- "How is the rent indexed? (Madad / CPI linkage)" → renter (already exists, update buyer_relevance)
-- "Is the landlord open to a longer lease term for stability?" → renter
-- "What happens to my deposit if the landlord sells the property?" → renter
-- "Can I make minor modifications to the apartment (painting, shelving)?" → renter
-
-### Universal Questions (Apply to Everyone)
-All existing questions without specific buyer_relevance will be marked as `"is_universal": true`.
-
----
-
-## Technical Considerations
-
-1. **Backwards Compatibility**: Existing questions without `buyer_relevance` continue to work (treated as universal)
-2. **Performance**: Questions are cached for 1 hour, scoring happens client-side
-3. **Mobile UX**: Copy buttons remain always visible on mobile per existing pattern
-4. **Guest Experience**: Defaults to "first-time buyer" logic for questions, with explicit nudge to personalize
-5. **Design Consistency**: Uses existing `GuestSignupNudge`, `Badge`, and color tokens (primary/10, muted, etc.)
-
----
-
-## Summary
-
-This implementation adds comprehensive buyer personalization to the Questions to Ask feature:
-
-- **Database**: New `buyer_relevance` column + 15+ buyer-specific questions
-- **Logic**: Scoring algorithm that prioritizes buyer-type matches for authenticated users
-- **UI**: Personalization badges for logged-in users, signup nudges for guests
-- **Context**: Full buyer profile integration via existing `useBuyerProfile` hook
-- **Design**: Follows established patterns (PersonalizationHeader, GuestAssumptionsBanner)
-
-All changes maintain visual consistency with the existing brand and provide meaningful value differentiation between guest and authenticated experiences.
+**Database Updates:**
+- Update 28 rental questions with proper targeting flags
