@@ -256,9 +256,9 @@ export default function ListingsGuide() {
                 Listings Guide
               </Badge>
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">
-                Why <span className="text-primary">Israeli</span> Property Listings
+                Why <span className="text-primary">Israel</span> Property Listings
               </h1>
-              <h2 className="text-2xl md:text-4xl font-bold text-primary mb-6">
+              <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-6">
                 Feel Misleading to International Buyers
               </h2>
               <p className="text-lg text-muted-foreground mb-6">
