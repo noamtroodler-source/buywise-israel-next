@@ -309,11 +309,11 @@ export default function TalkingToProfessionalsGuide() {
             </Badge>
             
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3">
-              What to Know Before Talking to an Agent, Lawyer, or <span className="text-primary">Broker</span>
+              What to Know Before Talking to an Agent, Lawyer, or Broker
             </h1>
             
-            <p className="text-xl md:text-2xl text-primary font-medium mb-4">
-              Preparing to Speak with Israeli Real Estate Professionals
+            <p className="text-xl md:text-2xl text-foreground font-medium mb-4">
+              Preparing to Speak with <span className="text-primary">Israeli</span> Real Estate Professionals
             </p>
             
             <p className="text-muted-foreground text-lg mb-6">

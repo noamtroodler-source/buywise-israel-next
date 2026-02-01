@@ -596,7 +596,7 @@ export default function OlehBuyerGuide() {
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                <span className="text-primary">Oleh</span> First-Time Buyer Guide
+                Oleh First-Time Buyer Guide
               </h1>
               
               <p className="text-lg text-muted-foreground">

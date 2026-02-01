@@ -601,7 +601,7 @@ export default function InvestmentPropertyGuide() {
               </div>
               
               <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-                <span className="text-primary">Investment</span> Property Guide
+                Investment Property Guide
               </h1>
               
               <p className="text-lg text-muted-foreground">
