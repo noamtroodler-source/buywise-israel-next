@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, ChevronDown, ChevronUp, Copy, Check, HelpCircle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Building2, ChevronDown, ChevronUp, Copy, Check, HelpCircle, CheckCircle2, Sparkles, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProjectQuestions, ProjectContext } from '@/hooks/usePropertyQuestions';
@@ -10,6 +10,7 @@ import { getBuyerTypeLabel } from '@/lib/calculations/purchaseTax';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { BuyerType } from '@/lib/calculations/purchaseTax';
+import { QuestionCategoryBadge } from '@/components/property/QuestionCategoryBadge';
 
 interface ProjectQuestionsToAskProps {
   hasPaymentSchedule: boolean;
@@ -55,13 +56,24 @@ export function ProjectQuestionsToAsk({
   // Get buyer type label for personalization badge
   const buyerTypeLabel = buyerType ? getBuyerTypeLabel(buyerType) : null;
 
-  const handleCopyAll = () => {
-    const allQuestions = questions
-      .map((q, i) => `${i + 1}. ${q.question_text}`)
-      .join('\n');
+  const formatQuestionsForCopy = () => {
+    const title = 'Questions for the Developer';
+    const intro = 'Before committing to this project, I wanted to clarify:';
     
-    navigator.clipboard.writeText(allQuestions);
+    return `${title}\n\n${intro}\n\n${questions
+      .map((q, i) => `${i + 1}. ${q.question_text}`)
+      .join('\n')}`;
+  };
+
+  const handleCopyAll = () => {
+    navigator.clipboard.writeText(formatQuestionsForCopy());
     toast.success('Questions copied to clipboard');
+  };
+
+  const handleEmailQuestions = () => {
+    const subject = 'Questions about the new construction project';
+    const body = encodeURIComponent(formatQuestionsForCopy());
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${body}`);
   };
 
   const handleCopyQuestion = (questionId: string, questionText: string) => {
@@ -108,15 +120,27 @@ export function ProjectQuestionsToAsk({
                 </p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-xs"
-              onClick={handleCopyAll}
-            >
-              <Copy className="h-3.5 w-3.5 mr-1" />
-              Copy all
-            </Button>
+            <div className="flex gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs"
+                onClick={handleCopyAll}
+                title="Copy all questions"
+              >
+                <Copy className="h-3.5 w-3.5 mr-1" />
+                Copy
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs"
+                onClick={handleEmailQuestions}
+                title="Email questions to yourself"
+              >
+                <Mail className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
           
           {/* Personalization Badge - only for authenticated users with buyer type */}
@@ -155,12 +179,15 @@ export function ProjectQuestionsToAsk({
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground leading-relaxed">
-                        "{question.question_text}"
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <HelpCircle className="h-3 w-3 inline-block" />
-                        {question.why_it_matters}
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground leading-relaxed">
+                          "{question.question_text}"
+                        </p>
+                        <QuestionCategoryBadge category={question.category} className="shrink-0 mt-0.5" />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1.5 flex items-start gap-1.5">
+                        <HelpCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                        <span>{question.why_it_matters}</span>
                       </p>
                     </div>
                     <Button
