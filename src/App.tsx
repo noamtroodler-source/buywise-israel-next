@@ -13,6 +13,7 @@ import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { WhatsAppFallbackModal } from "@/components/ui/WhatsAppFallbackModal";
 import { PageLoader } from "@/components/shared/PageLoader";
+import { PageTracker } from "@/hooks/usePageTracking";
 
 // Critical path - keep as static imports (homepage, listings, auth)
 import Index from "./pages/Index";
@@ -149,6 +150,7 @@ const App = () => (
                 <Sonner />
                 <WhatsAppFallbackModal>
                   <BrowserRouter>
+                    <PageTracker />
                     <ScrollToTop />
                     <Suspense fallback={<PageLoader />}>
                       <Routes>

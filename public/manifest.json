@@ -1,0 +1,26 @@
+{
+  "name": "BuyWise Israel",
+  "short_name": "BuyWise",
+  "description": "Navigate Israeli real estate with clarity and confidence. Explore properties, calculate costs, and understand the market — built for international buyers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["business", "finance", "lifestyle"],
+  "lang": "en",
+  "dir": "ltr"
+}
