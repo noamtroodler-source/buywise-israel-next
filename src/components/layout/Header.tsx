@@ -69,6 +69,7 @@ export function Header() {
         {/* Desktop Navigation - True Center */}
         <nav className="hidden md:flex items-center justify-center gap-6">
           <MegaMenu config={NAV_CONFIG.buy} />
+          <MegaMenu config={NAV_CONFIG.projects} />
           <MegaMenu config={NAV_CONFIG.rent} />
           <LearnNav />
           <MoreNav />
@@ -297,6 +298,35 @@ export function Header() {
                 <AccordionContent className="pb-2">
                   <div className="pl-4 space-y-1">
                     {NAV_CONFIG.buy.columns.map((column) => (
+                      <div key={column.title} className="mb-2">
+                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {column.title}
+                        </p>
+                        {column.items.map((item) => (
+                          <Link
+                            key={item.href}
+                            to={item.href}
+                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+              
+              {/* Projects Accordion */}
+              <AccordionItem value="projects" className="border-b-0">
+                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
+                  Projects
+                </AccordionTrigger>
+                <AccordionContent className="pb-2">
+                  <div className="pl-4 space-y-1">
+                    {NAV_CONFIG.projects.columns.map((column) => (
                       <div key={column.title} className="mb-2">
                         <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                           {column.title}
