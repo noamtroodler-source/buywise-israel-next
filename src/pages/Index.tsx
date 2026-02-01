@@ -22,17 +22,17 @@ const Index = () => {
       {/* 1. Cinematic Hero with Integrated Search */}
       <HeroSplit />
       
-      {/* 2. Featured Listings - Immediately after hero for prominence */}
-      <FeaturedShowcase />
+      {/* 2. Three Pillars - Establish value prop first */}
+      <ThreePillars />
       
-      {/* 3. New Projects Highlight */}
-      <ProjectsHighlight />
-      
-      {/* 4. Platform Promise Strip - Breathing room */}
+      {/* 3. Platform Promise - Why we're different */}
       <PlatformPromise />
       
-      {/* 5. Three Pillars - Value Proposition */}
-      <ThreePillars />
+      {/* 4. Featured Listings - Now users browse with context */}
+      <FeaturedShowcase />
+      
+      {/* 5. New Projects Highlight */}
+      <ProjectsHighlight />
       
       {/* 6. Explore by Region */}
       <RegionExplorer />

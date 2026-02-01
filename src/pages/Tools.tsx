@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
-  Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass
+  Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass,
+  Search, Home
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -103,6 +104,14 @@ const toolComponents: Record<string, React.ComponentType> = {
 
 // Journey phase order
 const phaseOrder = ['define', 'check', 'move_forward', 'after_deal'];
+
+// Journey stage selector options
+const journeyStages = [
+  { key: 'define', label: 'Just starting', icon: Compass, description: 'Figuring out what I can afford' },
+  { key: 'check', label: 'Found something', icon: Search, description: 'Want to understand the true cost' },
+  { key: 'move_forward', label: 'Ready to buy', icon: TrendingUp, description: 'Planning financing & docs' },
+  { key: 'after_deal', label: 'Already bought', icon: Home, description: 'Planning renovations' },
+];
 
 function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   const Icon = tool.icon;
@@ -221,6 +230,13 @@ export default function Tools() {
     setSearchParams({ tool: toolId });
   };
 
+  const scrollToPhase = (phaseKey: string) => {
+    const element = document.getElementById(`phase-${phaseKey}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <Layout>
       <SEOHead
@@ -260,12 +276,35 @@ export default function Tools() {
                   <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
                     Property Tools & Calculators
                   </h1>
-                  <p className="text-muted-foreground max-w-xl mx-auto mb-4">
+                  <p className="text-muted-foreground max-w-xl mx-auto mb-6">
                     Let's figure out what you can afford, what it really costs, and where you stand — together.
                   </p>
-                  <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto">
-                    These tools are organized by where you are in your journey. Not sure where to start? <span className="text-primary font-medium">The mortgage and affordability calculators</span> are usually the best first step.
-                  </p>
+                </motion.div>
+                
+                {/* Journey Stage Selector */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="max-w-3xl mx-auto"
+                >
+                  <p className="text-sm text-muted-foreground mb-3">Where are you in your journey?</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                    {journeyStages.map((stage) => {
+                      const Icon = stage.icon;
+                      return (
+                        <button 
+                          key={stage.key}
+                          onClick={() => scrollToPhase(stage.key)}
+                          className="p-3 md:p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-card/80 transition-all text-left group"
+                        >
+                          <Icon className="h-4 w-4 md:h-5 md:w-5 text-primary mb-1.5 md:mb-2 group-hover:scale-110 transition-transform" />
+                          <p className="font-medium text-xs md:text-sm text-foreground">{stage.label}</p>
+                          <p className="text-[10px] md:text-xs text-muted-foreground leading-snug">{stage.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -292,9 +331,11 @@ export default function Tools() {
                 return (
                   <motion.section
                     key={phaseKey}
+                    id={`phase-${phaseKey}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.05 * phaseIndex }}
+                    className="scroll-mt-24"
                   >
                     <div className="mb-4">
                       <h2 className="text-lg font-semibold text-foreground">

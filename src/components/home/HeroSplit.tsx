@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Search, Building2, Home, Key, House, KeyRound, HardHat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -68,8 +68,8 @@ export function HeroSplit() {
           >
             {/* Headline */}
             <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight">
-              <span className="text-primary">Israel</span> Real Estate,
-              <span className="block">Reinvented for You</span>
+              Navigate <span className="text-primary">Israel</span> Real Estate
+              <span className="block">— With Clarity</span>
             </h1>
 
             {/* Subheadline */}
@@ -120,6 +120,14 @@ export function HeroSplit() {
                     <span className="hidden sm:inline">Search</span>
                   </Button>
                 </div>
+                
+                {/* First time? Entry point */}
+                <p className="text-sm text-white/70 text-center mt-3">
+                  First time buying in Israel?{' '}
+                  <Link to="/guides/buying-in-israel" className="text-white underline underline-offset-2 hover:no-underline">
+                    Start with our guide
+                  </Link>
+                </p>
               </form>
             </motion.div>
 
