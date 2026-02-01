@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyHero } from '@/components/property/PropertyHero';
 import { PropertyQuickSummary } from '@/components/property/PropertyQuickSummary';
 import { PropertyDescription } from '@/components/property/PropertyDescription';
+import { PropertyQuestionsToAsk } from '@/components/property/PropertyQuestionsToAsk';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
@@ -162,8 +163,23 @@ export default function PropertyDetail() {
 
             {/* Description */}
             <PropertyDescription description={property.description} />
-            
 
+            {/* Questions to Ask */}
+            <PropertyQuestionsToAsk 
+              context={{
+                listingStatus: property.listing_status,
+                propertyType: property.property_type,
+                yearBuilt: property.year_built || undefined,
+                hasVaadBayit: !!property.vaad_bayit_monthly,
+                hasParking: !!(property as any).parking_spots,
+                daysOnMarket,
+                priceReduced: !!(property as any).original_price,
+                missingFields: [
+                  ...(!property.size_sqm ? ['size_sqm'] : []),
+                  ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
+                ],
+              }}
+            />
             {/* Value Snapshot - Collapsible on mobile */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -295,6 +311,8 @@ export default function PropertyDetail() {
                 agent={property.agent}
                 propertyId={property.id}
                 propertyTitle={property.title}
+                onSave={handleSave}
+                isSaved={isSaved}
               />
             </div>
           </div>

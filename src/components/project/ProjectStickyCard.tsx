@@ -1,4 +1,4 @@
-import { MessageCircle, Mail, Phone, Building, Shield, CheckCircle, User, TrendingUp } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building, Shield, CheckCircle, User, TrendingUp, BookOpen, ChevronDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer, ProjectUnit } from '@/types/projects';
 import { useProjectInquiryTracking } from '@/hooks/useProjectInquiryTracking';
@@ -233,6 +234,24 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
               ))}
             </div>
           </div>
+
+          {/* Permission to Slow Down */}
+          <div className="pt-3 border-t border-border/50 mt-3">
+            <p className="text-xs text-muted-foreground text-center mb-2">
+              Not ready to reach out?
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-xs" 
+              asChild
+            >
+              <Link to="/guides/new-vs-resale">
+                <BookOpen className="h-3.5 w-3.5 mr-1" />
+                Read the new-build guide first
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -271,18 +290,37 @@ export function ProjectMobileContactBar({ project, developer, representingAgent 
 
   return (
     <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t border-border lg:hidden z-50">
-      <div className="flex gap-3 max-w-lg mx-auto">
-        {whatsappUrl ? (
-          <Button className="flex-1" size="lg" onClick={handleWhatsAppClick}>
-            <MessageCircle className="h-4 w-4 mr-2" />
-            {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
-          </Button>
-        ) : (
-          <Button className="flex-1" size="lg">
-            <Mail className="h-4 w-4 mr-2" />
-            Request Info
-          </Button>
-        )}
+      <div className="max-w-lg mx-auto space-y-2">
+        <div className="flex gap-3">
+          {whatsappUrl ? (
+            <Button className="flex-1" size="lg" onClick={handleWhatsAppClick}>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              {representingAgent ? 'WhatsApp Agent' : 'WhatsApp'}
+            </Button>
+          ) : (
+            <Button className="flex-1" size="lg">
+              <Mail className="h-4 w-4 mr-2" />
+              Request Info
+            </Button>
+          )}
+        </div>
+
+        {/* Permission to Slow Down - Collapsible */}
+        <Collapsible>
+          <CollapsibleTrigger className="w-full text-center py-1">
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              Not ready? That's okay
+              <ChevronDown className="h-3 w-3" />
+            </span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-2">
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <Link to="/guides/new-vs-resale">
+                Read the new-build guide first
+              </Link>
+            </Button>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );

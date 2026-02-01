@@ -131,7 +131,7 @@ export const TOOLS_BY_PHASE: Record<string, { title: string; description: string
   define: {
     title: 'Define What Fits You',
     description: 'Understand your budget and options before you start searching.',
-    tools: ['affordability', 'rentvsbuy']
+    tools: ['readiness', 'affordability', 'rentvsbuy']
   },
   check: {
     title: 'Calculate True Costs',
