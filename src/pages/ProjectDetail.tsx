@@ -106,15 +106,15 @@ export default function ProjectDetail() {
                 amenities={project.amenities}
               />
               
-              {/* Questions to Ask the Developer */}
+              {/* Floor Plans - What's available */}
+              <ProjectFloorPlans units={units} developer={project.developer} />
+              
+              {/* Questions to Ask the Developer - Right before cost breakdown */}
               <ProjectQuestionsToAsk 
                 hasPaymentSchedule={true}
                 hasBankGuarantee={true}
                 deliveryYear={project.completion_date ? new Date(project.completion_date).getFullYear() : undefined}
               />
-              
-              {/* Floor Plans - What's available */}
-              <ProjectFloorPlans units={units} developer={project.developer} />
               
               {/* Cost Breakdown with buyer protections integrated */}
               <ProjectCostBreakdown 
