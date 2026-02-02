@@ -1,20 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Calculator, PiggyBank, Home, Compass } from 'lucide-react';
+import { ArrowRight, Calculator, PiggyBank, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const tools = [
-  {
-    id: 'readiness',
-    icon: Compass,
-    title: 'Readiness Check',
-    description: 'Not sure where to start? Find out what to focus on.',
-    link: '/tools?tool=readiness',
-    color: 'bg-primary/10 text-primary',
-    badge: 'Start here',
-  },
   {
     id: 'mortgage',
     icon: Calculator,
@@ -22,6 +13,7 @@ const tools = [
     description: 'Understand monthly reality — not optimistic estimates.',
     link: '/tools?tool=mortgage',
     color: 'bg-primary/10 text-primary',
+    badge: 'Start here',
   },
   {
     id: 'totalcost',

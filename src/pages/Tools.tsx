@@ -20,7 +20,6 @@ import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
-import { ReadinessCheckTool } from '@/components/tools/ReadinessCheckTool';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -36,13 +35,6 @@ interface Tool {
 
 // All tools with their metadata and contextual guidance hints
 const allTools: Record<string, Tool> = {
-  readiness: {
-    id: 'readiness',
-    label: 'Readiness Check',
-    description: "Understand where you are in your journey — and what to focus on next.",
-    icon: Compass,
-    guidanceHint: "Start here if you're not sure",
-  },
   mortgage: { 
     id: 'mortgage', 
     label: 'Mortgage Calculator', 
@@ -92,7 +84,6 @@ const allTools: Record<string, Tool> = {
 };
 
 const toolComponents: Record<string, React.ComponentType> = {
-  readiness: ReadinessCheckTool,
   mortgage: MortgageCalculator,
   totalcost: TrueCostCalculator,
   affordability: AffordabilityCalculator,
