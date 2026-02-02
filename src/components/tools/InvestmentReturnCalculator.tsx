@@ -68,13 +68,13 @@ function calculateInvestmentGrade(netYield: number, cashOnCash: number, apprecia
   return { grade: 'D', label: 'Weak Investment', colorClass: 'text-muted-foreground bg-muted/50 border-border' };
 }
 
-// Default values
+// Default values - harmonized with other calculators (₪2.75M standard, 5.25% rate)
 const DEFAULTS = {
-  purchasePrice: 2500000,
+  purchasePrice: 2750000,
   selectedCity: 'tel-aviv',
   propertySizeSqm: 85,
   rooms: 3,
-  monthlyRent: 8000,
+  monthlyRent: 8500,
   vacancyRate: 5,
   monthlyArnona: 450,
   monthlyVaadBayit: 350,
@@ -85,7 +85,7 @@ const DEFAULTS = {
   useLeverage: true,
   buyerType: 'investor' as const,
   downPaymentPercent: 50,
-  interestRate: 4.5,
+  interestRate: 5.25,
   loanTermYears: 20,
   taxMethod: 'flat_10' as const,
   holdingPeriod: 10,
