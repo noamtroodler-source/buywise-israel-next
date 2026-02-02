@@ -1,227 +1,392 @@
 
-# Comprehensive Testing Plan: Agent Property Wizard
+
+# Comprehensive Tool-by-Tool Audit Plan for BuyWise Israel
 
 ## Executive Summary
-I will systematically test the Agent Add Property Wizard through all possible flows, combinations, edge cases, and error scenarios using browser automation. This includes testing each of the 6 steps, all property type variations, rental vs sale paths, validation logic, image handling, and the full submission process.
+
+This audit covers all 8 property calculators/tools on the platform, evaluating each for:
+- **Accuracy**: Cross-checking calculations against official 2025 Israeli sources
+- **Data integrity**: Ensuring inputs flow correctly to outputs
+- **UX/Design**: Balance between comprehensive and approachable
+- **Content quality**: Educational value without overwhelming users
+- **Brand consistency**: Alignment with BuyWise Israel design standards
 
 ---
 
-## Current Architecture Overview
+## Critical Findings to Address First
 
-The wizard consists of:
-- **6 Steps**: Basics → Details → Features → Photos → Description → Review
-- **Context Provider**: `PropertyWizardContext.tsx` manages state and validation
-- **Property Types**: apartment, house, penthouse, cottage, land
-- **Listing Types**: for_sale, for_rent
+### Finding 1: Oleh Tax Brackets May Need Update for 2025
 
----
-
-## Known Issue Detected
-
-**Console Error Found**: `StepDescription` component has a ref forwarding issue:
+**Current code** (`src/lib/calculations/purchaseTax.ts` lines 44-49):
 ```
-Function components cannot be given refs. Check the render method of WizardContent.
+oleh: [
+  { min: 0, max: 1978745, rate: 0 },
+  { min: 1978745, max: 6055070, rate: 0.005 }, // 0.5%
+  { min: 6055070, max: 20183560, rate: 0.08 },
+  { min: 20183560, max: null, rate: 0.10 },
+]
 ```
-This occurs because `AnimatePresence` is trying to pass a ref to `StepDescription`, which is not wrapped in `forwardRef()`. This needs to be fixed.
+
+**2025 official rates** (from Semerenko Group / Israel Tax Authority):
+- 0-1,978,745: 0%
+- 1,978,745-6,055,070: 0.5%
+- 6,055,070-20,183,565: **8%** (matches)
+- Above 20,183,565: **10%** (matches)
+
+**Verification**: The current brackets match the 2025 official rates. However, the database shows `rate_percent: 5` for Oleh above 6,055,070 which conflicts with the hardcoded 8% in the code. Need to verify which is authoritative.
+
+**Action**: Ensure database `purchase_tax_brackets` table for `oleh` buyer type matches the code. The code shows 8% and 10% for top brackets, but the database shows 5% for the third bracket.
+
+### Finding 2: VAT Rate Correctly Updated
+
+**Status**: The code correctly reflects the 18% VAT rate as of January 2025 (was 17%). Found in:
+- `src/lib/calculations/purchaseCosts.ts` line 67
+- `src/components/tools/TrueCostCalculator.tsx` line 91
+- `src/components/tools/RentVsBuyCalculator.tsx` line 84
+
+### Finding 3: PTI Limit Correctly Updated
+
+**Status**: The code correctly shows 50% maximum Payment-to-Income ratio per Bank of Israel Directive 329 v11.
+- `src/lib/calculations/mortgage.ts` line 73
+- `src/components/tools/AffordabilityCalculator.tsx` lines 89-90
 
 ---
 
-## Test Categories & Scenarios
+## Tool-by-Tool Audit
 
-### Phase 1: Step-by-Step Navigation Testing
+### Tool 1: Mortgage Calculator
 
-#### Step 0 - Basics
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T1.1 | Empty form - click Next | Button disabled, cannot proceed |
-| T1.2 | Title only entered | Button disabled |
-| T1.3 | Title + Price (no address) | Button disabled |
-| T1.4 | Valid title, price, address without street number | "Please select address with street number" warning |
-| T1.5 | Valid title, price, typed address but not selected from dropdown | "Must select from dropdown" warning |
-| T1.6 | Select address from unsupported city | "Not a supported city" error, address cleared |
-| T1.7 | Complete all fields with valid address | Next enabled, map shows pin |
-| T1.8 | Property type selection cycling | All 5 types selectable |
-| T1.9 | Listing status toggle (Sale/Rent) | Price label changes appropriately |
-| T1.10 | Price formatting with commas | Displays formatted, stores raw number |
-| T1.11 | Character counter for title | Shows X/100 characters |
+**Location**: `src/components/tools/MortgageCalculator.tsx`
 
-#### Step 1 - Details
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T2.1 | Apartment type - rooms/baths fields | Required fields visible |
-| T2.2 | Land type - lot size required | Only lot size + parking visible |
-| T2.3 | House type - no floor fields | Building section hidden |
-| T2.4 | Floor number validation | Accepts 0 (ground floor) |
-| T2.5 | Decimal bathroom values | Accepts 0.5 increments |
-| T2.6 | Year built future date | Accepts up to current year +5 |
-| T2.7 | Negative parking value | Should not allow or show 0 |
-| T2.8 | Land without lot_size | Cannot proceed |
+**Accuracy Check**:
+| Calculation | Status | Notes |
+|-------------|--------|-------|
+| PMT formula | Verified | Standard amortization formula |
+| LTV limits | Verified | First-time: 75%, Upgrader: 70%, Investor/Foreign: 50%, Oleh: 75% |
+| PTI (Payment-to-Income) | Verified | 50% max per BoI Directive 329 v11 |
+| Stress test (+1%, +2%) | Verified | Bank of Israel recommends +2% test |
+| Variable rate limit | Verified | 33.3% max in variable tracks |
 
-#### Step 2 - Features
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T3.1 | Toggle all feature checkboxes | Visual feedback, updates state |
-| T3.2 | Rental mode - Lease Details section | Shows lease term, subletting, agent fee |
-| T3.3 | Sale mode - no Lease Details | Section hidden |
-| T3.4 | Property Terms (both modes) | Furnished status, pets policy visible |
-| T3.5 | Immediate entry checked | Date picker hidden |
-| T3.6 | Immediate entry unchecked | Date picker shown, min date = today |
-| T3.7 | Va'ad Bayit input formatting | Shekel prefix, number formatting |
-| T3.8 | AC type selection | All 4 options work |
-| T3.9 | Condition dropdown | All 5 conditions selectable |
-| T3.10 | Feature sync with explicit booleans | balcony → has_balcony, etc. |
+**UX Assessment**:
+- Good: Has "ExampleValuesHint" explaining default values
+- Good: BuyerTypeInfoBanner shows personalized context
+- Good: Stress test section helps with risk awareness
+- Good: "Honest ranges" showing low/mid/high payment estimates
+- Good: Israel-specific track explanations (Prime, Fixed-Linked, etc.)
 
-#### Step 3 - Photos
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T4.1 | No photos - click Next | Button disabled |
-| T4.2 | 1-2 photos uploaded | Warning "minimum 3 required" |
-| T4.3 | 3 photos uploaded | Can proceed |
-| T4.4 | 5+ photos uploaded | "Great length" or similar |
-| T4.5 | Drag to reorder | Order updates, first = cover |
-| T4.6 | "Set as Cover" button | Moves image to first position |
-| T4.7 | Remove image | Image deleted from list |
-| T4.8 | Max 20 images | Upload button hidden at 20 |
-| T4.9 | Invalid image file | Error state shown |
-| T4.10 | Large file upload | Loading state displays |
-
-#### Step 4 - Description
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T5.1 | Empty description | Cannot proceed |
-| T5.2 | < 100 chars description | Character feedback red |
-| T5.3 | 300-500 chars | "Great length!" feedback |
-| T5.4 | > 2000 chars | Truncated at max |
-| T5.5 | AI Grammar Check button | Calls edge function, shows feedback |
-| T5.6 | Apply improved version | Updates description text |
-| T5.7 | Add highlight | Appears in list |
-| T5.8 | Remove highlight | Removed from list |
-| T5.9 | 5 highlights max | Input hidden after 5 |
-| T5.10 | Highlight Enter key | Adds highlight |
-
-#### Step 5 - Review
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T6.1 | All data displays correctly | Shows summary of all steps |
-| T6.2 | Edit buttons per section | Navigates to correct step |
-| T6.3 | "Preview as Buyer" button | Opens PropertyPreviewDialog |
-| T6.4 | Cover image shown | First uploaded image |
-| T6.5 | All features/badges display | Correct labels |
-| T6.6 | Description truncated | Shows first ~4 lines |
+**Recommended Improvements**:
+1. Add tooltip explaining what "Prime" rate means in Israel context
+2. Consider adding a "typical bank quote" disclaimer
+3. Source attribution uses Directive 329 v11 but shows April 2025 effective date - verify this is correct
 
 ---
 
-### Phase 2: Cross-Step Validation Testing
+### Tool 2: Affordability Calculator
 
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T7.1 | Change property type after Step 1 | Details step updates conditionally |
-| T7.2 | Change listing status after Step 2 | Features step shows/hides lease details |
-| T7.3 | Navigate back and forward | State preserved |
-| T7.4 | Remove all photos after reaching Step 5 | Cannot submit |
-| T7.5 | Clear description after reaching Step 5 | Cannot submit |
+**Location**: `src/components/tools/AffordabilityCalculator.tsx`
 
----
+**Accuracy Check**:
+| Calculation | Status | Notes |
+|-------------|--------|-------|
+| Max PTI 50% | Verified | Matches BoI regulations |
+| LTV by buyer type | Verified | Correct limits applied |
+| Foreign income haircut | Verified | 70-85% discount applied |
+| Self-employed discount | Verified | 70% multiplier |
+| Max display cap | Verified | ₪99.9M ceiling |
 
-### Phase 3: Property Type Matrix Testing
+**UX Assessment**:
+- Good: Clear income fields with spouse option
+- Good: Employment type selector with multipliers
+- Good: Foreign income toggle with explanation
+- Good: Visual progress indicator
 
-| Property Type | Listing Status | Special Behaviors |
-|---------------|----------------|-------------------|
-| Apartment | For Sale | Standard flow |
-| Apartment | For Rent | + Lease Details section |
-| House | For Sale | No floor fields, no building section |
-| House | For Rent | No floor fields + Lease Details |
-| Penthouse | For Sale | Standard floor fields |
-| Penthouse | For Rent | Standard + Lease Details |
-| Cottage | For Sale | Cottage/Garden Apartment label |
-| Cottage | For Rent | + Lease Details |
-| Land | For Sale | Only lot_size, no rooms/baths/floor/year |
-| Land | For Rent | Lot size + Lease Details |
+**Recommended Improvements**:
+1. Add stress test showing how 1% rate increase affects max budget
+2. Consider showing "conservative" vs "aggressive" budget ranges
+3. Add note about typical bank requirements beyond just PTI
 
 ---
 
-### Phase 4: Submission Flow Testing
+### Tool 3: True Cost Calculator
 
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T8.1 | Save Draft button | Creates property with verification_status='draft' |
-| T8.2 | Submit for Review (verified agent) | Creates with verification_status='pending_review' |
-| T8.3 | Submit for Review (unverified agent) | Button disabled, warning banner shown |
-| T8.4 | Submission success | PropertySubmittedDialog appears |
-| T8.5 | Dialog "Add Another" button | Wizard resets |
-| T8.6 | Dialog "Go to Dashboard" button | Navigates to /agent/properties |
-| T8.7 | Network error during save | Toast error message |
-| T8.8 | Loading state during submission | Spinner, buttons disabled |
+**Location**: `src/components/tools/TrueCostCalculator.tsx`
 
----
+**Accuracy Check**:
+| Cost Item | Status | Notes |
+|-----------|--------|-------|
+| Purchase tax | Verified | Uses correct 2025 brackets |
+| VAT 18% | Verified | Updated from 17% |
+| Lawyer 0.5-1.5% + VAT | Verified | Standard range |
+| Agent 2% + VAT | Verified | Resale only |
+| Tabu registration | Verified | ₪300-600 range |
+| Mortgage origination | Verified | ₪360 cap by law |
+| Developer lawyer | Verified | 1.5-2% for new construction |
 
-### Phase 5: Edge Cases & Error States
+**UX Assessment**:
+- Good: Toggle for new construction vs resale
+- Good: City-based Arnona estimates
+- Good: Optional toggles for moving/furniture/renovation
+- Good: Uses city metrics for price comparison
 
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T9.1 | Special characters in title | Accepted, displayed correctly |
-| T9.2 | Hebrew text in description | Renders correctly (RTL) |
-| T9.3 | Very long address | Truncates or wraps appropriately |
-| T9.4 | Price = 0 | Cannot proceed from Step 0 |
-| T9.5 | Extremely high price | Formats with commas correctly |
-| T9.6 | Rapid step navigation | No UI glitches |
-| T9.7 | Browser back button | Handled gracefully |
-| T9.8 | Page refresh mid-wizard | Auto-save preserves data (localStorage) |
-| T9.9 | Multiple tabs open | Session-unique storage keys |
+**Recommended Improvements**:
+1. Clarify that agent fee is typically paid by buyer (not seller) in Israel
+2. Add bank guarantee explanation for new construction
+3. Consider adding Madad linkage warning for new construction more prominently
 
 ---
 
-### Phase 6: UI/UX Consistency Checks
+### Tool 4: Rent vs Buy Calculator
 
-| Test Case | Scenario | Expected Behavior |
-|-----------|----------|-------------------|
-| T10.1 | Mobile viewport | Responsive layout, usable |
-| T10.2 | Progress bar accuracy | Reflects current step |
-| T10.3 | Animation transitions | Smooth between steps |
-| T10.4 | Scroll to top on step change | Window scrolls up |
-| T10.5 | Disabled button styling | Visually distinct |
-| T10.6 | Error state styling | Consistent red/destructive theme |
-| T10.7 | Success state styling | Consistent primary/green theme |
+**Location**: `src/components/tools/RentVsBuyCalculator.tsx`
 
----
+**Accuracy Check**:
+| Calculation | Status | Notes |
+|-------------|--------|-------|
+| Purchase costs | Verified | Uses calculateTotalPurchaseCosts |
+| Purchase tax by buyer type | Verified | Correct mapping |
+| Appreciation assumptions | Note | Uses user input, defaults 4% |
+| Rent increase | Verified | 3% annual default |
+| Capital gains (Mas Shevach) | Verified | Uses proper exemptions |
 
-## Technical Issues to Fix
+**UX Assessment**:
+- Good: Clear Pros/Cons for both options
+- Good: Time horizon selector
+- Good: Qualitative factors alongside numbers
+- Good: VAT correctly at 18%
 
-### Issue 1: React Ref Warning
-**File**: `src/components/agent/wizard/steps/StepDescription.tsx`
-**Problem**: Component not wrapped in `forwardRef()` but receives ref from AnimatePresence
-**Fix**: Wrap component with `React.forwardRef()` or ensure parent doesn't pass ref
-
-### Issue 2: Potential Data Sync Issues
-**Files**: `PropertyWizardContext.tsx`, `useAgentProperties.tsx`
-**Check**: Verify all lease reality fields are being sent to DB correctly
-**Fields**: `lease_term`, `subletting_allowed`, `furnished_status`, `pets_policy`, `agent_fee_required`
-
-### Issue 3: Missing Fields in Submission
-**File**: `src/pages/agent/NewPropertyWizard.tsx`
-**Check**: Verify `parking`, `condition`, `lot_size_sqm` are included in mutation payload
+**Recommended Improvements**:
+1. Add explicit note about Madad (index) for rent increases
+2. Consider showing break-even timeline more prominently
+3. Add warning about appreciation assumptions being uncertain
 
 ---
 
-## Test Execution Plan
+### Tool 5: Investment Return Calculator
 
-1. **Setup**: Open browser, navigate to `/agent/properties/new`
-2. **Authentication**: Ensure logged in as agent user
-3. **Execute**: Run through each test category systematically
-4. **Document**: Screenshot failures, log unexpected behaviors
-5. **Report**: Compile findings with severity levels
+**Location**: `src/components/tools/InvestmentReturnCalculator.tsx`
+
+**Accuracy Check**:
+| Calculation | Status | Notes |
+|-------------|--------|-------|
+| Gross yield | Verified | Annual rent / price |
+| Net yield | Verified | After expenses |
+| Rental tax options | Verified | Exemption (₪5,471/mo), 10% flat, progressive |
+| Vacancy rates | Verified | City-specific estimates |
+| Cash-on-cash return | Verified | Correct formula |
+| Capital gains on exit | Verified | Uses Mas Shevach calculation |
+
+**UX Assessment**:
+- Good: City-based rent suggestions
+- Good: Three tax method comparison
+- Good: Investment grade scoring (A+ to D)
+- Good: Multi-year projection
+
+**Recommended Improvements**:
+1. Clarify rental income tax exemption threshold more prominently (₪5,471/month)
+2. Add note about management fee being deductible under progressive method
+3. Consider adding Tel Aviv/periphery yield benchmark comparison
 
 ---
 
-## Success Criteria
+### Tool 6: Renovation Cost Estimator
 
-- All validation rules enforce correctly
-- No console errors during normal flow
-- All property type/listing status combinations work
-- Photos upload, reorder, and delete properly
-- Description AI check integrates smoothly
-- Preview dialog shows accurate data
-- Save draft and submit for review both function
-- Mobile responsiveness adequate
-- No data loss on navigation
+**Location**: `src/components/tools/RenovationCostEstimator.tsx`
+
+**Accuracy Check**:
+| Category | Price Range | Status |
+|----------|-------------|--------|
+| Kitchen (standard) | ₪55k-90k | Reasonable |
+| Bathroom (standard) | ₪40k-65k | Reasonable |
+| Flooring (standard/sqm) | ₪280-450 | Reasonable |
+| Painting (standard/sqm) | ₪50-80 | Reasonable |
+| Electrical (full rewire) | ₪25k-45k | Reasonable |
+| HVAC (multi-split) | ₪15k-30k | Reasonable |
+| Mamad (safe room) | ₪80k-120k | Reasonable for prefab |
+
+**UX Assessment**:
+- Good: Quality level selector (Basic/Standard/Premium)
+- Good: Israel-specific categories (Mamad)
+- Good: Timeline estimates per category
+- Good: Permit requirement warnings
+
+**Recommended Improvements**:
+1. Add 30/40/30 payment schedule explanation
+2. Consider adding regional cost variation note
+3. Add Tofes 4 requirement note for major renovations
+4. Include contingency recommendation (10-20% buffer)
+
+---
+
+### Tool 7: Document Checklist
+
+**Location**: `src/components/tools/DocumentChecklistTool.tsx`
+
+**Accuracy Check**:
+- Sources documents from database (`useDocumentsByStage`)
+- Covers Buy and Rent transaction types
+- Filters by buyer type (Israeli, Oleh, Foreign)
+
+**UX Assessment**:
+- Good: Progress tracking with celebration
+- Good: Stage-by-stage organization
+- Good: Critical document flagging
+- Good: Print functionality
+
+**Recommended Improvements**:
+1. Add Hebrew document names for recognition at offices
+2. Consider adding "where to get" icons/links
+3. Add estimated processing time for each document
+
+---
+
+### Tool 8: Readiness Check
+
+**Location**: `src/components/tools/ReadinessCheckTool.tsx`
+
+**Accuracy Check**:
+- Qualitative assessment tool, not calculation-based
+- Links to relevant guides and tools
+
+**UX Assessment**:
+- Good: Journey stage selector
+- Good: Knowledge gap identification
+- Good: Encouraging affirmations (brand voice aligned)
+- Good: Resource recommendations
+
+**Recommended Improvements**:
+1. Consider adding a "readiness score" summary
+2. Add progress saving to profile
+3. Link gaps directly to specific guide sections
+
+---
+
+## Cross-Tool Consistency Checks
+
+### Default Values Harmony
+
+| Tool | Default Price | Status |
+|------|---------------|--------|
+| Mortgage | ₪2,750,000 | Standard |
+| Affordability | ₪687,500 down payment (25%) | Standard |
+| True Cost | ₪2,750,000 | Standard |
+| Rent vs Buy | Uses city metrics | Adaptive |
+| Investment | ₪2,500,000 | Slightly different |
+| Purchase Tax | ₪2,750,000 | Standard |
+| New Construction | ₪2,500,000 | Slightly different |
+
+**Action**: Consider harmonizing Investment and New Construction defaults to ₪2,750,000 for consistency.
+
+### Interest Rate Defaults
+
+| Tool | Default Rate |
+|------|--------------|
+| Mortgage | 5.25% |
+| Affordability | 5.25% |
+| Rent vs Buy | 4.5% (for estimates) |
+| Investment | 4.5% |
+
+**Action**: Consider standardizing to 5.25% across all tools as it's the current market midpoint.
+
+### Buyer Type Mapping
+
+All tools correctly map:
+- `first_time` → First-Time Buyer
+- `oleh` → New Immigrant (Oleh Hadash)
+- `investor` / `additional` → Additional Property
+- `foreign` / `non_resident` → Foreign Resident
+
+---
+
+## Database Data Integrity Check
+
+### purchase_tax_brackets Table Issue
+
+**Problem**: Database shows `oleh` buyer type third bracket at 5% rate:
+```
+bracket_min: 6055070, buyer_type: oleh, rate_percent: 5
+```
+
+**Code shows** (`purchaseTax.ts`): 8% for this bracket
+
+**Official 2025 rates**: 8% for 6,055,070 - 20,183,565
+
+**Action Required**: Update database to match official rates. The database entry appears incorrect.
+
+### calculator_constants Table
+
+Verified constants present for:
+- VAT rate (18%)
+- LTV limits by buyer type
+- Arnona discounts
+- Lawyer/agent fee ranges
+
+---
+
+## Design & Branding Consistency
+
+All tools verified to include:
+- ToolLayout wrapper for consistent structure
+- BuyerTypeInfoBanner for personalization
+- ExampleValuesHint for default value transparency
+- SourceAttribution for trust signals
+- ToolDisclaimer with variant-specific text
+- ToolFeedback for user engagement
+- Primary blue (not red/green) for data indicators
+
+---
+
+## Technical Section
+
+### Calculation Libraries
+
+All calculation logic is centralized in:
+```
+src/lib/calculations/
+├── purchaseTax.ts      # Mas Rechisha brackets
+├── mortgage.ts         # PMT, LTV, PTI calculations
+├── purchaseCosts.ts    # One-time and recurring costs
+├── capitalGains.ts     # Mas Shevach calculation
+├── rentalYield.ts      # Yield and ROI projections
+├── constants.ts        # Fallback values
+└── toolSources.ts      # Source attribution config
+```
+
+### Database Tables Used
+
+- `calculator_constants` - Configurable rates and limits
+- `purchase_tax_brackets` - Tax bracket definitions
+- `document_checklist` - Document requirements
+- `canonical_metrics` - City market data
+
+### Key Implementation Details
+
+1. **Personalization Flow**: All tools read from `useBuyerProfile()` hook to auto-set buyer type
+2. **Session Persistence**: Each tool saves state to `sessionStorage` for return visits
+3. **Save to Profile**: Logged-in users can save results via `useSaveCalculatorResult()`
+4. **Currency Support**: Tools respect user's ILS/USD preference via `usePreferences()`
+
+---
+
+## Priority Action Items
+
+### Critical (Do Before Launch)
+
+1. **Fix Oleh tax bracket in database**: Update `purchase_tax_brackets` table to show 8% (not 5%) for third bracket
+
+### High Priority
+
+2. **Harmonize default property prices**: Align Investment and New Construction to ₪2,750,000
+3. **Standardize interest rates**: Use 5.25% consistently across all tools
+
+### Medium Priority
+
+4. **Add contingency buffer** to Renovation Estimator results (10-20% recommendation)
+5. **Enhance Document Checklist** with Hebrew document names
+6. **Add break-even timeline** as prominent feature in Rent vs Buy
+
+### Low Priority (Post-Launch Polish)
+
+7. Add regional cost variation notes to Renovation Estimator
+8. Improve Readiness Check with progress persistence
+9. Consider adding "comparison mode" to run multiple scenarios side-by-side
 
