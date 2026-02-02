@@ -44,7 +44,7 @@ export function NewConstructionCostCalculator() {
   const currencySymbol = useCurrencySymbol();
   const { data: buyerProfile } = useBuyerProfile();
   
-  const [contractPrice, setContractPrice] = useState(2500000);
+  const [contractPrice, setContractPrice] = useState(2750000);
   const [buyerType, setBuyerType] = useState<BuyerType>('first_time');
   const [constructionMonths, setConstructionMonths] = useState(36);
   const [annualIndexRate, setAnnualIndexRate] = useState(2.5);

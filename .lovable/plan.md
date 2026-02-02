@@ -371,18 +371,18 @@ src/lib/calculations/
 
 ### Critical (Do Before Launch)
 
-1. **Fix Oleh tax bracket in database**: Update `purchase_tax_brackets` table to show 8% (not 5%) for third bracket
+1. ~~**Fix Oleh tax bracket in database**: Update `purchase_tax_brackets` table to show 8% (not 5%) for third bracket~~ ✅ DONE - Fixed 2026-02-02
 
 ### High Priority
 
-2. **Harmonize default property prices**: Align Investment and New Construction to ₪2,750,000
-3. **Standardize interest rates**: Use 5.25% consistently across all tools
+2. ~~**Harmonize default property prices**: Align Investment and New Construction to ₪2,750,000~~ ✅ DONE - Updated both to ₪2,750,000
+3. ~~**Standardize interest rates**: Use 5.25% consistently across all tools~~ ✅ DONE - Investment calc updated to 5.25%
 
 ### Medium Priority
 
-4. **Add contingency buffer** to Renovation Estimator results (10-20% recommendation)
-5. **Enhance Document Checklist** with Hebrew document names
-6. **Add break-even timeline** as prominent feature in Rent vs Buy
+4. ~~**Add contingency buffer** to Renovation Estimator results (10-20% recommendation)~~ ✅ Already implemented - 15% default
+5. ~~**Enhance Document Checklist** with Hebrew document names~~ ✅ Already implemented - Shows Hebrew + transliteration
+6. **Add break-even timeline** as prominent feature in Rent vs Buy (already exists in calculation, could be more prominent)
 
 ### Low Priority (Post-Launch Polish)
 
