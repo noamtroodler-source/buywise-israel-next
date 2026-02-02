@@ -499,12 +499,15 @@ export type Database = {
           created_at: string
           email: string
           email_verified_at: string | null
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
           is_verified: boolean | null
           joined_via: string | null
           languages: string[] | null
           last_active_at: string | null
           license_number: string | null
+          linkedin_url: string | null
           name: string
           neighborhoods_covered: string[] | null
           notify_email: boolean | null
@@ -529,12 +532,15 @@ export type Database = {
           created_at?: string
           email: string
           email_verified_at?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
           last_active_at?: string | null
           license_number?: string | null
+          linkedin_url?: string | null
           name: string
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null
@@ -559,12 +565,15 @@ export type Database = {
           created_at?: string
           email?: string
           email_verified_at?: string | null
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           is_verified?: boolean | null
           joined_via?: string | null
           languages?: string[] | null
           last_active_at?: string | null
           license_number?: string | null
+          linkedin_url?: string | null
           name?: string
           neighborhoods_covered?: string[] | null
           notify_email?: boolean | null

@@ -25,6 +25,9 @@ export interface Agent {
   neighborhoods_covered: string[] | null;
   response_time_hours: number | null;
   is_verified: boolean;
+  linkedin_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
   created_at: string;
   updated_at: string;
 }

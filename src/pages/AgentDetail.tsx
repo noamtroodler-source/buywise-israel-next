@@ -20,8 +20,12 @@ import {
   MapPin,
   FileText,
   ShieldCheck,
-  ArrowLeft
+  ArrowLeft,
+  Linkedin,
+  Instagram,
+  Facebook
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
@@ -245,6 +249,32 @@ export default function AgentDetail() {
                   <Share2 className="h-4 w-4" />
                   Share Profile
                 </Button>
+                {(agent.linkedin_url || agent.instagram_url || agent.facebook_url) && (
+                  <>
+                    <Separator orientation="vertical" className="h-8" />
+                    {agent.linkedin_url && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <a href={agent.linkedin_url} target="_blank" rel="noopener noreferrer">
+                          <Linkedin className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                    {agent.instagram_url && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <a href={agent.instagram_url} target="_blank" rel="noopener noreferrer">
+                          <Instagram className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                    {agent.facebook_url && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <a href={agent.facebook_url} target="_blank" rel="noopener noreferrer">
+                          <Facebook className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
