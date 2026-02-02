@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { GitCompare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCompare, CompareCategory } from '@/contexts/CompareContext';
@@ -9,7 +10,8 @@ interface CompareButtonProps {
   className?: string;
 }
 
-export function CompareButton({ propertyId, category, className }: CompareButtonProps) {
+export const CompareButton = forwardRef<HTMLButtonElement, CompareButtonProps>(
+  function CompareButton({ propertyId, category, className }, ref) {
   const { addToCompare, removeFromCompare, isInCompare } = useCompare();
   const isSelected = isInCompare(propertyId);
 
@@ -26,6 +28,7 @@ export function CompareButton({ propertyId, category, className }: CompareButton
 
   return (
     <Button
+      ref={ref}
       variant="ghost"
       size="icon"
       onClick={handleClick}
@@ -40,4 +43,4 @@ export function CompareButton({ propertyId, category, className }: CompareButton
       <GitCompare className={cn("h-4 w-4", isSelected && "fill-current")} />
     </Button>
   );
-}
+});

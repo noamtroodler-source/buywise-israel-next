@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Share2, Link, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +18,8 @@ interface ShareButtonProps {
   className?: string;
 }
 
-export function ShareButton({ propertyId, propertyTitle, className = "" }: ShareButtonProps) {
+export const ShareButton = forwardRef<HTMLDivElement, ShareButtonProps>(
+  function ShareButton({ propertyId, propertyTitle, className = "" }, ref) {
   const { trackShare } = useShareTracking();
   const propertyUrl = `${window.location.origin}/property/${propertyId}`;
   const shareText = `Check out this property: ${propertyTitle}`;
@@ -70,4 +72,4 @@ export function ShareButton({ propertyId, propertyTitle, className = "" }: Share
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
