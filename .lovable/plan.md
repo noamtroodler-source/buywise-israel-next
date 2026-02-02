@@ -1,51 +1,54 @@
 
-# Plan: Add Social Links Display to Agency Public Profile
+# Plan: Add Social Links to Agent Profiles
 
 ## Overview
-Agencies can already save social links (LinkedIn, Instagram, Facebook) through their settings page, but these links aren't displayed on their public profile page. This plan adds social link icons to the agency detail page, matching the pattern already used on developer profiles.
+Agents currently don't have social link fields in the database or their public profiles. This plan adds LinkedIn, Instagram, and Facebook links for agents, matching the pattern used for developers and agencies.
 
 ## Changes Required
 
-### 1. Update Agency Interface
-**File:** `src/hooks/useAgency.tsx`
+### 1. Database Migration
+Add three new columns to the `agents` table:
+- `linkedin_url` (text, nullable)
+- `instagram_url` (text, nullable)  
+- `facebook_url` (text, nullable)
 
-Add `social_links` to the Agency interface:
+This follows the same pattern as the `developers` table (individual URL columns rather than JSONB like agencies).
+
+### 2. Update Agent Interface
+**File:** `src/hooks/useAgent.tsx`
+
+Add to the Agent interface:
 ```typescript
-export interface Agency {
-  // ... existing fields
-  social_links?: {
-    linkedin?: string;
-    instagram?: string;
-    facebook?: string;
-  } | null;
-}
+linkedin_url: string | null;
+instagram_url: string | null;
+facebook_url: string | null;
 ```
 
-### 2. Update Agency Detail Page
-**File:** `src/pages/AgencyDetail.tsx`
+### 3. Update Agent Detail Page
+**File:** `src/pages/AgentDetail.tsx`
 
-Add social link icon buttons next to the existing contact buttons in the hero card, following the same pattern used in `DeveloperDetail.tsx`:
-
+Add social link icon buttons after the Share button in the contact section:
 - Import Linkedin, Instagram, Facebook icons from lucide-react
-- Add a visual separator between contact buttons and social icons
-- Display social link icon buttons (ghost variant, icon-only) for any links that exist
+- Import Separator component
+- Add ghost icon buttons for each social link that exists
 
-**Location in UI:** After the Share button in the contact actions row
+**Visual placement:** After the "Share Profile" button with a vertical separator
 
-**Visual treatment:**
-- Small ghost icon buttons (h-8 w-8)
-- Opens in new tab with proper rel attributes
-- Only shows icons that have URLs configured
-
-## Visual Example
 ```
-[Website] [Call] [Email] [Share] | [LinkedIn] [Instagram] [Facebook]
-                                   ↑ Only shows if configured
+[WhatsApp] [Email] [Share Profile] | [LinkedIn] [Instagram] [Facebook]
 ```
 
-## No Database Changes Required
-The `social_links` column already exists in the agencies table and agencies can already save their social links through settings.
+## Summary
+| Entity | Database Status | Display Status |
+|--------|-----------------|----------------|
+| Developers | ✅ Has columns | ✅ Already displays |
+| Agencies | ✅ Has social_links JSONB | ✅ Just added display |
+| Agents | ❌ Needs columns | ❌ Needs display |
 
 ## Files to Modify
-1. `src/hooks/useAgency.tsx` - Add social_links to interface
-2. `src/pages/AgencyDetail.tsx` - Display social link icons
+1. **Database** - Add 3 columns to agents table
+2. `src/hooks/useAgent.tsx` - Add to interface
+3. `src/pages/AgentDetail.tsx` - Add social link icons
+
+## Note
+Developers already have social links fully working - no changes needed there.
