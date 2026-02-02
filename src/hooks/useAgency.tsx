@@ -14,6 +14,11 @@ export interface Agency {
   is_verified: boolean;
   cities_covered: string[] | null;
   specializations: string[] | null;
+  social_links?: {
+    linkedin?: string;
+    instagram?: string;
+    facebook?: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
-import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft, FileText } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft, FileText, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { useAgency, useAgencyAgents, useAgencyListings, useAgencyStats } from '@/hooks/useAgency';
@@ -213,6 +214,33 @@ export default function AgencyDetail() {
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
+                  {/* Social Links */}
+                  {(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook) && (
+                    <>
+                      <Separator orientation="vertical" className="h-6 mx-1" />
+                      {agency.social_links?.linkedin && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                          <a href={agency.social_links.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                            <Linkedin className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                      {agency.social_links?.instagram && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                          <a href={agency.social_links.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                            <Instagram className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                      {agency.social_links?.facebook && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                          <a href={agency.social_links.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                            <Facebook className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
