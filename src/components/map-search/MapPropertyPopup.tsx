@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Popup } from '@/vendor/react-leaflet';
+import { Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { Property } from '@/types/database';
 import { Button } from '@/components/ui/button';

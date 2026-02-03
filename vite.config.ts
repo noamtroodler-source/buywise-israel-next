@@ -9,10 +9,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  // Workaround: ensure Vite doesn't keep a stale pre-bundled react-leaflet build.
-  // react-leaflet v5 expects React 19 (uses React.use), but this app is on React 18.
+  // Force Vite to re-optimize dependencies (clears stale cache)
   optimizeDeps: {
-    exclude: ["react-leaflet", "@react-leaflet/core"],
+    force: true,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
