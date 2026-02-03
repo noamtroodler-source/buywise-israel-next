@@ -271,8 +271,8 @@ export default function Listings() {
           />
         </div>
 
-        {/* Results Count */}
-        {!isLoading && (
+        {/* Results Count - Mobile only (desktop count is inline in filter bar) */}
+        {!isLoading && isMobile && (
           <p className="text-sm text-muted-foreground mb-4">
             Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
           </p>

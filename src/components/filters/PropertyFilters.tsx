@@ -264,24 +264,26 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     });
   };
 
-  // Filter button base styles
-  const filterButtonBase = "h-11 min-h-[44px] gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all active:scale-[0.98] touch-manipulation";
+  // Filter button base styles - Primary (higher visual weight)
+  const filterButtonBase = "h-10 min-h-[40px] gap-1.5 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-3.5 font-medium transition-all active:scale-[0.98] touch-manipulation";
   const filterButtonActive = "bg-primary text-primary-foreground border-primary";
+  // Secondary filter styling - lighter weight for less important filters
+  const filterButtonSecondary = "h-10 min-h-[40px] gap-1.5 rounded-full border-0 bg-transparent hover:bg-muted/50 px-3 font-normal text-muted-foreground transition-all active:scale-[0.98] touch-manipulation";
 
   return (
     <TooltipProvider>
       <>
         {/* Main Filters Row - Single row on desktop */}
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY */}
+          {/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY - Smaller, more subtle */}
           {showSoldToggle && !isMobile && (
-            <div className="flex items-center rounded-full border border-border/60 bg-background shadow-sm overflow-hidden mr-1">
+            <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
               <button
                 className={cn(
-                  "px-4 py-2.5 text-sm font-medium transition-all",
+                  "px-3 py-1.5 text-sm font-medium transition-all",
                   !isSoldView 
                     ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => onSoldToggle?.(false)}
               >
@@ -289,10 +291,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </button>
               <button
                 className={cn(
-                  "px-4 py-2.5 text-sm font-medium transition-all",
+                  "px-3 py-1.5 text-sm font-medium transition-all",
                   isSoldView 
                     ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 onClick={() => onSoldToggle?.(true)}
               >
@@ -559,13 +561,13 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </Popover>
           )}
 
-          {/* Desktop: Property Type */}
+          {/* Desktop: Property Type - Secondary styling (lighter weight) */}
           {!isMobile && (
           <Popover open={typeOpen} onOpenChange={setTypeOpen}>
             <PopoverTrigger asChild>
               <Button 
-                variant="outline" 
-                className={cn(filterButtonBase, typeOpen && filterButtonActive)}
+                variant="ghost" 
+                className={cn(filterButtonSecondary, filters.property_types?.length && "text-foreground font-medium", typeOpen && "bg-muted/50")}
               >
                 <Building2 className="h-4 w-4" />
                 <span>Type</span>
@@ -615,11 +617,11 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
           </Popover>
           )}
 
-          {/* Desktop: More Filters */}
+          {/* Desktop: More Filters - Secondary styling (lighter weight) */}
           {!isMobile && (
             <Button 
-              variant="outline"
-              className={cn(filterButtonBase)}
+              variant="ghost"
+              className={cn(filterButtonSecondary)}
               onClick={() => setMoreFiltersOpen(true)}
             >
               <SlidersHorizontal className="h-4 w-4" />
@@ -627,22 +629,33 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
-          {/* Clear All Filters - Desktop only */}
-          {hasActiveFilters && !isMobile && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
-              onClick={clearAllFilters}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span>Clear</span>
-            </Button>
+          {/* Inline Results Count - Desktop only */}
+          {!isMobile && previewCount !== undefined && (
+            <span className="text-sm text-muted-foreground whitespace-nowrap px-2">
+              {isCountLoading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin inline" />
+              ) : (
+                <>{previewCount} {previewCount === 1 ? 'property' : 'properties'}</>
+              )}
+            </span>
           )}
 
           {/* Desktop: Sort & Create Alert pushed to the right */}
           {!isMobile && (
             <div className="flex items-center gap-2 ml-auto">
+              {/* Clear All Filters */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1 text-muted-foreground hover:text-foreground px-2"
+                  onClick={clearAllFilters}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span className="text-xs">Clear</span>
+                </Button>
+              )}
+
               {/* Sort */}
               <div className="flex items-center gap-1">
                 <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
@@ -650,7 +663,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <PopoverTrigger asChild>
                     <Button 
                       variant="ghost" 
-                      className="h-11 gap-1 px-2 font-medium hover:bg-muted/50"
+                      className="h-10 gap-1 px-2 font-medium hover:bg-muted/50"
                     >
                       <span>{getSortLabel()}</span>
                       <ChevronDown className="h-4 w-4" />
@@ -679,20 +692,19 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 </Popover>
               </div>
 
-              {/* Subtle Separator */}
+              {/* Create Alert Button - Icon only with tooltip */}
               {onCreateAlert && (
-                <div className="h-6 w-px bg-border/60" />
-              )}
-
-              {/* Create Alert Button */}
-              {onCreateAlert && (
-                <Button 
-                  onClick={handleCreateAlertClick}
-                  className="h-11 gap-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 px-5 font-medium shadow-sm"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span>Create Alert</span>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={handleCreateAlertClick}
+                      className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm p-0"
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Create search alert</TooltipContent>
+                </Tooltip>
               )}
             </div>
           )}
