@@ -1,239 +1,228 @@
 
-# Map Search Improvements: Smart City Defaults + Zillow-Style Card Grid
 
-## Overview
-Transform the map search experience with two major improvements:
-1. **Smart city selection** - Automatically center the map on a relevant city based on user history
-2. **Zillow-style property grid** - Replace single-column cards with a 2-column grid using the same `PropertyCard` component from the grid listings page
+# Map Toolbar Redesign: Cleaner, Compact, Zillow-Inspired
 
----
+## Current Issues Identified
 
-## Part 1: Smart City Selection
+Looking at the screenshot, the current toolbar has several design problems:
 
-### Current Problem
-When users visit `/map`, they see all of Israel zoomed out (zoom level 8), which isn't useful for browsing properties.
+1. **Excessive Vertical Spacing** - Each button group is wrapped in its own container with gaps between them, creating too much whitespace
+2. **Fragmented Grouping** - Related functions are in separate containers (zoom together, but location alone; layers together, but keyboard alone)
+3. **Visual Noise** - Every single group has its own rounded corners, border, and shadow creating a cluttered appearance
+4. **No Clear Hierarchy** - All buttons look equally important despite having different usage frequencies
 
-### Solution: City Priority System
-The map will automatically determine the best city to show based on this priority order:
+## Design Solution
 
-1. **URL Parameter** - If `?city=Tel Aviv` is in URL, use that city
-2. **Recent Session City** - If user searched a city during this session, use the most recent one
-3. **User's Saved Preference** - For logged-in users, use their most frequently searched city from database
-4. **localStorage History** - For guests, use their last searched city stored locally
-5. **Fallback Empty State** - Show a friendly "Select a City" prompt (like Zillow screenshot)
+### Core Principles
 
-### New Hook: useRecentSearchCity
-```typescript
-// src/hooks/useRecentSearchCity.ts
-- Checks localStorage for 'bw_last_search_city'
-- For logged-in users, queries search_analytics for most common city
-- Returns { city, isLoading } or null if no history
-```
+Following Zillow/Google Maps best practices:
+- **Consolidate related tools** into fewer visual groups
+- **Reduce container overhead** - fewer boxes, less visual noise
+- **Smaller, tighter spacing** - compact footprint without sacrificing touch targets
+- **Clear visual hierarchy** - primary actions more prominent
+- **Consistent styling** - match BuyWise design language
 
-### localStorage Key
-```typescript
-const LAST_CITY_KEY = 'bw_last_search_city';
-// Format: { city: string, timestamp: number }
-```
+### New Structure: 3 Logical Groups
 
-### Auto-Save City on Search
-When user selects a city filter (on grid or map), automatically save to localStorage.
-
----
-
-## Part 2: Empty State for No City Selected
-
-When the smart city system can't find a previous city (new user, first visit), show a friendly empty state panel.
-
-### Design (Inspired by Zillow Screenshot)
 ```text
-+----------------------------------------------+
-|                                              |
-|  [Map Icon]                                  |
-|                                              |
-|  Where would you like to search?             |
-|                                              |
-|  [City Search Input with autocomplete]       |
-|                                              |
-|  ─────────── or ───────────                  |
-|                                              |
-|  Popular Cities:                             |
-|  [Tel Aviv] [Jerusalem] [Herzliya]           |
-|  [Ra'anana] [Netanya] [Haifa]               |
-|                                              |
-|  ─────────────────────────────               |
-|                                              |
-|  SEARCH TIPS                                 |
-|  • Enter a city name to see properties       |
-|  • Use filters to narrow your search         |
-|  • Draw on the map to search custom areas    |
-|                                              |
-+----------------------------------------------+
++-------+
+| +   - |  Group 1: Navigation (Zoom + Location + Reset)
+| O   R |  4 buttons in a 2x2 grid
++-------+
+         
++-------+
+| D   S |  Group 2: Tools & Layers (Draw, Saved, Train, Heatmap)
+| T   H |  4 buttons in a 2x2 grid
++-------+
+         
++-------+
+| Share |  Group 3: Utility (Share, Keyboard on desktop)
+| Keys? |  1-2 buttons stacked
++-------+
 ```
 
-### New Component
-```typescript
-// src/components/map-search/MapEmptyState.tsx
-interface MapEmptyStateProps {
-  onCitySelect: (city: string, coordinates: { lat: number; lng: number }) => void;
-}
-```
+### Key Changes
+
+| Before | After |
+|--------|-------|
+| 7 separate containers | 3 consolidated groups |
+| 9 visible buttons spread vertically | Same buttons, 2x2 grid layout |
+| Large gaps between groups | Tight 6px gaps |
+| Each group has own shadow | Subtle, unified shadows |
+| Individual rounded corners everywhere | Clean rounded corners on group edges |
 
 ---
 
-## Part 3: Zillow-Style 2-Column Property Grid
+## Technical Implementation
 
-### Current Issue
-The map sidebar uses `MapPropertyCard` - a compact horizontal card that differs from the main grid.
+### 1. Consolidated Button Groups
 
-### Solution
-Replace with the actual `PropertyCard` component used on `/listings` grid, arranged in a 2-column layout.
+Instead of wrapping each 1-2 buttons in separate containers:
 
-### Changes to MapPropertyList
-
-**Before (single column, different card):**
 ```tsx
-<div className="p-3 space-y-3">
-  {properties.map(property => (
-    <MapPropertyCard property={property} ... />
-  ))}
+// BEFORE (current - many containers)
+<div className="bg-background rounded-lg shadow-md border">
+  <Button>Zoom In</Button>
+  <Button>Zoom Out</Button>
+</div>
+<div className="bg-background rounded-lg shadow-md border">
+  <Button>Location</Button>
+</div>
+// ... 5 more containers
+
+// AFTER (consolidated 2x2 grids)
+<div className="bg-background rounded-lg shadow-sm border p-1">
+  <div className="grid grid-cols-2 gap-0.5">
+    <Button>Zoom In</Button>
+    <Button>Zoom Out</Button>
+    <Button>Location</Button>
+    <Button>Reset</Button>
+  </div>
 </div>
 ```
 
-**After (2-column grid, same PropertyCard):**
+### 2. Button Styling Updates
+
 ```tsx
-<div className="p-3 grid grid-cols-2 gap-3">
-  {properties.map(property => (
-    <PropertyCard 
-      property={property} 
-      compact 
-      showCompareButton={false}
-      showShareButton={false}
-      maxBadges={1}
-    />
-  ))}
-</div>
+// Smaller, consistent buttons
+className="h-8 w-8 rounded-md"  // Was h-9 w-9
+
+// Cleaner hover state
+className="hover:bg-accent/50"  // Subtle background change
+
+// Active state (layer toggles)
+className={cn(
+  "h-8 w-8 rounded-md transition-colors",
+  isActive && "bg-primary text-primary-foreground"  // More obvious active state
+)}
 ```
 
-### Benefits
-- **Consistency** - Same card design on grid and map pages
-- **Feature Parity** - Image carousel, badges, favorites all work the same
-- **Zillow-Style** - Larger cards with images displayed in a grid layout
-- **No Duplicate Code** - Reuse existing `PropertyCard` component
+### 3. Reduced Visual Weight
 
-### Card Hover Sync
-Add hover state sync between sidebar cards and map markers:
-- Wrap `PropertyCard` in a div with `onMouseEnter`/`onMouseLeave` handlers
-- When card is hovered, highlight corresponding map marker
+```tsx
+// Container styling - lighter shadows, thinner borders
+className="bg-background/95 backdrop-blur-sm rounded-lg shadow-sm border"
+
+// Tighter gaps between groups
+className="flex flex-col gap-1.5"  // Was gap-1 but with more containers
+```
+
+### 4. Icon Size Optimization
+
+```tsx
+// Slightly smaller icons for tighter layout
+<ZoomIn className="h-3.5 w-3.5" />  // Was h-4 w-4
+```
+
+### 5. Mobile Optimization
+
+On mobile, toolbar buttons need adequate touch targets:
+```tsx
+// Mobile: slightly larger
+className={cn(
+  "rounded-md transition-colors",
+  isMobile ? "h-10 w-10" : "h-8 w-8"
+)}
+```
 
 ---
 
-## Part 4: Enhanced Filter Bar
+## Visual Comparison
 
-### Goal
-Show the same filters available on the grid page, not just a simplified version.
-
-### Changes to MapFiltersBar
-Add inline filter buttons that match the grid page:
-- **City search** (prominent, with search icon)
-- **Price dropdown**
-- **Beds & Baths dropdown** 
-- **Property Type dropdown**
-- **More Filters button** (opens full filter sheet)
-- **Sort dropdown** (pushed to right side)
-
-### Layout
+### Before (Current)
 ```text
-[Buy|Rent] [City ▼] [Price ▼] [Beds/Baths ▼] [Type ▼] [More ▼]     [Sort ▼] [View Toggle]
++-------+     ← Zoom container
+| +   - |
++-------+
+
++-------+     ← Location container  
+|   O   |
++-------+
+
++-------+     ← Draw container
+|   D   |
++-------+
+
++-------+     ← Layers container
+| T   H |
++-------+
+
++-------+     ← Share container
+|  <>   |
++-------+
+
++-------+     ← Keyboard container
+|   ?   |
++-------+
+
++-------+     ← Reset container
+|  []   |
++-------+
 ```
 
-On mobile, keep the existing condensed approach with full-screen filter sheet.
+### After (Redesigned)
+```text
++-------+     ← Navigation group (compact 2x2)
+| + | - |
+|---|---|
+| O | R |
++-------+
+  6px gap
++-------+     ← Tools & Layers group (compact 2x2)
+| D | S |
+|---|---|
+| T | H |
++-------+
+  6px gap
++---+         ← Utility group (stacked)
+|<>?|
++---+
+```
 
 ---
 
-## Implementation Files
+## Files to Modify
 
-### New Files
-| File | Purpose |
-|------|---------|
-| `src/hooks/useRecentSearchCity.ts` | Get/save user's recent city |
-| `src/components/map-search/MapEmptyState.tsx` | Empty state when no city |
-
-### Modified Files
 | File | Changes |
 |------|---------|
-| `MapSearchLayout.tsx` | Add smart city logic, show empty state |
-| `MapPropertyList.tsx` | Convert to 2-column grid using `PropertyCard` |
-| `MapFiltersBar.tsx` | Add full filter set like grid page |
-| `PropertyFilters.tsx` | Save selected city to localStorage |
-| `Listings.tsx` | Save selected city to localStorage |
+| `src/components/map-search/MapToolbar.tsx` | Restructure into 3 groups, 2x2 grid layout, smaller buttons |
+| `src/components/map-search/MapShareButton.tsx` | Remove container wrapper (toolbar provides it now) |
+| `src/index.css` | Add `.map-toolbar-group` and `.map-toolbar-btn` utility classes |
 
 ---
 
-## Technical Details
+## Additional Improvements
 
-### City Coordinates Lookup
-The `cities` table includes `center_lat` and `center_lng` columns for map centering.
+### Tooltip Enhancements
+- Show keyboard shortcut in parentheses: "Zoom in (+)"
+- Faster tooltip delay on desktop
 
-```sql
--- Example: Get city center for map focus
-SELECT name, center_lat, center_lng 
-FROM cities 
-WHERE name = 'Tel Aviv';
+### Clear Drawing Button
+When a polygon is drawn, show a small red X badge on the draw button rather than adding an extra button:
+```tsx
+// Badge indicator instead of separate button
+<Button className="relative">
+  <PenTool className="h-3.5 w-3.5" />
+  {hasDrawnPolygon && (
+    <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full flex items-center justify-center">
+      <X className="h-2 w-2 text-white" />
+    </span>
+  )}
+</Button>
 ```
 
-### Smart Zoom Level
-- City selected: zoom to level 13 (neighborhood view)
-- No city: show empty state overlay instead of zoomed-out Israel
-
-### localStorage Format
-```typescript
-interface RecentCity {
-  name: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
-}
-```
-
-### Database Query for Frequent City (logged-in users)
-```sql
-SELECT cities[1] as city, COUNT(*) as search_count
-FROM search_analytics
-WHERE user_id = $1 AND cities IS NOT NULL
-GROUP BY cities[1]
-ORDER BY search_count DESC
-LIMIT 1;
-```
+### Conditional Buttons
+- Saved locations button: Only show when user has saved locations (already implemented)
+- Keyboard shortcuts button: Only on desktop (already implemented)
 
 ---
 
-## User Flows
+## Expected Result
 
-### First-Time Visitor
-1. User visits `/map`
-2. No city history found
-3. Shows MapEmptyState with city picker
-4. User selects "Tel Aviv"
-5. Map centers on Tel Aviv, city saved to localStorage
-6. Properties load in 2-column grid
+The redesigned toolbar will:
+- Take up approximately 40% less vertical space
+- Have a cleaner, more professional appearance matching BuyWise design
+- Provide better visual grouping of related functions
+- Maintain full accessibility with proper ARIA labels and focus states
+- Work well on both desktop and mobile with appropriate sizing
 
-### Returning Visitor
-1. User visits `/map`
-2. localStorage has "Ra'anana" as last city
-3. Map auto-centers on Ra'anana (zoom 13)
-4. Properties load immediately
-
-### Logged-In User with Search History
-1. User visits `/map`
-2. Query finds they search "Jerusalem" most often
-3. Map centers on Jerusalem
-4. Properties load in 2-column grid
-
----
-
-## Mobile Considerations
-
-- Empty state displays in full mobile view
-- 2-column grid becomes 1-column on mobile (for the split/list views)
-- City picker uses native-feeling input with suggestions
