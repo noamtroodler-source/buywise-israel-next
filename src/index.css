@@ -234,3 +234,146 @@
     transform: scale(1);
   }
 }
+
+/* =========================
+   Map Marker Styles
+   ========================= */
+
+/* Property price markers */
+.property-marker {
+  white-space: nowrap;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid transparent;
+}
+
+.property-marker.for-sale {
+  background: hsl(213 94% 45%);
+  color: white;
+}
+
+.property-marker.for-rent {
+  background: hsl(142 76% 36%);
+  color: white;
+}
+
+.property-marker.hovered,
+.property-marker.selected {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-color: white;
+  z-index: 1000 !important;
+}
+
+/* Cluster markers */
+.cluster-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: hsl(213 94% 45%);
+  color: white;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 200ms ease;
+  border: 3px solid white;
+}
+
+.cluster-marker:hover {
+  transform: scale(1.08);
+}
+
+.cluster-marker.small {
+  width: 50px;
+  height: 50px;
+}
+
+.cluster-marker.medium {
+  width: 65px;
+  height: 65px;
+}
+
+.cluster-marker.large {
+  width: 80px;
+  height: 80px;
+}
+
+.cluster-marker .cluster-count {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cluster-marker.small .cluster-count {
+  font-size: 13px;
+}
+
+.cluster-marker.medium .cluster-count {
+  font-size: 15px;
+}
+
+.cluster-marker.large .cluster-count {
+  font-size: 18px;
+}
+
+.cluster-marker .cluster-price {
+  opacity: 0.9;
+  line-height: 1.2;
+}
+
+.cluster-marker.small .cluster-price {
+  font-size: 9px;
+}
+
+.cluster-marker.medium .cluster-price {
+  font-size: 10px;
+}
+
+.cluster-marker.large .cluster-price {
+  font-size: 11px;
+}
+
+/* Leaflet popup overrides */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 280px;
+}
+
+.leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 18px !important;
+}
+
+/* Saved location markers */
+.saved-location-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: hsl(270 60% 50%);
+  color: white;
+  border-radius: 9999px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 200ms ease;
+}
+
+.saved-location-marker:hover {
+  transform: scale(1.1);
+}

@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PropertyFilters as PropertyFiltersType } from '@/types/database';
 import { MapFilterDialog } from './MapFilterDialog';
+import { ViewToggle } from '@/components/filters/ViewToggle';
 import { 
   SlidersHorizontal, 
-  List, 
   MapPin, 
   Loader2,
   X,
@@ -88,13 +88,8 @@ export function MapFiltersBar({
           
           <Separator orientation="vertical" className="h-6 hidden sm:block" />
           
-          {/* List View Link */}
-          <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-            <Link to={`/listings?status=${urlStatus}`}>
-              <List className="h-4 w-4 mr-2" />
-              List View
-            </Link>
-          </Button>
+          {/* View Toggle - Grid/Map */}
+          <ViewToggle activeView="map" className="hidden sm:flex" />
         </div>
 
         {/* Center: Result count */}
