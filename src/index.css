@@ -359,6 +359,29 @@
   transition: all 200ms ease;
 }
 
+/* =========================
+   Leaflet z-index fixes for dialogs/modals
+   ========================= */
+
+/* Ensure Leaflet controls don't appear above dialogs/modals */
+.leaflet-control-container {
+  z-index: 40 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 40 !important;
+}
+
+.leaflet-control {
+  z-index: 40 !important;
+}
+
+/* Leaflet-Geoman toolbar should also respect dialog z-index */
+.leaflet-pm-toolbar {
+  z-index: 40 !important;
+}
+
 /* Leaflet popup overrides */
 .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
