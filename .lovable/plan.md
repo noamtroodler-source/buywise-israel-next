@@ -1,372 +1,368 @@
 
-
-# Phase 3: Draw to Search and City/Neighborhood Overlays
+# Phase 4: BuyWise Exclusive Features
 
 ## Overview
 
-This phase adds powerful spatial filtering tools to the map search:
-1. **Draw-to-Search Tools** - Rectangle and freehand polygon drawing for custom area filtering
-2. **City Overlay Layer** - Clickable city markers when zoomed out that zoom into that city
-3. **Neighborhood Overlay** - Clickable neighborhood chips when zoomed into a city
-4. **Polygon-based Filtering** - Filter properties that fall within drawn shapes
+This phase adds the unique BuyWise features that differentiate the map search from competitors:
+1. **Enhanced Saved Locations Layer** - Interactive commute lines from property to saved locations
+2. **Commute Time Visualization** - Lines and time bubbles on property click
+3. **Train Station Layer** - Toggle to show train stations on map
+4. **Market Context Overlay** - Price-per-sqm heatmap toggle
 
 ---
 
-## Part 1: Draw-to-Search Implementation
+## Part 1: Enhanced Saved Locations with Commute Lines
 
-### Approach: Leaflet-Geoman
-We'll use `@geoman-io/leaflet-geoman-free` (MIT licensed) for drawing capabilities. It supports:
-- Rectangle drawing
-- Freehand polygon drawing  
-- Circle drawing (radius-based search)
-- Edit/delete of drawn shapes
+### Current State
+- `SavedLocationsLayer.tsx` shows purple markers for saved locations
+- `SavedLocationsSection.tsx` calculates distances using Haversine formula
+- Travel time formulas already exist: walk (12 min/km), transit (1.8 min/km + 10), drive (1.2 min/km + 2)
 
-### New Component: DrawControl.tsx
+### Enhancement: CommuteLines Component
+When a property is selected, draw lines from the property to each saved location with travel time labels.
 
-**Location:** `src/components/map-search/DrawControl.tsx`
+**New Component:** `src/components/map-search/CommuteLines.tsx`
 
-**Features:**
-- Toolbar buttons: Rectangle, Freehand, Circle, Clear
-- Integrates with Leaflet via `useMap()` hook
-- Fires callback with GeoJSON polygon when shape is completed
-- Disables "Search as I move" when a shape is active
-- Visual feedback during drawing
-
-### State Flow
-1. User clicks "Draw" in toolbar, selects mode (Rectangle/Freehand/Circle)
-2. Drawing mode activates on map
-3. User draws shape
-4. Shape completion fires event with polygon coordinates
-5. MapSearchLayout receives polygon and adds to filters
-6. Properties are filtered by point-in-polygon check
-
-### Filter Integration
-Add new filter type to `PropertyFilters`:
-```typescript
-polygon?: [number, number][]; // Array of [lng, lat] coordinates
-```
-
-Update `usePaginatedProperties` to handle polygon filtering client-side (Supabase doesn't support native polygon filtering without PostGIS extensions).
-
----
-
-## Part 2: City Overlay Layer
-
-### Purpose
-When zoomed out (zoom < 10), show clickable city markers that:
-- Display city name
-- Show property count in that city
-- Click to zoom into the city
-
-### New Component: CityOverlay.tsx
-
-**Location:** `src/components/map-search/CityOverlay.tsx`
-
-**Features:**
-- Fetches cities with coordinates from database
-- Renders city markers only when zoom < 10
-- Each marker shows: city name + property count badge
-- Click handler zooms map to city center at zoom 13
-- Optional: Show average price per city
+Features:
+- Render `Polyline` from selected property to each saved location
+- Travel time badge at midpoint of each line
+- Color-coded by mode (walk: green, transit: blue, drive: gray)
+- Lines appear only when a property is selected
+- Fade animation on appear/disappear
 
 ### Visual Design
-- Clean pill-shaped labels (similar to Google Maps)
-- White background with subtle shadow
-- City name in dark text
-- Property count as small badge
+```
+Property ---- 15 min (car) ---- Saved Location (Work)
+   |
+   ---- 25 min (transit) ---- Saved Location (Parents)
+```
+
+- Dashed lines with gradient
+- Midpoint bubble showing travel time
+- Purple destination markers (existing)
+- Subtle animation on line appearance
+
+---
+
+## Part 2: Train Station Layer
 
 ### Data Source
-Uses existing `useCities()` hook which already fetches city data including `center_lat` and `center_lng`.
+Cities table already has `has_train_station` boolean and `center_lat`/`center_lng` coordinates.
 
----
+We'll use Israel Railways station data. Create a static data file with known train stations:
 
-## Part 3: Neighborhood Selection
-
-### Purpose
-When zoomed into a city (zoom >= 12), show clickable neighborhood chips that filter results.
-
-### Data Structure
-Neighborhoods are stored as JSONB in the `cities` table:
-```json
-[
-  { "name": "North Ra'anana", "description": "New developments and villas" },
-  { "name": "City Center", "description": "Close to amenities" }
-]
-```
-
-### New Component: NeighborhoodOverlay.tsx
-
-**Location:** `src/components/map-search/NeighborhoodOverlay.tsx`
-
-**Features:**
-- Detects when user is zoomed into a specific city
-- Shows horizontal scrollable chip bar of neighborhoods
-- Multi-select capability (click multiple neighborhoods)
-- Selected neighborhoods filter property list
-- Clear selection button
-
-### Implementation
-1. When map bounds are within a city's area (check against city center + radius)
-2. Show that city's neighborhoods as filter chips
-3. Clicking a chip adds `neighborhoods: ['North Ra'anana']` to filters
-4. `usePaginatedProperties` already supports `neighborhood` filter
-
----
-
-## Part 4: MapToolbar Enhancement
-
-### Updates to MapToolbar.tsx
-
-Add new draw tool buttons:
-- **Draw button group:**
-  - Rectangle icon - draw rectangular area
-  - Pencil icon - freehand polygon
-  - Circle icon - radius-based area
-- **Clear Drawing** - appears when a shape exists
-- Visual state for active drawing mode
-
-### Button Layout
-```
-[Zoom +]
-[Zoom -]
-------
-[Locate Me]
-[Saved Places]
-------
-[Draw Menu ▼]  <- New dropdown with Rectangle, Freehand, Circle options
-[Clear Draw]   <- Only shows when drawing exists
-------
-[Reset View]
-```
-
----
-
-## Part 5: Client-Side Polygon Filtering
-
-### Point-in-Polygon Algorithm
-Since Supabase doesn't have native spatial queries, we'll filter client-side:
+**New File:** `src/data/trainStations.ts`
 
 ```typescript
-// Check if a point is inside a polygon using ray-casting algorithm
-function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i][0], yi = polygon[i][1];
-    const xj = polygon[j][0], yj = polygon[j][1];
-    if (((yi > point[1]) !== (yj > point[1])) &&
-        (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi)) {
-      inside = !inside;
-    }
-  }
-  return inside;
+export interface TrainStation {
+  id: string;
+  name: string;
+  nameHe: string;
+  latitude: number;
+  longitude: number;
+  lines: string[]; // e.g., ['Tel Aviv - Beer Sheva', 'Coastal Line']
 }
+
+export const TRAIN_STATIONS: TrainStation[] = [
+  // Major stations with coordinates
+  { id: 'tlv-hashalom', name: 'Tel Aviv HaShalom', ... },
+  { id: 'herzliya', name: 'Herzliya', ... },
+  // etc.
+];
 ```
 
-### Integration
-In `MapSearchLayout`, when a polygon is active:
-1. Fetch all properties within map bounds (existing behavior)
-2. Apply additional client-side filter using point-in-polygon
-3. Only show properties that fall within the drawn shape
+### New Component: TrainStationLayer.tsx
+
+**Location:** `src/components/map-search/TrainStationLayer.tsx`
+
+Features:
+- Toggle visibility from MapToolbar
+- Train icon markers at each station
+- Click to show station name and lines
+- Only show when zoom >= 11 (city level)
+- Marker style: white background with train icon
+
+### MapToolbar Update
+Add train station toggle button next to saved locations toggle.
 
 ---
 
-## CSS Additions to index.css
+## Part 3: Market Context Overlay (Price Heatmap)
 
-```css
-/* Draw control styles */
-.draw-toolbar-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
-  transition: all 200ms;
-}
+### Data Source
+Cities have `average_price_sqm` data. We'll create a choropleth-style overlay.
 
-.draw-toolbar-button:hover {
-  background: hsl(210 40% 96%);
-}
+### Implementation Approach
+Since we don't have precise city boundary polygons, use a circle-based heatmap:
+- Center circles on city coordinates
+- Color by price-per-sqm (green = affordable, yellow = moderate, red = expensive)
+- Opacity overlay, subtle enough not to obstruct map
 
-.draw-toolbar-button.active {
-  background: hsl(213 94% 45%);
-  color: white;
-}
+**New Component:** `src/components/map-search/PriceHeatmapLayer.tsx`
 
-/* City overlay markers */
-.city-overlay-marker {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: white;
-  border-radius: 9999px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
-  transition: transform 200ms, box-shadow 200ms;
-  white-space: nowrap;
-}
+Features:
+- Circular overlays on each city with coordinates
+- Color scale: 
+  - Green: < ₪30,000/sqm
+  - Yellow: ₪30,000-50,000/sqm
+  - Orange: ₪50,000-70,000/sqm
+  - Red: > ₪70,000/sqm
+- Very low opacity (0.15-0.2) to not obstruct view
+- Legend in corner showing price ranges
+- Toggle on/off from toolbar
 
-.city-overlay-marker:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.city-overlay-marker .city-name {
-  font-weight: 600;
-  font-size: 13px;
-  color: hsl(222 47% 11%);
-}
-
-.city-overlay-marker .city-count {
-  font-size: 11px;
-  background: hsl(213 94% 45%);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 9999px;
-}
-
-/* Neighborhood chip bar */
-.neighborhood-bar {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: calc(100% - 32px);
-  overflow-x: auto;
-}
-
-.neighborhood-chip {
-  padding: 6px 12px;
-  background: hsl(210 40% 96%);
-  border-radius: 9999px;
-  font-size: 13px;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 200ms;
-}
-
-.neighborhood-chip:hover {
-  background: hsl(210 40% 90%);
-}
-
-.neighborhood-chip.selected {
-  background: hsl(213 94% 45%);
-  color: white;
-}
-
-/* Drawn shape styles */
-.leaflet-pm-shape {
-  fill-opacity: 0.2 !important;
-  stroke-width: 2 !important;
-}
-```
+### MapToolbar Update
+Add heatmap toggle button with gradient icon.
 
 ---
 
-## Files Summary
+## Part 4: Enhanced Property Popup with Commute Info
+
+### Enhancement to MapPropertyPopup.tsx
+When a property is selected and user has saved locations:
+- Show mini commute section in popup
+- Display closest saved location with travel time
+- "See all commutes" expands to full list
+
+---
+
+## Part 5: Quick Commute Filter
+
+### New Feature: "Within X minutes of [Location]"
+Add a filter option to find properties within a certain commute time of a saved location.
+
+**Implementation:**
+- New filter in MapFiltersBar: "Near my places" dropdown
+- Select saved location + max time (15/30/45/60 min)
+- Filter properties by calculated distance
+- Uses existing travel time formula
+
+---
+
+## File Summary
 
 ### New Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/components/map-search/DrawControl.tsx` | Draw toolbar and Leaflet-Geoman integration |
-| `src/components/map-search/CityOverlay.tsx` | City markers when zoomed out |
-| `src/components/map-search/NeighborhoodChips.tsx` | Neighborhood filter chips when zoomed in |
-| `src/lib/utils/geometry.ts` | Point-in-polygon and geometry utilities |
+| `src/components/map-search/CommuteLines.tsx` | Lines from property to saved locations |
+| `src/components/map-search/TrainStationLayer.tsx` | Train station markers |
+| `src/components/map-search/PriceHeatmapLayer.tsx` | Price-per-sqm heatmap overlay |
+| `src/components/map-search/HeatmapLegend.tsx` | Legend for price heatmap |
+| `src/data/trainStations.ts` | Static train station data |
+| `src/components/map-search/CommuteFilter.tsx` | "Near my places" filter popover |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `package.json` | Add `@geoman-io/leaflet-geoman-free` dependency |
-| `src/index.css` | Add draw, city overlay, and neighborhood chip styles |
-| `src/types/database.ts` | Add `polygon` to PropertyFilters |
-| `src/types/content.ts` | Add `center_lat`, `center_lng` to City type |
-| `src/components/map-search/PropertyMap.tsx` | Add DrawControl, CityOverlay, NeighborhoodChips |
-| `src/components/map-search/MapSearchLayout.tsx` | Handle polygon state and filtering |
-| `src/components/map-search/MapToolbar.tsx` | Add draw tool buttons |
+| `src/components/map-search/PropertyMap.tsx` | Add new layers, pass selected property to CommuteLines |
+| `src/components/map-search/MapToolbar.tsx` | Add train station and heatmap toggles |
+| `src/components/map-search/MapPropertyPopup.tsx` | Add commute info section |
+| `src/components/map-search/MapFiltersBar.tsx` | Add commute filter button |
+| `src/components/map-search/MapSearchLayout.tsx` | Handle commute filter state |
+| `src/index.css` | Add styles for commute lines, train markers, heatmap legend |
+| `src/lib/utils/geometry.ts` | Add getDistanceInKm helper |
 
 ---
 
-## UX Flow
+## CSS Additions
 
-### Draw-to-Search Flow
-1. User clicks draw button in toolbar
-2. Dropdown shows: Rectangle, Freehand, Circle
-3. User selects mode and draws on map
-4. Shape appears with subtle fill
-5. "Search as I move" auto-disables
-6. Properties filter to those inside shape
-7. "Clear Drawing" button appears
-8. User can redraw or clear
+```css
+/* Commute Lines */
+.commute-line-tooltip {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
 
-### City Zoom Flow
-1. User views Israel at zoom 8-9
-2. City markers appear (Tel Aviv, Jerusalem, Haifa, etc.)
-3. Each shows name + property count
-4. User clicks "Tel Aviv"
-5. Map smoothly zooms to Tel Aviv at zoom 13
-6. City markers fade out, property markers appear
+.commute-line-tooltip.walk {
+  color: hsl(142 76% 36%);
+}
 
-### Neighborhood Filter Flow
-1. User is viewing Tel Aviv at zoom 13+
-2. Neighborhood chips appear at bottom: "Neve Tzedek", "Florentin", "Sarona", etc.
-3. User clicks "Neve Tzedek" - chip highlights
-4. Properties filter to that neighborhood
-5. User can multi-select neighborhoods
-6. "Clear" button resets selection
+.commute-line-tooltip.transit {
+  color: hsl(213 94% 45%);
+}
 
----
+.commute-line-tooltip.drive {
+  color: hsl(215 16% 47%);
+}
 
-## Technical Considerations
+/* Train Station Markers */
+.train-station-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 6px;
+  border: 2px solid hsl(213 94% 45%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms;
+}
 
-### Performance
-- City overlay only renders when zoom < 10
-- Neighborhoods only fetch/show when in single city view
-- Polygon filtering is optimized with early exit on bounds check
-- Drawn shapes stored in state, not re-rendered unnecessarily
+.train-station-marker:hover {
+  transform: scale(1.1);
+}
 
-### Mobile Support
-- Draw tools work with touch (Leaflet-Geoman supports touch)
-- Neighborhood chips are horizontally scrollable
-- City markers are tap-friendly size
+.train-station-marker svg {
+  color: hsl(213 94% 45%);
+}
 
-### State Persistence
-- Drawn polygon can be serialized to URL for sharing
-- Format: `?polygon=lat1,lng1;lat2,lng2;...`
+/* Heatmap Legend */
+.heatmap-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1000;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+}
 
----
+.heatmap-legend-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
 
-## Dependencies
+.heatmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
 
-**New Package:**
+.heatmap-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
 ```
-@geoman-io/leaflet-geoman-free: ^2.16.0
+
+---
+
+## Train Station Data
+
+Israeli Railway has approximately 70 stations. Here are key stations to include:
+
+**Major Stations:**
+- Tel Aviv: HaShalom, Merkaz/Savidor, University
+- Jerusalem: Yitzhak Navon, Malha
+- Haifa: Merkaz, Bat Galim
+- Beer Sheva: Merkaz, North/University
+- Ben Gurion Airport
+
+**Central Stations:**
+- Herzliya, Netanya, Hadera, Binyamina
+- Petah Tikva, Bnei Brak, Ramat Gan
+- Holon, Bat Yam, Ashdod, Ashkelon
+- Modi'in Merkaz, Lod, Rehovot
+- Kfar Saba, Ra'anana, Hod HaSharon
+
+---
+
+## UX Flows
+
+### Commute Visualization Flow
+1. User has saved locations (work, parents, etc.)
+2. User clicks a property on map
+3. Dashed lines animate from property to each saved location
+4. Midpoint badges show travel time with mode icon
+5. Popup shows summary: "15 min drive to Work"
+
+### Train Station Flow
+1. User clicks train icon in toolbar
+2. Train station markers appear on map
+3. Click station to see name and rail lines
+4. Useful for commute-conscious buyers
+
+### Price Heatmap Flow
+1. User clicks heatmap icon in toolbar
+2. Colored circles appear over cities
+3. Legend explains color scale
+4. Helps understand market prices spatially
+
+### Commute Filter Flow
+1. User clicks "Near my places" in filter bar
+2. Selects saved location from dropdown
+3. Selects max commute time (15/30/45/60 min)
+4. Properties filter to those within range
+5. Clear filter to show all
+
+---
+
+## Technical Details
+
+### Travel Time Calculation (Existing Logic)
+```typescript
+// Already in SavedLocationsSection.tsx
+const times = {
+  walk: distanceKm * 12,           // ~5 km/h walking speed
+  transit: distanceKm * 1.8 + 10,  // ~33 km/h avg + 10 min wait
+  drive: distanceKm * 1.2 + 2,     // ~50 km/h avg + 2 min parking
+};
 ```
 
-This is the free/open-source version of Leaflet-Geoman, MIT licensed.
+### Distance Calculation (Existing in geometry.ts)
+```typescript
+// getDistanceInMeters already exists
+// Add getDistanceInKm wrapper
+export function getDistanceInKm(point1, point2): number {
+  return getDistanceInMeters(point1, point2) / 1000;
+}
+```
+
+### Price Heatmap Color Scale
+```typescript
+function getPriceColor(pricePerSqm: number): string {
+  if (pricePerSqm < 30000) return 'hsl(142 76% 50%)';   // Green
+  if (pricePerSqm < 50000) return 'hsl(45 100% 51%)';   // Yellow
+  if (pricePerSqm < 70000) return 'hsl(25 95% 53%)';    // Orange
+  return 'hsl(0 84% 60%)';                              // Red
+}
+```
+
+---
+
+## State Management
+
+### New State in PropertyMap.tsx
+```typescript
+const [showTrainStations, setShowTrainStations] = useState(false);
+const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
+```
+
+### New State in MapSearchLayout.tsx
+```typescript
+const [commuteFilter, setCommuteFilter] = useState<{
+  locationId: string;
+  maxMinutes: number;
+} | null>(null);
+```
 
 ---
 
 ## Summary
 
-Phase 3 delivers powerful spatial filtering that matches Zillow's best features while adding BuyWise-specific value:
+Phase 4 delivers the BuyWise-exclusive features that make this map search unique:
 
-1. **Draw-to-Search**: Rectangle, freehand, and circle drawing for precise area filtering
-2. **City Quick-Jump**: Click city names when zoomed out to navigate quickly
-3. **Neighborhood Filtering**: Easy chip-based neighborhood selection when zoomed in
-4. **Client-Side Polygon Filtering**: Fast point-in-polygon filtering without database extensions
+1. **Commute Lines**: Visual connection between properties and saved locations
+2. **Train Stations**: Interactive layer showing Israel's rail network
+3. **Price Heatmap**: Spatial market context for price comparisons
+4. **Commute Filter**: Find properties within X minutes of your important places
 
-These features transform the map from a visualization tool into an active search interface, letting users define exactly where they want to live.
+These features directly address the needs of international buyers who want to understand:
+- How far is this from my workplace?
+- Is there public transit nearby?
+- How does this area compare price-wise?
+- Show me everything within 30 minutes of my parents
 
+The implementation reuses existing distance/travel time logic and adds visual map layers to make this information instantly accessible while browsing.
