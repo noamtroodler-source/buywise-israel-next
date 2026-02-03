@@ -1,11 +1,12 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { Property } from '@/types/database';
-import { MapPropertyCard } from './MapPropertyCard';
+import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Loader2, Home } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MapPropertyListProps {
   properties: Property[];
@@ -30,6 +31,7 @@ export function MapPropertyList({
 }: MapPropertyListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const isMobile = useIsMobile();
 
   // Scroll to hovered property when hovering on map marker
   useEffect(() => {
@@ -87,19 +89,33 @@ export function MapPropertyList({
         </p>
       </div>
       
-      {/* Scrollable list */}
+      {/* Scrollable list - 2-column grid on desktop, 1-column on mobile */}
       <ScrollArea className="flex-1">
-        <div ref={listRef} className="p-3 space-y-3">
+        <div 
+          ref={listRef} 
+          className={cn(
+            "p-3 gap-3",
+            isMobile ? "space-y-3" : "grid grid-cols-2"
+          )}
+        >
           {properties.map((property) => (
             <div
               key={property.id}
               ref={(el) => setCardRef(property.id, el)}
+              onMouseEnter={() => onPropertyHover(property.id)}
+              onMouseLeave={() => onPropertyHover(null)}
+              onClick={() => onPropertySelect(property.id)}
+              className={cn(
+                "transition-all duration-200 rounded-xl cursor-pointer",
+                hoveredPropertyId === property.id && "ring-2 ring-primary shadow-lg"
+              )}
             >
-              <MapPropertyCard
+              <PropertyCard
                 property={property}
-                isHovered={hoveredPropertyId === property.id}
-                onHover={onPropertyHover}
-                onSelect={onPropertySelect}
+                compact
+                showCompareButton={false}
+                showShareButton={false}
+                maxBadges={1}
               />
             </div>
           ))}
