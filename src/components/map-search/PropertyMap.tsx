@@ -135,7 +135,12 @@ function ClusterMarker({ position, count, priceRange, onClick }: ClusterMarkerPr
     
     return L.divIcon({
       html: `
-        <div class="cluster-marker ${sizeTier}">
+        <div class="cluster-marker ${sizeTier}" style="
+          background: white;
+          color: hsl(213, 94%, 45%);
+          border: 2px solid hsl(220, 13%, 85%);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        ">
           <span class="cluster-count">${count}</span>
           <span class="cluster-price">${priceRange}</span>
         </div>
