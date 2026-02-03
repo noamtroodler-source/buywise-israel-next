@@ -222,22 +222,11 @@ export function MapToolbar({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={cn(btnBase, 'relative', (drawMode || hasDrawnPolygon) && btnActive)}
+                    className={cn(btnBase, (drawMode || hasDrawnPolygon) && btnActive)}
                     aria-label="Draw to search (D)"
                     aria-expanded={drawMenuOpen}
                   >
                     <PenTool className={iconSize} />
-                    {hasDrawnPolygon && (
-                      <span 
-                        className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-destructive rounded-full flex items-center justify-center cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onClearPolygon();
-                        }}
-                      >
-                        <X className="h-2 w-2 text-white" />
-                      </span>
-                    )}
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
