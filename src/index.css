@@ -381,6 +381,15 @@
   opacity: 0 !important;
   height: 0 !important;
   width: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Also target any popup tip that might slip through */
+.leaflet-popup .leaflet-popup-tip {
+  display: none !important;
+  background: transparent !important;
 }
 
 .leaflet-popup-close-button {
