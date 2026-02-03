@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import { Marker } from 'react-leaflet';
+import { Marker } from '@/vendor/react-leaflet';
 import L from 'leaflet';
 import { Property } from '@/types/database';
 import { useFormatPrice } from '@/contexts/PreferencesContext';

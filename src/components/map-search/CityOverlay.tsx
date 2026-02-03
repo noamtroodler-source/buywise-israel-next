@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Marker, useMap } from 'react-leaflet';
+import { Marker, useMap } from '@/vendor/react-leaflet';
 import L from 'leaflet';
 import { useCities } from '@/hooks/useCities';
 import { useQuery } from '@tanstack/react-query';

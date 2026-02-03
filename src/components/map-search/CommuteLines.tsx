@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Polyline, Tooltip } from 'react-leaflet';
+import { Polyline, Tooltip } from '@/vendor/react-leaflet';
 import { SavedLocation } from '@/types/savedLocation';
 import { Property } from '@/types/database';
 import { getDistanceInMeters } from '@/lib/utils/geometry';

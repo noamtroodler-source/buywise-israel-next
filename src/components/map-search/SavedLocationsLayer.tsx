@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Marker, Tooltip } from 'react-leaflet';
+import { Marker, Tooltip } from '@/vendor/react-leaflet';
 import L from 'leaflet';
 import { SavedLocation, getLocationIcon } from '@/types/savedLocation';
 
