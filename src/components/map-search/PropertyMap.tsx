@@ -13,6 +13,7 @@ import { TrainStationLayer } from './TrainStationLayer';
 import { PriceHeatmapLayer } from './PriceHeatmapLayer';
 import { HeatmapLegend } from './HeatmapLegend';
 import { CommuteLines } from './CommuteLines';
+import { ClearDrawingButton } from './ClearDrawingButton';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useAuth } from '@/hooks/useAuth';
 import type { MapBounds } from './MapSearchLayout';
@@ -419,6 +420,12 @@ export function PropertyMap({
 
       {/* Heatmap Legend */}
       <HeatmapLegend visible={showPriceHeatmap} />
+
+      {/* Clear Drawing Button - prominent floating button when polygon exists */}
+      <ClearDrawingButton 
+        visible={!!drawnPolygon} 
+        onClear={handleClearPolygon} 
+      />
 
       {/* Neighborhood Chips (when zoomed in) */}
       <NeighborhoodChips
