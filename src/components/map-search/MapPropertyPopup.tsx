@@ -36,12 +36,12 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
       position={[property.latitude, property.longitude]}
       closeButton={false}
       className="property-popup"
-      maxWidth={280}
-      minWidth={280}
+      maxWidth={260}
+      minWidth={260}
     >
-      <div className="bg-card text-card-foreground overflow-hidden">
-        {/* Image Header */}
-        <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="bg-card text-card-foreground rounded-xl overflow-hidden">
+        {/* Image Header - compact 16:10 ratio */}
+        <div className="relative h-32 overflow-hidden">
           <img
             src={image}
             alt={property.title}
@@ -51,61 +51,59 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
           {/* Close button - top right */}
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-background/90 hover:bg-background flex items-center justify-center shadow-md transition-colors"
+            className="absolute top-1.5 right-1.5 z-10 w-6 h-6 rounded-full bg-background/90 hover:bg-background flex items-center justify-center shadow-sm transition-colors"
             aria-label="Close popup"
           >
-            <X className="h-4 w-4 text-foreground" />
+            <X className="h-3.5 w-3.5 text-foreground" />
           </button>
           
           {/* Status badge - top left */}
-          <div className="absolute top-2 left-2">
-            <Badge 
-              variant={isRental ? "secondary" : "default"}
-              className={isRental ? 'bg-muted text-foreground' : 'bg-primary text-primary-foreground'}
-            >
-              {isRental ? 'For Rent' : 'For Sale'}
-            </Badge>
-          </div>
+          <Badge 
+            variant={isRental ? "secondary" : "default"}
+            className={`absolute top-1.5 left-1.5 text-xs px-2 py-0.5 ${isRental ? 'bg-muted text-foreground' : 'bg-primary text-primary-foreground'}`}
+          >
+            {isRental ? 'Rent' : 'Sale'}
+          </Badge>
           
           {/* Favorite button - bottom right of image */}
-          <div className="absolute bottom-2 right-2">
+          <div className="absolute bottom-1.5 right-1.5">
             <FavoriteButton propertyId={property.id} propertyPrice={property.price} size="sm" />
           </div>
         </div>
         
-        {/* Content */}
-        <div className="p-3 space-y-2">
+        {/* Content - compact spacing */}
+        <div className="p-2.5 space-y-1.5">
           {/* Price */}
-          <p className="font-bold text-lg text-foreground">
+          <p className="font-bold text-base text-foreground leading-tight">
             {formatPrice(property.price, property.currency || 'ILS')}
-            {isRental && <span className="text-sm font-normal text-muted-foreground">/mo</span>}
+            {isRental && <span className="text-xs font-normal text-muted-foreground">/mo</span>}
           </p>
           
-          {/* Stats */}
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Bed className="h-3.5 w-3.5" />
+          {/* Stats - inline with address */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Bed className="h-3 w-3" />
               {property.bedrooms}
             </span>
-            <span className="flex items-center gap-1">
-              <Bath className="h-3.5 w-3.5" />
+            <span className="flex items-center gap-0.5">
+              <Bath className="h-3 w-3" />
               {property.bathrooms}
             </span>
             {property.size_sqm && (
-              <span className="flex items-center gap-1">
-                <Maximize className="h-3.5 w-3.5" />
+              <span className="flex items-center gap-0.5">
+                <Maximize className="h-3 w-3" />
                 {formatArea(property.size_sqm)}
               </span>
             )}
           </div>
           
           {/* Address */}
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-xs text-muted-foreground truncate">
             {property.address || `${property.neighborhood ? property.neighborhood + ', ' : ''}${property.city}`}
           </p>
           
           {/* View Details Button */}
-          <Button asChild className="w-full" size="sm">
+          <Button asChild className="w-full h-8 text-xs" size="sm">
             <Link to={`/property/${property.id}`}>
               View Details
             </Link>

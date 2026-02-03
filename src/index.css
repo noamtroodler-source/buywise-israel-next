@@ -363,25 +363,24 @@
 .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
   overflow: hidden !important;
+  background: transparent !important;
 }
 
 .leaflet-popup-content {
   margin: 0 !important;
-  min-width: 280px;
-  width: 280px !important;
+  width: 260px !important;
 }
 
-/* Hide the default pointer/tip on property popups */
-.property-popup .leaflet-popup-tip-container {
+/* Hide the default pointer/tip completely */
+.leaflet-popup-tip-container {
   display: none !important;
 }
 
 .property-popup .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
   overflow: hidden !important;
-  border: 1px solid hsl(var(--border));
 }
 
 .leaflet-popup-close-button {
