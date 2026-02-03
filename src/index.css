@@ -600,3 +600,103 @@
 .dark .heatmap-legend-title {
   color: hsl(210 40% 98%);
 }
+
+/* =========================
+   Mobile Sheet Transitions
+   ========================= */
+
+.mobile-sheet {
+  transition: height 300ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: height;
+}
+
+/* =========================
+   Mobile Quick Filters
+   ========================= */
+
+.mobile-quick-filters {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.mobile-quick-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.quick-filter-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 150ms;
+}
+
+.quick-filter-chip:hover {
+  background: hsl(var(--accent));
+}
+
+.quick-filter-chip.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* =========================
+   Accessibility
+   ========================= */
+
+/* Focus visible styles for toolbar buttons */
+.map-toolbar-button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .cluster-marker,
+  .property-marker,
+  .city-overlay-marker,
+  .mobile-sheet,
+  .commute-line-tooltip,
+  .saved-location-marker,
+  .train-station-marker {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .leaflet-marker-pane * {
+    transition: none !important;
+  }
+  
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Dark mode for quick filters */
+.dark .quick-filter-chip {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.dark .quick-filter-chip:hover {
+  background: hsl(var(--accent));
+}
+
+.dark .quick-filter-chip.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
