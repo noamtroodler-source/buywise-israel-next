@@ -85,10 +85,14 @@ interface CityMarkerProps {
 
 function CityMarker({ name, center, count, onClick }: CityMarkerProps) {
   const icon = useMemo(() => {
+    // Determine size tier based on property count
+    const sizeTier = count >= 50 ? 'large' : count >= 21 ? 'medium' : 'small';
+    
     return L.divIcon({
       html: `
-        <div class="city-overlay-marker">
-          <span class="city-name">${name}</span>
+        <div class="city-marker-pill ${sizeTier}">
+          <span class="city-label">${name}</span>
+          <span class="city-divider">•</span>
           <span class="city-count">${count}</span>
         </div>
       `,
