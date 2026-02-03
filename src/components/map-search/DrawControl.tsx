@@ -100,9 +100,6 @@ export function DrawControl({ drawMode, onDrawComplete, onDrawCancel }: DrawCont
     const handleCreate = (e: any) => {
       const layer = e.layer;
       
-      // Store reference for later clearing
-      drawnLayerRef.current = layer;
-      
       // Extract coordinates based on shape type
       if (e.shape === 'Circle') {
         const center = layer.getLatLng();
@@ -124,6 +121,10 @@ export function DrawControl({ drawMode, onDrawComplete, onDrawCancel }: DrawCont
         const polygon = latLngsToPolygon(latLngs);
         onDrawComplete(polygon);
       }
+
+      // Remove the Geoman-created layer - DrawnPolygon component will handle display
+      map.removeLayer(layer);
+      drawnLayerRef.current = null;
 
       // Disable draw mode after completion
       map.pm.disableDraw();
