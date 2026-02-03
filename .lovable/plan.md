@@ -1,157 +1,185 @@
 
+# Map Marker Visual Improvements
 
-# Declutter Buy/Rent Filter Bar: Best Practices Redesign
+## Current Issues Identified
 
-## Current Issues
+Based on the screenshot and code review:
 
-Looking at the screenshot, the filter bar has visual congestion from:
+1. **Hover state not clear enough**: When hovering on a property card in the sidebar, the corresponding marker on the map doesn't stand out enough from other markers. All markers are blue, making it hard to spot which one is highlighted.
 
-1. **Too many equally-weighted elements** - Every filter button has the same visual prominence
-2. **Duplicate toggles on same row** - Active/Sold toggle AND Grid/Map toggle both compete for attention  
-3. **Results count on separate line** - Creates unnecessary vertical space
-4. **No clear visual grouping** - Filters, sort, and actions all blend together
+2. **Price text cutoff**: The current pill-shaped markers (`rounded-full`) cause the price text to get clipped or blend with the map background because they're too compact.
 
----
-
-## Design Solution: Industry Best Practices
-
-### Principle 1: Visual Hierarchy
-Not all filters are equally important. Primary actions (City, Price) should be more prominent than secondary ones (Type, More).
-
-### Principle 2: Consolidate Counts & Toggles
-Move the "Showing X of Y" count inline with the filter row to eliminate a line.
-
-### Principle 3: Group Related Actions
-Visually separate the core filters from utility actions (Sort, View Toggle, Alert).
-
-### Principle 4: Reduce Button Weight
-Use lighter styling for less-used filters (Type, More) to reduce visual noise.
+3. **Clusters also have readability issues**: The cluster markers (circles showing "2" with price range) have text that can be hard to read against the map.
 
 ---
 
-## Proposed Layout
+## Design Solution
 
-```text
-Desktop (single row, clear grouping):
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│ [Active|Sold]  [City ▼]  [Price ▼]  [Beds/Baths ▼]  [Type ▼]  [More]     304 results     Sort ▼  [🔔]  [Grid|Map] │
-│                ─────── Core Filters ───────                     Count    ── Actions ──│
-└────────────────────────────────────────────────────────────────────────────────────────┘
+### Change 1: Neutral Default State, Blue on Hover/Select
+
+Transform the marker visual hierarchy:
+
+| State | Current | New |
+|-------|---------|-----|
+| Default (inactive) | Blue pill | White background, gray text, subtle border |
+| Hovered | Blue + slight scale | Blue background, white text, larger scale |
+| Selected | Blue + ring | Blue background, white text, ring |
+
+This creates a clear visual distinction - the hovered marker "pops" against all the muted markers.
+
+### Change 2: Better Marker Shape with Pointer
+
+Replace the simple `rounded-full` pill with a more map-appropriate shape:
+
+```
+Current: ┌──────┐ (rounded pill)
+         │₪3.2M │
+         └──────┘
+
+New:     ┌──────┐ (rounded rectangle with pointer triangle)
+         │₪3.2M │
+         └──┬───┘
+            ▼
 ```
 
-### Key Changes
-
-| Before | After |
-|--------|-------|
-| 9 individual items with equal weight | Clear 3-section grouping |
-| Results count on separate line | Inline with filters |
-| Create Alert as big blue button | Icon-only button to save space |
-| All filters have identical styling | Primary filters slightly more prominent |
-| Clear button visible when no filters | Hidden when no active filters |
+This "callout" shape:
+- Provides more room for the price text
+- Points precisely to the property location
+- Is the industry standard (Google Maps, Airbnb, Zillow)
 
 ---
 
 ## Technical Implementation
 
-### 1. Inline Results Count
+### File: `src/components/map-search/PropertyMarker.tsx`
 
-Move the count from `Listings.tsx` into `PropertyFilters.tsx` as a subtle inline element:
+Update the marker styles to use neutral default colors:
 
 ```tsx
-// After core filters, before right-aligned actions
-{!isMobile && previewCount !== undefined && (
-  <span className="text-sm text-muted-foreground whitespace-nowrap">
-    {previewCount} {previewCount === 1 ? 'property' : 'properties'}
-  </span>
-)}
+// Default state - neutral
+let bgColor = 'white';
+let textColor = 'hsl(220, 10%, 40%)'; // Gray text
+let borderColor = 'hsl(220, 13%, 85%)'; // Subtle gray border
+
+// Hover or selected state - primary blue
+if (isHovered || isSelected) {
+  bgColor = 'hsl(213, 94%, 45%)'; // Primary blue
+  textColor = 'white';
+  borderColor = 'white';
+}
 ```
 
-### 2. Compact Create Alert Button
-
-Change from full "Create Alert" button to icon-only on desktop (tooltip on hover):
+Update the marker HTML to use a callout shape with pointer:
 
 ```tsx
-// Desktop: Icon button with tooltip
-<Tooltip>
-  <TooltipTrigger asChild>
-    <Button 
-      onClick={handleCreateAlertClick}
-      className="h-10 w-10 rounded-full bg-primary text-primary-foreground"
+return L.divIcon({
+  html: `
+    <div 
+      class="property-marker-wrapper"
+      style="position: relative; display: flex; flex-direction: column; align-items: center;"
     >
-      <Bell className="h-4 w-4" />
-    </Button>
-  </TooltipTrigger>
-  <TooltipContent>Create search alert</TooltipContent>
-</Tooltip>
+      <div 
+        class="property-marker-pill"
+        style="
+          background-color: ${bgColor};
+          color: ${textColor};
+          border: 2px solid ${borderColor};
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 12px;
+          white-space: nowrap;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          ${(isHovered || isSelected) ? 'transform: scale(1.1);' : ''}
+        "
+      >
+        ₪${displayPrice}${suffix}
+      </div>
+      <div 
+        class="property-marker-pointer"
+        style="
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 6px solid ${bgColor};
+          margin-top: -1px;
+        "
+      ></div>
+    </div>
+  `,
+  className: '',
+  iconSize: L.point(0, 0),
+  iconAnchor: L.point(0, 30), // Anchor at bottom of pointer
+});
 ```
 
-### 3. Reduce Filter Button Weight
+### File: `src/index.css`
 
-Make Type and More buttons visually lighter (ghost-like):
+Add/update marker styles for consistency:
 
-```tsx
-// Secondary filter styling - lighter weight
-const filterButtonSecondary = "h-10 gap-1.5 rounded-full border-0 bg-transparent hover:bg-muted/50 px-3 font-normal text-muted-foreground";
+```css
+/* Property markers - neutral default, blue on hover */
+.property-marker-wrapper {
+  transition: transform 200ms ease;
+}
 
-// Type button - secondary styling
-<Button variant="ghost" className={filterButtonSecondary}>
-  <Building2 className="h-4 w-4" />
-  <span>Type</span>
-</Button>
+.property-marker-pill {
+  transition: all 200ms ease;
+}
+
+.property-marker-wrapper.hovered .property-marker-pill,
+.property-marker-wrapper.selected .property-marker-pill {
+  background: hsl(213 94% 45%);
+  color: white;
+  border-color: white;
+  transform: scale(1.1);
+}
 ```
 
-### 4. Smaller Active/Sold Toggle
+### File: `src/components/map-search/PropertyMap.tsx`
 
-Reduce the visual weight of the toggle:
-
-```tsx
-// Smaller, more subtle toggle
-<div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
-  <button className={cn(
-    "px-3 py-1.5 text-sm font-medium transition-all",
-    !isSoldView ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-  )}>Active</button>
-  <button className={cn(
-    "px-3 py-1.5 text-sm font-medium transition-all",
-    isSoldView ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-  )}>Sold</button>
-</div>
-```
-
-### 5. Remove Separate Results Line
-
-In `Listings.tsx`, remove the standalone results count paragraph since it's now inline:
+Update the ClusterMarker styling similarly:
 
 ```tsx
-// REMOVE THIS BLOCK:
-{!isLoading && (
-  <p className="text-sm text-muted-foreground mb-4">
-    Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
-  </p>
-)}
+// Cluster marker - white background by default for better readability
+return L.divIcon({
+  html: `
+    <div class="cluster-marker ${sizeTier}" style="
+      background: white;
+      color: hsl(213, 94%, 45%);
+      border: 2px solid hsl(220, 13%, 85%);
+    ">
+      <span class="cluster-count">${count}</span>
+      <span class="cluster-price">${priceRange}</span>
+    </div>
+  `,
+  ...
+});
 ```
 
 ---
 
 ## Visual Comparison
 
-### Before
-```text
-[Active|Sold] [City ▼] [$ Price ▼] [⊞ Beds/Baths ▼] [🏢 Type ▼] [☰ More]  [Clear]    ↕ Newest ▼  |  [🔔 Create Alert]  [Grid|Map]
-
-Showing 24 of 304 properties
+### Before (Current State)
+```
+Map View:
+   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← All blue, hover barely visible
+      ●        ●        ●
 ```
 
-### After  
-```text
-[Active|Sold]  [City ▼]  [Price ▼]  [Beds ▼]  Type ▼  More    304 properties    Newest ▼  [🔔]  [Grid|Map]
+### After (Improved)
 ```
+Map View:
+   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← White/gray default
+      ▼        ▼        ▼
 
-**Reduction:**
-- 1 fewer line (count moved inline)
-- Create Alert button is now compact icon
-- Type and More have reduced visual weight
-- Clearer visual grouping with spacing
+When hovering property card for 4.5M:
+   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← 4.5M turns BLUE, stands out
+      ▼       ▼▼▼       ▼
+             (larger)
+```
 
 ---
 
@@ -159,28 +187,26 @@ Showing 24 of 304 properties
 
 | File | Changes |
 |------|---------|
-| `src/components/filters/PropertyFilters.tsx` | Add inline count, compact alert button, lighter secondary filter styling |
-| `src/pages/Listings.tsx` | Remove standalone results count paragraph |
+| `src/components/map-search/PropertyMarker.tsx` | New color logic (neutral default, blue hover), callout shape with pointer |
+| `src/components/map-search/PropertyMap.tsx` | Update ClusterMarker to use white background with blue text |
+| `src/index.css` | Update `.cluster-marker` styles for white background, add `.property-marker-wrapper` styles |
 
 ---
 
-## Mobile Considerations
+## Additional Improvements Included
 
-The mobile layout already handles this well with:
-- Collapsed filters into a single "Filters" button
-- Sort on its own row
-- Alert as icon-only
-
-No mobile changes needed.
+1. **Better shadows**: Slightly stronger drop shadow for depth
+2. **Smoother transitions**: CSS transitions for hover states
+3. **Pointer anchor adjustment**: Move `iconAnchor` to the bottom of the pointer so marker points exactly at the property location
+4. **Consistent border radius**: Change from pill (`rounded-full`) to rounded rectangle (`border-radius: 8px`) for more text room
 
 ---
 
-## Expected Result
+## Result
 
-The redesigned filter bar will:
-- Feel less cluttered with clear visual hierarchy
-- Take up less vertical space (1 line instead of 2)
-- Have clearer grouping of filters vs. actions
-- Maintain all functionality
-- Match professional real estate site patterns (Zillow, Redfin)
-
+After implementation:
+- Neutral gray/white markers for all properties by default
+- Blue highlight clearly visible when hovering on a sidebar card
+- Callout shape with pointer shows full price without cutoff
+- Cluster markers also more readable with white background
+- Professional look matching Zillow/Redfin/Airbnb patterns
