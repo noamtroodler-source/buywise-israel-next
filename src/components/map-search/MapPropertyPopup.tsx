@@ -8,7 +8,7 @@ import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { CommuteInfo } from './CommuteLines';
 import { SavedLocation } from '@/types/savedLocation';
-import { Bed, Bath, Maximize, ExternalLink, X } from 'lucide-react';
+import { Bed, Bath, Maximize, X } from 'lucide-react';
 
 interface MapPropertyPopupProps {
   propertyId: string;
@@ -36,56 +36,64 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
       position={[property.latitude, property.longitude]}
       closeButton={false}
       className="property-popup"
-      maxWidth={320}
+      maxWidth={280}
       minWidth={280}
     >
-      <div className="relative">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-background/80 hover:bg-background flex items-center justify-center shadow"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        
-        {/* Image */}
-        <div className="relative h-32 -mx-3 -mt-3 mb-3 overflow-hidden rounded-t-lg">
+      <div className="bg-card text-card-foreground overflow-hidden">
+        {/* Image Header */}
+        <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={image}
             alt={property.title}
             className="w-full h-full object-cover"
           />
+          
+          {/* Close button - top right */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-background/90 hover:bg-background flex items-center justify-center shadow-md transition-colors"
+            aria-label="Close popup"
+          >
+            <X className="h-4 w-4 text-foreground" />
+          </button>
+          
+          {/* Status badge - top left */}
           <div className="absolute top-2 left-2">
-            <Badge className={isRental ? 'bg-muted text-foreground' : 'bg-primary text-primary-foreground'}>
+            <Badge 
+              variant={isRental ? "secondary" : "default"}
+              className={isRental ? 'bg-muted text-foreground' : 'bg-primary text-primary-foreground'}
+            >
               {isRental ? 'For Rent' : 'For Sale'}
             </Badge>
           </div>
-          <div className="absolute top-2 right-10">
+          
+          {/* Favorite button - bottom right of image */}
+          <div className="absolute bottom-2 right-2">
             <FavoriteButton propertyId={property.id} propertyPrice={property.price} size="sm" />
           </div>
         </div>
         
         {/* Content */}
-        <div className="space-y-2">
+        <div className="p-3 space-y-2">
           {/* Price */}
-          <p className="font-bold text-lg">
+          <p className="font-bold text-lg text-foreground">
             {formatPrice(property.price, property.currency || 'ILS')}
             {isRental && <span className="text-sm font-normal text-muted-foreground">/mo</span>}
           </p>
           
           {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Bed className="h-4 w-4" />
-              {property.bedrooms} bd
+              <Bed className="h-3.5 w-3.5" />
+              {property.bedrooms}
             </span>
             <span className="flex items-center gap-1">
-              <Bath className="h-4 w-4" />
-              {property.bathrooms} ba
+              <Bath className="h-3.5 w-3.5" />
+              {property.bathrooms}
             </span>
             {property.size_sqm && (
               <span className="flex items-center gap-1">
-                <Maximize className="h-4 w-4" />
+                <Maximize className="h-3.5 w-3.5" />
                 {formatArea(property.size_sqm)}
               </span>
             )}
@@ -97,10 +105,9 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
           </p>
           
           {/* View Details Button */}
-          <Button asChild className="w-full mt-3" size="sm">
+          <Button asChild className="w-full" size="sm">
             <Link to={`/property/${property.id}`}>
               View Details
-              <ExternalLink className="h-4 w-4 ml-2" />
             </Link>
           </Button>
 
