@@ -328,24 +328,6 @@ export function MapToolbar({
             </Tooltip>
           )}
           
-          {/* Heatmap */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(btnBase, showPriceHeatmap && btnActive)}
-                onClick={onTogglePriceHeatmap}
-                aria-label={showPriceHeatmap ? 'Hide price heatmap (H)' : 'Show price heatmap (H)'}
-                aria-pressed={showPriceHeatmap}
-              >
-                <Thermometer className={iconSize} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              {showPriceHeatmap ? 'Hide price heatmap (H)' : 'Show price heatmap (H)'}
-            </TooltipContent>
-          </Tooltip>
         </div>
       </div>
 
