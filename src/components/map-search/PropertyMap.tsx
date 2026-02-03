@@ -263,7 +263,7 @@ export function PropertyMap({
   );
 }
 
-// Cluster marker component
+// Cluster marker component with size tiers
 import React from 'react';
 import { Marker } from 'react-leaflet';
 
@@ -274,21 +274,37 @@ interface ClusterMarkerProps {
   onClick: () => void;
 }
 
+// Get cluster size tier based on property count
+function getClusterSizeTier(count: number): 'small' | 'medium' | 'large' {
+  if (count <= 10) return 'small';
+  if (count <= 50) return 'medium';
+  return 'large';
+}
+
 function ClusterMarker({ position, count, priceRange, onClick }: ClusterMarkerProps) {
-  const icon = useMemo(() => 
-    L.divIcon({
+  const sizeTier = getClusterSizeTier(count);
+  
+  const icon = useMemo(() => {
+    const sizes = {
+      small: { iconSize: 50, anchor: 25 },
+      medium: { iconSize: 65, anchor: 32.5 },
+      large: { iconSize: 80, anchor: 40 },
+    };
+    
+    const { iconSize, anchor } = sizes[sizeTier];
+    
+    return L.divIcon({
       html: `
-        <div class="cluster-marker bg-primary text-primary-foreground rounded-full px-3 py-2 shadow-lg cursor-pointer hover:scale-105 transition-transform flex flex-col items-center justify-center min-w-[60px]">
-          <span class="font-bold text-sm">${count}</span>
-          <span class="text-xs opacity-90">${priceRange}</span>
+        <div class="cluster-marker ${sizeTier}">
+          <span class="cluster-count">${count}</span>
+          <span class="cluster-price">${priceRange}</span>
         </div>
       `,
       className: '',
-      iconSize: L.point(80, 50),
-      iconAnchor: L.point(40, 25),
-    }),
-    [count, priceRange]
-  );
+      iconSize: L.point(iconSize, iconSize),
+      iconAnchor: L.point(anchor, anchor),
+    });
+  }, [count, priceRange, sizeTier]);
 
   return (
     <Marker
