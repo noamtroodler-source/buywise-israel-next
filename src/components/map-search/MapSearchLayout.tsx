@@ -190,7 +190,7 @@ export default function MapSearchLayout() {
     return !recentCity;
   }, [urlCity, hasSelectedCity, recentCityLoading, recentCity]);
 
-  // Combined filters with bounds (when searchAsMove is enabled)
+  // Combined filters with bounds (when searchAsMove is enabled OR polygon is active)
   const queryFilters = useMemo(() => {
     const baseFilters = { ...filters };
     
@@ -199,13 +199,17 @@ export default function MapSearchLayout() {
       baseFilters.neighborhoods = selectedNeighborhoods;
     }
     
-    if (!searchAsMove || !mapBounds) return baseFilters;
+    // Include bounds when: searchAsMove is enabled OR a polygon is drawn
+    // This ensures polygon filtering has the correct geographic dataset to filter
+    const shouldIncludeBounds = searchAsMove || drawnPolygon;
+    
+    if (!shouldIncludeBounds || !mapBounds) return baseFilters;
     
     return {
       ...baseFilters,
       bounds: mapBounds,
     };
-  }, [filters, mapBounds, searchAsMove, selectedNeighborhoods]);
+  }, [filters, mapBounds, searchAsMove, selectedNeighborhoods, drawnPolygon]);
 
   // Fetch saved locations for commute filter
   const { data: savedLocations } = useSavedLocations();
