@@ -7,19 +7,23 @@ import { CookieConsentBanner } from '../shared/CookieConsentBanner';
 
 interface LayoutProps {
   children: ReactNode;
+  hideFooter?: boolean;
+  hideMobileNav?: boolean;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, hideFooter, hideMobileNav }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1">{children}</main>
       {/* Footer has extra padding on mobile to clear bottom nav */}
-      <div className="mb-bottom-nav md:mb-0">
-        <Footer />
-      </div>
+      {!hideFooter && (
+        <div className="mb-bottom-nav md:mb-0">
+          <Footer />
+        </div>
+      )}
       <FloatingWhatsApp />
-      <MobileBottomNav />
+      {!hideMobileNav && <MobileBottomNav />}
       <CookieConsentBanner />
     </div>
   );

@@ -211,6 +211,15 @@ function applyFilters(query: any, filters?: PropertyFilters) {
     }
     query = query.in('allows_pets', petFilters);
   }
+  
+  // Map bounds filtering
+  if (filters.bounds) {
+    query = query
+      .gte('latitude', filters.bounds.south)
+      .lte('latitude', filters.bounds.north)
+      .gte('longitude', filters.bounds.west)
+      .lte('longitude', filters.bounds.east);
+  }
 
   return query;
 }

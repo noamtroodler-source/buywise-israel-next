@@ -46,6 +46,7 @@ const Advertise = lazy(() => import("./pages/Advertise"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Favorites = lazy(() => import("./pages/Favorites"));
+const MapSearch = lazy(() => import("./pages/MapSearch"));
 
 // Legal pages
 const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
@@ -180,6 +181,7 @@ const App = () => (
                         
                         
                         {/* Lazy loaded routes */}
+                        <Route path="/map" element={<MapSearch />} />
                         <Route path="/get-started" element={<GetStarted />} />
                         <Route path="/compare" element={<Compare />} />
                         <Route path="/compare-projects" element={<CompareProjects />} />

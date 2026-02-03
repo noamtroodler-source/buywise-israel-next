@@ -864,6 +864,8 @@ export type Database = {
           average_vaad_bayit_min: number | null
           buyer_profile_match: string[] | null
           card_description: string | null
+          center_lat: number | null
+          center_lng: number | null
           commute_time_jerusalem: number | null
           commute_time_tel_aviv: number | null
           created_at: string
@@ -929,6 +931,8 @@ export type Database = {
           average_vaad_bayit_min?: number | null
           buyer_profile_match?: string[] | null
           card_description?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
           commute_time_jerusalem?: number | null
           commute_time_tel_aviv?: number | null
           created_at?: string
@@ -994,6 +998,8 @@ export type Database = {
           average_vaad_bayit_min?: number | null
           buyer_profile_match?: string[] | null
           card_description?: string | null
+          center_lat?: number | null
+          center_lng?: number | null
           commute_time_jerusalem?: number | null
           commute_time_tel_aviv?: number | null
           created_at?: string
