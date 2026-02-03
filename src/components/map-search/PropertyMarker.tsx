@@ -87,13 +87,13 @@ export function PropertyMarker({
             style="
               background-color: ${markerStyle.bgColor};
               color: ${markerStyle.textColor};
-              border: 2px solid ${markerStyle.borderColor};
-              padding: 6px 10px;
-              border-radius: 8px;
+              border: 1px solid ${markerStyle.borderColor};
+              padding: 4px 8px;
+              border-radius: 6px;
               font-weight: 600;
-              font-size: 12px;
+              font-size: 11px;
               white-space: nowrap;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              box-shadow: 0 1px 4px rgba(0,0,0,0.12);
               opacity: ${markerStyle.opacity};
               cursor: pointer;
               transition: all 200ms ease;
@@ -106,9 +106,9 @@ export function PropertyMarker({
             style="
               width: 0;
               height: 0;
-              border-left: 6px solid transparent;
-              border-right: 6px solid transparent;
-              border-top: 6px solid ${markerStyle.borderColor};
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-top: 5px solid ${markerStyle.borderColor};
               margin-top: -1px;
             "
           ></div>
@@ -119,9 +119,9 @@ export function PropertyMarker({
               bottom: 0;
               width: 0;
               height: 0;
-              border-left: 5px solid transparent;
-              border-right: 5px solid transparent;
-              border-top: 5px solid ${markerStyle.bgColor};
+              border-left: 4px solid transparent;
+              border-right: 4px solid transparent;
+              border-top: 4px solid ${markerStyle.bgColor};
               margin-top: -2px;
             "
           ></div>
