@@ -1,239 +1,372 @@
 
 
-# Phase 2: Clustering Optimization, Performance & Grid/Map View Toggle
+# Phase 3: Draw to Search and City/Neighborhood Overlays
 
 ## Overview
 
-This phase focuses on three key areas:
-1. **Optimizing the existing clustering implementation** for better performance with 600+ properties
-2. **Adding CSS styling for cluster markers** that's currently missing
-3. **Creating a view toggle** (Grid/Map) on the Listings page so users can switch between the traditional grid view and the new map view
+This phase adds powerful spatial filtering tools to the map search:
+1. **Draw-to-Search Tools** - Rectangle and freehand polygon drawing for custom area filtering
+2. **City Overlay Layer** - Clickable city markers when zoomed out that zoom into that city
+3. **Neighborhood Overlay** - Clickable neighborhood chips when zoomed into a city
+4. **Polygon-based Filtering** - Filter properties that fall within drawn shapes
 
 ---
 
-## Part 1: Cluster Marker Styling
+## Part 1: Draw-to-Search Implementation
 
-### Problem
-The current cluster markers use inline Tailwind classes in JavaScript template literals, but these won't be processed by Tailwind's JIT compiler since they're dynamically generated. This causes unstyled or broken cluster markers.
+### Approach: Leaflet-Geoman
+We'll use `@geoman-io/leaflet-geoman-free` (MIT licensed) for drawing capabilities. It supports:
+- Rectangle drawing
+- Freehand polygon drawing  
+- Circle drawing (radius-based search)
+- Edit/delete of drawn shapes
 
-### Solution
-Add dedicated CSS classes in `src/index.css` for cluster markers and property markers that work independently of Tailwind's JIT compilation.
+### New Component: DrawControl.tsx
 
-### Changes to `src/index.css`
-Add a new section for map-specific styles:
+**Location:** `src/components/map-search/DrawControl.tsx`
 
-```css
-/* Map Marker Styles */
-.property-marker {
-  white-space: nowrap;
-  padding: 6px 10px;
-  border-radius: 9999px;
-  font-weight: 600;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 200ms;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
+**Features:**
+- Toolbar buttons: Rectangle, Freehand, Circle, Clear
+- Integrates with Leaflet via `useMap()` hook
+- Fires callback with GeoJSON polygon when shape is completed
+- Disables "Search as I move" when a shape is active
+- Visual feedback during drawing
 
-.property-marker.hovered,
-.property-marker.selected {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  ring: 2px solid hsl(213 94% 45%);
-}
+### State Flow
+1. User clicks "Draw" in toolbar, selects mode (Rectangle/Freehand/Circle)
+2. Drawing mode activates on map
+3. User draws shape
+4. Shape completion fires event with polygon coordinates
+5. MapSearchLayout receives polygon and adds to filters
+6. Properties are filtered by point-in-polygon check
 
-.cluster-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: hsl(213 94% 45%);
-  color: white;
-  border-radius: 9999px;
-  padding: 8px 12px;
-  min-width: 60px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: transform 200ms;
-}
-
-.cluster-marker:hover {
-  transform: scale(1.05);
-}
-
-.cluster-marker .cluster-count {
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.2;
-}
-
-.cluster-marker .cluster-price {
-  font-size: 11px;
-  opacity: 0.9;
-  line-height: 1.2;
-}
-
-/* Leaflet popup overrides */
-.leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  padding: 0;
-}
-
-.leaflet-popup-content {
-  margin: 12px;
-}
+### Filter Integration
+Add new filter type to `PropertyFilters`:
+```typescript
+polygon?: [number, number][]; // Array of [lng, lat] coordinates
 ```
 
----
-
-## Part 2: Clustering Performance Optimization
-
-### Current State
-The clustering uses `use-supercluster` which is good, but several optimizations are needed:
-
-1. **Bounds update on initial load** - Currently uses `[-180, -85, 180, 85]` as initial bounds
-2. **Debounced updates** - Already implemented in `MapBoundsListener` but can be improved
-3. **Memoization** - Points array is memoized, good
-
-### Optimizations to PropertyMap.tsx
-
-1. **Better initial bounds calculation** from map center and zoom
-2. **Cluster styling using CSS classes** instead of inline styles
-3. **Add cluster size tiers** for visual hierarchy (small/medium/large clusters)
-
-### ClusterMarker Improvements
-- Add size tiers: 
-  - Small (2-10 properties): 50px diameter
-  - Medium (11-50 properties): 65px diameter
-  - Large (51+ properties): 80px diameter
-- Improve hover/click feedback
+Update `usePaginatedProperties` to handle polygon filtering client-side (Supabase doesn't support native polygon filtering without PostGIS extensions).
 
 ---
 
-## Part 3: Grid/Map View Toggle on Listings Page
+## Part 2: City Overlay Layer
 
-### User Flow
-On `/listings` and when viewing rentals:
-1. User sees a toggle button group in the filter bar area
-2. "Grid" (default) shows the current card-based layout
-3. "Map" navigates to `/map` with all current filters preserved in URL
+### Purpose
+When zoomed out (zoom < 10), show clickable city markers that:
+- Display city name
+- Show property count in that city
+- Click to zoom into the city
 
-On `/map`:
-1. User sees the same toggle but "Map" is selected
-2. Clicking "Grid" navigates back to `/listings` with filters preserved
+### New Component: CityOverlay.tsx
+
+**Location:** `src/components/map-search/CityOverlay.tsx`
+
+**Features:**
+- Fetches cities with coordinates from database
+- Renders city markers only when zoom < 10
+- Each marker shows: city name + property count badge
+- Click handler zooms map to city center at zoom 13
+- Optional: Show average price per city
+
+### Visual Design
+- Clean pill-shaped labels (similar to Google Maps)
+- White background with subtle shadow
+- City name in dark text
+- Property count as small badge
+
+### Data Source
+Uses existing `useCities()` hook which already fetches city data including `center_lat` and `center_lng`.
+
+---
+
+## Part 3: Neighborhood Selection
+
+### Purpose
+When zoomed into a city (zoom >= 12), show clickable neighborhood chips that filter results.
+
+### Data Structure
+Neighborhoods are stored as JSONB in the `cities` table:
+```json
+[
+  { "name": "North Ra'anana", "description": "New developments and villas" },
+  { "name": "City Center", "description": "Close to amenities" }
+]
+```
+
+### New Component: NeighborhoodOverlay.tsx
+
+**Location:** `src/components/map-search/NeighborhoodOverlay.tsx`
+
+**Features:**
+- Detects when user is zoomed into a specific city
+- Shows horizontal scrollable chip bar of neighborhoods
+- Multi-select capability (click multiple neighborhoods)
+- Selected neighborhoods filter property list
+- Clear selection button
 
 ### Implementation
-
-#### New Component: `ViewToggle.tsx`
-Location: `src/components/filters/ViewToggle.tsx`
-
-A simple toggle button group:
-```
-[Grid Icon] Grid | [Map Icon] Map
-```
-
-Props:
-- `activeView: 'grid' | 'map'`
-- `onViewChange: (view: 'grid' | 'map') => void`
-
-#### Changes to PropertyFilters.tsx
-Add the `ViewToggle` component in the filter bar, positioned after the sort dropdown on desktop.
-
-#### Changes to Listings.tsx
-1. Import and render `ViewToggle` with `activeView="grid"`
-2. On "Map" click, navigate to `/map` with current search params
-
-#### Changes to MapSearchLayout.tsx
-1. Import and render `ViewToggle` with `activeView="map"` in the `MapFiltersBar`
-2. On "Grid" click, navigate to `/listings` with current search params
-
-#### URL Parameter Synchronization
-Both pages already use URL params (`?status=for_sale&city=Tel+Aviv&min_price=...`). When switching views:
-- Extract all current URL params
-- Navigate to the other page with same params
-- The target page will parse and apply filters from URL
+1. When map bounds are within a city's area (check against city center + radius)
+2. Show that city's neighborhoods as filter chips
+3. Clicking a chip adds `neighborhoods: ['North Ra'anana']` to filters
+4. `usePaginatedProperties` already supports `neighborhood` filter
 
 ---
 
-## Part 4: Loading States & Skeleton UI
+## Part 4: MapToolbar Enhancement
 
-### Current State
-`MapPropertyList.tsx` has loading skeletons, but they could be improved.
+### Updates to MapToolbar.tsx
 
-### Improvements
-1. Add skeleton for cluster markers during initial load
-2. Improve loading overlay visibility
-3. Add shimmer effect to loading states
+Add new draw tool buttons:
+- **Draw button group:**
+  - Rectangle icon - draw rectangular area
+  - Pencil icon - freehand polygon
+  - Circle icon - radius-based area
+- **Clear Drawing** - appears when a shape exists
+- Visual state for active drawing mode
+
+### Button Layout
+```
+[Zoom +]
+[Zoom -]
+------
+[Locate Me]
+[Saved Places]
+------
+[Draw Menu ▼]  <- New dropdown with Rectangle, Freehand, Circle options
+[Clear Draw]   <- Only shows when drawing exists
+------
+[Reset View]
+```
 
 ---
 
-## Files to Create
+## Part 5: Client-Side Polygon Filtering
+
+### Point-in-Polygon Algorithm
+Since Supabase doesn't have native spatial queries, we'll filter client-side:
+
+```typescript
+// Check if a point is inside a polygon using ray-casting algorithm
+function isPointInPolygon(point: [number, number], polygon: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    if (((yi > point[1]) !== (yj > point[1])) &&
+        (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+```
+
+### Integration
+In `MapSearchLayout`, when a polygon is active:
+1. Fetch all properties within map bounds (existing behavior)
+2. Apply additional client-side filter using point-in-polygon
+3. Only show properties that fall within the drawn shape
+
+---
+
+## CSS Additions to index.css
+
+```css
+/* Draw control styles */
+.draw-toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.draw-toolbar-button:hover {
+  background: hsl(210 40% 96%);
+}
+
+.draw-toolbar-button.active {
+  background: hsl(213 94% 45%);
+  color: white;
+}
+
+/* City overlay markers */
+.city-overlay-marker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms, box-shadow 200ms;
+  white-space: nowrap;
+}
+
+.city-overlay-marker:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.city-overlay-marker .city-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: hsl(222 47% 11%);
+}
+
+.city-overlay-marker .city-count {
+  font-size: 11px;
+  background: hsl(213 94% 45%);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+
+/* Neighborhood chip bar */
+.neighborhood-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: calc(100% - 32px);
+  overflow-x: auto;
+}
+
+.neighborhood-chip {
+  padding: 6px 12px;
+  background: hsl(210 40% 96%);
+  border-radius: 9999px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.neighborhood-chip:hover {
+  background: hsl(210 40% 90%);
+}
+
+.neighborhood-chip.selected {
+  background: hsl(213 94% 45%);
+  color: white;
+}
+
+/* Drawn shape styles */
+.leaflet-pm-shape {
+  fill-opacity: 0.2 !important;
+  stroke-width: 2 !important;
+}
+```
+
+---
+
+## Files Summary
+
+### New Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/components/filters/ViewToggle.tsx` | Toggle between Grid and Map views |
+| `src/components/map-search/DrawControl.tsx` | Draw toolbar and Leaflet-Geoman integration |
+| `src/components/map-search/CityOverlay.tsx` | City markers when zoomed out |
+| `src/components/map-search/NeighborhoodChips.tsx` | Neighborhood filter chips when zoomed in |
+| `src/lib/utils/geometry.ts` | Point-in-polygon and geometry utilities |
 
-## Files to Modify
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/index.css` | Add cluster marker and map popup styles |
-| `src/components/map-search/PropertyMap.tsx` | Optimize clustering, use CSS classes, add size tiers |
-| `src/components/filters/PropertyFilters.tsx` | Add ViewToggle component |
-| `src/pages/Listings.tsx` | Handle view toggle navigation to map |
-| `src/components/map-search/MapFiltersBar.tsx` | Add ViewToggle for map-to-grid navigation |
-| `src/components/map-search/MapSearchLayout.tsx` | Pass listingType to MapFiltersBar |
-| `src/lib/routes.ts` | Add mapUrl helper function |
+| `package.json` | Add `@geoman-io/leaflet-geoman-free` dependency |
+| `src/index.css` | Add draw, city overlay, and neighborhood chip styles |
+| `src/types/database.ts` | Add `polygon` to PropertyFilters |
+| `src/types/content.ts` | Add `center_lat`, `center_lng` to City type |
+| `src/components/map-search/PropertyMap.tsx` | Add DrawControl, CityOverlay, NeighborhoodChips |
+| `src/components/map-search/MapSearchLayout.tsx` | Handle polygon state and filtering |
+| `src/components/map-search/MapToolbar.tsx` | Add draw tool buttons |
 
 ---
 
-## Technical Details
+## UX Flow
 
-### ViewToggle Component Design
-```tsx
-interface ViewToggleProps {
-  activeView: 'grid' | 'map';
-  className?: string;
-}
+### Draw-to-Search Flow
+1. User clicks draw button in toolbar
+2. Dropdown shows: Rectangle, Freehand, Circle
+3. User selects mode and draws on map
+4. Shape appears with subtle fill
+5. "Search as I move" auto-disables
+6. Properties filter to those inside shape
+7. "Clear Drawing" button appears
+8. User can redraw or clear
 
-// Uses ToggleGroup from Radix UI (already installed)
-// Grid icon: LayoutGrid from lucide-react
-// Map icon: Map from lucide-react
-// Navigation handled via useNavigate + preserving search params
+### City Zoom Flow
+1. User views Israel at zoom 8-9
+2. City markers appear (Tel Aviv, Jerusalem, Haifa, etc.)
+3. Each shows name + property count
+4. User clicks "Tel Aviv"
+5. Map smoothly zooms to Tel Aviv at zoom 13
+6. City markers fade out, property markers appear
+
+### Neighborhood Filter Flow
+1. User is viewing Tel Aviv at zoom 13+
+2. Neighborhood chips appear at bottom: "Neve Tzedek", "Florentin", "Sarona", etc.
+3. User clicks "Neve Tzedek" - chip highlights
+4. Properties filter to that neighborhood
+5. User can multi-select neighborhoods
+6. "Clear" button resets selection
+
+---
+
+## Technical Considerations
+
+### Performance
+- City overlay only renders when zoom < 10
+- Neighborhoods only fetch/show when in single city view
+- Polygon filtering is optimized with early exit on bounds check
+- Drawn shapes stored in state, not re-rendered unnecessarily
+
+### Mobile Support
+- Draw tools work with touch (Leaflet-Geoman supports touch)
+- Neighborhood chips are horizontally scrollable
+- City markers are tap-friendly size
+
+### State Persistence
+- Drawn polygon can be serialized to URL for sharing
+- Format: `?polygon=lat1,lng1;lat2,lng2;...`
+
+---
+
+## Dependencies
+
+**New Package:**
+```
+@geoman-io/leaflet-geoman-free: ^2.16.0
 ```
 
-### Cluster Size Tiers Logic
-```tsx
-const getClusterSize = (count: number) => {
-  if (count <= 10) return { size: 50, fontSize: 12 };
-  if (count <= 50) return { size: 65, fontSize: 14 };
-  return { size: 80, fontSize: 16 };
-};
-```
-
-### URL Preservation During View Switch
-```tsx
-const switchToMapView = () => {
-  const currentParams = searchParams.toString();
-  navigate(`/map?${currentParams}`);
-};
-
-const switchToGridView = () => {
-  const currentParams = searchParams.toString();
-  navigate(`/listings?${currentParams}`);
-};
-```
+This is the free/open-source version of Leaflet-Geoman, MIT licensed.
 
 ---
 
 ## Summary
 
-This phase delivers:
-1. Properly styled cluster markers via CSS (not broken inline Tailwind)
-2. Visual cluster size tiers for better UX at different zoom levels
-3. Seamless Grid/Map view toggle that preserves all filters
-4. Performance optimizations for large property counts
-5. Improved loading states
+Phase 3 delivers powerful spatial filtering that matches Zillow's best features while adding BuyWise-specific value:
 
-The view toggle enables users to effortlessly switch between traditional grid browsing and spatial map exploration while maintaining their search context.
+1. **Draw-to-Search**: Rectangle, freehand, and circle drawing for precise area filtering
+2. **City Quick-Jump**: Click city names when zoomed out to navigate quickly
+3. **Neighborhood Filtering**: Easy chip-based neighborhood selection when zoomed in
+4. **Client-Side Polygon Filtering**: Fast point-in-polygon filtering without database extensions
+
+These features transform the map from a visualization tool into an active search interface, letting users define exactly where they want to live.
 
