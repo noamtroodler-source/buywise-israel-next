@@ -1,14 +1,18 @@
-import { useEffect, useRef, useCallback, useMemo } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, useMap, useMapEvents, Marker } from 'react-leaflet';
 import L from 'leaflet';
-import { Property } from '@/types/database';
+import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
 import { MapToolbar } from './MapToolbar';
 import { SavedLocationsLayer } from './SavedLocationsLayer';
+import { DrawControl, DrawnPolygon, type DrawMode } from './DrawControl';
+import { CityOverlay } from './CityOverlay';
+import { NeighborhoodChips } from './NeighborhoodChips';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useAuth } from '@/hooks/useAuth';
 import type { MapBounds } from './MapSearchLayout';
+import type { Polygon } from '@/lib/utils/geometry';
 import 'leaflet/dist/leaflet.css';
 import useSupercluster from 'use-supercluster';
 
@@ -22,6 +26,15 @@ interface PropertyMapProps {
   onPropertyHover: (id: string | null) => void;
   onPropertySelect: (id: string | null) => void;
   searchAsMove: boolean;
+  onSearchAsMoveChange: (value: boolean) => void;
+  listingStatus: ListingStatus;
+  // Polygon/Draw state
+  drawnPolygon: Polygon | null;
+  onPolygonChange: (polygon: Polygon | null) => void;
+  // Neighborhood state
+  selectedNeighborhoods: string[];
+  onNeighborhoodToggle: (neighborhood: string) => void;
+  onClearNeighborhoods: () => void;
 }
 
 // Map bounds listener component
@@ -73,19 +86,71 @@ function MapBoundsListener({
   return null;
 }
 
-// Cluster icon generator
-function createClusterIcon(count: number, priceRange: string) {
-  return L.divIcon({
-    html: `
-      <div class="cluster-marker">
-        <span class="cluster-count">${count}</span>
-        <span class="cluster-price">${priceRange}</span>
-      </div>
-    `,
-    className: 'custom-cluster-icon',
-    iconSize: L.point(80, 50),
-    iconAnchor: L.point(40, 25),
+// Zoom level tracker for overlays
+function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
+  const map = useMap();
+  
+  useMapEvents({
+    zoomend: () => {
+      onZoomChange(map.getZoom());
+    },
   });
+
+  useEffect(() => {
+    onZoomChange(map.getZoom());
+  }, []);
+
+  return null;
+}
+
+// Get cluster size tier based on property count
+function getClusterSizeTier(count: number): 'small' | 'medium' | 'large' {
+  if (count <= 10) return 'small';
+  if (count <= 50) return 'medium';
+  return 'large';
+}
+
+interface ClusterMarkerProps {
+  position: [number, number];
+  count: number;
+  priceRange: string;
+  onClick: () => void;
+}
+
+function ClusterMarker({ position, count, priceRange, onClick }: ClusterMarkerProps) {
+  const sizeTier = getClusterSizeTier(count);
+  
+  const icon = useMemo(() => {
+    const sizes = {
+      small: { iconSize: 50, anchor: 25 },
+      medium: { iconSize: 65, anchor: 32.5 },
+      large: { iconSize: 80, anchor: 40 },
+    };
+    
+    const { iconSize, anchor } = sizes[sizeTier];
+    
+    return L.divIcon({
+      html: `
+        <div class="cluster-marker ${sizeTier}">
+          <span class="cluster-count">${count}</span>
+          <span class="cluster-price">${priceRange}</span>
+        </div>
+      `,
+      className: '',
+      iconSize: L.point(iconSize, iconSize),
+      iconAnchor: L.point(anchor, anchor),
+    });
+  }, [count, priceRange, sizeTier]);
+
+  return (
+    <Marker
+      position={position}
+      icon={icon}
+      eventHandlers={{
+        click: onClick,
+      }}
+    />
+  );
 }
 
 export function PropertyMap({
@@ -98,11 +163,21 @@ export function PropertyMap({
   onPropertyHover,
   onPropertySelect,
   searchAsMove,
+  onSearchAsMoveChange,
+  listingStatus,
+  drawnPolygon,
+  onPolygonChange,
+  selectedNeighborhoods,
+  onNeighborhoodToggle,
+  onClearNeighborhoods,
 }: PropertyMapProps) {
   const { user } = useAuth();
   const { data: savedLocations } = useSavedLocations();
   const mapRef = useRef<L.Map>(null);
-  const [showSavedLocations, setShowSavedLocations] = React.useState(true);
+  const [showSavedLocations, setShowSavedLocations] = useState(true);
+  const [drawMode, setDrawMode] = useState<DrawMode>(null);
+  const [currentZoom, setCurrentZoom] = useState(zoom);
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   
   // Convert properties to GeoJSON points for clustering
   const points = useMemo(() => 
@@ -126,13 +201,12 @@ export function PropertyMap({
   );
 
   // Get map bounds for clustering
-  const [bounds, setBounds] = React.useState<[number, number, number, number]>([-180, -85, 180, 85]);
-  const [currentZoom, setCurrentZoom] = React.useState(zoom);
+  const [clusterBounds, setClusterBounds] = useState<[number, number, number, number]>([-180, -85, 180, 85]);
 
   // Supercluster hook
   const { clusters, supercluster } = useSupercluster({
     points,
-    bounds,
+    bounds: clusterBounds,
     zoom: currentZoom,
     options: {
       radius: 75,
@@ -173,6 +247,35 @@ export function PropertyMap({
     );
   }, [supercluster]);
 
+  // Handle draw completion
+  const handleDrawComplete = useCallback((polygon: Polygon) => {
+    onPolygonChange(polygon);
+    setDrawMode(null);
+    // Disable search as move when polygon is drawn
+    onSearchAsMoveChange(false);
+  }, [onPolygonChange, onSearchAsMoveChange]);
+
+  // Handle draw cancel
+  const handleDrawCancel = useCallback(() => {
+    setDrawMode(null);
+  }, []);
+
+  // Handle clear polygon
+  const handleClearPolygon = useCallback(() => {
+    onPolygonChange(null);
+    onSearchAsMoveChange(true);
+  }, [onPolygonChange, onSearchAsMoveChange]);
+
+  // Handle city click from overlay
+  const handleCityClick = useCallback((cityName: string, cityCenter: [number, number]) => {
+    // Could filter by city here if needed
+  }, []);
+
+  // Show city overlay when zoomed out
+  const showCityOverlay = currentZoom < 10;
+  // Show neighborhood chips when zoomed in
+  const showNeighborhoodChips = currentZoom >= 12;
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
@@ -191,14 +294,36 @@ export function PropertyMap({
         <MapBoundsListener 
           onBoundsChange={(b, c, z) => {
             onBoundsChange(b, c, z);
-            setBounds([b.west, b.south, b.east, b.north]);
+            setClusterBounds([b.west, b.south, b.east, b.north]);
             setCurrentZoom(z);
+            setMapBounds(b);
           }}
           searchAsMove={searchAsMove}
         />
+
+        <ZoomTracker onZoomChange={setCurrentZoom} />
+
+        {/* Draw Control */}
+        <DrawControl
+          drawMode={drawMode}
+          onDrawComplete={handleDrawComplete}
+          onDrawCancel={handleDrawCancel}
+        />
+
+        {/* Display drawn polygon */}
+        {drawnPolygon && (
+          <DrawnPolygon polygon={drawnPolygon} onClear={handleClearPolygon} />
+        )}
+
+        {/* City Overlay (when zoomed out) */}
+        <CityOverlay
+          visible={showCityOverlay}
+          listingStatus={listingStatus}
+          onCityClick={handleCityClick}
+        />
         
-        {/* Property Markers / Clusters */}
-        {clusters.map(cluster => {
+        {/* Property Markers / Clusters (when zoomed in enough) */}
+        {!showCityOverlay && clusters.map(cluster => {
           const [lng, lat] = cluster.geometry.coordinates;
           const { cluster: isCluster, point_count: pointCount } = cluster.properties;
           
@@ -255,64 +380,21 @@ export function PropertyMap({
         onToggleSavedLocations={() => setShowSavedLocations(!showSavedLocations)}
         hasSavedLocations={!!savedLocations?.length}
         searchAsMove={searchAsMove}
-        onSearchAsMoveChange={(value) => {
-          // This is handled in parent, but we can trigger a refresh
-        }}
+        onSearchAsMoveChange={onSearchAsMoveChange}
+        drawMode={drawMode}
+        onDrawModeChange={setDrawMode}
+        hasDrawnPolygon={!!drawnPolygon}
+        onClearPolygon={handleClearPolygon}
+      />
+
+      {/* Neighborhood Chips (when zoomed in) */}
+      <NeighborhoodChips
+        visible={showNeighborhoodChips}
+        mapBounds={mapBounds}
+        selectedNeighborhoods={selectedNeighborhoods}
+        onNeighborhoodToggle={onNeighborhoodToggle}
+        onClearNeighborhoods={onClearNeighborhoods}
       />
     </div>
-  );
-}
-
-// Cluster marker component with size tiers
-import React from 'react';
-import { Marker } from 'react-leaflet';
-
-interface ClusterMarkerProps {
-  position: [number, number];
-  count: number;
-  priceRange: string;
-  onClick: () => void;
-}
-
-// Get cluster size tier based on property count
-function getClusterSizeTier(count: number): 'small' | 'medium' | 'large' {
-  if (count <= 10) return 'small';
-  if (count <= 50) return 'medium';
-  return 'large';
-}
-
-function ClusterMarker({ position, count, priceRange, onClick }: ClusterMarkerProps) {
-  const sizeTier = getClusterSizeTier(count);
-  
-  const icon = useMemo(() => {
-    const sizes = {
-      small: { iconSize: 50, anchor: 25 },
-      medium: { iconSize: 65, anchor: 32.5 },
-      large: { iconSize: 80, anchor: 40 },
-    };
-    
-    const { iconSize, anchor } = sizes[sizeTier];
-    
-    return L.divIcon({
-      html: `
-        <div class="cluster-marker ${sizeTier}">
-          <span class="cluster-count">${count}</span>
-          <span class="cluster-price">${priceRange}</span>
-        </div>
-      `,
-      className: '',
-      iconSize: L.point(iconSize, iconSize),
-      iconAnchor: L.point(anchor, anchor),
-    });
-  }, [count, priceRange, sizeTier]);
-
-  return (
-    <Marker
-      position={position}
-      icon={icon}
-      eventHandlers={{
-        click: onClick,
-      }}
-    />
   );
 }

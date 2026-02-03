@@ -104,6 +104,9 @@ export interface City {
   average_vaad_bayit_max?: number | null;
   rental_5_room_min?: number | null;
   rental_5_room_max?: number | null;
+  // Map center coordinates
+  center_lat?: number | null;
+  center_lng?: number | null;
 }
 
 export type BlogSortOption = 'newest' | 'most_viewed' | 'most_saved';

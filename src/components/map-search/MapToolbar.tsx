@@ -1,4 +1,4 @@
-import { RefObject, useCallback } from 'react';
+import { RefObject, useCallback, useState } from 'react';
 import L from 'leaflet';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,8 +8,19 @@ import {
   Locate, 
   MapPin,
   Layers,
+  Square,
+  PenTool,
+  Circle,
+  X,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import type { DrawMode } from './DrawControl';
 
 interface MapToolbarProps {
   mapRef: RefObject<L.Map | null>;
@@ -18,6 +29,11 @@ interface MapToolbarProps {
   hasSavedLocations: boolean;
   searchAsMove: boolean;
   onSearchAsMoveChange: (value: boolean) => void;
+  // Draw mode props
+  drawMode: DrawMode;
+  onDrawModeChange: (mode: DrawMode) => void;
+  hasDrawnPolygon: boolean;
+  onClearPolygon: () => void;
 }
 
 export function MapToolbar({
@@ -25,7 +41,13 @@ export function MapToolbar({
   showSavedLocations,
   onToggleSavedLocations,
   hasSavedLocations,
+  drawMode,
+  onDrawModeChange,
+  hasDrawnPolygon,
+  onClearPolygon,
 }: MapToolbarProps) {
+  const [drawMenuOpen, setDrawMenuOpen] = useState(false);
+
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.zoomIn();
@@ -50,6 +72,11 @@ export function MapToolbar({
       mapRef.current.flyTo([31.5, 34.8], 8, { duration: 1 });
     }
   }, [mapRef]);
+
+  const handleDrawModeSelect = (mode: DrawMode) => {
+    onDrawModeChange(mode);
+    setDrawMenuOpen(false);
+  };
 
   return (
     <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-1">
@@ -124,6 +151,69 @@ export function MapToolbar({
           </Tooltip>
         </div>
       )}
+
+      {/* Draw Tools */}
+      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
+        <DropdownMenu open={drawMenuOpen} onOpenChange={setDrawMenuOpen}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-9 w-9 rounded-none",
+                    (drawMode || hasDrawnPolygon) && "bg-primary/10 text-primary"
+                  )}
+                >
+                  <PenTool className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="left">Draw to search</TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent side="left" align="start">
+            <DropdownMenuItem 
+              onClick={() => handleDrawModeSelect('rectangle')}
+              className={cn(drawMode === 'rectangle' && 'bg-accent')}
+            >
+              <Square className="h-4 w-4 mr-2" />
+              Rectangle
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleDrawModeSelect('polygon')}
+              className={cn(drawMode === 'polygon' && 'bg-accent')}
+            >
+              <PenTool className="h-4 w-4 mr-2" />
+              Freehand
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleDrawModeSelect('circle')}
+              className={cn(drawMode === 'circle' && 'bg-accent')}
+            >
+              <Circle className="h-4 w-4 mr-2" />
+              Circle
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        {/* Clear Drawing Button */}
+        {hasDrawnPolygon && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-none border-t text-destructive hover:text-destructive"
+                onClick={onClearPolygon}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Clear drawing</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
       
       {/* Reset View */}
       <div className="bg-background rounded-lg shadow-md border overflow-hidden">
