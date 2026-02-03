@@ -42,6 +42,18 @@ interface PropertyMapProps {
   onClearNeighborhoods: () => void;
 }
 
+// Map click handler to deselect property when clicking empty map
+function MapClickHandler({ onDeselect }: { onDeselect: () => void }) {
+  useMapEvents({
+    click: (e) => {
+      // Only deselect if clicking on empty map (not on a marker)
+      // Markers stop propagation, so this only fires for empty space
+      onDeselect();
+    },
+  });
+  return null;
+}
+
 // Map bounds listener component
 function MapBoundsListener({ 
   onBoundsChange,
@@ -332,6 +344,12 @@ export function PropertyMap({
         />
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
+
+        {/* Click handler to deselect when clicking empty map */}
+        <MapClickHandler onDeselect={() => {
+          onPropertySelect(null);
+          onPropertyHover(null);
+        }} />
 
         {/* Draw Control */}
         <DrawControl
