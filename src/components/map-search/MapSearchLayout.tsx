@@ -9,7 +9,7 @@ import { MobileMapSheet } from './MobileMapSheet';
 import { MobileQuickFilters } from './MobileQuickFilters';
 import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
 import { MapOnboardingHints } from './MapOnboardingHints';
-import { MapEmptyState } from './MapEmptyState';
+
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
@@ -40,10 +40,9 @@ export default function MapSearchLayout() {
   const isMobile = useIsMobile();
   const mapRef = useRef<L.Map | null>(null);
   
-  // Smart city selection
+  // City data for auto-centering
   const { recentCity, isLoading: recentCityLoading } = useRecentSearchCity();
   const { data: allCities } = useCities();
-  const [hasSelectedCity, setHasSelectedCity] = useState(false);
   
   // Map state
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
@@ -137,58 +136,20 @@ export default function MapSearchLayout() {
     return initialFilters;
   });
 
-  // Smart city selection: Apply recent city if no city in URL
+  // Auto-center to recent city if available (non-blocking)
   useEffect(() => {
-    // Skip if already has city in URL or user already selected a city in this session
-    if (urlCity || hasSelectedCity) return;
+    // Skip if already has city in URL
+    if (urlCity) return;
     
     // Wait until recent city is loaded
     if (recentCityLoading) return;
     
-    // If we have a recent city, apply it
+    // If we have a recent city, auto-center to it (but don't block anything)
     if (recentCity) {
-      setHasSelectedCity(true);
       setMapCenter([recentCity.lat, recentCity.lng]);
       setMapZoom(CITY_ZOOM);
-      setFilters(prev => ({ ...prev, city: recentCity.name }));
-      
-      // Update URL with the city
-      const params = new URLSearchParams(searchParams);
-      params.set('city', recentCity.name);
-      params.set('center', `${recentCity.lat.toFixed(4)},${recentCity.lng.toFixed(4)}`);
-      params.set('zoom', String(CITY_ZOOM));
-      setSearchParams(params, { replace: true });
     }
-  }, [recentCity, recentCityLoading, urlCity, hasSelectedCity, searchParams, setSearchParams]);
-
-  // Handle city selection from empty state
-  const handleCitySelectFromEmptyState = useCallback((cityName: string, coords: { lat: number; lng: number }) => {
-    setHasSelectedCity(true);
-    setMapCenter([coords.lat, coords.lng]);
-    setMapZoom(CITY_ZOOM);
-    setFilters(prev => ({ ...prev, city: cityName }));
-    
-    // Save to localStorage for future visits
-    saveRecentCity(cityName, coords.lat, coords.lng);
-    
-    // Update URL
-    const params = new URLSearchParams(searchParams);
-    params.set('city', cityName);
-    params.set('center', `${coords.lat.toFixed(4)},${coords.lng.toFixed(4)}`);
-    params.set('zoom', String(CITY_ZOOM));
-    setSearchParams(params, { replace: true });
-  }, [searchParams, setSearchParams]);
-
-  // Determine if we should show the empty state
-  const showEmptyState = useMemo(() => {
-    // Show empty state only if:
-    // 1. No city in URL
-    // 2. No recent city found (after loading)
-    // 3. User hasn't selected a city yet
-    if (urlCity || hasSelectedCity) return false;
-    if (recentCityLoading) return false;
-    return !recentCity;
-  }, [urlCity, hasSelectedCity, recentCityLoading, recentCity]);
+  }, [recentCity, recentCityLoading, urlCity]);
 
   // Combined filters with bounds (when searchAsMove is enabled OR polygon is active)
   const queryFilters = useMemo(() => {
@@ -291,7 +252,6 @@ export default function MapSearchLayout() {
     
     // If city changed, save it and update map position
     if (newFilters.city && newFilters.city !== filters.city) {
-      setHasSelectedCity(true);
       const city = allCities?.find(c => c.name === newFilters.city);
       if (city?.center_lat && city?.center_lng) {
         setMapCenter([city.center_lat, city.center_lng]);
@@ -363,27 +323,6 @@ export default function MapSearchLayout() {
 
   // Mobile layout
   if (isMobile) {
-    // Show empty state on mobile if no city
-    if (showEmptyState) {
-      return (
-        <div className="flex flex-col h-[calc(100vh-64px)]">
-          <MapFiltersBar
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-            resultCount={0}
-            isLoading={false}
-            searchAsMove={searchAsMove}
-            onSearchAsMoveChange={handleSearchAsMoveChange}
-            savedLocations={savedLocations}
-            commuteFilter={commuteFilter}
-            onCommuteFilterChange={setCommuteFilter}
-          />
-          <MapEmptyState onCitySelect={handleCitySelectFromEmptyState} />
-        </div>
-      );
-    }
-
     return (
       <div className="flex flex-col h-[calc(100vh-64px)]">
         {/* Filter Bar */}
@@ -500,38 +439,34 @@ export default function MapSearchLayout() {
         onCommuteFilterChange={setCommuteFilter}
       />
       
-      {/* Empty State or Split View */}
-      {showEmptyState ? (
-        <MapEmptyState onCitySelect={handleCitySelectFromEmptyState} />
-      ) : (
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={55} minSize={35} maxSize={75}>
-            <div className="relative h-full">
-              <PropertyMap {...propertyMapProps} />
-              {/* Onboarding Hints */}
-              <MapOnboardingHints 
-                visible={true} 
-                hasSavedLocations={!!savedLocations?.length} 
-              />
-            </div>
-          </ResizablePanel>
-          
-          <ResizableHandle withHandle />
-          
-          <ResizablePanel defaultSize={45} minSize={25} maxSize={65}>
-            <MapPropertyList
-              properties={properties}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              hasNextPage={hasNextPage}
-              loadMore={loadMore}
-              hoveredPropertyId={hoveredPropertyId}
-              onPropertyHover={handlePropertyHover}
-              onPropertySelect={handlePropertySelect}
+      {/* Split View */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanel defaultSize={55} minSize={35} maxSize={75}>
+          <div className="relative h-full">
+            <PropertyMap {...propertyMapProps} />
+            {/* Onboarding Hints */}
+            <MapOnboardingHints 
+              visible={true} 
+              hasSavedLocations={!!savedLocations?.length} 
             />
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      )}
+          </div>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel defaultSize={45} minSize={25} maxSize={65}>
+          <MapPropertyList
+            properties={properties}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            hasNextPage={hasNextPage}
+            loadMore={loadMore}
+            hoveredPropertyId={hoveredPropertyId}
+            onPropertyHover={handlePropertyHover}
+            onPropertySelect={handlePropertySelect}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
       {/* Keyboard Shortcuts Modal */}
       <MapKeyboardShortcuts 
