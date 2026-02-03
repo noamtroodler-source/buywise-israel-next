@@ -40,7 +40,7 @@ export function CityOverlay({ visible, listingStatus, onCityClick }: CityOverlay
     staleTime: 60000, // 1 minute
   });
 
-  // Create city markers with coordinates - show top 6 cities by property count
+  // Create city markers with coordinates
   const cityMarkers = useMemo(() => {
     if (!cities || !visible) return [];
 
@@ -52,9 +52,7 @@ export function CityOverlay({ visible, listingStatus, onCityClick }: CityOverlay
         center: [city.center_lat!, city.center_lng!] as [number, number],
         count: cityCounts?.[city.name] || 0,
       }))
-      .filter((city) => city.count > 0)
-      .sort((a, b) => b.count - a.count) // Sort by property count descending
-      .slice(0, 6); // Show only top 6 cities
+      .filter((city) => city.count > 0); // Only show cities with properties
   }, [cities, cityCounts, visible]);
 
   if (!visible) return null;
