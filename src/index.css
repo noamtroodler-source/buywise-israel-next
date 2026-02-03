@@ -374,13 +374,13 @@
 }
 
 /* Hide the default pointer/tip completely */
-.leaflet-popup-tip-container {
+.leaflet-popup-tip-container,
+.leaflet-popup-tip {
   display: none !important;
-}
-
-.property-popup .leaflet-popup-content-wrapper {
-  border-radius: 12px !important;
-  overflow: hidden !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
 }
 
 .leaflet-popup-close-button {
