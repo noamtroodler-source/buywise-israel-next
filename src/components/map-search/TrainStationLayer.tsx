@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Marker, Popup, useMap, useMapEvents } from '@/vendor/react-leaflet';
+import { Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { TRAIN_STATIONS, TrainStation } from '@/data/trainStations';
 import { Badge } from '@/components/ui/badge';

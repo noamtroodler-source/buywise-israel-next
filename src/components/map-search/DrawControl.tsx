@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useMap } from '@/vendor/react-leaflet';
+import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
