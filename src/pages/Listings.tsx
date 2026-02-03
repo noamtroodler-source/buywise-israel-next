@@ -265,16 +265,18 @@ export default function Listings() {
         </div>
 
         {/* Results Count Row - with View Toggle on desktop */}
-        {!isLoading && (
-          <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4">
+          {!isLoading ? (
             <p className="text-sm text-muted-foreground">
               Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
             </p>
-            {!isMobile && (
-              <ViewToggle activeView="grid" size="sm" />
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
+          )}
+          {!isMobile && (
+            <ViewToggle activeView="grid" size="sm" />
+          )}
+        </div>
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
         {isLoading ? (
