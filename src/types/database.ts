@@ -119,6 +119,13 @@ export interface Inquiry {
   created_at: string;
 }
 
+export interface MapBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
 export interface PropertyFilters {
   city?: string;
   neighborhood?: string;
@@ -150,6 +157,8 @@ export interface PropertyFilters {
   available_now?: boolean;
   available_by?: string;
   allows_pets?: ('cats' | 'dogs' | 'all')[];
+  // Map bounds filter
+  bounds?: MapBounds;
 }
 
 export interface SearchAlert {
