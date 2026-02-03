@@ -6,12 +6,14 @@ import { MapPropertyList } from './MapPropertyList';
 import { MapFiltersBar } from './MapFiltersBar';
 import { MobileMapSheet } from './MobileMapSheet';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { PropertyFilters as PropertyFiltersType, ListingStatus, Property } from '@/types/database';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { List, Map as MapIcon, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { isPointInPolygon, type Polygon } from '@/lib/utils/geometry';
+import { isPointInPolygon, getDistanceInMeters, type Polygon } from '@/lib/utils/geometry';
+import type { CommuteFilterValue } from './CommuteFilter';
 
 // Israel bounds for initial view
 const ISRAEL_CENTER: [number, number] = [31.5, 34.8];
@@ -41,6 +43,9 @@ export default function MapSearchLayout() {
   
   // Neighborhood filter state
   const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
+
+  // Commute filter state
+  const [commuteFilter, setCommuteFilter] = useState<CommuteFilterValue | null>(null);
   
   // Mobile view state
   const [mobileView, setMobileView] = useState<'map' | 'list' | 'split'>('split');
@@ -105,6 +110,9 @@ export default function MapSearchLayout() {
     };
   }, [filters, mapBounds, searchAsMove, selectedNeighborhoods]);
 
+  // Fetch saved locations for commute filter
+  const { data: savedLocations } = useSavedLocations();
+
   // Fetch properties with bounds filtering
   const { 
     properties: rawProperties, 
@@ -116,18 +124,42 @@ export default function MapSearchLayout() {
     reset,
   } = usePaginatedProperties(queryFilters, { pageSize: 50 });
 
-  // Apply polygon filtering client-side
+  // Apply polygon and commute filtering client-side
   const properties = useMemo(() => {
-    if (!drawnPolygon || drawnPolygon.length === 0) return rawProperties;
-    
-    return rawProperties.filter(property => {
-      if (!property.longitude || !property.latitude) return false;
-      return isPointInPolygon(
-        [property.longitude, property.latitude],
-        drawnPolygon
-      );
-    });
-  }, [rawProperties, drawnPolygon]);
+    let filtered = rawProperties;
+
+    // Apply polygon filter
+    if (drawnPolygon && drawnPolygon.length > 0) {
+      filtered = filtered.filter(property => {
+        if (!property.longitude || !property.latitude) return false;
+        return isPointInPolygon(
+          [property.longitude, property.latitude],
+          drawnPolygon
+        );
+      });
+    }
+
+    // Apply commute filter
+    if (commuteFilter && savedLocations) {
+      const targetLocation = savedLocations.find(l => l.id === commuteFilter.locationId);
+      if (targetLocation) {
+        const maxDistanceKm = commuteFilter.maxMinutes / 1.2; // Approximate: 1.2 min/km for driving
+        
+        filtered = filtered.filter(property => {
+          if (!property.longitude || !property.latitude) return false;
+          const distanceMeters = getDistanceInMeters(
+            [property.longitude, property.latitude],
+            [targetLocation.longitude, targetLocation.latitude]
+          );
+          const distanceKm = distanceMeters / 1000;
+          const travelTime = distanceKm * 1.2 + 2; // Same formula as CommuteLines
+          return travelTime <= commuteFilter.maxMinutes;
+        });
+      }
+    }
+
+    return filtered;
+  }, [rawProperties, drawnPolygon, commuteFilter, savedLocations]);
 
   // Keep listing_status in sync with URL
   useEffect(() => {
@@ -226,10 +258,13 @@ export default function MapSearchLayout() {
           filters={filters}
           onFiltersChange={handleFiltersChange}
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-          resultCount={drawnPolygon ? properties.length : totalCount}
+          resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
           isLoading={isFetching}
           searchAsMove={searchAsMove}
           onSearchAsMoveChange={handleSearchAsMoveChange}
+          savedLocations={savedLocations}
+          commuteFilter={commuteFilter}
+          onCommuteFilterChange={setCommuteFilter}
         />
         
         {/* Mobile View Toggle */}
@@ -313,10 +348,13 @@ export default function MapSearchLayout() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-        resultCount={drawnPolygon ? properties.length : totalCount}
+        resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
         isLoading={isFetching}
         searchAsMove={searchAsMove}
         onSearchAsMoveChange={handleSearchAsMoveChange}
+        savedLocations={savedLocations}
+        commuteFilter={commuteFilter}
+        onCommuteFilterChange={setCommuteFilter}
       />
       
       {/* Split View */}

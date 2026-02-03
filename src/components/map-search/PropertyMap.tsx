@@ -9,6 +9,10 @@ import { SavedLocationsLayer } from './SavedLocationsLayer';
 import { DrawControl, DrawnPolygon, type DrawMode } from './DrawControl';
 import { CityOverlay } from './CityOverlay';
 import { NeighborhoodChips } from './NeighborhoodChips';
+import { TrainStationLayer } from './TrainStationLayer';
+import { PriceHeatmapLayer } from './PriceHeatmapLayer';
+import { HeatmapLegend } from './HeatmapLegend';
+import { CommuteLines } from './CommuteLines';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useAuth } from '@/hooks/useAuth';
 import type { MapBounds } from './MapSearchLayout';
@@ -175,6 +179,8 @@ export function PropertyMap({
   const { data: savedLocations } = useSavedLocations();
   const mapRef = useRef<L.Map>(null);
   const [showSavedLocations, setShowSavedLocations] = useState(true);
+  const [showTrainStations, setShowTrainStations] = useState(false);
+  const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
@@ -362,6 +368,20 @@ export function PropertyMap({
         {user && showSavedLocations && savedLocations && savedLocations.length > 0 && (
           <SavedLocationsLayer locations={savedLocations} />
         )}
+
+        {/* Commute Lines (when property is selected and user has saved locations) */}
+        {user && showSavedLocations && savedLocations && savedLocations.length > 0 && selectedPropertyId && (
+          <CommuteLines
+            property={properties.find(p => p.id === selectedPropertyId) || null}
+            savedLocations={savedLocations}
+          />
+        )}
+
+        {/* Train Station Layer */}
+        <TrainStationLayer visible={showTrainStations} />
+
+        {/* Price Heatmap Layer */}
+        <PriceHeatmapLayer visible={showPriceHeatmap} />
         
         {/* Selected Property Popup */}
         {selectedPropertyId && (
@@ -369,6 +389,7 @@ export function PropertyMap({
             propertyId={selectedPropertyId}
             properties={properties}
             onClose={() => onPropertySelect(null)}
+            savedLocations={savedLocations}
           />
         )}
       </MapContainer>
@@ -385,7 +406,14 @@ export function PropertyMap({
         onDrawModeChange={setDrawMode}
         hasDrawnPolygon={!!drawnPolygon}
         onClearPolygon={handleClearPolygon}
+        showTrainStations={showTrainStations}
+        onToggleTrainStations={() => setShowTrainStations(!showTrainStations)}
+        showPriceHeatmap={showPriceHeatmap}
+        onTogglePriceHeatmap={() => setShowPriceHeatmap(!showPriceHeatmap)}
       />
+
+      {/* Heatmap Legend */}
+      <HeatmapLegend visible={showPriceHeatmap} />
 
       {/* Neighborhood Chips (when zoomed in) */}
       <NeighborhoodChips

@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { PropertyFilters as PropertyFiltersType } from '@/types/database';
 import { MapFilterDialog } from './MapFilterDialog';
 import { ViewToggle } from '@/components/filters/ViewToggle';
+import { CommuteFilter, CommuteFilterValue } from './CommuteFilter';
+import { SavedLocation } from '@/types/savedLocation';
 import { 
   SlidersHorizontal, 
   MapPin, 
@@ -24,6 +26,10 @@ interface MapFiltersBarProps {
   isLoading: boolean;
   searchAsMove: boolean;
   onSearchAsMoveChange: (value: boolean) => void;
+  // Commute filter props
+  savedLocations?: SavedLocation[];
+  commuteFilter: CommuteFilterValue | null;
+  onCommuteFilterChange: (value: CommuteFilterValue | null) => void;
 }
 
 export function MapFiltersBar({
@@ -34,6 +40,9 @@ export function MapFiltersBar({
   isLoading,
   searchAsMove,
   onSearchAsMoveChange,
+  savedLocations,
+  commuteFilter,
+  onCommuteFilterChange,
 }: MapFiltersBarProps) {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
@@ -117,6 +126,15 @@ export function MapFiltersBar({
               Search as I move
             </Label>
           </div>
+
+          {/* Commute Filter */}
+          {savedLocations && savedLocations.length > 0 && (
+            <CommuteFilter
+              savedLocations={savedLocations}
+              value={commuteFilter}
+              onChange={onCommuteFilterChange}
+            />
+          )}
           
           {/* Filters Button */}
           <Button
