@@ -1,102 +1,60 @@
 
+## Remove City Selection Requirement for Map Page
 
-## City Overlay Redesign - Clean, Professional Map Markers
+### What's Happening Now
+When you visit `/map`, the app checks if you have a city selected (from URL, localStorage, or database). If not, it shows a "MapEmptyState" screen forcing you to pick a city before you can see the map.
 
-### Current Issues
+### What We'll Change
+Remove this gate entirely. Users will land directly on the map showing all of Israel at a zoomed-out view with city overlay markers. They can then:
+- Click on city markers to zoom in
+- Use the search/filters to find properties
+- Pan and zoom freely without any barrier
 
-1. **Visual Overlap**: Tel Aviv metro area has 8+ cities clustered together (Herzliya, Hod HaSharon, Kfar Saba, Ra'anana, Petah Tikva, Ramat Gan, Tel Aviv) causing unreadable marker overlap
-2. **Disjointed Design**: The current "city name pill + separate blue count bubble" looks unprofessional and disconnected
-3. **No Prioritization**: All cities shown equally regardless of property count or importance
+---
 
-### Solution: Unified City Pill Markers
+## Implementation
 
-Redesign to a single, unified marker style similar to how Zillow and Redfin show regional markers:
+### 1. Remove Empty State Logic from MapSearchLayout
+- Remove the `showEmptyState` computed value
+- Remove the `hasSelectedCity` state (no longer needed)
+- Remove the `handleCitySelectFromEmptyState` callback
+- Remove both mobile and desktop conditional renders that show `MapEmptyState`
+- Set default view to show all of Israel (already configured as `ISRAEL_CENTER` and `ISRAEL_ZOOM`)
 
-**New Design**:
-- Single cohesive pill: `City Name • Count` (e.g., "Jerusalem • 16")
-- Clean white background with subtle border and shadow
-- Blue text for city name, muted for count
-- Hover state with subtle lift effect
-- Size scales based on property count (larger cities = slightly larger markers)
+### 2. Simplify Recent City Hook Usage  
+- Keep the `useRecentSearchCity` hook but only use it to auto-center if a recent city exists (optional enhancement)
+- Don't block rendering waiting for it
 
-### Implementation
+### 3. Clean Up Imports
+- Remove `MapEmptyState` import since it won't be used
 
-**1. Update CityOverlay Component**
-- Change marker HTML to single unified pill design
-- Add size tiers based on property count (similar to cluster markers)
-- Update iconAnchor to center markers properly
+### 4. Optional: Keep MapEmptyState File
+- The file can remain in the codebase in case we want to use it elsewhere (e.g., a dedicated city search page)
+- Or we can delete it entirely
 
-**2. Add Smart Collision Handling**
-For the Tel Aviv metro cluster, implement one of two approaches:
+---
 
-*Option A (Recommended)*: Regional grouping at very zoomed out levels
-- When zoom is less than 8, group Tel Aviv metro cities into a single "Gush Dan • 112" marker
-- Clicking expands to show individual cities as user zooms in
-- This prevents the visual mess in the screenshot
+## Technical Changes
 
-*Option B*: CSS-based offset
-- Apply slight position offsets to overlapping markers
-- Less elegant but simpler
+**File: `src/components/map-search/MapSearchLayout.tsx`**
 
-**3. Update CSS Styles**
-- Replace the two-element styling with unified pill styling
-- Add hover and interaction states
-- Implement size tiers (small/medium/large based on property count)
+Remove or simplify:
+- Line 12: `MapEmptyState` import → remove
+- Line 46: `hasSelectedCity` state → remove
+- Lines 141-162: useEffect for smart city selection → simplify to just auto-center without blocking
+- Lines 164-180: `handleCitySelectFromEmptyState` callback → remove
+- Lines 183-191: `showEmptyState` computation → remove
+- Lines 366-385: Mobile empty state conditional render → remove
+- Lines 503-506: Desktop empty state conditional render → remove
 
-### Technical Details
+The result is users go straight to the map view showing Israel with city overlays, which can be clicked to zoom into specific areas.
 
-**CityOverlay.tsx Changes**:
-```tsx
-// New unified pill HTML
-html: `
-  <div class="city-marker-pill ${sizeTier}">
-    <span class="city-label">${name}</span>
-    <span class="city-divider">•</span>
-    <span class="city-count">${count}</span>
-  </div>
-`
-```
+---
 
-**CSS Changes**:
-```css
-.city-marker-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: white;
-  border-radius: 9999px;
-  border: 1px solid hsl(220, 13%, 85%);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  cursor: pointer;
-  white-space: nowrap;
-  transform: translate(-50%, -50%);
-}
+## Expected Behavior After Change
 
-.city-marker-pill .city-label {
-  font-weight: 600;
-  font-size: 13px;
-  color: hsl(213, 94%, 40%);
-}
-
-.city-marker-pill .city-count {
-  font-size: 12px;
-  color: hsl(220, 10%, 50%);
-}
-```
-
-### Size Tiers
-- **Small** (1-20 properties): Compact pill
-- **Medium** (21-50 properties): Standard pill  
-- **Large** (50+ properties): Slightly larger, bolder
-
-### Files to Modify
-1. `src/components/map-search/CityOverlay.tsx` - Update marker rendering with new unified design
-2. `src/index.css` - Replace city overlay styles with new unified pill design
-
-### Result
-- Clean, professional city markers that match modern map design standards
-- Single cohesive element instead of disjointed name + bubble
-- Proper sizing hierarchy based on property count
-- Better visual separation through unified design
-
+1. Visit `/map` → See full Israel map with city markers immediately
+2. City markers show property counts (the redesigned pills we just implemented)
+3. Click a city marker → Zoom in to that city, see property markers
+4. Use filters to narrow down properties
+5. No blocking "choose a city" screen
