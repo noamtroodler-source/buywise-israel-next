@@ -283,23 +283,22 @@
   z-index: 1000 !important;
 }
 
-/* Cluster markers */
+/* Cluster markers - white background with blue text for readability */
 .cluster-marker {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: hsl(213 94% 45%);
-  color: white;
+  background: white;
+  color: hsl(213 94% 45%);
   border-radius: 9999px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   cursor: pointer;
-  transition: transform 200ms ease;
-  border: 3px solid white;
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .cluster-marker:hover {
   transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .cluster-marker.small {
@@ -335,7 +334,7 @@
 }
 
 .cluster-marker .cluster-price {
-  opacity: 0.9;
+  opacity: 0.85;
   line-height: 1.2;
 }
 
@@ -349,6 +348,15 @@
 
 .cluster-marker.large .cluster-price {
   font-size: 11px;
+}
+
+/* Property marker wrapper transitions */
+.property-marker-wrapper {
+  transition: transform 200ms ease;
+}
+
+.property-marker-pill {
+  transition: all 200ms ease;
 }
 
 /* Leaflet popup overrides */

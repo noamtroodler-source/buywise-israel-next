@@ -38,56 +38,98 @@ export function PropertyMarker({
     const isRental = property.listing_status === 'for_rent';
     const isSold = property.listing_status === 'sold' || property.listing_status === 'rented';
     
-    let bgColor = 'hsl(213, 94%, 45%)'; // Primary blue for sales
-    let textColor = 'white';
+    // Default: neutral white/gray
+    let bgColor = 'white';
+    let textColor = 'hsl(220, 10%, 40%)';
+    let borderColor = 'hsl(220, 13%, 85%)';
     let opacity = '1';
-    let scale = 'scale-100';
     let zIndex = 100;
-    let shadow = 'shadow-md';
     
-    if (isRental) {
-      bgColor = 'hsl(var(--muted))';
-      textColor = 'hsl(var(--foreground))';
-    }
-    
+    // Sold/rented: more muted
     if (isSold) {
-      bgColor = 'hsl(var(--muted))';
-      textColor = 'hsl(var(--muted-foreground))';
+      bgColor = 'hsl(220, 13%, 95%)';
+      textColor = 'hsl(220, 10%, 55%)';
+      borderColor = 'hsl(220, 13%, 80%)';
       opacity = '0.7';
     }
     
+    // Hover or selected: primary blue
     if (isHovered || isSelected) {
-      scale = 'scale-110';
+      bgColor = 'hsl(213, 94%, 45%)';
+      textColor = 'white';
+      borderColor = 'white';
       zIndex = 1000;
-      shadow = 'shadow-lg ring-2 ring-primary';
     }
     
-    return { bgColor, textColor, opacity, scale, zIndex, shadow, isRental };
+    return { bgColor, textColor, borderColor, opacity, zIndex, isRental };
   }, [property.listing_status, isHovered, isSelected]);
 
-  // Create custom icon
+  // Create custom icon with callout shape
   const icon = useMemo(() => {
     const suffix = markerStyle.isRental ? '/mo' : '';
-    const selectedClass = (isHovered || isSelected) ? 'ring-2 ring-primary ring-offset-1' : '';
-    const scaleClass = (isHovered || isSelected) ? 'scale-110' : 'scale-100';
+    const scaleStyle = (isHovered || isSelected) ? 'transform: scale(1.1);' : '';
     
     return L.divIcon({
       html: `
         <div 
-          class="property-marker whitespace-nowrap px-2.5 py-1.5 rounded-full font-semibold text-xs cursor-pointer transition-all duration-200 ${scaleClass} ${selectedClass}"
+          class="property-marker-wrapper"
           style="
-            background-color: ${markerStyle.bgColor};
-            color: ${markerStyle.textColor};
-            opacity: ${markerStyle.opacity};
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            ${scaleStyle}
+            transition: transform 200ms ease;
           "
         >
-          ₪${displayPrice}${suffix}
+          <div 
+            class="property-marker-pill"
+            style="
+              background-color: ${markerStyle.bgColor};
+              color: ${markerStyle.textColor};
+              border: 2px solid ${markerStyle.borderColor};
+              padding: 6px 10px;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 12px;
+              white-space: nowrap;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+              opacity: ${markerStyle.opacity};
+              cursor: pointer;
+              transition: all 200ms ease;
+            "
+          >
+            ₪${displayPrice}${suffix}
+          </div>
+          <div 
+            class="property-marker-pointer"
+            style="
+              width: 0;
+              height: 0;
+              border-left: 6px solid transparent;
+              border-right: 6px solid transparent;
+              border-top: 6px solid ${markerStyle.borderColor};
+              margin-top: -1px;
+            "
+          ></div>
+          <div 
+            class="property-marker-pointer-inner"
+            style="
+              position: absolute;
+              bottom: 0;
+              width: 0;
+              height: 0;
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-top: 5px solid ${markerStyle.bgColor};
+              margin-top: -2px;
+            "
+          ></div>
         </div>
       `,
       className: '',
       iconSize: L.point(0, 0),
-      iconAnchor: L.point(0, 0),
+      iconAnchor: L.point(0, 32),
     });
   }, [displayPrice, markerStyle, isHovered, isSelected]);
 
