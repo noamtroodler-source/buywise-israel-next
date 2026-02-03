@@ -1,12 +1,17 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import L from 'leaflet';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyList } from './MapPropertyList';
 import { MapFiltersBar } from './MapFiltersBar';
 import { MobileMapSheet } from './MobileMapSheet';
+import { MobileQuickFilters } from './MobileQuickFilters';
+import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
+import { MapOnboardingHints } from './MapOnboardingHints';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
 import { PropertyFilters as PropertyFiltersType, ListingStatus, Property } from '@/types/database';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -29,6 +34,7 @@ export type MapBounds = {
 export default function MapSearchLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
+  const mapRef = useRef<L.Map | null>(null);
   
   // Map state
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
@@ -50,9 +56,35 @@ export default function MapSearchLayout() {
   // Mobile view state
   const [mobileView, setMobileView] = useState<'map' | 'list' | 'split'>('split');
   
+  // Layer toggles state (for keyboard shortcuts)
+  const [showSavedLocations, setShowSavedLocations] = useState(true);
+  const [showTrainStations, setShowTrainStations] = useState(false);
+  const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
+  const [drawMode, setDrawMode] = useState<'rectangle' | 'polygon' | 'circle' | null>(null);
+  
+  // Keyboard shortcuts help modal
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  
   // Get listing status from URL
   const urlStatus = searchParams.get('status') || 'for_sale';
   const listingStatus: ListingStatus = urlStatus as ListingStatus;
+
+  // Keyboard shortcuts
+  useMapKeyboardShortcuts(mapRef, {
+    onZoomIn: () => mapRef.current?.zoomIn(),
+    onZoomOut: () => mapRef.current?.zoomOut(),
+    onResetView: () => mapRef.current?.flyTo([31.5, 34.8], 8, { duration: 1 }),
+    onToggleDraw: () => setDrawMode(prev => prev ? null : 'rectangle'),
+    onClearSelection: () => {
+      setSelectedPropertyId(null);
+      if (drawMode) setDrawMode(null);
+    },
+    onToggleSavedLocations: () => setShowSavedLocations(prev => !prev),
+    onToggleTrainStations: () => setShowTrainStations(prev => !prev),
+    onToggleHeatmap: () => setShowPriceHeatmap(prev => !prev),
+    onLocate: () => mapRef.current?.locate({ setView: true, maxZoom: 14 }),
+    onShowHelp: () => setShowKeyboardHelp(true),
+  });
 
   // Parse filters from URL
   const [filters, setFilters] = useState<PropertyFiltersType>(() => {
@@ -266,6 +298,13 @@ export default function MapSearchLayout() {
           commuteFilter={commuteFilter}
           onCommuteFilterChange={setCommuteFilter}
         />
+
+        {/* Mobile Quick Filters */}
+        <MobileQuickFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
+        />
         
         {/* Mobile View Toggle */}
         <div className="flex items-center justify-center gap-1 p-2 border-b bg-background">
@@ -273,6 +312,7 @@ export default function MapSearchLayout() {
             variant={mobileView === 'list' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setMobileView('list')}
+            aria-pressed={mobileView === 'list'}
           >
             <List className="h-4 w-4 mr-1" />
             List
@@ -281,6 +321,7 @@ export default function MapSearchLayout() {
             variant={mobileView === 'split' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setMobileView('split')}
+            aria-pressed={mobileView === 'split'}
           >
             <Layers className="h-4 w-4 mr-1" />
             Split
@@ -289,6 +330,7 @@ export default function MapSearchLayout() {
             variant={mobileView === 'map' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setMobileView('map')}
+            aria-pressed={mobileView === 'map'}
           >
             <MapIcon className="h-4 w-4 mr-1" />
             Map
@@ -360,7 +402,14 @@ export default function MapSearchLayout() {
       {/* Split View */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={55} minSize={35} maxSize={75}>
-          <PropertyMap {...propertyMapProps} />
+          <div className="relative h-full">
+            <PropertyMap {...propertyMapProps} />
+            {/* Onboarding Hints */}
+            <MapOnboardingHints 
+              visible={true} 
+              hasSavedLocations={!!savedLocations?.length} 
+            />
+          </div>
         </ResizablePanel>
         
         <ResizableHandle withHandle />
@@ -378,6 +427,12 @@ export default function MapSearchLayout() {
           />
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      {/* Keyboard Shortcuts Modal */}
+      <MapKeyboardShortcuts 
+        open={showKeyboardHelp} 
+        onOpenChange={setShowKeyboardHelp} 
+      />
     </div>
   );
 }

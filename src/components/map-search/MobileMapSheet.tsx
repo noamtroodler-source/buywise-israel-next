@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Property, ListingStatus } from '@/types/database';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyCard } from './MapPropertyCard';
@@ -8,6 +8,7 @@ import { Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
 import { cn } from '@/lib/utils';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface MobileMapSheetProps {
   properties: Property[];
@@ -59,14 +60,69 @@ export function MobileMapSheet({
   loadMore,
 }: MobileMapSheetProps) {
   const [sheetState, setSheetState] = useState<SheetState>('half');
+  const { light: hapticLight } = useHapticFeedback();
+  
+  // Touch gesture handling
+  const touchStartY = useRef<number | null>(null);
+  const touchCurrentY = useRef<number | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchCurrentY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    touchCurrentY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (touchStartY.current === null || touchCurrentY.current === null) return;
+
+    const deltaY = touchStartY.current - touchCurrentY.current;
+    const threshold = 50;
+
+    if (Math.abs(deltaY) > threshold) {
+      if (deltaY > 0) {
+        // Swipe up - expand
+        setSheetState(prev => {
+          if (prev === 'peek') {
+            hapticLight();
+            return 'half';
+          }
+          if (prev === 'half') {
+            hapticLight();
+            return 'full';
+          }
+          return prev;
+        });
+      } else {
+        // Swipe down - collapse
+        setSheetState(prev => {
+          if (prev === 'full') {
+            hapticLight();
+            return 'half';
+          }
+          if (prev === 'half') {
+            hapticLight();
+            return 'peek';
+          }
+          return prev;
+        });
+      }
+    }
+
+    touchStartY.current = null;
+    touchCurrentY.current = null;
+  }, [hapticLight]);
 
   const toggleSheet = useCallback(() => {
+    hapticLight();
     setSheetState(prev => {
       if (prev === 'peek') return 'half';
       if (prev === 'half') return 'full';
       return 'half';
     });
-  }, []);
+  }, [hapticLight]);
 
   const getSheetHeight = () => {
     switch (sheetState) {
@@ -87,7 +143,7 @@ export function MobileMapSheet({
   return (
     <div className="h-full flex flex-col">
       {/* Map Section */}
-      <div className={cn("transition-all duration-300", getMapHeight())}>
+      <div className={cn("mobile-sheet", getMapHeight())}>
         <PropertyMap
           properties={mappableProperties}
           center={mapCenter}
@@ -109,14 +165,22 @@ export function MobileMapSheet({
       </div>
 
       {/* Property List Sheet */}
-      <div className={cn(
-        "bg-background border-t rounded-t-2xl shadow-lg transition-all duration-300",
-        getSheetHeight()
-      )}>
+      <div 
+        className={cn(
+          "bg-background border-t rounded-t-2xl shadow-lg mobile-sheet",
+          getSheetHeight()
+        )}
+        role="region"
+        aria-label="Property list"
+      >
         {/* Drag Handle */}
         <button
           onClick={toggleSheet}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className="w-full py-3 flex flex-col items-center justify-center touch-none"
+          aria-label={sheetState === 'peek' ? 'Expand property list' : sheetState === 'full' ? 'Collapse property list' : 'Toggle property list'}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
