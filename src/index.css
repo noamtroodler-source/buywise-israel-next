@@ -377,3 +377,103 @@
 .saved-location-marker:hover {
   transform: scale(1.1);
 }
+
+/* =========================
+   City Overlay Markers
+   ========================= */
+
+.city-overlay-marker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: white;
+  border-radius: 9999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms, box-shadow 200ms;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+
+.city-overlay-marker:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.city-overlay-marker .city-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: hsl(222 47% 11%);
+}
+
+.city-overlay-marker .city-count {
+  font-size: 11px;
+  background: hsl(213 94% 45%);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 9999px;
+}
+
+/* =========================
+   Neighborhood Chip Bar
+   ========================= */
+
+.neighborhood-bar {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: calc(100% - 32px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.neighborhood-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.neighborhood-chip {
+  padding: 6px 12px;
+  background: hsl(210 40% 96%);
+  border-radius: 9999px;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 200ms;
+  border: none;
+}
+
+.neighborhood-chip:hover {
+  background: hsl(210 40% 90%);
+}
+
+.neighborhood-chip.selected {
+  background: hsl(213 94% 45%);
+  color: white;
+}
+
+/* =========================
+   Draw Control Styles
+   ========================= */
+
+.draw-mode-active {
+  cursor: crosshair !important;
+}
+
+/* Geoman shape styling overrides */
+.leaflet-pm-shape {
+  fill-opacity: 0.15 !important;
+  stroke-width: 2 !important;
+  stroke: hsl(213 94% 45%) !important;
+  fill: hsl(213 94% 45%) !important;
+}

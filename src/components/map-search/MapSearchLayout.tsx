@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyList } from './MapPropertyList';
@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { List, Map as MapIcon, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isPointInPolygon, type Polygon } from '@/lib/utils/geometry';
 
 // Israel bounds for initial view
 const ISRAEL_CENTER: [number, number] = [31.5, 34.8];
@@ -34,6 +35,12 @@ export default function MapSearchLayout() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(ISRAEL_CENTER);
   const [mapZoom, setMapZoom] = useState(ISRAEL_ZOOM);
+  
+  // Draw-to-search state
+  const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
+  
+  // Neighborhood filter state
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState<string[]>([]);
   
   // Mobile view state
   const [mobileView, setMobileView] = useState<'map' | 'list' | 'split'>('split');
@@ -83,16 +90,24 @@ export default function MapSearchLayout() {
 
   // Combined filters with bounds (when searchAsMove is enabled)
   const queryFilters = useMemo(() => {
-    if (!searchAsMove || !mapBounds) return filters;
+    const baseFilters = { ...filters };
+    
+    // Add neighborhoods to filters if selected
+    if (selectedNeighborhoods.length > 0) {
+      baseFilters.neighborhoods = selectedNeighborhoods;
+    }
+    
+    if (!searchAsMove || !mapBounds) return baseFilters;
+    
     return {
-      ...filters,
+      ...baseFilters,
       bounds: mapBounds,
     };
-  }, [filters, mapBounds, searchAsMove]);
+  }, [filters, mapBounds, searchAsMove, selectedNeighborhoods]);
 
   // Fetch properties with bounds filtering
   const { 
-    properties, 
+    properties: rawProperties, 
     totalCount, 
     isLoading, 
     isFetching,
@@ -100,6 +115,19 @@ export default function MapSearchLayout() {
     loadMore,
     reset,
   } = usePaginatedProperties(queryFilters, { pageSize: 50 });
+
+  // Apply polygon filtering client-side
+  const properties = useMemo(() => {
+    if (!drawnPolygon || drawnPolygon.length === 0) return rawProperties;
+    
+    return rawProperties.filter(property => {
+      if (!property.longitude || !property.latitude) return false;
+      return isPointInPolygon(
+        [property.longitude, property.latitude],
+        drawnPolygon
+      );
+    });
+  }, [rawProperties, drawnPolygon]);
 
   // Keep listing_status in sync with URL
   useEffect(() => {
@@ -143,11 +171,51 @@ export default function MapSearchLayout() {
     setSelectedPropertyId(propertyId);
   }, []);
 
+  const handleSearchAsMoveChange = useCallback((value: boolean) => {
+    setSearchAsMove(value);
+  }, []);
+
+  const handlePolygonChange = useCallback((polygon: Polygon | null) => {
+    setDrawnPolygon(polygon);
+  }, []);
+
+  const handleNeighborhoodToggle = useCallback((neighborhood: string) => {
+    setSelectedNeighborhoods(prev => 
+      prev.includes(neighborhood)
+        ? prev.filter(n => n !== neighborhood)
+        : [...prev, neighborhood]
+    );
+  }, []);
+
+  const handleClearNeighborhoods = useCallback(() => {
+    setSelectedNeighborhoods([]);
+  }, []);
+
   // Properties with coordinates for map
   const mappableProperties = useMemo(() => 
     properties.filter(p => p.latitude && p.longitude),
     [properties]
   );
+
+  // Shared PropertyMap props
+  const propertyMapProps = {
+    properties: mappableProperties,
+    center: mapCenter,
+    zoom: mapZoom,
+    onBoundsChange: handleBoundsChange,
+    hoveredPropertyId,
+    selectedPropertyId,
+    onPropertyHover: handlePropertyHover,
+    onPropertySelect: handlePropertySelect,
+    searchAsMove,
+    onSearchAsMoveChange: handleSearchAsMoveChange,
+    listingStatus,
+    drawnPolygon,
+    onPolygonChange: handlePolygonChange,
+    selectedNeighborhoods,
+    onNeighborhoodToggle: handleNeighborhoodToggle,
+    onClearNeighborhoods: handleClearNeighborhoods,
+  };
 
   // Mobile layout
   if (isMobile) {
@@ -158,10 +226,10 @@ export default function MapSearchLayout() {
           filters={filters}
           onFiltersChange={handleFiltersChange}
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-          resultCount={totalCount}
+          resultCount={drawnPolygon ? properties.length : totalCount}
           isLoading={isFetching}
           searchAsMove={searchAsMove}
-          onSearchAsMoveChange={setSearchAsMove}
+          onSearchAsMoveChange={handleSearchAsMoveChange}
         />
         
         {/* Mobile View Toggle */}
@@ -195,17 +263,7 @@ export default function MapSearchLayout() {
         {/* Mobile Content */}
         <div className="flex-1 relative overflow-hidden">
           {mobileView === 'map' ? (
-            <PropertyMap
-              properties={mappableProperties}
-              center={mapCenter}
-              zoom={mapZoom}
-              onBoundsChange={handleBoundsChange}
-              hoveredPropertyId={hoveredPropertyId}
-              selectedPropertyId={selectedPropertyId}
-              onPropertyHover={handlePropertyHover}
-              onPropertySelect={handlePropertySelect}
-              searchAsMove={searchAsMove}
-            />
+            <PropertyMap {...propertyMapProps} />
           ) : mobileView === 'list' ? (
             <MapPropertyList
               properties={properties}
@@ -229,6 +287,13 @@ export default function MapSearchLayout() {
               onPropertyHover={handlePropertyHover}
               onPropertySelect={handlePropertySelect}
               searchAsMove={searchAsMove}
+              onSearchAsMoveChange={handleSearchAsMoveChange}
+              listingStatus={listingStatus}
+              drawnPolygon={drawnPolygon}
+              onPolygonChange={handlePolygonChange}
+              selectedNeighborhoods={selectedNeighborhoods}
+              onNeighborhoodToggle={handleNeighborhoodToggle}
+              onClearNeighborhoods={handleClearNeighborhoods}
               isLoading={isLoading}
               isFetching={isFetching}
               hasNextPage={hasNextPage}
@@ -248,26 +313,16 @@ export default function MapSearchLayout() {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-        resultCount={totalCount}
+        resultCount={drawnPolygon ? properties.length : totalCount}
         isLoading={isFetching}
         searchAsMove={searchAsMove}
-        onSearchAsMoveChange={setSearchAsMove}
+        onSearchAsMoveChange={handleSearchAsMoveChange}
       />
       
       {/* Split View */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={55} minSize={35} maxSize={75}>
-          <PropertyMap
-            properties={mappableProperties}
-            center={mapCenter}
-            zoom={mapZoom}
-            onBoundsChange={handleBoundsChange}
-            hoveredPropertyId={hoveredPropertyId}
-            selectedPropertyId={selectedPropertyId}
-            onPropertyHover={handlePropertyHover}
-            onPropertySelect={handlePropertySelect}
-            searchAsMove={searchAsMove}
-          />
+          <PropertyMap {...propertyMapProps} />
         </ResizablePanel>
         
         <ResizableHandle withHandle />

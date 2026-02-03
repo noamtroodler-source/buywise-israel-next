@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
-import { Property } from '@/types/database';
+import { Property, ListingStatus } from '@/types/database';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyCard } from './MapPropertyCard';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 import type { MapBounds } from './MapSearchLayout';
+import type { Polygon } from '@/lib/utils/geometry';
 import { cn } from '@/lib/utils';
 
 interface MobileMapSheetProps {
@@ -19,6 +20,13 @@ interface MobileMapSheetProps {
   onPropertyHover: (id: string | null) => void;
   onPropertySelect: (id: string | null) => void;
   searchAsMove: boolean;
+  onSearchAsMoveChange: (value: boolean) => void;
+  listingStatus: ListingStatus;
+  drawnPolygon: Polygon | null;
+  onPolygonChange: (polygon: Polygon | null) => void;
+  selectedNeighborhoods: string[];
+  onNeighborhoodToggle: (neighborhood: string) => void;
+  onClearNeighborhoods: () => void;
   isLoading: boolean;
   isFetching: boolean;
   hasNextPage: boolean;
@@ -38,6 +46,13 @@ export function MobileMapSheet({
   onPropertyHover,
   onPropertySelect,
   searchAsMove,
+  onSearchAsMoveChange,
+  listingStatus,
+  drawnPolygon,
+  onPolygonChange,
+  selectedNeighborhoods,
+  onNeighborhoodToggle,
+  onClearNeighborhoods,
   isLoading,
   isFetching,
   hasNextPage,
@@ -83,6 +98,13 @@ export function MobileMapSheet({
           onPropertyHover={onPropertyHover}
           onPropertySelect={onPropertySelect}
           searchAsMove={searchAsMove}
+          onSearchAsMoveChange={onSearchAsMoveChange}
+          listingStatus={listingStatus}
+          drawnPolygon={drawnPolygon}
+          onPolygonChange={onPolygonChange}
+          selectedNeighborhoods={selectedNeighborhoods}
+          onNeighborhoodToggle={onNeighborhoodToggle}
+          onClearNeighborhoods={onClearNeighborhoods}
         />
       </div>
 
