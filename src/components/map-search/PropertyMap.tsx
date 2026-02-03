@@ -261,11 +261,29 @@ export function PropertyMap({
 
   // Handle draw completion
   const handleDrawComplete = useCallback((polygon: Polygon) => {
+    // Capture current map bounds BEFORE disabling searchAsMove
+    // This ensures the backend query uses the correct geographic area
+    if (mapRef.current) {
+      const bounds = mapRef.current.getBounds();
+      const center = mapRef.current.getCenter();
+      const zoom = mapRef.current.getZoom();
+      onBoundsChange(
+        {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        },
+        [center.lat, center.lng],
+        zoom
+      );
+    }
+    
     onPolygonChange(polygon);
     setDrawMode(null);
     // Disable search as move when polygon is drawn
     onSearchAsMoveChange(false);
-  }, [onPolygonChange, onSearchAsMoveChange]);
+  }, [onPolygonChange, onSearchAsMoveChange, onBoundsChange]);
 
   // Handle draw cancel
   const handleDrawCancel = useCallback(() => {
