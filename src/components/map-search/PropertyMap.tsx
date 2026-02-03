@@ -214,14 +214,14 @@ export function PropertyMap({
   // Get map bounds for clustering
   const [clusterBounds, setClusterBounds] = useState<[number, number, number, number]>([-180, -85, 180, 85]);
 
-  // Supercluster hook
+  // Supercluster hook - low radius so only truly overlapping markers cluster
   const { clusters, supercluster } = useSupercluster({
     points,
     bounds: clusterBounds,
     zoom: currentZoom,
     options: {
-      radius: 75,
-      maxZoom: 17,
+      radius: 25,
+      maxZoom: 14,
       minZoom: 0,
     },
   });
