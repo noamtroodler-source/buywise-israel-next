@@ -1,212 +1,93 @@
 
-# Map Marker Visual Improvements
+## What’s causing the “I draw a box and suddenly only 2 listings remain” glitch
 
-## Current Issues Identified
+Right now, when a shape is completed, `PropertyMap` does this:
 
-Based on the screenshot and code review:
+- sets `drawnPolygon`
+- **turns off `searchAsMove`** (`onSearchAsMoveChange(false)`)
 
-1. **Hover state not clear enough**: When hovering on a property card in the sidebar, the corresponding marker on the map doesn't stand out enough from other markers. All markers are blue, making it hard to spot which one is highlighted.
+In `MapSearchLayout`, the backend query only includes the map bounds when `searchAsMove === true`:
 
-2. **Price text cutoff**: The current pill-shaped markers (`rounded-full`) cause the price text to get clipped or blend with the map background because they're too compact.
-
-3. **Clusters also have readability issues**: The cluster markers (circles showing "2" with price range) have text that can be hard to read against the map.
-
----
-
-## Design Solution
-
-### Change 1: Neutral Default State, Blue on Hover/Select
-
-Transform the marker visual hierarchy:
-
-| State | Current | New |
-|-------|---------|-----|
-| Default (inactive) | Blue pill | White background, gray text, subtle border |
-| Hovered | Blue + slight scale | Blue background, white text, larger scale |
-| Selected | Blue + ring | Blue background, white text, ring |
-
-This creates a clear visual distinction - the hovered marker "pops" against all the muted markers.
-
-### Change 2: Better Marker Shape with Pointer
-
-Replace the simple `rounded-full` pill with a more map-appropriate shape:
-
-```
-Current: ┌──────┐ (rounded pill)
-         │₪3.2M │
-         └──────┘
-
-New:     ┌──────┐ (rounded rectangle with pointer triangle)
-         │₪3.2M │
-         └──┬───┘
-            ▼
+```ts
+if (!searchAsMove || !mapBounds) return baseFilters;
+return { ...baseFilters, bounds: mapBounds };
 ```
 
-This "callout" shape:
-- Provides more room for the price text
-- Points precisely to the property location
-- Is the industry standard (Google Maps, Airbnb, Zillow)
+So as soon as you draw:
+- bounds filtering is removed from the query
+- `usePaginatedProperties` fetches a different set of “newest” properties city-wide (first page only)
+- then the polygon filter runs client-side on this new dataset
+- result: often only 1–2 happen to fall inside your drawn shape, even though the map clearly had many inside before you drew
 
----
+This is why it feels like a random/repeatable glitch.
 
-## Technical Implementation
+## Fix approach (so this won’t happen again)
 
-### File: `src/components/map-search/PropertyMarker.tsx`
+### Goal behavior
+Any time a drawn shape exists, the results should still be constrained to the relevant area (at minimum: the bounds you were looking at when you drew), and then further filtered by the polygon.
 
-Update the marker styles to use neutral default colors:
+### Changes we’ll make
 
-```tsx
-// Default state - neutral
-let bgColor = 'white';
-let textColor = 'hsl(220, 10%, 40%)'; // Gray text
-let borderColor = 'hsl(220, 13%, 85%)'; // Subtle gray border
+1) **Keep bounds filtering active whenever a polygon exists**
+- Update the `queryFilters` logic in `src/components/map-search/MapSearchLayout.tsx` so that it includes `bounds` when:
+  - `searchAsMove` is enabled **OR**
+  - `drawnPolygon` is present
+- This “freezes” the last known bounds when drawing is active (since we still want to stop auto-refresh while panning).
 
-// Hover or selected state - primary blue
-if (isHovered || isSelected) {
-  bgColor = 'hsl(213, 94%, 45%)'; // Primary blue
-  textColor = 'white';
-  borderColor = 'white';
-}
-```
+Concretely: change the conditional from:
+- “only include bounds when searchAsMove is on”
+to:
+- “include bounds when searchAsMove is on OR a polygon is active”
 
-Update the marker HTML to use a callout shape with pointer:
+2) **Force-refresh the bounds exactly at the moment the draw completes**
+Even with the change above, there’s still a corner case:
+- if `searchAsMove` was off before drawing (or bounds are stale), the frozen bounds might not reflect what you’re currently looking at.
 
-```tsx
-return L.divIcon({
-  html: `
-    <div 
-      class="property-marker-wrapper"
-      style="position: relative; display: flex; flex-direction: column; align-items: center;"
-    >
-      <div 
-        class="property-marker-pill"
-        style="
-          background-color: ${bgColor};
-          color: ${textColor};
-          border: 2px solid ${borderColor};
-          padding: 6px 10px;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 12px;
-          white-space: nowrap;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-          ${(isHovered || isSelected) ? 'transform: scale(1.1);' : ''}
-        "
-      >
-        ₪${displayPrice}${suffix}
-      </div>
-      <div 
-        class="property-marker-pointer"
-        style="
-          width: 0;
-          height: 0;
-          border-left: 6px solid transparent;
-          border-right: 6px solid transparent;
-          border-top: 6px solid ${bgColor};
-          margin-top: -1px;
-        "
-      ></div>
-    </div>
-  `,
-  className: '',
-  iconSize: L.point(0, 0),
-  iconAnchor: L.point(0, 30), // Anchor at bottom of pointer
-});
-```
+So in `src/components/map-search/PropertyMap.tsx`, inside `handleDrawComplete`, we will:
+- read the current Leaflet map bounds from `mapRef.current.getBounds()`
+- call `onBoundsChange(...)` once immediately (to store the “frozen” bounds correctly)
+- then set `drawnPolygon` and disable `searchAsMove`
 
-### File: `src/index.css`
+This ensures the polygon filter is applied to the same geographic area you were viewing when you drew.
 
-Add/update marker styles for consistency:
+3) (Optional but recommended) **Use the polygon’s bounding box instead of the viewport bounds**
+Viewport bounds are good enough to fix the glitch, but we can make it even more correct and efficient:
+- compute the polygon’s min/max lat/lng
+- use that as the bounds filter (smaller query window, fewer irrelevant results)
 
-```css
-/* Property markers - neutral default, blue on hover */
-.property-marker-wrapper {
-  transition: transform 200ms ease;
-}
+If your dataset can get large, this reduces the chance you miss properties due to pagination.
 
-.property-marker-pill {
-  transition: all 200ms ease;
-}
+We can implement this in `MapSearchLayout` (derive bounds from `drawnPolygon`), or in `PropertyMap` when the draw completes (compute bounds there and push it through `onBoundsChange`).
 
-.property-marker-wrapper.hovered .property-marker-pill,
-.property-marker-wrapper.selected .property-marker-pill {
-  background: hsl(213 94% 45%);
-  color: white;
-  border-color: white;
-  transform: scale(1.1);
-}
-```
+4) Add a lightweight dev-only diagnostic (to prevent regressions)
+To make sure this never silently breaks again, we can add a guard (only in development):
+- when `drawnPolygon` is present and `properties.length` drops by a huge percent after drawing, log:
+  - rawProperties count
+  - filtered count
+  - whether bounds were included
+This makes future issues immediately obvious in console.
 
-### File: `src/components/map-search/PropertyMap.tsx`
+## Files we will touch
+- `src/components/map-search/MapSearchLayout.tsx`
+  - adjust `queryFilters` bounds logic to include bounds when `drawnPolygon` exists
+  - (optional) compute polygon bbox bounds
+- `src/components/map-search/PropertyMap.tsx`
+  - on draw complete: capture current map bounds and call `onBoundsChange` immediately before freezing search-as-move
 
-Update the ClusterMarker styling similarly:
+## How we’ll verify (quick, practical)
+1) Go to `/map?...zoom=13` (like your current route), ensure you see many markers.
+2) Draw a rectangle that clearly covers many visible markers.
+3) Confirm:
+   - the list count stays consistent (it should not collapse to 1–2)
+   - properties inside the box remain visible
+4) Pan the map while a polygon is active:
+   - results should remain “frozen” (no surprise refresh), unless you clear the polygon.
+5) Clear polygon:
+   - `searchAsMove` resumes and bounds update again as you move.
 
-```tsx
-// Cluster marker - white background by default for better readability
-return L.divIcon({
-  html: `
-    <div class="cluster-marker ${sizeTier}" style="
-      background: white;
-      color: hsl(213, 94%, 45%);
-      border: 2px solid hsl(220, 13%, 85%);
-    ">
-      <span class="cluster-count">${count}</span>
-      <span class="cluster-price">${priceRange}</span>
-    </div>
-  `,
-  ...
-});
-```
+## Edge cases we’ll cover
+- Drawing when `searchAsMove` is already off
+- Quickly drawing immediately after zoom/pan (stale bounds timing)
+- Very small polygons
+- Clearing polygon restores normal behavior
 
----
-
-## Visual Comparison
-
-### Before (Current State)
-```
-Map View:
-   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← All blue, hover barely visible
-      ●        ●        ●
-```
-
-### After (Improved)
-```
-Map View:
-   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← White/gray default
-      ▼        ▼        ▼
-
-When hovering property card for 4.5M:
-   [₪3.2M]  [₪4.5M]  [₪2.8M]  ← 4.5M turns BLUE, stands out
-      ▼       ▼▼▼       ▼
-             (larger)
-```
-
----
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/map-search/PropertyMarker.tsx` | New color logic (neutral default, blue hover), callout shape with pointer |
-| `src/components/map-search/PropertyMap.tsx` | Update ClusterMarker to use white background with blue text |
-| `src/index.css` | Update `.cluster-marker` styles for white background, add `.property-marker-wrapper` styles |
-
----
-
-## Additional Improvements Included
-
-1. **Better shadows**: Slightly stronger drop shadow for depth
-2. **Smoother transitions**: CSS transitions for hover states
-3. **Pointer anchor adjustment**: Move `iconAnchor` to the bottom of the pointer so marker points exactly at the property location
-4. **Consistent border radius**: Change from pill (`rounded-full`) to rounded rectangle (`border-radius: 8px`) for more text room
-
----
-
-## Result
-
-After implementation:
-- Neutral gray/white markers for all properties by default
-- Blue highlight clearly visible when hovering on a sidebar card
-- Callout shape with pointer shows full price without cutoff
-- Cluster markers also more readable with white background
-- Professional look matching Zillow/Redfin/Airbnb patterns
