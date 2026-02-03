@@ -244,24 +244,17 @@ export default function Listings() {
             isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
           )}
         >
-          <div className="flex items-center gap-2">
-            <PropertyFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              listingType={isRentals ? 'for_rent' : 'for_sale'}
-              onCreateAlert={() => setShowAlertDialog(true)}
-              showSoldToggle={!isRentals}
-              isSoldView={isSoldView}
-              onSoldToggle={handleSoldToggle}
-              previewCount={totalCount}
-              isCountLoading={isFetching}
-            />
-            
-            {/* Desktop View Toggle */}
-            {!isMobile && (
-              <ViewToggle activeView="grid" />
-            )}
-          </div>
+          <PropertyFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            listingType={isRentals ? 'for_rent' : 'for_sale'}
+            onCreateAlert={() => setShowAlertDialog(true)}
+            showSoldToggle={!isRentals}
+            isSoldView={isSoldView}
+            onSoldToggle={handleSoldToggle}
+            previewCount={totalCount}
+            isCountLoading={isFetching}
+          />
           
           {/* Quick Filter Chips - Mobile only */}
           <QuickFilterChips
@@ -271,11 +264,16 @@ export default function Listings() {
           />
         </div>
 
-        {/* Results Count - Mobile only (desktop count is inline in filter bar) */}
-        {!isLoading && isMobile && (
-          <p className="text-sm text-muted-foreground mb-4">
-            Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
-          </p>
+        {/* Results Count Row - with View Toggle on desktop */}
+        {!isLoading && (
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted-foreground">
+              Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
+            </p>
+            {!isMobile && (
+              <ViewToggle activeView="grid" size="sm" />
+            )}
+          </div>
         )}
 
         {/* Property Grid with loading overlay - wrapped in PullToRefresh on mobile */}
