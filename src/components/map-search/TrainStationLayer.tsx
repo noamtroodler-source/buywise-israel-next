@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Marker, Popup, useMap } from 'react-leaflet';
+import { useMemo, useState, useEffect } from 'react';
+import { Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { TRAIN_STATIONS, TrainStation } from '@/data/trainStations';
-import { Train } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface TrainStationLayerProps {
@@ -14,10 +13,17 @@ export function TrainStationLayer({ visible, minZoom = 11 }: TrainStationLayerPr
   const map = useMap();
   const [currentZoom, setCurrentZoom] = useState(map.getZoom());
 
-  // Track zoom changes
-  map.on('zoomend', () => {
-    setCurrentZoom(map.getZoom());
+  // Track zoom changes using useMapEvents hook (proper React way)
+  useMapEvents({
+    zoomend: () => {
+      setCurrentZoom(map.getZoom());
+    },
   });
+
+  // Set initial zoom on mount
+  useEffect(() => {
+    setCurrentZoom(map.getZoom());
+  }, [map]);
 
   // Only show stations when zoomed in enough
   const shouldShow = visible && currentZoom >= minZoom;
