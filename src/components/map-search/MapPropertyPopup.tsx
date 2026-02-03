@@ -6,15 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { CommuteInfo } from './CommuteLines';
+import { SavedLocation } from '@/types/savedLocation';
 import { Bed, Bath, Maximize, ExternalLink, X } from 'lucide-react';
 
 interface MapPropertyPopupProps {
   propertyId: string;
   properties: Property[];
   onClose: () => void;
+  savedLocations?: SavedLocation[];
 }
 
-export function MapPropertyPopup({ propertyId, properties, onClose }: MapPropertyPopupProps) {
+export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations }: MapPropertyPopupProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   
@@ -100,6 +103,11 @@ export function MapPropertyPopup({ propertyId, properties, onClose }: MapPropert
               <ExternalLink className="h-4 w-4 ml-2" />
             </Link>
           </Button>
+
+          {/* Commute Info (if user has saved locations) */}
+          {savedLocations && savedLocations.length > 0 && (
+            <CommuteInfo property={property} savedLocations={savedLocations} />
+          )}
         </div>
       </div>
     </Popup>

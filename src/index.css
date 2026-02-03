@@ -477,3 +477,126 @@
   stroke: hsl(213 94% 45%) !important;
   fill: hsl(213 94% 45%) !important;
 }
+
+/* =========================
+   Train Station Markers
+   ========================= */
+
+.train-station-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 6px;
+  border: 2px solid hsl(213 94% 45%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms;
+}
+
+.train-station-marker:hover {
+  transform: scale(1.1);
+}
+
+.train-station-marker svg {
+  color: hsl(213 94% 45%);
+}
+
+.train-station-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+/* =========================
+   Commute Lines
+   ========================= */
+
+.commute-line-tooltip {
+  background: white !important;
+  padding: 4px 8px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  white-space: nowrap !important;
+  border: none !important;
+}
+
+.commute-line-tooltip::before {
+  display: none !important;
+}
+
+.commute-line-tooltip.walk {
+  color: hsl(142 76% 36%) !important;
+}
+
+.commute-line-tooltip.transit {
+  color: hsl(213 94% 45%) !important;
+}
+
+.commute-line-tooltip.drive {
+  color: hsl(215 16% 47%) !important;
+}
+
+/* =========================
+   Heatmap Legend
+   ========================= */
+
+.heatmap-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 1000;
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+}
+
+.heatmap-legend-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: hsl(222 47% 11%);
+}
+
+.heatmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.heatmap-legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.heatmap-legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* Dark mode adjustments */
+.dark .train-station-marker {
+  background: hsl(222 47% 11%);
+  border-color: hsl(213 94% 55%);
+}
+
+.dark .train-station-marker svg {
+  color: hsl(213 94% 55%);
+}
+
+.dark .commute-line-tooltip {
+  background: hsl(222 47% 11%) !important;
+  color: hsl(210 40% 98%) !important;
+}
+
+.dark .heatmap-legend {
+  background: hsl(222 47% 11%);
+}
+
+.dark .heatmap-legend-title {
+  color: hsl(210 40% 98%);
+}

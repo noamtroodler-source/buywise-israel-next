@@ -12,6 +12,8 @@ import {
   PenTool,
   Circle,
   X,
+  Train,
+  Thermometer,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -34,6 +36,11 @@ interface MapToolbarProps {
   onDrawModeChange: (mode: DrawMode) => void;
   hasDrawnPolygon: boolean;
   onClearPolygon: () => void;
+  // Layer toggles
+  showTrainStations: boolean;
+  onToggleTrainStations: () => void;
+  showPriceHeatmap: boolean;
+  onTogglePriceHeatmap: () => void;
 }
 
 export function MapToolbar({
@@ -45,6 +52,10 @@ export function MapToolbar({
   onDrawModeChange,
   hasDrawnPolygon,
   onClearPolygon,
+  showTrainStations,
+  onToggleTrainStations,
+  showPriceHeatmap,
+  onTogglePriceHeatmap,
 }: MapToolbarProps) {
   const [drawMenuOpen, setDrawMenuOpen] = useState(false);
 
@@ -213,6 +224,47 @@ export function MapToolbar({
             <TooltipContent side="left">Clear drawing</TooltipContent>
           </Tooltip>
         )}
+      </div>
+
+      {/* Layer Toggles */}
+      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-9 w-9 rounded-none border-b",
+                showTrainStations && "bg-primary/10 text-primary"
+              )}
+              onClick={onToggleTrainStations}
+            >
+              <Train className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {showTrainStations ? 'Hide train stations' : 'Show train stations'}
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-9 w-9 rounded-none",
+                showPriceHeatmap && "bg-primary/10 text-primary"
+              )}
+              onClick={onTogglePriceHeatmap}
+            >
+              <Thermometer className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            {showPriceHeatmap ? 'Hide price heatmap' : 'Show price heatmap'}
+          </TooltipContent>
+        </Tooltip>
       </div>
       
       {/* Reset View */}

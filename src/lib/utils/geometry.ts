@@ -67,6 +67,16 @@ export function getDistanceInMeters(
   return R * c;
 }
 
+/**
+ * Calculate distance between two points in kilometers
+ */
+export function getDistanceInKm(
+  point1: [number, number], 
+  point2: [number, number]
+): number {
+  return getDistanceInMeters(point1, point2) / 1000;
+}
+
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
 }
