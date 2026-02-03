@@ -15,6 +15,7 @@ import {
   Train,
   Thermometer,
   Keyboard,
+  Share2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -24,8 +25,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import type { DrawMode } from './DrawControl';
-import { MapShareButton } from './MapShareButton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 interface MapToolbarProps {
   mapRef: RefObject<L.Map | null>;
@@ -66,6 +67,9 @@ export function MapToolbar({
   const isMobile = useIsMobile();
   const [drawMenuOpen, setDrawMenuOpen] = useState(false);
 
+  const buttonSize = isMobile ? 'h-10 w-10' : 'h-8 w-8';
+  const iconSize = isMobile ? 'h-4 w-4' : 'h-3.5 w-3.5';
+
   const handleZoomIn = useCallback(() => {
     if (mapRef.current) {
       mapRef.current.zoomIn();
@@ -80,13 +84,11 @@ export function MapToolbar({
 
   const handleLocate = useCallback(() => {
     if (!mapRef.current) return;
-    
     mapRef.current.locate({ setView: true, maxZoom: 14 });
   }, [mapRef]);
 
   const handleResetView = useCallback(() => {
     if (mapRef.current) {
-      // Reset to Israel view
       mapRef.current.flyTo([31.5, 34.8], 8, { duration: 1 });
     }
   }, [mapRef]);
@@ -96,239 +98,292 @@ export function MapToolbar({
     setDrawMenuOpen(false);
   };
 
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'BuyWise Map Search',
+          text: 'Check out this property search on BuyWise',
+          url,
+        });
+        return;
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') return;
+      }
+    }
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard', {
+        description: 'Share it with others to show this exact map view',
+        duration: 3000,
+      });
+    } catch {
+      const textArea = document.createElement('textarea');
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast.success('Link copied to clipboard');
+    }
+  }, [isMobile]);
+
+  // Common button styles
+  const btnBase = cn(
+    buttonSize,
+    'rounded-md transition-colors hover:bg-accent/60'
+  );
+  
+  const btnActive = 'bg-primary text-primary-foreground hover:bg-primary/90';
+
   return (
     <div 
-      className="absolute top-4 right-4 z-[1000] flex flex-col gap-1"
+      className="absolute top-4 right-4 z-[1000] flex flex-col gap-1.5"
       role="toolbar"
       aria-label="Map controls"
       aria-orientation="vertical"
     >
-      {/* Zoom Controls */}
-      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-none border-b map-toolbar-button"
-              onClick={handleZoomIn}
-              aria-label="Zoom in (keyboard: +)"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Zoom in (+)</TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-none map-toolbar-button"
-              onClick={handleZoomOut}
-              aria-label="Zoom out (keyboard: -)"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Zoom out (-)</TooltipContent>
-        </Tooltip>
-      </div>
-      
-      {/* Location Control */}
-      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-none map-toolbar-button"
-              onClick={handleLocate}
-              aria-label="Find my location (keyboard: L)"
-            >
-              <Locate className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">My location (L)</TooltipContent>
-        </Tooltip>
-      </div>
-      
-      {/* Saved Locations Toggle */}
-      {hasSavedLocations && (
-        <div className="bg-background rounded-lg shadow-md border overflow-hidden">
+      {/* Group 1: Navigation (Zoom + Location + Reset) */}
+      <div className="map-toolbar-group">
+        <div className="grid grid-cols-2 gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-9 w-9 rounded-none map-toolbar-button",
-                  showSavedLocations && "bg-primary/10 text-primary"
-                )}
-                onClick={onToggleSavedLocations}
-                aria-label={showSavedLocations ? 'Hide saved places (keyboard: S)' : 'Show saved places (keyboard: S)'}
-                aria-pressed={showSavedLocations}
+                className={btnBase}
+                onClick={handleZoomIn}
+                aria-label="Zoom in (+)"
               >
-                <MapPin className="h-4 w-4" />
+                <ZoomIn className={iconSize} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
-              {showSavedLocations ? 'Hide saved places (S)' : 'Show saved places (S)'}
-            </TooltipContent>
+            <TooltipContent side="left">Zoom in (+)</TooltipContent>
           </Tooltip>
-        </div>
-      )}
-
-      {/* Draw Tools */}
-      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-        <DropdownMenu open={drawMenuOpen} onOpenChange={setDrawMenuOpen}>
+          
           <Tooltip>
             <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={btnBase}
+                onClick={handleZoomOut}
+                aria-label="Zoom out (-)"
+              >
+                <ZoomOut className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Zoom out (-)</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={btnBase}
+                onClick={handleLocate}
+                aria-label="Find my location (L)"
+              >
+                <Locate className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">My location (L)</TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={btnBase}
+                onClick={handleResetView}
+                aria-label="Reset view (R)"
+              >
+                <Layers className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Reset view (R)</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+
+      {/* Group 2: Tools & Layers (Draw, Saved, Train, Heatmap) */}
+      <div className="map-toolbar-group">
+        <div className="grid grid-cols-2 gap-0.5">
+          {/* Draw Tool with badge */}
+          <DropdownMenu open={drawMenuOpen} onOpenChange={setDrawMenuOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(btnBase, 'relative', (drawMode || hasDrawnPolygon) && btnActive)}
+                    aria-label="Draw to search (D)"
+                    aria-expanded={drawMenuOpen}
+                  >
+                    <PenTool className={iconSize} />
+                    {hasDrawnPolygon && (
+                      <span 
+                        className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-destructive rounded-full flex items-center justify-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onClearPolygon();
+                        }}
+                      >
+                        <X className="h-2 w-2 text-white" />
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="left">Draw to search (D)</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent side="left" align="start">
+              <DropdownMenuItem 
+                onClick={() => handleDrawModeSelect('rectangle')}
+                className={cn(drawMode === 'rectangle' && 'bg-accent')}
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Rectangle
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDrawModeSelect('polygon')}
+                className={cn(drawMode === 'polygon' && 'bg-accent')}
+              >
+                <PenTool className="h-4 w-4 mr-2" />
+                Freehand
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDrawModeSelect('circle')}
+                className={cn(drawMode === 'circle' && 'bg-accent')}
+              >
+                <Circle className="h-4 w-4 mr-2" />
+                Circle
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Saved Locations */}
+          {hasSavedLocations ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn(
-                    "h-9 w-9 rounded-none map-toolbar-button",
-                    (drawMode || hasDrawnPolygon) && "bg-primary/10 text-primary"
-                  )}
-                  aria-label="Draw to search area (keyboard: D)"
-                  aria-expanded={drawMenuOpen}
+                  className={cn(btnBase, showSavedLocations && btnActive)}
+                  onClick={onToggleSavedLocations}
+                  aria-label={showSavedLocations ? 'Hide saved places (S)' : 'Show saved places (S)'}
+                  aria-pressed={showSavedLocations}
                 >
-                  <PenTool className="h-4 w-4" />
+                  <MapPin className={iconSize} />
                 </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="left">Draw to search (D)</TooltipContent>
-          </Tooltip>
-          <DropdownMenuContent side="left" align="start">
-            <DropdownMenuItem 
-              onClick={() => handleDrawModeSelect('rectangle')}
-              className={cn(drawMode === 'rectangle' && 'bg-accent')}
-            >
-              <Square className="h-4 w-4 mr-2" />
-              Rectangle
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleDrawModeSelect('polygon')}
-              className={cn(drawMode === 'polygon' && 'bg-accent')}
-            >
-              <PenTool className="h-4 w-4 mr-2" />
-              Freehand
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleDrawModeSelect('circle')}
-              className={cn(drawMode === 'circle' && 'bg-accent')}
-            >
-              <Circle className="h-4 w-4 mr-2" />
-              Circle
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        
-        {/* Clear Drawing Button */}
-        {hasDrawnPolygon && (
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                {showSavedLocations ? 'Hide saved places (S)' : 'Show saved places (S)'}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(btnBase, showTrainStations && btnActive)}
+                  onClick={onToggleTrainStations}
+                  aria-label={showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+                  aria-pressed={showTrainStations}
+                >
+                  <Train className={iconSize} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          
+          {/* Train Stations (only if saved locations exist, otherwise use slot above) */}
+          {hasSavedLocations && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(btnBase, showTrainStations && btnActive)}
+                  onClick={onToggleTrainStations}
+                  aria-label={showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+                  aria-pressed={showTrainStations}
+                >
+                  <Train className={iconSize} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+              </TooltipContent>
+            </Tooltip>
+          )}
+          
+          {/* Heatmap */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-none border-t text-destructive hover:text-destructive"
-                onClick={onClearPolygon}
+                className={cn(btnBase, showPriceHeatmap && btnActive)}
+                onClick={onTogglePriceHeatmap}
+                aria-label={showPriceHeatmap ? 'Hide price heatmap (H)' : 'Show price heatmap (H)'}
+                aria-pressed={showPriceHeatmap}
               >
-                <X className="h-4 w-4" />
+                <Thermometer className={iconSize} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">Clear drawing</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-
-      {/* Layer Toggles */}
-      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "h-9 w-9 rounded-none border-b map-toolbar-button",
-                showTrainStations && "bg-primary/10 text-primary"
-              )}
-              onClick={onToggleTrainStations}
-              aria-label={showTrainStations ? 'Hide train stations (keyboard: T)' : 'Show train stations (keyboard: T)'}
-              aria-pressed={showTrainStations}
-            >
-              <Train className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "h-9 w-9 rounded-none map-toolbar-button",
-                showPriceHeatmap && "bg-primary/10 text-primary"
-              )}
-              onClick={onTogglePriceHeatmap}
-              aria-label={showPriceHeatmap ? 'Hide price heatmap (keyboard: H)' : 'Show price heatmap (keyboard: H)'}
-              aria-pressed={showPriceHeatmap}
-            >
-              <Thermometer className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            {showPriceHeatmap ? 'Hide price heatmap (H)' : 'Show price heatmap (H)'}
-          </TooltipContent>
-        </Tooltip>
-      </div>
-
-      {/* Share Button */}
-      <MapShareButton />
-      
-      {/* Keyboard Shortcuts - Desktop only */}
-      {!isMobile && onShowKeyboardShortcuts && (
-        <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 rounded-none map-toolbar-button"
-                onClick={onShowKeyboardShortcuts}
-                aria-label="Show keyboard shortcuts"
-              >
-                <Keyboard className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Keyboard shortcuts (?)</TooltipContent>
+            <TooltipContent side="left">
+              {showPriceHeatmap ? 'Hide price heatmap (H)' : 'Show price heatmap (H)'}
+            </TooltipContent>
           </Tooltip>
         </div>
-      )}
-      
-      {/* Reset View */}
-      <div className="bg-background rounded-lg shadow-md border overflow-hidden">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-none map-toolbar-button"
-              onClick={handleResetView}
-              aria-label="Reset map view to default (keyboard: R)"
-            >
-              <Layers className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Reset view (R)</TooltipContent>
-        </Tooltip>
+      </div>
+
+      {/* Group 3: Utility (Share + Keyboard shortcuts) */}
+      <div className="map-toolbar-group">
+        <div className={cn("grid gap-0.5", !isMobile && onShowKeyboardShortcuts ? "grid-cols-2" : "grid-cols-1")}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={btnBase}
+                onClick={handleShare}
+                aria-label="Share this view"
+              >
+                <Share2 className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Share this view</TooltipContent>
+          </Tooltip>
+          
+          {!isMobile && onShowKeyboardShortcuts && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={btnBase}
+                  onClick={onShowKeyboardShortcuts}
+                  aria-label="Keyboard shortcuts (?)"
+                >
+                  <Keyboard className={iconSize} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Keyboard shortcuts (?)</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -204,6 +204,19 @@
   }
 }
 
+/* =========================
+   Map Toolbar Group Styles
+   ========================= */
+
+.map-toolbar-group {
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  border: 1px solid hsl(var(--border));
+  padding: 0.25rem;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
