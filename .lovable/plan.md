@@ -1,76 +1,102 @@
 
-## Map Property Popup Redesign
 
-The current popup looks unprofessional because it uses Leaflet's default popup styling with an awkward pointer/tail, inconsistent padding, and the close button fighting with the Favorite button. We'll redesign this to match the polished mini-property-card aesthetic used elsewhere in Bob Wiser.
-
----
-
-## Design Approach
+## City Overlay Redesign - Clean, Professional Map Markers
 
 ### Current Issues
-1. Visible triangular "tail/pointer" at the bottom (Leaflet default)
-2. Close button (X) overlaps awkwardly with the Favorite heart button
-3. Content area has inconsistent spacing
-4. View Details button styling feels out of place
-5. Doesn't match the polished CardContent styling used in PropertyCard
 
-### New Design
-A clean, floating card that:
-- Has no visible pointer/tail (hide the leaflet-popup-tip)
-- Features a proper image header with rounded top corners
-- Places close button in a non-conflicting position
-- Uses consistent typography and spacing from PropertyCard
-- Keeps the same compact information hierarchy
+1. **Visual Overlap**: Tel Aviv metro area has 8+ cities clustered together (Herzliya, Hod HaSharon, Kfar Saba, Ra'anana, Petah Tikva, Ramat Gan, Tel Aviv) causing unreadable marker overlap
+2. **Disjointed Design**: The current "city name pill + separate blue count bubble" looks unprofessional and disconnected
+3. **No Prioritization**: All cities shown equally regardless of property count or importance
 
----
+### Solution: Unified City Pill Markers
 
-## Implementation
+Redesign to a single, unified marker style similar to how Zillow and Redfin show regional markers:
 
-### 1. Update CSS for Leaflet Popup (src/index.css)
-- Hide the default leaflet popup pointer/tip
-- Add styles for clean floating card appearance
-- Ensure the popup shadow and border-radius match the design system
+**New Design**:
+- Single cohesive pill: `City Name • Count` (e.g., "Jerusalem • 16")
+- Clean white background with subtle border and shadow
+- Blue text for city name, muted for count
+- Hover state with subtle lift effect
+- Size scales based on property count (larger cities = slightly larger markers)
 
+### Implementation
+
+**1. Update CityOverlay Component**
+- Change marker HTML to single unified pill design
+- Add size tiers based on property count (similar to cluster markers)
+- Update iconAnchor to center markers properly
+
+**2. Add Smart Collision Handling**
+For the Tel Aviv metro cluster, implement one of two approaches:
+
+*Option A (Recommended)*: Regional grouping at very zoomed out levels
+- When zoom is less than 8, group Tel Aviv metro cities into a single "Gush Dan • 112" marker
+- Clicking expands to show individual cities as user zooms in
+- This prevents the visual mess in the screenshot
+
+*Option B*: CSS-based offset
+- Apply slight position offsets to overlapping markers
+- Less elegant but simpler
+
+**3. Update CSS Styles**
+- Replace the two-element styling with unified pill styling
+- Add hover and interaction states
+- Implement size tiers (small/medium/large based on property count)
+
+### Technical Details
+
+**CityOverlay.tsx Changes**:
+```tsx
+// New unified pill HTML
+html: `
+  <div class="city-marker-pill ${sizeTier}">
+    <span class="city-label">${name}</span>
+    <span class="city-divider">•</span>
+    <span class="city-count">${count}</span>
+  </div>
+`
+```
+
+**CSS Changes**:
 ```css
-/* Hide the triangular pointer */
-.property-popup .leaflet-popup-tip-container {
-  display: none !important;
+.city-marker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border-radius: 9999px;
+  border: 1px solid hsl(220, 13%, 85%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  cursor: pointer;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
 }
 
-/* Clean floating card styling */
-.property-popup .leaflet-popup-content-wrapper {
-  border-radius: 12px !important;
-  overflow: hidden !important;
+.city-marker-pill .city-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: hsl(213, 94%, 40%);
+}
+
+.city-marker-pill .city-count {
+  font-size: 12px;
+  color: hsl(220, 10%, 50%);
 }
 ```
 
-### 2. Redesign MapPropertyPopup Component (src/components/map-search/MapPropertyPopup.tsx)
-- Remove negative margin hacks that fight with the popup wrapper
-- Use proper aspect ratio for image (matching PropertyCard)
-- Move close button to top-right corner of the image with proper z-index and no overlap with Favorite
-- Use the same typography hierarchy as PropertyCard (price, stats, address)
-- Style the View Details button to match the primary button pattern
-- Clean up padding and spacing to match the card design system
+### Size Tiers
+- **Small** (1-20 properties): Compact pill
+- **Medium** (21-50 properties): Standard pill  
+- **Large** (50+ properties): Slightly larger, bolder
 
-Key structural changes:
-- Image container: Use `aspect-[4/3]` like PropertyCard compact mode
-- Close button: Position in top-right corner with semi-transparent background
-- Favorite button: Keep it but position properly (not overlapping with close)
-- Status badge: Keep in top-left
-- Content: Match PropertyCard spacing (`p-3`, proper font sizes)
+### Files to Modify
+1. `src/components/map-search/CityOverlay.tsx` - Update marker rendering with new unified design
+2. `src/index.css` - Replace city overlay styles with new unified pill design
 
----
+### Result
+- Clean, professional city markers that match modern map design standards
+- Single cohesive element instead of disjointed name + bubble
+- Proper sizing hierarchy based on property count
+- Better visual separation through unified design
 
-## Files to Modify
-1. **src/index.css** - Add/update popup styles to hide pointer and style the card
-2. **src/components/map-search/MapPropertyPopup.tsx** - Complete redesign of the component structure and styling
-
----
-
-## Expected Result
-A clean, floating mini-property card popup that:
-- Looks like a polished card floating over the map (no pointer)
-- Matches the PropertyCard design language
-- Has clear, non-overlapping action buttons
-- Uses proper shadows and rounded corners
-- Feels premium and on-brand for Bob Wiser
