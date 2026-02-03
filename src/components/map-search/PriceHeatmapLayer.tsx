@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Circle, useMap } from 'react-leaflet';
+import { Circle, useMap } from '@/vendor/react-leaflet';
 import { useCities } from '@/hooks/useCities';
 
 interface PriceHeatmapLayerProps {

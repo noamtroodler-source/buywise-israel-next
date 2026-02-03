@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, useMap, useMapEvents, Marker } from '@/vendor/react-leaflet';
 import L from 'leaflet';
 import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
