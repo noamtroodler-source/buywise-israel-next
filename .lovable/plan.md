@@ -1,127 +1,133 @@
 
 
-# Map Toolbar Redesign: Cleaner, Compact, Zillow-Inspired
+# Declutter Buy/Rent Filter Bar: Best Practices Redesign
 
-## Current Issues Identified
+## Current Issues
 
-Looking at the screenshot, the current toolbar has several design problems:
+Looking at the screenshot, the filter bar has visual congestion from:
 
-1. **Excessive Vertical Spacing** - Each button group is wrapped in its own container with gaps between them, creating too much whitespace
-2. **Fragmented Grouping** - Related functions are in separate containers (zoom together, but location alone; layers together, but keyboard alone)
-3. **Visual Noise** - Every single group has its own rounded corners, border, and shadow creating a cluttered appearance
-4. **No Clear Hierarchy** - All buttons look equally important despite having different usage frequencies
+1. **Too many equally-weighted elements** - Every filter button has the same visual prominence
+2. **Duplicate toggles on same row** - Active/Sold toggle AND Grid/Map toggle both compete for attention  
+3. **Results count on separate line** - Creates unnecessary vertical space
+4. **No clear visual grouping** - Filters, sort, and actions all blend together
 
-## Design Solution
+---
 
-### Core Principles
+## Design Solution: Industry Best Practices
 
-Following Zillow/Google Maps best practices:
-- **Consolidate related tools** into fewer visual groups
-- **Reduce container overhead** - fewer boxes, less visual noise
-- **Smaller, tighter spacing** - compact footprint without sacrificing touch targets
-- **Clear visual hierarchy** - primary actions more prominent
-- **Consistent styling** - match BuyWise design language
+### Principle 1: Visual Hierarchy
+Not all filters are equally important. Primary actions (City, Price) should be more prominent than secondary ones (Type, More).
 
-### New Structure: 3 Logical Groups
+### Principle 2: Consolidate Counts & Toggles
+Move the "Showing X of Y" count inline with the filter row to eliminate a line.
+
+### Principle 3: Group Related Actions
+Visually separate the core filters from utility actions (Sort, View Toggle, Alert).
+
+### Principle 4: Reduce Button Weight
+Use lighter styling for less-used filters (Type, More) to reduce visual noise.
+
+---
+
+## Proposed Layout
 
 ```text
-+-------+
-| +   - |  Group 1: Navigation (Zoom + Location + Reset)
-| O   R |  4 buttons in a 2x2 grid
-+-------+
-         
-+-------+
-| D   S |  Group 2: Tools & Layers (Draw, Saved, Train, Heatmap)
-| T   H |  4 buttons in a 2x2 grid
-+-------+
-         
-+-------+
-| Share |  Group 3: Utility (Share, Keyboard on desktop)
-| Keys? |  1-2 buttons stacked
-+-------+
+Desktop (single row, clear grouping):
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ [Active|Sold]  [City ▼]  [Price ▼]  [Beds/Baths ▼]  [Type ▼]  [More]     304 results     Sort ▼  [🔔]  [Grid|Map] │
+│                ─────── Core Filters ───────                     Count    ── Actions ──│
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Changes
 
 | Before | After |
 |--------|-------|
-| 7 separate containers | 3 consolidated groups |
-| 9 visible buttons spread vertically | Same buttons, 2x2 grid layout |
-| Large gaps between groups | Tight 6px gaps |
-| Each group has own shadow | Subtle, unified shadows |
-| Individual rounded corners everywhere | Clean rounded corners on group edges |
+| 9 individual items with equal weight | Clear 3-section grouping |
+| Results count on separate line | Inline with filters |
+| Create Alert as big blue button | Icon-only button to save space |
+| All filters have identical styling | Primary filters slightly more prominent |
+| Clear button visible when no filters | Hidden when no active filters |
 
 ---
 
 ## Technical Implementation
 
-### 1. Consolidated Button Groups
+### 1. Inline Results Count
 
-Instead of wrapping each 1-2 buttons in separate containers:
-
-```tsx
-// BEFORE (current - many containers)
-<div className="bg-background rounded-lg shadow-md border">
-  <Button>Zoom In</Button>
-  <Button>Zoom Out</Button>
-</div>
-<div className="bg-background rounded-lg shadow-md border">
-  <Button>Location</Button>
-</div>
-// ... 5 more containers
-
-// AFTER (consolidated 2x2 grids)
-<div className="bg-background rounded-lg shadow-sm border p-1">
-  <div className="grid grid-cols-2 gap-0.5">
-    <Button>Zoom In</Button>
-    <Button>Zoom Out</Button>
-    <Button>Location</Button>
-    <Button>Reset</Button>
-  </div>
-</div>
-```
-
-### 2. Button Styling Updates
+Move the count from `Listings.tsx` into `PropertyFilters.tsx` as a subtle inline element:
 
 ```tsx
-// Smaller, consistent buttons
-className="h-8 w-8 rounded-md"  // Was h-9 w-9
-
-// Cleaner hover state
-className="hover:bg-accent/50"  // Subtle background change
-
-// Active state (layer toggles)
-className={cn(
-  "h-8 w-8 rounded-md transition-colors",
-  isActive && "bg-primary text-primary-foreground"  // More obvious active state
+// After core filters, before right-aligned actions
+{!isMobile && previewCount !== undefined && (
+  <span className="text-sm text-muted-foreground whitespace-nowrap">
+    {previewCount} {previewCount === 1 ? 'property' : 'properties'}
+  </span>
 )}
 ```
 
-### 3. Reduced Visual Weight
+### 2. Compact Create Alert Button
+
+Change from full "Create Alert" button to icon-only on desktop (tooltip on hover):
 
 ```tsx
-// Container styling - lighter shadows, thinner borders
-className="bg-background/95 backdrop-blur-sm rounded-lg shadow-sm border"
-
-// Tighter gaps between groups
-className="flex flex-col gap-1.5"  // Was gap-1 but with more containers
+// Desktop: Icon button with tooltip
+<Tooltip>
+  <TooltipTrigger asChild>
+    <Button 
+      onClick={handleCreateAlertClick}
+      className="h-10 w-10 rounded-full bg-primary text-primary-foreground"
+    >
+      <Bell className="h-4 w-4" />
+    </Button>
+  </TooltipTrigger>
+  <TooltipContent>Create search alert</TooltipContent>
+</Tooltip>
 ```
 
-### 4. Icon Size Optimization
+### 3. Reduce Filter Button Weight
+
+Make Type and More buttons visually lighter (ghost-like):
 
 ```tsx
-// Slightly smaller icons for tighter layout
-<ZoomIn className="h-3.5 w-3.5" />  // Was h-4 w-4
+// Secondary filter styling - lighter weight
+const filterButtonSecondary = "h-10 gap-1.5 rounded-full border-0 bg-transparent hover:bg-muted/50 px-3 font-normal text-muted-foreground";
+
+// Type button - secondary styling
+<Button variant="ghost" className={filterButtonSecondary}>
+  <Building2 className="h-4 w-4" />
+  <span>Type</span>
+</Button>
 ```
 
-### 5. Mobile Optimization
+### 4. Smaller Active/Sold Toggle
 
-On mobile, toolbar buttons need adequate touch targets:
+Reduce the visual weight of the toggle:
+
 ```tsx
-// Mobile: slightly larger
-className={cn(
-  "rounded-md transition-colors",
-  isMobile ? "h-10 w-10" : "h-8 w-8"
+// Smaller, more subtle toggle
+<div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
+  <button className={cn(
+    "px-3 py-1.5 text-sm font-medium transition-all",
+    !isSoldView ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+  )}>Active</button>
+  <button className={cn(
+    "px-3 py-1.5 text-sm font-medium transition-all",
+    isSoldView ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+  )}>Sold</button>
+</div>
+```
+
+### 5. Remove Separate Results Line
+
+In `Listings.tsx`, remove the standalone results count paragraph since it's now inline:
+
+```tsx
+// REMOVE THIS BLOCK:
+{!isLoading && (
+  <p className="text-sm text-muted-foreground mb-4">
+    Showing {properties.length} of {totalCount} {totalCount === 1 ? 'property' : 'properties'}
+  </p>
 )}
 ```
 
@@ -129,55 +135,23 @@ className={cn(
 
 ## Visual Comparison
 
-### Before (Current)
+### Before
 ```text
-+-------+     ← Zoom container
-| +   - |
-+-------+
+[Active|Sold] [City ▼] [$ Price ▼] [⊞ Beds/Baths ▼] [🏢 Type ▼] [☰ More]  [Clear]    ↕ Newest ▼  |  [🔔 Create Alert]  [Grid|Map]
 
-+-------+     ← Location container  
-|   O   |
-+-------+
-
-+-------+     ← Draw container
-|   D   |
-+-------+
-
-+-------+     ← Layers container
-| T   H |
-+-------+
-
-+-------+     ← Share container
-|  <>   |
-+-------+
-
-+-------+     ← Keyboard container
-|   ?   |
-+-------+
-
-+-------+     ← Reset container
-|  []   |
-+-------+
+Showing 24 of 304 properties
 ```
 
-### After (Redesigned)
+### After  
 ```text
-+-------+     ← Navigation group (compact 2x2)
-| + | - |
-|---|---|
-| O | R |
-+-------+
-  6px gap
-+-------+     ← Tools & Layers group (compact 2x2)
-| D | S |
-|---|---|
-| T | H |
-+-------+
-  6px gap
-+---+         ← Utility group (stacked)
-|<>?|
-+---+
+[Active|Sold]  [City ▼]  [Price ▼]  [Beds ▼]  Type ▼  More    304 properties    Newest ▼  [🔔]  [Grid|Map]
 ```
+
+**Reduction:**
+- 1 fewer line (count moved inline)
+- Create Alert button is now compact icon
+- Type and More have reduced visual weight
+- Clearer visual grouping with spacing
 
 ---
 
@@ -185,44 +159,28 @@ className={cn(
 
 | File | Changes |
 |------|---------|
-| `src/components/map-search/MapToolbar.tsx` | Restructure into 3 groups, 2x2 grid layout, smaller buttons |
-| `src/components/map-search/MapShareButton.tsx` | Remove container wrapper (toolbar provides it now) |
-| `src/index.css` | Add `.map-toolbar-group` and `.map-toolbar-btn` utility classes |
+| `src/components/filters/PropertyFilters.tsx` | Add inline count, compact alert button, lighter secondary filter styling |
+| `src/pages/Listings.tsx` | Remove standalone results count paragraph |
 
 ---
 
-## Additional Improvements
+## Mobile Considerations
 
-### Tooltip Enhancements
-- Show keyboard shortcut in parentheses: "Zoom in (+)"
-- Faster tooltip delay on desktop
+The mobile layout already handles this well with:
+- Collapsed filters into a single "Filters" button
+- Sort on its own row
+- Alert as icon-only
 
-### Clear Drawing Button
-When a polygon is drawn, show a small red X badge on the draw button rather than adding an extra button:
-```tsx
-// Badge indicator instead of separate button
-<Button className="relative">
-  <PenTool className="h-3.5 w-3.5" />
-  {hasDrawnPolygon && (
-    <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full flex items-center justify-center">
-      <X className="h-2 w-2 text-white" />
-    </span>
-  )}
-</Button>
-```
-
-### Conditional Buttons
-- Saved locations button: Only show when user has saved locations (already implemented)
-- Keyboard shortcuts button: Only on desktop (already implemented)
+No mobile changes needed.
 
 ---
 
 ## Expected Result
 
-The redesigned toolbar will:
-- Take up approximately 40% less vertical space
-- Have a cleaner, more professional appearance matching BuyWise design
-- Provide better visual grouping of related functions
-- Maintain full accessibility with proper ARIA labels and focus states
-- Work well on both desktop and mobile with appropriate sizing
+The redesigned filter bar will:
+- Feel less cluttered with clear visual hierarchy
+- Take up less vertical space (1 line instead of 2)
+- Have clearer grouping of filters vs. actions
+- Maintain all functionality
+- Match professional real estate site patterns (Zillow, Redfin)
 
