@@ -1,371 +1,239 @@
 
 
-# Ultimate Map Search Experience for BuyWise Israel
+# Phase 2: Clustering Optimization, Performance & Grid/Map View Toggle
 
-## Executive Summary
+## Overview
 
-This plan creates a world-class, Zillow-inspired map search experience specifically designed for international buyers exploring Israeli real estate. The feature combines split-view browsing, intelligent clustering, draw-to-search, neighborhood boundaries, and BuyWise-exclusive features like saved locations integration and commute time visualization.
-
----
-
-## Core Architecture
-
-### New Route and Page Structure
-- **Route**: `/map` (new page, accessible from navigation)
-- **Mobile Route Behavior**: On mobile, shows vertical split (map top, list bottom) with swipe-to-expand gestures
-- **Desktop Layout**: Horizontal split with resizable panels (map left ~55%, listings right ~45%)
-
-### State Management
-The map view shares URL state with `/listings` for seamless switching:
-```
-/map?status=for_sale&city=Tel+Aviv&min_price=2000000&max_price=5000000
-```
-Users can toggle between List View and Map View while preserving all filters.
+This phase focuses on three key areas:
+1. **Optimizing the existing clustering implementation** for better performance with 600+ properties
+2. **Adding CSS styling for cluster markers** that's currently missing
+3. **Creating a view toggle** (Grid/Map) on the Listings page so users can switch between the traditional grid view and the new map view
 
 ---
 
-## Feature Breakdown
-
-### 1. Split-View Layout (Desktop and Mobile)
-
-**Desktop (Horizontal Split)**
-- Left panel: Interactive map (50-65% width, resizable)
-- Right panel: Scrollable property cards in compact format
-- Resizable divider using existing `ResizablePanelGroup` component
-- Full-screen map toggle button
-
-**Mobile (Vertical Split)**
-- Top: Map view (50% height initially)
-- Bottom: Swipeable card carousel or scrollable list
-- Pull-up gesture to expand list / pull-down to expand map
-- Bottom sheet UX pattern for property list
-
-### 2. Price-Based Map Markers
-
-**Marker Design (BuyWise Style)**
-- Clean pill-shaped markers showing formatted price
-- For Sale: Primary blue background (`hsl(213, 94%, 45%)`)
-- For Rent: Muted gray background with "/mo" suffix
-- Sold: Muted with strikethrough styling
-- Active/Hovered: Scale up + shadow + border highlight
-- Size adapts to zoom level (larger at city view, smaller when zoomed in)
-
-**Marker Interaction**
-- Click: Opens mini property card popup with image, price, beds/baths, quick actions
-- Hover (desktop): Highlights corresponding card in list panel
-- Selected: Distinct styling (ring, elevated z-index)
-
-### 3. Intelligent Clustering
-
-**Implementation**
-- Use `react-leaflet-markercluster` or custom Supercluster implementation
-- Cluster markers show count + price range (e.g., "12 properties | 2.5M-4.2M")
-- Smooth zoom animation when clicking cluster
-- Progressive disclosure: clusters break apart at appropriate zoom levels
-
-**Performance**
-- Virtualized rendering for 600+ properties
-- Only render markers within viewport + buffer zone
-- Debounced re-render on map move
-
-### 4. Bounding Box Search (Search-as-You-Move)
-
-**How It Works**
-- Map movement automatically updates property results
-- Toggle: "Search as I move the map" (on by default)
-- Visible bounds become the search filter
-- URL updates with map center and zoom for shareable links
-
-**Implementation**
-- Listen to map `moveend` event
-- Extract bounds: `[sw_lat, sw_lng, ne_lat, ne_lng]`
-- Add to PropertyFilters: `bounds?: [number, number, number, number]`
-- Update `usePaginatedProperties` to filter by bounds on the server
-
-### 5. Draw to Search
-
-**Draw Modes**
-- Rectangle: Quick area selection
-- Freehand Polygon: Draw custom shapes (using Leaflet.FreeDraw or Leaflet-Geoman)
-- Circle: Radius-based search around a point
-
-**UX Flow**
-1. Click "Draw" button in map toolbar
-2. Draw shape on map
-3. Properties within shape are filtered
-4. "Clear Drawing" button to reset
-5. Shape persists until cleared
-
-**BuyWise Twist: Neighborhood Quick Select**
-- Clicking a city shows clickable neighborhood overlay
-- Neighborhoods have subtle boundary highlights
-- Click neighborhood name to filter to that area
-
-### 6. City and Neighborhood Boundaries
-
-**City Layer**
-- When zoomed out, show city labels centered on cities
-- Click city label to zoom to that city's bounds
-
-**Neighborhood Overlay**
-- When zoomed into a city, show neighborhood boundaries as subtle polygons
-- Neighborhoods are clickable and can be multi-selected
-- Selected neighborhoods get highlighted border and fill
-- Active neighborhoods appear as filter chips below map
-
-### 7. BuyWise-Exclusive: Saved Locations on Map
-
-**Integration with Existing Feature**
-- User's saved locations (home, work, family, etc.) appear on map
-- Toggle visibility with "Show My Places" button
-- Each saved location shows distance/commute from nearby properties
-
-**Visual Treatment**
-- Purple markers (matches existing category color)
-- Smaller size than property markers
-- Label shows location name on hover
-
-### 8. Live Commute Time Visualization
-
-**How It Works**
-- User can click any property to see commute times to saved locations
-- Shows walking/transit/driving time bubbles
-- Lines drawn between property and saved locations with time labels
-
-**BuyWise Twist**
-- "Find properties within X minutes of [saved location]" filter
-- Commute-based search: select your workplace, show all properties within 30 min commute
-
-### 9. Smart Filter Integration
-
-**Sticky Filter Bar**
-- Compact filter bar above map (desktop) or below header (mobile)
-- Quick filters: Price range slider, Rooms, Property type
-- "More Filters" opens existing MobileFilterSheet
-- Live count updates as filters change
-
-**Filter Synchronization**
-- Filters are bidirectional with URL
-- Map bounds filter stacks with other filters
-- "Reset to show all" clears bounds and filters
-
-### 10. Property Card Highlighting
-
-**Synchronized Selection**
-- Hover on map marker = highlight corresponding card in list
-- Hover on card in list = highlight corresponding marker on map
-- Click on card = pan map to center that property
-
-**Visual Feedback**
-- Hovered card: subtle border glow
-- Selected card: primary border, slightly elevated
-
----
-
-## Mobile-Specific Features
-
-### Gesture Support
-- Native pinch-to-zoom and pan
-- Pull-to-refresh on property list
-- Swipe between properties in bottom sheet
-
-### Bottom Sheet Property List
-- Collapsed: Shows peek of first property card
-- Half-expanded: Shows 3-4 cards in scrollable list
-- Full-expanded: Full-screen list with mini-map header
-
-### Map Controls
-- Floating action buttons: Current location, Zoom in/out
-- Filter chip bar scrollable horizontally
-- "List View" / "Map View" toggle in header
-
----
-
-## BuyWise Israel Unique Features
-
-### 1. Anglo-Friendly Neighborhood Context
-- Neighborhood overlays include "Anglo presence" indicator
-- Tooltip shows helpful context for international buyers
-
-### 2. Market Context Overlay
-- Toggle to show price-per-sqm heatmap by area
-- Color gradient indicates market price levels
-- Helps understand relative value
-
-### 3. Saved Locations Integration
-- Unique to BuyWise: See your saved important places
-- Visual commute context built into property browsing
-- Answers "how far is this from my parents' apartment?"
-
-### 4. Train Station Layer
-- Toggle to show train stations on map
-- Properties near stations get small train icon
-- Helps commuters understand connectivity
-
-### 5. Clickable City Cards
-- When zoomed out, cities show as cards with:
-  - Property count
-  - Median price
-  - YoY change indicator
-- Click to zoom into city
-
----
-
-## Technical Implementation
-
-### New Files to Create
-
-```
-src/pages/MapSearch.tsx              # Main map search page
-src/components/map-search/
-  MapSearchLayout.tsx                # Split view container
-  PropertyMap.tsx                    # Main map component
-  PropertyMarker.tsx                 # Price-based marker
-  MarkerCluster.tsx                  # Cluster component
-  MapToolbar.tsx                     # Draw tools, layers, controls
-  DrawControl.tsx                    # Freehand/rectangle/circle draw
-  NeighborhoodOverlay.tsx            # Neighborhood boundaries
-  SavedLocationsLayer.tsx            # User's saved locations
-  MapPropertyCard.tsx                # Compact property card for map
-  MapPropertyPopup.tsx               # Marker click popup
-  MobileMapSheet.tsx                 # Mobile bottom sheet for list
-  MapFiltersBar.tsx                  # Compact filter bar for map view
-src/hooks/
-  useMapBounds.ts                    # Bounds-based filtering hook
-  useMapClustering.ts                # Supercluster hook wrapper
-  useNeighborhoodBoundaries.ts       # Fetch neighborhood polygons
-```
-
-### Files to Modify
-
-```
-src/App.tsx                          # Add /map route
-src/types/database.ts                # Add bounds filter type
-src/hooks/usePaginatedProperties.tsx # Add bounds filtering
-src/components/filters/PropertyFilters.tsx # Add map view toggle
-src/components/layout/MobileBottomNav.tsx # Update Search to link to map
-```
-
-### Database Additions
-
-**New Table: `neighborhood_boundaries`**
-```sql
-CREATE TABLE neighborhood_boundaries (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  city_id uuid REFERENCES cities(id),
-  name text NOT NULL,
-  slug text NOT NULL,
-  boundary_geojson jsonb NOT NULL,  -- GeoJSON polygon
-  center_lat numeric,
-  center_lng numeric,
-  created_at timestamptz DEFAULT now()
-);
-```
-
-**City Coordinates (if not existing)**
-Add `center_lat` and `center_lng` to cities table for map centering.
-
-### Dependencies
-
-Already installed:
-- `react-leaflet` and `leaflet` - core map rendering
-- `react-resizable-panels` - split view
-
-Need to install:
-- `react-leaflet-markercluster` - efficient marker clustering
-- OR `use-supercluster` + `supercluster` - alternative clustering approach
-- `leaflet-freedraw` or `terra-draw` - freehand drawing capability
-
----
-
-## Implementation Phases
-
-### Phase 1: Core Map View
-1. Create MapSearch page with split layout
-2. Display properties as price markers
-3. Implement bounding box search (search as you move)
-4. Add map/list view toggle to existing listings page
-5. Sync URL state between views
-
-### Phase 2: Clustering and Performance
-1. Implement marker clustering
-2. Optimize for 600+ properties
-3. Add loading states and skeleton UI
-4. Virtualize property list panel
-
-### Phase 3: Draw and Boundaries
-1. Add draw tools (rectangle, freehand)
-2. Create neighborhood boundary overlays
-3. Implement neighborhood click-to-filter
-4. Add city zoom behavior
-
-### Phase 4: BuyWise Features
-1. Integrate saved locations layer
-2. Add commute time visualization
-3. Train station layer
-4. Market context overlay
-
-### Phase 5: Mobile Optimization
-1. Bottom sheet property list
-2. Gesture refinements
-3. Mobile-specific controls
-4. Performance optimization
-
----
-
-## URL Structure
-
-```
-/map                                    # Default: for_sale, all Israel
-/map?status=for_sale                    # Sales view
-/map?status=for_rent                    # Rentals view
-/map?city=Tel+Aviv                      # City filter
-/map?center=32.0853,34.7818&zoom=14     # Map position
-/map?bounds=32.0,34.7,32.1,34.8         # Bounding box (for sharing)
-/map?neighborhoods=neve-tzedek,florentin # Neighborhood filter
+## Part 1: Cluster Marker Styling
+
+### Problem
+The current cluster markers use inline Tailwind classes in JavaScript template literals, but these won't be processed by Tailwind's JIT compiler since they're dynamically generated. This causes unstyled or broken cluster markers.
+
+### Solution
+Add dedicated CSS classes in `src/index.css` for cluster markers and property markers that work independently of Tailwind's JIT compilation.
+
+### Changes to `src/index.css`
+Add a new section for map-specific styles:
+
+```css
+/* Map Marker Styles */
+.property-marker {
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 200ms;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.property-marker.hovered,
+.property-marker.selected {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  ring: 2px solid hsl(213 94% 45%);
+}
+
+.cluster-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: hsl(213 94% 45%);
+  color: white;
+  border-radius: 9999px;
+  padding: 8px 12px;
+  min-width: 60px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: transform 200ms;
+}
+
+.cluster-marker:hover {
+  transform: scale(1.05);
+}
+
+.cluster-marker .cluster-count {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.cluster-marker .cluster-price {
+  font-size: 11px;
+  opacity: 0.9;
+  line-height: 1.2;
+}
+
+/* Leaflet popup overrides */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 0;
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+}
 ```
 
 ---
 
-## Analytics Events
+## Part 2: Clustering Performance Optimization
 
-```
-map_view_opened
-map_marker_clicked
-map_cluster_expanded
-map_draw_started
-map_draw_completed
-map_neighborhood_selected
-map_bounds_search
-map_saved_location_toggled
-map_commute_checked
-map_list_scrolled
-map_property_hovered
-```
+### Current State
+The clustering uses `use-supercluster` which is good, but several optimizations are needed:
 
----
+1. **Bounds update on initial load** - Currently uses `[-180, -85, 180, 85]` as initial bounds
+2. **Debounced updates** - Already implemented in `MapBoundsListener` but can be improved
+3. **Memoization** - Points array is memoized, good
 
-## Accessibility Considerations
+### Optimizations to PropertyMap.tsx
 
-- Keyboard navigation between markers
-- Screen reader announcements for property counts
-- High contrast mode for markers
-- Focus management between map and list panels
+1. **Better initial bounds calculation** from map center and zoom
+2. **Cluster styling using CSS classes** instead of inline styles
+3. **Add cluster size tiers** for visual hierarchy (small/medium/large clusters)
+
+### ClusterMarker Improvements
+- Add size tiers: 
+  - Small (2-10 properties): 50px diameter
+  - Medium (11-50 properties): 65px diameter
+  - Large (51+ properties): 80px diameter
+- Improve hover/click feedback
 
 ---
 
-## Performance Targets
+## Part 3: Grid/Map View Toggle on Listings Page
 
-- Initial map load: under 2 seconds
-- Marker re-render on move: under 100ms
-- Cluster update: under 50ms
-- Smooth 60fps panning and zooming
+### User Flow
+On `/listings` and when viewing rentals:
+1. User sees a toggle button group in the filter bar area
+2. "Grid" (default) shows the current card-based layout
+3. "Map" navigates to `/map` with all current filters preserved in URL
+
+On `/map`:
+1. User sees the same toggle but "Map" is selected
+2. Clicking "Grid" navigates back to `/listings` with filters preserved
+
+### Implementation
+
+#### New Component: `ViewToggle.tsx`
+Location: `src/components/filters/ViewToggle.tsx`
+
+A simple toggle button group:
+```
+[Grid Icon] Grid | [Map Icon] Map
+```
+
+Props:
+- `activeView: 'grid' | 'map'`
+- `onViewChange: (view: 'grid' | 'map') => void`
+
+#### Changes to PropertyFilters.tsx
+Add the `ViewToggle` component in the filter bar, positioned after the sort dropdown on desktop.
+
+#### Changes to Listings.tsx
+1. Import and render `ViewToggle` with `activeView="grid"`
+2. On "Map" click, navigate to `/map` with current search params
+
+#### Changes to MapSearchLayout.tsx
+1. Import and render `ViewToggle` with `activeView="map"` in the `MapFiltersBar`
+2. On "Grid" click, navigate to `/listings` with current search params
+
+#### URL Parameter Synchronization
+Both pages already use URL params (`?status=for_sale&city=Tel+Aviv&min_price=...`). When switching views:
+- Extract all current URL params
+- Navigate to the other page with same params
+- The target page will parse and apply filters from URL
+
+---
+
+## Part 4: Loading States & Skeleton UI
+
+### Current State
+`MapPropertyList.tsx` has loading skeletons, but they could be improved.
+
+### Improvements
+1. Add skeleton for cluster markers during initial load
+2. Improve loading overlay visibility
+3. Add shimmer effect to loading states
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/filters/ViewToggle.tsx` | Toggle between Grid and Map views |
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/index.css` | Add cluster marker and map popup styles |
+| `src/components/map-search/PropertyMap.tsx` | Optimize clustering, use CSS classes, add size tiers |
+| `src/components/filters/PropertyFilters.tsx` | Add ViewToggle component |
+| `src/pages/Listings.tsx` | Handle view toggle navigation to map |
+| `src/components/map-search/MapFiltersBar.tsx` | Add ViewToggle for map-to-grid navigation |
+| `src/components/map-search/MapSearchLayout.tsx` | Pass listingType to MapFiltersBar |
+| `src/lib/routes.ts` | Add mapUrl helper function |
+
+---
+
+## Technical Details
+
+### ViewToggle Component Design
+```tsx
+interface ViewToggleProps {
+  activeView: 'grid' | 'map';
+  className?: string;
+}
+
+// Uses ToggleGroup from Radix UI (already installed)
+// Grid icon: LayoutGrid from lucide-react
+// Map icon: Map from lucide-react
+// Navigation handled via useNavigate + preserving search params
+```
+
+### Cluster Size Tiers Logic
+```tsx
+const getClusterSize = (count: number) => {
+  if (count <= 10) return { size: 50, fontSize: 12 };
+  if (count <= 50) return { size: 65, fontSize: 14 };
+  return { size: 80, fontSize: 16 };
+};
+```
+
+### URL Preservation During View Switch
+```tsx
+const switchToMapView = () => {
+  const currentParams = searchParams.toString();
+  navigate(`/map?${currentParams}`);
+};
+
+const switchToGridView = () => {
+  const currentParams = searchParams.toString();
+  navigate(`/listings?${currentParams}`);
+};
+```
 
 ---
 
 ## Summary
 
-This map search feature transforms BuyWise Israel from a list-first to a map-first property discovery platform. By combining industry-best-practices from Zillow and Redfin with BuyWise-unique features like saved locations integration and commute visualization, international buyers can explore Israeli real estate spatially - understanding not just what they're buying, but where they'll be living in relation to the places that matter to them.
+This phase delivers:
+1. Properly styled cluster markers via CSS (not broken inline Tailwind)
+2. Visual cluster size tiers for better UX at different zoom levels
+3. Seamless Grid/Map view toggle that preserves all filters
+4. Performance optimizations for large property counts
+5. Improved loading states
 
-The feature respects the existing codebase patterns, integrates with current filter systems, and maintains the mobile-first, Zillow-style UX standards already established in the platform.
+The view toggle enables users to effortlessly switch between traditional grid browsing and spatial map exploration while maintaining their search context.
 
