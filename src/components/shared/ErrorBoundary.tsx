@@ -66,16 +66,20 @@ export class ErrorBoundary extends Component<Props, State> {
       };
 
       // Insert into client_errors table
+      // Note: error_type must be one of: js_error, map_failure, search_failure, api_error
       const { error: insertError } = await supabase
         .from('client_errors')
         .insert({
-          error_type: error.name || 'Error',
+          error_type: 'js_error', // Use valid constraint value (actual error name is in metadata)
           error_message: error.message?.substring(0, 1000) || 'Unknown error',
           stack_trace: error.stack?.substring(0, 5000) || null,
           page_path: pagePath,
           session_id: sessionId,
           user_id: user?.id || null,
-          metadata: metadata,
+          metadata: {
+            ...metadata,
+            error_name: error.name, // Store the actual error type (TypeError, etc.) here
+          },
         });
 
       if (insertError) {
