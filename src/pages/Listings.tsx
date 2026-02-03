@@ -8,7 +8,7 @@ import { PropertyFilters as PropertyFiltersType, ListingStatus } from '@/types/d
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { QuickFilterChips } from '@/components/filters/QuickFilterChips';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
-
+import { ViewToggle } from '@/components/filters/ViewToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
@@ -244,17 +244,24 @@ export default function Listings() {
             isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
           )}
         >
-          <PropertyFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            listingType={isRentals ? 'for_rent' : 'for_sale'}
-            onCreateAlert={() => setShowAlertDialog(true)}
-            showSoldToggle={!isRentals}
-            isSoldView={isSoldView}
-            onSoldToggle={handleSoldToggle}
-            previewCount={totalCount}
-            isCountLoading={isFetching}
-          />
+          <div className="flex items-center gap-2">
+            <PropertyFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              listingType={isRentals ? 'for_rent' : 'for_sale'}
+              onCreateAlert={() => setShowAlertDialog(true)}
+              showSoldToggle={!isRentals}
+              isSoldView={isSoldView}
+              onSoldToggle={handleSoldToggle}
+              previewCount={totalCount}
+              isCountLoading={isFetching}
+            />
+            
+            {/* Desktop View Toggle */}
+            {!isMobile && (
+              <ViewToggle activeView="grid" />
+            )}
+          </div>
           
           {/* Quick Filter Chips - Mobile only */}
           <QuickFilterChips
