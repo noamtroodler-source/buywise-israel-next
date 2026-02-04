@@ -19,7 +19,6 @@ import { useAuth } from '@/hooks/useAuth';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
 import 'leaflet/dist/leaflet.css';
-import useSupercluster from 'use-supercluster';
 
 interface PropertyMapProps {
   properties: Property[];
@@ -120,60 +119,6 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   return null;
 }
 
-// Get cluster size tier based on property count
-function getClusterSizeTier(count: number): 'small' | 'medium' | 'large' {
-  if (count <= 10) return 'small';
-  if (count <= 50) return 'medium';
-  return 'large';
-}
-
-interface ClusterMarkerProps {
-  position: [number, number];
-  count: number;
-  priceRange: string;
-  onClick: () => void;
-}
-
-function ClusterMarker({ position, count, priceRange, onClick }: ClusterMarkerProps) {
-  const sizeTier = getClusterSizeTier(count);
-  
-  const icon = useMemo(() => {
-    const sizes = {
-      small: { iconSize: 50, anchor: 25 },
-      medium: { iconSize: 65, anchor: 32.5 },
-      large: { iconSize: 80, anchor: 40 },
-    };
-    
-    const { iconSize, anchor } = sizes[sizeTier];
-    
-    return L.divIcon({
-      html: `
-        <div class="cluster-marker ${sizeTier}" style="
-          background: white;
-          color: hsl(213, 94%, 45%);
-          border: 2px solid hsl(220, 13%, 85%);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        ">
-          <span class="cluster-count">${count}</span>
-          <span class="cluster-price">${priceRange}</span>
-        </div>
-      `,
-      className: '',
-      iconSize: L.point(iconSize, iconSize),
-      iconAnchor: L.point(anchor, anchor),
-    });
-  }, [count, priceRange, sizeTier]);
-
-  return (
-    <Marker
-      position={position}
-      icon={icon}
-      eventHandlers={{
-        click: onClick,
-      }}
-    />
-  );
-}
 
 export function PropertyMap({
   properties,
@@ -202,74 +147,6 @@ export function PropertyMap({
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
-  
-  // Convert properties to GeoJSON points for clustering
-  const points = useMemo(() => 
-    properties
-      .filter(p => p.latitude && p.longitude)
-      .map(property => ({
-        type: 'Feature' as const,
-        properties: {
-          cluster: false,
-          propertyId: property.id,
-          price: property.price,
-          listingStatus: property.listing_status,
-          property,
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [property.longitude!, property.latitude!],
-        },
-      })),
-    [properties]
-  );
-
-  // Get map bounds for clustering
-  const [clusterBounds, setClusterBounds] = useState<[number, number, number, number]>([-180, -85, 180, 85]);
-
-  // Supercluster hook - low radius so only truly overlapping markers cluster
-  const { clusters, supercluster } = useSupercluster({
-    points,
-    bounds: clusterBounds,
-    zoom: currentZoom,
-    options: {
-      radius: 25,
-      maxZoom: 14,
-      minZoom: 0,
-    },
-  });
-
-  // Format price range for cluster
-  const formatClusterPriceRange = useCallback((clusterProperties: any[]) => {
-    const prices = clusterProperties.map(p => p.price);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    
-    const formatCompact = (n: number) => {
-      if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-      if (n >= 1000) return `${Math.round(n / 1000)}K`;
-      return String(n);
-    };
-    
-    if (min === max) return formatCompact(min);
-    return `${formatCompact(min)}-${formatCompact(max)}`;
-  }, []);
-
-  // Handle cluster click - zoom in
-  const handleClusterClick = useCallback((clusterId: number, coordinates: [number, number]) => {
-    if (!supercluster || !mapRef.current) return;
-    
-    const expansionZoom = Math.min(
-      supercluster.getClusterExpansionZoom(clusterId),
-      17
-    );
-    
-    mapRef.current.flyTo(
-      { lat: coordinates[1], lng: coordinates[0] },
-      expansionZoom,
-      { duration: 0.5 }
-    );
-  }, [supercluster]);
 
   // Handle draw completion
   const handleDrawComplete = useCallback((polygon: Polygon) => {
@@ -336,7 +213,6 @@ export function PropertyMap({
         <MapBoundsListener 
           onBoundsChange={(b, c, z) => {
             onBoundsChange(b, c, z);
-            setClusterBounds([b.west, b.south, b.east, b.north]);
             setCurrentZoom(z);
             setMapBounds(b);
           }}
@@ -370,31 +246,10 @@ export function PropertyMap({
           onCityClick={handleCityClick}
         />
         
-        {/* Property Markers / Clusters (when zoomed in enough) */}
-        {!showCityOverlay && clusters.map(cluster => {
-          const [lng, lat] = cluster.geometry.coordinates;
-          const { cluster: isCluster, point_count: pointCount } = cluster.properties;
-          
-          if (isCluster) {
-            // Get all properties in this cluster for price range
-            const leaves = supercluster?.getLeaves(cluster.id as number, Infinity) || [];
-            const clusterProps = leaves.map((l: any) => l.properties);
-            const priceRange = formatClusterPriceRange(clusterProps);
-            
-            return (
-              <ClusterMarker
-                key={`cluster-${cluster.id}`}
-                position={[lat, lng]}
-                count={pointCount}
-                priceRange={priceRange}
-                onClick={() => handleClusterClick(cluster.id as number, [lng, lat])}
-              />
-            );
-          }
-          
-          // Single property marker
-          const property = cluster.properties.property;
-          return (
+        {/* Property Markers (when zoomed in enough) */}
+        {!showCityOverlay && properties
+          .filter(p => p.latitude && p.longitude)
+          .map(property => (
             <PropertyMarker
               key={property.id}
               property={property}
@@ -403,8 +258,7 @@ export function PropertyMap({
               onHover={onPropertyHover}
               onClick={onPropertySelect}
             />
-          );
-        })}
+          ))}
         
         {/* Saved Locations Layer */}
         {user && showSavedLocations && savedLocations && savedLocations.length > 0 && (
