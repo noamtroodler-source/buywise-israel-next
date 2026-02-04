@@ -315,6 +315,11 @@ export default function MapSearchLayout() {
     [properties]
   );
 
+  // Handle city selection from map overlay
+  const handleCitySelect = useCallback((cityName: string) => {
+    handleFiltersChange({ ...filters, city: cityName });
+  }, [filters, handleFiltersChange]);
+
   // Shared PropertyMap props
   const propertyMapProps = {
     properties: mappableProperties,
@@ -333,6 +338,7 @@ export default function MapSearchLayout() {
     selectedNeighborhoods,
     onNeighborhoodToggle: handleNeighborhoodToggle,
     onClearNeighborhoods: handleClearNeighborhoods,
+    onCitySelect: handleCitySelect,
   };
 
   // Mobile layout
