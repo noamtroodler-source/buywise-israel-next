@@ -40,6 +40,8 @@ export default function MapSearchLayout() {
   const isMobile = useIsMobile();
   const mapRef = useRef<L.Map | null>(null);
   const isProgrammaticMoveRef = useRef(false);
+  const cityDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastDetectedCityRef = useRef<string | null>(null);
 
   // Initial map view from URL (MapContainer only reads props on mount; we also keep state in sync)
   const initialMapCenter = (() => {
@@ -156,6 +158,15 @@ export default function MapSearchLayout() {
       setMapZoom(CITY_ZOOM);
     }
   }, [recentCity, recentCityLoading, urlCity]);
+
+  // Cleanup city detection timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (cityDetectionTimeoutRef.current) {
+        clearTimeout(cityDetectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle searchAsMove toggle - freeze bounds when disabled
   const handleSearchAsMoveChange = useCallback((enabled: boolean) => {
@@ -313,7 +324,7 @@ export default function MapSearchLayout() {
   const findCityByCoordinates = useCallback((lat: number, lng: number): string | null => {
     if (!allCities) return null;
     
-    const MAX_DISTANCE_KM = 5; // Only match if within 5km of city center
+    const MAX_DISTANCE_KM = 10; // Increased from 5km for more stable detection at boundaries
     let closestCity: string | null = null;
     let minDistance = Infinity;
     
@@ -334,6 +345,34 @@ export default function MapSearchLayout() {
     return closestCity;
   }, [allCities]);
 
+  // Debounced city detection - runs 800ms after user stops moving
+  const detectAndUpdateCity = useCallback((center: [number, number], zoom: number) => {
+    if (!allCities) return;
+    
+    if (zoom >= 12) {
+      const detectedCity = findCityByCoordinates(center[0], center[1]);
+      
+      // Only update if different from LAST detected (prevents flickering)
+      if (detectedCity !== lastDetectedCityRef.current) {
+        lastDetectedCityRef.current = detectedCity;
+        
+        if (detectedCity) {
+          setFilters(prev => ({ ...prev, city: detectedCity, listing_status: listingStatus }));
+          // Note: NOT updating URL here to reduce re-renders during navigation
+        } else {
+          // Clear city if we're zoomed in but not near any city
+          setFilters(prev => ({ ...prev, city: undefined, listing_status: listingStatus }));
+        }
+      }
+    } else if (zoom < 12) {
+      // Zoomed out - clear city filter
+      if (lastDetectedCityRef.current !== null) {
+        lastDetectedCityRef.current = null;
+        setFilters(prev => ({ ...prev, city: undefined, listing_status: listingStatus }));
+      }
+    }
+  }, [allCities, findCityByCoordinates, listingStatus]);
+
   const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
     // Always update mapBounds so property queries get correct viewport
     setMapBounds(bounds);
@@ -344,32 +383,15 @@ export default function MapSearchLayout() {
     setMapCenter(center);
     setMapZoom(zoom);
     
-    // Auto-detect city when zoomed in (zoom ≥ 12)
-    if (zoom >= 12 && allCities) {
-      const detectedCity = findCityByCoordinates(center[0], center[1]);
-      
-      // Only update if detected city is different from current filter
-      if (detectedCity && detectedCity !== filters.city) {
-        const updatedFilters = { ...filters, city: detectedCity, listing_status: listingStatus };
-        setFilters(updatedFilters);
-        updateUrlParams(updatedFilters, center, zoom);
-      }
-      
-      // Clear city filter if zoomed in but not near any city center
-      if (!detectedCity && filters.city) {
-        const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
-        setFilters(updatedFilters);
-        updateUrlParams(updatedFilters, center, zoom);
-      }
+    // Schedule debounced city detection (800ms after user stops moving)
+    if (cityDetectionTimeoutRef.current) {
+      clearTimeout(cityDetectionTimeoutRef.current);
     }
     
-    // If zoomed out (< 12), clear city filter to show all cities
-    if (zoom < 12 && filters.city) {
-      const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
-      setFilters(updatedFilters);
-      updateUrlParams(updatedFilters, center, zoom);
-    }
-  }, [filters, listingStatus, allCities, findCityByCoordinates, updateUrlParams]);
+    cityDetectionTimeoutRef.current = setTimeout(() => {
+      detectAndUpdateCity(center, zoom);
+    }, 800);
+  }, [detectAndUpdateCity]); // Minimal dependencies - much more stable
 
   const handlePropertyHover = useCallback((propertyId: string | null) => {
     setHoveredPropertyId(propertyId);
