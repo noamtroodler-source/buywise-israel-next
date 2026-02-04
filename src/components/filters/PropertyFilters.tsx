@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
+import { ViewToggle } from '@/components/filters/ViewToggle';
 
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
@@ -27,6 +28,11 @@ interface PropertyFiltersProps {
   onSoldToggle?: (showSold: boolean) => void;
   previewCount?: number;
   isCountLoading?: boolean;
+  // Buy/Rent toggle for map page
+  showBuyRentToggle?: boolean;
+  onBuyRentChange?: (type: 'for_sale' | 'for_rent') => void;
+  // View toggle context
+  activeView?: 'grid' | 'map';
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -97,7 +103,7 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading }: PropertyFiltersProps) {
+export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading, showBuyRentToggle, onBuyRentChange, activeView = 'grid' }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
@@ -275,6 +281,34 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       <>
         {/* Main Filters Row - Single row on desktop */}
         <div className="flex flex-wrap gap-2 items-center">
+          {/* Buy/Rent Toggle - For map page */}
+          {showBuyRentToggle && !isMobile && (
+            <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
+              <button
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium transition-all",
+                  listingType === 'for_sale' 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => onBuyRentChange?.('for_sale')}
+              >
+                Buy
+              </button>
+              <button
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium transition-all",
+                  listingType === 'for_rent' 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => onBuyRentChange?.('for_rent')}
+              >
+                Rent
+              </button>
+            </div>
+          )}
+
           {/* Active/Sold Toggle - Only shown on for_sale listings, DESKTOP ONLY - Smaller, more subtle */}
           {showSoldToggle && !isMobile && (
             <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
@@ -706,6 +740,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <TooltipContent>Create search alert</TooltipContent>
                 </Tooltip>
               )}
+
+              {/* View Toggle - Grid/Map */}
+              <ViewToggle activeView={activeView} />
             </div>
           )}
         </div>

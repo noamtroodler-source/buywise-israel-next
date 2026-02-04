@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyList } from './MapPropertyList';
-import { MapFiltersBar } from './MapFiltersBar';
+import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { MobileMapSheet } from './MobileMapSheet';
 import { MobileQuickFilters } from './MobileQuickFilters';
 import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
@@ -340,15 +340,19 @@ export default function MapSearchLayout() {
     return (
       <div className="flex flex-col h-[calc(100vh-64px)]">
         {/* Filter Bar */}
-        <MapFiltersBar
+        <PropertyFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-          resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
-          isLoading={isFetching}
-          savedLocations={savedLocations}
-          commuteFilter={commuteFilter}
-          onCommuteFilterChange={setCommuteFilter}
+          showBuyRentToggle={true}
+          onBuyRentChange={(type) => {
+            const params = new URLSearchParams(searchParams);
+            params.set('status', type);
+            setSearchParams(params);
+          }}
+          previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
+          isCountLoading={isFetching}
+          activeView="map"
         />
 
         {/* Mobile Quick Filters */}
@@ -438,15 +442,19 @@ export default function MapSearchLayout() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Filter Bar */}
-      <MapFiltersBar
+      <PropertyFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
         listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-        resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
-        isLoading={isFetching}
-        savedLocations={savedLocations}
-        commuteFilter={commuteFilter}
-        onCommuteFilterChange={setCommuteFilter}
+        showBuyRentToggle={true}
+        onBuyRentChange={(type) => {
+          const params = new URLSearchParams(searchParams);
+          params.set('status', type);
+          setSearchParams(params);
+        }}
+        previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
+        isCountLoading={isFetching}
+        activeView="map"
       />
       
       {/* Split View */}
