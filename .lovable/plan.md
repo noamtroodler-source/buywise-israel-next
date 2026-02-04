@@ -1,60 +1,81 @@
 
-## Remove City Selection Requirement for Map Page
+## Add 2,500 Mock Properties - 50 Resale + 50 Rental Per City
 
-### What's Happening Now
-When you visit `/map`, the app checks if you have a city selected (from URL, localStorage, or database). If not, it shows a "MapEmptyState" screen forcing you to pick a city before you can see the map.
+### Current Situation
+- 25 cities in your database
+- Currently ~16 properties per city (608 total)
+- 100 active agents linked to 10 agencies
+- Need to add 50 resale + 50 rental per city = 2,500 new properties
 
-### What We'll Change
-Remove this gate entirely. Users will land directly on the map showing all of Israel at a zoomed-out view with city overlay markers. They can then:
-- Click on city markers to zoom in
-- Use the search/filters to find properties
-- Pan and zoom freely without any barrier
+### Implementation: New Edge Function
 
----
+I'll create a new edge function `seed-additional-properties` that:
 
-## Implementation
+1. **Fetches existing agents** from the database (to assign properties realistically)
+2. **Uses official cities** from the `cities` table (no hardcoding)
+3. **Generates 100 properties per city** (50 for_sale + 50 for_rent)
+4. **Scatters listing dates** across 0-90 days ago (not all "just listed")
+5. **Varies property attributes realistically:**
+   - Property types: apartments, penthouses, garden apartments, duplexes, houses, cottages
+   - Bedrooms: 2-6 rooms based on property type
+   - Sizes: 50-300 sqm based on type
+   - Prices: City-specific multipliers with ±30% variance
+   - Floors: Ground to 30th based on type
+   - Conditions: new, renovated, good
+   - Features: Random selection from balcony, storage, parking, elevator, sea_view, etc.
 
-### 1. Remove Empty State Logic from MapSearchLayout
-- Remove the `showEmptyState` computed value
-- Remove the `hasSelectedCity` state (no longer needed)
-- Remove the `handleCitySelectFromEmptyState` callback
-- Remove both mobile and desktop conditional renders that show `MapEmptyState`
-- Set default view to show all of Israel (already configured as `ISRAEL_CENTER` and `ISRAEL_ZOOM`)
+### Technical Details
 
-### 2. Simplify Recent City Hook Usage  
-- Keep the `useRecentSearchCity` hook but only use it to auto-center if a recent city exists (optional enhancement)
-- Don't block rendering waiting for it
+**New File: `supabase/functions/seed-additional-properties/index.ts`**
 
-### 3. Clean Up Imports
-- Remove `MapEmptyState` import since it won't be used
+```typescript
+// Key features:
+- Fetches all agent IDs from database
+- Fetches all cities from database  
+- For each city: generates 50 sale + 50 rent properties
+- created_at is set randomly 0-90 days in the past
+- Prices use city-specific multipliers (Tel Aviv 1.8x, Beer Sheva 0.55x, etc.)
+- Rental prices: 4,000-25,000 NIS based on city and size
+- Sale prices: 1.5M-15M NIS based on city and size
+- Batch inserts of 100 at a time for performance
+```
 
-### 4. Optional: Keep MapEmptyState File
-- The file can remain in the codebase in case we want to use it elsewhere (e.g., a dedicated city search page)
-- Or we can delete it entirely
+**Listing Age Distribution:**
+- 15% Hot (0-3 days): "Just Listed"
+- 25% Fresh (4-7 days)
+- 40% Standard (8-30 days)
+- 20% Older (31-90 days)
 
----
+**Property Mix (per 50):**
+- ~30 apartments (60%)
+- ~8 garden apartments (16%)
+- ~5 penthouses (10%)
+- ~4 duplexes (8%)
+- ~3 houses/cottages (6%)
 
-## Technical Changes
+**Rental-Specific Fields:**
+- `lease_term`: 6_months, 12_months, 24_months, flexible
+- `furnished_status`: fully, semi, unfurnished
+- `pets_policy`: allowed, case_by_case, not_allowed
+- `agent_fee_required`, `bank_guarantee_required`, `checks_required`
 
-**File: `src/components/map-search/MapSearchLayout.tsx`**
+### After Implementation
 
-Remove or simplify:
-- Line 12: `MapEmptyState` import → remove
-- Line 46: `hasSelectedCity` state → remove
-- Lines 141-162: useEffect for smart city selection → simplify to just auto-center without blocking
-- Lines 164-180: `handleCitySelectFromEmptyState` callback → remove
-- Lines 183-191: `showEmptyState` computation → remove
-- Lines 366-385: Mobile empty state conditional render → remove
-- Lines 503-506: Desktop empty state conditional render → remove
+To seed the new properties, you'll call the edge function:
+```
+POST /seed-additional-properties
+```
 
-The result is users go straight to the map view showing Israel with city overlays, which can be clicked to zoom into specific areas.
+This will add:
+- 1,250 for_sale properties (50 × 25 cities)
+- 1,250 for_rent properties (50 × 25 cities)
+- **Total: 2,500 new properties**
 
----
+### Files to Create
+1. `supabase/functions/seed-additional-properties/index.ts` - New edge function for bulk property seeding
 
-## Expected Behavior After Change
-
-1. Visit `/map` → See full Israel map with city markers immediately
-2. City markers show property counts (the redesigned pills we just implemented)
-3. Click a city marker → Zoom in to that city, see property markers
-4. Use filters to narrow down properties
-5. No blocking "choose a city" screen
+### Result
+- Every city will have 66 resale + 66 rental properties (existing 16 + new 50)
+- Properties will show realistic variety in listing age, price, size, features
+- All properties linked to real agents in the database
+- Map will display fuller, more realistic marketplace
