@@ -126,6 +126,7 @@ const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminSoldTransactions = lazy(() => import("./pages/admin/SoldTransactionsAdmin"));
 const HeroImageGenerator = lazy(() => import("./pages/admin/HeroImageGenerator"));
 const HeroPreview = lazy(() => import("./pages/admin/HeroPreview"));
+const ImportNeighborhoods = lazy(() => import("./pages/admin/ImportNeighborhoods"));
 
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
@@ -410,6 +411,7 @@ const App = () => (
                           <Route path="accuracy-audit" element={<AdminAccuracyAudit />} />
                           <Route path="featured" element={<AdminFeatured />} />
                           <Route path="sold-transactions" element={<AdminSoldTransactions />} />
+                          <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />
