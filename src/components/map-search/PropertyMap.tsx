@@ -243,7 +243,7 @@ export function PropertyMap({
   const [showTrainStations, setShowTrainStations] = useState(false);
   const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
   const [showAngloCommunity, setShowAngloCommunity] = useState(false);
-  const [showNeighborhoodBoundaries, setShowNeighborhoodBoundaries] = useState(false);
+  const [showNeighborhoodBoundaries, setShowNeighborhoodBoundaries] = useState(true);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
