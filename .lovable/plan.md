@@ -1,147 +1,93 @@
 
+Goal: make city-to-city switching reliably (1) animates the map from the current city to the newly selected city, and (2) updates BOTH the right-side listings and the map markers to the new city immediately after the animation.
 
-## Fix: City-to-City Smooth Animation Not Working
+What’s actually broken right now (root cause)
+- Your property query uses `queryFilters.bounds` when `mapBounds` exists (see `MapSearchLayout.tsx` → `queryFilters` memo).
+- During a city change we set `isProgrammaticMoveRef.current = true` and then `handleBoundsChange` currently returns early, meaning it does NOT update `mapBounds`.
+- Worse: the map’s `moveend` event fires while the flag is still true, so `MapBoundsListener` calls `onBoundsChange(...)`, but `handleBoundsChange(...)` discards it. Then `MapViewUpdater` clears the flag after that same `moveend`, and there is no subsequent event to update bounds.
+- Result: your property query continues using the OLD city’s bounds while the city filter is the NEW city → frequently yields 0 results (“No properties in this area”) and no markers/listings.
 
-### The Problem
+Fix strategy (make the state flow deterministic)
+We will ensure that after every programmatic city fly-to:
+1) the “programmatic move” flag is cleared, AND
+2) the FINAL bounds/center/zoom of the destination are pushed into MapSearchLayout state (especially `mapBounds`), so the backend query updates to the new city viewport.
 
-When switching from one city (e.g., Beit Shemesh) to another city (e.g., Jerusalem), the map doesn't smoothly animate between them. The map just stays where it is.
+Implementation steps
 
-**Root Cause:** There's a synchronization issue between two state sources:
+1) Change `handleBoundsChange` to never block updating `mapBounds`
+File: `src/components/map-search/MapSearchLayout.tsx`
+- Current behavior:
+  - If `isProgrammaticMoveRef.current` is true, it returns early and updates nothing.
+- New behavior:
+  - Always update `setMapBounds(bounds)` (so queries have correct viewport).
+  - While programmatic move is active, skip only `setMapCenter`/`setMapZoom` (to avoid the “overwrite destination mid-flight” problem).
+- Pseudocode:
+  - `setMapBounds(bounds);`
+  - `if (isProgrammaticMoveRef.current) return;`
+  - `setMapCenter(center); setMapZoom(zoom);`
 
-1. **`mapCenter`/`mapZoom` state** - Updated by both:
-   - User interactions (panning/zooming) via `handleBoundsChange`
-   - Programmatic city selection in `handleFiltersChange`
+Why this matters:
+- Even if center/zoom are “protected” during the flight, we still need bounds to update at the end so listings refresh.
 
-2. **`prevCenterRef`/`prevZoomRef` in `MapViewUpdater`** - Only updated when `flyTo` is called
+2) Force a “final bounds sync” at the end of the flyTo animation
+File: `src/components/map-search/PropertyMap.tsx`
+- Problem: the last `moveend` occurs while `isProgrammaticMoveRef` is still true, so the last bounds update is ignored.
+- Solution: In `MapViewUpdater`’s `moveend` handler, after clearing flags, manually compute the final bounds/center/zoom from Leaflet and call `onBoundsChange(...)` directly.
+- This guarantees that MapSearchLayout receives a post-animation update even if the normal `MapBoundsListener` update was skipped.
+- Implementation details:
+  - Update `MapViewUpdater` props to accept `onBoundsChange` (same signature used elsewhere).
+  - In `map.once('moveend', ...)`:
+    - set `isFlyingRef.current = false`
+    - set `isProgrammaticMoveRef.current = false`
+    - read `const bounds = map.getBounds(); const center = map.getCenter(); const zoom = map.getZoom();`
+    - call `onBoundsChange({north/south/east/west}, [center.lat, center.lng], zoom)`
 
-When you:
-1. Select "Beit Shemesh" → Map flies there → `prevCenterRef` = Beit Shemesh coords
-2. Pan the map slightly → `mapCenter` updates to new position
-3. Select "Jerusalem" → `handleFiltersChange` sets `mapCenter` to Jerusalem
-4. `MapViewUpdater` compares Jerusalem coords vs `prevCenterRef` (Beit Shemesh) → Should detect change ✓
+3) Pass `onBoundsChange` into `MapViewUpdater`
+File: `src/components/map-search/PropertyMap.tsx`
+- Update the `MapViewUpdater` call site to include `onBoundsChange={...}`.
+- This will be a small signature change but keeps the logic local and reliable.
 
-The problem is that `handleBoundsChange` is being called during/after the city selection and overwriting the target coordinates with the current map position before `MapViewUpdater` can process them.
+4) Stabilize city-switch UX (optional but recommended while we’re in here)
+File: `src/components/map-search/MapSearchLayout.tsx`
+When a city changes or is cleared:
+- Clear selection and any “stale” constraints that can confuse results:
+  - `setSelectedPropertyId(null)` (avoid popup referencing an old property id)
+  - If a polygon is drawn, consider clearing it on city change OR at least re-enabling `searchAsMove` + clearing `frozenBounds` so the new city can load normally.
+- This is optional; the core bug is bounds not updating. But it prevents “sticky” filters from making it look broken even when the animation works.
 
-### The Solution
+5) Verification checklist (we will explicitly test the failing scenarios you described)
+After implementation, we’ll verify these exact flows:
+A. City-to-city switch with prior panning
+- Start on City A, pan/zoom a bit, then switch to City B.
+- Expected:
+  - map animates (flyTo) from current position to City B
+  - after animation completes, listings refresh to City B (not “No properties in this area”)
+  - markers correspond to City B
 
-Prevent `handleBoundsChange` from overwriting programmatic center/zoom updates by introducing a "programmatic update in progress" flag:
+B. Far city switch (e.g., “Oshawa” → “Be’er Sheva”)
+- Expected:
+  - map visibly flies across Israel (duration ~1.5s)
+  - listings and markers change to Be’er Sheva after the flight
 
-1. **Add a flag** in `MapSearchLayout` to indicate a programmatic view change is pending
-2. **Set the flag** before updating `mapCenter`/`mapZoom` for city selection
-3. **Skip state updates** in `handleBoundsChange` while the flag is active
-4. **Clear the flag** after `MapViewUpdater` processes the change
+C. Buy and Rent modes
+- Repeat A/B with `status=for_sale` and `status=for_rent`
+- Expected: both modes refresh correctly (bounds + city filter consistent)
 
----
+D. Regression checks
+- Manual pan/zoom still updates listings when `searchAsMove` is active
+- City cleared still zooms out to Israel and shows appropriate national results
 
-## Technical Changes
+Technical notes (why this will work)
+- The core issue is that `mapBounds` is a critical input to `usePaginatedProperties`, and we were preventing it from updating during programmatic moves.
+- By (1) always updating bounds and (2) forcing a “final bounds sync” after the fly completes, we guarantee queryFilters changes to match the new viewport, which triggers the property query to fetch the correct dataset for the new city.
 
-### 1. Add `isProgrammaticMoveRef` in `MapSearchLayout.tsx`
+Files to change
+- `src/components/map-search/MapSearchLayout.tsx`
+  - Adjust `handleBoundsChange` logic as described
+  - (Optional) clear selection/polygon/frozenBounds on city change
+- `src/components/map-search/PropertyMap.tsx`
+  - Extend `MapViewUpdater` to accept `onBoundsChange`
+  - On moveend: clear flags and push final bounds/center/zoom via `onBoundsChange`
 
-Track when a programmatic map move is initiated:
-
-```typescript
-const isProgrammaticMoveRef = useRef(false);
-```
-
-### 2. Set Flag in City Selection Logic
-
-Before updating map state for city changes:
-
-```typescript
-const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
-  const updatedFilters = { ...newFilters, listing_status: listingStatus };
-  
-  // Check if city was CLEARED
-  const cityCleared = filters.city && !newFilters.city;
-  if (cityCleared) {
-    isProgrammaticMoveRef.current = true;  // Set flag
-    const nextCenter = ISRAEL_CENTER;
-    const nextZoom = ISRAEL_ZOOM;
-    setMapCenter(nextCenter);
-    setMapZoom(nextZoom);
-    // ... rest of logic
-  }
-  
-  // If city changed to a NEW city
-  const cityChanged = newFilters.city && newFilters.city !== filters.city;
-  if (cityChanged) {
-    const city = allCities?.find(c => c.name === newFilters.city);
-    if (city?.center_lat && city?.center_lng) {
-      isProgrammaticMoveRef.current = true;  // Set flag
-      const nextCenter: [number, number] = [city.center_lat, city.center_lng];
-      // ... rest of logic
-    }
-  }
-  // ...
-}, [...]);
-```
-
-### 3. Skip State Updates in `handleBoundsChange` During Programmatic Move
-
-```typescript
-const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
-  // Skip if programmatic move is in progress
-  if (isProgrammaticMoveRef.current) return;
-  
-  setMapBounds(bounds);
-  setMapCenter(center);
-  setMapZoom(zoom);
-}, []);
-```
-
-### 4. Clear Flag After Animation in `PropertyMap.tsx`
-
-Pass the flag to `MapViewUpdater` and clear it after `flyTo` completes:
-
-```typescript
-// In PropertyMap props
-isProgrammaticMoveRef: React.MutableRefObject<boolean>;
-
-// In MapViewUpdater
-function MapViewUpdater({ center, zoom, isFlyingRef, isProgrammaticMoveRef }) {
-  // ...
-  if (centerChanged || zoomChanged) {
-    isFlyingRef.current = true;
-    map.flyTo(center, zoom, { duration: 1.5 });
-    
-    map.once('moveend', () => {
-      isFlyingRef.current = false;
-      isProgrammaticMoveRef.current = false;  // Clear after animation
-    });
-    // ...
-  }
-}
-```
-
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/components/map-search/MapSearchLayout.tsx` | Add `isProgrammaticMoveRef`, set it before city changes, skip in `handleBoundsChange` |
-| `src/components/map-search/PropertyMap.tsx` | Accept `isProgrammaticMoveRef` prop, clear it in `MapViewUpdater` after animation |
-
----
-
-## Flow After Fix
-
-1. User selects "Jerusalem" from dropdown while on "Beit Shemesh"
-2. `handleFiltersChange` sets `isProgrammaticMoveRef.current = true`
-3. `setMapCenter(Jerusalem coords)` is called
-4. `handleBoundsChange` is called but skips update because `isProgrammaticMoveRef` is true
-5. `MapViewUpdater` detects center change, calls `flyTo(Jerusalem, 13, {duration: 1.5})`
-6. Map smoothly animates from Beit Shemesh to Jerusalem
-7. Animation completes → `isProgrammaticMoveRef.current = false`
-8. Normal bounds tracking resumes
-
----
-
-## Result
-
-After this fix:
-- Switching from one city to another will smoothly animate the map between locations
-- The 1.5-second duration provides a nice visual "guide" effect
-- Works for both Buy and Rent listings
-- Property listings update after the animation completes to show the new city's properties
-
+Expected result
+- City switches always “guide” (smooth animation) AND reliably show the new city’s properties on the list and map immediately after the animation completes, even if the user panned/zoomed beforehand.
