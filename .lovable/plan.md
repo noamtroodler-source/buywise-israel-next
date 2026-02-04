@@ -1,46 +1,61 @@
 
-## Fix: City Selection Not Zooming to City
+## Fix: Smooth City-to-City Map Animation
 
 ### The Problem
 
-When you select a city from the filter dropdown, the map should zoom to that city's location. Currently, it doesn't work because:
+When you switch cities (e.g., from Jerusalem to Beit Shemesh), the map should smoothly fly from one city to the other. Currently, there's a race condition:
 
-1. **React-Leaflet's `MapContainer` limitation** - The `center` and `zoom` props only work on initial render. After the map mounts, changing these props has no effect on the map view.
-
-2. **Missing view synchronization** - There's no component inside the map that listens for changes to the center/zoom state and updates the map accordingly.
+1. You select "Beit Shemesh" from the filter
+2. `setMapCenter` is called with Beit Shemesh coordinates
+3. `MapViewUpdater` starts `flyTo` animation
+4. During the animation, `moveend` events fire
+5. `handleBoundsChange` updates `mapCenter` with intermediate positions
+6. This can interfere with the animation or cause visual glitches
 
 ### The Solution
 
-Add a `MapViewUpdater` component inside `MapContainer` that:
-- Uses `useMap()` to get the map instance
-- Watches for changes to `center` and `zoom` props
-- Calls `map.flyTo()` to smoothly animate to the new location when they change
+Add a "flying" flag to prevent the bounds listener from overwriting the target coordinates during programmatic animations:
+
+1. **Add `isFlying` ref** - Track when a programmatic flyTo is in progress
+2. **Set flag before flyTo** - Mark as flying before starting animation
+3. **Clear on animation end** - Listen for `moveend` after animation completes
+4. **Skip bounds update during flight** - Don't update center/zoom state while flying
 
 ---
 
 ## Technical Changes
 
-### 1. Create `MapViewUpdater` Component (inside `PropertyMap.tsx`)
+### 1. Update `MapViewUpdater` in `PropertyMap.tsx`
 
-Add a new internal component that syncs external state to the map:
+Add an `isFlying` ref and use Leaflet's animation events:
 
 ```typescript
-// Syncs external center/zoom state to the map
 function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
   const prevCenterRef = useRef<[number, number]>(center);
   const prevZoomRef = useRef<number>(zoom);
+  const isFlyingRef = useRef(false);
   
   useEffect(() => {
-    // Check if center or zoom actually changed (comparing values, not references)
+    // Check if center or zoom actually changed
     const centerChanged = 
       center[0] !== prevCenterRef.current[0] || 
       center[1] !== prevCenterRef.current[1];
     const zoomChanged = zoom !== prevZoomRef.current;
     
     if (centerChanged || zoomChanged) {
+      // Mark as flying to prevent bounds updates during animation
+      isFlyingRef.current = true;
+      
       // Fly to new location with smooth animation
-      map.flyTo(center, zoom, { duration: 1 });
+      map.flyTo(center, zoom, { duration: 1.5 });
+      
+      // Clear flying flag when animation ends
+      const onMoveEnd = () => {
+        isFlyingRef.current = false;
+        map.off('moveend', onMoveEnd);
+      };
+      map.once('moveend', onMoveEnd);
       
       // Update refs
       prevCenterRef.current = center;
@@ -52,46 +67,75 @@ function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: numb
 }
 ```
 
-### 2. Add `MapViewUpdater` Inside `MapContainer`
+### 2. Pass `isFlying` State to `MapBoundsListener`
 
-Place it after `MapBoundsListener`:
+Expose the flying state so bounds listener can skip updates:
 
-```tsx
-<MapContainer ref={mapRef} center={center} zoom={zoom} ...>
-  <TileLayer ... />
-  <MapBoundsListener ... />
-  <MapViewUpdater center={center} zoom={zoom} />  {/* NEW */}
-  <ZoomTracker ... />
-  ...
-</MapContainer>
+```typescript
+// Add to PropertyMap component state
+const isFlyingRef = useRef(false);
+
+// Pass to MapViewUpdater
+<MapViewUpdater 
+  center={center} 
+  zoom={zoom} 
+  isFlyingRef={isFlyingRef}
+/>
+
+// Pass to MapBoundsListener
+<MapBoundsListener 
+  onBoundsChange={...}
+  searchAsMove={searchAsMove}
+  isFlyingRef={isFlyingRef}
+/>
+```
+
+### 3. Update `MapBoundsListener` to Skip During Flight
+
+```typescript
+function MapBoundsListener({ 
+  onBoundsChange,
+  searchAsMove,
+  isFlyingRef,
+}: { 
+  onBoundsChange: ...;
+  searchAsMove: boolean;
+  isFlyingRef: React.RefObject<boolean>;
+}) {
+  // ... existing code ...
+
+  const handleMoveEnd = useCallback(() => {
+    // Skip if programmatic flight in progress
+    if (isFlyingRef.current) return;
+    if (!searchAsMove) return;
+    
+    // ... rest of existing code ...
+  }, [map, onBoundsChange, searchAsMove, isFlyingRef]);
+}
+```
+
+### 4. Increase Animation Duration
+
+Change from 1 second to 1.5 seconds for a smoother, more noticeable transition when flying between distant cities:
+
+```typescript
+map.flyTo(center, zoom, { duration: 1.5 });
 ```
 
 ---
 
-## How It Works
-
-1. User selects "Jerusalem" from city filter dropdown
-2. `PropertyFilters` calls `onFiltersChange({ city: "Jerusalem" })`
-3. `MapSearchLayout.handleFiltersChange` detects city changed
-4. It looks up Jerusalem's coordinates from `allCities` data
-5. It calls `setMapCenter([31.7683, 35.2137])` and `setMapZoom(13)`
-6. `PropertyMap` receives new `center` and `zoom` props
-7. **NEW:** `MapViewUpdater` detects the change and calls `map.flyTo()`
-8. Map smoothly animates to Jerusalem
-
----
-
-## File Changes
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/map-search/PropertyMap.tsx` | Add `MapViewUpdater` component and use it inside `MapContainer` |
+| `src/components/map-search/PropertyMap.tsx` | Add `isFlyingRef`, update `MapViewUpdater` to set/clear flag, update `MapBoundsListener` to respect flag |
 
 ---
 
 ## Result
 
 After this fix:
-- Selecting a city from the filter dropdown will smoothly zoom the map to that city
-- Clicking a city marker on the map will also trigger the same smooth zoom effect
-- The animation provides a nice user experience showing the transition
+- Selecting a city from the dropdown will smoothly animate the map from current location to the new city
+- The animation won't be interrupted by bounds update callbacks
+- Works for both city overlay clicks and filter dropdown selections
+- The 1.5-second duration provides a nice visual guide showing the journey between cities
