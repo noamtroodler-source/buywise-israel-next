@@ -309,17 +309,67 @@ export default function MapSearchLayout() {
     updateUrlParams(updatedFilters);
   }, [listingStatus, updateUrlParams, filters.city, allCities]);
 
+  // Helper: Find closest city to given coordinates
+  const findCityByCoordinates = useCallback((lat: number, lng: number): string | null => {
+    if (!allCities) return null;
+    
+    const MAX_DISTANCE_KM = 5; // Only match if within 5km of city center
+    let closestCity: string | null = null;
+    let minDistance = Infinity;
+    
+    for (const city of allCities) {
+      if (!city.center_lat || !city.center_lng) continue;
+      
+      const distanceKm = getDistanceInMeters(
+        [lng, lat], 
+        [city.center_lng, city.center_lat]
+      ) / 1000;
+      
+      if (distanceKm < minDistance && distanceKm < MAX_DISTANCE_KM) {
+        minDistance = distanceKm;
+        closestCity = city.name;
+      }
+    }
+    
+    return closestCity;
+  }, [allCities]);
+
   const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
     // Always update mapBounds so property queries get correct viewport
     setMapBounds(bounds);
     
-    // Skip center/zoom updates during programmatic moves (city selection animations)
-    // This prevents user panning from overwriting the fly-to destination
+    // Skip updates during programmatic moves (city selection animations)
     if (isProgrammaticMoveRef.current) return;
     
     setMapCenter(center);
     setMapZoom(zoom);
-  }, []);
+    
+    // Auto-detect city when zoomed in (zoom ≥ 12)
+    if (zoom >= 12 && allCities) {
+      const detectedCity = findCityByCoordinates(center[0], center[1]);
+      
+      // Only update if detected city is different from current filter
+      if (detectedCity && detectedCity !== filters.city) {
+        const updatedFilters = { ...filters, city: detectedCity, listing_status: listingStatus };
+        setFilters(updatedFilters);
+        updateUrlParams(updatedFilters, center, zoom);
+      }
+      
+      // Clear city filter if zoomed in but not near any city center
+      if (!detectedCity && filters.city) {
+        const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
+        setFilters(updatedFilters);
+        updateUrlParams(updatedFilters, center, zoom);
+      }
+    }
+    
+    // If zoomed out (< 12), clear city filter to show all cities
+    if (zoom < 12 && filters.city) {
+      const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
+      setFilters(updatedFilters);
+      updateUrlParams(updatedFilters, center, zoom);
+    }
+  }, [filters, listingStatus, allCities, findCityByCoordinates, updateUrlParams]);
 
   const handlePropertyHover = useCallback((propertyId: string | null) => {
     setHoveredPropertyId(propertyId);
