@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.send-digest-email]
 verify_jwt = false
+
+[functions.seed-additional-properties]
+verify_jwt = false
