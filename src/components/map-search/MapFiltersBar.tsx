@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,19 @@ import {
   SlidersHorizontal, 
   Loader2,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Quick filter chips for common amenities
+const QUICK_AMENITIES = [
+  { key: 'has_balcony' as const, label: 'Balcony', icon: '🏠' },
+  { key: 'has_elevator' as const, label: 'Elevator', icon: '🛗' },
+  { key: 'has_storage' as const, label: 'Storage', icon: '📦' },
+  { key: 'has_parking' as const, label: 'Parking', icon: '🚗' },
+  { key: 'has_pool' as const, label: 'Pool', icon: '🏊' },
+  { key: 'is_accessible' as const, label: 'Accessible', icon: '♿' },
+];
 
 interface MapFiltersBarProps {
   filters: PropertyFiltersType;
@@ -39,22 +50,55 @@ export function MapFiltersBar({
 }: MapFiltersBarProps) {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
+  const [filterHistory, setFilterHistory] = useState<PropertyFiltersType[]>([]);
   
   const urlStatus = searchParams.get('status') || 'for_sale';
 
   // Count active filters (excluding listing_status)
-  const activeFilterCount = Object.entries(filters).filter(([key, value]) => {
-    if (key === 'listing_status') return false;
-    if (key === 'bounds') return false;
-    if (value === undefined || value === null) return false;
-    if (Array.isArray(value) && value.length === 0) return false;
-    return true;
-  }).length;
+  const activeFilterCount = useMemo(() => {
+    return Object.entries(filters).filter(([key, value]) => {
+      if (key === 'listing_status') return false;
+      if (key === 'bounds') return false;
+      if (value === undefined || value === null) return false;
+      if (typeof value === 'boolean' && !value) return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }).length;
+  }, [filters]);
+
+  // Count active quick amenity filters
+  const activeAmenityCount = useMemo(() => {
+    return QUICK_AMENITIES.filter(a => filters[a.key]).length;
+  }, [filters]);
+
+  const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
+    // Save current state to history before changing
+    setFilterHistory(prev => [...prev.slice(-5), filters]);
+    onFiltersChange(newFilters);
+  }, [filters, onFiltersChange]);
+
+  const handleUndo = useCallback(() => {
+    if (filterHistory.length > 0) {
+      const previousFilters = filterHistory[filterHistory.length - 1];
+      setFilterHistory(prev => prev.slice(0, -1));
+      onFiltersChange(previousFilters);
+    }
+  }, [filterHistory, onFiltersChange]);
 
   const handleClearFilter = (key: keyof PropertyFiltersType) => {
     const newFilters = { ...filters };
     delete newFilters[key];
-    onFiltersChange(newFilters);
+    handleFiltersChange(newFilters);
+  };
+
+  const handleToggleAmenity = (key: keyof PropertyFiltersType) => {
+    const newFilters = { ...filters };
+    if (newFilters[key]) {
+      delete newFilters[key];
+    } else {
+      (newFilters as any)[key] = true;
+    }
+    handleFiltersChange(newFilters);
   };
 
   return (
@@ -137,6 +181,44 @@ export function MapFiltersBar({
           </Button>
         </div>
       </div>
+
+      {/* Quick Amenity Filter Chips */}
+      <div className="px-4 py-2 border-b flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        {QUICK_AMENITIES.map((amenity) => {
+          const isActive = filters[amenity.key];
+          return (
+            <button
+              key={amenity.key}
+              onClick={() => handleToggleAmenity(amenity.key)}
+              className={cn(
+                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                isActive 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <span>{amenity.icon}</span>
+              <span>{amenity.label}</span>
+            </button>
+          );
+        })}
+        
+        {/* Undo button - shown when there's filter history */}
+        {filterHistory.length > 0 && (
+          <>
+            <Separator orientation="vertical" className="h-5 mx-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleUndo}
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground gap-1 px-2"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span className="text-xs">Undo</span>
+            </Button>
+          </>
+        )}
+      </div>
       
       {/* Active Filters Chips */}
       {activeFilterCount > 0 && (
@@ -197,7 +279,10 @@ export function MapFiltersBar({
             </Badge>
           )}
           <button 
-            onClick={() => onFiltersChange({ listing_status: filters.listing_status })}
+            onClick={() => {
+              handleFiltersChange({ listing_status: filters.listing_status });
+              setFilterHistory([]);
+            }}
             className="text-xs text-primary hover:underline whitespace-nowrap"
           >
             Clear all

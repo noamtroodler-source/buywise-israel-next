@@ -159,6 +159,12 @@ export interface PropertyFilters {
   allows_pets?: ('cats' | 'dogs' | 'all')[];
   // Map bounds filter
   bounds?: MapBounds;
+  // Quick amenity filters
+  has_balcony?: boolean;
+  has_elevator?: boolean;
+  has_storage?: boolean;
+  has_parking?: boolean;
+  has_pool?: boolean;
 }
 
 export interface SearchAlert {

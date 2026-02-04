@@ -16,6 +16,7 @@ import {
   Thermometer,
   Keyboard,
   Share2,
+  Users,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -45,6 +46,8 @@ interface MapToolbarProps {
   onToggleTrainStations: () => void;
   showPriceHeatmap: boolean;
   onTogglePriceHeatmap: () => void;
+  showAngloCommunity: boolean;
+  onToggleAngloCommunity: () => void;
   // Keyboard shortcuts
   onShowKeyboardShortcuts?: () => void;
 }
@@ -62,6 +65,8 @@ export function MapToolbar({
   onToggleTrainStations,
   showPriceHeatmap,
   onTogglePriceHeatmap,
+  showAngloCommunity,
+  onToggleAngloCommunity,
   onShowKeyboardShortcuts,
 }: MapToolbarProps) {
   const isMobile = useIsMobile();
@@ -317,6 +322,24 @@ export function MapToolbar({
             </Tooltip>
           )}
           
+          {/* Anglo Community Layer */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(btnBase, showAngloCommunity && btnActive)}
+                onClick={onToggleAngloCommunity}
+                aria-label={showAngloCommunity ? 'Hide Anglo spots' : 'Show Anglo spots'}
+                aria-pressed={showAngloCommunity}
+              >
+                <Users className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {showAngloCommunity ? 'Hide Anglo spots' : 'Anglo community spots'}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 

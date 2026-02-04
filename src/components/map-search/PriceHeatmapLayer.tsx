@@ -1,20 +1,22 @@
 import { useMemo } from 'react';
 import { Circle, useMap } from 'react-leaflet';
 import { useCities } from '@/hooks/useCities';
+import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface PriceHeatmapLayerProps {
   visible: boolean;
 }
 
-// Color scale based on price per sqm (in ILS)
+// Brand-aligned blue gradient color scale based on price per sqm (in ILS)
 function getPriceColor(pricePerSqm: number | null): string {
-  if (!pricePerSqm) return 'hsl(0 0% 50%)'; // Gray for unknown
+  if (!pricePerSqm) return 'hsl(220, 10%, 70%)'; // Gray for unknown
   
-  if (pricePerSqm < 25000) return 'hsl(142 76% 50%)';   // Green - affordable
-  if (pricePerSqm < 40000) return 'hsl(80 65% 50%)';    // Light green
-  if (pricePerSqm < 55000) return 'hsl(45 100% 51%)';   // Yellow - moderate
-  if (pricePerSqm < 70000) return 'hsl(25 95% 53%)';    // Orange
-  return 'hsl(0 84% 60%)';                               // Red - expensive
+  // Blue gradient: lighter = more affordable, darker = expensive
+  if (pricePerSqm < 25000) return 'hsl(200, 80%, 70%)';   // Light blue - affordable
+  if (pricePerSqm < 40000) return 'hsl(200, 75%, 55%)';   // Medium blue
+  if (pricePerSqm < 55000) return 'hsl(213, 85%, 50%)';   // Primary blue
+  if (pricePerSqm < 70000) return 'hsl(220, 80%, 40%)';   // Dark blue
+  return 'hsl(230, 70%, 30%)';                             // Deep blue - expensive
 }
 
 // Get radius based on population/importance
@@ -31,6 +33,7 @@ function getCityRadius(population: number | null, name: string): number {
 export function PriceHeatmapLayer({ visible }: PriceHeatmapLayerProps) {
   const { data: cities, isLoading } = useCities();
   const map = useMap();
+  const { currency, exchangeRate } = usePreferences();
 
   const citiesWithCoords = useMemo(() => {
     if (!cities) return [];
