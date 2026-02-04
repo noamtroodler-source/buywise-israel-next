@@ -1,142 +1,161 @@
 
-## Auto-Detect City When Zooming Into Map Area
+## Why the Auto-Detection is Glitchy (Root Cause Analysis)
 
-### What You're Asking For
+The current implementation has a critical flaw that causes the "glitchy" behavior when panning between cities:
 
-When you're viewing Ashdod and manually zoom out, then zoom back into Jerusalem, you want:
-1. The properties on the right side to update to show Jerusalem listings
-2. The city filter dropdown (top left) to automatically update to "Jerusalem"
+### The Problem: Cascading State Updates
 
-Currently, the system only updates the city filter when you explicitly select a city from the dropdown or click on a city overlay marker. Manual panning/zooming updates the listings via map bounds, but it doesn't sync the city filter.
+Every time you pan or zoom the map, this happens:
+
+1. `handleBoundsChange` is called with new bounds/center/zoom
+2. The function checks if zoom >= 12 and tries to detect a city
+3. If a city is detected, it calls `setFilters()` and `updateUrlParams()`
+4. These state changes trigger React re-renders
+5. The URL update causes `useSearchParams` to change
+6. This can cause additional re-renders and callback recreations
+7. Meanwhile, you're still panning, so `handleBoundsChange` is called again
+8. The cycle repeats rapidly, causing visual "flickering" and laggy behavior
+
+### Additional Issues
+
+1. **5km radius is too restrictive** - The current 5km threshold means as you pan between cities, the filter rapidly switches between detected/undefined, causing the listings to flash between "City X listings" and "All listings in viewport"
+
+2. **Callback dependency array includes `filters`** - The `handleBoundsChange` callback depends on `filters`, which means every time filters change (including when auto-detection changes the city), the callback is recreated, potentially causing stale closure issues
+
+3. **No debouncing on city detection** - While map bounds are debounced (300ms), the city detection runs immediately on every update
+
+4. **URL updates on every detection** - Changing the URL on every city detection causes extra re-renders and can interfere with the user's current navigation
 
 ---
 
-### How It Will Work
+## Recommended Solution: Simplify the Approach
 
-When you zoom into a specific city area (zoom level ≥12), the system will:
+Based on the complexity and issues, here's a cleaner approach:
 
-1. **Detect the city** - Compare the map's center coordinates against all known city centers and find the closest match within a reasonable radius (~5km)
-2. **Update the city filter** - If a city is detected and it's different from the current filter, automatically update the city dropdown
-3. **Sync URL and state** - The URL and filter bar will reflect the detected city
+### Option A: Remove Auto-Detection (Simpler, More Reliable)
 
-The detection will only trigger when:
-- Zoom level is 12 or higher (zoomed in enough to be viewing a single city)
-- The map center is within ~5km of a city center
-- The detected city is different from the current filter (to avoid unnecessary updates)
-- It's a user-initiated pan/zoom (not during programmatic city-to-city animations)
+Remove the automatic city detection and keep the city filter as an explicit user action. The map already shows the correct properties based on viewport bounds - the city filter is really just a convenience for the dropdown display.
+
+**Benefits:**
+- No glitchy behavior during panning
+- Cleaner, more predictable UX
+- Map bounds still drive property queries correctly
+
+**Trade-off:**
+- City dropdown won't auto-update when panning into a new area
+
+### Option B: Lightweight Auto-Detection (Debounced, Non-Blocking)
+
+Keep auto-detection but make it much less intrusive:
+
+1. **Increase debounce significantly** - Only detect city after 800ms of no movement (user "settled" in an area)
+2. **Don't update URL for auto-detection** - Only update the filter state, not the URL (reduces re-renders)
+3. **Add hysteresis** - Only change city if the detected city is different for 2+ consecutive checks (prevents rapid flickering between cities at boundaries)
+4. **Remove filters dependency** - Store detected city in a separate ref to avoid callback recreation
 
 ---
 
-### Technical Implementation
+## Implementation Plan (Option B - Improved Auto-Detection)
 
-#### 1. Add City Detection Logic in `MapSearchLayout.tsx`
+### File: `src/components/map-search/MapSearchLayout.tsx`
 
-Create a helper function to find the closest city to given coordinates:
+#### 1. Add Dedicated Debounce for City Detection
+
+Create a separate debounced city detection that runs after the user stops moving:
 
 ```typescript
-// Helper: Find closest city to given coordinates
-const findCityByCoordinates = useCallback((lat: number, lng: number): string | null => {
-  if (!allCities) return null;
-  
-  const MAX_DISTANCE_KM = 5; // Only match if within 5km of city center
-  let closestCity: string | null = null;
-  let minDistance = Infinity;
-  
-  for (const city of allCities) {
-    if (!city.center_lat || !city.center_lng) continue;
-    
-    // Simple distance calculation (Haversine approximation for small distances)
-    const distanceKm = getDistanceInMeters(
-      [lng, lat], 
-      [city.center_lng, city.center_lat]
-    ) / 1000;
-    
-    if (distanceKm < minDistance && distanceKm < MAX_DISTANCE_KM) {
-      minDistance = distanceKm;
-      closestCity = city.name;
-    }
-  }
-  
-  return closestCity;
-}, [allCities]);
+const cityDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const lastDetectedCityRef = useRef<string | null>(null);
 ```
 
-#### 2. Add City Auto-Detection in `handleBoundsChange`
+#### 2. Simplify `handleBoundsChange`
 
-When bounds change (user pans/zooms), check if we should update the city filter:
+Remove city detection logic from `handleBoundsChange` and schedule it separately:
 
 ```typescript
 const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
-  // Always update mapBounds for property queries
   setMapBounds(bounds);
   
-  // Skip updates during programmatic moves
   if (isProgrammaticMoveRef.current) return;
   
   setMapCenter(center);
   setMapZoom(zoom);
   
-  // Auto-detect city when zoomed in (zoom ≥ 12)
-  if (zoom >= 12 && allCities) {
-    const detectedCity = findCityByCoordinates(center[0], center[1]);
-    
-    // Only update if detected city is different from current filter
-    if (detectedCity && detectedCity !== filters.city) {
-      // Update filters with detected city (without triggering map fly)
-      const updatedFilters = { ...filters, city: detectedCity, listing_status: listingStatus };
-      setFilters(updatedFilters);
-      updateUrlParams(updatedFilters, center, zoom);
-    }
-    
-    // Clear city filter if zoomed in but not near any city center
-    if (!detectedCity && filters.city) {
-      const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
-      setFilters(updatedFilters);
-      updateUrlParams(updatedFilters, center, zoom);
-    }
+  // Schedule city detection (debounced separately)
+  if (cityDetectionTimeoutRef.current) {
+    clearTimeout(cityDetectionTimeoutRef.current);
   }
   
-  // If zoomed out (< 12), clear city filter to show all cities
-  if (zoom < 12 && filters.city) {
-    const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
-    setFilters(updatedFilters);
-    updateUrlParams(updatedFilters, center, zoom);
-  }
-}, [filters, listingStatus, allCities, findCityByCoordinates, updateUrlParams]);
+  cityDetectionTimeoutRef.current = setTimeout(() => {
+    detectAndUpdateCity(center, zoom);
+  }, 800); // Wait 800ms after user stops moving
+}, []); // No filter dependencies - much more stable
 ```
 
-#### 3. Prevent Infinite Loops
+#### 3. Create Separate City Detection Function
 
-The key challenge is preventing the city auto-detection from triggering a map fly animation (which would create a loop). The solution:
+```typescript
+const detectAndUpdateCity = useCallback((center: [number, number], zoom: number) => {
+  if (!allCities) return;
+  
+  if (zoom >= 12) {
+    const detectedCity = findCityByCoordinates(center[0], center[1]);
+    
+    // Only update if different from LAST detected (not current filter)
+    // This prevents flickering when filter was set by other means
+    if (detectedCity !== lastDetectedCityRef.current) {
+      lastDetectedCityRef.current = detectedCity;
+      
+      if (detectedCity) {
+        setFilters(prev => ({ ...prev, city: detectedCity }));
+        // Note: NOT updating URL here to reduce re-renders
+      }
+    }
+  } else if (zoom < 12) {
+    // Zoomed out - clear city filter
+    if (lastDetectedCityRef.current !== null) {
+      lastDetectedCityRef.current = null;
+      setFilters(prev => ({ ...prev, city: undefined }));
+    }
+  }
+}, [allCities, findCityByCoordinates]);
+```
 
-- When detecting a city from pan/zoom, update `filters` and URL **without** setting `mapCenter`/`mapZoom` (since those are already correct from the user's pan)
-- Only use the `isProgrammaticMoveRef` pattern for explicit city dropdown selections
+#### 4. Increase Detection Radius
+
+Change from 5km to 10km for more stable detection near city boundaries:
+
+```typescript
+const MAX_DISTANCE_KM = 10; // Was 5, now more tolerant
+```
 
 ---
 
-### Files to Modify
+## Summary of Changes
 
-| File | Change |
-|------|--------|
-| `src/components/map-search/MapSearchLayout.tsx` | Add `findCityByCoordinates` helper and city auto-detection logic in `handleBoundsChange` |
-
----
-
-### User Experience
-
-| Scenario | Behavior |
-|----------|----------|
-| Viewing Ashdod, zoom out | City filter clears, shows national view with city overlays |
-| Zoom in on Jerusalem area | City filter updates to "Jerusalem", listings show Jerusalem properties |
-| Pan slightly within Jerusalem | No change (still detecting Jerusalem) |
-| Pan to border area between cities | Whichever city center is closer gets selected |
-| Select city from dropdown | Map flies to that city (existing behavior) |
+| Change | Reason |
+|--------|--------|
+| Add 800ms debounce for city detection | Prevents rapid updates while actively panning |
+| Remove `filters` from `handleBoundsChange` dependencies | Prevents callback recreation on every filter change |
+| Don't update URL on auto-detection | Reduces re-renders and navigation interference |
+| Track "last detected city" in a ref | Prevents redundant state updates |
+| Increase detection radius to 10km | More stable detection at city boundaries |
+| Clean up timeout on unmount | Prevent memory leaks |
 
 ---
 
-### Edge Cases Handled
+## Files to Modify
 
-1. **Rapid panning**: Debounced via existing 300ms timeout in `MapBoundsListener`
-2. **No city nearby**: If you zoom into an area without a known city (e.g., desert), the city filter stays cleared
-3. **City filter sync**: Both dropdown selection AND manual zoom will keep the filter in sync
-4. **Works with Buy/Rent toggle**: Detection works for both listing types
+| File | Changes |
+|------|---------|
+| `src/components/map-search/MapSearchLayout.tsx` | Refactor city detection to be debounced and non-blocking |
+
+---
+
+## Expected Result
+
+After this fix:
+- Panning/zooming will feel smooth with no "glitchy" flickering
+- City filter will update ~800ms after you stop moving in a new city area
+- The right-side listings update based on viewport (unchanged, already works)
+- Explicit city dropdown selection still works with smooth animations (unchanged)
