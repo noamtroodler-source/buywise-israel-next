@@ -1,120 +1,97 @@
 
-## Unify Map Filter Bar with Listings Filter Bar
+## Fix: City Selection Not Zooming to City
 
-### Goal
-Make the map page (`/map`) filter bar visually identical to the grid listings page (`/listings`), replacing the Active/Sold toggle with a Buy/Rent toggle.
+### The Problem
 
-### Current Differences
+When you select a city from the filter dropdown, the map should zoom to that city's location. Currently, it doesn't work because:
 
-| Feature | Grid Page (`PropertyFilters.tsx`) | Map Page (`MapFiltersBar.tsx`) |
-|---------|-----------------------------------|--------------------------------|
-| Primary Toggle | Active/Sold (for sale only) | Buy/Rent |
-| City Filter | Full dropdown with search | None |
-| Price Filter | Full dropdown with range | None (only in dialog) |
-| Beds/Baths | Full dropdown | None (only in dialog) |
-| Type Filter | Full dropdown | None (only in dialog) |
-| More Filters | Full sheet | Dialog-based |
-| Sort | Dropdown | None |
-| Alert Button | Icon button | None |
-| View Toggle | Grid/Map toggle | Grid/Map toggle |
+1. **React-Leaflet's `MapContainer` limitation** - The `center` and `zoom` props only work on initial render. After the map mounts, changing these props has no effect on the map view.
 
-### Solution
+2. **Missing view synchronization** - There's no component inside the map that listens for changes to the center/zoom state and updates the map accordingly.
 
-Replace `MapFiltersBar` with the existing `PropertyFilters` component, which already has all the filter dropdowns and styling. We'll:
+### The Solution
 
-1. **Reuse `PropertyFilters`** - The grid's filter component is feature-complete
-2. **Modify the toggle** - Change Active/Sold to Buy/Rent for the map page context
-3. **Add Buy/Rent toggle option** - New prop to show Buy/Rent instead of Active/Sold
+Add a `MapViewUpdater` component inside `MapContainer` that:
+- Uses `useMap()` to get the map instance
+- Watches for changes to `center` and `zoom` props
+- Calls `map.flyTo()` to smoothly animate to the new location when they change
 
 ---
 
 ## Technical Changes
 
-### 1. Update `PropertyFilters.tsx` - Add Buy/Rent Toggle Mode
+### 1. Create `MapViewUpdater` Component (inside `PropertyMap.tsx`)
 
-Add a new prop to support Buy/Rent toggle (for map page) vs Active/Sold (for listings):
+Add a new internal component that syncs external state to the map:
 
 ```typescript
-interface PropertyFiltersProps {
-  // ... existing props
-  showBuyRentToggle?: boolean;  // NEW: Show Buy/Rent instead of Active/Sold
-  onBuyRentChange?: (type: 'for_sale' | 'for_rent') => void;  // NEW
+// Syncs external center/zoom state to the map
+function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  const prevCenterRef = useRef<[number, number]>(center);
+  const prevZoomRef = useRef<number>(zoom);
+  
+  useEffect(() => {
+    // Check if center or zoom actually changed (comparing values, not references)
+    const centerChanged = 
+      center[0] !== prevCenterRef.current[0] || 
+      center[1] !== prevCenterRef.current[1];
+    const zoomChanged = zoom !== prevZoomRef.current;
+    
+    if (centerChanged || zoomChanged) {
+      // Fly to new location with smooth animation
+      map.flyTo(center, zoom, { duration: 1 });
+      
+      // Update refs
+      prevCenterRef.current = center;
+      prevZoomRef.current = zoom;
+    }
+  }, [map, center, zoom]);
+  
+  return null;
 }
 ```
 
-Modify the toggle section (around line 278-304):
-- When `showBuyRentToggle` is true, render Buy/Rent toggle
-- When `showSoldToggle` is true, render Active/Sold toggle
-- Both use the same visual styling
+### 2. Add `MapViewUpdater` Inside `MapContainer`
 
-### 2. Update `MapSearchLayout.tsx` - Use PropertyFilters
-
-Replace the custom `MapFiltersBar` component with `PropertyFilters`:
+Place it after `MapBoundsListener`:
 
 ```tsx
-// Before
-<MapFiltersBar
-  filters={filters}
-  onFiltersChange={handleFiltersChange}
-  listingType={listingStatus}
-  resultCount={totalCount}
-  isLoading={isFetching}
+<MapContainer ref={mapRef} center={center} zoom={zoom} ...>
+  <TileLayer ... />
+  <MapBoundsListener ... />
+  <MapViewUpdater center={center} zoom={zoom} />  {/* NEW */}
+  <ZoomTracker ... />
   ...
-/>
-
-// After
-<PropertyFilters
-  filters={filters}
-  onFiltersChange={handleFiltersChange}
-  listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-  showBuyRentToggle={true}
-  onBuyRentChange={(type) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('status', type);
-    setSearchParams(params);
-  }}
-  previewCount={totalCount}
-  isCountLoading={isFetching}
-  onCreateAlert={() => setShowAlertDialog(true)}
-/>
+</MapContainer>
 ```
-
-### 3. Keep MapFiltersBar for Mobile Quick Access
-
-The map page has specific mobile needs (commute filter, quick filters). We'll:
-- Use `PropertyFilters` for the main filter bar
-- Keep mobile-specific features in a slimmed-down version or integrate into the existing mobile filter sheet
-
-### 4. Handle View Toggle Context
-
-The ViewToggle is already included in PropertyFilters, so it will automatically show Grid/Map options with the correct active state.
 
 ---
 
-## Files to Modify
+## How It Works
 
-1. **`src/components/filters/PropertyFilters.tsx`**
-   - Add `showBuyRentToggle` prop
-   - Add `onBuyRentChange` callback
-   - Add Buy/Rent toggle rendering logic alongside Active/Sold
-
-2. **`src/components/map-search/MapSearchLayout.tsx`**
-   - Import and use `PropertyFilters` instead of `MapFiltersBar`
-   - Pass appropriate props for map context
-
-3. **`src/components/map-search/MapFiltersBar.tsx`**
-   - Keep only mobile-specific features or remove entirely
+1. User selects "Jerusalem" from city filter dropdown
+2. `PropertyFilters` calls `onFiltersChange({ city: "Jerusalem" })`
+3. `MapSearchLayout.handleFiltersChange` detects city changed
+4. It looks up Jerusalem's coordinates from `allCities` data
+5. It calls `setMapCenter([31.7683, 35.2137])` and `setMapZoom(13)`
+6. `PropertyMap` receives new `center` and `zoom` props
+7. **NEW:** `MapViewUpdater` detects the change and calls `map.flyTo()`
+8. Map smoothly animates to Jerusalem
 
 ---
 
-## Visual Result
+## File Changes
 
-After implementation, the map page will have:
+| File | Change |
+|------|--------|
+| `src/components/map-search/PropertyMap.tsx` | Add `MapViewUpdater` component and use it inside `MapContainer` |
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ [Buy|Rent] │ 🏙️ City ▼ │ $ Price ▼ │ 🛏️ Beds ▼ │ Type ▼ │ More │ ... │ Sort ▼ │ 🔔 │ [Grid|Map] │
-└─────────────────────────────────────────────────────────────────┘
-```
+---
 
-This matches the grid listings page exactly, with the toggle changed to Buy/Rent for the map context.
+## Result
+
+After this fix:
+- Selecting a city from the filter dropdown will smoothly zoom the map to that city
+- Clicking a city marker on the map will also trigger the same smooth zoom effect
+- The animation provides a nice user experience showing the transition
