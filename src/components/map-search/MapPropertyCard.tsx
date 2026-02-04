@@ -4,6 +4,7 @@ import { Bed, Bath, Maximize, MapPin, TrendingDown, Sparkles, Flame, Clock } fro
 import { Property } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
+import { ShareButton } from '@/components/property/ShareButton';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { differenceInDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -160,8 +161,15 @@ export const MapPropertyCard = memo(function MapPropertyCard({
         </div>
       </div>
       
-      {/* Favorite Button */}
-      <div className="flex-shrink-0 self-start">
+      {/* Action Buttons */}
+      <div className="flex-shrink-0 self-start flex flex-col gap-1">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <ShareButton 
+            propertyId={property.id} 
+            propertyTitle={property.title}
+            className="h-7 w-7"
+          />
+        </div>
         <FavoriteButton 
           propertyId={property.id} 
           propertyPrice={property.price}

@@ -114,7 +114,7 @@ export function MapPropertyList({
                 property={property}
                 compact
                 showCompareButton={false}
-                showShareButton={false}
+                showShareButton={true}
                 maxBadges={1}
               />
             </div>
