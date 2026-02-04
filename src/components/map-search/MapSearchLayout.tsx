@@ -39,6 +39,25 @@ export default function MapSearchLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const mapRef = useRef<L.Map | null>(null);
+
+  // Initial map view from URL (MapContainer only reads props on mount; we also keep state in sync)
+  const initialMapCenter = (() => {
+    const center = searchParams.get('center');
+    if (center) {
+      const [lat, lng] = center.split(',').map(Number);
+      if (!isNaN(lat) && !isNaN(lng)) return [lat, lng] as [number, number];
+    }
+    return ISRAEL_CENTER;
+  })();
+
+  const initialMapZoom = (() => {
+    const zoom = searchParams.get('zoom');
+    if (zoom) {
+      const z = Number(zoom);
+      if (!isNaN(z)) return z;
+    }
+    return ISRAEL_ZOOM;
+  })();
   
   // City data for auto-centering
   const { recentCity, isLoading: recentCityLoading } = useRecentSearchCity();
@@ -50,8 +69,8 @@ export default function MapSearchLayout() {
   const [searchAsMove, setSearchAsMove] = useState(true);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<[number, number]>(ISRAEL_CENTER);
-  const [mapZoom, setMapZoom] = useState(ISRAEL_ZOOM);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(initialMapCenter);
+  const [mapZoom, setMapZoom] = useState(initialMapZoom);
   
   // Draw-to-search state
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
@@ -119,21 +138,6 @@ export default function MapSearchLayout() {
     const minRooms = searchParams.get('min_rooms');
     if (minRooms) initialFilters.min_rooms = Number(minRooms);
     
-    // Parse map center and zoom from URL
-    const center = searchParams.get('center');
-    if (center) {
-      const [lat, lng] = center.split(',').map(Number);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        setMapCenter([lat, lng]);
-      }
-    }
-    
-    const zoom = searchParams.get('zoom');
-    if (zoom) {
-      const z = Number(zoom);
-      if (!isNaN(z)) setMapZoom(z);
-    }
-
     return initialFilters;
   });
 
@@ -247,7 +251,9 @@ export default function MapSearchLayout() {
   }, [listingStatus, filters.listing_status]);
 
   // Update URL when filters change
-  const updateUrlParams = useCallback((newFilters: PropertyFiltersType) => {
+  const updateUrlParams = useCallback((newFilters: PropertyFiltersType, nextCenter?: [number, number], nextZoom?: number) => {
+    const centerToSave = nextCenter ?? mapCenter;
+    const zoomToSave = nextZoom ?? mapZoom;
     const params = new URLSearchParams();
     params.set('status', urlStatus);
     if (newFilters.city) params.set('city', newFilters.city);
@@ -256,25 +262,33 @@ export default function MapSearchLayout() {
     if (newFilters.max_price) params.set('max_price', String(newFilters.max_price));
     if (newFilters.min_rooms) params.set('min_rooms', String(newFilters.min_rooms));
     // Save map position
-    params.set('center', `${mapCenter[0].toFixed(4)},${mapCenter[1].toFixed(4)}`);
-    params.set('zoom', String(mapZoom));
+    params.set('center', `${centerToSave[0].toFixed(4)},${centerToSave[1].toFixed(4)}`);
+    params.set('zoom', String(zoomToSave));
     setSearchParams(params, { replace: true });
   }, [urlStatus, setSearchParams, mapCenter, mapZoom]);
 
   const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
-    setFilters(updatedFilters);
-    updateUrlParams(updatedFilters);
     
-    // If city changed, save it and update map position
-    if (newFilters.city && newFilters.city !== filters.city) {
+    // If city changed, compute the next center/zoom first so the map reliably fly-zooms.
+    const cityChanged = newFilters.city && newFilters.city !== filters.city;
+    if (cityChanged) {
       const city = allCities?.find(c => c.name === newFilters.city);
       if (city?.center_lat && city?.center_lng) {
-        setMapCenter([city.center_lat, city.center_lng]);
-        setMapZoom(CITY_ZOOM);
+        const nextCenter: [number, number] = [city.center_lat, city.center_lng];
+        const nextZoom = CITY_ZOOM;
+        setMapCenter(nextCenter);
+        setMapZoom(nextZoom);
         saveRecentCity(city.name, city.center_lat, city.center_lng);
+        setFilters(updatedFilters);
+        updateUrlParams(updatedFilters, nextCenter, nextZoom);
+        return;
       }
     }
+
+    // Default: no special map view update
+    setFilters(updatedFilters);
+    updateUrlParams(updatedFilters);
   }, [listingStatus, updateUrlParams, filters.city, allCities]);
 
   const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
