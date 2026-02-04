@@ -121,6 +121,32 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   return null;
 }
 
+// Syncs external center/zoom state to the map (for city selection)
+function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  const prevCenterRef = useRef<[number, number]>(center);
+  const prevZoomRef = useRef<number>(zoom);
+  
+  useEffect(() => {
+    // Check if center or zoom actually changed (comparing values, not references)
+    const centerChanged = 
+      center[0] !== prevCenterRef.current[0] || 
+      center[1] !== prevCenterRef.current[1];
+    const zoomChanged = zoom !== prevZoomRef.current;
+    
+    if (centerChanged || zoomChanged) {
+      // Fly to new location with smooth animation
+      map.flyTo(center, zoom, { duration: 1 });
+      
+      // Update refs
+      prevCenterRef.current = center;
+      prevZoomRef.current = zoom;
+    }
+  }, [map, center, zoom]);
+  
+  return null;
+}
+
 
 export function PropertyMap({
   properties,
@@ -222,6 +248,9 @@ export function PropertyMap({
           }}
           searchAsMove={searchAsMove}
         />
+
+        {/* Sync external center/zoom to map (for city selection) */}
+        <MapViewUpdater center={center} zoom={zoom} />
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
 
