@@ -59,14 +59,18 @@ function MapClickHandler({ onDeselect }: { onDeselect: () => void }) {
 function MapBoundsListener({ 
   onBoundsChange,
   searchAsMove,
+  isFlyingRef,
 }: { 
   onBoundsChange: (bounds: MapBounds, center: [number, number], zoom: number) => void;
   searchAsMove: boolean;
+  isFlyingRef: React.RefObject<boolean>;
 }) {
   const map = useMap();
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const handleMoveEnd = useCallback(() => {
+    // Skip if programmatic flight in progress
+    if (isFlyingRef.current) return;
     if (!searchAsMove) return;
     
     if (debounceRef.current) {
@@ -89,7 +93,7 @@ function MapBoundsListener({
         zoom
       );
     }, 300);
-  }, [map, onBoundsChange, searchAsMove]);
+  }, [map, onBoundsChange, searchAsMove, isFlyingRef]);
 
   useMapEvents({
     moveend: handleMoveEnd,
@@ -122,7 +126,15 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 }
 
 // Syncs external center/zoom state to the map (for city selection)
-function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+function MapViewUpdater({ 
+  center, 
+  zoom,
+  isFlyingRef,
+}: { 
+  center: [number, number]; 
+  zoom: number;
+  isFlyingRef: React.MutableRefObject<boolean>;
+}) {
   const map = useMap();
   const prevCenterRef = useRef<[number, number]>(center);
   const prevZoomRef = useRef<number>(zoom);
@@ -135,14 +147,22 @@ function MapViewUpdater({ center, zoom }: { center: [number, number]; zoom: numb
     const zoomChanged = zoom !== prevZoomRef.current;
     
     if (centerChanged || zoomChanged) {
+      // Mark as flying to prevent bounds updates during animation
+      isFlyingRef.current = true;
+      
       // Fly to new location with smooth animation
-      map.flyTo(center, zoom, { duration: 1 });
+      map.flyTo(center, zoom, { duration: 1.5 });
+      
+      // Clear flying flag when animation ends
+      map.once('moveend', () => {
+        isFlyingRef.current = false;
+      });
       
       // Update refs
       prevCenterRef.current = center;
       prevZoomRef.current = zoom;
     }
-  }, [map, center, zoom]);
+  }, [map, center, zoom, isFlyingRef]);
   
   return null;
 }
@@ -170,6 +190,7 @@ export function PropertyMap({
   const { user } = useAuth();
   const { data: savedLocations } = useSavedLocations();
   const mapRef = useRef<L.Map>(null);
+  const isFlyingRef = useRef(false);
   const [showSavedLocations, setShowSavedLocations] = useState(true);
   const [showTrainStations, setShowTrainStations] = useState(false);
   const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
@@ -247,10 +268,11 @@ export function PropertyMap({
             setMapBounds(b);
           }}
           searchAsMove={searchAsMove}
+          isFlyingRef={isFlyingRef}
         />
 
         {/* Sync external center/zoom to map (for city selection) */}
-        <MapViewUpdater center={center} zoom={zoom} />
+        <MapViewUpdater center={center} zoom={zoom} isFlyingRef={isFlyingRef} />
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
 
