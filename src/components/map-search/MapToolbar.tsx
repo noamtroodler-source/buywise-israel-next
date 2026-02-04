@@ -287,15 +287,12 @@ export function MapToolbar({
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(btnBase, showAngloCommunity && btnActive, 'relative')}
+                className={cn(btnBase, showAngloCommunity && btnActive)}
                 onClick={onToggleAngloCommunity}
                 aria-label={showAngloCommunity ? 'Hide Anglo spots' : 'Show Anglo spots'}
                 aria-pressed={showAngloCommunity}
               >
                 <Users className={iconSize} />
-                <span className="absolute -top-1 -right-1 text-[8px] font-semibold bg-primary text-primary-foreground px-1 rounded">
-                  β
-                </span>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
