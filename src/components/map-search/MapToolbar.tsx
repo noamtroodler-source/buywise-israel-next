@@ -141,7 +141,7 @@ export function MapToolbar({
 
   return (
     <div 
-      className="absolute top-4 right-4 z-[1000] flex flex-col gap-1.5"
+      className="absolute top-4 right-4 z-[40] flex flex-col gap-1.5"
       role="toolbar"
       aria-label="Map controls"
       aria-orientation="vertical"

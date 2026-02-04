@@ -58,7 +58,7 @@ export function PropertyMarker({
       bgColor = 'hsl(213, 94%, 45%)';
       textColor = 'white';
       borderColor = 'white';
-      zIndex = 1000;
+      zIndex = 200;
     }
     
     return { bgColor, textColor, borderColor, opacity, zIndex, isRental };
