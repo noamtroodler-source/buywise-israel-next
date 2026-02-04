@@ -9,6 +9,7 @@ import { MobileMapSheet } from './MobileMapSheet';
 import { MobileQuickFilters } from './MobileQuickFilters';
 import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
 import { MapOnboardingHints } from './MapOnboardingHints';
+import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
@@ -97,6 +98,9 @@ export default function MapSearchLayout() {
   
   // Keyboard shortcuts help modal
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  
+  // Alert dialog state
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
   
   // Get listing status from URL
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -492,6 +496,7 @@ export default function MapSearchLayout() {
           previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
           isCountLoading={isFetching}
           activeView="map"
+          onCreateAlert={() => setShowAlertDialog(true)}
         />
 
         {/* Mobile Quick Filters */}
@@ -573,6 +578,17 @@ export default function MapSearchLayout() {
             />
           )}
         </div>
+        
+        {/* Create Alert Dialog */}
+        <CreateAlertDialog
+          open={showAlertDialog}
+          onOpenChange={setShowAlertDialog}
+          filters={{
+            ...filters,
+            neighborhoods: selectedNeighborhoods.length > 0 ? selectedNeighborhoods : undefined,
+          }}
+          listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
+        />
       </div>
     );
   }
@@ -594,6 +610,7 @@ export default function MapSearchLayout() {
         previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
         isCountLoading={isFetching}
         activeView="map"
+        onCreateAlert={() => setShowAlertDialog(true)}
       />
       
       {/* Split View */}
@@ -629,6 +646,17 @@ export default function MapSearchLayout() {
       <MapKeyboardShortcuts 
         open={showKeyboardHelp} 
         onOpenChange={setShowKeyboardHelp} 
+      />
+      
+      {/* Create Alert Dialog */}
+      <CreateAlertDialog
+        open={showAlertDialog}
+        onOpenChange={setShowAlertDialog}
+        filters={{
+          ...filters,
+          neighborhoods: selectedNeighborhoods.length > 0 ? selectedNeighborhoods : undefined,
+        }}
+        listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
       />
     </div>
   );

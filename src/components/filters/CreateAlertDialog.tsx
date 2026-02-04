@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Bell, Mail, MessageSquare, Phone, Zap, Clock, Calendar, Sparkles, Check, Loader2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Bell, Mail, MessageSquare, Phone, Zap, Clock, Calendar, Sparkles, Check, Loader2, MapPin } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -102,11 +102,35 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
     staleTime: 30000, // Cache for 30 seconds
   });
 
+  // Get active filters excluding internal fields
   const activeFilters = Object.entries(filters).filter(([key, value]) => {
-    if (key === 'listing_status' || key === 'sort_by') return false;
+    if (key === 'listing_status' || key === 'sort_by' || key === 'city' || key === 'neighborhoods') return false;
     if (Array.isArray(value)) return value.length > 0;
     return value !== undefined && value !== null && value !== '';
   });
+
+  // Generate auto alert name based on filters
+  const autoAlertName = useMemo(() => {
+    const parts: string[] = [];
+    if (filters.city) parts.push(filters.city);
+    if (filters.neighborhoods?.length) {
+      const neighborhoods = filters.neighborhoods;
+      if (neighborhoods.length <= 2) {
+        parts.push(`(${neighborhoods.join(', ')})`);
+      } else {
+        parts.push(`(${neighborhoods.slice(0, 2).join(', ')}...)`);
+      }
+    }
+    if (filters.min_rooms) parts.push(`${filters.min_rooms}+ rooms`);
+    if (filters.min_price || filters.max_price) {
+      const min = filters.min_price ? `${currencySymbol}${(filters.min_price / 1000000).toFixed(1)}M` : '';
+      const max = filters.max_price ? `${currencySymbol}${(filters.max_price / 1000000).toFixed(1)}M` : '';
+      if (min && max) parts.push(`${min}-${max}`);
+      else if (min) parts.push(`${min}+`);
+      else if (max) parts.push(`up to ${max}`);
+    }
+    return parts.join(' · ') || 'All listings';
+  }, [filters, currencySymbol]);
 
   const needsPhone = notifyWhatsapp || notifySms;
 
@@ -162,11 +186,6 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
   const listingTypeLabel = listingType === 'for_sale' ? 'properties for sale' : 
                            listingType === 'for_rent' ? 'rentals' : 'new projects';
 
-  const getFiltersSummary = () => {
-    if (activeFilters.length === 0) return 'All listings';
-    return activeFilters.map(([key, value]) => formatFilterValue(key, value, currencySymbol)).join(', ');
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
@@ -184,22 +203,48 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
         </div>
 
         <div className="px-6 space-y-6">
-          {/* Your Filters */}
-          <div className="space-y-2">
-            <h3 className="font-semibold">Your Filters</h3>
-            {activeFilters.length > 0 ? (
+          {/* Your Search Summary */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">Your Search</h3>
+            
+            {/* City with prominent display */}
+            {filters.city && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="font-medium text-lg">{filters.city}</span>
+              </div>
+            )}
+            
+            {/* Neighborhoods as chips */}
+            {filters.neighborhoods && filters.neighborhoods.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {filters.neighborhoods.map((neighborhood) => (
+                  <Badge key={neighborhood} variant="secondary" className="rounded-full text-xs">
+                    {neighborhood}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            
+            {/* Other active filters */}
+            {activeFilters.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {activeFilters.map(([key, value]) => (
-                  <Badge key={key} variant="secondary" className="rounded-full">
+                  <Badge key={key} variant="outline" className="rounded-full">
                     {formatFilterValue(key, value, currencySymbol)}
                   </Badge>
                 ))}
               </div>
-            ) : (
+            )}
+            
+            {/* No filters message */}
+            {!filters.city && activeFilters.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 No filters set - you'll get all new listings
               </p>
             )}
+            
+            {/* Match count */}
             <div className="flex items-center gap-2 text-sm text-primary">
               <Sparkles className="h-4 w-4" />
               {isCountLoading ? (
@@ -300,7 +345,7 @@ export function CreateAlertDialog({ open, onOpenChange, filters, listingType }: 
           {/* Summary Box */}
           <div className="bg-muted/30 border border-dashed border-border rounded-xl p-4">
             <p className="text-sm font-medium mb-1">You'll get alerts for:</p>
-            <p className="text-sm text-muted-foreground">{getFiltersSummary()}</p>
+            <p className="text-sm text-muted-foreground">{autoAlertName}</p>
           </div>
         </div>
 
