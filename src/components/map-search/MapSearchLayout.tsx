@@ -46,6 +46,7 @@ export default function MapSearchLayout() {
   
   // Map state
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+  const [frozenBounds, setFrozenBounds] = useState<MapBounds | null>(null); // Bounds when searchAsMove was disabled
   const [searchAsMove, setSearchAsMove] = useState(true);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
@@ -151,7 +152,19 @@ export default function MapSearchLayout() {
     }
   }, [recentCity, recentCityLoading, urlCity]);
 
-  // Combined filters with bounds (when searchAsMove is enabled OR polygon is active)
+  // Handle searchAsMove toggle - freeze bounds when disabled
+  const handleSearchAsMoveChange = useCallback((enabled: boolean) => {
+    if (!enabled && mapBounds) {
+      // Freeze current bounds when disabling
+      setFrozenBounds(mapBounds);
+    } else if (enabled) {
+      // Clear frozen bounds when enabling
+      setFrozenBounds(null);
+    }
+    setSearchAsMove(enabled);
+  }, [mapBounds]);
+
+  // Combined filters with bounds
   const queryFilters = useMemo(() => {
     const baseFilters = { ...filters };
     
@@ -160,17 +173,20 @@ export default function MapSearchLayout() {
       baseFilters.neighborhoods = selectedNeighborhoods;
     }
     
-    // Include bounds when: searchAsMove is enabled OR a polygon is drawn
-    // This ensures polygon filtering has the correct geographic dataset to filter
-    const shouldIncludeBounds = searchAsMove || drawnPolygon;
+    // Determine which bounds to use:
+    // - If searchAsMove is ON: use current map bounds (live updates)
+    // - If searchAsMove is OFF: use frozen bounds (static results)
+    // - If polygon is drawn: always include bounds for proper dataset
+    const boundsToUse = searchAsMove ? mapBounds : (frozenBounds || mapBounds);
+    const shouldIncludeBounds = boundsToUse && (searchAsMove || frozenBounds || drawnPolygon);
     
-    if (!shouldIncludeBounds || !mapBounds) return baseFilters;
+    if (!shouldIncludeBounds || !boundsToUse) return baseFilters;
     
     return {
       ...baseFilters,
-      bounds: mapBounds,
+      bounds: boundsToUse,
     };
-  }, [filters, mapBounds, searchAsMove, selectedNeighborhoods, drawnPolygon]);
+  }, [filters, mapBounds, frozenBounds, searchAsMove, selectedNeighborhoods, drawnPolygon]);
 
   // Fetch saved locations for commute filter
   const { data: savedLocations } = useSavedLocations();
@@ -275,9 +291,7 @@ export default function MapSearchLayout() {
     setSelectedPropertyId(propertyId);
   }, []);
 
-  const handleSearchAsMoveChange = useCallback((value: boolean) => {
-    setSearchAsMove(value);
-  }, []);
+  // Note: handleSearchAsMoveChange is defined earlier to support frozen bounds logic
 
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
