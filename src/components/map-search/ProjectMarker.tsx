@@ -62,10 +62,6 @@ export function ProjectMarker({
         <div 
           class="project-marker-wrapper ${activeClass}"
           style="
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             ${scaleStyle}
             transition: transform 200ms ease;
           "
@@ -77,7 +73,6 @@ export function ProjectMarker({
             <span class="project-marker-name">${project.name}</span>
             ${displayPrice ? `<span class="project-marker-divider">•</span><span class="project-marker-price">${displayPrice}</span>` : ''}
           </div>
-          <div class="project-marker-pointer"></div>
         </div>
       `,
       className: '',
