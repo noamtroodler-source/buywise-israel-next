@@ -1,87 +1,120 @@
 
-## Make Project Markers Smaller and Simpler
+## Redesign Anglo Community Markers to Match Site Branding
 
-Based on the screenshot, you want the project markers to be more compact with just:
-- Blue house icon
-- **Bold project name**
-- Dot separator
-- "From ₪X.XM" price
+### Current State
+The Anglo community POI markers currently use:
+- Colorful circular backgrounds (purple for synagogues, green for supermarkets, etc.)
+- Emoji icons (🕍, 🛒, 🌳, etc.)
+- Click-to-show popup for details
 
-### Changes Required
+### Problem
+- The rainbow of colors doesn't fit the site's blue-primary branding
+- Emojis look inconsistent across devices
+- No hover feedback showing what the spot is before clicking
 
-#### File: `src/components/map-search/ProjectMarker.tsx`
+### Solution
+Redesign markers to match the **train station marker** pattern with hover tooltips:
 
-Simplify the marker HTML structure:
+1. **Consistent Blue-Branded Styling**: White background with blue border (like train station markers)
+2. **Lucide SVG Icons**: Replace emojis with clean Lucide icons for each category
+3. **Hover Tooltip**: Show spot name on hover using react-leaflet's `Tooltip` component
+
+---
+
+### Technical Changes
+
+#### File: `src/components/map-search/AngloCommunityLayer.tsx`
+
+**Changes:**
+- Import `Tooltip` from react-leaflet
+- Replace emoji-based `createAngloSpotIcon` with SVG Lucide icons
+- Add `<Tooltip>` component with `direction="top"` showing the spot name on hover
+- Use consistent white background + blue icon styling
 
 ```tsx
-// Current structure (too complex):
-<div class="project-marker-pill">
-  <svg>...</svg>
-  <span class="project-marker-name">${project.name}</span>
-  ${displayPrice ? `<span class="project-marker-divider">•</span><span class="project-marker-price">${displayPrice}</span>` : ''}
-</div>
-<div class="project-marker-pointer"></div>
-
-// New structure (simpler, smaller):
-<div class="project-marker-pill">
-  <svg>...</svg>
-  <span class="project-marker-name">${project.name}</span>
-  ${displayPrice ? `<span class="project-marker-divider">•</span><span class="project-marker-price">${displayPrice}</span>` : ''}
-</div>
-// Remove pointer for cleaner look
+// New marker structure with Tooltip
+<Marker position={[spot.lat, spot.lng]} icon={createAngloSpotIcon(spot.category)}>
+  <Tooltip 
+    direction="top" 
+    offset={[0, -16]}
+    className="anglo-spot-tooltip"
+  >
+    <span className="font-medium text-xs">{spot.name}</span>
+  </Tooltip>
+  <Popup>...</Popup>
+</Marker>
 ```
+
+**Icon SVG paths by category:**
+| Category | Icon |
+|----------|------|
+| synagogue | Star of David path (custom) |
+| supermarket | ShoppingCart |
+| community_center | Users |
+| park | Trees |
+| cafe | Coffee |
+| restaurant | UtensilsCrossed |
+| school | GraduationCap |
+| medical | Stethoscope |
+| fitness | Dumbbell |
 
 #### File: `src/index.css`
 
-Make the marker smaller and cleaner:
+**Update `.anglo-poi-marker` styles:**
+- White background instead of category-colored
+- Blue border (matching train station style)
+- Rounded rectangle (6px radius) instead of circle
+- Blue icon color
+
+**Add `.anglo-spot-tooltip` styles:**
+- Match existing tooltip patterns (white bg, subtle shadow)
+- Clean, readable text
 
 ```css
-.project-marker-pill {
-  display: inline-flex;
+.anglo-poi-marker {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 10px;       /* Reduced from 6px 10px */
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   background: white;
   border-radius: 6px;
-  font-size: 11px;
-  white-space: nowrap;
+  border: 1.5px solid hsl(213 94% 45%);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  border: 1px solid hsl(220 10% 85%);
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: transform 200ms ease;
 }
 
-.project-marker-icon {
-  flex-shrink: 0;
-  color: hsl(213 94% 45%);  /* Blue icon */
+.anglo-poi-marker svg {
+  color: hsl(213 94% 45%);
 }
 
-.project-marker-name {
-  font-weight: 600;         /* Bold name */
-  color: hsl(220 10% 25%);
+.anglo-spot-tooltip {
+  background: white !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+  white-space: nowrap !important;
+  color: hsl(220 10% 25%) !important;
 }
 
-.project-marker-divider {
-  opacity: 0.4;
-  font-size: 8px;
-}
-
-.project-marker-price {
-  font-weight: 500;
-  color: hsl(220 10% 45%);
-  font-size: 10px;
+.anglo-spot-tooltip::before {
+  display: none !important;
 }
 ```
 
+---
+
 ### Visual Result
 
-**Before:** Larger marker with pointer arrow  
-**After:** Compact pill matching the screenshot: `🏠 **Haifa Residence** • From ₪1.8M`
+**Before:**
+- Colorful circular markers with emojis (🕍 🛒 🌳)
+- Click required to see what it is
 
-The marker will be:
-- Smaller overall footprint
-- No bottom pointer (cleaner look)
-- Blue house icon on left
-- Bold project name
-- Subtle separator dot
-- "From ₪X.XM" in lighter gray
+**After:**
+- Clean white rectangles with blue icons (matching train stations)
+- Hover shows the name (e.g., "Nitzanim Synagogue", "Osher Ad Raanana")
+- Click still opens full popup with details
