@@ -71,7 +71,7 @@ export function ProjectMarker({
           "
         >
           <div class="project-marker-pill">
-            <svg class="project-marker-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <svg class="project-marker-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M19 10V19H17V14H7V19H5V10L12 3L19 10ZM21 21H3V9L12 0L21 9V21ZM9 19H11V16H13V19H15V12H9V19Z"/>
             </svg>
             <span class="project-marker-name">${project.name}</span>
