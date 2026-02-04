@@ -1,6 +1,17 @@
 import { useMemo } from 'react';
-import { Marker, Popup } from 'react-leaflet';
+import { Marker, Popup, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
+import { renderToString } from 'react-dom/server';
+import { 
+  ShoppingCart, 
+  Users, 
+  Trees, 
+  Coffee, 
+  UtensilsCrossed, 
+  GraduationCap, 
+  Stethoscope, 
+  Dumbbell 
+} from 'lucide-react';
 import angloSpotsData from '@/data/anglo-spots.json';
 
 type AngloCategory = 
@@ -34,41 +45,60 @@ const ALL_ANGLO_SPOTS: (AngloSpot & { city: string })[] = (angloSpotsData as Cit
   cityData => cityData.spots.map(spot => ({ ...spot, city: cityData.city }))
 );
 
-// Icon creation based on category
-function createAngloSpotIcon(category: AngloCategory): L.DivIcon {
-  const iconMap: Record<AngloCategory, string> = {
-    synagogue: '🕍',
-    supermarket: '🛒',
-    community_center: '🏛️',
-    park: '🌳',
-    cafe: '☕',
-    restaurant: '🍽️',
-    school: '🏫',
-    medical: '🏥',
-    fitness: '💪',
-  };
+// Star of David SVG path for synagogue icon
+const StarOfDavidIcon = () => (
+  <svg 
+    width="14" 
+    height="14" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <polygon points="12 2 22 20 2 20" />
+    <polygon points="12 22 2 4 22 4" />
+  </svg>
+);
+
+// Get the appropriate icon component for each category
+function getCategoryIcon(category: AngloCategory): React.ReactNode {
+  const iconProps = { size: 14, strokeWidth: 2 };
   
-  const colorMap: Record<AngloCategory, string> = {
-    synagogue: 'hsl(270, 60%, 50%)',
-    supermarket: 'hsl(145, 60%, 40%)',
-    community_center: 'hsl(175, 70%, 40%)',
-    park: 'hsl(120, 50%, 45%)',
-    cafe: 'hsl(30, 70%, 50%)',
-    restaurant: 'hsl(0, 65%, 50%)',
-    school: 'hsl(35, 90%, 50%)',
-    medical: 'hsl(200, 70%, 50%)',
-    fitness: 'hsl(320, 60%, 50%)',
-  };
+  switch (category) {
+    case 'synagogue':
+      return <StarOfDavidIcon />;
+    case 'supermarket':
+      return <ShoppingCart {...iconProps} />;
+    case 'community_center':
+      return <Users {...iconProps} />;
+    case 'park':
+      return <Trees {...iconProps} />;
+    case 'cafe':
+      return <Coffee {...iconProps} />;
+    case 'restaurant':
+      return <UtensilsCrossed {...iconProps} />;
+    case 'school':
+      return <GraduationCap {...iconProps} />;
+    case 'medical':
+      return <Stethoscope {...iconProps} />;
+    case 'fitness':
+      return <Dumbbell {...iconProps} />;
+    default:
+      return <Users {...iconProps} />;
+  }
+}
+
+// Icon creation based on category using Lucide icons
+function createAngloSpotIcon(category: AngloCategory): L.DivIcon {
+  const iconHtml = renderToString(getCategoryIcon(category));
   
   return L.divIcon({
-    html: `
-      <div class="anglo-poi-marker" style="background: ${colorMap[category]};">
-        <span style="font-size: 14px;">${iconMap[category]}</span>
-      </div>
-    `,
+    html: `<div class="anglo-poi-marker">${iconHtml}</div>`,
     className: '',
-    iconSize: L.point(32, 32),
-    iconAnchor: L.point(16, 16),
+    iconSize: L.point(28, 28),
+    iconAnchor: L.point(14, 14),
   });
 }
 
@@ -116,6 +146,13 @@ export function AngloCommunityLayer({ visible, currentCity }: AngloCommunityLaye
           position={[spot.lat, spot.lng]}
           icon={createAngloSpotIcon(spot.category)}
         >
+          <Tooltip 
+            direction="top" 
+            offset={[0, -16]}
+            className="anglo-spot-tooltip"
+          >
+            <span className="font-medium text-xs">{spot.name}</span>
+          </Tooltip>
           <Popup>
             <div className="p-2 min-w-[200px]">
               <h4 className="font-semibold text-sm mb-0.5">{spot.name}</h4>
