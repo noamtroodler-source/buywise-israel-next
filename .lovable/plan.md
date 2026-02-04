@@ -1,128 +1,120 @@
 
-## Add 3-6 Varied Images Per Mock Listing
+## Unify Map Filter Bar with Listings Filter Bar
 
-### Current Issue
-The `seed-additional-properties` function sets `images: null` for all generated properties. This means the 2,500 mock listings we just created don't have any photos.
+### Goal
+Make the map page (`/map`) filter bar visually identical to the grid listings page (`/listings`), replacing the Active/Sold toggle with a Buy/Rent toggle.
+
+### Current Differences
+
+| Feature | Grid Page (`PropertyFilters.tsx`) | Map Page (`MapFiltersBar.tsx`) |
+|---------|-----------------------------------|--------------------------------|
+| Primary Toggle | Active/Sold (for sale only) | Buy/Rent |
+| City Filter | Full dropdown with search | None |
+| Price Filter | Full dropdown with range | None (only in dialog) |
+| Beds/Baths | Full dropdown | None (only in dialog) |
+| Type Filter | Full dropdown | None (only in dialog) |
+| More Filters | Full sheet | Dialog-based |
+| Sort | Dropdown | None |
+| Alert Button | Icon button | None |
+| View Toggle | Grid/Map toggle | Grid/Map toggle |
 
 ### Solution
 
-**1. Add Curated Image Pools** (from existing seed-demo-data)
-Copy over the proven Unsplash image collections:
-- `PROPERTY_INTERIORS` - 30 interior shots (living rooms, kitchens, bedrooms)
-- `PROPERTY_EXTERIORS` - 20 exterior shots (house fronts, balcony views)
-- `MODERN_BUILDINGS` - 20 building facade shots
+Replace `MapFiltersBar` with the existing `PropertyFilters` component, which already has all the filter dropdowns and styling. We'll:
 
-**2. Create Image Generation Function**
-```typescript
-function generatePropertyImages(): string[] {
-  const count = randomInt(3, 6);
-  const images: string[] = [];
-  
-  // Mix of 1 exterior + 2-5 interiors for variety
-  images.push(randomChoice(PROPERTY_EXTERIORS));
-  
-  // Add unique interiors (no duplicates within same listing)
-  const shuffledInteriors = [...PROPERTY_INTERIORS].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < count - 1 && i < shuffledInteriors.length; i++) {
-    images.push(shuffledInteriors[i]);
-  }
-  
-  return images;
-}
-```
-
-**3. Update Property Generation**
-Change line 159 from:
-```typescript
-images: null,
-```
-To:
-```typescript
-images: generatePropertyImages(),
-```
-
-**4. Fix Existing Properties (Optional Update Query)**
-Also create a separate function endpoint to backfill images for the ~2,500 properties that were already created without images.
+1. **Reuse `PropertyFilters`** - The grid's filter component is feature-complete
+2. **Modify the toggle** - Change Active/Sold to Buy/Rent for the map page context
+3. **Add Buy/Rent toggle option** - New prop to show Buy/Rent instead of Active/Sold
 
 ---
 
 ## Technical Changes
 
-### File: `supabase/functions/seed-additional-properties/index.ts`
+### 1. Update `PropertyFilters.tsx` - Add Buy/Rent Toggle Mode
 
-Add after line 64 (after STREET_NAMES):
-
-```typescript
-// Curated Unsplash property images
-const PROPERTY_INTERIORS = [
-  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
-  // ... 28 more interior images
-];
-
-const PROPERTY_EXTERIORS = [
-  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80",
-  "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
-  // ... 18 more exterior images
-];
-```
-
-Add after `randomSubset` function (around line 78):
+Add a new prop to support Buy/Rent toggle (for map page) vs Active/Sold (for listings):
 
 ```typescript
-function generatePropertyImages(): string[] {
-  const count = randomInt(3, 6);
-  const images: string[] = [];
-  
-  // Start with an exterior shot
-  images.push(randomChoice(PROPERTY_EXTERIORS));
-  
-  // Add unique interior shots
-  const shuffled = [...PROPERTY_INTERIORS].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < count - 1; i++) {
-    images.push(shuffled[i]);
-  }
-  
-  return images;
+interface PropertyFiltersProps {
+  // ... existing props
+  showBuyRentToggle?: boolean;  // NEW: Show Buy/Rent instead of Active/Sold
+  onBuyRentChange?: (type: 'for_sale' | 'for_rent') => void;  // NEW
 }
 ```
 
-Update line 159:
-```typescript
+Modify the toggle section (around line 278-304):
+- When `showBuyRentToggle` is true, render Buy/Rent toggle
+- When `showSoldToggle` is true, render Active/Sold toggle
+- Both use the same visual styling
+
+### 2. Update `MapSearchLayout.tsx` - Use PropertyFilters
+
+Replace the custom `MapFiltersBar` component with `PropertyFilters`:
+
+```tsx
 // Before
-images: null,
+<MapFiltersBar
+  filters={filters}
+  onFiltersChange={handleFiltersChange}
+  listingType={listingStatus}
+  resultCount={totalCount}
+  isLoading={isFetching}
+  ...
+/>
 
-// After  
-images: generatePropertyImages(),
+// After
+<PropertyFilters
+  filters={filters}
+  onFiltersChange={handleFiltersChange}
+  listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
+  showBuyRentToggle={true}
+  onBuyRentChange={(type) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('status', type);
+    setSearchParams(params);
+  }}
+  previewCount={totalCount}
+  isCountLoading={isFetching}
+  onCreateAlert={() => setShowAlertDialog(true)}
+/>
 ```
 
-### Backfill Existing Properties
+### 3. Keep MapFiltersBar for Mobile Quick Access
 
-Add a second mode to the function that updates existing properties with null images:
+The map page has specific mobile needs (commute filter, quick filters). We'll:
+- Use `PropertyFilters` for the main filter bar
+- Keep mobile-specific features in a slimmed-down version or integrate into the existing mobile filter sheet
 
-```typescript
-// If called with action=backfill, update existing properties
-if (action === 'backfill') {
-  const { data: propsWithoutImages } = await supabase
-    .from('properties')
-    .select('id')
-    .is('images', null);
-    
-  for (const prop of propsWithoutImages) {
-    await supabase
-      .from('properties')
-      .update({ images: generatePropertyImages() })
-      .eq('id', prop.id);
-  }
-}
-```
+### 4. Handle View Toggle Context
+
+The ViewToggle is already included in PropertyFilters, so it will automatically show Grid/Map options with the correct active state.
 
 ---
 
-## Result
+## Files to Modify
 
-After this update:
-- All NEW properties seeded will have 3-6 varied images
-- Images will include 1 exterior + 2-5 unique interior shots
-- Calling the function with `?action=backfill` will fix the ~2,500 existing properties without images
-- Each listing's gallery will look realistic with different photos
+1. **`src/components/filters/PropertyFilters.tsx`**
+   - Add `showBuyRentToggle` prop
+   - Add `onBuyRentChange` callback
+   - Add Buy/Rent toggle rendering logic alongside Active/Sold
+
+2. **`src/components/map-search/MapSearchLayout.tsx`**
+   - Import and use `PropertyFilters` instead of `MapFiltersBar`
+   - Pass appropriate props for map context
+
+3. **`src/components/map-search/MapFiltersBar.tsx`**
+   - Keep only mobile-specific features or remove entirely
+
+---
+
+## Visual Result
+
+After implementation, the map page will have:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ [Buy|Rent] │ 🏙️ City ▼ │ $ Price ▼ │ 🛏️ Beds ▼ │ Type ▼ │ More │ ... │ Sort ▼ │ 🔔 │ [Grid|Map] │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+This matches the grid listings page exactly, with the toggle changed to Buy/Rent for the map context.
