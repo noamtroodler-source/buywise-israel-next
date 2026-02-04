@@ -1,8 +1,11 @@
 import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents, Marker } from 'react-leaflet';
 import L from 'leaflet';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
+import { ProjectMarker } from './ProjectMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
 import { MapToolbar } from './MapToolbar';
 import { SavedLocationsLayer } from './SavedLocationsLayer';
@@ -13,9 +16,11 @@ import { TrainStationLayer } from './TrainStationLayer';
 import { PriceHeatmapLayer } from './PriceHeatmapLayer';
 import { HeatmapLegend } from './HeatmapLegend';
 import { CommuteLines } from './CommuteLines';
+import { AngloCommunityLayer } from './AngloCommunityLayer';
 import { ClearDrawingButton } from './ClearDrawingButton';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
 import 'leaflet/dist/leaflet.css';
@@ -225,6 +230,7 @@ export function PropertyMap({
   onCitySelect,
   isProgrammaticMoveRef,
 }: PropertyMapProps) {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: savedLocations } = useSavedLocations();
   const mapRef = useRef<L.Map>(null);
@@ -232,9 +238,38 @@ export function PropertyMap({
   const [showSavedLocations, setShowSavedLocations] = useState(true);
   const [showTrainStations, setShowTrainStations] = useState(false);
   const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
+  const [showAngloCommunity, setShowAngloCommunity] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+  const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
+
+  // Fetch projects for Buy mode (only when zoomed in enough)
+  const { data: projects } = useQuery({
+    queryKey: ['map-projects', mapBounds, listingStatus],
+    queryFn: async () => {
+      if (!mapBounds) return [];
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, slug, city, latitude, longitude, price_from, status')
+        .eq('is_published', true)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .gte('latitude', mapBounds.south)
+        .lte('latitude', mapBounds.north)
+        .gte('longitude', mapBounds.west)
+        .lte('longitude', mapBounds.east);
+      
+      if (error) {
+        console.error('Error fetching projects:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: listingStatus === 'for_sale' && currentZoom >= 10 && !!mapBounds,
+    staleTime: 30000,
+  });
 
   // Handle draw completion
   const handleDrawComplete = useCallback((polygon: Polygon) => {
@@ -359,6 +394,17 @@ export function PropertyMap({
             />
           ))}
         
+        {/* Project Markers (Buy mode only, when zoomed in enough) */}
+        {!showCityOverlay && listingStatus === 'for_sale' && projects?.map(project => (
+          <ProjectMarker
+            key={`project-${project.id}`}
+            project={project}
+            isHovered={hoveredProjectId === project.id}
+            onHover={setHoveredProjectId}
+            onClick={(slug) => navigate(`/projects/${slug}`)}
+          />
+        ))}
+        
         {/* Saved Locations Layer */}
         {user && showSavedLocations && savedLocations && savedLocations.length > 0 && (
           <SavedLocationsLayer locations={savedLocations} />
@@ -377,6 +423,9 @@ export function PropertyMap({
 
         {/* Price Heatmap Layer */}
         <PriceHeatmapLayer visible={showPriceHeatmap} />
+
+        {/* Anglo Community Layer */}
+        <AngloCommunityLayer visible={showAngloCommunity} />
         
         {/* Selected Property Popup */}
         {selectedPropertyId && (
@@ -405,6 +454,8 @@ export function PropertyMap({
         onToggleTrainStations={() => setShowTrainStations(!showTrainStations)}
         showPriceHeatmap={showPriceHeatmap}
         onTogglePriceHeatmap={() => setShowPriceHeatmap(!showPriceHeatmap)}
+        showAngloCommunity={showAngloCommunity}
+        onToggleAngloCommunity={() => setShowAngloCommunity(!showAngloCommunity)}
       />
 
       {/* Heatmap Legend */}
