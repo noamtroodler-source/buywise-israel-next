@@ -216,10 +216,10 @@ export function MapToolbar({
         </div>
       </div>
 
-      {/* Group 2: Tools & Layers (Draw, Saved, Train, Heatmap) */}
+      {/* Group 2: Tools & Layers (Draw, Train, Anglo, Share) */}
       <div className="map-toolbar-group">
         <div className="grid grid-cols-2 gap-0.5">
-          {/* Draw Tool with badge */}
+          {/* Draw Tool with dropdown */}
           <DropdownMenu open={drawMenuOpen} onOpenChange={setDrawMenuOpen}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -262,65 +262,24 @@ export function MapToolbar({
             </DropdownMenuContent>
           </DropdownMenu>
           
-          {/* Saved Locations */}
-          {hasSavedLocations ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(btnBase, showSavedLocations && btnActive)}
-                  onClick={onToggleSavedLocations}
-                  aria-label={showSavedLocations ? 'Hide saved places (S)' : 'Show saved places (S)'}
-                  aria-pressed={showSavedLocations}
-                >
-                  <MapPin className={iconSize} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                {showSavedLocations ? 'Hide saved places (S)' : 'Show saved places (S)'}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(btnBase, showTrainStations && btnActive)}
-                  onClick={onToggleTrainStations}
-                  aria-label={showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
-                  aria-pressed={showTrainStations}
-                >
-                  <Train className={iconSize} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
-              </TooltipContent>
-            </Tooltip>
-          )}
-          
-          {/* Train Stations (only if saved locations exist, otherwise use slot above) */}
-          {hasSavedLocations && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(btnBase, showTrainStations && btnActive)}
-                  onClick={onToggleTrainStations}
-                  aria-label={showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
-                  aria-pressed={showTrainStations}
-                >
-                  <Train className={iconSize} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">
-                {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          {/* Train Stations */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(btnBase, showTrainStations && btnActive)}
+                onClick={onToggleTrainStations}
+                aria-label={showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+                aria-pressed={showTrainStations}
+              >
+                <Train className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {showTrainStations ? 'Hide train stations (T)' : 'Show train stations (T)'}
+            </TooltipContent>
+          </Tooltip>
           
           {/* Anglo Community Layer */}
           <Tooltip>
@@ -340,12 +299,8 @@ export function MapToolbar({
               {showAngloCommunity ? 'Hide Anglo spots' : 'Anglo community spots'}
             </TooltipContent>
           </Tooltip>
-        </div>
-      </div>
-
-      {/* Group 3: Utility (Share + Keyboard shortcuts) */}
-      <div className="map-toolbar-group">
-        <div className={cn("grid gap-0.5", !isMobile && onShowKeyboardShortcuts ? "grid-cols-2" : "grid-cols-1")}>
+          
+          {/* Share */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -360,25 +315,28 @@ export function MapToolbar({
             </TooltipTrigger>
             <TooltipContent side="left">Share this view</TooltipContent>
           </Tooltip>
-          
-          {!isMobile && onShowKeyboardShortcuts && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={btnBase}
-                  onClick={onShowKeyboardShortcuts}
-                  aria-label="Keyboard shortcuts (?)"
-                >
-                  <Keyboard className={iconSize} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">Keyboard shortcuts (?)</TooltipContent>
-            </Tooltip>
-          )}
         </div>
       </div>
+
+      {/* Keyboard shortcuts - desktop only, no box wrapper */}
+      {!isMobile && onShowKeyboardShortcuts && (
+        <div className="map-toolbar-group">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={btnBase}
+                onClick={onShowKeyboardShortcuts}
+                aria-label="Keyboard shortcuts (?)"
+              >
+                <Keyboard className={iconSize} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Keyboard shortcuts (?)</TooltipContent>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 }
