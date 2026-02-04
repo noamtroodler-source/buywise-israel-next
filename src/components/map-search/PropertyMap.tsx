@@ -151,42 +151,54 @@ function MapViewUpdater({
       center[0] !== prevCenterRef.current[0] || 
       center[1] !== prevCenterRef.current[1];
     const zoomChanged = zoom !== prevZoomRef.current;
-    
-    if (centerChanged || zoomChanged) {
-      // Mark as flying to prevent bounds updates during animation
-      isFlyingRef.current = true;
-      
-      // Fly to new location with smooth animation
-      map.flyTo(center, zoom, { duration: 1.5 });
-      
-      // Clear flying flag when animation ends and push final bounds
-      map.once('moveend', () => {
-        isFlyingRef.current = false;
-        // Clear programmatic move flag after animation completes
-        if (isProgrammaticMoveRef) {
-          isProgrammaticMoveRef.current = false;
-        }
-        
-        // Force a final bounds sync so property query updates to new city
-        const finalBounds = map.getBounds();
-        const finalCenter = map.getCenter();
-        const finalZoom = map.getZoom();
-        onBoundsChange(
-          {
-            north: finalBounds.getNorth(),
-            south: finalBounds.getSouth(),
-            east: finalBounds.getEast(),
-            west: finalBounds.getWest(),
-          },
-          [finalCenter.lat, finalCenter.lng],
-          finalZoom
-        );
-      });
-      
-      // Update refs
+
+    if (!centerChanged && !zoomChanged) return;
+
+    // IMPORTANT:
+    // The parent updates `center/zoom` state on *manual* map navigation (moveend/zoomend)
+    // so we can keep URL + UI in sync.
+    // If we call `flyTo()` in response to those changes, the map starts “fighting itself”
+    // (manual pan -> state update -> flyTo -> moveend -> refetch -> flicker).
+    // Therefore, only run flyTo when the parent explicitly marks this as programmatic.
+    if (isProgrammaticMoveRef && !isProgrammaticMoveRef.current) {
       prevCenterRef.current = center;
       prevZoomRef.current = zoom;
+      return;
     }
+    
+    // Mark as flying to prevent bounds updates during animation
+    isFlyingRef.current = true;
+    
+    // Fly to new location with smooth animation
+    map.flyTo(center, zoom, { duration: 1.5 });
+    
+    // Clear flying flag when animation ends and push final bounds
+    map.once('moveend', () => {
+      isFlyingRef.current = false;
+      // Clear programmatic move flag after animation completes
+      if (isProgrammaticMoveRef) {
+        isProgrammaticMoveRef.current = false;
+      }
+      
+      // Force a final bounds sync so property query updates to new city
+      const finalBounds = map.getBounds();
+      const finalCenter = map.getCenter();
+      const finalZoom = map.getZoom();
+      onBoundsChange(
+        {
+          north: finalBounds.getNorth(),
+          south: finalBounds.getSouth(),
+          east: finalBounds.getEast(),
+          west: finalBounds.getWest(),
+        },
+        [finalCenter.lat, finalCenter.lng],
+        finalZoom
+      );
+    });
+    
+    // Update refs
+    prevCenterRef.current = center;
+    prevZoomRef.current = zoom;
   }, [map, center, zoom, isFlyingRef, isProgrammaticMoveRef, onBoundsChange]);
   
   return null;
