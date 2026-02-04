@@ -63,6 +63,64 @@ const STREET_NAMES = [
   'Begin', 'Shaul HaMelech', 'Derech HaShalom', 'Einstein', 'Trumpeldor',
 ];
 
+// Curated Unsplash property images - interiors
+const PROPERTY_INTERIORS = [
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
+  "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
+  "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
+  "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
+  "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
+  "https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80",
+  "https://images.unsplash.com/photo-1560185127-6a8c6c9e26b4?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+  "https://images.unsplash.com/photo-1583845112203-29329902332e?w=800&q=80",
+  "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
+  "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80",
+  "https://images.unsplash.com/photo-1615873968403-89e068629265?w=800&q=80",
+  "https://images.unsplash.com/photo-1585128792020-803d29415281?w=800&q=80",
+  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80",
+  "https://images.unsplash.com/photo-1600573472556-e636c2acda88?w=800&q=80",
+  "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585153490-76fb20a32601?w=800&q=80",
+  "https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&q=80",
+  "https://images.unsplash.com/photo-1600607687644-c7f34b5063cd?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80",
+  "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=800&q=80",
+  "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&q=80",
+  "https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=800&q=80",
+  "https://images.unsplash.com/photo-1560440021-33f9b867899d?w=800&q=80",
+  "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80",
+  "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=800&q=80",
+  "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800&q=80",
+  "https://images.unsplash.com/photo-1556909190-eccf4a8bf97a?w=800&q=80",
+  "https://images.unsplash.com/photo-1560184897-ae75f418493e?w=800&q=80",
+];
+
+// Curated Unsplash property images - exteriors
+const PROPERTY_EXTERIORS = [
+  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80",
+  "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+  "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800&q=80",
+  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+  "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800&q=80",
+  "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800&q=80",
+  "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80",
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
+  "https://images.unsplash.com/photo-1600573472591-ee6c563aaec8?w=800&q=80",
+  "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
+  "https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800&q=80",
+  "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80",
+  "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80",
+  "https://images.unsplash.com/photo-1576941089067-2de3c901e126?w=800&q=80",
+  "https://images.unsplash.com/photo-1598228723793-52759bba239c?w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154363-67eb9e2e2099?w=800&q=80",
+];
+
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -75,6 +133,22 @@ function randomSubset<T>(arr: T[], min: number, max: number): T[] {
   const count = randomInt(min, max);
   const shuffled = [...arr].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
+}
+
+function generatePropertyImages(): string[] {
+  const count = randomInt(3, 6);
+  const images: string[] = [];
+  
+  // Start with an exterior shot
+  images.push(randomChoice(PROPERTY_EXTERIORS));
+  
+  // Add unique interior shots
+  const shuffled = [...PROPERTY_INTERIORS].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count - 1; i++) {
+    images.push(shuffled[i]);
+  }
+  
+  return images;
 }
 
 function getWeightedPropertyType() {
@@ -156,7 +230,7 @@ function generateProperty(
     total_floors: totalFloors,
     year_built: randomInt(1970, 2024),
     features: features,
-    images: null,
+    images: generatePropertyImages(),
     views_count: randomInt(0, 500),
     is_featured: Math.random() < 0.05,
     is_published: true,
@@ -194,6 +268,52 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check for backfill mode
+    const url = new URL(req.url);
+    const action = url.searchParams.get('action');
+
+    if (action === 'backfill') {
+      // Backfill images for existing properties with null images
+      const { data: propsWithoutImages, error: fetchError } = await supabase
+        .from('properties')
+        .select('id')
+        .is('images', null);
+
+      if (fetchError) throw fetchError;
+
+      if (!propsWithoutImages || propsWithoutImages.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No properties need image backfill', updated: 0 }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      let updated = 0;
+      const batchSize = 50;
+      
+      for (let i = 0; i < propsWithoutImages.length; i += batchSize) {
+        const batch = propsWithoutImages.slice(i, i + batchSize);
+        for (const prop of batch) {
+          const { error: updateError } = await supabase
+            .from('properties')
+            .update({ images: generatePropertyImages() })
+            .eq('id', prop.id);
+          
+          if (!updateError) updated++;
+        }
+        console.log(`Backfilled ${Math.min(i + batchSize, propsWithoutImages.length)} / ${propsWithoutImages.length} properties`);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Backfilled images for ${updated} properties`,
+          updated 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Fetch all active agents
     const { data: agents, error: agentsError } = await supabase
