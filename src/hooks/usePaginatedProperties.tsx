@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 
@@ -49,6 +49,7 @@ export function usePaginatedProperties(
       if (error) throw error;
       return count ?? 0;
     },
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
@@ -71,6 +72,10 @@ export function usePaginatedProperties(
       if (error) throw error;
       return data as Property[];
     },
+    // Critical for map UX:
+    // when bounds (or other filters) change, keep rendering the previous page's results
+    // until the new query resolves, instead of flashing empty/skeleton state.
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
@@ -101,6 +106,9 @@ export function usePaginatedProperties(
   useEffect(() => {
     if (filterKey !== prevFilterKeyRef.current) {
       prevFilterKeyRef.current = filterKey;
+      // Reset pagination, but do NOT clear existing results immediately.
+      // The query uses `placeholderData: keepPreviousData`, so the UI stays stable
+      // while the new filter/bounds query is fetching.
       setPage(1);
       setAllProperties([]);
     }
