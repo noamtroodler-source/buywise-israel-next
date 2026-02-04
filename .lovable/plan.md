@@ -1,79 +1,90 @@
 
-
-## Fix Map Controls Appearing Above Navigation Dropdowns
+## Add Share Button on Hover for Map View Properties
 
 ### The Problem
+In the grid view (`/buy`, `/rent` pages), hovering over a property card shows a share button. However, in the map view (`/map`), property cards don't show the share button on hover:
 
-The map toolbar and related controls are using `z-[1000]` (z-index: 1000), while navigation dropdowns use the Radix UI standard of `z-50` (z-index: 50). This means the map controls are rendering on top of navigation menus instead of behind them.
+1. **MapPropertyList (desktop right panel)**: `PropertyCard` is called with `showShareButton={false}`
+2. **MapPropertyCard (mobile sheet)**: This custom compact card component has no share button at all
 
 ### The Solution
-
-Lower the map-specific z-index values to be below the header/navigation layer but still above the map itself. The correct hierarchy should be:
-
-| Layer | z-index | Components |
-|-------|---------|------------|
-| Modals/Dialogs | 50 | Alert dialogs, Dialogs, Sheets |
-| Navigation dropdowns | 50 | Header dropdowns (Buy, Rent, Learn, etc.) |
-| **Map controls** | **40** | MapToolbar, ClearDrawingButton |
-| Leaflet native controls | 40 | Zoom controls (already correct in CSS) |
-| Map content | auto | Markers, popups |
+Enable the share button in both places to match the grid view behavior.
 
 ---
 
-### Files to Change
+### Files to Modify
 
-#### 1. `src/components/map-search/MapToolbar.tsx`
+#### 1. `src/components/map-search/MapPropertyList.tsx`
 
-Change the container's z-index from `z-[1000]` to `z-[40]`:
+This is a simple one-line change - the `PropertyCard` component already supports `showShareButton`, we just need to enable it:
 
+**Change line 117:**
 ```tsx
-// Line 144: Change z-[1000] to z-[40]
-<div 
-  className="absolute top-4 right-4 z-[40] flex flex-col gap-1.5"
-  role="toolbar"
-  ...
->
+// FROM:
+showShareButton={false}
+
+// TO:
+showShareButton={true}
 ```
 
-#### 2. `src/components/map-search/ClearDrawingButton.tsx`
+This enables the hover-to-reveal share button that already exists in `PropertyCard`.
 
-Change the container's z-index from `z-[1000]` to `z-[40]`:
+---
 
+#### 2. `src/components/map-search/MapPropertyCard.tsx`
+
+This custom compact card is used in the mobile swipeable sheet. It currently only has a `FavoriteButton`. We need to add a `ShareButton` next to it.
+
+**Add import:**
 ```tsx
-// Line 19: Change z-[1000] to z-[40]
-className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
+import { ShareButton } from '@/components/property/ShareButton';
 ```
 
-#### 3. `src/index.css` (property marker hover state)
+**Modify the action buttons section (around line 164):**
+```tsx
+// FROM:
+{/* Favorite Button */}
+<div className="flex-shrink-0 self-start">
+  <FavoriteButton 
+    propertyId={property.id} 
+    propertyPrice={property.price}
+    size="sm"
+  />
+</div>
 
-The CSS has a property marker style with `z-index: 1000 !important` for hovered/selected markers. This should also be lowered:
-
-```css
-/* Line 283: Change from z-index: 1000 to a lower value */
-.property-marker.hovered,
-.property-marker.selected {
-  transform: scale(1.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  border-color: white;
-  z-index: 100 !important; /* Was 1000, lowered to stay above other markers but below dropdowns */
-}
+// TO:
+{/* Action Buttons */}
+<div className="flex-shrink-0 self-start flex flex-col gap-1">
+  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+    <ShareButton 
+      propertyId={property.id} 
+      propertyTitle={property.title}
+      className="h-7 w-7"
+    />
+  </div>
+  <FavoriteButton 
+    propertyId={property.id} 
+    propertyPrice={property.price}
+    size="sm"
+  />
+</div>
 ```
 
 ---
 
-### Why z-40?
+### Summary of Changes
 
-- Radix UI dropdowns use `z-50` by default
-- The existing CSS already forces Leaflet controls to `z-index: 40`
-- Using `z-40` keeps map controls consistent and ensures all navigation/header elements (z-50) appear above them
+| File | Change |
+|------|--------|
+| `MapPropertyList.tsx` | Set `showShareButton={true}` on PropertyCard |
+| `MapPropertyCard.tsx` | Add `ShareButton` import and render it with hover visibility |
 
 ---
 
 ### Result
 
-After this fix:
-- Header navigation dropdowns (Buy, Rent, Learn, Company) will appear above map controls
-- Map toolbar buttons (zoom, locate, draw, share) stay above the map tiles
-- Modals and dialogs continue to work correctly (z-50)
-- Property markers on hover/select still pop above other markers but don't interfere with UI
-
+After this change:
+- **Desktop map view (right panel)**: Hovering over a property in the list will show the share button in the top-right of the card image
+- **Mobile map view (sheet)**: Hovering/tapping will reveal the share button next to the favorite button
+- Tapping the share button opens the dropdown with "Copy Link" and "WhatsApp" options
+- Share tracking analytics will work automatically (already built into `ShareButton`)
