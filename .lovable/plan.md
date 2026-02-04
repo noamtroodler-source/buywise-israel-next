@@ -1,161 +1,79 @@
 
-## Why the Auto-Detection is Glitchy (Root Cause Analysis)
 
-The current implementation has a critical flaw that causes the "glitchy" behavior when panning between cities:
+## Fix Map Controls Appearing Above Navigation Dropdowns
 
-### The Problem: Cascading State Updates
+### The Problem
 
-Every time you pan or zoom the map, this happens:
+The map toolbar and related controls are using `z-[1000]` (z-index: 1000), while navigation dropdowns use the Radix UI standard of `z-50` (z-index: 50). This means the map controls are rendering on top of navigation menus instead of behind them.
 
-1. `handleBoundsChange` is called with new bounds/center/zoom
-2. The function checks if zoom >= 12 and tries to detect a city
-3. If a city is detected, it calls `setFilters()` and `updateUrlParams()`
-4. These state changes trigger React re-renders
-5. The URL update causes `useSearchParams` to change
-6. This can cause additional re-renders and callback recreations
-7. Meanwhile, you're still panning, so `handleBoundsChange` is called again
-8. The cycle repeats rapidly, causing visual "flickering" and laggy behavior
+### The Solution
 
-### Additional Issues
+Lower the map-specific z-index values to be below the header/navigation layer but still above the map itself. The correct hierarchy should be:
 
-1. **5km radius is too restrictive** - The current 5km threshold means as you pan between cities, the filter rapidly switches between detected/undefined, causing the listings to flash between "City X listings" and "All listings in viewport"
-
-2. **Callback dependency array includes `filters`** - The `handleBoundsChange` callback depends on `filters`, which means every time filters change (including when auto-detection changes the city), the callback is recreated, potentially causing stale closure issues
-
-3. **No debouncing on city detection** - While map bounds are debounced (300ms), the city detection runs immediately on every update
-
-4. **URL updates on every detection** - Changing the URL on every city detection causes extra re-renders and can interfere with the user's current navigation
+| Layer | z-index | Components |
+|-------|---------|------------|
+| Modals/Dialogs | 50 | Alert dialogs, Dialogs, Sheets |
+| Navigation dropdowns | 50 | Header dropdowns (Buy, Rent, Learn, etc.) |
+| **Map controls** | **40** | MapToolbar, ClearDrawingButton |
+| Leaflet native controls | 40 | Zoom controls (already correct in CSS) |
+| Map content | auto | Markers, popups |
 
 ---
 
-## Recommended Solution: Simplify the Approach
+### Files to Change
 
-Based on the complexity and issues, here's a cleaner approach:
+#### 1. `src/components/map-search/MapToolbar.tsx`
 
-### Option A: Remove Auto-Detection (Simpler, More Reliable)
+Change the container's z-index from `z-[1000]` to `z-[40]`:
 
-Remove the automatic city detection and keep the city filter as an explicit user action. The map already shows the correct properties based on viewport bounds - the city filter is really just a convenience for the dropdown display.
-
-**Benefits:**
-- No glitchy behavior during panning
-- Cleaner, more predictable UX
-- Map bounds still drive property queries correctly
-
-**Trade-off:**
-- City dropdown won't auto-update when panning into a new area
-
-### Option B: Lightweight Auto-Detection (Debounced, Non-Blocking)
-
-Keep auto-detection but make it much less intrusive:
-
-1. **Increase debounce significantly** - Only detect city after 800ms of no movement (user "settled" in an area)
-2. **Don't update URL for auto-detection** - Only update the filter state, not the URL (reduces re-renders)
-3. **Add hysteresis** - Only change city if the detected city is different for 2+ consecutive checks (prevents rapid flickering between cities at boundaries)
-4. **Remove filters dependency** - Store detected city in a separate ref to avoid callback recreation
-
----
-
-## Implementation Plan (Option B - Improved Auto-Detection)
-
-### File: `src/components/map-search/MapSearchLayout.tsx`
-
-#### 1. Add Dedicated Debounce for City Detection
-
-Create a separate debounced city detection that runs after the user stops moving:
-
-```typescript
-const cityDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-const lastDetectedCityRef = useRef<string | null>(null);
+```tsx
+// Line 144: Change z-[1000] to z-[40]
+<div 
+  className="absolute top-4 right-4 z-[40] flex flex-col gap-1.5"
+  role="toolbar"
+  ...
+>
 ```
 
-#### 2. Simplify `handleBoundsChange`
+#### 2. `src/components/map-search/ClearDrawingButton.tsx`
 
-Remove city detection logic from `handleBoundsChange` and schedule it separately:
+Change the container's z-index from `z-[1000]` to `z-[40]`:
 
-```typescript
-const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
-  setMapBounds(bounds);
-  
-  if (isProgrammaticMoveRef.current) return;
-  
-  setMapCenter(center);
-  setMapZoom(zoom);
-  
-  // Schedule city detection (debounced separately)
-  if (cityDetectionTimeoutRef.current) {
-    clearTimeout(cityDetectionTimeoutRef.current);
-  }
-  
-  cityDetectionTimeoutRef.current = setTimeout(() => {
-    detectAndUpdateCity(center, zoom);
-  }, 800); // Wait 800ms after user stops moving
-}, []); // No filter dependencies - much more stable
+```tsx
+// Line 19: Change z-[1000] to z-[40]
+className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
 ```
 
-#### 3. Create Separate City Detection Function
+#### 3. `src/index.css` (property marker hover state)
 
-```typescript
-const detectAndUpdateCity = useCallback((center: [number, number], zoom: number) => {
-  if (!allCities) return;
-  
-  if (zoom >= 12) {
-    const detectedCity = findCityByCoordinates(center[0], center[1]);
-    
-    // Only update if different from LAST detected (not current filter)
-    // This prevents flickering when filter was set by other means
-    if (detectedCity !== lastDetectedCityRef.current) {
-      lastDetectedCityRef.current = detectedCity;
-      
-      if (detectedCity) {
-        setFilters(prev => ({ ...prev, city: detectedCity }));
-        // Note: NOT updating URL here to reduce re-renders
-      }
-    }
-  } else if (zoom < 12) {
-    // Zoomed out - clear city filter
-    if (lastDetectedCityRef.current !== null) {
-      lastDetectedCityRef.current = null;
-      setFilters(prev => ({ ...prev, city: undefined }));
-    }
-  }
-}, [allCities, findCityByCoordinates]);
-```
+The CSS has a property marker style with `z-index: 1000 !important` for hovered/selected markers. This should also be lowered:
 
-#### 4. Increase Detection Radius
-
-Change from 5km to 10km for more stable detection near city boundaries:
-
-```typescript
-const MAX_DISTANCE_KM = 10; // Was 5, now more tolerant
+```css
+/* Line 283: Change from z-index: 1000 to a lower value */
+.property-marker.hovered,
+.property-marker.selected {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-color: white;
+  z-index: 100 !important; /* Was 1000, lowered to stay above other markers but below dropdowns */
+}
 ```
 
 ---
 
-## Summary of Changes
+### Why z-40?
 
-| Change | Reason |
-|--------|--------|
-| Add 800ms debounce for city detection | Prevents rapid updates while actively panning |
-| Remove `filters` from `handleBoundsChange` dependencies | Prevents callback recreation on every filter change |
-| Don't update URL on auto-detection | Reduces re-renders and navigation interference |
-| Track "last detected city" in a ref | Prevents redundant state updates |
-| Increase detection radius to 10km | More stable detection at city boundaries |
-| Clean up timeout on unmount | Prevent memory leaks |
+- Radix UI dropdowns use `z-50` by default
+- The existing CSS already forces Leaflet controls to `z-index: 40`
+- Using `z-40` keeps map controls consistent and ensures all navigation/header elements (z-50) appear above them
 
 ---
 
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/map-search/MapSearchLayout.tsx` | Refactor city detection to be debounced and non-blocking |
-
----
-
-## Expected Result
+### Result
 
 After this fix:
-- Panning/zooming will feel smooth with no "glitchy" flickering
-- City filter will update ~800ms after you stop moving in a new city area
-- The right-side listings update based on viewport (unchanged, already works)
-- Explicit city dropdown selection still works with smooth animations (unchanged)
+- Header navigation dropdowns (Buy, Rent, Learn, Company) will appear above map controls
+- Map toolbar buttons (zoom, locate, draw, share) stay above the map tiles
+- Modals and dialogs continue to work correctly (z-50)
+- Property markers on hover/select still pop above other markers but don't interfere with UI
+
