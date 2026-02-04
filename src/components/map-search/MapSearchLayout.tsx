@@ -310,10 +310,13 @@ export default function MapSearchLayout() {
   }, [listingStatus, updateUrlParams, filters.city, allCities]);
 
   const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
-    // Skip state updates during programmatic moves (city selection animations)
+    // Always update mapBounds so property queries get correct viewport
+    setMapBounds(bounds);
+    
+    // Skip center/zoom updates during programmatic moves (city selection animations)
+    // This prevents user panning from overwriting the fly-to destination
     if (isProgrammaticMoveRef.current) return;
     
-    setMapBounds(bounds);
     setMapCenter(center);
     setMapZoom(zoom);
   }, []);
