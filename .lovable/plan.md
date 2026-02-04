@@ -1,81 +1,128 @@
 
-## Add 2,500 Mock Properties - 50 Resale + 50 Rental Per City
+## Add 3-6 Varied Images Per Mock Listing
 
-### Current Situation
-- 25 cities in your database
-- Currently ~16 properties per city (608 total)
-- 100 active agents linked to 10 agencies
-- Need to add 50 resale + 50 rental per city = 2,500 new properties
+### Current Issue
+The `seed-additional-properties` function sets `images: null` for all generated properties. This means the 2,500 mock listings we just created don't have any photos.
 
-### Implementation: New Edge Function
+### Solution
 
-I'll create a new edge function `seed-additional-properties` that:
+**1. Add Curated Image Pools** (from existing seed-demo-data)
+Copy over the proven Unsplash image collections:
+- `PROPERTY_INTERIORS` - 30 interior shots (living rooms, kitchens, bedrooms)
+- `PROPERTY_EXTERIORS` - 20 exterior shots (house fronts, balcony views)
+- `MODERN_BUILDINGS` - 20 building facade shots
 
-1. **Fetches existing agents** from the database (to assign properties realistically)
-2. **Uses official cities** from the `cities` table (no hardcoding)
-3. **Generates 100 properties per city** (50 for_sale + 50 for_rent)
-4. **Scatters listing dates** across 0-90 days ago (not all "just listed")
-5. **Varies property attributes realistically:**
-   - Property types: apartments, penthouses, garden apartments, duplexes, houses, cottages
-   - Bedrooms: 2-6 rooms based on property type
-   - Sizes: 50-300 sqm based on type
-   - Prices: City-specific multipliers with ±30% variance
-   - Floors: Ground to 30th based on type
-   - Conditions: new, renovated, good
-   - Features: Random selection from balcony, storage, parking, elevator, sea_view, etc.
+**2. Create Image Generation Function**
+```typescript
+function generatePropertyImages(): string[] {
+  const count = randomInt(3, 6);
+  const images: string[] = [];
+  
+  // Mix of 1 exterior + 2-5 interiors for variety
+  images.push(randomChoice(PROPERTY_EXTERIORS));
+  
+  // Add unique interiors (no duplicates within same listing)
+  const shuffledInteriors = [...PROPERTY_INTERIORS].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count - 1 && i < shuffledInteriors.length; i++) {
+    images.push(shuffledInteriors[i]);
+  }
+  
+  return images;
+}
+```
 
-### Technical Details
+**3. Update Property Generation**
+Change line 159 from:
+```typescript
+images: null,
+```
+To:
+```typescript
+images: generatePropertyImages(),
+```
 
-**New File: `supabase/functions/seed-additional-properties/index.ts`**
+**4. Fix Existing Properties (Optional Update Query)**
+Also create a separate function endpoint to backfill images for the ~2,500 properties that were already created without images.
+
+---
+
+## Technical Changes
+
+### File: `supabase/functions/seed-additional-properties/index.ts`
+
+Add after line 64 (after STREET_NAMES):
 
 ```typescript
-// Key features:
-- Fetches all agent IDs from database
-- Fetches all cities from database  
-- For each city: generates 50 sale + 50 rent properties
-- created_at is set randomly 0-90 days in the past
-- Prices use city-specific multipliers (Tel Aviv 1.8x, Beer Sheva 0.55x, etc.)
-- Rental prices: 4,000-25,000 NIS based on city and size
-- Sale prices: 1.5M-15M NIS based on city and size
-- Batch inserts of 100 at a time for performance
+// Curated Unsplash property images
+const PROPERTY_INTERIORS = [
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
+  "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
+  // ... 28 more interior images
+];
+
+const PROPERTY_EXTERIORS = [
+  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80",
+  "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800&q=80",
+  // ... 18 more exterior images
+];
 ```
 
-**Listing Age Distribution:**
-- 15% Hot (0-3 days): "Just Listed"
-- 25% Fresh (4-7 days)
-- 40% Standard (8-30 days)
-- 20% Older (31-90 days)
+Add after `randomSubset` function (around line 78):
 
-**Property Mix (per 50):**
-- ~30 apartments (60%)
-- ~8 garden apartments (16%)
-- ~5 penthouses (10%)
-- ~4 duplexes (8%)
-- ~3 houses/cottages (6%)
-
-**Rental-Specific Fields:**
-- `lease_term`: 6_months, 12_months, 24_months, flexible
-- `furnished_status`: fully, semi, unfurnished
-- `pets_policy`: allowed, case_by_case, not_allowed
-- `agent_fee_required`, `bank_guarantee_required`, `checks_required`
-
-### After Implementation
-
-To seed the new properties, you'll call the edge function:
-```
-POST /seed-additional-properties
+```typescript
+function generatePropertyImages(): string[] {
+  const count = randomInt(3, 6);
+  const images: string[] = [];
+  
+  // Start with an exterior shot
+  images.push(randomChoice(PROPERTY_EXTERIORS));
+  
+  // Add unique interior shots
+  const shuffled = [...PROPERTY_INTERIORS].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count - 1; i++) {
+    images.push(shuffled[i]);
+  }
+  
+  return images;
+}
 ```
 
-This will add:
-- 1,250 for_sale properties (50 × 25 cities)
-- 1,250 for_rent properties (50 × 25 cities)
-- **Total: 2,500 new properties**
+Update line 159:
+```typescript
+// Before
+images: null,
 
-### Files to Create
-1. `supabase/functions/seed-additional-properties/index.ts` - New edge function for bulk property seeding
+// After  
+images: generatePropertyImages(),
+```
 
-### Result
-- Every city will have 66 resale + 66 rental properties (existing 16 + new 50)
-- Properties will show realistic variety in listing age, price, size, features
-- All properties linked to real agents in the database
-- Map will display fuller, more realistic marketplace
+### Backfill Existing Properties
+
+Add a second mode to the function that updates existing properties with null images:
+
+```typescript
+// If called with action=backfill, update existing properties
+if (action === 'backfill') {
+  const { data: propsWithoutImages } = await supabase
+    .from('properties')
+    .select('id')
+    .is('images', null);
+    
+  for (const prop of propsWithoutImages) {
+    await supabase
+      .from('properties')
+      .update({ images: generatePropertyImages() })
+      .eq('id', prop.id);
+  }
+}
+```
+
+---
+
+## Result
+
+After this update:
+- All NEW properties seeded will have 3-6 varied images
+- Images will include 1 exterior + 2-5 unique interior shots
+- Calling the function with `?action=backfill` will fix the ~2,500 existing properties without images
+- Each listing's gallery will look realistic with different photos
