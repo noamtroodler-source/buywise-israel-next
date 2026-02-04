@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
 import { triggerHaptic } from './useHapticFeedback';
+import { useCompare } from '@/contexts/CompareContext';
 
 const GUEST_FAVORITES_KEY = 'buywise_guest_favorites';
 
@@ -18,6 +19,7 @@ interface GuestFavorite {
 export function useFavorites() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { removeFromCompare } = useCompare();
   
   // Use shared context for guest favorites
   const { guestFavorites, setGuestFavorites } = useFavoritesContext();
@@ -138,6 +140,9 @@ export function useFavorites() {
 
   const removeFavorite = useMutation({
     mutationFn: async (propertyId: string) => {
+      // Also remove from compare when unfavoriting
+      removeFromCompare(propertyId);
+      
       if (!user) {
         // Guest: update context (which syncs to sessionStorage)
         setGuestFavorites(current => current.filter(f => f.property_id !== propertyId));
