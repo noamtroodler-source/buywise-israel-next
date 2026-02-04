@@ -1,93 +1,142 @@
 
-Goal: make city-to-city switching reliably (1) animates the map from the current city to the newly selected city, and (2) updates BOTH the right-side listings and the map markers to the new city immediately after the animation.
+## Auto-Detect City When Zooming Into Map Area
 
-What’s actually broken right now (root cause)
-- Your property query uses `queryFilters.bounds` when `mapBounds` exists (see `MapSearchLayout.tsx` → `queryFilters` memo).
-- During a city change we set `isProgrammaticMoveRef.current = true` and then `handleBoundsChange` currently returns early, meaning it does NOT update `mapBounds`.
-- Worse: the map’s `moveend` event fires while the flag is still true, so `MapBoundsListener` calls `onBoundsChange(...)`, but `handleBoundsChange(...)` discards it. Then `MapViewUpdater` clears the flag after that same `moveend`, and there is no subsequent event to update bounds.
-- Result: your property query continues using the OLD city’s bounds while the city filter is the NEW city → frequently yields 0 results (“No properties in this area”) and no markers/listings.
+### What You're Asking For
 
-Fix strategy (make the state flow deterministic)
-We will ensure that after every programmatic city fly-to:
-1) the “programmatic move” flag is cleared, AND
-2) the FINAL bounds/center/zoom of the destination are pushed into MapSearchLayout state (especially `mapBounds`), so the backend query updates to the new city viewport.
+When you're viewing Ashdod and manually zoom out, then zoom back into Jerusalem, you want:
+1. The properties on the right side to update to show Jerusalem listings
+2. The city filter dropdown (top left) to automatically update to "Jerusalem"
 
-Implementation steps
+Currently, the system only updates the city filter when you explicitly select a city from the dropdown or click on a city overlay marker. Manual panning/zooming updates the listings via map bounds, but it doesn't sync the city filter.
 
-1) Change `handleBoundsChange` to never block updating `mapBounds`
-File: `src/components/map-search/MapSearchLayout.tsx`
-- Current behavior:
-  - If `isProgrammaticMoveRef.current` is true, it returns early and updates nothing.
-- New behavior:
-  - Always update `setMapBounds(bounds)` (so queries have correct viewport).
-  - While programmatic move is active, skip only `setMapCenter`/`setMapZoom` (to avoid the “overwrite destination mid-flight” problem).
-- Pseudocode:
-  - `setMapBounds(bounds);`
-  - `if (isProgrammaticMoveRef.current) return;`
-  - `setMapCenter(center); setMapZoom(zoom);`
+---
 
-Why this matters:
-- Even if center/zoom are “protected” during the flight, we still need bounds to update at the end so listings refresh.
+### How It Will Work
 
-2) Force a “final bounds sync” at the end of the flyTo animation
-File: `src/components/map-search/PropertyMap.tsx`
-- Problem: the last `moveend` occurs while `isProgrammaticMoveRef` is still true, so the last bounds update is ignored.
-- Solution: In `MapViewUpdater`’s `moveend` handler, after clearing flags, manually compute the final bounds/center/zoom from Leaflet and call `onBoundsChange(...)` directly.
-- This guarantees that MapSearchLayout receives a post-animation update even if the normal `MapBoundsListener` update was skipped.
-- Implementation details:
-  - Update `MapViewUpdater` props to accept `onBoundsChange` (same signature used elsewhere).
-  - In `map.once('moveend', ...)`:
-    - set `isFlyingRef.current = false`
-    - set `isProgrammaticMoveRef.current = false`
-    - read `const bounds = map.getBounds(); const center = map.getCenter(); const zoom = map.getZoom();`
-    - call `onBoundsChange({north/south/east/west}, [center.lat, center.lng], zoom)`
+When you zoom into a specific city area (zoom level ≥12), the system will:
 
-3) Pass `onBoundsChange` into `MapViewUpdater`
-File: `src/components/map-search/PropertyMap.tsx`
-- Update the `MapViewUpdater` call site to include `onBoundsChange={...}`.
-- This will be a small signature change but keeps the logic local and reliable.
+1. **Detect the city** - Compare the map's center coordinates against all known city centers and find the closest match within a reasonable radius (~5km)
+2. **Update the city filter** - If a city is detected and it's different from the current filter, automatically update the city dropdown
+3. **Sync URL and state** - The URL and filter bar will reflect the detected city
 
-4) Stabilize city-switch UX (optional but recommended while we’re in here)
-File: `src/components/map-search/MapSearchLayout.tsx`
-When a city changes or is cleared:
-- Clear selection and any “stale” constraints that can confuse results:
-  - `setSelectedPropertyId(null)` (avoid popup referencing an old property id)
-  - If a polygon is drawn, consider clearing it on city change OR at least re-enabling `searchAsMove` + clearing `frozenBounds` so the new city can load normally.
-- This is optional; the core bug is bounds not updating. But it prevents “sticky” filters from making it look broken even when the animation works.
+The detection will only trigger when:
+- Zoom level is 12 or higher (zoomed in enough to be viewing a single city)
+- The map center is within ~5km of a city center
+- The detected city is different from the current filter (to avoid unnecessary updates)
+- It's a user-initiated pan/zoom (not during programmatic city-to-city animations)
 
-5) Verification checklist (we will explicitly test the failing scenarios you described)
-After implementation, we’ll verify these exact flows:
-A. City-to-city switch with prior panning
-- Start on City A, pan/zoom a bit, then switch to City B.
-- Expected:
-  - map animates (flyTo) from current position to City B
-  - after animation completes, listings refresh to City B (not “No properties in this area”)
-  - markers correspond to City B
+---
 
-B. Far city switch (e.g., “Oshawa” → “Be’er Sheva”)
-- Expected:
-  - map visibly flies across Israel (duration ~1.5s)
-  - listings and markers change to Be’er Sheva after the flight
+### Technical Implementation
 
-C. Buy and Rent modes
-- Repeat A/B with `status=for_sale` and `status=for_rent`
-- Expected: both modes refresh correctly (bounds + city filter consistent)
+#### 1. Add City Detection Logic in `MapSearchLayout.tsx`
 
-D. Regression checks
-- Manual pan/zoom still updates listings when `searchAsMove` is active
-- City cleared still zooms out to Israel and shows appropriate national results
+Create a helper function to find the closest city to given coordinates:
 
-Technical notes (why this will work)
-- The core issue is that `mapBounds` is a critical input to `usePaginatedProperties`, and we were preventing it from updating during programmatic moves.
-- By (1) always updating bounds and (2) forcing a “final bounds sync” after the fly completes, we guarantee queryFilters changes to match the new viewport, which triggers the property query to fetch the correct dataset for the new city.
+```typescript
+// Helper: Find closest city to given coordinates
+const findCityByCoordinates = useCallback((lat: number, lng: number): string | null => {
+  if (!allCities) return null;
+  
+  const MAX_DISTANCE_KM = 5; // Only match if within 5km of city center
+  let closestCity: string | null = null;
+  let minDistance = Infinity;
+  
+  for (const city of allCities) {
+    if (!city.center_lat || !city.center_lng) continue;
+    
+    // Simple distance calculation (Haversine approximation for small distances)
+    const distanceKm = getDistanceInMeters(
+      [lng, lat], 
+      [city.center_lng, city.center_lat]
+    ) / 1000;
+    
+    if (distanceKm < minDistance && distanceKm < MAX_DISTANCE_KM) {
+      minDistance = distanceKm;
+      closestCity = city.name;
+    }
+  }
+  
+  return closestCity;
+}, [allCities]);
+```
 
-Files to change
-- `src/components/map-search/MapSearchLayout.tsx`
-  - Adjust `handleBoundsChange` logic as described
-  - (Optional) clear selection/polygon/frozenBounds on city change
-- `src/components/map-search/PropertyMap.tsx`
-  - Extend `MapViewUpdater` to accept `onBoundsChange`
-  - On moveend: clear flags and push final bounds/center/zoom via `onBoundsChange`
+#### 2. Add City Auto-Detection in `handleBoundsChange`
 
-Expected result
-- City switches always “guide” (smooth animation) AND reliably show the new city’s properties on the list and map immediately after the animation completes, even if the user panned/zoomed beforehand.
+When bounds change (user pans/zooms), check if we should update the city filter:
+
+```typescript
+const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
+  // Always update mapBounds for property queries
+  setMapBounds(bounds);
+  
+  // Skip updates during programmatic moves
+  if (isProgrammaticMoveRef.current) return;
+  
+  setMapCenter(center);
+  setMapZoom(zoom);
+  
+  // Auto-detect city when zoomed in (zoom ≥ 12)
+  if (zoom >= 12 && allCities) {
+    const detectedCity = findCityByCoordinates(center[0], center[1]);
+    
+    // Only update if detected city is different from current filter
+    if (detectedCity && detectedCity !== filters.city) {
+      // Update filters with detected city (without triggering map fly)
+      const updatedFilters = { ...filters, city: detectedCity, listing_status: listingStatus };
+      setFilters(updatedFilters);
+      updateUrlParams(updatedFilters, center, zoom);
+    }
+    
+    // Clear city filter if zoomed in but not near any city center
+    if (!detectedCity && filters.city) {
+      const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
+      setFilters(updatedFilters);
+      updateUrlParams(updatedFilters, center, zoom);
+    }
+  }
+  
+  // If zoomed out (< 12), clear city filter to show all cities
+  if (zoom < 12 && filters.city) {
+    const updatedFilters = { ...filters, city: undefined, listing_status: listingStatus };
+    setFilters(updatedFilters);
+    updateUrlParams(updatedFilters, center, zoom);
+  }
+}, [filters, listingStatus, allCities, findCityByCoordinates, updateUrlParams]);
+```
+
+#### 3. Prevent Infinite Loops
+
+The key challenge is preventing the city auto-detection from triggering a map fly animation (which would create a loop). The solution:
+
+- When detecting a city from pan/zoom, update `filters` and URL **without** setting `mapCenter`/`mapZoom` (since those are already correct from the user's pan)
+- Only use the `isProgrammaticMoveRef` pattern for explicit city dropdown selections
+
+---
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/components/map-search/MapSearchLayout.tsx` | Add `findCityByCoordinates` helper and city auto-detection logic in `handleBoundsChange` |
+
+---
+
+### User Experience
+
+| Scenario | Behavior |
+|----------|----------|
+| Viewing Ashdod, zoom out | City filter clears, shows national view with city overlays |
+| Zoom in on Jerusalem area | City filter updates to "Jerusalem", listings show Jerusalem properties |
+| Pan slightly within Jerusalem | No change (still detecting Jerusalem) |
+| Pan to border area between cities | Whichever city center is closer gets selected |
+| Select city from dropdown | Map flies to that city (existing behavior) |
+
+---
+
+### Edge Cases Handled
+
+1. **Rapid panning**: Debounced via existing 300ms timeout in `MapBoundsListener`
+2. **No city nearby**: If you zoom into an area without a known city (e.g., desert), the city filter stays cleared
+3. **City filter sync**: Both dropdown selection AND manual zoom will keep the filter in sync
+4. **Works with Buy/Rent toggle**: Detection works for both listing types
