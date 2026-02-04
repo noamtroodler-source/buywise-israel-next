@@ -39,6 +39,7 @@ export default function MapSearchLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const mapRef = useRef<L.Map | null>(null);
+  const isProgrammaticMoveRef = useRef(false);
 
   // Initial map view from URL (MapContainer only reads props on mount; we also keep state in sync)
   const initialMapCenter = (() => {
@@ -273,6 +274,8 @@ export default function MapSearchLayout() {
     // Check if city was CLEARED (had a value, now undefined)
     const cityCleared = filters.city && !newFilters.city;
     if (cityCleared) {
+      // Set flag to prevent handleBoundsChange from overwriting during animation
+      isProgrammaticMoveRef.current = true;
       // Zoom back out to show all of Israel
       const nextCenter = ISRAEL_CENTER;
       const nextZoom = ISRAEL_ZOOM;
@@ -288,6 +291,8 @@ export default function MapSearchLayout() {
     if (cityChanged) {
       const city = allCities?.find(c => c.name === newFilters.city);
       if (city?.center_lat && city?.center_lng) {
+        // Set flag to prevent handleBoundsChange from overwriting during animation
+        isProgrammaticMoveRef.current = true;
         const nextCenter: [number, number] = [city.center_lat, city.center_lng];
         const nextZoom = CITY_ZOOM;
         setMapCenter(nextCenter);
@@ -305,6 +310,9 @@ export default function MapSearchLayout() {
   }, [listingStatus, updateUrlParams, filters.city, allCities]);
 
   const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
+    // Skip state updates during programmatic moves (city selection animations)
+    if (isProgrammaticMoveRef.current) return;
+    
     setMapBounds(bounds);
     setMapCenter(center);
     setMapZoom(zoom);
@@ -366,6 +374,7 @@ export default function MapSearchLayout() {
     onNeighborhoodToggle: handleNeighborhoodToggle,
     onClearNeighborhoods: handleClearNeighborhoods,
     onCitySelect: handleCitySelect,
+    isProgrammaticMoveRef,
   };
 
   // Mobile layout

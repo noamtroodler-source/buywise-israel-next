@@ -41,6 +41,8 @@ interface PropertyMapProps {
   onClearNeighborhoods: () => void;
   // City selection callback
   onCitySelect?: (cityName: string) => void;
+  // Programmatic move flag (for city-to-city animations)
+  isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
 }
 
 // Map click handler to deselect property when clicking empty map
@@ -130,10 +132,12 @@ function MapViewUpdater({
   center, 
   zoom,
   isFlyingRef,
+  isProgrammaticMoveRef,
 }: { 
   center: [number, number]; 
   zoom: number;
   isFlyingRef: React.MutableRefObject<boolean>;
+  isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
 }) {
   const map = useMap();
   const prevCenterRef = useRef<[number, number]>(center);
@@ -156,13 +160,17 @@ function MapViewUpdater({
       // Clear flying flag when animation ends
       map.once('moveend', () => {
         isFlyingRef.current = false;
+        // Clear programmatic move flag after animation completes
+        if (isProgrammaticMoveRef) {
+          isProgrammaticMoveRef.current = false;
+        }
       });
       
       // Update refs
       prevCenterRef.current = center;
       prevZoomRef.current = zoom;
     }
-  }, [map, center, zoom, isFlyingRef]);
+  }, [map, center, zoom, isFlyingRef, isProgrammaticMoveRef]);
   
   return null;
 }
@@ -186,6 +194,7 @@ export function PropertyMap({
   onNeighborhoodToggle,
   onClearNeighborhoods,
   onCitySelect,
+  isProgrammaticMoveRef,
 }: PropertyMapProps) {
   const { user } = useAuth();
   const { data: savedLocations } = useSavedLocations();
@@ -272,7 +281,7 @@ export function PropertyMap({
         />
 
         {/* Sync external center/zoom to map (for city selection) */}
-        <MapViewUpdater center={center} zoom={zoom} isFlyingRef={isFlyingRef} />
+        <MapViewUpdater center={center} zoom={zoom} isFlyingRef={isFlyingRef} isProgrammaticMoveRef={isProgrammaticMoveRef} />
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
 
