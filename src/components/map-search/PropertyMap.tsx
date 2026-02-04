@@ -17,6 +17,7 @@ import { PriceHeatmapLayer } from './PriceHeatmapLayer';
 import { HeatmapLegend } from './HeatmapLegend';
 import { CommuteLines } from './CommuteLines';
 import { AngloCommunityLayer } from './AngloCommunityLayer';
+import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { ClearDrawingButton } from './ClearDrawingButton';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
 import { useAuth } from '@/hooks/useAuth';
@@ -48,6 +49,8 @@ interface PropertyMapProps {
   onCitySelect?: (cityName: string) => void;
   // Programmatic move flag (for city-to-city animations)
   isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
+  // Current city for boundary layer
+  currentCity?: string | null;
 }
 
 // Map click handler to deselect property when clicking empty map
@@ -229,6 +232,7 @@ export function PropertyMap({
   onClearNeighborhoods,
   onCitySelect,
   isProgrammaticMoveRef,
+  currentCity,
 }: PropertyMapProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -239,6 +243,7 @@ export function PropertyMap({
   const [showTrainStations, setShowTrainStations] = useState(false);
   const [showPriceHeatmap, setShowPriceHeatmap] = useState(false);
   const [showAngloCommunity, setShowAngloCommunity] = useState(false);
+  const [showNeighborhoodBoundaries, setShowNeighborhoodBoundaries] = useState(false);
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
@@ -426,8 +431,13 @@ export function PropertyMap({
 
         {/* Anglo Community Layer */}
         <AngloCommunityLayer visible={showAngloCommunity} />
+
+        {/* Neighborhood Boundaries Layer */}
+        <NeighborhoodBoundariesLayer 
+          visible={showNeighborhoodBoundaries} 
+          currentCity={currentCity || null} 
+        />
         
-        {/* Selected Property Popup */}
         {selectedPropertyId && (
           <MapPropertyPopup
             propertyId={selectedPropertyId}

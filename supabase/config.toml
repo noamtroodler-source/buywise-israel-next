@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.seed-additional-properties]
 verify_jwt = false
+
+[functions.fetch-neighborhood-boundaries]
+verify_jwt = false

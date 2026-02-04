@@ -476,6 +476,7 @@ export default function MapSearchLayout() {
     onClearNeighborhoods: handleClearNeighborhoods,
     onCitySelect: handleCitySelect,
     isProgrammaticMoveRef,
+    currentCity: filters.city || null,
   };
 
   // Mobile layout
