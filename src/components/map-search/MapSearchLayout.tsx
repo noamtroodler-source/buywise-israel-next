@@ -270,7 +270,20 @@ export default function MapSearchLayout() {
   const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
     const updatedFilters = { ...newFilters, listing_status: listingStatus };
     
-    // If city changed, compute the next center/zoom first so the map reliably fly-zooms.
+    // Check if city was CLEARED (had a value, now undefined)
+    const cityCleared = filters.city && !newFilters.city;
+    if (cityCleared) {
+      // Zoom back out to show all of Israel
+      const nextCenter = ISRAEL_CENTER;
+      const nextZoom = ISRAEL_ZOOM;
+      setMapCenter(nextCenter);
+      setMapZoom(nextZoom);
+      setFilters(updatedFilters);
+      updateUrlParams(updatedFilters, nextCenter, nextZoom);
+      return;
+    }
+    
+    // If city changed to a NEW city, compute the next center/zoom first so the map reliably fly-zooms.
     const cityChanged = newFilters.city && newFilters.city !== filters.city;
     if (cityChanged) {
       const city = allCities?.find(c => c.name === newFilters.city);
