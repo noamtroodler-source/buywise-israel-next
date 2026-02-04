@@ -16,7 +16,7 @@ export function ClearDrawingButton({ visible, onClear }: ClearDrawingButtonProps
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.2 }}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]"
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
         >
           <Button
             variant="secondary"
