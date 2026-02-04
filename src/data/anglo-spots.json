@@ -1,0 +1,2449 @@
+[
+  {
+    "city": "Jerusalem",
+    "spots": [
+      {
+        "name": "Yakar Synagogue",
+        "name_he": "קהל יקר",
+        "category": "synagogue",
+        "address": "10 Halamed Hei St, Baka",
+        "lat": 31.7666,
+        "lng": 35.2123,
+        "description": "Modern Orthodox synagogue in Baka known for its large English‑speaking congregation and Anglo programs"
+      },
+      {
+        "name": "Nitzanim Synagogue",
+        "name_he": "בית כנסת נצנים",
+        "category": "synagogue",
+        "address": "27 Asher St, Baka",
+        "lat": 31.7616,
+        "lng": 35.215,
+        "description": "Community shul in Baka with many Anglo members and English shiurim"
+      },
+      {
+        "name": "Ohel Nechama Synagogue",
+        "name_he": "אוהל נחמה",
+        "category": "synagogue",
+        "address": "5 Emek Refaim St",
+        "lat": 31.7722,
+        "lng": 35.2153,
+        "description": "Popular Shteibel offering traditional services with English announcements"
+      },
+      {
+        "name": "Eretz Chemdah Synagogue",
+        "name_he": "ארץ חמדה",
+        "category": "synagogue",
+        "address": "Beit Boyer, Baka",
+        "lat": 31.7625,
+        "lng": 35.213,
+        "description": "Anglo‑friendly synagogue with multiple minyanim and shiurim in English"
+      },
+      {
+        "name": "Rami Levi Talpiot",
+        "name_he": "רמי לוי תלפיות",
+        "category": "supermarket",
+        "address": "23 HaUman St, Talpiot",
+        "lat": 31.7533,
+        "lng": 35.2134,
+        "description": "Large discount supermarket frequented by Anglos for kosher groceries"
+      },
+      {
+        "name": "Nefesh B’Nefesh Jerusalem Campus",
+        "name_he": "נפש בנפש ירושלים",
+        "category": "community_center",
+        "address": "5 Nahum Hefzadi St",
+        "lat": 31.7745,
+        "lng": 35.2187,
+        "description": "Immigrant support center hosting English‑language programs, lectures and services"
+      },
+      {
+        "name": "Liberty Bell Park",
+        "name_he": "גן הפעמון",
+        "category": "park",
+        "address": "King David St",
+        "lat": 31.7694,
+        "lng": 35.2116,
+        "description": "Central park with playgrounds and open lawns, popular for Anglo family outings"
+      },
+      {
+        "name": "Grand Cafe",
+        "name_he": "גראנד קפה",
+        "category": "cafe",
+        "address": "74 Derech Beit Lechem",
+        "lat": 31.762,
+        "lng": 35.2185,
+        "description": "Trendy café in Baka where Anglos meet for brunch and coffee"
+      },
+      {
+        "name": "Terem Baka Urgent Care",
+        "name_he": "טרם בקעה",
+        "category": "medical",
+        "address": "14 Yad Harutzim St",
+        "lat": 31.7489,
+        "lng": 35.2154,
+        "description": "24‑hour urgent care clinic with English‑speaking staff"
+      },
+      {
+        "name": "Jerusalem YMCA Fitness Center",
+        "name_he": "יינמ",
+        "category": "fitness",
+        "address": "26 King David St",
+        "lat": 31.7741,
+        "lng": 35.2234,
+        "description": "Historic health club with gym and pool used by Anglos for sports and recreation"
+      }
+    ]
+  },
+  {
+    "city": "Tel Aviv",
+    "spots": [
+      {
+        "name": "Chabad on the Coast",
+        "name_he": "חב״ד על החוף",
+        "category": "synagogue",
+        "address": "100 Ben Yehuda St",
+        "lat": 32.0805,
+        "lng": 34.7685,
+        "description": "First English‑speaking Chabad house in Tel Aviv offering services and classes in English"
+      },
+      {
+        "name": "Tel Aviv International Synagogue",
+        "name_he": "בית כנסת בינלאומי תל אביב",
+        "category": "synagogue",
+        "address": "23 Frishman St",
+        "lat": 32.0795,
+        "lng": 34.768,
+        "description": "Modern Orthodox shul with English‑language services led by an American rabbi"
+      },
+      {
+        "name": "North Central Synagogue",
+        "name_he": "בית כנסת צפון מרכז",
+        "category": "synagogue",
+        "address": "126 Ben Yehuda St",
+        "lat": 32.09,
+        "lng": 34.7725,
+        "description": "Friendly community synagogue attended by many Anglos living in north Tel Aviv"
+      },
+      {
+        "name": "AM:PM Supermarket Dizengoff",
+        "name_he": "אם:פם דיזנגוף",
+        "category": "supermarket",
+        "address": "115 Dizengoff St",
+        "lat": 32.0807,
+        "lng": 34.7722,
+        "description": "Convenience chain favored by English speakers for late‑night groceries"
+      },
+      {
+        "name": "Nefesh B’Nefesh Gush Dan Office",
+        "name_he": "נפש בנפש תל אביב",
+        "category": "community_center",
+        "address": "24 King George St",
+        "lat": 32.0736,
+        "lng": 34.7739,
+        "description": "Resource center providing programming and assistance for Anglos in the Gush Dan area"
+      },
+      {
+        "name": "Yarkon Park",
+        "name_he": "פארק הירקון",
+        "category": "park",
+        "address": "Ganei Yehoshua",
+        "lat": 32.095,
+        "lng": 34.8001,
+        "description": "Large urban park along the Yarkon river where Anglo families stroll and exercise"
+      },
+      {
+        "name": "Mike’s Place",
+        "name_he": "מייק'ס פלייס",
+        "category": "restaurant",
+        "address": "90 Herbert Samuel Promenade",
+        "lat": 32.0702,
+        "lng": 34.7645,
+        "description": "American sports bar on the beachfront popular with expats and tourists"
+      },
+      {
+        "name": "Benedict Rothschild",
+        "name_he": "בנדיקט רוטשילד",
+        "category": "restaurant",
+        "address": "29 Rothschild Blvd",
+        "lat": 32.0671,
+        "lng": 34.7748,
+        "description": "24/7 breakfast restaurant known for English menu and Anglo patrons"
+      },
+      {
+        "name": "Walworth Barbour American International School",
+        "name_he": "בית ספר אמריקאי וולוורת ברבור",
+        "category": "school",
+        "address": "Even Yehuda (near Tel Aviv)",
+        "lat": 32.1896,
+        "lng": 34.8354,
+        "description": "American international school serving Anglo children from Tel Aviv and the Sharon region"
+      },
+      {
+        "name": "Assuta Ramat HaHayal",
+        "name_he": "אסותא רמת החייל",
+        "category": "medical",
+        "address": "20 Habarzel St",
+        "lat": 32.0951,
+        "lng": 34.8439,
+        "description": "Private hospital with English‑speaking staff and high‑quality care"
+      },
+      {
+        "name": "Gordon Swimming Pool",
+        "name_he": "בריכת גורדון",
+        "category": "fitness",
+        "address": "Tel Aviv Port",
+        "lat": 32.0871,
+        "lng": 34.7678,
+        "description": "Outdoor salt‑water pool where many Anglos swim and exercise"
+      }
+    ]
+  },
+  {
+    "city": "Haifa",
+    "spots": [
+      {
+        "name": "Heychal Eliezer Synagogue",
+        "name_he": "היכל אליעזר",
+        "category": "synagogue",
+        "address": "Horev Center, Ahuza",
+        "lat": 32.7899,
+        "lng": 34.989,
+        "description": "Modern Orthodox synagogue in the Ahuza neighborhood with English‑speaking families"
+      },
+      {
+        "name": "Or Hadash Masorti Congregation",
+        "name_he": "אור חדש",
+        "category": "synagogue",
+        "address": "1 Derech Horev",
+        "lat": 32.793,
+        "lng": 34.9935,
+        "description": "Conservative/Masorti community offering egalitarian services with translation"
+      },
+      {
+        "name": "Chabad of Ahuza",
+        "name_he": "חבד אחוזה",
+        "category": "synagogue",
+        "address": "Horev St 98",
+        "lat": 32.8001,
+        "lng": 34.984,
+        "description": "Chabad house catering to Anglos and students in the Carmel area"
+      },
+      {
+        "name": "Shufersal Deal Ahuza",
+        "name_he": "שופרסל דיל אחוזה",
+        "category": "supermarket",
+        "address": "92 Horev St",
+        "lat": 32.7865,
+        "lng": 34.9897,
+        "description": "Large grocery store stocked with Anglo imported products"
+      },
+      {
+        "name": "Beit Hagefen Jewish‑Arab Center",
+        "name_he": "בית הגפן",
+        "category": "community_center",
+        "address": "33 HaGefen St",
+        "lat": 32.8229,
+        "lng": 34.995,
+        "description": "Cultural center hosting multicultural events and lectures attended by English speakers"
+      },
+      {
+        "name": "Gan HaEm (Mother’s Park)",
+        "name_he": "גן האם",
+        "category": "park",
+        "address": "Carmel Center",
+        "lat": 32.7932,
+        "lng": 34.9881,
+        "description": "Shaded park with playground and zoo; popular with Anglo families"
+      },
+      {
+        "name": "Hecht Park",
+        "name_he": "פארק חורשת הייט",
+        "category": "park",
+        "address": "HaTmarim Blvd",
+        "lat": 32.8275,
+        "lng": 34.9704,
+        "description": "Waterfront park on the beach where Anglos jog and picnic"
+      },
+      {
+        "name": "Cafe Strudel",
+        "name_he": "קפה שטרודל",
+        "category": "cafe",
+        "address": "142 Moriah Blvd",
+        "lat": 32.7949,
+        "lng": 34.9859,
+        "description": "European‑style cafe in the Carmel popular with Anglo expats"
+      },
+      {
+        "name": "Leo Baeck Education Center",
+        "name_he": "מרכז חינוך ליאו בק",
+        "category": "school",
+        "address": "127 Moriah Blvd",
+        "lat": 32.785,
+        "lng": 34.9833,
+        "description": "Pluralistic school offering English programs and attended by many Anglo children"
+      },
+      {
+        "name": "Rambam Health Care Campus",
+        "name_he": "מרכז רפואי רמבם",
+        "category": "medical",
+        "address": "8 HaAliya HaShniya St",
+        "lat": 32.807,
+        "lng": 34.9738,
+        "description": "Major hospital where English‑speaking physicians provide care"
+      },
+      {
+        "name": "Carmel Sports Center",
+        "name_he": "מרכז ספורט כרמל",
+        "category": "fitness",
+        "address": "2 Derech Ahuza",
+        "lat": 32.7804,
+        "lng": 34.979,
+        "description": "Gym and pool complex used by local Anglos for recreation"
+      }
+    ]
+  },
+  {
+    "city": "Ra'anana",
+    "spots": [
+      {
+        "name": "Young Israel of North Ra’anana",
+        "name_he": "קהילת יאנג ישראל צפון רעננה",
+        "category": "synagogue",
+        "address": "75 Ahuza St",
+        "lat": 32.1852,
+        "lng": 34.8713,
+        "description": "Modern Orthodox shul with a predominantly Anglo membership"
+      },
+      {
+        "name": "Kehillat Shivtei Yisrael",
+        "name_he": "קהילת שבטי ישראל",
+        "category": "synagogue",
+        "address": "2 HaTayasim St",
+        "lat": 32.188,
+        "lng": 34.871,
+        "description": "Community synagogue offering English‑language programs and youth groups"
+      },
+      {
+        "name": "Kehillat Ohel Ari",
+        "name_he": "קהילת אוהל ארי",
+        "category": "synagogue",
+        "address": "3 HaHaroshet St",
+        "lat": 32.183,
+        "lng": 34.863,
+        "description": "Carlebach‑style shul popular with young Anglo families"
+      },
+      {
+        "name": "Beit Knesset Hanassi",
+        "name_he": "בית כנסת הנשיא",
+        "category": "synagogue",
+        "address": "110 Ahuza St",
+        "lat": 32.1828,
+        "lng": 34.872,
+        "description": "Traditional synagogue known for its large Anglo congregation"
+      },
+      {
+        "name": "Rami Levi Ra’anana",
+        "name_he": "רמי לוי רעננה",
+        "category": "supermarket",
+        "address": "Ahuza St",
+        "lat": 32.1823,
+        "lng": 34.8698,
+        "description": "Discount supermarket heavily frequented by the Anglo community"
+      },
+      {
+        "name": "Yochananof Renanim Mall",
+        "name_he": "יוחננוף קניון רננים",
+        "category": "supermarket",
+        "address": "Ra’ananim Mall",
+        "lat": 32.1792,
+        "lng": 34.8767,
+        "description": "Large supermarket with many imported Anglo products"
+      },
+      {
+        "name": "Anglo Community Center",
+        "name_he": "מרכז קהילתי אנגלו",
+        "category": "community_center",
+        "address": "Ra’anana Community Center",
+        "lat": 32.184,
+        "lng": 34.8738,
+        "description": "Center that hosts JLIC, Nefesh B’Nefesh events and Anglo social groups"
+      },
+      {
+        "name": "Park Ra’anana",
+        "name_he": "פארק רעננה",
+        "category": "park",
+        "address": "Derech HaPark",
+        "lat": 32.1857,
+        "lng": 34.8534,
+        "description": "Expansive municipal park with lake and playgrounds, very popular with Anglo families"
+      },
+      {
+        "name": "Cafe Landwer Ra’anana",
+        "name_he": "קפה לנדוור רעננה",
+        "category": "cafe",
+        "address": "116 Ahuza St",
+        "lat": 32.1849,
+        "lng": 34.868,
+        "description": "Café serving dairy meals; Anglos often meet here for breakfast"
+      },
+      {
+        "name": "Meir Medical Center",
+        "name_he": "מרכז רפואי מאיר",
+        "category": "medical",
+        "address": "Kfar Saba (serving Ra’anana)",
+        "lat": 32.1743,
+        "lng": 34.9107,
+        "description": "Major hospital nearby offering English‑speaking doctors and services"
+      },
+      {
+        "name": "Ra’anana Country Club",
+        "name_he": "קאנטרי רעננה",
+        "category": "fitness",
+        "address": "HaPark St",
+        "lat": 32.183,
+        "lng": 34.8636,
+        "description": "Sports and swimming complex used by local Anglos"
+      }
+    ]
+  },
+  {
+    "city": "Modi'in",
+    "spots": [
+      {
+        "name": "Shaarei Yonah Menachem Synagogue",
+        "name_he": "שערי יונה מנחם",
+        "category": "synagogue",
+        "address": "1 Avnei Hachoshen St",
+        "lat": 31.8967,
+        "lng": 35.0097,
+        "description": "English‑speaking Orthodox synagogue with a warm community"
+      },
+      {
+        "name": "Kehillat Yachad",
+        "name_he": "קהילת יחד",
+        "category": "synagogue",
+        "address": "26 Emek HaEla",
+        "lat": 31.8945,
+        "lng": 35.0189,
+        "description": "Masorti congregation offering egalitarian services with translations"
+      },
+      {
+        "name": "Chabad of Modiin",
+        "name_he": "חב״ד מודיעין",
+        "category": "synagogue",
+        "address": "9 Emek HaEla",
+        "lat": 31.8942,
+        "lng": 35.0179,
+        "description": "Chabad house that welcomes Anglo immigrants and visitors"
+      },
+      {
+        "name": "Rami Levi Modiin Mall",
+        "name_he": "רמי לוי קניון עזריאלי מודיעין",
+        "category": "supermarket",
+        "address": "Azrieli Mall",
+        "lat": 31.896,
+        "lng": 35.0035,
+        "description": "Large supermarket offering value groceries to Anglo families"
+      },
+      {
+        "name": "Yochananof Lev Reut",
+        "name_he": "יוחננוף לוי רעות",
+        "category": "supermarket",
+        "address": "Lev Reut Center",
+        "lat": 31.909,
+        "lng": 35.016,
+        "description": "Full‑service supermarket stocked with Anglo goods"
+      },
+      {
+        "name": "Modi'in Community Center",
+        "name_he": "מרכז קהילתי מודיעין",
+        "category": "community_center",
+        "address": "49 Emek Zevulun",
+        "lat": 31.8936,
+        "lng": 35.0169,
+        "description": "Municipal center hosting English classes, youth activities and NBN events"
+      },
+      {
+        "name": "Anabe Park",
+        "name_he": "פארק ענבה",
+        "category": "park",
+        "address": "Modi'in Central Park",
+        "lat": 31.895,
+        "lng": 35.002,
+        "description": "Large park with lake, playgrounds and amphitheater where Anglo families gather"
+      },
+      {
+        "name": "Cafe Greg Modi'in",
+        "name_he": "קפה גרג מודיעין",
+        "category": "cafe",
+        "address": "Azrieli Mall",
+        "lat": 31.896,
+        "lng": 35.0037,
+        "description": "Coffee shop in the mall frequented by Anglos"
+      },
+      {
+        "name": "Yachad School",
+        "name_he": "בית ספר יחד",
+        "category": "school",
+        "address": "Modi'in Maccabim Re’ut",
+        "lat": 31.8925,
+        "lng": 35.014,
+        "description": "Religious public school with many Anglo students"
+      },
+      {
+        "name": "Maccabi Health Clinic",
+        "name_he": "מכבי שירותי בריאות",
+        "category": "medical",
+        "address": "Azrieli Mall",
+        "lat": 31.8958,
+        "lng": 35.0033,
+        "description": "Healthcare clinic where many staff speak English"
+      },
+      {
+        "name": "Modi'in Sports Center",
+        "name_he": "מרכז ספורט מודיעין",
+        "category": "fitness",
+        "address": "Emek HaEla",
+        "lat": 31.899,
+        "lng": 35.015,
+        "description": "Gym, pool and sports facilities popular with locals"
+      }
+    ]
+  },
+  {
+    "city": "Beit Shemesh",
+    "spots": [
+      {
+        "name": "Aish Kodesh Ramat Beit Shemesh",
+        "name_he": "אש קודש רמת בית שמש",
+        "category": "synagogue",
+        "address": "16 Nahal Dolev",
+        "lat": 31.7361,
+        "lng": 34.9881,
+        "description": "Vibrant shul with large Anglo membership and Carlebach davening"
+      },
+      {
+        "name": "Beit Tefillah Yonah Avraham",
+        "name_he": "בית תפילה יונה אברהם",
+        "category": "synagogue",
+        "address": "10 Nahal Refaim",
+        "lat": 31.7395,
+        "lng": 34.9867,
+        "description": "Modern Orthodox synagogue known for English sermons and shiurim"
+      },
+      {
+        "name": "Lev Hatorah / JLIC",
+        "name_he": "לב התורה",
+        "category": "community_center",
+        "address": "70 Nahal Dolev",
+        "lat": 31.7355,
+        "lng": 34.9877,
+        "description": "Anglo community hub offering shiurim, youth groups and social events"
+      },
+      {
+        "name": "Rami Levi Beit Shemesh",
+        "name_he": "רמי לוי בית שמש",
+        "category": "supermarket",
+        "address": "19 Nahal Sorek",
+        "lat": 31.7425,
+        "lng": 34.9885,
+        "description": "Large supermarket popular among Anglo families"
+      },
+      {
+        "name": "Osher Ad Ramat Beit Shemesh",
+        "name_he": "אושר עד רמה בית שמש",
+        "category": "supermarket",
+        "address": "1 Nahal Snir",
+        "lat": 31.739,
+        "lng": 34.994,
+        "description": "Warehouse‑style kosher supermarket with Anglo products"
+      },
+      {
+        "name": "Matnas Beit Shemesh",
+        "name_he": "מתנס בית שמש",
+        "category": "community_center",
+        "address": "6 Derech Yigael Yadin",
+        "lat": 31.745,
+        "lng": 34.995,
+        "description": "Municipal community center hosting English classes and events"
+      },
+      {
+        "name": "Ramat Beit Shemesh Park",
+        "name_he": "פארק רמת בית שמש",
+        "category": "park",
+        "address": "Nahal Refaim",
+        "lat": 31.7412,
+        "lng": 34.99,
+        "description": "Neighborhood park where families gather on Shabbat afternoons"
+      },
+      {
+        "name": "Cuppa Joe RBS",
+        "name_he": "קפה קופה ג'ו",
+        "category": "cafe",
+        "address": "3 Nahal Hayarden",
+        "lat": 31.7358,
+        "lng": 34.988,
+        "description": "Coffee shop serving American‑style bagels and salads"
+      },
+      {
+        "name": "Orot Bnot School",
+        "name_he": "אורות בנות",
+        "category": "school",
+        "address": "Nahal Uriah 33",
+        "lat": 31.74,
+        "lng": 34.986,
+        "description": "Religious girls’ school with many Anglo families"
+      },
+      {
+        "name": "Terem Ramat Beit Shemesh",
+        "name_he": "טרם רמת בית שמש",
+        "category": "medical",
+        "address": "16 HaHaruv",
+        "lat": 31.7462,
+        "lng": 34.9993,
+        "description": "Urgent care clinic with English‑speaking doctors"
+      },
+      {
+        "name": "RBS Fitness Center",
+        "name_he": "מרכז כושר רמת בית שמש",
+        "category": "fitness",
+        "address": "10 Nahal Refaim",
+        "lat": 31.7395,
+        "lng": 34.9867,
+        "description": "Gym offering classes and equipment used by Anglos"
+      }
+    ]
+  },
+  {
+    "city": "Netanya",
+    "spots": [
+      {
+        "name": "Young Israel of North Netanya",
+        "name_he": "יאנג ישראל צפון נתניה",
+        "category": "synagogue",
+        "address": "6 Nachal Sorek St",
+        "lat": 32.333,
+        "lng": 34.856,
+        "description": "Anglo Orthodox shul serving the North Netanya community"
+      },
+      {
+        "name": "Bet Israel Synagogue",
+        "name_he": "בית ישראל",
+        "category": "synagogue",
+        "address": "9 Smilanski St",
+        "lat": 32.3272,
+        "lng": 34.8552,
+        "description": "Historic synagogue attended by English‑speaking locals"
+      },
+      {
+        "name": "Yochananof Ir Yamim",
+        "name_he": "יוחננוף עיר ימים",
+        "category": "supermarket",
+        "address": "Ir Yamim Mall",
+        "lat": 32.278,
+        "lng": 34.858,
+        "description": "Large supermarket near the beach with Anglo products"
+      },
+      {
+        "name": "Rami Levi Netanya",
+        "name_he": "רמי לוי נתניה",
+        "category": "supermarket",
+        "address": "Kiryat Hasharon",
+        "lat": 32.3364,
+        "lng": 34.877,
+        "description": "Discount grocer visited by Anglo families"
+      },
+      {
+        "name": "AACI Netanya Center",
+        "name_he": "אאצי נתניה",
+        "category": "community_center",
+        "address": "28 Shmuel Hanaziv St",
+        "lat": 32.3286,
+        "lng": 34.8596,
+        "description": "Anglo cultural center offering activities, library and support"
+      },
+      {
+        "name": "Independence Square",
+        "name_he": "כיכר העצמאות",
+        "category": "park",
+        "address": "Kikar HaAtzmaut",
+        "lat": 32.3324,
+        "lng": 34.8567,
+        "description": "Central plaza and park where Anglos stroll along the promenade"
+      },
+      {
+        "name": "Cafe London",
+        "name_he": "קפה לונדון",
+        "category": "cafe",
+        "address": "Netanya Promenade",
+        "lat": 32.3319,
+        "lng": 34.8564,
+        "description": "Beachfront café with English menu popular among tourists and locals"
+      },
+      {
+        "name": "Bistro 56",
+        "name_he": "ביסטרו 56",
+        "category": "restaurant",
+        "address": "Ir Yamim Mall",
+        "lat": 32.2794,
+        "lng": 34.8586,
+        "description": "Upscale meat restaurant drawing Anglo patrons"
+      },
+      {
+        "name": "Tchernichovsky High School",
+        "name_he": "תיכון טשרניחובסקי",
+        "category": "school",
+        "address": "1 Tchernichovsky St",
+        "lat": 32.3278,
+        "lng": 34.8611,
+        "description": "Secular high school with English matriculation program"
+      },
+      {
+        "name": "Laniado Hospital",
+        "name_he": "בית חולים לניאדו",
+        "category": "medical",
+        "address": "7 Shmuel Hanaziv",
+        "lat": 32.3247,
+        "lng": 34.8661,
+        "description": "Hospital serving the Netanya area with English‑speaking physicians"
+      },
+      {
+        "name": "Sironit Country Club",
+        "name_he": "קאנטרי סירונית",
+        "category": "fitness",
+        "address": "Rehov Sironit",
+        "lat": 32.3259,
+        "lng": 34.8619,
+        "description": "Swimming pool and fitness center used by locals"
+      }
+    ]
+  },
+  {
+    "city": "Herzliya",
+    "spots": [
+      {
+        "name": "Congregation Na’aleh",
+        "name_he": "קהילת נעלה",
+        "category": "synagogue",
+        "address": "Herzliya Pituach",
+        "lat": 32.166,
+        "lng": 34.81,
+        "description": "Modern Orthodox shul in Herzliya Pituach with many Anglo members"
+      },
+      {
+        "name": "Yeshuat Yisrael Synagogue",
+        "name_he": "ישועת ישראל",
+        "category": "synagogue",
+        "address": "2 Ben Gurion Blvd",
+        "lat": 32.165,
+        "lng": 34.8345,
+        "description": "Friendly synagogue attended by local Anglos"
+      },
+      {
+        "name": "Shufersal Seven Stars Mall",
+        "name_he": "שופרסל קניון שבעת הכוכבים",
+        "category": "supermarket",
+        "address": "Seven Stars Mall",
+        "lat": 32.1656,
+        "lng": 34.8398,
+        "description": "Large supermarket with imported products catering to expats"
+      },
+      {
+        "name": "Herzliya Anglo Center",
+        "name_he": "מרכז אנגלו הרצליה",
+        "category": "community_center",
+        "address": "7 Aba Even St",
+        "lat": 32.161,
+        "lng": 34.842,
+        "description": "Gathering place hosting NBN events, lectures and social groups"
+      },
+      {
+        "name": "Herzliya Park",
+        "name_he": "פארק הרצליה",
+        "category": "park",
+        "address": "Rothschild Blvd",
+        "lat": 32.1664,
+        "lng": 34.8506,
+        "description": "Green park with lake and playgrounds where Anglo families walk and bike"
+      },
+      {
+        "name": "Zvulun Beach",
+        "name_he": "חוף זבולון",
+        "category": "park",
+        "address": "Herzliya Marina",
+        "lat": 32.165,
+        "lng": 34.803,
+        "description": "Family‑friendly beach popular with Anglo swimmers and sunbathers"
+      },
+      {
+        "name": "Benedict Herzliya",
+        "name_he": "בנדיקט הרצליה",
+        "category": "cafe",
+        "address": "1 HaSharon St",
+        "lat": 32.1685,
+        "lng": 34.811,
+        "description": "All‑day breakfast spot favored by expats"
+      },
+      {
+        "name": "Herbert Samuel Restaurant",
+        "name_he": "הרברט סמואל",
+        "category": "restaurant",
+        "address": "60 Ramat Yam St",
+        "lat": 32.1648,
+        "lng": 34.8097,
+        "description": "Seaside fine‑dining restaurant attracting international clientele"
+      },
+      {
+        "name": "Walworth Barbour American International School",
+        "name_he": "בית ספר אמריקאי",
+        "category": "school",
+        "address": "Even Yehuda",
+        "lat": 32.198,
+        "lng": 34.8814,
+        "description": "American international school serving Anglo families from Herzliya and the Sharon"
+      },
+      {
+        "name": "Herzliya Medical Center",
+        "name_he": "המרכז הרפואי הרצליה",
+        "category": "medical",
+        "address": "7 Ramat Yam St",
+        "lat": 32.1645,
+        "lng": 34.8087,
+        "description": "Private hospital with English‑speaking doctors and specialists"
+      },
+      {
+        "name": "Herzliya Country Club",
+        "name_he": "קאנטרי הרצליה",
+        "category": "fitness",
+        "address": "Herzliya Pituach",
+        "lat": 32.1635,
+        "lng": 34.82,
+        "description": "Exclusive sports club with pool and gym used by affluent Anglos"
+      }
+    ]
+  },
+  {
+    "city": "Petah Tikva",
+    "spots": [
+      {
+        "name": "Ohel Moshe Synagogue",
+        "name_he": "אוהל משה",
+        "category": "synagogue",
+        "address": "5 Ze’ev Orlov St",
+        "lat": 32.087,
+        "lng": 34.8889,
+        "description": "Ashkenazi synagogue with English‑speaking congregation"
+      },
+      {
+        "name": "Neve Giladi Shul",
+        "name_he": "בית כנסת נווה גלעדי",
+        "category": "synagogue",
+        "address": "Neve Giladi",
+        "lat": 32.09,
+        "lng": 34.884,
+        "description": "Community synagogue where Anglos have established a minyan"
+      },
+      {
+        "name": "Rami Levi Petah Tikva",
+        "name_he": "רמי לוי פתח תקווה",
+        "category": "supermarket",
+        "address": "Sgula Industrial Zone",
+        "lat": 32.1144,
+        "lng": 34.8884,
+        "description": "Discount grocery chain frequented by Anglos"
+      },
+      {
+        "name": "Ilan Ramon Community Center",
+        "name_he": "מרכז קהילתי אילן רמון",
+        "category": "community_center",
+        "address": "Petah Tikva",
+        "lat": 32.0947,
+        "lng": 34.885,
+        "description": "Neighborhood center hosting Anglo social events and ulpan classes"
+      },
+      {
+        "name": "Yad Labanim Park",
+        "name_he": "פארק יד לבנים",
+        "category": "park",
+        "address": "Bar Kochba St",
+        "lat": 32.083,
+        "lng": 34.886,
+        "description": "City park with playgrounds and lawns popular for Shabbat walks"
+      },
+      {
+        "name": "Cafe Landwer Petah Tikva",
+        "name_he": "קפה לנדוור פתח תקווה",
+        "category": "cafe",
+        "address": "Ofer Mall",
+        "lat": 32.0902,
+        "lng": 34.891,
+        "description": "Cafe with dairy menu attracting English‑speaking patrons"
+      },
+      {
+        "name": "Kapulsky Restaurant",
+        "name_he": "מסעדת קפולסקי",
+        "category": "restaurant",
+        "address": "Petah Tikva Center",
+        "lat": 32.092,
+        "lng": 34.8865,
+        "description": "Restaurant serving European‑style dishes, popular with seniors and Anglos"
+      },
+      {
+        "name": "Ulpan Maalot School",
+        "name_he": "אולפן מעלות",
+        "category": "school",
+        "address": "Petah Tikva",
+        "lat": 32.0852,
+        "lng": 34.881,
+        "description": "Hebrew ulpan where many immigrants study"
+      },
+      {
+        "name": "Schneider Children’s Medical Center",
+        "name_he": "מרכז שניידר",
+        "category": "medical",
+        "address": "14 Kaplan St",
+        "lat": 32.0913,
+        "lng": 34.8801,
+        "description": "World‑class pediatric hospital with English‑speaking staff"
+      },
+      {
+        "name": "Petah Tikva Country Club",
+        "name_he": "קאנטרי פתח תקווה",
+        "category": "fitness",
+        "address": "Petah Tikva",
+        "lat": 32.08,
+        "lng": 34.887,
+        "description": "Sports and swimming club used by local families"
+      }
+    ]
+  },
+  {
+    "city": "Rishon LeZion",
+    "spots": [
+      {
+        "name": "Kehilat Yeshurun",
+        "name_he": "קהילת ישורון",
+        "category": "synagogue",
+        "address": "Ehud Manor 2",
+        "lat": 31.973,
+        "lng": 34.792,
+        "description": "Religious Zionist synagogue with English‑language shiurim"
+      },
+      {
+        "name": "Beth Shalom Synagogue",
+        "name_he": "בית שלום",
+        "category": "synagogue",
+        "address": "67 Herzl St",
+        "lat": 31.9688,
+        "lng": 34.7896,
+        "description": "Traditional synagogue attended by Anglo families"
+      },
+      {
+        "name": "Osher Ad Rishon",
+        "name_he": "אושר עד ראשון",
+        "category": "supermarket",
+        "address": "4 Repin St",
+        "lat": 31.977,
+        "lng": 34.7912,
+        "description": "Large kosher supermarket popular among Anglos"
+      },
+      {
+        "name": "Rishon Anglo Community Center",
+        "name_he": "מרכז אנגלו ראשון",
+        "category": "community_center",
+        "address": "Rishon LeZion",
+        "lat": 31.9735,
+        "lng": 34.792,
+        "description": "Volunteer‑run center offering English programs and support"
+      },
+      {
+        "name": "Rishon Lake Park",
+        "name_he": "פארק האגם",
+        "category": "park",
+        "address": "Rishon East",
+        "lat": 31.9695,
+        "lng": 34.771,
+        "description": "Large park with lake and bike paths where families picnic"
+      },
+      {
+        "name": "Cafe Cafe Rishon",
+        "name_he": "קפה קפה ראשון",
+        "category": "cafe",
+        "address": "7 Rothschild St",
+        "lat": 31.9709,
+        "lng": 34.7905,
+        "description": "Chain café offering dairy menu and free Wi‑Fi"
+      },
+      {
+        "name": "TGI Friday’s Cinema City",
+        "name_he": "טי ג'יי איי פריידייז",
+        "category": "restaurant",
+        "address": "Cinema City",
+        "lat": 31.9813,
+        "lng": 34.782,
+        "description": "American restaurant in English, a favorite among Anglos"
+      },
+      {
+        "name": "College of Management Academic Studies",
+        "name_he": "המסלול האקדמי המכללה למינהל",
+        "category": "school",
+        "address": "2 Eli Wiesel St",
+        "lat": 31.9929,
+        "lng": 34.7771,
+        "description": "Private college offering courses in English"
+      },
+      {
+        "name": "Shamir Medical Center",
+        "name_he": "מרכז רפואי שמיר",
+        "category": "medical",
+        "address": "Tzrifin",
+        "lat": 31.9592,
+        "lng": 34.8209,
+        "description": "Regional hospital with English‑speaking doctors"
+      },
+      {
+        "name": "Rishon Country Club",
+        "name_he": "קאנטרי ראשון",
+        "category": "fitness",
+        "address": "Rishon LeZion",
+        "lat": 31.9692,
+        "lng": 34.7748,
+        "description": "Sports club with pool, gym and classes"
+      }
+    ]
+  },
+  {
+    "city": "Ashdod",
+    "spots": [
+      {
+        "name": "Chabad of Ashdod",
+        "name_he": "חב״ד אשדוד",
+        "category": "synagogue",
+        "address": "2 HaBanot St",
+        "lat": 31.6685,
+        "lng": 34.571,
+        "description": "English‑friendly Chabad house serving local and visiting Anglos"
+      },
+      {
+        "name": "Marina Synagogue",
+        "name_he": "בית כנסת המרינה",
+        "category": "synagogue",
+        "address": "HaNamal St",
+        "lat": 31.6703,
+        "lng": 34.552,
+        "description": "Beachside synagogue popular with Anglo yacht owners and travelers"
+      },
+      {
+        "name": "Osher Ad Ashdod",
+        "name_he": "אושר עד אשדוד",
+        "category": "supermarket",
+        "address": "8 Tzahal Rd",
+        "lat": 31.816,
+        "lng": 34.6544,
+        "description": "Warehouse supermarket with bulk kosher foods frequented by Anglos"
+      },
+      {
+        "name": "Yochananof Ashdod",
+        "name_he": "יוחננוף אשדוד",
+        "category": "supermarket",
+        "address": "1 HaHagana St",
+        "lat": 31.778,
+        "lng": 34.646,
+        "description": "Full‑service grocery store with imported products"
+      },
+      {
+        "name": "AACI Ashdod",
+        "name_he": "אאצי אשדוד",
+        "category": "community_center",
+        "address": "12 Ben Ami St",
+        "lat": 31.671,
+        "lng": 34.5715,
+        "description": "Branch of the Association of Americans and Canadians in Israel supporting Anglos"
+      },
+      {
+        "name": "Ashdod Yam Park",
+        "name_he": "פארק אשדוד ים",
+        "category": "park",
+        "address": "Derech HaYam",
+        "lat": 31.787,
+        "lng": 34.64,
+        "description": "Beachfront park with amphitheater and playgrounds, popular with families"
+      },
+      {
+        "name": "Aroma Espresso Bar Ashdod Marina",
+        "name_he": "ארומה מרינה אשדוד",
+        "category": "cafe",
+        "address": "Ashdod Marina",
+        "lat": 31.799,
+        "lng": 34.636,
+        "description": "Coffee shop at the marina where Anglos relax by the sea"
+      },
+      {
+        "name": "Giraffe Noodles Ashdod",
+        "name_he": "ג'ירף נודלס אשדוד",
+        "category": "restaurant",
+        "address": "Sfinat HaPlugot St",
+        "lat": 31.803,
+        "lng": 34.649,
+        "description": "Asian fusion restaurant with English menu"
+      },
+      {
+        "name": "Sci‑Tech School Ashdod",
+        "name_he": "אורט סייטק אשדוד",
+        "category": "school",
+        "address": "Ashdod",
+        "lat": 31.8025,
+        "lng": 34.656,
+        "description": "Technological high school attended by some Anglo teens"
+      },
+      {
+        "name": "Assuta Ashdod Hospital",
+        "name_he": "בית חולים אסותא אשדוד",
+        "category": "medical",
+        "address": "6 HaTayasim Blvd",
+        "lat": 31.7875,
+        "lng": 34.6483,
+        "description": "Modern hospital offering services with English documentation"
+      },
+      {
+        "name": "Ashdod Country Club",
+        "name_he": "קאנטרי אשדוד",
+        "category": "fitness",
+        "address": "Ashdod",
+        "lat": 31.7995,
+        "lng": 34.6438,
+        "description": "Sports club with gym and swimming pools used by locals"
+      }
+    ]
+  },
+  {
+    "city": "Beersheba",
+    "spots": [
+      {
+        "name": "Ohel Shlomo Synagogue",
+        "name_he": "אוהל שלמה",
+        "category": "synagogue",
+        "address": "4 Eitz Hayim St",
+        "lat": 31.2444,
+        "lng": 34.793,
+        "description": "Masorti synagogue with English‑speaking members"
+      },
+      {
+        "name": "Great Synagogue of Beersheba",
+        "name_he": "היכל מאיר",
+        "category": "synagogue",
+        "address": "6 Weizmann St",
+        "lat": 31.2521,
+        "lng": 34.7938,
+        "description": "Historic shul where Anglos attend Shabbat services"
+      },
+      {
+        "name": "Chabad of Beersheba",
+        "name_he": "חב״ד באר שבע",
+        "category": "synagogue",
+        "address": "121 Herzl St",
+        "lat": 31.2459,
+        "lng": 34.791,
+        "description": "Chabad house offering welcoming environment for English speakers"
+      },
+      {
+        "name": "Rami Levi Beersheba",
+        "name_he": "רמי לוי באר שבע",
+        "category": "supermarket",
+        "address": "21 HaShevet St",
+        "lat": 31.24,
+        "lng": 34.795,
+        "description": "Affordable supermarket used by Anglo families and students"
+      },
+      {
+        "name": "Go Negev / NBN Beersheba Center",
+        "name_he": "גו נגב",
+        "category": "community_center",
+        "address": "Beersheba",
+        "lat": 31.257,
+        "lng": 34.7915,
+        "description": "Anglo immigrant center offering programs and assistance"
+      },
+      {
+        "name": "Beersheba River Park",
+        "name_he": "פארק נחל באר שבע",
+        "category": "park",
+        "address": "Beersheba",
+        "lat": 31.265,
+        "lng": 34.79,
+        "description": "Large park along the river with playgrounds and bike trails"
+      },
+      {
+        "name": "Cafe Greg Beersheba",
+        "name_he": "קפה גרג באר שבע",
+        "category": "cafe",
+        "address": "Big Center",
+        "lat": 31.244,
+        "lng": 34.7925,
+        "description": "Cafe offering dairy menu and free Wi‑Fi, frequented by students"
+      },
+      {
+        "name": "Ben‑Gurion University International School",
+        "name_he": "אוניברסיטת בן גוריון",
+        "category": "school",
+        "address": "Rager Blvd",
+        "lat": 31.2616,
+        "lng": 34.8015,
+        "description": "University with English programs attracting many international students"
+      },
+      {
+        "name": "Soroka Medical Center",
+        "name_he": "מרכז רפואי סורוקה",
+        "category": "medical",
+        "address": "Rager Blvd",
+        "lat": 31.2513,
+        "lng": 34.7915,
+        "description": "Major hospital serving the Negev region with English‑speaking doctors"
+      },
+      {
+        "name": "Beersheba Country Club",
+        "name_he": "קאנטרי באר שבע",
+        "category": "fitness",
+        "address": "Beersheba",
+        "lat": 31.247,
+        "lng": 34.793,
+        "description": "Sports complex with pool and gym used by families and students"
+      }
+    ]
+  },
+  {
+    "city": "Rehovot",
+    "spots": [
+      {
+        "name": "Chatam Community Synagogue",
+        "name_he": "קהילת חתם",
+        "category": "synagogue",
+        "address": "48 Marmorek St",
+        "lat": 31.8905,
+        "lng": 34.809,
+        "description": "Tight‑knit Anglo community shul offering supportive environment"
+      },
+      {
+        "name": "Ohel Shai Synagogue",
+        "name_he": "אוהל שי",
+        "category": "synagogue",
+        "address": "15 Yosef Caro St",
+        "lat": 31.895,
+        "lng": 34.802,
+        "description": "Modern Orthodox shul with English announcements"
+      },
+      {
+        "name": "Rami Levi Rehovot",
+        "name_he": "רמי לוי רחובות",
+        "category": "supermarket",
+        "address": "3 Hagozer St",
+        "lat": 31.899,
+        "lng": 34.81,
+        "description": "Large supermarket serving the Anglo community"
+      },
+      {
+        "name": "Chatam Anglo Community Center",
+        "name_he": "מרכז קהילתי חתם",
+        "category": "community_center",
+        "address": "Rehovot",
+        "lat": 31.893,
+        "lng": 34.804,
+        "description": "Center for the Chatam Anglo community, hosting events and shiurim"
+      },
+      {
+        "name": "Rehovot Municipal Park",
+        "name_he": "גן עירוני רחובות",
+        "category": "park",
+        "address": "Ein Gedi St",
+        "lat": 31.894,
+        "lng": 34.809,
+        "description": "City park with lawns and playgrounds enjoyed by Anglo families"
+      },
+      {
+        "name": "Cafe Mada",
+        "name_he": "קפה מדע",
+        "category": "cafe",
+        "address": "Weizmann Institute",
+        "lat": 31.906,
+        "lng": 34.807,
+        "description": "Cafe near the Weizmann Institute frequented by students and researchers"
+      },
+      {
+        "name": "Cafe Landwer Rehovot",
+        "name_he": "קפה לנדוור רחובות",
+        "category": "restaurant",
+        "address": "Rehovot Mall",
+        "lat": 31.898,
+        "lng": 34.812,
+        "description": "Dairy restaurant popular with Anglos"
+      },
+      {
+        "name": "Yehuda Halevi School",
+        "name_he": "בית ספר יהודה הלוי",
+        "category": "school",
+        "address": "Rehovot",
+        "lat": 31.889,
+        "lng": 34.81,
+        "description": "Religious elementary school attended by many Anglo children"
+      },
+      {
+        "name": "Kaplan Medical Center",
+        "name_he": "מרכז רפואי קפלן",
+        "category": "medical",
+        "address": "Rehovot",
+        "lat": 31.8902,
+        "lng": 34.8017,
+        "description": "Hospital serving Rehovot and neighboring cities with English support"
+      },
+      {
+        "name": "Rehovot Country Club",
+        "name_he": "קאנטרי רחובות",
+        "category": "fitness",
+        "address": "Rehovot",
+        "lat": 31.8875,
+        "lng": 34.807,
+        "description": "Local sports club with pool, gym and classes"
+      }
+    ]
+  },
+  {
+    "city": "Kfar Saba",
+    "spots": [
+      {
+        "name": "Young Israel of Kfar Saba",
+        "name_he": "יאנג ישראל כפר סבא",
+        "category": "synagogue",
+        "address": "1 Harav Kook St",
+        "lat": 32.176,
+        "lng": 34.907,
+        "description": "Orthodox shul with Anglo members and English programs"
+      },
+      {
+        "name": "Shaarei Rachamim Synagogue",
+        "name_he": "שערי רחמים",
+        "category": "synagogue",
+        "address": "7 Nahal Alexander",
+        "lat": 32.173,
+        "lng": 34.905,
+        "description": "Friendly community synagogue attended by Anglos"
+      },
+      {
+        "name": "Shufersal Deal Kfar Saba",
+        "name_he": "שופרסל דיל כפר סבא",
+        "category": "supermarket",
+        "address": "15 Weizmann St",
+        "lat": 32.1765,
+        "lng": 34.9078,
+        "description": "Large supermarket stocking many Anglo products"
+      },
+      {
+        "name": "NBN Kfar Saba Contact",
+        "name_he": "נפש בנפש כפר סבא",
+        "category": "community_center",
+        "address": "Kfar Saba Absorption Department",
+        "lat": 32.175,
+        "lng": 34.907,
+        "description": "Municipal absorption office offering Anglo assistance"
+      },
+      {
+        "name": "Kfar Saba Park",
+        "name_he": "פארק כפר סבא",
+        "category": "park",
+        "address": "Weizmann St",
+        "lat": 32.1768,
+        "lng": 34.9204,
+        "description": "Large park with lake, walking trails and playgrounds"
+      },
+      {
+        "name": "Cafe Cafe Kfar Saba",
+        "name_he": "קפה קפה כפר סבא",
+        "category": "cafe",
+        "address": "45 Weizmann St",
+        "lat": 32.175,
+        "lng": 34.906,
+        "description": "Popular café where Anglos meet over coffee"
+      },
+      {
+        "name": "Vaniglia Ice Cream",
+        "name_he": "וניליה",
+        "category": "restaurant",
+        "address": "Green Kfar Saba",
+        "lat": 32.1745,
+        "lng": 34.9055,
+        "description": "Ice‑cream shop and dessert café frequented by families"
+      },
+      {
+        "name": "Green Kfar Saba School",
+        "name_he": "בית ספר ירוק",
+        "category": "school",
+        "address": "Green Kfar Saba",
+        "lat": 32.1772,
+        "lng": 34.914,
+        "description": "Eco‑friendly primary school with Anglo students"
+      },
+      {
+        "name": "Meir Hospital",
+        "name_he": "בית חולים מאיר",
+        "category": "medical",
+        "address": "Kfar Saba",
+        "lat": 32.1743,
+        "lng": 34.9107,
+        "description": "Major hospital serving the Sharon region with English-speaking doctors"
+      },
+      {
+        "name": "Kfar Saba Country Club",
+        "name_he": "קאנטרי כפר סבא",
+        "category": "fitness",
+        "address": "Kfar Saba",
+        "lat": 32.174,
+        "lng": 34.9135,
+        "description": "Country club with pool and gym used by locals"
+      }
+    ]
+  },
+  {
+    "city": "Givat Shmuel",
+    "spots": [
+      {
+        "name": "Pituchei Chaim Synagogue",
+        "name_he": "פתחי חיים",
+        "category": "synagogue",
+        "address": "12 Ben Gurion St",
+        "lat": 32.079,
+        "lng": 34.8505,
+        "description": "Warm Orthodox shul popular with young Anglo professionals"
+      },
+      {
+        "name": "Young Israel of Givat Shmuel",
+        "name_he": "יאנג ישראל גבעת שמואל",
+        "category": "synagogue",
+        "address": "27 Maccabit St",
+        "lat": 32.0775,
+        "lng": 34.85,
+        "description": "Community synagogue serving Bar‑Ilan students and Anglos"
+      },
+      {
+        "name": "Yochananof Givat Shmuel",
+        "name_he": "יוחננוף גבעת שמואל",
+        "category": "supermarket",
+        "address": "1 Begin Road",
+        "lat": 32.0792,
+        "lng": 34.849,
+        "description": "Large supermarket with imported products"
+      },
+      {
+        "name": "JLIC Bar‑Ilan",
+        "name_he": "ג׳ליק בר אילן",
+        "category": "community_center",
+        "address": "Bar Ilan University",
+        "lat": 32.0748,
+        "lng": 34.848,
+        "description": "Community center for Anglo university students offering shiurim and events"
+      },
+      {
+        "name": "Givat Shmuel Park",
+        "name_he": "פארק גבעת שמואל",
+        "category": "park",
+        "address": "Marom Nave",
+        "lat": 32.08,
+        "lng": 34.8465,
+        "description": "Neighborhood park used by families and joggers"
+      },
+      {
+        "name": "Cafe Cafe Givat Shmuel",
+        "name_he": "קפה קפה גבעת שמואל",
+        "category": "cafe",
+        "address": "15 Ben Gurion St",
+        "lat": 32.079,
+        "lng": 34.8503,
+        "description": "Popular dairy café where Anglos socialize"
+      },
+      {
+        "name": "Burgers Bar",
+        "name_he": "בורגרס בר",
+        "category": "restaurant",
+        "address": "8 Ben Gurion St",
+        "lat": 32.079,
+        "lng": 34.8501,
+        "description": "Kosher burger joint popular with students"
+      },
+      {
+        "name": "Meshulam Leib High School",
+        "name_he": "תיכון משולם ליב",
+        "category": "school",
+        "address": "Givat Shmuel",
+        "lat": 32.0785,
+        "lng": 34.85,
+        "description": "Local high school attended by some Anglo teens"
+      },
+      {
+        "name": "Mayanei HaYeshua Medical Center",
+        "name_he": "מרכז רפואי מעייני הישועה",
+        "category": "medical",
+        "address": "Bnei Brak",
+        "lat": 32.0811,
+        "lng": 34.8373,
+        "description": "Hospital near Givat Shmuel providing services with English support"
+      },
+      {
+        "name": "Givat Shmuel Country Club",
+        "name_he": "קאנטרי גבעת שמואל",
+        "category": "fitness",
+        "address": "Givat Shmuel",
+        "lat": 32.0795,
+        "lng": 34.847,
+        "description": "Sports complex with gym and pool"
+      }
+    ]
+  },
+  {
+    "city": "Ramat Gan",
+    "spots": [
+      {
+        "name": "Ohel Moshe Synagogue",
+        "name_he": "אוהל משה",
+        "category": "synagogue",
+        "address": "1 Beit Yosef St",
+        "lat": 32.081,
+        "lng": 34.826,
+        "description": "Synagogue with modern Orthodox services and Anglo members"
+      },
+      {
+        "name": "Great Synagogue of Ramat Gan",
+        "name_he": "היכל הגדול רמת גן",
+        "category": "synagogue",
+        "address": "3 Bialik St",
+        "lat": 32.0834,
+        "lng": 34.8204,
+        "description": "Historic synagogue where many Anglos pray"
+      },
+      {
+        "name": "Shufersal Ramat Gan",
+        "name_he": "שופרסל רמת גן",
+        "category": "supermarket",
+        "address": "72 Bialik St",
+        "lat": 32.084,
+        "lng": 34.82,
+        "description": "Popular supermarket stocking Anglo goods"
+      },
+      {
+        "name": "Ramat Gan Community Center",
+        "name_he": "מרכז קהילתי רמת גן",
+        "category": "community_center",
+        "address": "Ramat Gan",
+        "lat": 32.0845,
+        "lng": 34.8268,
+        "description": "Community center hosting English lectures and events"
+      },
+      {
+        "name": "Ramat Gan National Park",
+        "name_he": "פארק לאומי רמת גן",
+        "category": "park",
+        "address": "Abba Hillel Rd",
+        "lat": 32.072,
+        "lng": 34.823,
+        "description": "Large green park with lake and zoo visited by families"
+      },
+      {
+        "name": "Cafe Joe Ramat Gan",
+        "name_he": "קפה ג'ו רמת גן",
+        "category": "cafe",
+        "address": "Ramat Gan",
+        "lat": 32.081,
+        "lng": 34.825,
+        "description": "Coffee shop popular with professionals and expats"
+      },
+      {
+        "name": "Black Bar 'n' Burger",
+        "name_he": "בלאק בר בורגר",
+        "category": "restaurant",
+        "address": "Ramat Gan",
+        "lat": 32.0805,
+        "lng": 34.824,
+        "description": "American‑style burger restaurant"
+      },
+      {
+        "name": "Blich High School",
+        "name_he": "תיכון בליך",
+        "category": "school",
+        "address": "Ramat Gan",
+        "lat": 32.0795,
+        "lng": 34.8255,
+        "description": "Public high school with international orientation"
+      },
+      {
+        "name": "Sheba Medical Center",
+        "name_he": "מרכז רפואי שיבא",
+        "category": "medical",
+        "address": "Tel Hashomer",
+        "lat": 32.0468,
+        "lng": 34.8428,
+        "description": "Israel’s largest hospital offering English services"
+      },
+      {
+        "name": "Ramat Gan Country Club",
+        "name_he": "קאנטרי רמת גן",
+        "category": "fitness",
+        "address": "Ramat Gan",
+        "lat": 32.0705,
+        "lng": 34.83,
+        "description": "Sports club with pools and gym facilities"
+      }
+    ]
+  },
+  {
+    "city": "Givatayim",
+    "spots": [
+      {
+        "name": "Shefa Tal Synagogue",
+        "name_he": "שפע טל",
+        "category": "synagogue",
+        "address": "6 Katznelson St",
+        "lat": 32.0698,
+        "lng": 34.812,
+        "description": "Modern Orthodox shul with some English‑speaking members"
+      },
+      {
+        "name": "Kehillat Shalva",
+        "name_he": "קהילת שלווה",
+        "category": "synagogue",
+        "address": "10 HaMa'apilim St",
+        "lat": 32.0705,
+        "lng": 34.8125,
+        "description": "Masorti community that welcomes English speakers"
+      },
+      {
+        "name": "Shufersal Givatayim",
+        "name_he": "שופרסל גבעתיים",
+        "category": "supermarket",
+        "address": "43 Arlozorov St",
+        "lat": 32.0685,
+        "lng": 34.8105,
+        "description": "Neighborhood supermarket visited by Anglos"
+      },
+      {
+        "name": "Givatayim Community Center",
+        "name_he": "מרכז קהילתי גבעתיים",
+        "category": "community_center",
+        "address": "5 Tchernichovsky St",
+        "lat": 32.0722,
+        "lng": 34.81,
+        "description": "City cultural center offering classes and events"
+      },
+      {
+        "name": "Givatayim Park",
+        "name_he": "פארק גבעתיים",
+        "category": "park",
+        "address": "Ramat Gan Rd",
+        "lat": 32.071,
+        "lng": 34.8065,
+        "description": "Large park with amphitheater and walking paths used by locals"
+      },
+      {
+        "name": "Cafe Greg Givatayim",
+        "name_he": "קפה גרג גבעתיים",
+        "category": "cafe",
+        "address": "17 Histadrut St",
+        "lat": 32.069,
+        "lng": 34.8108,
+        "description": "Cafe where Anglos meet for coffee"
+      },
+      {
+        "name": "Roladin Bakery & Cafe",
+        "name_he": "רולדין",
+        "category": "restaurant",
+        "address": "20 Katznelson St",
+        "lat": 32.07,
+        "lng": 34.8115,
+        "description": "Bakery and café serving salads and pastries"
+      },
+      {
+        "name": "Givatayim International School",
+        "name_he": "בית ספר בינלאומי גבעתיים",
+        "category": "school",
+        "address": "Givatayim",
+        "lat": 32.0705,
+        "lng": 34.811,
+        "description": "School offering bilingual curriculum"
+      },
+      {
+        "name": "Kohav HaShalom Clinic",
+        "name_he": "מרפאת כוכב השלום",
+        "category": "medical",
+        "address": "6 Histadrut St",
+        "lat": 32.0715,
+        "lng": 34.8123,
+        "description": "Health clinic with some English‑speaking staff"
+      },
+      {
+        "name": "Givatayim Sports Complex",
+        "name_he": "מרכז ספורט גבעתיים",
+        "category": "fitness",
+        "address": "Givatayim",
+        "lat": 32.07,
+        "lng": 34.809,
+        "description": "Community gym and swimming pool"
+      }
+    ]
+  },
+  {
+    "city": "Holon",
+    "spots": [
+      {
+        "name": "Ohel Avraham Synagogue",
+        "name_he": "אוהל אברהם",
+        "category": "synagogue",
+        "address": "15 Sokolov St",
+        "lat": 32.0115,
+        "lng": 34.7729,
+        "description": "Synagogue with Anglo attendees"
+      },
+      {
+        "name": "Kehillat Yad Rambam",
+        "name_he": "קהילת יד רמבם",
+        "category": "synagogue",
+        "address": "10 Gilboa St",
+        "lat": 32.013,
+        "lng": 34.7735,
+        "description": "Community shul welcoming English speakers"
+      },
+      {
+        "name": "Shufersal Holon",
+        "name_he": "שופרסל חולון",
+        "category": "supermarket",
+        "address": "27 Dizengoff St",
+        "lat": 32.0105,
+        "lng": 34.7718,
+        "description": "Supermarket with imported goods"
+      },
+      {
+        "name": "Holon Cultural Center",
+        "name_he": "המרכז לתרבות חולון",
+        "category": "community_center",
+        "address": "1 Kugel Blvd",
+        "lat": 32.012,
+        "lng": 34.7705,
+        "description": "Cultural center hosting events and exhibitions"
+      },
+      {
+        "name": "Peres Park",
+        "name_he": "פארק פרס",
+        "category": "park",
+        "address": "Holon",
+        "lat": 32.0135,
+        "lng": 34.77,
+        "description": "Park with lake, playgrounds and sports areas used by families"
+      },
+      {
+        "name": "Yotvata in the City",
+        "name_he": "יוטבתה בעיר",
+        "category": "cafe",
+        "address": "Holon",
+        "lat": 32.0125,
+        "lng": 34.772,
+        "description": "Dairy café near the park popular with Anglos"
+      },
+      {
+        "name": "Benedict Holon",
+        "name_he": "בנדיקט חולון",
+        "category": "restaurant",
+        "address": "2 HaHistadrut St",
+        "lat": 32.0135,
+        "lng": 34.7725,
+        "description": "All‑day breakfast restaurant with English menu"
+      },
+      {
+        "name": "Hand in Hand Bilingual School",
+        "name_he": "יד ביד",
+        "category": "school",
+        "address": "Holon",
+        "lat": 32.015,
+        "lng": 34.771,
+        "description": "Bilingual Hebrew–Arabic school that also draws Anglos"
+      },
+      {
+        "name": "Wolfson Medical Center",
+        "name_he": "מרכז רפואי וולפסון",
+        "category": "medical",
+        "address": "32 Tel Giborim St",
+        "lat": 32.0248,
+        "lng": 34.7715,
+        "description": "Hospital serving Holon and nearby cities with English signage"
+      },
+      {
+        "name": "Holon Country Club",
+        "name_he": "קאנטרי חולון",
+        "category": "fitness",
+        "address": "Holon",
+        "lat": 32.014,
+        "lng": 34.772,
+        "description": "Sports club with pool and gym"
+      }
+    ]
+  },
+  {
+    "city": "Bat Yam",
+    "spots": [
+      {
+        "name": "Young Israel of Bat Yam",
+        "name_he": "יאנג ישראל בת ים",
+        "category": "synagogue",
+        "address": "7 Yosef Tal St",
+        "lat": 32.0238,
+        "lng": 34.7502,
+        "description": "Small Orthodox shul serving the Anglo community"
+      },
+      {
+        "name": "Ezra VeHased Synagogue",
+        "name_he": "עזרה וחסד",
+        "category": "synagogue",
+        "address": "40 Herzl St",
+        "lat": 32.0195,
+        "lng": 34.7468,
+        "description": "Synagogue with an English minyan"
+      },
+      {
+        "name": "Osher Ad Bat Yam",
+        "name_he": "אושר עד בת ים",
+        "category": "supermarket",
+        "address": "3 Yiftach St",
+        "lat": 32.026,
+        "lng": 34.751,
+        "description": "Warehouse supermarket with kosher goods"
+      },
+      {
+        "name": "Bat Yam Anglo Center",
+        "name_he": "מרכז אנגלו בת ים",
+        "category": "community_center",
+        "address": "2 Balfur St",
+        "lat": 32.0235,
+        "lng": 34.7505,
+        "description": "Community hub organizing events for English speakers"
+      },
+      {
+        "name": "Bat Yam Promenade",
+        "name_he": "טיילת בת ים",
+        "category": "park",
+        "address": "Ben Gurion Blvd",
+        "lat": 32.017,
+        "lng": 34.746,
+        "description": "Seafront promenade and park where families walk and cycle"
+      },
+      {
+        "name": "Cafe Landwer Bat Yam",
+        "name_he": "קפה לנדוור בת ים",
+        "category": "cafe",
+        "address": "1 Ben Gurion Blvd",
+        "lat": 32.019,
+        "lng": 34.7475,
+        "description": "Café on the promenade popular with Anglos"
+      },
+      {
+        "name": "Pizza Hut Bat Yam",
+        "name_he": "פיצה האט בת ים",
+        "category": "restaurant",
+        "address": "Ben Gurion Blvd",
+        "lat": 32.021,
+        "lng": 34.75,
+        "description": "American pizza chain with English menu"
+      },
+      {
+        "name": "Bat Yam Ulpan",
+        "name_he": "אולפן בת ים",
+        "category": "school",
+        "address": "Bat Yam",
+        "lat": 32.0205,
+        "lng": 34.7505,
+        "description": "Hebrew ulpan for new immigrants"
+      },
+      {
+        "name": "Bat Yam Medical Center",
+        "name_he": "מרכז רפואי בת ים",
+        "category": "medical",
+        "address": "Bat Yam",
+        "lat": 32.023,
+        "lng": 34.749,
+        "description": "Local clinic with some English‑speaking doctors"
+      },
+      {
+        "name": "Bat Yam Country Club",
+        "name_he": "קאנטרי בת ים",
+        "category": "fitness",
+        "address": "Bat Yam",
+        "lat": 32.0215,
+        "lng": 34.7492,
+        "description": "Sports club with swimming pool and gym"
+      }
+    ]
+  },
+  {
+    "city": "Ashkelon",
+    "spots": [
+      {
+        "name": "Chabad House Ashkelon",
+        "name_he": "בית חבד אשקלון",
+        "category": "synagogue",
+        "address": "2 Habanim St",
+        "lat": 31.6685,
+        "lng": 34.571,
+        "description": "Chabad house serving local English‑speaking residents"
+      },
+      {
+        "name": "Marina Synagogue",
+        "name_he": "בית כנסת המרינה",
+        "category": "synagogue",
+        "address": "HaNamal St",
+        "lat": 31.6703,
+        "lng": 34.552,
+        "description": "Seaside shul near the marina used by Anglos"
+      },
+      {
+        "name": "Shufersal Ashkelon",
+        "name_he": "שופרסל אשקלון",
+        "category": "supermarket",
+        "address": "19 HaHistadrut",
+        "lat": 31.6732,
+        "lng": 34.5718,
+        "description": "Supermarket with imported products"
+      },
+      {
+        "name": "AACI Ashkelon",
+        "name_he": "אאצי אשקלון",
+        "category": "community_center",
+        "address": "12 Ben Ami St",
+        "lat": 31.671,
+        "lng": 34.5715,
+        "description": "Center providing support and social activities for Anglos"
+      },
+      {
+        "name": "Ashkelon National Park",
+        "name_he": "גן לאומי אשקלון",
+        "category": "park",
+        "address": "Ashkelon",
+        "lat": 31.6535,
+        "lng": 34.556,
+        "description": "Beachside national park with archaeological sites and picnic areas"
+      },
+      {
+        "name": "Aroma Marina",
+        "name_he": "ארומה מרינה",
+        "category": "cafe",
+        "address": "Ashkelon Marina",
+        "lat": 31.6715,
+        "lng": 34.551,
+        "description": "Coffee shop overlooking the marina"
+      },
+      {
+        "name": "La Cucina Restaurant",
+        "name_he": "לה קוצ'ינה",
+        "category": "restaurant",
+        "address": "Marina",
+        "lat": 31.6718,
+        "lng": 34.5515,
+        "description": "Italian restaurant frequented by locals and visitors"
+      },
+      {
+        "name": "ORT Afridar High School",
+        "name_he": "אורט אפרידר",
+        "category": "school",
+        "address": "Afridar",
+        "lat": 31.671,
+        "lng": 34.566,
+        "description": "High school where some Anglo teens study"
+      },
+      {
+        "name": "Barzilai Medical Center",
+        "name_he": "מרכז רפואי ברזילי",
+        "category": "medical",
+        "address": "7 Ma’ase HaDayal St",
+        "lat": 31.6715,
+        "lng": 34.5735,
+        "description": "Regional hospital with English‑speaking staff"
+      },
+      {
+        "name": "Ashkelon Sports Club",
+        "name_he": "מועדון ספורט אשקלון",
+        "category": "fitness",
+        "address": "Ashkelon",
+        "lat": 31.671,
+        "lng": 34.562,
+        "description": "Facility with pool and gym used by local families"
+      }
+    ]
+  },
+  {
+    "city": "Hadera",
+    "spots": [
+      {
+        "name": "Ohel Yitzhak Synagogue",
+        "name_he": "אוהל יצחק",
+        "category": "synagogue",
+        "address": "12 Ben Gurion Blvd",
+        "lat": 32.437,
+        "lng": 34.9197,
+        "description": "Synagogue attended by Anglo immigrants"
+      },
+      {
+        "name": "Chabad of Hadera",
+        "name_he": "חבד חדרה",
+        "category": "synagogue",
+        "address": "3 HaRav Kook St",
+        "lat": 32.4355,
+        "lng": 34.917,
+        "description": "Chabad house serving the local community"
+      },
+      {
+        "name": "Shufersal Hadera",
+        "name_he": "שופרסל חדרה",
+        "category": "supermarket",
+        "address": "21 Herbert Samuel St",
+        "lat": 32.433,
+        "lng": 34.919,
+        "description": "Supermarket with a selection of Anglo products"
+      },
+      {
+        "name": "AACI Hadera",
+        "name_he": "אאצי חדרה",
+        "category": "community_center",
+        "address": "15 Herbert Samuel St",
+        "lat": 32.4335,
+        "lng": 34.9194,
+        "description": "Branch of AACI supporting English speakers"
+      },
+      {
+        "name": "Hadera River Park",
+        "name_he": "פארק נחל חדרה",
+        "category": "park",
+        "address": "Hadera",
+        "lat": 32.431,
+        "lng": 34.9064,
+        "description": "Park along the river with walking paths and picnic areas"
+      },
+      {
+        "name": "Aroma G Mall",
+        "name_he": "ארומה קניון ג'י",
+        "category": "cafe",
+        "address": "G Mall",
+        "lat": 32.4365,
+        "lng": 34.9185,
+        "description": "Coffee shop in the mall frequented by locals"
+      },
+      {
+        "name": "Mul Yam Fish Restaurant",
+        "name_he": "מול ים",
+        "category": "restaurant",
+        "address": "Hadera",
+        "lat": 32.43,
+        "lng": 34.91,
+        "description": "Seafood restaurant near the coast"
+      },
+      {
+        "name": "Hadera Hebrew Academy",
+        "name_he": "האקדמיה העברית חדרה",
+        "category": "school",
+        "address": "Hadera",
+        "lat": 32.437,
+        "lng": 34.92,
+        "description": "Primary school with some English programs"
+      },
+      {
+        "name": "Hillel Yaffe Medical Center",
+        "name_he": "מרכז רפואי הלל יפה",
+        "category": "medical",
+        "address": "Givat Olga",
+        "lat": 32.4367,
+        "lng": 34.912,
+        "description": "Hospital serving Hadera and surrounding communities"
+      },
+      {
+        "name": "Hadera Country Club",
+        "name_he": "קאנטרי חדרה",
+        "category": "fitness",
+        "address": "Hadera",
+        "lat": 32.4335,
+        "lng": 34.91,
+        "description": "Sports club with pool and gym used by locals"
+      }
+    ]
+  },
+  {
+    "city": "Nahariya",
+    "spots": [
+      {
+        "name": "Chabad of Nahariya",
+        "name_he": "חבד נהריה",
+        "category": "synagogue",
+        "address": "14 Weizmann St",
+        "lat": 33.005,
+        "lng": 35.093,
+        "description": "Chabad house serving locals and tourists"
+      },
+      {
+        "name": "Kehillat Gilgal",
+        "name_he": "קהילת גלגל",
+        "category": "synagogue",
+        "address": "7 Henrietta Szold St",
+        "lat": 33.007,
+        "lng": 35.0922,
+        "description": "Community synagogue with Anglo participants"
+      },
+      {
+        "name": "Shufersal Nahariya",
+        "name_he": "שופרסל נהריה",
+        "category": "supermarket",
+        "address": "20 Ga'aton Blvd",
+        "lat": 33.0065,
+        "lng": 35.0965,
+        "description": "Supermarket with imported foods"
+      },
+      {
+        "name": "AACI Nahariya",
+        "name_he": "אאצי נהריה",
+        "category": "community_center",
+        "address": "10 Weizmann St",
+        "lat": 33.005,
+        "lng": 35.0935,
+        "description": "Branch providing services and events for Anglos"
+      },
+      {
+        "name": "Ga'aton River Park",
+        "name_he": "פארק נהר הגעתון",
+        "category": "park",
+        "address": "Nahariya",
+        "lat": 33.0055,
+        "lng": 35.0945,
+        "description": "Waterfront park with walking paths and playgrounds"
+      },
+      {
+        "name": "Cafe Greg Nahariya",
+        "name_he": "קפה גרג נהריה",
+        "category": "cafe",
+        "address": "Nahariya",
+        "lat": 33.007,
+        "lng": 35.0947,
+        "description": "Cafe offering dairy menu and free Wi‑Fi"
+      },
+      {
+        "name": "Penguin Restaurant",
+        "name_he": "פינגווין",
+        "category": "restaurant",
+        "address": "38 Ga'aton Blvd",
+        "lat": 33.0085,
+        "lng": 35.0982,
+        "description": "Legendary dairy restaurant popular with locals and visitors"
+      },
+      {
+        "name": "Western Galilee College",
+        "name_he": "מכללת הגליל המערבי",
+        "category": "school",
+        "address": "Akko Road",
+        "lat": 33.0058,
+        "lng": 35.092,
+        "description": "Academic college with international programs"
+      },
+      {
+        "name": "Galilee Medical Center",
+        "name_he": "מרכז רפואי לגליל",
+        "category": "medical",
+        "address": "Nahariya",
+        "lat": 33.005,
+        "lng": 35.0925,
+        "description": "Regional hospital with English‑speaking physicians"
+      },
+      {
+        "name": "Nahariya Country Club",
+        "name_he": "קאנטרי נהריה",
+        "category": "fitness",
+        "address": "Nahariya",
+        "lat": 33.0045,
+        "lng": 35.0945,
+        "description": "Sports club with pool and gym"
+      }
+    ]
+  },
+  {
+    "city": "Eilat",
+    "spots": [
+      {
+        "name": "Chabad of Eilat",
+        "name_he": "חבד אילת",
+        "category": "synagogue",
+        "address": "17 Kamen St",
+        "lat": 29.55,
+        "lng": 34.952,
+        "description": "Chabad house offering services and tourist assistance"
+      },
+      {
+        "name": "Kehillat Eilat",
+        "name_he": "קהילת אילת",
+        "category": "synagogue",
+        "address": "5 Mish'ol Ashkelon",
+        "lat": 29.557,
+        "lng": 34.949,
+        "description": "Community synagogue with mixed Hebrew‑English attendance"
+      },
+      {
+        "name": "Rami Levi Eilat",
+        "name_he": "רמי לוי אילת",
+        "category": "supermarket",
+        "address": "16 HaTzanchanim St",
+        "lat": 29.558,
+        "lng": 34.943,
+        "description": "Large discount supermarket with kosher goods"
+      },
+      {
+        "name": "Beit Oleh Eilat",
+        "name_he": "בית עולים אילת",
+        "category": "community_center",
+        "address": "Eilat",
+        "lat": 29.5575,
+        "lng": 34.951,
+        "description": "Immigrant center offering services for Anglos"
+      },
+      {
+        "name": "Eilat Botanical Garden",
+        "name_he": "הגן הבוטני אילת",
+        "category": "park",
+        "address": "Eilat",
+        "lat": 29.564,
+        "lng": 34.947,
+        "description": "Tropical garden overlooking the city"
+      },
+      {
+        "name": "Aroma Ice Mall",
+        "name_he": "ארומה אייס מול",
+        "category": "cafe",
+        "address": "Eilat Ice Mall",
+        "lat": 29.557,
+        "lng": 34.9445,
+        "description": "Cafe inside the Ice Mall frequented by tourists"
+      },
+      {
+        "name": "Pastot Restaurant",
+        "name_he": "פסטות",
+        "category": "restaurant",
+        "address": "Eilat",
+        "lat": 29.5565,
+        "lng": 34.95,
+        "description": "Italian restaurant with English menu"
+      },
+      {
+        "name": "Eilat International School",
+        "name_he": "בית ספר בינלאומי אילת",
+        "category": "school",
+        "address": "Eilat",
+        "lat": 29.5515,
+        "lng": 34.9565,
+        "description": "International school serving children of expats"
+      },
+      {
+        "name": "Yoseftal Medical Center",
+        "name_he": "מרכז רפואי יוספטל",
+        "category": "medical",
+        "address": "Eilat",
+        "lat": 29.554,
+        "lng": 34.95,
+        "description": "Hospital serving Eilat with English‑speaking staff"
+      },
+      {
+        "name": "Eilat Sports Center",
+        "name_he": "מרכז ספורט אילת",
+        "category": "fitness",
+        "address": "Eilat",
+        "lat": 29.559,
+        "lng": 34.948,
+        "description": "Sports complex with gym and pool"
+      }
+    ]
+  },
+  {
+    "city": "Tiberias",
+    "spots": [
+      {
+        "name": "Etz Hachaim Synagogue",
+        "name_he": "עץ החיים",
+        "category": "synagogue",
+        "address": "6 HaBanim St",
+        "lat": 32.794,
+        "lng": 35.531,
+        "description": "Historic synagogue with an Anglo-friendly atmosphere"
+      },
+      {
+        "name": "Ari Sephardic Synagogue",
+        "name_he": "בית כנסת הארי",
+        "category": "synagogue",
+        "address": "Old City",
+        "lat": 32.7925,
+        "lng": 35.532,
+        "description": "Ancient synagogue visited by English-speaking tourists and residents"
+      },
+      {
+        "name": "Shufersal Tiberias",
+        "name_he": "שופרסל טבריה",
+        "category": "supermarket",
+        "address": "1 HaGalil St",
+        "lat": 32.7918,
+        "lng": 35.5305,
+        "description": "Grocery store supplying Anglo goods"
+      },
+      {
+        "name": "Beit Gavriel / AACI",
+        "name_he": "בית גבריאל",
+        "category": "community_center",
+        "address": "Near Ginosar",
+        "lat": 32.7955,
+        "lng": 35.5405,
+        "description": "Cultural center hosting English-language events"
+      },
+      {
+        "name": "Tiberias Promenade",
+        "name_he": "טיילת טבריה",
+        "category": "park",
+        "address": "Lakefront",
+        "lat": 32.791,
+        "lng": 35.536,
+        "description": "Boardwalk along the Kinneret lake where families stroll"
+      },
+      {
+        "name": "Cafe Greg Tiberias",
+        "name_he": "קפה גרג טבריה",
+        "category": "cafe",
+        "address": "Tiberias",
+        "lat": 32.7905,
+        "lng": 35.5325,
+        "description": "Cafe serving dairy menu with English signage"
+      },
+      {
+        "name": "Decks Restaurant",
+        "name_he": "מסעדת דקס",
+        "category": "restaurant",
+        "address": "Tiberias Boardwalk",
+        "lat": 32.7918,
+        "lng": 35.533,
+        "description": "Steakhouse on the water popular with tourists"
+      },
+      {
+        "name": "Kinneret College",
+        "name_he": "מכללת כנרת",
+        "category": "school",
+        "address": "Degania Bet",
+        "lat": 32.694,
+        "lng": 35.576,
+        "description": "Academic college on the lake with international programs"
+      },
+      {
+        "name": "Poriya Medical Center",
+        "name_he": "מרכז רפואי פוריה",
+        "category": "medical",
+        "address": "Poriya",
+        "lat": 32.748,
+        "lng": 35.5,
+        "description": "Hospital serving Tiberias and the region"
+      },
+      {
+        "name": "Tiberias Country Club",
+        "name_he": "קאנטרי טבריה",
+        "category": "fitness",
+        "address": "Tiberias",
+        "lat": 32.791,
+        "lng": 35.534,
+        "description": "Sports club with pool and gym"
+      }
+    ]
+  },
+  {
+    "city": "Tzfat",
+    "spots": [
+      {
+        "name": "Ari Ashkenazi Synagogue",
+        "name_he": "בית כנסת הארי אשכנזי",
+        "category": "synagogue",
+        "address": "28 Alkabetz St",
+        "lat": 32.968,
+        "lng": 35.493,
+        "description": "Historic synagogue attracting tourists and Anglos"
+      },
+      {
+        "name": "Abuhav Synagogue",
+        "name_he": "בית כנסת אבוהב",
+        "category": "synagogue",
+        "address": "12 Abuhav St",
+        "lat": 32.9675,
+        "lng": 35.4925,
+        "description": "16th‑century synagogue visited by English speakers"
+      },
+      {
+        "name": "Osher Ad Safed",
+        "name_he": "אושר עד צפת",
+        "category": "supermarket",
+        "address": "91 Jerusalem St",
+        "lat": 32.967,
+        "lng": 35.4935,
+        "description": "Kosher supermarket with imported products"
+      },
+      {
+        "name": "Livnot U'Lehibanot",
+        "name_he": "לבנות ולהיבנות",
+        "category": "community_center",
+        "address": "5 Tet Zayin St",
+        "lat": 32.9655,
+        "lng": 35.494,
+        "description": "Anglo volunteer and study center offering programs for English speakers"
+      },
+      {
+        "name": "Safed Citadel Park",
+        "name_he": "גן המצודה",
+        "category": "park",
+        "address": "Citadel Hill",
+        "lat": 32.969,
+        "lng": 35.495,
+        "description": "Park with ancient ruins and panoramic views over the Galilee"
+      },
+      {
+        "name": "Art Café",
+        "name_he": "ארט קפה",
+        "category": "cafe",
+        "address": "Safed Artists’ Quarter",
+        "lat": 32.967,
+        "lng": 35.4928,
+        "description": "Café in the artists’ colony frequented by Anglos"
+      },
+      {
+        "name": "Elements Restaurant",
+        "name_he": "מסעדת אלמנטס",
+        "category": "restaurant",
+        "address": "Safed Old City",
+        "lat": 32.9675,
+        "lng": 35.4926,
+        "description": "Vegetarian restaurant with English menu"
+      },
+      {
+        "name": "Zefat Academic College",
+        "name_he": "המכללה האקדמית צפת",
+        "category": "school",
+        "address": "Tzfat",
+        "lat": 32.972,
+        "lng": 35.494,
+        "description": "Academic college with international students"
+      },
+      {
+        "name": "Ziv Medical Center",
+        "name_he": "מרכז רפואי זיו",
+        "category": "medical",
+        "address": "Safed",
+        "lat": 32.9727,
+        "lng": 35.4995,
+        "description": "Hospital serving the Upper Galilee with English‑speaking staff"
+      },
+      {
+        "name": "Safed Sports Center",
+        "name_he": "מרכז ספורט צפת",
+        "category": "fitness",
+        "address": "Safed",
+        "lat": 32.97,
+        "lng": 35.496,
+        "description": "Gym and sports complex used by locals"
+      }
+    ]
+  }
+]
