@@ -346,8 +346,6 @@ export default function MapSearchLayout() {
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
           resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
           isLoading={isFetching}
-          searchAsMove={searchAsMove}
-          onSearchAsMoveChange={handleSearchAsMoveChange}
           savedLocations={savedLocations}
           commuteFilter={commuteFilter}
           onCommuteFilterChange={setCommuteFilter}
@@ -446,8 +444,6 @@ export default function MapSearchLayout() {
         listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
         resultCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
         isLoading={isFetching}
-        searchAsMove={searchAsMove}
-        onSearchAsMoveChange={handleSearchAsMoveChange}
         savedLocations={savedLocations}
         commuteFilter={commuteFilter}
         onCommuteFilterChange={setCommuteFilter}

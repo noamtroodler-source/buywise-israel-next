@@ -2,8 +2,6 @@ import { useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { PropertyFilters as PropertyFiltersType } from '@/types/database';
 import { MapFilterDialog } from './MapFilterDialog';
@@ -12,7 +10,6 @@ import { CommuteFilter, CommuteFilterValue } from './CommuteFilter';
 import { SavedLocation } from '@/types/savedLocation';
 import { 
   SlidersHorizontal, 
-  MapPin, 
   Loader2,
   X,
 } from 'lucide-react';
@@ -24,8 +21,6 @@ interface MapFiltersBarProps {
   listingType: 'for_sale' | 'for_rent';
   resultCount: number;
   isLoading: boolean;
-  searchAsMove: boolean;
-  onSearchAsMoveChange: (value: boolean) => void;
   // Commute filter props
   savedLocations?: SavedLocation[];
   commuteFilter: CommuteFilterValue | null;
@@ -38,8 +33,6 @@ export function MapFiltersBar({
   listingType,
   resultCount,
   isLoading,
-  searchAsMove,
-  onSearchAsMoveChange,
   savedLocations,
   commuteFilter,
   onCommuteFilterChange,
@@ -112,20 +105,8 @@ export function MapFiltersBar({
           )}
         </div>
 
-        {/* Right: Search toggle + Filters */}
+        {/* Right: Filters */}
         <div className="flex items-center gap-3">
-          {/* Search as I move toggle */}
-          <div className="hidden sm:flex items-center gap-2">
-            <Switch
-              id="search-as-move"
-              checked={searchAsMove}
-              onCheckedChange={onSearchAsMoveChange}
-            />
-            <Label htmlFor="search-as-move" className="text-xs text-muted-foreground cursor-pointer">
-              <MapPin className="h-3 w-3 inline mr-1" />
-              Search as I move
-            </Label>
-          </div>
 
           {/* Commute Filter */}
           {savedLocations && savedLocations.length > 0 && (
