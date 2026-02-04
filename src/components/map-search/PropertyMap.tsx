@@ -133,11 +133,13 @@ function MapViewUpdater({
   zoom,
   isFlyingRef,
   isProgrammaticMoveRef,
+  onBoundsChange,
 }: { 
   center: [number, number]; 
   zoom: number;
   isFlyingRef: React.MutableRefObject<boolean>;
   isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
+  onBoundsChange: (bounds: import('./MapSearchLayout').MapBounds, center: [number, number], zoom: number) => void;
 }) {
   const map = useMap();
   const prevCenterRef = useRef<[number, number]>(center);
@@ -157,20 +159,35 @@ function MapViewUpdater({
       // Fly to new location with smooth animation
       map.flyTo(center, zoom, { duration: 1.5 });
       
-      // Clear flying flag when animation ends
+      // Clear flying flag when animation ends and push final bounds
       map.once('moveend', () => {
         isFlyingRef.current = false;
         // Clear programmatic move flag after animation completes
         if (isProgrammaticMoveRef) {
           isProgrammaticMoveRef.current = false;
         }
+        
+        // Force a final bounds sync so property query updates to new city
+        const finalBounds = map.getBounds();
+        const finalCenter = map.getCenter();
+        const finalZoom = map.getZoom();
+        onBoundsChange(
+          {
+            north: finalBounds.getNorth(),
+            south: finalBounds.getSouth(),
+            east: finalBounds.getEast(),
+            west: finalBounds.getWest(),
+          },
+          [finalCenter.lat, finalCenter.lng],
+          finalZoom
+        );
       });
       
       // Update refs
       prevCenterRef.current = center;
       prevZoomRef.current = zoom;
     }
-  }, [map, center, zoom, isFlyingRef, isProgrammaticMoveRef]);
+  }, [map, center, zoom, isFlyingRef, isProgrammaticMoveRef, onBoundsChange]);
   
   return null;
 }
@@ -281,7 +298,13 @@ export function PropertyMap({
         />
 
         {/* Sync external center/zoom to map (for city selection) */}
-        <MapViewUpdater center={center} zoom={zoom} isFlyingRef={isFlyingRef} isProgrammaticMoveRef={isProgrammaticMoveRef} />
+        <MapViewUpdater 
+          center={center} 
+          zoom={zoom} 
+          isFlyingRef={isFlyingRef} 
+          isProgrammaticMoveRef={isProgrammaticMoveRef}
+          onBoundsChange={onBoundsChange}
+        />
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
 
