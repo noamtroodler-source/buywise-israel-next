@@ -42,6 +42,8 @@ export default function MapSearchLayout() {
   const isProgrammaticMoveRef = useRef(false);
   const cityDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastDetectedCityRef = useRef<string | null>(null);
+  const pendingDetectedCityRef = useRef<string | null>(null);
+  const pendingDetectedCityCountRef = useRef(0);
 
   // Initial map view from URL (MapContainer only reads props on mount; we also keep state in sync)
   const initialMapCenter = (() => {
@@ -346,30 +348,50 @@ export default function MapSearchLayout() {
   }, [allCities]);
 
   // Debounced city detection - runs 800ms after user stops moving
+  // Uses hysteresis + “2 confirmations” to prevent flicker while navigating city-to-city.
   const detectAndUpdateCity = useCallback((center: [number, number], zoom: number) => {
     if (!allCities) return;
-    
-    if (zoom >= 12) {
-      const detectedCity = findCityByCoordinates(center[0], center[1]);
-      
-      // Only update if different from LAST detected (prevents flickering)
-      if (detectedCity !== lastDetectedCityRef.current) {
-        lastDetectedCityRef.current = detectedCity;
-        
-        if (detectedCity) {
-          setFilters(prev => ({ ...prev, city: detectedCity, listing_status: listingStatus }));
-          // Note: NOT updating URL here to reduce re-renders during navigation
-        } else {
-          // Clear city if we're zoomed in but not near any city
-          setFilters(prev => ({ ...prev, city: undefined, listing_status: listingStatus }));
-        }
-      }
-    } else if (zoom < 12) {
-      // Zoomed out - clear city filter
+
+    const ENTER_ZOOM = 12;
+    const EXIT_ZOOM = 11; // only clear when clearly zoomed out to avoid toggling around 11-12
+
+    // Clear when sufficiently zoomed out
+    if (zoom <= EXIT_ZOOM) {
+      pendingDetectedCityRef.current = null;
+      pendingDetectedCityCountRef.current = 0;
       if (lastDetectedCityRef.current !== null) {
         lastDetectedCityRef.current = null;
         setFilters(prev => ({ ...prev, city: undefined, listing_status: listingStatus }));
       }
+      return;
+    }
+
+    // Only attempt detection when zoomed in enough
+    if (zoom < ENTER_ZOOM) return;
+
+    const detectedCity = findCityByCoordinates(center[0], center[1]);
+
+    // If we're not confidently in a city, don't force-clearing; keep current city to avoid flashing.
+    if (!detectedCity) {
+      pendingDetectedCityRef.current = null;
+      pendingDetectedCityCountRef.current = 0;
+      return;
+    }
+
+    // Require 2 consecutive detections of the same city before committing.
+    if (pendingDetectedCityRef.current === detectedCity) {
+      pendingDetectedCityCountRef.current += 1;
+    } else {
+      pendingDetectedCityRef.current = detectedCity;
+      pendingDetectedCityCountRef.current = 1;
+    }
+
+    if (pendingDetectedCityCountRef.current < 2) return;
+
+    if (detectedCity !== lastDetectedCityRef.current) {
+      lastDetectedCityRef.current = detectedCity;
+      setFilters(prev => ({ ...prev, city: detectedCity, listing_status: listingStatus }));
+      // Note: NOT updating URL here to reduce re-renders during navigation
     }
   }, [allCities, findCityByCoordinates, listingStatus]);
 
