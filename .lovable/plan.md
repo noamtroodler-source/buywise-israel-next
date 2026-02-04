@@ -1,60 +1,116 @@
 
 
-## Zoom Out to Israel When City is Cleared
+## Fix: City-to-City Smooth Animation Not Working
 
 ### The Problem
 
-When you clear the city filter (deselect the currently selected city), the map stays at the current location instead of zooming back out to show all of Israel.
+When switching from one city (e.g., Beit Shemesh) to another city (e.g., Jerusalem), the map doesn't smoothly animate between them. The map just stays where it is.
 
-The current logic in `handleFiltersChange` only handles the case when a **new city is selected**:
-```typescript
-const cityChanged = newFilters.city && newFilters.city !== filters.city;
-```
+**Root Cause:** There's a synchronization issue between two state sources:
 
-This condition is `false` when `newFilters.city` is `undefined` (cleared), so the zoom-out logic is never triggered.
+1. **`mapCenter`/`mapZoom` state** - Updated by both:
+   - User interactions (panning/zooming) via `handleBoundsChange`
+   - Programmatic city selection in `handleFiltersChange`
+
+2. **`prevCenterRef`/`prevZoomRef` in `MapViewUpdater`** - Only updated when `flyTo` is called
+
+When you:
+1. Select "Beit Shemesh" → Map flies there → `prevCenterRef` = Beit Shemesh coords
+2. Pan the map slightly → `mapCenter` updates to new position
+3. Select "Jerusalem" → `handleFiltersChange` sets `mapCenter` to Jerusalem
+4. `MapViewUpdater` compares Jerusalem coords vs `prevCenterRef` (Beit Shemesh) → Should detect change ✓
+
+The problem is that `handleBoundsChange` is being called during/after the city selection and overwriting the target coordinates with the current map position before `MapViewUpdater` can process them.
 
 ### The Solution
 
-Add a check for when the city is **cleared** (was set, now is `undefined`) and fly the map back to the national view of Israel:
+Prevent `handleBoundsChange` from overwriting programmatic center/zoom updates by introducing a "programmatic update in progress" flag:
 
-1. Detect when `filters.city` had a value but `newFilters.city` is now `undefined`
-2. Set map center to `ISRAEL_CENTER` (31.5, 34.8)
-3. Set zoom to `ISRAEL_ZOOM` (8)
-4. Use the same smooth `flyTo` animation
+1. **Add a flag** in `MapSearchLayout` to indicate a programmatic view change is pending
+2. **Set the flag** before updating `mapCenter`/`mapZoom` for city selection
+3. **Skip state updates** in `handleBoundsChange` while the flag is active
+4. **Clear the flag** after `MapViewUpdater` processes the change
 
 ---
 
 ## Technical Changes
 
-### Update `handleFiltersChange` in `MapSearchLayout.tsx`
+### 1. Add `isProgrammaticMoveRef` in `MapSearchLayout.tsx`
+
+Track when a programmatic map move is initiated:
+
+```typescript
+const isProgrammaticMoveRef = useRef(false);
+```
+
+### 2. Set Flag in City Selection Logic
+
+Before updating map state for city changes:
 
 ```typescript
 const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
   const updatedFilters = { ...newFilters, listing_status: listingStatus };
   
-  // Check if city was CLEARED (had a value, now undefined)
+  // Check if city was CLEARED
   const cityCleared = filters.city && !newFilters.city;
   if (cityCleared) {
-    // Zoom back out to show all of Israel
+    isProgrammaticMoveRef.current = true;  // Set flag
     const nextCenter = ISRAEL_CENTER;
     const nextZoom = ISRAEL_ZOOM;
     setMapCenter(nextCenter);
     setMapZoom(nextZoom);
-    setFilters(updatedFilters);
-    updateUrlParams(updatedFilters, nextCenter, nextZoom);
-    return;
+    // ... rest of logic
   }
   
-  // If city changed to a NEW city, fly to that city
+  // If city changed to a NEW city
   const cityChanged = newFilters.city && newFilters.city !== filters.city;
   if (cityChanged) {
-    // ... existing city zoom logic ...
+    const city = allCities?.find(c => c.name === newFilters.city);
+    if (city?.center_lat && city?.center_lng) {
+      isProgrammaticMoveRef.current = true;  // Set flag
+      const nextCenter: [number, number] = [city.center_lat, city.center_lng];
+      // ... rest of logic
+    }
   }
+  // ...
+}, [...]);
+```
 
-  // Default: no special map view update
-  setFilters(updatedFilters);
-  updateUrlParams(updatedFilters);
-}, [listingStatus, updateUrlParams, filters.city, allCities]);
+### 3. Skip State Updates in `handleBoundsChange` During Programmatic Move
+
+```typescript
+const handleBoundsChange = useCallback((bounds: MapBounds, center: [number, number], zoom: number) => {
+  // Skip if programmatic move is in progress
+  if (isProgrammaticMoveRef.current) return;
+  
+  setMapBounds(bounds);
+  setMapCenter(center);
+  setMapZoom(zoom);
+}, []);
+```
+
+### 4. Clear Flag After Animation in `PropertyMap.tsx`
+
+Pass the flag to `MapViewUpdater` and clear it after `flyTo` completes:
+
+```typescript
+// In PropertyMap props
+isProgrammaticMoveRef: React.MutableRefObject<boolean>;
+
+// In MapViewUpdater
+function MapViewUpdater({ center, zoom, isFlyingRef, isProgrammaticMoveRef }) {
+  // ...
+  if (centerChanged || zoomChanged) {
+    isFlyingRef.current = true;
+    map.flyTo(center, zoom, { duration: 1.5 });
+    
+    map.once('moveend', () => {
+      isFlyingRef.current = false;
+      isProgrammaticMoveRef.current = false;  // Clear after animation
+    });
+    // ...
+  }
+}
 ```
 
 ---
@@ -63,15 +119,29 @@ const handleFiltersChange = useCallback((newFilters: PropertyFiltersType) => {
 
 | File | Change |
 |------|--------|
-| `src/components/map-search/MapSearchLayout.tsx` | Add city-cleared check in `handleFiltersChange` to zoom back to Israel |
+| `src/components/map-search/MapSearchLayout.tsx` | Add `isProgrammaticMoveRef`, set it before city changes, skip in `handleBoundsChange` |
+| `src/components/map-search/PropertyMap.tsx` | Accept `isProgrammaticMoveRef` prop, clear it in `MapViewUpdater` after animation |
+
+---
+
+## Flow After Fix
+
+1. User selects "Jerusalem" from dropdown while on "Beit Shemesh"
+2. `handleFiltersChange` sets `isProgrammaticMoveRef.current = true`
+3. `setMapCenter(Jerusalem coords)` is called
+4. `handleBoundsChange` is called but skips update because `isProgrammaticMoveRef` is true
+5. `MapViewUpdater` detects center change, calls `flyTo(Jerusalem, 13, {duration: 1.5})`
+6. Map smoothly animates from Beit Shemesh to Jerusalem
+7. Animation completes → `isProgrammaticMoveRef.current = false`
+8. Normal bounds tracking resumes
 
 ---
 
 ## Result
 
-After this change:
-- Selecting a city zooms the map to that city (existing behavior)
-- Clearing the city filter smoothly zooms the map back out to show all of Israel
-- The same 1.5-second `flyTo` animation provides a smooth transition
-- Works from the City filter dropdown clear action
+After this fix:
+- Switching from one city to another will smoothly animate the map between locations
+- The 1.5-second duration provides a nice visual "guide" effect
+- Works for both Buy and Rent listings
+- Property listings update after the animation completes to show the new city's properties
 
