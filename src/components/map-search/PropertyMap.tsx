@@ -39,6 +39,8 @@ interface PropertyMapProps {
   selectedNeighborhoods: string[];
   onNeighborhoodToggle: (neighborhood: string) => void;
   onClearNeighborhoods: () => void;
+  // City selection callback
+  onCitySelect?: (cityName: string) => void;
 }
 
 // Map click handler to deselect property when clicking empty map
@@ -137,6 +139,7 @@ export function PropertyMap({
   selectedNeighborhoods,
   onNeighborhoodToggle,
   onClearNeighborhoods,
+  onCitySelect,
 }: PropertyMapProps) {
   const { user } = useAuth();
   const { data: savedLocations } = useSavedLocations();
@@ -187,8 +190,9 @@ export function PropertyMap({
 
   // Handle city click from overlay
   const handleCityClick = useCallback((cityName: string, cityCenter: [number, number]) => {
-    // Could filter by city here if needed
-  }, []);
+    // Update filters with selected city
+    onCitySelect?.(cityName);
+  }, [onCitySelect]);
 
   // Show city overlay when zoomed out
   const showCityOverlay = currentZoom < 10;
