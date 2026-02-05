@@ -5,6 +5,7 @@ import {
   MessageCircle, Eye, Users, TrendingUp, Shield, FileText, MapPin, Share2,
   Linkedin, Instagram, Facebook
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,12 +89,21 @@ export default function DeveloperDetail() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'planning': return 'Planning';
+      case 'planning': return 'Planning Phase';
       case 'pre_sale': return 'Pre-Sale';
-      case 'under_construction': return 'Under Construction';
-      case 'completed': case 'delivery': return 'Completed';
+      case 'foundation': return 'Foundation';
+      case 'structure': return 'Structure';
+      case 'finishing': return 'Finishing';
+      case 'delivery': return 'Ready for Move-In';
       default: return status;
     }
+  };
+
+  const getStageProgress = (status: string): number => {
+    const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
+    const stageIndex = stages.findIndex(s => s === status);
+    if (stageIndex === -1) return 0;
+    return Math.round(((stageIndex + 1) / stages.length) * 100);
   };
 
   const getStatusColor = (status: string) => {
@@ -432,6 +442,7 @@ export default function DeveloperDetail() {
                       project={project} 
                       getStatusLabel={getStatusLabel}
                       getStatusColor={getStatusColor}
+                      getStageProgress={getStageProgress}
                       formatPrice={formatPrice}
                     />
                   ))}
@@ -455,6 +466,7 @@ export default function DeveloperDetail() {
                       project={project} 
                       getStatusLabel={getStatusLabel}
                       getStatusColor={getStatusColor}
+                      getStageProgress={getStageProgress}
                       formatPrice={formatPrice}
                     />
                   ))}
@@ -496,39 +508,23 @@ interface ProjectCardProps {
     city: string;
     price_from: number | null;
     views_count: number;
-    construction_progress_percent?: number | null;
   };
   getStatusLabel: (status: string) => string;
   getStatusColor: (status: string) => string;
+  getStageProgress: (status: string) => number;
   formatPrice: (price: number | null) => string;
 }
 
-function ProjectCard({ project, getStatusLabel, getStatusColor, formatPrice }: ProjectCardProps) {
+function ProjectCard({ project, getStatusLabel, getStatusColor, getStageProgress, formatPrice }: ProjectCardProps) {
   return (
     <Link to={`/projects/${project.slug}`}>
       <Card className="h-full hover:shadow-card-hover transition-all duration-300 group overflow-hidden">
-        <div className="aspect-[16/9] overflow-hidden relative">
+        <div className="aspect-[16/9] overflow-hidden">
           <img
             src={project.images?.[0] || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'}
             alt={project.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          {project.construction_progress_percent !== undefined && project.construction_progress_percent > 0 && (
-            <div className="absolute bottom-2 left-2 right-2">
-              <div className="bg-background/90 backdrop-blur-sm rounded-md px-2 py-1">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span>Progress</span>
-                  <span className="font-medium">{project.construction_progress_percent}%</span>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary transition-all" 
-                    style={{ width: `${project.construction_progress_percent}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         <CardContent className="p-5 space-y-3">
           <div className="flex items-center justify-between">
@@ -548,6 +544,23 @@ function ProjectCard({ project, getStatusLabel, getStatusColor, formatPrice }: P
           <p className="text-sm text-muted-foreground">
             {project.neighborhood ? `${project.neighborhood}, ` : ''}{project.city}
           </p>
+          
+          {/* Project Status Progress Bar */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {getStatusLabel(project.status)}
+              </span>
+              <span className="font-medium text-primary">
+                {getStageProgress(project.status)}%
+              </span>
+            </div>
+            <Progress 
+              value={getStageProgress(project.status)} 
+              className="h-1.5" 
+            />
+          </div>
+
           <div className="pt-2 border-t border-border">
             <p className="text-sm text-muted-foreground">Starting from</p>
             <p className="text-xl font-bold text-primary">
