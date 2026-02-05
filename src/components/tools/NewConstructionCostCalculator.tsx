@@ -283,7 +283,7 @@ export function NewConstructionCostCalculator() {
   );
 
   const rightColumn = (
-    <Card className="lg:sticky lg:top-6 lg:self-start">
+    <Card className="lg:sticky lg:top-20 lg:self-start">
       <CardContent className="p-6 space-y-4">
         {/* Index Warning */}
         <Alert variant="default" className="bg-amber-50 border-amber-200">
