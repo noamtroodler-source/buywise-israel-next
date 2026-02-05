@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { createGuestClient } from '@/integrations/supabase/guestClient';
+import { getOrCreateGuestId } from '@/utils/guestId';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property } from '@/types/database';
@@ -103,6 +105,13 @@ export function useFavorites() {
           const filtered = current.filter(f => f.property_id !== propertyId);
           return [{ property_id: propertyId, price: currentPrice }, ...filtered];
         });
+        
+        // Also insert into guest_property_saves for counting
+        const guestId = getOrCreateGuestId();
+        const guestClient = createGuestClient(guestId);
+        await guestClient
+          .from('guest_property_saves')
+          .upsert({ property_id: propertyId, guest_id: guestId }, { onConflict: 'property_id,guest_id' });
         return;
       }
       
@@ -117,7 +126,10 @@ export function useFavorites() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate saves count to reflect the new save
+      queryClient.invalidateQueries({ queryKey: ['savesCount', variables.propertyId] });
+      
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['favorites'] });
         queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
@@ -146,6 +158,15 @@ export function useFavorites() {
       if (!user) {
         // Guest: update context (which syncs to sessionStorage)
         setGuestFavorites(current => current.filter(f => f.property_id !== propertyId));
+        
+        // Also delete from guest_property_saves
+        const guestId = getOrCreateGuestId();
+        const guestClient = createGuestClient(guestId);
+        await guestClient
+          .from('guest_property_saves')
+          .delete()
+          .eq('property_id', propertyId)
+          .eq('guest_id', guestId);
         return;
       }
       
@@ -188,7 +209,10 @@ export function useFavorites() {
       }
       toast.error('Failed to remove property');
     },
-    onSuccess: () => {
+    onSuccess: (_, propertyId) => {
+      // Invalidate saves count to reflect the removal
+      queryClient.invalidateQueries({ queryKey: ['savesCount', propertyId] });
+      
       // Guest updates are reactive via context - no invalidation needed
       toast.success('Property removed from favorites');
     },
