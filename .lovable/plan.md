@@ -1,74 +1,45 @@
 
+# Fix: Change Share Dropdown Hover Color to Blue
 
-# Fix: "Questions to Ask" Section Not Showing
-
-## Root Cause
-
-The "Questions to Ask" section is not appearing because the **`generate-listing-questions` edge function is not deployed** (returning 404). When the hook calls the function and gets an error, it throws and the component renders `null` (silent fail per line 98-99 in `PropertyQuestionsToAsk.tsx`).
-
-This affects ALL listing types:
-- ✗ Properties (buy/resale)
-- ✗ Rentals
-- ✗ Projects
-
----
-
-## Evidence
-
-| Check | Result |
-|-------|--------|
-| Edge function curl test | `404 NOT_FOUND` |
-| Function code exists | ✓ `supabase/functions/generate-listing-questions/` |
-| property_questions table | ✓ 144 active questions |
-| listing_question_cache | ✓ Has cached entries from previous runs |
-
----
+## Problem
+The dropdown menu items in ShareButton use `focus:bg-accent` which maps to yellow in the current theme. Per the platform's color palette standards, selection and hover states should use blue (primary color).
 
 ## Solution
-
-### Step 1: Deploy the Edge Function
-
-Deploy `generate-listing-questions` to make it accessible. The code is correct; it just needs to be deployed.
-
-```
-Deploy: generate-listing-questions
-```
-
-### Step 2: Verify RLS Policy (Already OK)
-
-The RLS policy on `listing_question_cache` has `USING (false)`:
-
-```sql
-Policy: "Cache managed internally only" 
-- USING: false
-- WITH CHECK: false
-```
-
-**This is actually fine** because the edge function uses `SUPABASE_SERVICE_ROLE_KEY` which **bypasses RLS entirely**. The cache is only written/read by the edge function, not the browser client.
+Update the `DropdownMenuItem` component to use `focus:bg-primary/10 focus:text-primary` instead of `focus:bg-accent focus:text-accent-foreground`. This aligns with the existing standard noted in the memory for SelectItem focus states.
 
 ---
 
-## Files Changed
+## File to Update
 
-No code changes needed - just deployment.
+### `src/components/ui/dropdown-menu.tsx` (line 82)
+
+**Before:**
+```typescript
+"relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground"
+```
+
+**After:**
+```typescript
+"relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-primary/10 focus:text-primary"
+```
 
 ---
 
-## After Fix
+## Impact
+This change applies globally to all dropdown menus across the app, ensuring consistent blue hover states that match the brand color palette (matching the fix already applied to SelectItem per the UI component standards).
 
-Once deployed:
-1. Property detail pages (buy/resale) → Questions appear
-2. Rental listings → Questions appear
-3. Project detail pages → Questions appear
+| Component | Before | After |
+|-----------|--------|-------|
+| ShareButton dropdown | Yellow hover | Blue hover |
+| ProjectShareButton | Yellow hover | Blue hover |
+| All other dropdowns | Yellow hover | Blue hover |
 
 ---
 
-## Technical Note
+## Summary
 
-The component correctly handles the loading/error states:
-- Shows skeleton while loading
-- Returns `null` on error (silent fail)
-- Shows questions when available
+| File | Change |
+|------|--------|
+| `src/components/ui/dropdown-menu.tsx` | `focus:bg-accent focus:text-accent-foreground` → `focus:bg-primary/10 focus:text-primary` |
 
-The issue is purely that the backend function isn't reachable.
-
+**Effort:** 1 minute
