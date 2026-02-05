@@ -216,35 +216,6 @@ export default function PropertyDetail() {
               </motion.div>
             )}
 
-            {/* Questions to Ask - Right before cost breakdown */}
-            <PropertyQuestionsToAsk 
-              listing={{
-                type: property.listing_status === 'for_rent' ? 'rent' : 'buy',
-                entity_id: property.id,
-                entity_type: 'property',
-                price: property.price || undefined,
-                size_sqm: property.size_sqm || undefined,
-                price_per_sqm: property.size_sqm && property.price ? Math.round(property.price / property.size_sqm) : undefined,
-                year_built: property.year_built || undefined,
-                days_on_market: daysOnMarket,
-                price_reduced: !!(property as any).original_price,
-                condition: property.condition || undefined,
-                city: property.city,
-                neighborhood: property.neighborhood || undefined,
-                property_type: property.property_type,
-                bedrooms: property.bedrooms || undefined,
-                has_parking: !!(property as any).parking_spots,
-                has_elevator: (property as any).has_elevator,
-                floor: property.floor ?? undefined,
-                total_floors: (property as any).total_floors,
-                missing_fields: [
-                  ...(!property.size_sqm ? ['size_sqm'] : []),
-                  ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
-                  ...(!property.year_built ? ['year_built'] : []),
-                ],
-              }}
-            />
-
             {/* Cost Breakdown - Collapsible on mobile */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (
               <motion.div 
@@ -304,6 +275,35 @@ export default function PropertyDetail() {
                 </GoogleMapsProvider>
               </MobileCollapsibleSection>
             </motion.div>
+
+            {/* Questions to Ask - After location, before next steps */}
+            <PropertyQuestionsToAsk 
+              listing={{
+                type: property.listing_status === 'for_rent' ? 'rent' : 'buy',
+                entity_id: property.id,
+                entity_type: 'property',
+                price: property.price || undefined,
+                size_sqm: property.size_sqm || undefined,
+                price_per_sqm: property.size_sqm && property.price ? Math.round(property.price / property.size_sqm) : undefined,
+                year_built: property.year_built || undefined,
+                days_on_market: daysOnMarket,
+                price_reduced: !!(property as any).original_price,
+                condition: property.condition || undefined,
+                city: property.city,
+                neighborhood: property.neighborhood || undefined,
+                property_type: property.property_type,
+                bedrooms: property.bedrooms || undefined,
+                has_parking: !!(property as any).parking_spots,
+                has_elevator: (property as any).has_elevator,
+                floor: property.floor ?? undefined,
+                total_floors: (property as any).total_floors,
+                missing_fields: [
+                  ...(!property.size_sqm ? ['size_sqm'] : []),
+                  ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
+                  ...(!property.year_built ? ['year_built'] : []),
+                ],
+              }}
+            />
 
             {/* Next Steps CTAs */}
             <PropertyNextSteps 
