@@ -20,7 +20,6 @@ import {
   CompareQuickInsights,
   CompareSection,
   CompareEmptyState,
-  CompareWinnerSummary,
   CompareAISummary,
   type ComparisonRow,
 } from '@/components/compare';
@@ -553,17 +552,11 @@ export default function Compare() {
           )}
         </div>
 
-        {/* AI Summary */}
+        {/* AI Summary with Winner Breakdown */}
         <CompareAISummary
           properties={properties}
           winnerCounts={winnerCounts}
           isRental={isRental}
-        />
-
-        {/* Winner Summary */}
-        <CompareWinnerSummary
-          properties={properties}
-          winnerCounts={winnerCounts}
         />
       </div>
     </Layout>

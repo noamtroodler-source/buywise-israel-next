@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RefreshCw, AlertCircle } from 'lucide-react';
+import { Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Property } from '@/types/database';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface WinnerCount {
   propertyId: string;
@@ -108,28 +108,16 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
       className="rounded-xl border bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4 md:p-6"
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg">Comparison AI Summary</h3>
-            <p className="text-sm text-muted-foreground">
-              AI-powered analysis of your selected properties
-            </p>
-          </div>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Sparkles className="h-5 w-5 text-primary" />
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={generateSummary}
-          disabled={loading}
-          className="shrink-0"
-        >
-          <RefreshCw className={cn("h-4 w-4 mr-1", loading && "animate-spin")} />
-          <span className="hidden sm:inline">Regenerate</span>
-        </Button>
+        <div>
+          <h3 className="font-semibold text-lg">Comparison AI Summary</h3>
+          <p className="text-sm text-muted-foreground">
+            AI-powered analysis of your selected properties
+          </p>
+        </div>
       </div>
 
       {/* Content */}
@@ -172,6 +160,41 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {/* Winner Breakdown */}
+      {winnerCounts.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {[...winnerCounts].sort((a, b) => b.wins - a.wins).map((winner, index) => (
+            <div 
+              key={winner.propertyId}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
+                index === 0 
+                  ? 'bg-primary/10 text-primary font-medium' 
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              <span className="truncate max-w-[150px]">{winner.title}</span>
+              <span className="font-semibold">{winner.wins}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CTA Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-border/50">
+        <Button asChild variant="outline" className="flex-1">
+          <Link to="/tools?tool=totalcost">
+            Calculate True Costs
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="flex-1">
+          <Link to="/tools?tool=mortgage">
+            Run Mortgage Numbers
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Link>
+        </Button>
+      </div>
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-border/50">
