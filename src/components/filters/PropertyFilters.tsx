@@ -312,7 +312,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const filterButtonSecondary = "h-10 min-h-[40px] gap-1.5 rounded-full border-0 bg-transparent hover:bg-muted/50 px-3 font-normal text-muted-foreground transition-all active:scale-[0.98] touch-manipulation";
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={400} skipDelayDuration={100}>
       <>
         {/* Main Filters Row - Single row on desktop */}
         <div className="flex flex-wrap gap-2 items-center">
@@ -601,8 +601,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Rooms</Label>
                     <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                      <TooltipTrigger asChild>
+                        <button type="button" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-[250px]">
                         <p className="text-sm">In Israel, "rooms" includes living areas. A 3-room apartment typically has 2 bedrooms + a living room.</p>
