@@ -116,22 +116,6 @@ export default function ProjectDetail() {
               {/* Floor Plans - What's available */}
               <ProjectFloorPlans units={units} developer={project.developer} />
               
-              {/* Questions to Ask the Developer - Right before cost breakdown */}
-              <ProjectQuestionsToAsk 
-                listing={{
-                  type: 'project',
-                  entity_id: project.id,
-                  entity_type: 'project',
-                  price: project.price_from || undefined,
-                  city: project.city,
-                  neighborhood: project.neighborhood || undefined,
-                  delivery_year: project.completion_date ? new Date(project.completion_date).getFullYear() : undefined,
-                  has_payment_schedule: true,
-                  has_bank_guarantee: true,
-                  developer_name: project.developer?.name,
-                }}
-              />
-              
               {/* Cost Breakdown with buyer protections integrated */}
               <ProjectCostBreakdown 
                 units={units}
@@ -154,6 +138,22 @@ export default function ProjectDetail() {
                   entityType="project"
                 />
               </GoogleMapsProvider>
+              
+              {/* Questions to Ask the Developer - After location, before next steps */}
+              <ProjectQuestionsToAsk 
+                listing={{
+                  type: 'project',
+                  entity_id: project.id,
+                  entity_type: 'project',
+                  price: project.price_from || undefined,
+                  city: project.city,
+                  neighborhood: project.neighborhood || undefined,
+                  delivery_year: project.completion_date ? new Date(project.completion_date).getFullYear() : undefined,
+                  has_payment_schedule: true,
+                  has_bank_guarantee: true,
+                  developer_name: project.developer?.name,
+                }}
+              />
               
               {/* Next Steps - Merged CTAs */}
               <ProjectNextSteps 
