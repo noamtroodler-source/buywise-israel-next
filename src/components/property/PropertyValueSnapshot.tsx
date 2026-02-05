@@ -139,8 +139,8 @@ export function PropertyValueSnapshot({
 
           {/* Comparison to Market */}
           {rentalComparisonPercent !== null && (
-            <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <div className={`p-4 rounded-xl ${rentalComparisonPercent >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 border-border/50'} border`}>
+              <div className={`flex items-center gap-2 mb-1 ${rentalComparisonPercent >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
               {rentalComparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : rentalComparisonPercent < 0 ? (
@@ -150,7 +150,7 @@ export function PropertyValueSnapshot({
               )}
                 <span className="text-sm">vs Market Rate</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">
+              <p className={`text-2xl font-bold ${rentalComparisonPercent >= 0 ? 'text-primary' : 'text-foreground'}`}>
                 {rentalComparisonPercent > 0 ? '+' : ''}{rentalComparisonPercent}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -210,8 +210,8 @@ export function PropertyValueSnapshot({
 
         {/* Card 2: vs City Average (combines comparison % with city avg as subtext) */}
         {purchaseComparisonPercent !== null && averagePriceSqm && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+          <div className={`p-4 rounded-xl ${purchaseComparisonPercent >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 border-border/50'} border`}>
+            <div className={`flex items-center gap-2 mb-1 ${purchaseComparisonPercent >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
               {purchaseComparisonPercent > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : purchaseComparisonPercent < 0 ? (
@@ -235,7 +235,7 @@ export function PropertyValueSnapshot({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-2xl font-bold text-foreground">
+            <p className={`text-2xl font-bold ${purchaseComparisonPercent >= 0 ? 'text-primary' : 'text-foreground'}`}>
               {purchaseComparisonPercent > 0 ? '+' : ''}{purchaseComparisonPercent}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -246,8 +246,8 @@ export function PropertyValueSnapshot({
 
         {/* 12-Month Trend */}
         {priceChange !== null && priceChange !== undefined && (
-          <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+          <div className={`p-4 rounded-xl ${priceChange >= 0 ? 'bg-primary/10 border-primary/20' : 'bg-muted/30 border-border/50'} border`}>
+            <div className={`flex items-center gap-2 mb-1 ${priceChange >= 0 ? 'text-primary' : 'text-muted-foreground'}`}>
               {priceChange > 0 ? (
                 <TrendingUp className="h-4 w-4" />
               ) : priceChange < 0 ? (
@@ -271,11 +271,11 @@ export function PropertyValueSnapshot({
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <p className="text-2xl font-bold text-foreground">
+            <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-primary' : 'text-foreground'}`}>
               {priceChange > 0 ? '+' : ''}{priceChange}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Area price change
+              {city} avg prices
             </p>
           </div>
         )}
