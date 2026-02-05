@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { 
   MapPin, Clock, BookOpen, Users, FileText, AlertTriangle, 
-  Lightbulb, CheckCircle2, ArrowRight, Scale, Building2, 
+  Lightbulb, CheckCircle2, ArrowRight, ArrowLeft, Scale, Building2, 
   Landmark, Home, Banknote, Key, ClipboardCheck, Calculator,
   Globe, Gavel, FileWarning, Calendar, Receipt, Shield,
   TrendingUp, DollarSign, RefreshCw
@@ -259,6 +259,16 @@ const ParticipantBadge = ({ participant }: { participant: string }) => (
 );
 
 // Stage card component
+// Back button component - used in hero
+const BackToGuidesButton = () => (
+  <Link to="/guides">
+    <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+      <ArrowLeft className="h-4 w-4" />
+      Back to Guides
+    </Button>
+  </Link>
+);
+
 const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: number }) => (
   <motion.div
     initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
@@ -420,6 +430,8 @@ export default function BuyingPropertyGuide() {
         <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
+            {/* Back Button */}
+            <BackToGuidesButton />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

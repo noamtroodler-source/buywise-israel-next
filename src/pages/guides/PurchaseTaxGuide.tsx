@@ -18,6 +18,7 @@ import {
   Scale,
   Landmark,
   ArrowRight,
+  ArrowLeft,
   Lightbulb,
   Image,
   DollarSign,
@@ -25,6 +26,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -282,6 +284,13 @@ export default function PurchaseTaxGuide() {
         <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
+            {/* Back Button */}
+            <Link to="/guides">
+              <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Guides
+              </Button>
+            </Link>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

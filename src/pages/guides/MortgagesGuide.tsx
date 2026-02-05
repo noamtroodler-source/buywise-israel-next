@@ -19,6 +19,7 @@ import {
   Handshake,
   AlertTriangle,
   ArrowRight,
+  ArrowLeft,
   BookOpen,
   Calculator,
   DollarSign,
@@ -28,6 +29,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
@@ -288,6 +290,13 @@ export default function MortgagesGuide() {
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
           <div className="container relative py-12 md:py-16">
+            {/* Back Button */}
+            <Link to="/guides">
+              <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Guides
+              </Button>
+            </Link>
             <motion.div {...fadeInUp} className="max-w-3xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
                 <Landmark className="h-4 w-4" />

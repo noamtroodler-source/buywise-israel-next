@@ -5,7 +5,7 @@ import {
   ArrowLeft, TrendingUp, Clock, ChevronDown, ChevronUp,
   Calculator, PieChart, MapPin, AlertTriangle, Target,
   CheckCircle2, Percent, Building2, Wallet, Users,
-  Home, DollarSign, Key, Scale
+  Home, DollarSign, Key, Scale, BookOpen
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export default function InvestmentPropertyGuide() {
     setOpenSections(newOpen);
   };
 
+  // Back button is already at the top of the guide - see render below
   const sections: Section[] = [
     {
       id: 'real-numbers',

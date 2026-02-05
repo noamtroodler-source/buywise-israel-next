@@ -21,9 +21,11 @@ import {
   CheckCircle2,
   Calculator,
   Lightbulb,
-  Heart
+  Heart,
+  ArrowLeft
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -302,6 +304,13 @@ export default function TalkingToProfessionalsGuide() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
         <div className="container relative py-12 md:py-16">
+          {/* Back Button */}
+          <Link to="/guides">
+            <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Guides
+            </Button>
+          </Link>
           <motion.div {...fadeInUp} className="max-w-3xl mx-auto text-center">
             <Badge variant="secondary" className="mb-4">
               <Users className="h-3 w-3 mr-1" />
