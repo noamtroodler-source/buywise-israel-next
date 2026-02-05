@@ -1,216 +1,86 @@
 
-# Glossary Page Redesign: Simplified & Focused
 
-## The Problem
+# Add Neighborhood Data to Properties
 
-Currently, users see **6 distinct visual layers** before reaching glossary terms:
+## Current State
 
-```text
-Current Flow (Fragmented):
-┌─────────────────────────────────────────┐
-│ 1. Book icon                            │
-│ 2. "Hebrew Real Estate Glossary"        │
-│ 3. Subtitle + term count                │
-│ 4. Search input                         │
-│ 5. "Study with Flashcards" button       │
-├─────────────────────────────────────────┤
-│ 6. "Where are you in your journey?"     │
-│    [4 stage cards in a grid]            │
-├─────────────────────────────────────────┤
-│ 7. Sticky tabs: All | Saved | Legal...  │
-├─────────────────────────────────────────┤
-│ 8. Finally, the actual terms...         │
-└─────────────────────────────────────────┘
-```
+The neighborhood display code is **already implemented** across all property cards and detail pages:
+- PropertyCard (compact & standard): `{property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}`
+- MapPropertyCard: Same format
+- PropertyQuickSummary: Shows neighborhood in location line
 
-This creates decision fatigue: users face multiple choices (journey stage? category? search? flashcards?) before seeing any terms.
+**The Problem**: No properties have neighborhoods assigned - all 3,100+ properties have `neighborhood = NULL`.
 
----
+## Solution
 
-## The Solution: Unified Hero + Smart Defaults
-
-Consolidate into **2 clean sections** before content:
-
-```text
-Redesigned Flow:
-┌─────────────────────────────────────────┐
-│ Hebrew Real Estate Glossary             │
-│ Master the terms you'll encounter       │
-│                                         │
-│ [🔍 Search...              ] [📚 Study] │
-│                                         │
-│ 33 terms • Saved: 5 ⭐                   │
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│ All | Legal | Mortgage | Property | Tax │  <- Simplified sticky nav
-└─────────────────────────────────────────┘
-│                                         │
-│ [Term cards organized by journey stage] │
-│ (Journey headers appear inline          │
-│  with content, not as a filter)         │
-```
-
----
-
-## Key Design Decisions
-
-### 1. Remove Journey Selector as a Filter
-
-The 4-stage journey grid is valuable for organization, but NOT as a filter. Instead:
-- Keep journey stages as **section headers** in the term list (already works this way in default view)
-- Remove the clickable filter cards that currently sit between hero and categories
-- Users still see terms organized by journey, but without the extra decision step
-
-### 2. Combine Search + Flashcards in Hero
-
-Put them side-by-side to reduce vertical stacking:
-```text
-[🔍 Search in Hebrew, English...    ] [📚 Study Mode]
-```
-
-### 3. Simplify Category Nav
-
-Current: Icon + Label for each category
-Simplified: Text-only pills (smaller, faster to scan)
-
-```text
-All  •  Saved (5)  •  Legal  •  Mortgage  •  Property  •  Tax
-```
-
-### 4. Add Quick Stats to Hero
-
-Show saved count and mastered count (from flashcards) as subtle stats, giving users a sense of progress without adding clutter.
-
----
-
-## Detailed Changes
-
-### GlossaryHero.tsx (Simplified)
-
-Remove:
-- Large book icon (unnecessary visual weight)
-- Separate lines for title, subtitle, term count
-
-Add:
-- Inline layout for search + study button
-- Progress indicators (saved count, mastery)
+Populate neighborhoods on mock properties using the neighborhood data already defined in the `cities` table.
 
 ```text
 Before:
-     📚
-Hebrew Real Estate Glossary
-Master the terms you'll encounter...
-33 terms • Organized by journey
-
-[        Search...           ]
-
-[📚 Study with Flashcards]
-
-After:
-Hebrew Real Estate Glossary
-Master the terms you'll encounter — so you feel confident.
-
-[🔍 Search...              ] [📚 Study]
-
-33 terms • 5 saved ⭐ • 12 mastered ✓
-```
-
-### JourneySelector.tsx
-
-**Delete this component entirely** from the page layout. The journey organization remains in the content (section headers), but users don't need to actively choose a stage filter.
-
-### CategoryNav.tsx (Streamlined)
-
-- Remove icons from category pills
-- Smaller, more compact pills
-- Keep sticky behavior
-
-```text
-Before:
-[📖 All Terms] [⭐ Saved 0] [⚖️ Legal] [🏛️ Mortgage] [🏠 Property] [📄 Tax]
-
-After:
-[ All ] [ Saved 5 ] [ Legal ] [ Mortgage ] [ Property ] [ Tax ]
-```
-
-### Glossary.tsx (Page Logic)
-
-- Remove `selectedJourneyStage` state entirely
-- Remove `JourneySelector` import and usage
-- Pass saved count + mastered count to hero for display
-
----
-
-## Visual Comparison
-
-### Before (6 visual layers)
-```text
 ┌─────────────────────────────────────┐
-│            📚                       │  <- Icon
-│  Hebrew Real Estate Glossary        │  <- Title
-│  Master the terms...                │  <- Subtitle
-│  33 terms • Organized by journey    │  <- Meta
-│  [      Search...            ]      │  <- Search
-│  [📚 Study with Flashcards]         │  <- CTA
-├─────────────────────────────────────┤
-│  Where are you in your journey?     │  <- Journey question
-│  [Before] [During] [Offer] [After]  │  <- Journey cards
-├─────────────────────────────────────┤
-│  [All] [Saved] [Legal] [Mortgage]...│  <- Category nav
-├─────────────────────────────────────┤
-│  Terms...                           │  <- Content
+│ Ra'anana                            │  <- Just city
+└─────────────────────────────────────┘
+
+After:
+┌─────────────────────────────────────┐
+│ Neve Oz, Ra'anana                   │  <- Neighborhood + City
 └─────────────────────────────────────┘
 ```
 
-### After (2 visual layers)
-```text
-┌─────────────────────────────────────┐
-│  Hebrew Real Estate Glossary        │  <- Title (no icon)
-│  Master the terms you'll encounter  │  <- Subtitle
-│                                     │
-│  [🔍 Search...         ] [📚 Study] │  <- Search + CTA inline
-│                                     │
-│  33 terms • 5 saved • 12 mastered   │  <- Compact stats
-├─────────────────────────────────────┤
-│  All  Saved  Legal  Mortgage  ...   │  <- Simpler category nav
-├─────────────────────────────────────┤
-│                                     │
-│  ─ Before You Start ─               │  <- Journey as section header
-│  [Term] [Term] [Term]               │
-│                                     │
-│  ─ During Research ─                │
-│  [Term] [Term] [Term]               │
-└─────────────────────────────────────┘
+## Implementation
+
+### Database Migration
+
+Create a migration that:
+1. For each city that has neighborhoods defined, randomly assign neighborhoods to ~70% of properties in that city
+2. Leave ~30% without neighborhoods (realistic - not all listings specify this)
+
+```sql
+-- Assign random neighborhoods to properties based on their city
+WITH city_neighborhoods AS (
+  SELECT 
+    name as city_name,
+    jsonb_array_elements_text(
+      jsonb_path_query_array(neighborhoods, '$[*].name')
+    ) as neighborhood_name,
+    random() as rand_order
+  FROM cities
+  WHERE neighborhoods IS NOT NULL 
+    AND jsonb_array_length(neighborhoods) > 0
+),
+-- Get one random neighborhood per city for each property
+property_assignments AS (
+  SELECT DISTINCT ON (p.id)
+    p.id as property_id,
+    cn.neighborhood_name
+  FROM properties p
+  JOIN city_neighborhoods cn ON cn.city_name = p.city
+  WHERE p.neighborhood IS NULL
+    AND random() < 0.7  -- 70% of properties get a neighborhood
+  ORDER BY p.id, random()
+)
+UPDATE properties p
+SET neighborhood = pa.neighborhood_name
+FROM property_assignments pa
+WHERE p.id = pa.property_id;
 ```
 
----
+## Expected Result
 
-## Files to Modify
+- ~2,170 properties (70%) will have neighborhoods assigned
+- ~930 properties (30%) will remain without (realistic variation)
+- All existing UI will immediately show neighborhoods without code changes
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/glossary/GlossaryHero.tsx` | Redesign: remove icon, inline search + study button, add progress stats |
-| `src/components/glossary/CategoryNav.tsx` | Simplify: remove icons, smaller pills, text-only |
-| `src/pages/Glossary.tsx` | Remove JourneySelector component, remove journey filter state, pass progress stats to hero |
+| Database Migration | SQL to populate neighborhood field on properties |
 
----
+## Benefits
 
-## UX Rationale
+- **Immediate visibility**: Neighborhoods appear on all cards and detail pages
+- **No code changes needed**: Display logic already exists
+- **Realistic data**: Random assignment from actual city neighborhoods
+- **User trust**: Shows local knowledge ("Neve Oz, Ra'anana" vs just "Ra'anana")
 
-1. **Reduce cognitive load**: Users see terms faster, with journey organization happening naturally in the content
-2. **Maintain functionality**: Search, flashcards, categories, and saved terms all still work
-3. **Progress visibility**: Showing saved + mastered counts creates a sense of accomplishment
-4. **Consistent with platform**: Matches the cleaner approach used on Guides and Tools pages
-5. **Mobile-friendly**: Fewer stacked elements means less scrolling before content
-
----
-
-## Implementation Summary
-
-| Component | Effort |
-|-----------|--------|
-| GlossaryHero.tsx | Medium - restructure layout |
-| CategoryNav.tsx | Low - remove icons, adjust sizing |
-| Glossary.tsx | Low - remove JourneySelector, add mastered count prop |
-
-Total: ~50-70 lines changed across 3 files
