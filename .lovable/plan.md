@@ -1,73 +1,74 @@
 
-# Show 3 Questions with Expand/Collapse
+# Move Show More/Less Button to Bottom
 
-## Overview
+## The Issue
 
-Update the "Questions to Ask" components to show only the first 3 questions by default, with a collapsible section to reveal the remaining questions.
+Currently, the "Show more/less" toggle button is positioned **between** the visible questions (1-3) and the hidden questions (4-6). When you expand, the button stays in the middle instead of moving to the bottom.
 
-## Current Behavior
+## The Fix
 
-- All 5-6 questions display immediately
-- No way to collapse or hide questions
+Move the `CollapsibleTrigger` button to **after** the `CollapsibleContent`. This way:
+- **Collapsed**: Button appears below question 3, says "Show 3 more questions"
+- **Expanded**: Button appears below question 6, says "Show less"
 
-## New Behavior
+The button will always be at the bottom of all visible questions.
 
-- Show first 3 questions by default
-- Display "Show X more questions" button below
-- Clicking expands to reveal remaining questions
-- Button changes to "Show less" when expanded
-- Smooth animation for expand/collapse
-
-## Visual Layout
+## Visual Comparison
 
 ```text
-┌─────────────────────────────────────────────┐
-│  Questions to Ask                     Copy  │
-│  Tailored for this listing                  │
-├─────────────────────────────────────────────┤
-│  1. "First question..."        [Pricing]    │
-│     Why it matters explanation              │
-├─────────────────────────────────────────────┤
-│  2. "Second question..."       [Legal]      │
-│     Why it matters explanation              │
-├─────────────────────────────────────────────┤
-│  3. "Third question..."        [Building]   │
-│     Why it matters explanation              │
-├─────────────────────────────────────────────┤
-│         ▼ Show 3 more questions             │
-├ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┤
-│  (Hidden until expanded)                    │
-│  4. "Fourth question..."                    │
-│  5. "Fifth question..."                     │
-│  6. "Sixth question..."                     │
-└─────────────────────────────────────────────┘
+CURRENT (Button in middle when expanded):
+┌────────────────────────────────────┐
+│  1. Question...                    │
+│  2. Question...                    │
+│  3. Question...                    │
+├────────────────────────────────────┤
+│      ▲ Show less  ← STUCK HERE     │
+├────────────────────────────────────┤
+│  4. Question...                    │
+│  5. Question...                    │
+│  6. Question...                    │
+├────────────────────────────────────┤
+│  Take your time...                 │
+└────────────────────────────────────┘
+
+FIXED (Button at bottom):
+┌────────────────────────────────────┐
+│  1. Question...                    │
+│  2. Question...                    │
+│  3. Question...                    │
+│  4. Question...                    │
+│  5. Question...                    │
+│  6. Question...                    │
+├────────────────────────────────────┤
+│      ▲ Show less  ← MOVES HERE     │
+├────────────────────────────────────┤
+│  Take your time...                 │
+└────────────────────────────────────┘
 ```
 
-## Implementation
+## Files to Modify
 
-### Files to Modify
+| File | Change |
+|------|--------|
+| `src/components/property/PropertyQuestionsToAsk.tsx` | Move `CollapsibleTrigger` after `CollapsibleContent` |
+| `src/components/project/ProjectQuestionsToAsk.tsx` | Same change |
 
-| File | Changes |
-|------|---------|
-| `src/components/property/PropertyQuestionsToAsk.tsx` | Add collapsed state, split questions into visible/hidden |
-| `src/components/project/ProjectQuestionsToAsk.tsx` | Same changes as above |
+## Technical Change
 
-### Technical Approach
+Simply reorder the elements inside the `Collapsible` component:
 
-1. Add `isExpanded` state (default: `false`)
-2. Split questions array:
-   - `visibleQuestions`: First 3 questions (always shown)
-   - `hiddenQuestions`: Remaining questions (shown when expanded)
-3. Use Radix `Collapsible` component for smooth animation
-4. Add expand/collapse button with:
-   - ChevronDown icon that rotates when expanded
-   - Dynamic text: "Show X more questions" / "Show less"
-5. Only show button if more than 3 questions exist
+```tsx
+// Before:
+<Collapsible>
+  <CollapsibleTrigger>...</CollapsibleTrigger>  {/* Button first */}
+  <CollapsibleContent>...</CollapsibleContent>
+</Collapsible>
 
-### Loading State Update
+// After:
+<Collapsible>
+  <CollapsibleContent>...</CollapsibleContent>
+  <CollapsibleTrigger>...</CollapsibleTrigger>  {/* Button last */}
+</Collapsible>
+```
 
-Update skeleton to show only 3 items instead of 5 to match collapsed state.
-
-### Copy/Email Functionality
-
-Keep unchanged - these actions still copy/email ALL questions regardless of collapsed state.
+This is a simple reordering - no logic changes needed.
