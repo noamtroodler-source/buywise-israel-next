@@ -1,95 +1,157 @@
 
-## Goal
-Ensure the Rooms/Bathrooms help tooltips on Buy/Rent listings:
-1) Never open “by themselves” (no auto-open on popover open, scroll/sticky changes, or focus),
-2) Only open after a deliberate mouse hover,
-3) Don’t flicker/glitch when moving between the icon and the tooltip content.
 
-## Why it’s still happening (likely causes)
-From the current implementation in `PropertyFilters.tsx`, the tooltip can still open without an intentional hover because Radix tooltips can open when:
-- **The popover opens underneath a stationary cursor** (the trigger appears under the mouse; Radix interprets it like “hover”),
-- **The trigger receives focus** (Popover often moves focus when opening; Radix Tooltip opens on focus by default),
-- **Small trigger hit-area + rapid enter/leave** causes perceived “glitchiness.”
+# Comparison AI Summary Feature
 
-Delay alone helps, but it doesn’t prevent the “popover appears under mouse” and “focus opens tooltip” cases.
+## Overview
+Add an AI-powered "Comparison AI Summary" section to the Compare page that provides a comprehensive 3-4 sentence breakdown analyzing the properties being compared. This summary will do the "processing work" for users by highlighting key differences, trade-offs, and providing actionable guidance on which property might be best for different buyer/renter profiles.
 
-## Approach (foolproof)
-Implement a **controlled, hover-only tooltip** specifically for these help icons:
-- Tooltip `open` state is controlled by our code.
-- We only set `open=true` on **mouse pointer enter** when:
-  - the pointer has actually moved since the popover opened (“armed” state), and
-  - the pointer type is `mouse` (ignore touch/pen).
-- We explicitly ignore focus-driven open events.
-- We keep the tooltip stable by allowing hoverable content (so you can move from icon to tooltip without it closing instantly) and by increasing the trigger hit-area.
+## What the AI Summary Will Include
+The AI will analyze all compared properties and generate a comprehensive summary covering:
+- **Overall winner assessment** with context (not just "X wins" but why)
+- **Key trade-offs** between properties (e.g., "Property A offers more space at a lower price, but Property B is newer and in a more central location")
+- **Value analysis** (which property offers best value for money)
+- **Specific recommendations** based on user priorities (families, investors, first-time buyers)
+- **Notable differences** in features, location, or condition
 
-## Step-by-step implementation plan
+## Implementation Plan
 
-### 1) Add a small “HoverOnlyTooltip” helper (local to PropertyFilters)
-**File:** `src/components/filters/PropertyFilters.tsx`
+### 1. Create Edge Function: `generate-comparison-summary`
+**File:** `supabase/functions/generate-comparison-summary/index.ts`
 
-Create a small internal component (or hook) near the top of the file to wrap Radix Tooltip with:
-- `open` + `onOpenChange` controlled (but we’ll gate opening)
-- trigger event handlers:
-  - `onPointerEnter`: if `armed && e.pointerType === 'mouse'` then open (after delay or immediately)
-  - `onPointerLeave`: close (with small grace period if needed)
-  - `onFocus`: do nothing (prevents focus-open)
-- content handlers:
-  - optionally keep open while hovering content (Radix default behavior can be preserved)
-- larger trigger button hit area: `p-1 -m-1` or similar.
+The edge function will:
+- Accept an array of property data with all relevant comparison metrics
+- Use Lovable AI (google/gemini-3-flash-preview) to generate the summary
+- Use tool calling to return structured output
+- Handle rate limits (429) and payment errors (402)
 
-### 2) Add “arming” logic tied to the Beds/Baths popover open state
-**Problem solved:** tooltip opens when popover appears under the cursor.
+**Input payload:**
+```typescript
+{
+  properties: Array<{
+    title: string;
+    price: number;
+    size_sqm: number;
+    bedrooms: number;
+    bathrooms: number;
+    city: string;
+    neighborhood: string;
+    condition: string;
+    year_built: number;
+    floor: number;
+    parking: number;
+    features: string[];
+  }>;
+  isRental: boolean;
+  winnerData: Array<{ title: string; wins: number }>;
+}
+```
 
-Inside `PropertyFilters`, when `bedsAndBathsOpen` becomes `true`:
-- Set `tooltipsArmed = false`
-- Add a one-time `pointermove` listener on `window` that sets `tooltipsArmed = true` on the first move
-- Clean up listener on close/unmount
+**Output:**
+```typescript
+{
+  summary: string; // 3-4 comprehensive sentences
+}
+```
 
-Result: If the popover opens under your cursor and you don’t move the mouse, the tooltip will not open.
+### 2. Create Component: `CompareAISummary`
+**File:** `src/components/compare/CompareAISummary.tsx`
 
-### 3) Replace the Rooms tooltip usage with HoverOnlyTooltip
-**Where:** the Rooms label block (around the existing HelpCircle icon)
+A new component that:
+- Displays the AI-generated summary with a distinct "AI" visual treatment
+- Shows loading state with skeleton animation while generating
+- Caches the summary in component state (regenerates on property change)
+- Has a "Regenerate" button for users who want a fresh analysis
+- Handles error states gracefully (shows fallback to basic summary)
 
-Replace:
-- `<Tooltip> ... </Tooltip>` (uncontrolled)
-with the controlled hover-only component.
+**Design:**
+- Header: "Comparison AI Summary" with Sparkles/Brain icon
+- Subtitle: "AI-powered analysis of your selected properties"
+- Body: The generated summary text (3-4 sentences)
+- Optional: Small disclaimer "AI-generated summary based on listed data"
 
-### 4) Add a Bathrooms help icon (if you want it to exist) and apply the same HoverOnlyTooltip
-Right now Bathrooms has no help icon/tooltip in this desktop popover section, but you’ve referred to “rooms and bathrooms tooltip.” We’ll make behavior consistent by:
-- adding a small HelpCircle next to Bathrooms label
-- using the same HoverOnlyTooltip wrapper so it can’t auto-open either
+### 3. Update Compare Page
+**File:** `src/pages/Compare.tsx`
 
-(If you prefer not to add a Bathrooms tooltip visually, we’ll still ensure any existing Bathrooms tooltip elsewhere uses the same pattern—but in this specific popover section it currently doesn’t exist.)
+- Import and render `CompareAISummary` component
+- Place it between the comparison sections and the existing `CompareWinnerSummary`
+- Pass required property data and winner counts to the component
+- The AI summary will complement (not replace) the existing winner summary
 
-### 5) Stabilize “glitchy” behavior (flicker / rapid close-open)
-Adjust these specifics:
-- Ensure trigger has a bigger hover area (reduces accidental pointerleave).
-- Keep `TooltipProvider delayDuration` but slightly tune (e.g., 300–450ms is fine).
-- Add a tiny close grace (optional): on pointerleave of trigger, close after ~80–120ms unless pointer enters tooltip content—this prevents flicker when moving from icon to tooltip.
+### 4. Update config.toml
+**File:** `supabase/config.toml`
 
-### 6) Test matrix (what we will verify after changes)
-On `/listings?status=for_sale` and `/listings?status=for_rent`:
+Add the new edge function configuration:
+```toml
+[functions.generate-comparison-summary]
+verify_jwt = false
+```
 
-**Desktop mouse**
-- Open Beds/Baths popover with cursor already in that region → tooltip must NOT open until you move mouse and hover the icon.
-- Hover icon → tooltip opens after delay.
-- Move from icon to tooltip content → tooltip stays stable (no flicker).
-- Move away → tooltip closes.
+### 5. Export Component
+**File:** `src/components/compare/index.ts`
 
-**Keyboard**
-- Tab into the help icon → tooltip should NOT open on focus (per your requirement).
-- Escape closes popover/tooltip as expected.
+Add export for the new `CompareAISummary` component.
 
-**Mobile / touch**
-- No tooltip opens on tap/scroll (pointerType gating).
+## UI/UX Design
 
-## Files we will change
-1) `src/components/filters/PropertyFilters.tsx`
-   - Add controlled hover-only tooltip logic
-   - Add arming logic linked to `bedsAndBathsOpen`
-   - Apply to Rooms (and Bathrooms if added)
+```text
++--------------------------------------------------+
+|  [Brain Icon]  Comparison AI Summary             |
+|  AI-powered analysis of your properties          |
++--------------------------------------------------+
+|                                                  |
+|  "The 5-room duplex in Petah Tikva offers the    |
+|  best overall value, combining the largest       |
+|  living space (120 sqm) with the lowest price    |
+|  per square meter at 28,333 ILS. While the       |
+|  penthouse in Tel Aviv commands a premium, its   |
+|  central location and modern finishes may        |
+|  justify the higher cost for those prioritizing  |
+|  convenience and lifestyle. For families         |
+|  seeking space on a budget, the Petah Tikva      |
+|  property is the clear winner; for professionals |
+|  valuing location, consider the Tel Aviv         |
+|  option despite its smaller footprint."          |
+|                                                  |
+|  [Regenerate Summary]                            |
+|                                                  |
+|  AI-generated · Based on listed property data    |
++--------------------------------------------------+
+```
 
-## Notes / tradeoffs
-- Disabling focus-open means keyboard users won’t get the tooltip automatically. If you want, we can provide an accessible alternative (e.g., a small “info” dialog on Enter/Space) later—but the current request is explicitly hover-only.
-- This solution is intentionally localized to the Rooms/Baths help icons so we don’t accidentally change tooltip behavior sitewide.
+## Technical Details
+
+| Component | Purpose |
+|-----------|---------|
+| Edge function | Server-side AI processing via Lovable AI gateway |
+| Tool calling | Structured output extraction for reliable summary format |
+| Component state | Cache summary to avoid re-fetching on every render |
+| useEffect trigger | Regenerate when properties array changes |
+| Error boundary | Graceful fallback if AI fails |
+
+## AI Prompt Strategy
+The system prompt will instruct the AI to:
+1. Compare properties objectively using the provided metrics
+2. Highlight the most significant differences
+3. Avoid generic statements - be specific to the actual data
+4. Provide actionable guidance for different buyer/renter profiles
+5. Keep the summary to 3-4 comprehensive sentences
+6. Use natural, conversational language
+7. For rentals: focus on monthly costs, availability, lease terms
+8. For sales: focus on value, investment potential, location
+
+## Files to Create/Modify
+
+| File | Action |
+|------|--------|
+| `supabase/functions/generate-comparison-summary/index.ts` | Create |
+| `src/components/compare/CompareAISummary.tsx` | Create |
+| `src/components/compare/index.ts` | Modify (add export) |
+| `src/pages/Compare.tsx` | Modify (add component) |
+| `supabase/config.toml` | Modify (add function config) |
+
+## Error Handling
+- **Rate limit (429):** Show toast "AI is busy, please try again in a moment"
+- **Payment required (402):** Show toast "AI service temporarily unavailable"
+- **Network error:** Show fallback to existing basic summary
+- **Invalid response:** Log error, show graceful fallback
 
