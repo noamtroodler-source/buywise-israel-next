@@ -325,7 +325,7 @@ export default function Glossary() {
             className="max-w-xl mx-auto mt-12"
           >
             <SupportFooter 
-              message="Still confused about a term? [Ask us] — we'll explain it in plain English."
+              message="Still confused about a term? [Ask us] — we'll explain it as best we can."
               linkText="Ask us"
               variant="card"
             />
