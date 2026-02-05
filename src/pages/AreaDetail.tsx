@@ -10,7 +10,6 @@ import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
-import { CityOpener } from '@/components/city/CityOpener';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
@@ -230,16 +229,7 @@ export default function CityDetail() {
           />
         )}
 
-        {/* 3. Opener Section - Overview */}
-        <CityOpener
-          cityName={city.name}
-          identitySentence={identitySentence}
-          hasTrainStation={city.has_train_station}
-          angloPresence={city.anglo_presence}
-          yoyPriceChange={yoyChange}
-        />
-
-        {/* 4. Market Overview - 3 Card Grid */}
+        {/* 3. Market Overview - 3 Card Grid */}
         <section id="market">
           <MarketOverviewCards
             marketData={marketData}
