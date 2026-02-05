@@ -1,320 +1,216 @@
 
+# Glossary Page Redesign: Simplified & Focused
 
-# Hebrew Real Estate Glossary Flashcards
+## The Problem
 
-## Overview
-
-Creating an interactive flashcard study mode for the Hebrew Real Estate Glossary. This feature transforms the existing term data into an engaging learning experience with:
-
-- **Card flip animations** showing Hebrew on front, English + explanation on back
-- **Progress tracking** persisted to localStorage
-- **Study modes** (all terms, saved terms, by journey stage, by category)  
-- **Gamification** with streaks, completion celebration, and "mastered" tracking
-- **Mobile-optimized** swipe gestures following the Embla carousel patterns already in use
-
----
-
-## Why This Matters
-
-For English speakers buying property in Israel, recognizing Hebrew terms is critical:
-- Reading contracts with Hebrew legal terminology
-- Understanding listings on Yad2/Madlan
-- Communicating with Israeli lawyers, agents, notaries
-- Feeling confident rather than lost in meetings
-
-Flashcards are proven to accelerate vocabulary retention through active recall.
-
----
-
-## User Experience Flow
+Currently, users see **6 distinct visual layers** before reaching glossary terms:
 
 ```text
-Glossary Page
-     │
-     ├── [New] "Study Mode" button in hero section
-     │
-     └──► Flashcard Modal (fullscreen on mobile, dialog on desktop)
-          │
-          ├── Deck Selection
-          │   ├── All Terms (47)
-          │   ├── Saved Terms (12)
-          │   ├── By Journey Stage
-          │   │   ├── Before You Start (8)
-          │   │   ├── During Research (15)
-          │   │   ├── Making an Offer (12)
-          │   │   └── Closing & After (12)
-          │   └── By Category
-          │       ├── Legal (10)
-          │       ├── Tax & Finance (8)
-          │       └── ... etc
-          │
-          └── Study Session
-              │
-              ├── Progress bar (3/20 cards)
-              │
-              ├── Flashcard (tap/click to flip)
-              │   │
-              │   ├── FRONT: Hebrew term (large)
-              │   │          + Transliteration
-              │   │          + Category badge
-              │   │
-              │   └── BACK: English term
-              │            + Simple explanation
-              │            + "When you'll see this"
-              │
-              ├── Self-rating buttons
-              │   ├── "Still Learning" (redo later)
-              │   └── "Got It!" (mark mastered)
-              │
-              ├── Navigation
-              │   ├── Swipe left/right (mobile)
-              │   ├── Arrow buttons (desktop)
-              │   └── Keyboard arrows (desktop)
-              │
-              └── Session Complete
-                  ├── Stats (X mastered, Y to review)
-                  ├── Confetti celebration
-                  └── Continue / Exit options
+Current Flow (Fragmented):
+┌─────────────────────────────────────────┐
+│ 1. Book icon                            │
+│ 2. "Hebrew Real Estate Glossary"        │
+│ 3. Subtitle + term count                │
+│ 4. Search input                         │
+│ 5. "Study with Flashcards" button       │
+├─────────────────────────────────────────┤
+│ 6. "Where are you in your journey?"     │
+│    [4 stage cards in a grid]            │
+├─────────────────────────────────────────┤
+│ 7. Sticky tabs: All | Saved | Legal...  │
+├─────────────────────────────────────────┤
+│ 8. Finally, the actual terms...         │
+└─────────────────────────────────────────┘
+```
+
+This creates decision fatigue: users face multiple choices (journey stage? category? search? flashcards?) before seeing any terms.
+
+---
+
+## The Solution: Unified Hero + Smart Defaults
+
+Consolidate into **2 clean sections** before content:
+
+```text
+Redesigned Flow:
+┌─────────────────────────────────────────┐
+│ Hebrew Real Estate Glossary             │
+│ Master the terms you'll encounter       │
+│                                         │
+│ [🔍 Search...              ] [📚 Study] │
+│                                         │
+│ 33 terms • Saved: 5 ⭐                   │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│ All | Legal | Mortgage | Property | Tax │  <- Simplified sticky nav
+└─────────────────────────────────────────┘
+│                                         │
+│ [Term cards organized by journey stage] │
+│ (Journey headers appear inline          │
+│  with content, not as a filter)         │
 ```
 
 ---
 
-## Technical Architecture
+## Key Design Decisions
 
-### New Files to Create
+### 1. Remove Journey Selector as a Filter
 
-| File | Purpose |
-|------|---------|
-| `src/components/glossary/FlashcardStudyModal.tsx` | Main modal container with deck selection and session management |
-| `src/components/glossary/Flashcard.tsx` | Individual flip card with front/back states |
-| `src/components/glossary/FlashcardProgress.tsx` | Progress bar and session stats |
-| `src/components/glossary/FlashcardDeckSelector.tsx` | Grid of deck options with term counts |
-| `src/hooks/useFlashcardProgress.ts` | LocalStorage hook for tracking mastered terms and session stats |
+The 4-stage journey grid is valuable for organization, but NOT as a filter. Instead:
+- Keep journey stages as **section headers** in the term list (already works this way in default view)
+- Remove the clickable filter cards that currently sit between hero and categories
+- Users still see terms organized by journey, but without the extra decision step
 
-### Files to Modify
+### 2. Combine Search + Flashcards in Hero
+
+Put them side-by-side to reduce vertical stacking:
+```text
+[🔍 Search in Hebrew, English...    ] [📚 Study Mode]
+```
+
+### 3. Simplify Category Nav
+
+Current: Icon + Label for each category
+Simplified: Text-only pills (smaller, faster to scan)
+
+```text
+All  •  Saved (5)  •  Legal  •  Mortgage  •  Property  •  Tax
+```
+
+### 4. Add Quick Stats to Hero
+
+Show saved count and mastered count (from flashcards) as subtle stats, giving users a sense of progress without adding clutter.
+
+---
+
+## Detailed Changes
+
+### GlossaryHero.tsx (Simplified)
+
+Remove:
+- Large book icon (unnecessary visual weight)
+- Separate lines for title, subtitle, term count
+
+Add:
+- Inline layout for search + study button
+- Progress indicators (saved count, mastery)
+
+```text
+Before:
+     📚
+Hebrew Real Estate Glossary
+Master the terms you'll encounter...
+33 terms • Organized by journey
+
+[        Search...           ]
+
+[📚 Study with Flashcards]
+
+After:
+Hebrew Real Estate Glossary
+Master the terms you'll encounter — so you feel confident.
+
+[🔍 Search...              ] [📚 Study]
+
+33 terms • 5 saved ⭐ • 12 mastered ✓
+```
+
+### JourneySelector.tsx
+
+**Delete this component entirely** from the page layout. The journey organization remains in the content (section headers), but users don't need to actively choose a stage filter.
+
+### CategoryNav.tsx (Streamlined)
+
+- Remove icons from category pills
+- Smaller, more compact pills
+- Keep sticky behavior
+
+```text
+Before:
+[📖 All Terms] [⭐ Saved 0] [⚖️ Legal] [🏛️ Mortgage] [🏠 Property] [📄 Tax]
+
+After:
+[ All ] [ Saved 5 ] [ Legal ] [ Mortgage ] [ Property ] [ Tax ]
+```
+
+### Glossary.tsx (Page Logic)
+
+- Remove `selectedJourneyStage` state entirely
+- Remove `JourneySelector` import and usage
+- Pass saved count + mastered count to hero for display
+
+---
+
+## Visual Comparison
+
+### Before (6 visual layers)
+```text
+┌─────────────────────────────────────┐
+│            📚                       │  <- Icon
+│  Hebrew Real Estate Glossary        │  <- Title
+│  Master the terms...                │  <- Subtitle
+│  33 terms • Organized by journey    │  <- Meta
+│  [      Search...            ]      │  <- Search
+│  [📚 Study with Flashcards]         │  <- CTA
+├─────────────────────────────────────┤
+│  Where are you in your journey?     │  <- Journey question
+│  [Before] [During] [Offer] [After]  │  <- Journey cards
+├─────────────────────────────────────┤
+│  [All] [Saved] [Legal] [Mortgage]...│  <- Category nav
+├─────────────────────────────────────┤
+│  Terms...                           │  <- Content
+└─────────────────────────────────────┘
+```
+
+### After (2 visual layers)
+```text
+┌─────────────────────────────────────┐
+│  Hebrew Real Estate Glossary        │  <- Title (no icon)
+│  Master the terms you'll encounter  │  <- Subtitle
+│                                     │
+│  [🔍 Search...         ] [📚 Study] │  <- Search + CTA inline
+│                                     │
+│  33 terms • 5 saved • 12 mastered   │  <- Compact stats
+├─────────────────────────────────────┤
+│  All  Saved  Legal  Mortgage  ...   │  <- Simpler category nav
+├─────────────────────────────────────┤
+│                                     │
+│  ─ Before You Start ─               │  <- Journey as section header
+│  [Term] [Term] [Term]               │
+│                                     │
+│  ─ During Research ─                │
+│  [Term] [Term] [Term]               │
+└─────────────────────────────────────┘
+```
+
+---
+
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/Glossary.tsx` | Add "Study Mode" button in hero, import modal |
-| `src/components/glossary/GlossaryHero.tsx` | Add Study Mode CTA button |
-| `src/components/glossary/index.ts` | Export new components |
+| `src/components/glossary/GlossaryHero.tsx` | Redesign: remove icon, inline search + study button, add progress stats |
+| `src/components/glossary/CategoryNav.tsx` | Simplify: remove icons, smaller pills, text-only |
+| `src/pages/Glossary.tsx` | Remove JourneySelector component, remove journey filter state, pass progress stats to hero |
 
 ---
 
-## Component Details
+## UX Rationale
 
-### 1. FlashcardStudyModal
-
-Container that handles:
-- Fullscreen on mobile (`fixed inset-0`), centered dialog on desktop
-- State machine: `deck_selection` → `studying` → `complete`
-- Keyboard navigation (left/right arrows, space to flip)
-- Exit confirmation if session in progress
-
-```typescript
-interface FlashcardStudyModalProps {
-  open: boolean;
-  onClose: () => void;
-  terms: GlossaryTerm[];
-  savedTerms: Set<string>;
-}
-```
-
-### 2. Flashcard
-
-Individual card with 3D flip animation using Framer Motion:
-
-```typescript
-interface FlashcardProps {
-  term: GlossaryTerm;
-  isFlipped: boolean;
-  onFlip: () => void;
-}
-```
-
-Card design:
-- **Front**: Large Hebrew text (centered), transliteration below, category badge at bottom
-- **Back**: English term (large), simple explanation, "When you'll see this" context
-
-Flip animation using CSS perspective + Framer Motion:
-```css
-.card-inner {
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
-}
-.card-inner.flipped {
-  transform: rotateY(180deg);
-}
-```
-
-### 3. FlashcardProgress
-
-Shows:
-- Current position (3 of 20)
-- Progress bar (using existing `Progress` component)
-- "Still Learning" vs "Mastered" counts for session
-- Streak indicator (consecutive "Got It" cards)
-
-### 4. FlashcardDeckSelector
-
-Grid of selectable decks:
-- Uses the journey stage icons from `JourneySelector`
-- Uses category icons from `CategoryNav`
-- Shows term count for each deck
-- Highlights "Saved Terms" if user has saved items
-
-### 5. useFlashcardProgress Hook
-
-LocalStorage persistence for:
-- `masteredTerms: Set<string>` - IDs of terms user marked as "Got It"
-- `lastStudyDate: string` - For potential daily streaks
-- `totalSessionsCompleted: number` - Achievement tracking
-
-```typescript
-interface FlashcardProgress {
-  masteredTermIds: string[];
-  lastStudyDate: string | null;
-  sessionsCompleted: number;
-  streakDays: number;
-}
-
-function useFlashcardProgress() {
-  // Read/write to localStorage
-  // Returns: { progress, markMastered, resetProgress, ... }
-}
-```
-
----
-
-## Design Specifications
-
-### Card Styling (matches existing design language)
-
-```text
-┌─────────────────────────────────────────┐
-│                                         │
-│              ⚖️                         │  <- Category icon
-│                                         │
-│           נסח טאבו                       │  <- Hebrew (text-3xl font-bold)
-│         (Nesach Tabu)                   │  <- Transliteration (italic)
-│                                         │
-│                                         │
-│         [ Tap to flip ]                 │  <- Hint text
-│                                         │
-│  ┌─────────────────────────────────┐    │
-│  │ Legal                           │    │  <- Category badge
-│  └─────────────────────────────────┘    │
-└─────────────────────────────────────────┘
-
-             ↓ Flip ↓
-
-┌─────────────────────────────────────────┐
-│                                         │
-│      Land Registry Extract              │  <- English (text-2xl font-semibold)
-│                                         │
-│   "The official document showing        │
-│    property ownership history"          │  <- Simple explanation
-│                                         │
-│   When You'll See This:                 │
-│   "Before making an offer, you'll       │
-│    want to verify ownership"            │  <- Usage context
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-### Color Palette (using existing design tokens)
-- Card background: `bg-card`
-- Hebrew text: `text-primary` (brand blue)
-- English text: `text-foreground`
-- Explanations: `text-muted-foreground`
-- Progress bar: Primary color (existing `Progress` component)
-- Celebration: Blue-tinted confetti (matching existing celebration patterns)
-
-### Mobile Gestures
-- **Tap card**: Flip
-- **Swipe left**: "Still Learning" + next card
-- **Swipe right**: "Got It!" + next card (with haptic if available)
-- Uses Embla carousel for consistent swipe feel
-
-### Responsive Behavior
-- Mobile: Fullscreen modal with gesture controls
-- Desktop: Centered dialog (max-w-lg), keyboard shortcuts enabled
-
----
-
-## Gamification Elements
-
-### Streak Counter
-- Consecutive "Got It" answers in a session
-- Displayed as 🔥 with count
-- Resets on "Still Learning"
-
-### Session Completion
-- Confetti celebration (using existing `canvas-confetti` pattern)
-- Summary stats: "You mastered 15/20 terms!"
-- Encouragement: "Great progress! 8 terms left to review."
-
-### Progress Persistence
-- "Mastered" terms are remembered across sessions
-- Filter option: "Review terms I'm still learning"
-- Total mastery progress shown on glossary page
-
----
-
-## Accessibility
-
-- `aria-label` on flip cards
-- Keyboard navigation: Space to flip, Left/Right arrows
-- Focus trapping within modal
-- Screen reader announcements for card flips
-
----
-
-## Entry Points
-
-### Primary: Hero Section
-Add a prominent "Study Mode" button next to the search:
-
-```text
-┌─────────────────────────────────────────┐
-│         📚 Hebrew Real Estate           │
-│              Glossary                   │
-│                                         │
-│  Master the terms you'll encounter...   │
-│                                         │
-│  [ 🔍 Search terms...              ]    │
-│                                         │
-│  [ 🎴 Study with Flashcards ]           │  <- NEW
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-### Secondary: Category Nav
-Add "Practice" as a category option alongside "All Terms" and "Saved".
+1. **Reduce cognitive load**: Users see terms faster, with journey organization happening naturally in the content
+2. **Maintain functionality**: Search, flashcards, categories, and saved terms all still work
+3. **Progress visibility**: Showing saved + mastered counts creates a sense of accomplishment
+4. **Consistent with platform**: Matches the cleaner approach used on Guides and Tools pages
+5. **Mobile-friendly**: Fewer stacked elements means less scrolling before content
 
 ---
 
 ## Implementation Summary
 
-| Component | Lines (estimate) | Complexity |
-|-----------|-----------------|------------|
-| FlashcardStudyModal.tsx | ~250 | Medium |
-| Flashcard.tsx | ~120 | Medium (animation) |
-| FlashcardProgress.tsx | ~50 | Low |
-| FlashcardDeckSelector.tsx | ~100 | Low |
-| useFlashcardProgress.ts | ~60 | Low |
-| GlossaryHero.tsx changes | +10 | Low |
-| Glossary.tsx changes | +20 | Low |
+| Component | Effort |
+|-----------|--------|
+| GlossaryHero.tsx | Medium - restructure layout |
+| CategoryNav.tsx | Low - remove icons, adjust sizing |
+| Glossary.tsx | Low - remove JourneySelector, add mastered count prop |
 
-Total: ~610 lines of new/modified code
-
----
-
-## Future Enhancements (Not in Initial Scope)
-
-- Spaced repetition algorithm (show "Still Learning" cards more frequently)
-- Audio pronunciation for Hebrew terms
-- Daily study reminders
-- Leaderboard for logged-in users
-- "Term of the Day" widget on homepage
-
+Total: ~50-70 lines changed across 3 files
