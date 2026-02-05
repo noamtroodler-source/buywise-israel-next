@@ -2404,6 +2404,63 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          id: string
+          project_id: string | null
+          property_id: string | null
+          report_type: string
+          resolved_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          project_id?: string | null
+          property_id?: string | null
+          report_type: string
+          resolved_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          project_id?: string | null
+          property_id?: string | null
+          report_type?: string
+          resolved_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_reports_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_status_history: {
         Row: {
           changed_at: string
