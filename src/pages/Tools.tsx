@@ -210,6 +210,8 @@ export default function Tools() {
     const toolParam = searchParams.get('tool');
     if (toolParam && toolComponents[toolParam]) {
       setActiveTool(toolParam);
+       // Scroll to top when opening a tool
+       window.scrollTo(0, 0);
     } else {
       setActiveTool(null);
     }
