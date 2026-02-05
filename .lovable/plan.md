@@ -1,46 +1,74 @@
 
-# Fix: Sticky Output Box Being Cut Off by Header
 
-## Problem
-The tool output boxes (right column) use `lg:sticky lg:top-6` (24px from top), but your header is 64px tall (`h-16`) and sticky. This causes the output box to scroll under the header and get cut off.
+# Fix: "Questions to Ask" Section Not Showing
+
+## Root Cause
+
+The "Questions to Ask" section is not appearing because the **`generate-listing-questions` edge function is not deployed** (returning 404). When the hook calls the function and gets an error, it throws and the component renders `null` (silent fail per line 98-99 in `PropertyQuestionsToAsk.tsx`).
+
+This affects ALL listing types:
+- ✗ Properties (buy/resale)
+- ✗ Rentals
+- ✗ Projects
+
+---
+
+## Evidence
+
+| Check | Result |
+|-------|--------|
+| Edge function curl test | `404 NOT_FOUND` |
+| Function code exists | ✓ `supabase/functions/generate-listing-questions/` |
+| property_questions table | ✓ 144 active questions |
+| listing_question_cache | ✓ Has cached entries from previous runs |
+
+---
 
 ## Solution
-Change `lg:top-6` to `lg:top-20` (80px) on all affected tool components. This matches your existing architecture standard for sticky sidebars clearing the 64px header with proper padding.
+
+### Step 1: Deploy the Edge Function
+
+Deploy `generate-listing-questions` to make it accessible. The code is correct; it just needs to be deployed.
+
+```
+Deploy: generate-listing-questions
+```
+
+### Step 2: Verify RLS Policy (Already OK)
+
+The RLS policy on `listing_question_cache` has `USING (false)`:
+
+```sql
+Policy: "Cache managed internally only" 
+- USING: false
+- WITH CHECK: false
+```
+
+**This is actually fine** because the edge function uses `SUPABASE_SERVICE_ROLE_KEY` which **bypasses RLS entirely**. The cache is only written/read by the edge function, not the browser client.
 
 ---
 
-## Files to Update
+## Files Changed
 
-### 1. `src/components/tools/shared/ToolLayout.tsx` (line 103)
-```
-Before: lg:sticky lg:top-6 lg:self-start
-After:  lg:sticky lg:top-20 lg:self-start
-```
-
-### 2. `src/components/tools/PurchaseTaxCalculator.tsx` (line 333)
-```
-Before: lg:sticky lg:top-6 lg:self-start
-After:  lg:sticky lg:top-20 lg:self-start
-```
-
-### 3. `src/components/tools/NewConstructionCostCalculator.tsx` (line 286)
-```
-Before: lg:sticky lg:top-6 lg:self-start
-After:  lg:sticky lg:top-20 lg:self-start
-```
-
-### 4. `src/components/admin/PropertyPreviewModal.tsx` (line 497)
-This one is inside a modal, so `top-6` is likely correct there (no global header overlap). **No change needed.**
+No code changes needed - just deployment.
 
 ---
 
-## Summary
+## After Fix
 
-| File | Change |
-|------|--------|
-| `ToolLayout.tsx` | `top-6` → `top-20` |
-| `PurchaseTaxCalculator.tsx` | `top-6` → `top-20` |
-| `NewConstructionCostCalculator.tsx` | `top-6` → `top-20` |
+Once deployed:
+1. Property detail pages (buy/resale) → Questions appear
+2. Rental listings → Questions appear
+3. Project detail pages → Questions appear
 
-**Effort**: 2 minutes  
-**Impact**: All tool output boxes will now stay visible below the header when scrolling
+---
+
+## Technical Note
+
+The component correctly handles the loading/error states:
+- Shows skeleton while loading
+- Returns `null` on error (silent fail)
+- Shows questions when available
+
+The issue is purely that the backend function isn't reachable.
+
