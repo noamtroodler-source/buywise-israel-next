@@ -2404,6 +2404,39 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_question_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          expires_at: string | null
+          id: string
+          questions: Json
+          source: string
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          entity_id: string
+          entity_type: string
+          expires_at?: string | null
+          id?: string
+          questions: Json
+          source: string
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          expires_at?: string | null
+          id?: string
+          questions?: Json
+          source?: string
+        }
+        Relationships: []
+      }
       listing_reports: {
         Row: {
           admin_notes: string | null

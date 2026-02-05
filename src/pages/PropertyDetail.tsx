@@ -220,6 +220,8 @@ export default function PropertyDetail() {
             <PropertyQuestionsToAsk 
               listing={{
                 type: property.listing_status === 'for_rent' ? 'rent' : 'buy',
+                entity_id: property.id,
+                entity_type: 'property',
                 price: property.price || undefined,
                 size_sqm: property.size_sqm || undefined,
                 price_per_sqm: property.size_sqm && property.price ? Math.round(property.price / property.size_sqm) : undefined,

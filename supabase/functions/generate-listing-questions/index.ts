@@ -8,6 +8,8 @@ const corsHeaders = {
 
 interface ListingData {
   type: 'buy' | 'rent' | 'project';
+  entity_id?: string;   // property_id or project_id for caching
+  entity_type?: 'property' | 'project';  // for caching
   price?: number;
   size_sqm?: number;
   price_per_sqm?: number;
@@ -52,6 +54,21 @@ interface GeneratedQuestion {
   is_ai_generated: boolean;
 }
 
+// Generate a stable cache key from listing data
+function generateCacheKey(listing: ListingData): string {
+  const keyParts = [
+    listing.type,
+    listing.price?.toString() || '',
+    listing.size_sqm?.toString() || '',
+    listing.year_built?.toString() || '',
+    listing.city || '',
+    listing.neighborhood || '',
+    listing.property_type || '',
+    listing.bedrooms?.toString() || '',
+  ];
+  return keyParts.join('|');
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,17 +84,40 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
-      // Fall back to static questions
-      return await getFallbackQuestions(listing);
-    }
-
-    // Fetch pre-filtered questions from library
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Check cache first if we have entity identifiers
+    if (listing.entity_id && listing.entity_type) {
+      const cacheKey = generateCacheKey(listing);
+      
+      const { data: cached } = await supabase
+        .from("listing_question_cache")
+        .select("questions, source")
+        .eq("entity_type", listing.entity_type)
+        .eq("entity_id", listing.entity_id)
+        .eq("cache_key", cacheKey)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+      
+      if (cached) {
+        console.log("Cache hit for", listing.entity_type, listing.entity_id);
+        return new Response(
+          JSON.stringify({ 
+            questions: cached.questions,
+            source: "cached"
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY is not configured");
+      return await getFallbackQuestions(listing);
+    }
 
     const { data: allQuestions, error: dbError } = await supabase
       .from("property_questions")
@@ -195,9 +235,32 @@ serve(async (req) => {
       return await getFallbackQuestions(listing, top20Questions);
     }
 
+    const finalQuestions = questions.slice(0, 6);
+
+    // Cache the AI-generated questions if we have entity identifiers
+    if (listing.entity_id && listing.entity_type) {
+      const cacheKey = generateCacheKey(listing);
+      
+      // Upsert to handle race conditions
+      await supabase
+        .from("listing_question_cache")
+        .upsert({
+          entity_type: listing.entity_type,
+          entity_id: listing.entity_id,
+          cache_key: cacheKey,
+          questions: finalQuestions,
+          source: "ai",
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        }, {
+          onConflict: "entity_type,entity_id,cache_key"
+        });
+      
+      console.log("Cached questions for", listing.entity_type, listing.entity_id);
+    }
+
     return new Response(
       JSON.stringify({ 
-        questions: questions.slice(0, 6),
+        questions: finalQuestions,
         source: "ai"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
