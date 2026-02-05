@@ -1937,6 +1937,35 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_property_saves: {
+        Row: {
+          created_at: string
+          guest_id: string
+          id: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          guest_id: string
+          id?: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          guest_id?: string
+          id?: string
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_property_saves_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historical_prices: {
         Row: {
           average_price: number | null
@@ -4422,6 +4451,10 @@ export type Database = {
           sold_date: string
           sold_price: number
         }[]
+      }
+      get_property_saves_count: {
+        Args: { p_property_id: string }
+        Returns: number
       }
       has_role: {
         Args: {
