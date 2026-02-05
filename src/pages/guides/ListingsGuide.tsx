@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { 
   Home, MapPin, Building2, Users, FileText, Eye, Camera, 
   DollarSign, HelpCircle, CheckCircle, AlertTriangle, Lightbulb,
-  ArrowRight, Calculator, BookOpen, Search, Ruler, Tag, Clock,
+  ArrowRight, ArrowLeft, Calculator, BookOpen, Search, Ruler, Tag, Clock,
   Shield, Globe, MessageSquare, Scale, Layers, Sparkles, Sun
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -246,6 +247,13 @@ export default function ListingsGuide() {
         <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
+            {/* Back Button */}
+            <Link to="/guides">
+              <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Guides
+              </Button>
+            </Link>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -5,7 +5,7 @@ import {
   ArrowLeft, MapPin, Clock, ChevronDown, ChevronUp,
   Gift, Landmark, FileText, Calendar, Heart,
   CheckCircle2, AlertTriangle, Calculator, Plane,
-  Users, Building2, Globe, Shield, BadgeCheck
+  Users, Building2, Globe, Shield, BadgeCheck, BookOpen
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export default function OlehBuyerGuide() {
     setOpenSections(newOpen);
   };
 
+  // Back button is already at the top of the guide - see render below
   const sections: Section[] = [
     {
       id: 'timeline',

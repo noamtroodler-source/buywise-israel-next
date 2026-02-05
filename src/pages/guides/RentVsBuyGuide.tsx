@@ -4,11 +4,12 @@ import { motion } from 'framer-motion';
 import { 
   Scale, Clock, BookOpen, ChevronRight, Home, DollarSign,
   TrendingUp, Users, Shield, FileText, Calendar, Key, Heart,
-  ArrowRightLeft, CheckCircle, Plane, Receipt, AlertCircle,
+  ArrowRightLeft, ArrowLeft, CheckCircle, Plane, Receipt, AlertCircle,
   Building, Handshake, MapPin, Globe, Briefcase, UserCheck,
   HelpCircle, Lightbulb, Calculator, BookMarked
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 
 import rentVsBuyHero from '@/assets/guides/rent-vs-buy-hero.jpg';
 
@@ -251,6 +252,13 @@ export default function RentVsBuyGuide() {
           </div>
           
           <div className="container relative h-full flex flex-col justify-end pb-12">
+            {/* Back Button - Positioned at top */}
+            <Link to="/guides" className="absolute top-6 left-0">
+              <Button variant="ghost" className="gap-2 bg-background/80 backdrop-blur-sm hover:bg-background/90">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Guides
+              </Button>
+            </Link>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
