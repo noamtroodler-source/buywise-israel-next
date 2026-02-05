@@ -598,21 +598,23 @@ export default function MapSearchLayout() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Filter Bar */}
-      <PropertyFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-        showBuyRentToggle={true}
-        onBuyRentChange={(type) => {
-          const params = new URLSearchParams(searchParams);
-          params.set('status', type);
-          setSearchParams(params);
-        }}
-        previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
-        isCountLoading={isFetching}
-        activeView="map"
-        onCreateAlert={() => setShowAlertDialog(true)}
-      />
+      <div className="px-4 py-3 border-b bg-background">
+        <PropertyFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
+          showBuyRentToggle={true}
+          onBuyRentChange={(type) => {
+            const params = new URLSearchParams(searchParams);
+            params.set('status', type);
+            setSearchParams(params);
+          }}
+          previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
+          isCountLoading={isFetching}
+          activeView="map"
+          onCreateAlert={() => setShowAlertDialog(true)}
+        />
+      </div>
       
       {/* Split View */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
