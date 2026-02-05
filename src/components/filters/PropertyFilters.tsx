@@ -663,17 +663,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
             </Button>
           )}
 
-          {/* Inline Results Count - Desktop only */}
-          {!isMobile && previewCount !== undefined && (
-            <span className="text-sm text-muted-foreground whitespace-nowrap px-2">
-              {isCountLoading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin inline" />
-              ) : (
-                <>{previewCount} {previewCount === 1 ? 'property' : 'properties'}</>
-              )}
-            </span>
-          )}
-
           {/* Desktop: Sort & Create Alert pushed to the right */}
           {!isMobile && (
             <div className="flex items-center gap-2 ml-auto">
