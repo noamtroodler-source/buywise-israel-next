@@ -6,28 +6,31 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Link } from 'react-router-dom';
 
 const faqs = [
   {
-    question: 'How do payment schedules work for new construction in Israel?',
-    answer: `Payments are typically structured in stages tied to construction milestones. A common schedule is 20-30% at signing, with remaining payments spread across foundation completion, structural work, finishing stages, and final handover. Each developer may have slightly different schedules - ask for the specific payment plan before signing.`,
+    question: 'What is a Tofes 4 and when can I actually move in?',
+    answer: `Tofes 4 is the municipality's confirmation that the building meets approved plans and safety standards. Without it, you cannot legally occupy the apartment or connect utilities. You also need Tofes 5 (completion certificate) and fire department approval. Never accept keys or make final payment until both certificates are issued — some developers pressure buyers to take possession prematurely.`,
   },
   {
-    question: 'What happens if the developer delays completion?',
-    answer: `Israeli law (Hok Mecher) protects buyers with mandatory bank guarantees that secure your payments. If the developer fails to deliver, you can claim a refund. Minor delays (up to a few months) are common and usually don't trigger compensation. For major delays, your purchase contract should specify compensation terms or exit rights.`,
+    question: 'Is the price I\'m quoted the final price?',
+    answer: `Usually not. Most new construction contracts link payments to the Construction Cost Index (Madad Tasumin). This means your final price rises with inflation during construction. On a 2-3 year build, expect 5-15% increase over the quoted price. Always ask if the price is "סופי" (final) or "צמוד למדד" (index-linked), and budget accordingly.`,
   },
   {
-    question: 'Can I get a mortgage for an off-plan property?',
-    answer: `Yes, but it works differently than resale. Banks typically approve mortgages for new construction, but funds are released in stages matching your payment schedule. You'll start paying mortgage interest only on released amounts. Some buyers use a combination of savings for early payments and mortgage for later stages.`,
+    question: 'What if I need to sell before construction completes?',
+    answer: `You can transfer your contract rights (hasavat zchuyot), but developers must provide written consent and typically charge 1-2% of the purchase price as a transfer fee. Capital gains tax applies to any profit. The process requires legal coordination, and some developers restrict or delay transfers — clarify the policy before signing.`,
   },
   {
-    question: 'What is the typical completion timeline variance?',
-    answer: `Plan for 6-12 months beyond the stated completion date. Israeli construction projects frequently experience delays due to permit issues, material shortages, or labor availability. Pre-sale projects (not yet started) have higher variance than those already under construction. Always ask about current construction progress.`,
+    question: 'What warranty do I get on a new apartment?',
+    answer: `Israeli law provides two protection periods. Tekufat Bedek (inspection period) runs 1-7 years depending on the component: 1 year for general defects, 2 years for plumbing/electrical, 5 years for cracks and damp, 7 years for cladding and waterproofing. Tekufat Achrayut (warranty period) adds 3 years of structural coverage. Document and report all defects in writing immediately — verbal complaints don't count.`,
   },
   {
-    question: 'What legal protections do buyers have?',
-    answer: `The Sale Law (Hok Mecher) mandates that developers provide bank guarantees for all payments, ensuring your money is protected if the project fails. You also get a 1-year warranty on construction defects. However, you'll need to pay for the developer's lawyer (1.5% + VAT) in addition to your own legal representation.`,
+    question: 'How are my payments protected if the developer fails?',
+    answer: `The Sale Law (Hok Mechira) requires developers to provide bank guarantees for all payments exceeding 7% of the purchase price. This guarantee ensures your money is returned if the project collapses. Keep all guarantee documents in a safe place — they are your insurance. Verify the issuing bank is reputable and that guarantees are issued within 14 days of each payment.`,
+  },
+  {
+    question: 'What\'s in the technical specification (mifrat techni)?',
+    answer: `The mifrat techni is a detailed document listing every finish, material, and fixture included in your apartment — flooring type, tile brand, electrical outlets, kitchen countertops, door handles, everything. Anything not explicitly listed costs extra. Before final payment, hire an engineer to compare the delivered apartment against this specification. Discrepancies should be documented and resolved before signing the protocol.`,
   },
 ];
 
@@ -56,7 +59,6 @@ export function ProjectFAQ() {
           </AccordionItem>
         ))}
       </Accordion>
-
     </motion.div>
   );
 }

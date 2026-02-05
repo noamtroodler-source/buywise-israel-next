@@ -84,27 +84,32 @@ const rentingAspects = [
   {
     icon: Calendar,
     title: 'Lease Norms',
-    description: 'Typically 1-year contracts with limited renewal certainty. Shorter commitments than some expect.',
+    description: 'Typically 1-year contracts with limited renewal certainty. Early termination clauses (if they exist) usually require 60 days notice from tenant, 90 days from landlord.',
   },
   {
     icon: DollarSign,
     title: 'Security Deposits and Guarantees',
-    description: 'Common structures include deposits and bank guarantees, varying by landlord and property.',
+    description: 'Security deposits cannot exceed 3 months rent by law. Landlords may hold deposit up to 60 days after lease ends for damage inspection. Bank guarantees are common for higher-end rentals.',
   },
   {
     icon: Shield,
     title: 'Tenant Protections',
-    description: 'Less formal than some Western countries. Legal frameworks exist but enforcement varies.',
+    description: 'Less formal than US/UK. No standard inventory process — document everything with photos at move-in. Verbal agreements are hard to enforce.',
   },
   {
     icon: Handshake,
-    title: 'Landlord Flexibility',
-    description: 'Shorter notice periods and less stability than renters from some countries may expect.',
+    title: 'Rent Indexation (Madad)',
+    description: 'Many Israeli leases include annual rent increases tied to the Consumer Price Index. Budget for 2-5% yearly increases. Verify if your lease is "צמוד למדד" (index-linked).',
   },
   {
     icon: HelpCircle,
-    title: 'Renewal Uncertainty',
-    description: 'Landlords may choose not to renew without providing reasons beyond contract terms.',
+    title: 'Moving Out Essentials',
+    description: 'Document meter readings, transfer Arnona to your name, get signed confirmation of key return. Missing these steps can lead to disputes months later.',
+  },
+  {
+    icon: Building,
+    title: 'Dirat Le\'haskara Programme',
+    description: 'Government long-term rental programme in some areas offers more tenant protections and stability than private market rentals.',
   },
 ];
 

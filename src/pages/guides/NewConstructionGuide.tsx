@@ -82,16 +82,23 @@ export default function NewConstructionGuide() {
           </p>
           <h4 className="font-semibold">Key Advantages:</h4>
           <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Modern Standards:</strong> Built to current earthquake codes, energy efficiency requirements, and includes mandatory safe rooms (Mamad)</li>
-            <li><strong>Warranty Protection:</strong> One-year full warranty plus extended structural warranty</li>
-            <li><strong>Customization:</strong> Often ability to choose finishes, flooring, and kitchen specifications</li>
+            <li><strong>Modern Standards:</strong> Built to current earthquake codes (post-2018 regulations), energy efficiency requirements, and includes mandatory safe rooms (Mamad)</li>
+            <li><strong>Warranty Protection:</strong> Tekufat Bedek (1-7 years by component) plus Tekufat Achrayut (3-year structural warranty)</li>
+            <li><strong>Customization:</strong> Often ability to choose finishes, flooring, and kitchen specifications — compare against the Mifrat Techni</li>
             <li><strong>Payment Flexibility:</strong> Staged payments over construction period reduces upfront cash needs</li>
-            <li><strong>No Renovation Needed:</strong> Move-in ready with new appliances and systems</li>
+            <li><strong>Bank Guarantee Protection:</strong> Israeli law requires developers to provide bank guarantees for all payments over 7%</li>
           </ul>
           <div className="bg-primary/5 p-4 rounded-lg mt-4">
             <p className="text-sm">
               <strong>💡 For International Buyers:</strong> New construction is often preferred because you can manage much of 
-              the process remotely, and you won't need to deal with renovation contractors or unexpected repair issues.
+              the process remotely via Power of Attorney, and you won't need to deal with renovation contractors or unexpected repair issues.
+            </p>
+          </div>
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20 mt-4">
+            <p className="text-sm flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+              <span><strong>Pre-Sale Risk:</strong> Projects without a valid building permit (Heiter Bniya) carry higher uncertainty. 
+              Construction may be delayed or terms may change. Always verify permit status before signing.</span>
             </p>
           </div>
         </div>
@@ -165,10 +172,17 @@ export default function NewConstructionGuide() {
               payments. Always negotiate and review the schedule carefully with your lawyer before signing.</span>
             </p>
           </div>
-          <h4 className="font-semibold mt-4">CPI Linkage (Hatzamada):</h4>
+          <h4 className="font-semibold mt-4">Construction Cost Index (Madad Tasumin):</h4>
           <p>
-            Most new construction contracts include CPI (Consumer Price Index) linkage. This means your remaining 
-            payments may increase based on inflation. Budget for 2-4% annual increases on unpaid amounts.
+            Most new construction contracts link remaining payments to the Construction Cost Index, not CPI. 
+            This means your final price rises with construction material and labor costs. <strong>Budget for 5-15% 
+            increase</strong> over a 2-3 year construction period. Ask if the price is "סופי" (final) or "צמוד למדד" (index-linked).
+          </p>
+          <h4 className="font-semibold mt-4">Delay Compensation (2022 Sale Law):</h4>
+          <p>
+            Under the 2022 amendments to the Sale Law, if delivery is delayed beyond 60 days, developers must pay 
+            compensation equal to 100% of market rent for the first year of delay, and 150% thereafter. Verify your 
+            contract includes these protections.
           </p>
         </div>
       ),
