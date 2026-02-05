@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal } from 'lucide-react';
+ import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -13,6 +13,8 @@ import { Link } from 'react-router-dom';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectMobileFilterSheet } from '@/components/filters/ProjectMobileFilterSheet';
+ import { useGeolocation } from '@/hooks/useGeolocation';
+ import { findNearestCity } from '@/lib/utils/findNearestCity';
 
 export interface ProjectFiltersType {
   city?: string;
@@ -72,6 +74,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [developerSearch, setDeveloperSearch] = useState('');
+   const [geoError, setGeoError] = useState<string | null>(null);
   
   const { data: cities } = useCities();
   const { data: developers } = useDevelopers();
@@ -80,6 +83,34 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   
   // Dynamic count for Apply buttons - shows preview of matching results
   const { data: previewCount, isFetching: countLoading } = useProjectCount(filters);
+ 
+   const { getLocation, isLoading: geoLoading, coordinates, error: geoLocationError, isSupported: geoSupported } = useGeolocation();
+   
+   // Handle geolocation result
+   useMemo(() => {
+     if (coordinates && cities?.length) {
+       const nearest = findNearestCity(coordinates, cities);
+       if (nearest) {
+         updateFilter('city', nearest.name);
+         setCityOpen(false);
+         setGeoError(null);
+       } else {
+         setGeoError('No supported city nearby');
+       }
+     }
+   }, [coordinates, cities]);
+   
+   // Show geo error from hook
+   useMemo(() => {
+     if (geoLocationError) {
+       setGeoError(geoLocationError);
+     }
+   }, [geoLocationError]);
+   
+   const handleUseMyLocation = () => {
+     setGeoError(null);
+     getLocation();
+   };
 
   // Count active filters for mobile badge (excluding city, sort)
   const mobileActiveFilterCount = useMemo(() => {
@@ -178,6 +209,30 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               />
             </div>
 
+             {/* My Location Button */}
+             {geoSupported && (
+               <div className="space-y-1">
+                 <button
+                   type="button"
+                   disabled={geoLoading || !cities?.length}
+                   onClick={handleUseMyLocation}
+                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+                 >
+                   {geoLoading ? (
+                     <Loader2 className="h-4 w-4 animate-spin" />
+                   ) : (
+                     <Navigation className="h-4 w-4" />
+                   )}
+                   <span>{geoLoading ? 'Locating...' : 'Use my location'}</span>
+                 </button>
+                 {geoError && (
+                   <p className="text-xs text-muted-foreground px-3">{geoError}</p>
+                 )}
+               </div>
+             )}
+ 
+             <div className="border-t my-2" />
+ 
             <div className="max-h-[250px] overflow-y-auto space-y-1">
               {filteredCities?.map(city => (
                 <button

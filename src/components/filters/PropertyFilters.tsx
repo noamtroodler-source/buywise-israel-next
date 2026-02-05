@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw } from 'lucide-react';
+ import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -17,6 +17,8 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { ViewToggle } from '@/components/filters/ViewToggle';
+ import { useGeolocation } from '@/hooks/useGeolocation';
+ import { findNearestCity } from '@/lib/utils/findNearestCity';
 
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
@@ -112,12 +114,45 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+   const [geoError, setGeoError] = useState<string | null>(null);
   
   const { data: cities } = useCities();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { currency, exchangeRate } = usePreferences();
   const isMobile = useIsMobile();
+   
+   const { getLocation, isLoading: geoLoading, coordinates, error: geoLocationError, isSupported: geoSupported } = useGeolocation();
+   
+   // Handle geolocation result
+   useMemo(() => {
+     if (coordinates && cities?.length) {
+       const nearest = findNearestCity(coordinates, cities);
+       if (nearest) {
+         onFiltersChange({
+           ...filters,
+           city: nearest.name,
+           neighborhoods: undefined,
+         });
+         setCityOpen(false);
+         setGeoError(null);
+       } else {
+         setGeoError('No supported city nearby');
+       }
+     }
+   }, [coordinates, cities]);
+   
+   // Show geo error from hook
+   useMemo(() => {
+     if (geoLocationError) {
+       setGeoError(geoLocationError);
+     }
+   }, [geoLocationError]);
+   
+   const handleUseMyLocation = () => {
+     setGeoError(null);
+     getLocation();
+   };
   
   // Count active filters for mobile badge (excluding city, sort, listing_status)
   const mobileActiveFilterCount = useMemo(() => {
@@ -381,6 +416,30 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     />
                   </div>
 
+                 {/* My Location Button */}
+                 {geoSupported && (
+                   <div className="space-y-1">
+                     <button
+                       type="button"
+                       disabled={geoLoading || !cities?.length}
+                       onClick={handleUseMyLocation}
+                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+                     >
+                       {geoLoading ? (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                       ) : (
+                         <Navigation className="h-4 w-4" />
+                       )}
+                       <span>{geoLoading ? 'Locating...' : 'Use my location'}</span>
+                     </button>
+                     {geoError && (
+                       <p className="text-xs text-muted-foreground px-3">{geoError}</p>
+                     )}
+                   </div>
+                 )}
+ 
+                 <div className="border-t my-2" />
+ 
                   <div className="max-h-[150px] overflow-y-auto space-y-1">
                     {filteredCities?.map(city => (
                       <button
