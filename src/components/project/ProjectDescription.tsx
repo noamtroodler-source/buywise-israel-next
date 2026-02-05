@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
- import { ProjectAmenities } from './ProjectAmenities';
+ import { Badge } from '@/components/ui/badge';
+ import { Sparkles } from 'lucide-react';
 
 interface ProjectDescriptionProps {
   description?: string | null;
@@ -27,7 +28,19 @@ export function ProjectDescription({ description, amenities }: ProjectDescriptio
       )}
        
        {amenities && amenities.length > 0 && (
-         <ProjectAmenities amenities={amenities} />
+         <div className="space-y-3 pt-2">
+           <h3 className="text-lg font-semibold flex items-center gap-2">
+             <Sparkles className="h-5 w-5 text-primary" />
+             Amenities & Features
+           </h3>
+           <div className="flex flex-wrap gap-2">
+             {amenities.map((amenity, index) => (
+               <Badge key={index} variant="secondary" className="text-sm font-normal">
+                 {amenity}
+               </Badge>
+             ))}
+           </div>
+         </div>
       )}
     </motion.div>
   );
