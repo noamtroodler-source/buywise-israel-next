@@ -1,62 +1,136 @@
 
-# Consolidate to Single "Comparison AI Summary"
+
+# Report Inaccurate Info Feature
 
 ## Overview
-Merge the current `CompareAISummary` and `CompareWinnerSummary` into one unified component, keeping only the AI-powered summary while adding the winner breakdown and CTA buttons.
+Add a "Report Inaccurate Info" link to property detail pages, allowing users to flag outdated or incorrect listing information. This is a community-driven data quality feature used by Zillow, Redfin, and others.
 
-## Changes
+## Implementation
 
-### 1. Update `CompareAISummary` Component
-**File:** `src/components/compare/CompareAISummary.tsx`
+### 1. Create Database Table: `listing_reports`
+Store user-submitted reports for admin review.
 
-**Remove:**
-- The "Regenerate" button (prevent unlimited regenerations)
-- The `RefreshCw` icon import
+```sql
+CREATE TABLE public.listing_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  email TEXT, -- For anonymous reports
+  report_type TEXT NOT NULL, -- 'sold', 'price_wrong', 'photos_wrong', 'already_rented', 'scam', 'other'
+  description TEXT,
+  status TEXT DEFAULT 'pending', -- 'pending', 'reviewed', 'resolved', 'dismissed'
+  admin_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  resolved_at TIMESTAMPTZ,
+  
+  CONSTRAINT check_entity CHECK (
+    (property_id IS NOT NULL AND project_id IS NULL) OR
+    (property_id IS NULL AND project_id IS NOT NULL)
+  )
+);
 
-**Add:**
-- Winner breakdown pills (showing each property and how many categories it wins)
-- "Calculate True Costs" and "Run Mortgage Numbers" CTA buttons at the bottom
-- Keep the error state with "Try again" only for initial failures
+-- RLS: Anyone can create reports, only admins can read/update
+ALTER TABLE public.listing_reports ENABLE ROW LEVEL SECURITY;
 
-**New structure:**
-```text
-+--------------------------------------------------+
-|  [Sparkles]  Comparison AI Summary               |
-|  AI-powered analysis of your properties          |
-+--------------------------------------------------+
-|                                                  |
-|  "The 5-room duplex in Petah Tikva offers..."    |
-|  (AI-generated summary text)                     |
-|                                                  |
-|  [Property A - 3 wins] [Property B - 1 win] ...  |
-|                                                  |
-|  [Calculate True Costs] [Run Mortgage Numbers]   |
-|                                                  |
-|  AI-generated · Based on listed property data    |
-+--------------------------------------------------+
+CREATE POLICY "Anyone can create reports" ON listing_reports
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Users can view own reports" ON listing_reports
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can manage all reports" ON listing_reports
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin')
+  );
 ```
 
-### 2. Update Compare Page
-**File:** `src/pages/Compare.tsx`
+### 2. Create Component: `ReportListingButton`
+**File:** `src/components/property/ReportListingButton.tsx`
 
-- Remove the `CompareWinnerSummary` import and usage
-- Keep only `CompareAISummary`
+A subtle link/button that opens a dialog with:
+- **Report type dropdown**: "Already sold/rented", "Price is wrong", "Photos don't match", "Possible scam", "Other"
+- **Optional description** textarea
+- **Email field** (if not logged in)
+- Submit button
 
-### 3. Update Exports
-**File:** `src/components/compare/index.ts`
+Design: Small, muted link at bottom of property info (not prominent but accessible)
 
-- Remove `CompareWinnerSummary` export
+```text
+[Flag Icon] Report inaccurate info
+```
 
-### 4. Delete Old Component (optional cleanup)
-**File:** `src/components/compare/CompareWinnerSummary.tsx`
+### 3. Create Dialog: `ReportListingDialog`
+**File:** `src/components/property/ReportListingDialog.tsx`
 
-- Can be deleted since it's no longer used
+Modal dialog with:
+- Radio buttons for report type
+- Optional description field
+- Email field (shown only if user not logged in)
+- Success confirmation with "Thank you for helping keep our listings accurate"
 
-## Files to Modify
+### 4. Create Hook: `useReportListing`
+**File:** `src/hooks/useReportListing.ts`
+
+```typescript
+export function useReportListing() {
+  // Submit report to listing_reports table
+  // Show toast on success
+}
+```
+
+### 5. Add to Property Detail Page
+**File:** `src/pages/PropertyDetail.tsx`
+
+Add `ReportListingButton` after the ListingFeedback component (subtle placement near bottom of listing content).
+
+### 6. Add to Project Detail Page (optional)
+**File:** `src/pages/ProjectDetail.tsx`
+
+Same treatment for new development projects.
+
+## UI Placement
+
+```text
+Property Detail Page
+├── Hero
+├── Quick Summary
+├── Description
+├── Value Snapshot
+├── Recent Sales
+├── Questions to Ask
+├── Cost Breakdown
+├── Location
+├── Next Steps
+├── Listing Feedback
+└── [Flag] Report inaccurate info  <-- NEW (subtle link)
+```
+
+## Report Types
+| Type | Label |
+|------|-------|
+| `sold` | Already sold |
+| `rented` | Already rented |
+| `price_wrong` | Price is incorrect |
+| `photos_wrong` | Photos don't match |
+| `info_outdated` | Information is outdated |
+| `scam` | Possible scam/fraud |
+| `other` | Other issue |
+
+## Files to Create/Modify
 
 | File | Action |
 |------|--------|
-| `src/components/compare/CompareAISummary.tsx` | Modify |
-| `src/pages/Compare.tsx` | Modify |
-| `src/components/compare/index.ts` | Modify |
-| `src/components/compare/CompareWinnerSummary.tsx` | Delete (optional) |
+| Database migration | Create `listing_reports` table |
+| `src/components/property/ReportListingButton.tsx` | Create |
+| `src/components/property/ReportListingDialog.tsx` | Create |
+| `src/hooks/useReportListing.ts` | Create |
+| `src/pages/PropertyDetail.tsx` | Modify (add button) |
+| `src/pages/ProjectDetail.tsx` | Modify (add button - optional) |
+
+## Success State
+After submitting, user sees:
+- Toast: "Thanks for reporting! We'll review this listing."
+- Dialog closes
+- No page refresh needed
+
