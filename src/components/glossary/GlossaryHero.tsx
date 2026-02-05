@@ -1,15 +1,16 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Book, Search } from 'lucide-react';
+import { Book, Search, GraduationCap } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface GlossaryHeroProps {
   termCount: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onOpenFlashcards: () => void;
 }
 
-export function GlossaryHero({ termCount, searchQuery, onSearchChange }: GlossaryHeroProps) {
+export function GlossaryHero({ termCount, searchQuery, onSearchChange, onOpenFlashcards }: GlossaryHeroProps) {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
@@ -33,7 +34,7 @@ export function GlossaryHero({ termCount, searchQuery, onSearchChange }: Glossar
           </p>
           
           {/* Search Input */}
-          <div className="relative max-w-md mx-auto">
+          <div className="relative max-w-md mx-auto mb-4">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="search"
@@ -43,6 +44,16 @@ export function GlossaryHero({ termCount, searchQuery, onSearchChange }: Glossar
               className="pl-12 h-12 text-base bg-background/80 backdrop-blur-sm border-border/50 focus:border-primary/50"
             />
           </div>
+
+          {/* Study Mode Button */}
+          <Button 
+            onClick={onOpenFlashcards}
+            variant="outline"
+            className="gap-2 border-primary/30 hover:border-primary hover:bg-primary/5"
+          >
+            <GraduationCap className="h-4 w-4" />
+            Study with Flashcards
+          </Button>
         </motion.div>
       </div>
     </section>
