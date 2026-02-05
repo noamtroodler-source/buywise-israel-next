@@ -77,8 +77,12 @@ const howMortgagesDiffer = [
     description: 'In contrast to systems where mortgage approval precedes a binding agreement, in Israel buyers sign the contract and pay a significant deposit before securing their mortgage; there is usually no financing contingency built into the agreement.',
   },
   {
-    title: 'Buyer status matters',
-    description: 'Loan conditions and documentation requirements depend on whether the buyer is an Israeli resident, a new immigrant (oleh), a foreign buyer living abroad, or an investor; banks may request Israeli guarantors or limit the loan-to-value for non-residents.',
+    title: 'Buyer status determines LTV limits',
+    description: 'Bank of Israel regulations set maximum loan-to-value ratios: 75% for first-time Israeli buyers and Olim, 70% for upgraders, 50% for investors and foreign buyers (some lenders offer up to 70% for strong foreign profiles).',
+  },
+  {
+    title: 'Debt-to-income limits apply',
+    description: 'The Bank of Israel caps mortgage payments at 33-40% of net monthly income. For example, if your joint net income is ₪30,000, monthly payments cannot exceed ₪10,000-12,000.',
   },
   {
     title: 'Property characteristics influence eligibility',
@@ -86,16 +90,21 @@ const howMortgagesDiffer = [
   },
   {
     title: 'Currency and income source complicate matters',
-    description: 'Foreign currency income and assets introduce exchange-rate risk; banks may adjust terms or require proof of stable local income.',
+    description: 'Foreign currency income and assets introduce exchange-rate risk; banks may adjust terms or require proof of stable local income. Foreign buyers may need Israeli guarantors (arev) or additional collateral.',
   },
   {
     title: 'Documentation is extensive and locally oriented',
     description: 'Borrowers must supply Israeli bank account statements, tax returns, legal identification, and sometimes local guarantors; foreign documentation often requires translation and verification.',
   },
   {
-    title: 'Terms and processes vary by bank',
-    description: 'There is no standardised national lending program; each bank sets its own policies and risk thresholds.',
-    badge: 'VARIES BY BANK',
+    title: 'Pre-payment penalties vary by loan type',
+    description: 'Variable-rate loans generally have no pre-payment penalties. Fixed-rate loans may incur penalties if paid off when market rates are lower than your contracted rate.',
+    badge: 'VARIES BY LOAN TYPE',
+  },
+  {
+    title: 'Olim may access government mortgage',
+    description: 'New immigrants may be eligible for a government-backed mortgage (Mashkanta Zkaim) with favorable terms — typically fixed 3% rate for 20-25 years on a limited amount.',
+    badge: 'OLIM BENEFIT',
   },
 ];
 

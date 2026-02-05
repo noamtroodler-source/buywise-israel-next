@@ -111,7 +111,7 @@ const termsData = [
   {
     term: 'Aliyah Benefit',
     assumption: 'Automatic tax break for all Jews',
-    reality: 'A reduced rate available to new immigrants within a specific time window and subject to restrictions.',
+    reality: 'Reduced rates (0.5% up to ₪6M) available only within 7 years of aliyah date. First ₪1.98M may be exempt.',
   },
   {
     term: 'New Construction',
@@ -126,7 +126,7 @@ const termsData = [
   {
     term: 'Self-Assessment',
     assumption: 'Something handled automatically by lawyers',
-    reality: "The buyer's responsibility to file a tax report; attorneys typically assist, but the obligation is yours.",
+    reality: "The buyer's responsibility to file Form 1345 within 40 days of signing. Payment due within 60 days.",
   },
   {
     term: 'Exemption',
@@ -136,7 +136,17 @@ const termsData = [
   {
     term: 'Payment Deferral',
     assumption: 'No need to pay tax until delivery',
-    reality: 'Only available in new constructions, and interest and inflation adjustments apply.',
+    reality: 'Only available in new constructions, and interest and inflation adjustments apply during deferral.',
+  },
+  {
+    term: 'Capital Gains (Mas Shevach)',
+    assumption: 'Only the seller pays capital gains tax',
+    reality: 'Seller responsibility, but buyers should verify Tax Clearance Certificate before closing. Unpaid seller taxes can delay registration.',
+  },
+  {
+    term: 'Late Payment Interest',
+    assumption: 'Small penalty for late payment',
+    reality: 'Interest up to 5% monthly on unpaid capital gains tax. Purchase tax also accrues significant interest if not paid within 60 days.',
   },
 ];
 
