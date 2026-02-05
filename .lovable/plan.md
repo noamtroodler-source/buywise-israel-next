@@ -1,86 +1,65 @@
 
-
-# Add Neighborhood Data to Properties
+# Upgrade "At a Glance" to "Amenities & Features" Section
 
 ## Current State
 
-The neighborhood display code is **already implemented** across all property cards and detail pages:
-- PropertyCard (compact & standard): `{property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}`
-- MapPropertyCard: Same format
-- PropertyQuickSummary: Shows neighborhood in location line
-
-**The Problem**: No properties have neighborhoods assigned - all 3,100+ properties have `neighborhood = NULL`.
-
-## Solution
-
-Populate neighborhoods on mock properties using the neighborhood data already defined in the `cities` table.
+The property detail page has a small, understated section:
 
 ```text
-Before:
-┌─────────────────────────────────────┐
-│ Ra'anana                            │  <- Just city
-└─────────────────────────────────────┘
+Current:
+┌─────────────────────────────────────────────────────┐
+│ At a Glance                      <- text-sm, gray   │
+│ [Spacious Layout] [Double Parking] [Renovated]      │
+└─────────────────────────────────────────────────────┘
+```
 
+## Target State
+
+Match the project page's prominent section styling:
+
+```text
 After:
-┌─────────────────────────────────────┐
-│ Neve Oz, Ra'anana                   │  <- Neighborhood + City
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ ✨ Amenities & Features          <- text-lg, bold   │
+│ [Spacious Layout] [Double Parking] [Renovated]      │
+└─────────────────────────────────────────────────────┘
 ```
 
-## Implementation
+## Visual Comparison
 
-### Database Migration
+| Aspect | Before | After |
+|--------|--------|-------|
+| Title | "At a Glance" | "Amenities & Features" |
+| Size | `text-sm` | `text-lg` |
+| Weight | `font-medium` | `font-semibold` |
+| Color | `text-muted-foreground` (gray) | `text-foreground` (default/black) |
+| Icon | None | Sparkles icon with `text-primary` |
 
-Create a migration that:
-1. For each city that has neighborhoods defined, randomly assign neighborhoods to ~70% of properties in that city
-2. Leave ~30% without neighborhoods (realistic - not all listings specify this)
-
-```sql
--- Assign random neighborhoods to properties based on their city
-WITH city_neighborhoods AS (
-  SELECT 
-    name as city_name,
-    jsonb_array_elements_text(
-      jsonb_path_query_array(neighborhoods, '$[*].name')
-    ) as neighborhood_name,
-    random() as rand_order
-  FROM cities
-  WHERE neighborhoods IS NOT NULL 
-    AND jsonb_array_length(neighborhoods) > 0
-),
--- Get one random neighborhood per city for each property
-property_assignments AS (
-  SELECT DISTINCT ON (p.id)
-    p.id as property_id,
-    cn.neighborhood_name
-  FROM properties p
-  JOIN city_neighborhoods cn ON cn.city_name = p.city
-  WHERE p.neighborhood IS NULL
-    AND random() < 0.7  -- 70% of properties get a neighborhood
-  ORDER BY p.id, random()
-)
-UPDATE properties p
-SET neighborhood = pa.neighborhood_name
-FROM property_assignments pa
-WHERE p.id = pa.property_id;
-```
-
-## Expected Result
-
-- ~2,170 properties (70%) will have neighborhoods assigned
-- ~930 properties (30%) will remain without (realistic variation)
-- All existing UI will immediately show neighborhoods without code changes
-
-## Files Changed
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| Database Migration | SQL to populate neighborhood field on properties |
+| `src/components/property/PropertyQuickSummary.tsx` | Update heading style from small gray to prominent section header with Sparkles icon |
 
-## Benefits
+## Technical Changes
 
-- **Immediate visibility**: Neighborhoods appear on all cards and detail pages
-- **No code changes needed**: Display logic already exists
-- **Realistic data**: Random assignment from actual city neighborhoods
-- **User trust**: Shows local knowledge ("Neve Oz, Ra'anana" vs just "Ra'anana")
+In `PropertyQuickSummary.tsx`, lines 471-472, change from:
 
+```tsx
+<h3 className="text-sm font-medium text-muted-foreground">At a Glance</h3>
+```
+
+To:
+
+```tsx
+<h3 className="text-lg font-semibold flex items-center gap-2">
+  <Sparkles className="h-5 w-5 text-primary" />
+  Amenities & Features
+</h3>
+```
+
+Note: The Sparkles icon is already imported in this file (line 5), so no new imports are needed.
+
+## Impact
+
+This change affects both property buy and rental detail pages since they share the same `PropertyQuickSummary` component. The highlights/features will now have the visual prominence they deserve, matching the project page's treatment of amenities.
