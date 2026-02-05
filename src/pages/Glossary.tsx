@@ -8,7 +8,6 @@ import { GuestSignupNudge } from '@/components/shared/GuestSignupNudge';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { 
   GlossaryHero, 
-  JourneySelector, 
   journeyStages,
   CategoryNav, 
   CATEGORY_CONFIG,
@@ -20,56 +19,42 @@ import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossar
 import { useIsMobile } from '@/hooks/use-mobile';
 
 // Map terms to journey stages based on category and usage context
-// This spreads terms across all 4 stages more evenly
 function getTermJourneyStage(term: GlossaryTerm): string {
   const category = term.category || 'general';
   const context = (term.usage_context || '').toLowerCase();
   const englishTerm = (term.english_term || '').toLowerCase();
-  const hebrewTerm = term.hebrew_term || '';
   
-  // Keywords that indicate journey stages
   const beforeStartKeywords = ['tabu', 'registry', 'ownership', 'basic', 'start', 'general', 'property type'];
   const duringResearchKeywords = ['listing', 'viewing', 'search', 'room', 'floor', 'size', 'sqm', 'arnona', 'area'];
   const makingOfferKeywords = ['contract', 'offer', 'negotiat', 'lawyer', 'sign', 'agreement', 'warning', 'caveat'];
   const closingKeywords = ['closing', 'registration', 'after', 'payment', 'transfer', 'final'];
   
-  // Check context + english term for keywords
   const searchText = `${context} ${englishTerm}`;
   
-  // Before You Start: foundational terms everyone should understand first
-  // Include basic legal concepts like Tabu, land registry, ownership basics
   if (beforeStartKeywords.some(k => searchText.includes(k)) || category === 'general') {
     return 'before_start';
   }
   
-  // Closing & After: tax and final mortgage terms
   if (category === 'tax' || closingKeywords.some(k => searchText.includes(k))) {
     return 'closing_after';
   }
   
-  // Making an Offer: contract, legal, negotiation terms  
   if (makingOfferKeywords.some(k => searchText.includes(k)) || category === 'process') {
     return 'making_offer';
   }
   
-  // During Research: property, listings, viewings, mortgage basics
   if (duringResearchKeywords.some(k => searchText.includes(k)) || category === 'property') {
     return 'during_research';
   }
   
-  // Default: spread remaining terms based on category
-  // Mortgage terms: split between research (learning) and closing (finalizing)
   if (category === 'mortgage') {
-    // Basic mortgage concepts go to research, closing-related go to closing
     if (context.includes('choos') || context.includes('select') || context.includes('buying')) {
       return 'during_research';
     }
     return 'closing_after';
   }
   
-  // Legal terms: spread between before_start (basics) and making_offer (contracts)
   if (category === 'legal') {
-    // Registry/ownership basics go to before_start
     if (searchText.includes('registry') || searchText.includes('ownership') || searchText.includes('tabu')) {
       return 'before_start';
     }
@@ -83,7 +68,6 @@ export default function Glossary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedJourneyStage, setSelectedJourneyStage] = useState<string | null>(null);
   const [savedTerms, setSavedTerms] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('savedGlossaryTerms');
     return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -110,7 +94,7 @@ export default function Glossary() {
     return Array.from(cats).sort();
   }, [allTerms]);
 
-  // Filter terms based on search, category, and journey stage
+  // Filter terms based on search and category
   const displayTerms = useMemo(() => {
     if (debouncedSearch.length >= 2 && searchResults) {
       return searchResults;
@@ -120,24 +104,18 @@ export default function Glossary() {
     
     let filtered = allTerms;
     
-    // Filter by category
     if (selectedCategory === 'saved') {
       filtered = filtered.filter(term => savedTerms.has(term.id));
     } else if (selectedCategory !== 'all') {
       filtered = filtered.filter(term => term.category === selectedCategory);
     }
     
-    // Filter by journey stage
-    if (selectedJourneyStage) {
-      filtered = filtered.filter(term => getTermJourneyStage(term) === selectedJourneyStage);
-    }
-    
     return filtered;
-  }, [allTerms, searchResults, debouncedSearch, selectedCategory, savedTerms, selectedJourneyStage]);
+  }, [allTerms, searchResults, debouncedSearch, selectedCategory, savedTerms]);
 
   // Group terms by journey stage for organized display
   const groupedByJourney = useMemo(() => {
-    if (debouncedSearch.length >= 2 || selectedCategory !== 'all' || selectedJourneyStage) {
+    if (debouncedSearch.length >= 2 || selectedCategory !== 'all') {
       return null; // Don't group when filtering
     }
     
@@ -154,7 +132,7 @@ export default function Glossary() {
     });
     
     return groups;
-  }, [displayTerms, debouncedSearch, selectedCategory, selectedJourneyStage]);
+  }, [displayTerms, debouncedSearch, selectedCategory]);
 
   const toggleSavedTerm = (termId: string) => {
     setSavedTerms(prev => {
@@ -181,11 +159,6 @@ export default function Glossary() {
     });
   };
 
-  const handleJourneyStageClick = (stageKey: string | null) => {
-    setSelectedJourneyStage(stageKey);
-    setSelectedCategory('all'); // Reset category when selecting journey stage
-  };
-
   return (
     <Layout>
       <SEOHead
@@ -201,6 +174,7 @@ export default function Glossary() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onOpenFlashcards={() => setFlashcardsOpen(true)}
+          savedCount={savedTerms.size}
         />
 
         {/* Flashcard Study Modal */}
@@ -212,20 +186,11 @@ export default function Glossary() {
           getTermJourneyStage={getTermJourneyStage}
         />
 
-        {/* Journey Stage Selector */}
-        <JourneySelector 
-          activeStage={selectedJourneyStage}
-          onStageClick={handleJourneyStageClick}
-        />
-
         {/* Category Navigation */}
         <CategoryNav 
           categories={categories}
           selectedCategory={selectedCategory}
-          onCategoryChange={(cat) => {
-            setSelectedCategory(cat);
-            setSelectedJourneyStage(null); // Reset journey when selecting category
-          }}
+          onCategoryChange={setSelectedCategory}
           savedCount={savedTerms.size}
         />
 
@@ -254,7 +219,7 @@ export default function Glossary() {
                 <p className="text-muted-foreground max-w-sm mx-auto">
                   {selectedCategory === 'saved'
                     ? 'Click the star icon on any term to save it for later review.'
-                    : 'Try a different search term, category, or journey stage.'}
+                    : 'Try a different search term or category.'}
                 </p>
               </CardContent>
             </Card>
