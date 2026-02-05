@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight, PenLine
+  Wrench, ChevronRight, PenLine, Bug
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -67,6 +67,7 @@ export function AdminLayout() {
     { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
+    { href: '/admin/errors', label: 'Client Errors', icon: Bug },
   ];
 
   return (
