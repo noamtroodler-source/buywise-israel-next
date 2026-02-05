@@ -1,69 +1,73 @@
 
+# Show 3 Questions with Expand/Collapse
 
-# Ensure All Resale Listings Have Nearby Sold Comps
+## Overview
 
-## Current State
+Update the "Questions to Ask" components to show only the first 3 questions by default, with a collapsible section to reveal the remaining questions.
 
-- **309** resale listings with coordinates
-- **1,822** sold transactions in database
-- **7 cities with listings but NO comps**: Modi'in (name mismatch), Ma'ale Adumim, Hadera, Zichron Yaakov, Gush Etzion, Efrat, Givat Shmuel
+## Current Behavior
 
-## Issues to Fix
+- All 5-6 questions display immediately
+- No way to collapse or hide questions
 
-| Issue | Impact |
-|-------|--------|
-| City name mismatch: `Modi'in` vs `Modiin` | 16 listings have no matching comps |
-| 6 cities completely missing from sold data | ~50 listings have no nearby comps |
+## New Behavior
 
-## Solution
+- Show first 3 questions by default
+- Display "Show X more questions" button below
+- Clicking expands to reveal remaining questions
+- Button changes to "Show less" when expanded
+- Smooth animation for expand/collapse
 
-### Step 1: Fix City Name Consistency
+## Visual Layout
 
-Update the `seed-sold-transactions` edge function to use the exact city name from each property (which it already does correctly - the issue is the existing data).
-
-### Step 2: Re-run Seeding with Clear Flag
-
-Call the edge function with `clearExisting: true` to:
-1. Delete all existing sold transactions
-2. Re-generate 4-8 comps per property
-3. Use correct city names matching properties table
-
-### Step 3: Verify Comp Quality
-
-The existing algorithm already ensures prices are realistic:
-- Price per sqm derived from listing's price
-- ±15% variance for market spread
-- Size variance of ±20%
-- Coords within 0-500m of listing
-
-## Execution Plan
-
-1. Deploy the existing edge function (no code changes needed)
-2. Call it with options:
-```json
-{
-  "clearExisting": true,
-  "compsPerProperty": 6
-}
+```text
+┌─────────────────────────────────────────────┐
+│  Questions to Ask                     Copy  │
+│  Tailored for this listing                  │
+├─────────────────────────────────────────────┤
+│  1. "First question..."        [Pricing]    │
+│     Why it matters explanation              │
+├─────────────────────────────────────────────┤
+│  2. "Second question..."       [Legal]      │
+│     Why it matters explanation              │
+├─────────────────────────────────────────────┤
+│  3. "Third question..."        [Building]   │
+│     Why it matters explanation              │
+├─────────────────────────────────────────────┤
+│         ▼ Show 3 more questions             │
+├ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┤
+│  (Hidden until expanded)                    │
+│  4. "Fourth question..."                    │
+│  5. "Fifth question..."                     │
+│  6. "Sixth question..."                     │
+└─────────────────────────────────────────────┘
 ```
 
-This will generate ~1,854 sold transactions (309 properties × 6 comps) with prices anchored to each listing's price per sqm.
+## Implementation
 
-## Expected Result
+### Files to Modify
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Total sold transactions | 1,822 | ~1,854 |
-| Cities with comps | 19 | 25 (all) |
-| Price alignment | Mixed | ±15% of listing price/sqm |
-| Comp distance | 0-500m | 0-500m |
+| File | Changes |
+|------|---------|
+| `src/components/property/PropertyQuestionsToAsk.tsx` | Add collapsed state, split questions into visible/hidden |
+| `src/components/project/ProjectQuestionsToAsk.tsx` | Same changes as above |
 
-## No Code Changes Required
+### Technical Approach
 
-The existing `seed-sold-transactions` function already:
-- Uses city name directly from properties table
-- Generates prices based on listing's price/sqm with ±15% variance
-- Creates 4-8 comps per property within 500m radius
+1. Add `isExpanded` state (default: `false`)
+2. Split questions array:
+   - `visibleQuestions`: First 3 questions (always shown)
+   - `hiddenQuestions`: Remaining questions (shown when expanded)
+3. Use Radix `Collapsible` component for smooth animation
+4. Add expand/collapse button with:
+   - ChevronDown icon that rotates when expanded
+   - Dynamic text: "Show X more questions" / "Show less"
+5. Only show button if more than 3 questions exist
 
-We just need to re-run it with `clearExisting: true` to fix the data inconsistencies.
+### Loading State Update
 
+Update skeleton to show only 3 items instead of 5 to match collapsed state.
+
+### Copy/Email Functionality
+
+Keep unchanged - these actions still copy/email ALL questions regardless of collapsed state.
