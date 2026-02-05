@@ -208,27 +208,12 @@ export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestions
           {/* Collapsible section for additional questions */}
           {hasMoreQuestions && (
             <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown className="h-4 w-4 mr-1.5" />
-                  </motion.div>
-                  {isExpanded ? 'Show less' : `Show ${hiddenQuestions.length} more question${hiddenQuestions.length > 1 ? 's' : ''}`}
-                </Button>
-              </CollapsibleTrigger>
               <CollapsibleContent>
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-3 pt-3"
+                  className="space-y-3 pb-3"
                 >
                   {hiddenQuestions.map((question, hiddenIndex) => {
                     const actualIndex = VISIBLE_COUNT + hiddenIndex;
@@ -268,6 +253,21 @@ export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestions
                   })}
                 </motion.div>
               </CollapsibleContent>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1.5" />
+                  </motion.div>
+                  {isExpanded ? 'Show less' : `Show ${hiddenQuestions.length} more question${hiddenQuestions.length > 1 ? 's' : ''}`}
+                </Button>
+              </CollapsibleTrigger>
             </Collapsible>
           )}
 
