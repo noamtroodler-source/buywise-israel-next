@@ -134,8 +134,19 @@ export function FlashcardStudyModal({
     
     setSessionLearning(prev => new Set([...prev, currentTerm.id]));
     setStreak(0);
+    
+    // Re-add the term to the end of the deck so user sees it again
+    setDeckTerms(prev => {
+      const remaining = prev.slice(currentIndex + 1);
+      // Only re-add if not already at the end and card isn't already queued
+      if (remaining.length > 0 && !remaining.some(t => t.id === currentTerm.id)) {
+        return [...prev.slice(0, currentIndex + 1), ...remaining, currentTerm];
+      }
+      return prev;
+    });
+    
     goToNext();
-  }, [currentTerm, goToNext]);
+  }, [currentTerm, currentIndex, goToNext]);
 
   const handleExit = useCallback(() => {
     if (phase === 'studying' && currentIndex > 0) {
