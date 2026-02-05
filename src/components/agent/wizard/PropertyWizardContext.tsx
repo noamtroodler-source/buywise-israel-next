@@ -43,6 +43,9 @@ export interface PropertyWizardData {
   furnished_status: FurnishedStatus | undefined;
   pets_policy: PetsPolicy | undefined;
   agent_fee_required: boolean | undefined;
+   
+   // Furniture items for furnished properties
+   furniture_items: string[];
   
   // Step 4: Photos
   images: string[];
@@ -101,6 +104,8 @@ export const defaultPropertyData: PropertyWizardData = {
   furnished_status: undefined,
   pets_policy: undefined,
   agent_fee_required: undefined,
+   // Furniture items
+   furniture_items: [],
   images: [],
   description: '',
   highlights: [],

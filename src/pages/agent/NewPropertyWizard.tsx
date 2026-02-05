@@ -94,6 +94,7 @@ function WizardContent() {
         subletting_allowed: data.subletting_allowed,
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
+         furniture_items: data.furniture_items,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -137,6 +138,7 @@ function WizardContent() {
         subletting_allowed: data.subletting_allowed,
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
+         furniture_items: data.furniture_items,
         submitForReview: true,
       });
       

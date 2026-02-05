@@ -5,6 +5,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote } from 'lucide-react';
+ import { Armchair } from 'lucide-react';
+ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LeaseTermOption, SublettingOption, FurnishedStatus, PetsPolicy } from '@/types/database';
 
@@ -66,10 +68,53 @@ const commonFeatures = [
   { id: 'gym', label: 'Gym Access' },
   { id: 'doorman', label: 'Doorman/Concierge' },
 ];
+ 
+ // Furniture items grouped by category
+ const furnitureCategories = [
+   {
+     name: 'Kitchen',
+     items: [
+       { id: 'refrigerator', label: 'Refrigerator' },
+       { id: 'oven_stove', label: 'Oven/Stove' },
+       { id: 'microwave', label: 'Microwave' },
+       { id: 'dishwasher', label: 'Dishwasher' },
+       { id: 'washing_machine', label: 'Washing Machine' },
+       { id: 'dryer', label: 'Dryer' },
+     ],
+   },
+   {
+     name: 'Living Room',
+     items: [
+       { id: 'sofa', label: 'Sofa' },
+       { id: 'tv', label: 'TV' },
+       { id: 'coffee_table', label: 'Coffee Table' },
+       { id: 'dining_set', label: 'Dining Table + Chairs' },
+       { id: 'bookshelf', label: 'Bookshelf' },
+     ],
+   },
+   {
+     name: 'Bedroom',
+     items: [
+       { id: 'bed_double', label: 'Double Bed' },
+       { id: 'bed_single', label: 'Single Bed(s)' },
+       { id: 'wardrobe', label: 'Wardrobe/Closet' },
+       { id: 'desk_chair', label: 'Desk + Chair' },
+     ],
+   },
+   {
+     name: 'General',
+     items: [
+       { id: 'ac_units', label: 'Air Conditioner Units' },
+       { id: 'curtains', label: 'Curtains/Blinds' },
+       { id: 'light_fixtures', label: 'Light Fixtures' },
+     ],
+   },
+ ];
 
 export function StepFeatures() {
   const { data, updateData } = usePropertyWizard();
   const isRental = data.listing_status === 'for_rent';
+   const showFurnitureSection = data.furnished_status === 'fully' || data.furnished_status === 'semi';
 
   const toggleFeature = (featureId: string) => {
     const newFeatures = data.features.includes(featureId)
@@ -90,6 +135,13 @@ export function StepFeatures() {
     
     updateData(updates);
   };
+ 
+   const toggleFurnitureItem = (itemId: string) => {
+     const newItems = data.furniture_items.includes(itemId)
+       ? data.furniture_items.filter(i => i !== itemId)
+       : [...data.furniture_items, itemId];
+     updateData({ furniture_items: newItems });
+   };
 
   return (
     <div className="space-y-8">
@@ -329,7 +381,68 @@ export function StepFeatures() {
               </Select>
             </div>
           </div>
-        </div>
+           
+           {/* Furniture Items Selection - Conditional */}
+           <AnimatePresence>
+             {showFurnitureSection && (
+               <motion.div
+                 initial={{ opacity: 0, height: 0 }}
+                 animate={{ opacity: 1, height: 'auto' }}
+                 exit={{ opacity: 0, height: 0 }}
+                 transition={{ duration: 0.3 }}
+                 className="overflow-hidden"
+               >
+                 <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
+                   <div className="flex items-start gap-3">
+                     <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                       <Armchair className="h-4 w-4 text-primary" />
+                     </div>
+                     <div>
+                       <h4 className="font-semibold">What's Included</h4>
+                       <p className="text-sm text-muted-foreground">
+                         Select furniture and appliances that come with this property
+                       </p>
+                     </div>
+                   </div>
+                   
+                   <p className="text-xs text-primary/80 bg-primary/5 p-2 rounded-lg">
+                     💡 Listings with detailed furniture lists get 40% more inquiries
+                   </p>
+                   
+                   <div className="space-y-4">
+                     {furnitureCategories.map((category) => (
+                       <div key={category.name} className="space-y-2">
+                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                           {category.name}
+                         </p>
+                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                           {category.items.map((item) => (
+                             <label
+                               key={item.id}
+                               className={cn(
+                                 "flex items-center justify-center p-2.5 rounded-xl border cursor-pointer transition-all text-sm text-center",
+                                 data.furniture_items.includes(item.id)
+                                   ? "bg-primary/10 border-primary text-primary font-medium"
+                                   : "border-border hover:border-primary/50 hover:bg-muted/50"
+                               )}
+                             >
+                               <Checkbox
+                                 checked={data.furniture_items.includes(item.id)}
+                                 onCheckedChange={() => toggleFurnitureItem(item.id)}
+                                 className="sr-only"
+                               />
+                               {item.label}
+                             </label>
+                           ))}
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               </motion.div>
+             )}
+           </AnimatePresence>
+         </div>
 
         {/* Feature Checkboxes */}
         <div className="space-y-4 pt-4 border-t">
