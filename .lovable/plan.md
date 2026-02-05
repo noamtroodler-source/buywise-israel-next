@@ -1,73 +1,95 @@
 
-# Fix Tooltip Behavior for Rooms & Bathrooms Filter
+## Goal
+Ensure the Rooms/Bathrooms help tooltips on Buy/Rent listings:
+1) Never open “by themselves” (no auto-open on popover open, scroll/sticky changes, or focus),
+2) Only open after a deliberate mouse hover,
+3) Don’t flicker/glitch when moving between the icon and the tooltip content.
 
-## Problem
-The tooltip for the "Rooms" help icon on the buy/rent listings pages opens unexpectedly and behaves glitchy. Users report it opens without intentional hover.
+## Why it’s still happening (likely causes)
+From the current implementation in `PropertyFilters.tsx`, the tooltip can still open without an intentional hover because Radix tooltips can open when:
+- **The popover opens underneath a stationary cursor** (the trigger appears under the mouse; Radix interprets it like “hover”),
+- **The trigger receives focus** (Popover often moves focus when opening; Radix Tooltip opens on focus by default),
+- **Small trigger hit-area + rapid enter/leave** causes perceived “glitchiness.”
 
-## Root Cause
-In `PropertyFilters.tsx`:
-1. The parent `TooltipProvider` (line 315) has no `delayDuration` set, causing instant/shared tooltip timing
-2. The `TooltipTrigger` wraps the icon directly instead of using `asChild` pattern
-3. No `skipDelayDuration` specified, meaning hovering between tooltips can trigger instant open/close
+Delay alone helps, but it doesn’t prevent the “popover appears under mouse” and “focus opens tooltip” cases.
 
-## Solution
+## Approach (foolproof)
+Implement a **controlled, hover-only tooltip** specifically for these help icons:
+- Tooltip `open` state is controlled by our code.
+- We only set `open=true` on **mouse pointer enter** when:
+  - the pointer has actually moved since the popover opened (“armed” state), and
+  - the pointer type is `mouse` (ignore touch/pen).
+- We explicitly ignore focus-driven open events.
+- We keep the tooltip stable by allowing hoverable content (so you can move from icon to tooltip without it closing instantly) and by increasing the trigger hit-area.
 
-### Changes to `src/components/filters/PropertyFilters.tsx`
+## Step-by-step implementation plan
 
-**1. Add delay to TooltipProvider** (line 315)
-Change:
-```tsx
-<TooltipProvider>
-```
-To:
-```tsx
-<TooltipProvider delayDuration={400} skipDelayDuration={100}>
-```
-This ensures:
-- 400ms delay before tooltip opens (prevents accidental triggers)
-- 100ms skip delay when moving between tooltips (prevents rapid flickering)
+### 1) Add a small “HoverOnlyTooltip” helper (local to PropertyFilters)
+**File:** `src/components/filters/PropertyFilters.tsx`
 
-**2. Fix TooltipTrigger pattern** (lines 603-606)
-Change:
-```tsx
-<Tooltip>
-  <TooltipTrigger>
-    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-  </TooltipTrigger>
-```
-To:
-```tsx
-<Tooltip>
-  <TooltipTrigger asChild>
-    <button type="button" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
-      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-    </button>
-  </TooltipTrigger>
-```
-This:
-- Uses `asChild` for proper event handling
-- Wraps in a button for accessibility
-- Adds `type="button"` to prevent form submission
-- Adds focus ring for accessibility
-- Adds `cursor-help` for better UX
+Create a small internal component (or hook) near the top of the file to wrap Radix Tooltip with:
+- `open` + `onOpenChange` controlled (but we’ll gate opening)
+- trigger event handlers:
+  - `onPointerEnter`: if `armed && e.pointerType === 'mouse'` then open (after delay or immediately)
+  - `onPointerLeave`: close (with small grace period if needed)
+  - `onFocus`: do nothing (prevents focus-open)
+- content handlers:
+  - optionally keep open while hovering content (Radix default behavior can be preserved)
+- larger trigger button hit area: `p-1 -m-1` or similar.
 
-**3. Add animation stability** to TooltipContent
-The existing animate classes may cause visual glitching. Ensure smooth animation by keeping default Radix animations but verifying they complete properly.
+### 2) Add “arming” logic tied to the Beds/Baths popover open state
+**Problem solved:** tooltip opens when popover appears under the cursor.
 
-## Technical Details
+Inside `PropertyFilters`, when `bedsAndBathsOpen` becomes `true`:
+- Set `tooltipsArmed = false`
+- Add a one-time `pointermove` listener on `window` that sets `tooltipsArmed = true` on the first move
+- Clean up listener on close/unmount
 
-| Change | Location | Purpose |
-|--------|----------|---------|
-| `delayDuration={400}` | Line 315 | Requires deliberate hover, not accidental |
-| `skipDelayDuration={100}` | Line 315 | Prevents flicker when moving between tooltips |
-| `asChild` on TooltipTrigger | Lines 604-606 | Proper event propagation and accessibility |
-| Button wrapper | Lines 604-606 | Semantic element for keyboard accessibility |
+Result: If the popover opens under your cursor and you don’t move the mouse, the tooltip will not open.
 
-## Files to Modify
-- `src/components/filters/PropertyFilters.tsx` - 2 small edits (~10 lines changed)
+### 3) Replace the Rooms tooltip usage with HoverOnlyTooltip
+**Where:** the Rooms label block (around the existing HelpCircle icon)
 
-## Result
-- Tooltip only appears after deliberate 400ms hover
-- No automatic opening on page load or focus
-- Smooth animation without flickering
-- Proper keyboard accessibility maintained
+Replace:
+- `<Tooltip> ... </Tooltip>` (uncontrolled)
+with the controlled hover-only component.
+
+### 4) Add a Bathrooms help icon (if you want it to exist) and apply the same HoverOnlyTooltip
+Right now Bathrooms has no help icon/tooltip in this desktop popover section, but you’ve referred to “rooms and bathrooms tooltip.” We’ll make behavior consistent by:
+- adding a small HelpCircle next to Bathrooms label
+- using the same HoverOnlyTooltip wrapper so it can’t auto-open either
+
+(If you prefer not to add a Bathrooms tooltip visually, we’ll still ensure any existing Bathrooms tooltip elsewhere uses the same pattern—but in this specific popover section it currently doesn’t exist.)
+
+### 5) Stabilize “glitchy” behavior (flicker / rapid close-open)
+Adjust these specifics:
+- Ensure trigger has a bigger hover area (reduces accidental pointerleave).
+- Keep `TooltipProvider delayDuration` but slightly tune (e.g., 300–450ms is fine).
+- Add a tiny close grace (optional): on pointerleave of trigger, close after ~80–120ms unless pointer enters tooltip content—this prevents flicker when moving from icon to tooltip.
+
+### 6) Test matrix (what we will verify after changes)
+On `/listings?status=for_sale` and `/listings?status=for_rent`:
+
+**Desktop mouse**
+- Open Beds/Baths popover with cursor already in that region → tooltip must NOT open until you move mouse and hover the icon.
+- Hover icon → tooltip opens after delay.
+- Move from icon to tooltip content → tooltip stays stable (no flicker).
+- Move away → tooltip closes.
+
+**Keyboard**
+- Tab into the help icon → tooltip should NOT open on focus (per your requirement).
+- Escape closes popover/tooltip as expected.
+
+**Mobile / touch**
+- No tooltip opens on tap/scroll (pointerType gating).
+
+## Files we will change
+1) `src/components/filters/PropertyFilters.tsx`
+   - Add controlled hover-only tooltip logic
+   - Add arming logic linked to `bedsAndBathsOpen`
+   - Apply to Rooms (and Bathrooms if added)
+
+## Notes / tradeoffs
+- Disabling focus-open means keyboard users won’t get the tooltip automatically. If you want, we can provide an accessible alternative (e.g., a small “info” dialog on Enter/Space) later—but the current request is explicitly hover-only.
+- This solution is intentionally localized to the Rooms/Baths help icons so we don’t accidentally change tooltip behavior sitewide.
+
