@@ -308,6 +308,8 @@ export default function CityDetail() {
         <CitySourceAttribution 
           sources={(city as any).data_sources} 
           lastVerified={canonicalMetrics?.updated_at}
+          cityName={city.name}
+          districtName={districtName}
         />
       </div>
     </Layout>
