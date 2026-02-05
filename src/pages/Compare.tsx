@@ -21,6 +21,7 @@ import {
   CompareSection,
   CompareEmptyState,
   CompareWinnerSummary,
+  CompareAISummary,
   type ComparisonRow,
 } from '@/components/compare';
 import {
@@ -551,6 +552,13 @@ export default function Compare() {
             />
           )}
         </div>
+
+        {/* AI Summary */}
+        <CompareAISummary
+          properties={properties}
+          winnerCounts={winnerCounts}
+          isRental={isRental}
+        />
 
         {/* Winner Summary */}
         <CompareWinnerSummary

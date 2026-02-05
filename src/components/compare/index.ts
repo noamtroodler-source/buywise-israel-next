@@ -8,3 +8,4 @@ export { CompareEmptyState } from './CompareEmptyState';
 export { CompareWinnerSummary } from './CompareWinnerSummary';
 export { CompareProjectWinnerSummary } from './CompareProjectWinnerSummary';
 export { CompareUnitTypesSection } from './CompareUnitTypesSection';
+export { CompareAISummary } from './CompareAISummary';

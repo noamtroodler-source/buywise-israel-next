@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.fetch-neighborhood-boundaries]
 verify_jwt = false
+
+[functions.generate-comparison-summary]
+verify_jwt = false
