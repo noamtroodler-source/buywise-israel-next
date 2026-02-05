@@ -166,7 +166,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   };
 
   const filterButtonBase = "h-11 min-h-[44px] gap-2 rounded-full border border-border/60 bg-background hover:bg-muted/30 shadow-sm px-4 font-medium transition-all active:scale-[0.98] touch-manipulation";
-  const filterButtonActive = "bg-accent/20 border-accent/40 text-foreground";
+  const filterButtonActive = "bg-primary text-primary-foreground border-primary";
 
   return (
     <div className="flex flex-wrap gap-2 items-center">
