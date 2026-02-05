@@ -14,6 +14,7 @@ import {
   CATEGORY_CONFIG,
   GlossaryTermCard,
   GlossaryCarousel,
+  FlashcardStudyModal,
 } from '@/components/glossary';
 import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossary';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -88,6 +89,7 @@ export default function Glossary() {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   const [expandedTerms, setExpandedTerms] = useState<Set<string>>(new Set());
+  const [flashcardsOpen, setFlashcardsOpen] = useState(false);
 
   const isMobile = useIsMobile();
   const { data: allTerms, isLoading } = useGlossary();
@@ -198,6 +200,16 @@ export default function Glossary() {
           termCount={allTerms?.length || 0}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onOpenFlashcards={() => setFlashcardsOpen(true)}
+        />
+
+        {/* Flashcard Study Modal */}
+        <FlashcardStudyModal
+          open={flashcardsOpen}
+          onClose={() => setFlashcardsOpen(false)}
+          terms={allTerms || []}
+          savedTerms={savedTerms}
+          getTermJourneyStage={getTermJourneyStage}
         />
 
         {/* Journey Stage Selector */}
