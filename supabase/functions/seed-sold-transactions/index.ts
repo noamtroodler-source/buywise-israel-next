@@ -131,6 +131,7 @@ function generateYearBuilt(): number {
 
 interface SeedRequest {
   clearExisting?: boolean;
+  clearMockExisting?: boolean;
   compsPerProperty?: number;
   limitCities?: string[];
 }
@@ -154,9 +155,9 @@ Deno.serve(async (req) => {
       // Use defaults if no body
     }
 
-    const { clearExisting = false, compsPerProperty, limitCities } = options;
+    const { clearExisting = false, clearMockExisting = true, compsPerProperty, limitCities } = options;
 
-    // Optionally clear existing data
+    // Optionally clear ALL existing data (use with caution - deletes real data too)
     if (clearExisting) {
       const { error: deleteError } = await supabase
         .from('sold_transactions')
@@ -168,27 +169,69 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch all resale properties with coordinates
-    let query = supabase
-      .from('properties')
-      .select('id, city, price, size_sqm, bedrooms, latitude, longitude')
-      .eq('listing_status', 'for_sale')
-      .not('latitude', 'is', null)
-      .not('longitude', 'is', null)
-      .not('price', 'is', null)
-      .not('size_sqm', 'is', null);
-
-    if (limitCities && limitCities.length > 0) {
-      query = query.in('city', limitCities);
+    // Clear only mock-seeded data (safe - preserves real/imported data)
+    if (clearMockExisting && !clearExisting) {
+      const { error: deleteMockError } = await supabase
+        .from('sold_transactions')
+        .delete()
+        .eq('source', 'mock_seed');
+      
+      if (deleteMockError) {
+        console.error('Error clearing mock data:', deleteMockError);
+      } else {
+        console.log('Cleared existing mock_seed transactions');
+      }
     }
 
-    const { data: properties, error: propertiesError } = await query;
+    // Fetch all resale properties with coordinates - paginate to avoid 1000 row limit
+    const allProperties: Array<{
+      id: string;
+      city: string;
+      price: number;
+      size_sqm: number;
+      bedrooms: number | null;
+      latitude: number;
+      longitude: number;
+    }> = [];
+    
+    const PAGE_SIZE = 1000;
+    let offset = 0;
+    let hasMore = true;
 
-    if (propertiesError) {
-      throw new Error(`Failed to fetch properties: ${propertiesError.message}`);
+    while (hasMore) {
+      let query = supabase
+        .from('properties')
+        .select('id, city, price, size_sqm, bedrooms, latitude, longitude')
+        .eq('listing_status', 'for_sale')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .not('price', 'is', null)
+        .not('size_sqm', 'is', null)
+        .order('id')
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      if (limitCities && limitCities.length > 0) {
+        query = query.in('city', limitCities);
+      }
+
+      const { data: pageData, error: pageError } = await query;
+
+      if (pageError) {
+        throw new Error(`Failed to fetch properties: ${pageError.message}`);
+      }
+
+      if (pageData && pageData.length > 0) {
+        allProperties.push(...pageData);
+        offset += pageData.length;
+        hasMore = pageData.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
     }
 
-    if (!properties || properties.length === 0) {
+    console.log(`Fetched ${allProperties.length} properties total`);
+
+    if (allProperties.length === 0) {
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -199,13 +242,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Found ${properties.length} properties to seed comps for`);
+    console.log(`Found ${allProperties.length} properties to seed comps for`);
 
     const usedAddresses = new Set<string>();
     const allTransactions: Record<string, unknown>[] = [];
     let totalGenerated = 0;
 
-    for (const property of properties) {
+    for (const property of allProperties) {
       // Generate 4-8 comps per property (or custom amount)
       const numComps = compsPerProperty ?? randomInt(4, 8);
 
@@ -265,7 +308,7 @@ Deno.serve(async (req) => {
           is_new_construction: yearBuilt > 2022,
           latitude: coords.latitude,
           longitude: coords.longitude,
-          source: Math.random() < 0.7 ? 'nadlan_gov_il' : 'israel_tax_authority',
+          source: 'mock_seed',
         };
 
         allTransactions.push(transaction);
@@ -299,8 +342,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Seeded ${insertedCount} sold transactions for ${properties.length} properties`,
-        properties_processed: properties.length,
+        message: `Seeded ${insertedCount} sold transactions for ${allProperties.length} properties`,
+        properties_processed: allProperties.length,
         transactions_generated: totalGenerated,
         transactions_inserted: insertedCount,
         transactions_failed: failedCount,
