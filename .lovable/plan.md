@@ -1,130 +1,200 @@
 
-# Move Project Progress Bar to Bottom of Cards on Developer Profile
 
-## Overview
-Update the `ProjectCard` component in `DeveloperDetail.tsx` to match the project card layout on the main Projects page. Move the construction timeline/progress bar from the image overlay to the bottom section of the card content, using the 6-stage lifecycle logic.
+# Strategic Data Transparency Disclaimers - Multi-Source Approach
 
-## Current vs Desired Layout
+## Key Insight: Your Data is Richer Than We Thought
 
-**Current Layout (DeveloperDetail):**
+The site uses a **multi-layered sourcing strategy**, not just government data:
+
+| Data Type | Source Level | Granularity |
+|-----------|--------------|-------------|
+| Price Trends (chart) | CBS District Index | Regional (6 districts) |
+| Current Prices | CBS + Madlan + Madadirot | City/Neighborhood specific |
+| Rentals | Yad2 + Numbeo + Janglo + Bizportal | City-specific listings |
+| Arnona | Municipality rate tables | City-specific |
+| Market Factors | Local news + Municipal announcements | City-specific |
+
+**This changes the disclaimer strategy**: Instead of apologizing for data limitations, we're highlighting a robust verification process.
+
+---
+
+## Implementation Strategy
+
+### Approach: "Transparency as Trust Signal"
+
+Rather than defensive disclaimers, frame this as transparency that builds credibility:
+
+> "Here's exactly how we verified this data so you can trust it."
+
+### Placement Decisions
+
+| Location | What to Add | Why |
+|----------|-------------|-----|
+| `CitySourceAttribution` | Add "Understanding Our Data" expandable section | Already the credibility anchor - enhance it |
+| `PriceTrendsSection` | Keep existing info banner (already well-done) | District context is already clear |
+| `MarketOverviewCards` | Add subtle source indicators per card | Connect specific data to specific sources |
+
+---
+
+## Changes to Implement
+
+### 1. Enhance CitySourceAttribution Component
+
+**File**: `src/components/city/CitySourceAttribution.tsx`
+
+Add a new expandable section above the methodology that explains the multi-source approach:
+
 ```text
-+---------------------------+
-|  [Project Image]          |
-|                           |
-|  +---------------------+  |
-|  | Progress       33%  |  |  <-- On top of image
-|  | [▓▓▓▓▓░░░░░]       |  |
-|  +---------------------+  |
-+---------------------------+
-|  [Pre-Sale Badge]    👁 42|
-|  Project Name             |
-|  Location                 |
-|  -------------------------|
-|  Starting from            |
-|  ₪2,400,000               |
-+---------------------------+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✓ Data verified from official sources · Last updated Feb 2025  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ Price Data: CBS, Madlan (Q1 2025)                              │
+│ Rental Data: Yad2, Numbeo (Jan 2025)                           │
+│ Arnona: Municipality rate tables (2025)                         │
+│                                                                 │
+│ [🏛️ Government verified source]                                │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ 📊 Understanding our data                              [▼]     │  <-- NEW
+│                                                                 │
+│ (Expands to show:)                                             │
+│                                                                 │
+│ We combine multiple verified sources to give you a complete    │
+│ picture:                                                        │
+│                                                                 │
+│ • Government data (CBS, municipalities) forms our foundation   │
+│ • Listing platforms (Madlan, Yad2) provide real-time pricing   │
+│ • Industry research validates market trends                     │
+│                                                                 │
+│ For price trends, Israel's CBS publishes indices at the        │
+│ regional level. [City] is part of the [District] region -      │
+│ this provides verified context, while our city-specific        │
+│ metrics come from aggregated transaction data.                  │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ 📖 How we verify this data                             [▼]     │
+│ (existing methodology section)                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Desired Layout (matching Projects.tsx):**
-```text
-+---------------------------+
-|  [Project Image]          |
-|                           |
-|                           |
-|                           |
-+---------------------------+
-|  [Pre-Sale Badge]    👁 42|
-|  Project Name             |
-|  Location                 |
-|  -------------------------|
-|  Pre-Sale            33%  |  <-- Below content
-|  [▓▓▓▓▓▓▓▓░░░░░░░░]      |
-|  -------------------------|
-|  Starting from            |
-|  ₪2,400,000               |
-+---------------------------+
-```
+**Special variant for Jerusalem**:
+> "Jerusalem encompasses remarkably diverse neighborhoods — each with distinct market dynamics. Our regional data provides context, but we recommend neighborhood-level research for the most accurate picture."
 
-## Changes
+### 2. Add Props to CitySourceAttribution
 
-### File: `src/pages/DeveloperDetail.tsx`
+Pass district information to enable dynamic messaging:
 
-**1. Add Progress component import:**
 ```typescript
-import { Progress } from '@/components/ui/progress';
+interface CitySourceAttributionProps {
+  sources?: Record<string, SourceValue> | null;
+  lastVerified?: string | null;
+  className?: string;
+  cityName?: string;       // NEW
+  districtName?: string;   // NEW
+}
 ```
 
-**2. Add the 6-stage progress calculation function (same as Projects.tsx):**
+### 3. Update AreaDetail.tsx to Pass Props
+
+**File**: `src/pages/AreaDetail.tsx`
+
 ```typescript
-const getStageProgress = (status: string): number => {
-  const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
-  const stageIndex = stages.findIndex(s => s === status);
-  if (stageIndex === -1) return 0;
-  return Math.round(((stageIndex + 1) / stages.length) * 100);
-};
+<CitySourceAttribution 
+  sources={(city as any).data_sources} 
+  lastVerified={canonicalMetrics?.updated_at}
+  cityName={city.name}
+  districtName={districtName}
+/>
 ```
 
-**3. Update `getStatusLabel` to match Projects.tsx labels:**
-- 'planning' → 'Planning Phase'
-- 'pre_sale' → 'Pre-Sale'
-- 'foundation' → 'Foundation'
-- 'structure' → 'Structure'
-- 'finishing' → 'Finishing'
-- 'delivery' → 'Ready for Move-In'
+### 4. Optional: Add Source Indicators to MarketOverviewCards
 
-**4. Modify ProjectCard component:**
-
-**Remove:** The progress bar overlay from inside the image container (lines 516-531)
-
-**Add:** New progress bar section in CardContent, between location and price sections:
-
-```tsx
-{/* Project Status Progress Bar */}
-<div className="space-y-1.5">
-  <div className="flex items-center justify-between text-xs">
-    <span className="text-muted-foreground">
-      {getStageLabel(project.status)}
-    </span>
-    <span className="font-medium text-primary">
-      {getStageProgress(project.status)}%
-    </span>
-  </div>
-  <Progress 
-    value={getStageProgress(project.status)} 
-    className="h-1.5" 
-  />
-</div>
-```
-
-**5. Update ProjectCard props interface:**
-Add `getStageProgress` function to props, or define it inside the component.
-
-## Final Card Structure
+For each card, add a subtle source label at the bottom:
 
 ```text
-CardContent (p-5 space-y-3)
-├── Status Badge + Views row
-├── Project Name (h3)
-├── Location text
-├── Progress Bar section (NEW)  <-- Moved here
-│   ├── Stage Label (left) + Percentage (right)
-│   └── Progress component (h-1.5)
-└── Price section (border-t)
-    ├── "Starting from" label
-    └── Price value
+┌─ Average Price ─────────────┐
+│ ₪42,500/sqm                 │
+│ ▲ 12% vs national           │
+│                             │
+│ 📍 CBS + Madlan             │  <-- Subtle source indicator
+└─────────────────────────────┘
 ```
 
-## Technical Notes
+This is optional but reinforces multi-source credibility.
 
-| Item | Detail |
-|------|--------|
-| Progress stages | planning (17%), pre_sale (33%), foundation (50%), structure (67%), finishing (83%), delivery (100%) |
-| Progress component | Uses `@/components/ui/progress` (already in project) |
-| Status badge | Remains at top of card content |
-| Image section | Clean - no overlay elements |
+---
+
+## Copy: Final Messaging
+
+### "Understanding Our Data" Section (Default Cities)
+
+> **Understanding our data**
+>
+> We combine multiple verified sources to give you a complete picture:
+>
+> • **Government sources** (CBS, municipalities) form our foundation for verified statistics
+> • **Listing platforms** (Madlan, Yad2) provide real-time market pricing
+> • **Industry research** validates trends and provides market context
+>
+> For price trends, Israel's CBS publishes indices at the regional level. [City] is part of the [District] region — this gives you verified government context, while city-specific metrics come from aggregated transaction and listing data.
+>
+> Different sources have different strengths. We cross-reference them to help you make informed decisions.
+
+### Jerusalem Variant
+
+> **Understanding our data**
+>
+> Jerusalem encompasses remarkably diverse neighborhoods — from ultra-Orthodox communities to secular areas — each with distinct market dynamics and pricing.
+>
+> Our data combines CBS regional statistics with listing platform data and local market analysis. Given Jerusalem's diversity, we especially recommend:
+>
+> • Consulting with local agents familiar with your target neighborhoods
+> • Reviewing recent transactions in specific areas you're considering
+> • Using our regional trends as context, not as neighborhood-specific predictions
+
+### Tel Aviv Variant (Optional)
+
+> **Understanding our data**
+>
+> Tel Aviv benefits from extensive market coverage, with city-specific data available from multiple sources including CBS city-level statistics, Madlan transaction records, and active listing analysis.
+>
+> This page combines government statistics with real-time market data to give you one of the most complete pictures available for any Israeli city.
+
+---
 
 ## Files to Modify
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/pages/DeveloperDetail.tsx` | Modify ProjectCard layout |
+| `src/components/city/CitySourceAttribution.tsx` | Add "Understanding Our Data" expandable section with city/district-aware messaging |
+| `src/pages/AreaDetail.tsx` | Pass `cityName` and `districtName` to CitySourceAttribution |
+
+---
+
+## Technical Notes
+
+### District Detection
+Uses existing `getDistrictForCity()` from `src/lib/utils/districtMapping.ts`
+
+### City-Specific Variants
+```typescript
+const isJerusalem = cityName?.toLowerCase() === 'jerusalem';
+const isTelAviv = cityName?.toLowerCase() === 'tel aviv';
+```
+
+### Collapsible Pattern
+Matches existing methodology section using `@radix-ui/react-collapsible`
+
+---
+
+## Summary
+
+This approach:
+- Turns a potential weakness (district-level trends) into a strength (multi-source verification)
+- Builds trust through transparency without being defensive
+- Uses existing UI patterns (collapsibles, source badges)
+- Handles special cases (Jerusalem's diversity, Tel Aviv's coverage)
+- Keeps pages clean with expandable sections
+- Follows the "trusted guide" brand voice
+
