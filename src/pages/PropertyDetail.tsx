@@ -65,10 +65,6 @@ export default function PropertyDetail() {
 
   const handleSave = async () => {
     if (!property) return;
-    if (!user) {
-      toast.error('Please sign in to save properties');
-      return;
-    }
     await toggleFavorite(property.id);
   };
 
