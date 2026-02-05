@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Copy, Check, HelpCircle, Sparkles, Mail } from 'lucide-react';
+import { MessageCircle, Copy, Check, HelpCircle, Sparkles, Mail, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useListingQuestions, ListingData } from '@/hooks/useListingQuestions';
@@ -14,15 +15,23 @@ interface PropertyQuestionsToAskProps {
   className?: string;
 }
 
+const VISIBLE_COUNT = 3;
+
 export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestionsToAskProps) {
   const { data, isLoading, error } = useListingQuestions(listing);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const questions = data?.questions || [];
   const isAiGenerated = data?.source === 'ai';
   
   // Determine if this is a rental listing
   const isRental = listing.type === 'rent';
+  
+  // Split questions into visible and hidden
+  const visibleQuestions = questions.slice(0, VISIBLE_COUNT);
+  const hiddenQuestions = questions.slice(VISIBLE_COUNT);
+  const hasMoreQuestions = hiddenQuestions.length > 0;
 
   const formatQuestionsForCopy = () => {
     const title = isRental ? 'Questions for Landlord' : 'Questions for Agent';
@@ -71,7 +80,7 @@ export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestions
             </div>
           </div>
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/30">
                 <Skeleton className="h-6 w-6 rounded-full shrink-0" />
                 <div className="flex-1 space-y-2">
@@ -150,9 +159,10 @@ export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestions
         </CardHeader>
         
         <CardContent className="pt-0 space-y-4">
+          {/* Always visible questions */}
           <div className="space-y-3">
             <AnimatePresence mode="sync">
-              {questions.map((question, index) => (
+              {visibleQuestions.map((question, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, height: 0 }}
@@ -194,6 +204,72 @@ export function PropertyQuestionsToAsk({ listing, className }: PropertyQuestions
               ))}
             </AnimatePresence>
           </div>
+
+          {/* Collapsible section for additional questions */}
+          {hasMoreQuestions && (
+            <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1.5" />
+                  </motion.div>
+                  {isExpanded ? 'Show less' : `Show ${hiddenQuestions.length} more question${hiddenQuestions.length > 1 ? 's' : ''}`}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-3 pt-3"
+                >
+                  {hiddenQuestions.map((question, hiddenIndex) => {
+                    const actualIndex = VISIBLE_COUNT + hiddenIndex;
+                    return (
+                      <div key={actualIndex} className="group">
+                        <div className="flex gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
+                            {actualIndex + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-medium text-foreground leading-relaxed">
+                                "{question.question_text}"
+                              </p>
+                              <QuestionCategoryBadge category={question.category} className="shrink-0 mt-0.5" />
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1.5 flex items-start gap-1.5">
+                              <HelpCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                              <span>{question.why_it_matters}</span>
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleCopyQuestion(actualIndex, question.question_text)}
+                          >
+                            {copiedId === actualIndex.toString() ? (
+                              <Check className="h-3.5 w-3.5 text-primary" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Footer message */}
           <div className="pt-2 border-t border-border/50">
