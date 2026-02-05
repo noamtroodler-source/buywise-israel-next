@@ -1,136 +1,130 @@
 
-
-# Report Inaccurate Info Feature
+# Move Project Progress Bar to Bottom of Cards on Developer Profile
 
 ## Overview
-Add a "Report Inaccurate Info" link to property detail pages, allowing users to flag outdated or incorrect listing information. This is a community-driven data quality feature used by Zillow, Redfin, and others.
+Update the `ProjectCard` component in `DeveloperDetail.tsx` to match the project card layout on the main Projects page. Move the construction timeline/progress bar from the image overlay to the bottom section of the card content, using the 6-stage lifecycle logic.
 
-## Implementation
+## Current vs Desired Layout
 
-### 1. Create Database Table: `listing_reports`
-Store user-submitted reports for admin review.
-
-```sql
-CREATE TABLE public.listing_reports (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  email TEXT, -- For anonymous reports
-  report_type TEXT NOT NULL, -- 'sold', 'price_wrong', 'photos_wrong', 'already_rented', 'scam', 'other'
-  description TEXT,
-  status TEXT DEFAULT 'pending', -- 'pending', 'reviewed', 'resolved', 'dismissed'
-  admin_notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  resolved_at TIMESTAMPTZ,
-  
-  CONSTRAINT check_entity CHECK (
-    (property_id IS NOT NULL AND project_id IS NULL) OR
-    (property_id IS NULL AND project_id IS NOT NULL)
-  )
-);
-
--- RLS: Anyone can create reports, only admins can read/update
-ALTER TABLE public.listing_reports ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can create reports" ON listing_reports
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Users can view own reports" ON listing_reports
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Admins can manage all reports" ON listing_reports
-  FOR ALL USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin')
-  );
-```
-
-### 2. Create Component: `ReportListingButton`
-**File:** `src/components/property/ReportListingButton.tsx`
-
-A subtle link/button that opens a dialog with:
-- **Report type dropdown**: "Already sold/rented", "Price is wrong", "Photos don't match", "Possible scam", "Other"
-- **Optional description** textarea
-- **Email field** (if not logged in)
-- Submit button
-
-Design: Small, muted link at bottom of property info (not prominent but accessible)
-
+**Current Layout (DeveloperDetail):**
 ```text
-[Flag Icon] Report inaccurate info
++---------------------------+
+|  [Project Image]          |
+|                           |
+|  +---------------------+  |
+|  | Progress       33%  |  |  <-- On top of image
+|  | [▓▓▓▓▓░░░░░]       |  |
+|  +---------------------+  |
++---------------------------+
+|  [Pre-Sale Badge]    👁 42|
+|  Project Name             |
+|  Location                 |
+|  -------------------------|
+|  Starting from            |
+|  ₪2,400,000               |
++---------------------------+
 ```
 
-### 3. Create Dialog: `ReportListingDialog`
-**File:** `src/components/property/ReportListingDialog.tsx`
+**Desired Layout (matching Projects.tsx):**
+```text
++---------------------------+
+|  [Project Image]          |
+|                           |
+|                           |
+|                           |
++---------------------------+
+|  [Pre-Sale Badge]    👁 42|
+|  Project Name             |
+|  Location                 |
+|  -------------------------|
+|  Pre-Sale            33%  |  <-- Below content
+|  [▓▓▓▓▓▓▓▓░░░░░░░░]      |
+|  -------------------------|
+|  Starting from            |
+|  ₪2,400,000               |
++---------------------------+
+```
 
-Modal dialog with:
-- Radio buttons for report type
-- Optional description field
-- Email field (shown only if user not logged in)
-- Success confirmation with "Thank you for helping keep our listings accurate"
+## Changes
 
-### 4. Create Hook: `useReportListing`
-**File:** `src/hooks/useReportListing.ts`
+### File: `src/pages/DeveloperDetail.tsx`
 
+**1. Add Progress component import:**
 ```typescript
-export function useReportListing() {
-  // Submit report to listing_reports table
-  // Show toast on success
-}
+import { Progress } from '@/components/ui/progress';
 ```
 
-### 5. Add to Property Detail Page
-**File:** `src/pages/PropertyDetail.tsx`
+**2. Add the 6-stage progress calculation function (same as Projects.tsx):**
+```typescript
+const getStageProgress = (status: string): number => {
+  const stages = ['planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery'];
+  const stageIndex = stages.findIndex(s => s === status);
+  if (stageIndex === -1) return 0;
+  return Math.round(((stageIndex + 1) / stages.length) * 100);
+};
+```
 
-Add `ReportListingButton` after the ListingFeedback component (subtle placement near bottom of listing content).
+**3. Update `getStatusLabel` to match Projects.tsx labels:**
+- 'planning' → 'Planning Phase'
+- 'pre_sale' → 'Pre-Sale'
+- 'foundation' → 'Foundation'
+- 'structure' → 'Structure'
+- 'finishing' → 'Finishing'
+- 'delivery' → 'Ready for Move-In'
 
-### 6. Add to Project Detail Page (optional)
-**File:** `src/pages/ProjectDetail.tsx`
+**4. Modify ProjectCard component:**
 
-Same treatment for new development projects.
+**Remove:** The progress bar overlay from inside the image container (lines 516-531)
 
-## UI Placement
+**Add:** New progress bar section in CardContent, between location and price sections:
+
+```tsx
+{/* Project Status Progress Bar */}
+<div className="space-y-1.5">
+  <div className="flex items-center justify-between text-xs">
+    <span className="text-muted-foreground">
+      {getStageLabel(project.status)}
+    </span>
+    <span className="font-medium text-primary">
+      {getStageProgress(project.status)}%
+    </span>
+  </div>
+  <Progress 
+    value={getStageProgress(project.status)} 
+    className="h-1.5" 
+  />
+</div>
+```
+
+**5. Update ProjectCard props interface:**
+Add `getStageProgress` function to props, or define it inside the component.
+
+## Final Card Structure
 
 ```text
-Property Detail Page
-├── Hero
-├── Quick Summary
-├── Description
-├── Value Snapshot
-├── Recent Sales
-├── Questions to Ask
-├── Cost Breakdown
-├── Location
-├── Next Steps
-├── Listing Feedback
-└── [Flag] Report inaccurate info  <-- NEW (subtle link)
+CardContent (p-5 space-y-3)
+├── Status Badge + Views row
+├── Project Name (h3)
+├── Location text
+├── Progress Bar section (NEW)  <-- Moved here
+│   ├── Stage Label (left) + Percentage (right)
+│   └── Progress component (h-1.5)
+└── Price section (border-t)
+    ├── "Starting from" label
+    └── Price value
 ```
 
-## Report Types
-| Type | Label |
-|------|-------|
-| `sold` | Already sold |
-| `rented` | Already rented |
-| `price_wrong` | Price is incorrect |
-| `photos_wrong` | Photos don't match |
-| `info_outdated` | Information is outdated |
-| `scam` | Possible scam/fraud |
-| `other` | Other issue |
+## Technical Notes
 
-## Files to Create/Modify
+| Item | Detail |
+|------|--------|
+| Progress stages | planning (17%), pre_sale (33%), foundation (50%), structure (67%), finishing (83%), delivery (100%) |
+| Progress component | Uses `@/components/ui/progress` (already in project) |
+| Status badge | Remains at top of card content |
+| Image section | Clean - no overlay elements |
+
+## Files to Modify
 
 | File | Action |
 |------|--------|
-| Database migration | Create `listing_reports` table |
-| `src/components/property/ReportListingButton.tsx` | Create |
-| `src/components/property/ReportListingDialog.tsx` | Create |
-| `src/hooks/useReportListing.ts` | Create |
-| `src/pages/PropertyDetail.tsx` | Modify (add button) |
-| `src/pages/ProjectDetail.tsx` | Modify (add button - optional) |
-
-## Success State
-After submitting, user sees:
-- Toast: "Thanks for reporting! We'll review this listing."
-- Dialog closes
-- No page refresh needed
-
+| `src/pages/DeveloperDetail.tsx` | Modify ProjectCard layout |
