@@ -740,9 +740,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <TooltipContent>Create search alert</TooltipContent>
                 </Tooltip>
               )}
-
-              {/* View Toggle - Grid/Map */}
-              <ViewToggle activeView={activeView} />
             </div>
           )}
         </div>
