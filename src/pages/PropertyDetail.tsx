@@ -218,24 +218,28 @@ export default function PropertyDetail() {
 
             {/* Questions to Ask - Right before cost breakdown */}
             <PropertyQuestionsToAsk 
-              context={{
-                listingStatus: property.listing_status,
-                propertyType: property.property_type,
-                yearBuilt: property.year_built || undefined,
-                hasVaadBayit: !!property.vaad_bayit_monthly,
-                hasParking: !!(property as any).parking_spots,
-                daysOnMarket,
-                priceReduced: !!(property as any).original_price,
-                missingFields: [
+              listing={{
+                type: property.listing_status === 'for_rent' ? 'rent' : 'buy',
+                price: property.price || undefined,
+                size_sqm: property.size_sqm || undefined,
+                price_per_sqm: property.size_sqm && property.price ? Math.round(property.price / property.size_sqm) : undefined,
+                year_built: property.year_built || undefined,
+                days_on_market: daysOnMarket,
+                price_reduced: !!(property as any).original_price,
+                condition: property.condition || undefined,
+                city: property.city,
+                neighborhood: property.neighborhood || undefined,
+                property_type: property.property_type,
+                bedrooms: property.bedrooms || undefined,
+                has_parking: !!(property as any).parking_spots,
+                has_elevator: (property as any).has_elevator,
+                floor: property.floor ?? undefined,
+                total_floors: (property as any).total_floors,
+                missing_fields: [
                   ...(!property.size_sqm ? ['size_sqm'] : []),
                   ...(!property.floor && property.floor !== 0 ? ['floor'] : []),
+                  ...(!property.year_built ? ['year_built'] : []),
                 ],
-                isNewConstruction: false, // This is a resale property page, not new construction
-                // Buyer personalization context
-                buyerType: derivedBuyerType?.taxType,
-                residencyStatus: buyerProfile?.residency_status,
-                purchasePurpose: buyerProfile?.purchase_purpose === 'undecided' ? undefined : buyerProfile?.purchase_purpose,
-                isAuthenticated: !!user,
               }}
             />
 

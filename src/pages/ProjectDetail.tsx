@@ -118,12 +118,16 @@ export default function ProjectDetail() {
               
               {/* Questions to Ask the Developer - Right before cost breakdown */}
               <ProjectQuestionsToAsk 
-                hasPaymentSchedule={true}
-                hasBankGuarantee={true}
-                deliveryYear={project.completion_date ? new Date(project.completion_date).getFullYear() : undefined}
-                buyerType={derivedBuyerType?.taxType}
-                residencyStatus={buyerProfile?.residency_status}
-                purchasePurpose={buyerProfile?.purchase_purpose === 'undecided' ? undefined : buyerProfile?.purchase_purpose}
+                listing={{
+                  type: 'project',
+                  price: project.price_from || undefined,
+                  city: project.city,
+                  neighborhood: project.neighborhood || undefined,
+                  delivery_year: project.completion_date ? new Date(project.completion_date).getFullYear() : undefined,
+                  has_payment_schedule: true,
+                  has_bank_guarantee: true,
+                  developer_name: project.developer?.name,
+                }}
               />
               
               {/* Cost Breakdown with buyer protections integrated */}
