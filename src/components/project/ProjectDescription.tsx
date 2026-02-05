@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
+ import { ProjectAmenities } from './ProjectAmenities';
 
 interface ProjectDescriptionProps {
   description?: string | null;
@@ -25,15 +25,9 @@ export function ProjectDescription({ description, amenities }: ProjectDescriptio
           {description}
         </p>
       )}
-      
-      {amenities && amenities.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-2">
-          {amenities.map((amenity, index) => (
-            <Badge key={index} variant="secondary" className="text-sm font-normal">
-              {amenity}
-            </Badge>
-          ))}
-        </div>
+       
+       {amenities && amenities.length > 0 && (
+         <ProjectAmenities amenities={amenities} />
       )}
     </motion.div>
   );
