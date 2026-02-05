@@ -1,35 +1,36 @@
 
-# Improve AI Value Snapshot Clarity & Visual Indicators
+# Align Project Filters with Property Filters Styling
 
-## Changes
+## Problem
+The project filters use `accent` color (yellow/amber vibes) for active/selected states, while the rental and buy filters use `primary` color (blue). This creates visual inconsistency.
 
-### 1. Clearer Label for 12-Month Trend Card
-**Current**: "Area price change" (vague)  
-**New**: "{City} avg prices" (e.g., "Tel Aviv avg prices")
+## Current vs Target
 
-### 2. Visual Differentiation for Positive/Negative Trends (No Red/Green)
+| Component | Current Active Style | Target Active Style |
+|-----------|---------------------|---------------------|
+| **ProjectFilters** | `bg-accent/20 border-accent/40 text-foreground` | `bg-primary text-primary-foreground border-primary` |
+| **PropertyFilters** | `bg-primary text-primary-foreground border-primary` | (already correct) |
 
-Apply a combined approach using background tint + icon/text color:
+## Change
 
-| Trend | Background | Icon & % Color | Border |
-|-------|-----------|----------------|--------|
-| Positive (≥0%) | `bg-primary/10` | `text-primary` | `border-primary/20` |
-| Negative (<0%) | `bg-muted/30` | `text-muted-foreground` | `border-border/50` |
+**File**: `src/components/filters/ProjectFilters.tsx`
 
-This applies to:
-- **12-Month Trend card** (purchase properties)
-- **vs City Average card** (purchase properties)  
-- **vs Market Rate card** (rental properties)
+**Line 169** - Update `filterButtonActive` constant:
+```typescript
+// Before
+const filterButtonActive = "bg-accent/20 border-accent/40 text-foreground";
 
-## Technical Details
+// After  
+const filterButtonActive = "bg-primary text-primary-foreground border-primary";
+```
 
-**File**: `src/components/property/PropertyValueSnapshot.tsx`
+This single change will make the project filters use the same blue color scheme as the rental/buy filters for:
+- City dropdown button (when open or has selection)
+- Status dropdown button
+- Beds/Baths dropdown button
+- Price dropdown button
+- Year dropdown button
+- Developer dropdown button
+- Sort dropdown button
 
-**Changes**:
-1. Update the subtext on line 278 from `"Area price change"` → `"{city} avg prices"`
-2. Add conditional styling to percentage cards:
-   - Positive: blue-tinted background, primary-colored icon and percentage text
-   - Negative: muted background, muted icon and percentage text
-3. Apply same logic to rental "vs Market Rate" card for consistency
-
-**No new dependencies** - uses existing Tailwind classes (`bg-primary/10`, `text-primary`, `border-primary/20`)
+No other changes needed.
