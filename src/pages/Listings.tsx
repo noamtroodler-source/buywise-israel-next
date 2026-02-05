@@ -11,7 +11,7 @@ import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { ViewToggle } from '@/components/filters/ViewToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2 } from 'lucide-react';
+import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calculator, Lightbulb, Loader2, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
@@ -20,6 +20,11 @@ import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySk
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { SortOption } from '@/types/database';
 
 import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
@@ -28,8 +33,11 @@ export default function Listings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const filterBarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Get listing status from URL, default to for_sale
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -207,6 +215,30 @@ export default function Listings() {
 
   const seoData = getSeoData();
 
+  const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+    { value: 'newest', label: 'Newest Listings' },
+    { value: 'price_asc', label: 'Price: Low to High' },
+    { value: 'price_desc', label: 'Price: High to Low' },
+    { value: 'size_desc', label: 'Largest First' },
+    { value: 'rooms_desc', label: 'Rooms: Most to Fewest' },
+  ];
+
+  const getSortLabel = () => {
+    if (filters.sort_by) {
+      const found = SORT_OPTIONS.find(s => s.value === filters.sort_by);
+      return found?.label || 'Newest Listings';
+    }
+    return 'Newest Listings';
+  };
+
+  const handleCreateAlertClick = () => {
+    if (!user) {
+      navigate('/auth?redirect=/listings&intent=create_alert');
+      return;
+    }
+    setShowAlertDialog(true);
+  };
+
   return (
     <Layout>
       <SEOHead
@@ -274,7 +306,59 @@ export default function Listings() {
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}
           {!isMobile && (
-            <ViewToggle activeView="grid" size="sm" />
+            <TooltipProvider>
+              <div className="flex items-center gap-2">
+                {/* Sort Dropdown */}
+                <Popover open={sortOpen} onOpenChange={setSortOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 gap-1 px-2 font-medium hover:bg-muted/50"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                      <span className="text-sm">{getSortLabel()}</span>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
+                    {SORT_OPTIONS.map(option => (
+                      <button
+                        key={option.value}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                          filters.sort_by === option.value 
+                            ? "bg-primary/10 text-primary font-medium" 
+                            : "hover:bg-muted"
+                        )}
+                        onClick={() => {
+                          handleFiltersChange({ ...filters, sort_by: option.value });
+                          setSortOpen(false);
+                        }}
+                      >
+                        {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                        <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+
+                {/* Create Alert Button - Icon only with tooltip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={handleCreateAlertClick}
+                      className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm p-0"
+                    >
+                      <Bell className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Create search alert</TooltipContent>
+                </Tooltip>
+
+                {/* View Toggle */}
+                <ViewToggle activeView="grid" size="sm" />
+              </div>
+            </TooltipProvider>
           )}
         </div>
 

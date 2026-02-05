@@ -689,60 +689,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   <span className="text-xs">Clear</span>
                 </Button>
               )}
-
-              {/* Sort */}
-              <div className="flex items-center gap-1">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <Popover open={sortOpen} onOpenChange={setSortOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="h-10 gap-1 px-2 font-medium hover:bg-muted/50"
-                    >
-                      <span>{getSortLabel()}</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
-                    {SORT_OPTIONS.map(option => (
-                      <button
-                        key={option.value}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
-                          filters.sort_by === option.value 
-                            ? "bg-primary/10 text-primary font-medium" 
-                            : "hover:bg-muted"
-                        )}
-                        onClick={() => {
-                          updateFilter('sort_by', option.value);
-                          setSortOpen(false);
-                        }}
-                      >
-                        {filters.sort_by === option.value && <Check className="h-4 w-4" />}
-                        <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Create Alert Button - Icon only with tooltip */}
-              {onCreateAlert && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={handleCreateAlertClick}
-                      className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm p-0"
-                    >
-                      <Bell className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Create search alert</TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* View Toggle - Grid/Map */}
-              <ViewToggle activeView={activeView} />
             </div>
           )}
         </div>
