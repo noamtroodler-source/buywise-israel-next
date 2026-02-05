@@ -7,6 +7,7 @@ import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
 import { CompareButton } from './CompareButton';
+import { CompareCheckbox } from './CompareCheckbox';
 import { ShareButton } from './ShareButton';
 
 import { MonthlyEstimate } from './AffordabilityBadge';
@@ -27,9 +28,11 @@ interface PropertyCardProps {
   showCategoryBadge?: boolean;
   hideFeaturedBadge?: boolean;
   compareCategory?: 'buy' | 'rent';
+  /** Always show a compare checkbox (for Favorites page) */
+  alwaysShowCompare?: boolean;
 }
 
-const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory }, ref) {
+const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false }, ref) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -252,8 +255,15 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   </>
                 )}
 
-                {/* Status Badge - Top Left */}
-                <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+                {/* Always-visible Compare Checkbox - Top Left (before badges) */}
+                {alwaysShowCompare && compareCategory && (
+                  <div className="absolute top-2 left-2 z-20">
+                    <CompareCheckbox propertyId={property.id} category={compareCategory} />
+                  </div>
+                )}
+
+                {/* Status Badge - Top Left (offset if checkbox present) */}
+                <div className={cn("absolute top-2 flex gap-1.5 z-10", alwaysShowCompare && compareCategory ? "left-10" : "left-2")}>
                   {(() => {
                     const badges: React.ReactNode[] = [];
                     
@@ -422,7 +432,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   </>
                 )}
                 
-                <div className="absolute top-3 left-3 flex gap-2">
+                {/* Always-visible Compare Checkbox - Top Left (before badges) */}
+                {alwaysShowCompare && compareCategory && (
+                  <div className="absolute top-3 left-3 z-20">
+                    <CompareCheckbox propertyId={property.id} category={compareCategory} />
+                  </div>
+                )}
+                
+                <div className={cn("absolute top-3 flex gap-2", alwaysShowCompare && compareCategory ? "left-11" : "left-3")}>
                   {(() => {
                     const badges: React.ReactNode[] = [];
                     

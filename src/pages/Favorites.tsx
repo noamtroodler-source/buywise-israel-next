@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { usePriceDropAlerts } from '@/hooks/usePriceDropAlerts';
-import { CompareButton } from '@/components/property/CompareButton';
+import { CompareCheckbox } from '@/components/property/CompareCheckbox';
 import { CompareBar } from '@/components/property/CompareBar';
 import { useCompare } from '@/contexts/CompareContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -278,9 +278,10 @@ export default function Favorites() {
                           <div className="relative">
                             <PropertyCard 
                               property={property} 
-                              showCompareButton={true}
+                              showCompareButton={false}
                               showShareButton={false}
                               compareCategory="buy"
+                              alwaysShowCompare={true}
                             />
                           </div>
                           
@@ -333,9 +334,10 @@ export default function Favorites() {
                         <div key={property.id} className="space-y-2">
                           <PropertyCard 
                             property={property} 
-                            showCompareButton={true}
+                            showCompareButton={false}
                             showShareButton={false}
                             compareCategory="rent"
+                            alwaysShowCompare={true}
                           />
                           
                           <button
@@ -393,11 +395,13 @@ export default function Favorites() {
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
                                 
-                                {/* Compare Button - Top Right on Hover */}
-                                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                    <CompareButton propertyId={project.id} category="projects" />
-                                  </div>
+                                {/* Compare Checkbox - Top Left, always visible */}
+                                <div className="absolute top-3 left-3 z-10">
+                                  <CompareCheckbox propertyId={project.id} category="projects" />
+                                </div>
+                                
+                                {/* Favorite Button - Top Right */}
+                                <div className="absolute top-3 right-3 z-10">
                                   <Button
                                     variant="ghost"
                                     size="icon"
