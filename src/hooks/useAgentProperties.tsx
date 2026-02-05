@@ -51,6 +51,7 @@ export interface CreatePropertyData {
   furnished_status?: string;
   pets_policy?: string;
   agent_fee_required?: boolean;
+   furniture_items?: string[];
 }
 
 export function useAgentProfile() {

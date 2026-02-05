@@ -3151,6 +3151,7 @@ export type Database = {
           features: string[] | null
           floor: number | null
           furnished_status: string | null
+          furniture_items: string[] | null
           has_balcony: boolean | null
           has_elevator: boolean | null
           has_storage: boolean | null
@@ -3207,6 +3208,7 @@ export type Database = {
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null
+          furniture_items?: string[] | null
           has_balcony?: boolean | null
           has_elevator?: boolean | null
           has_storage?: boolean | null
@@ -3263,6 +3265,7 @@ export type Database = {
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null
+          furniture_items?: string[] | null
           has_balcony?: boolean | null
           has_elevator?: boolean | null
           has_storage?: boolean | null

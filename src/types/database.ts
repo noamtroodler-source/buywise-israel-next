@@ -94,6 +94,8 @@ export interface Property {
   agent_fee_required: boolean | null;
   bank_guarantee_required: boolean | null;
   checks_required: boolean | null;
+   // Furniture items for furnished properties
+   furniture_items: string[] | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;

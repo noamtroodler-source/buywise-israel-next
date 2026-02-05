@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap } from 'lucide-react';
+ import { Armchair, Refrigerator, Tv, UtensilsCrossed, WashingMachine } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -39,12 +40,36 @@ interface PropertyQuickSummaryProps {
     entry_date?: string | null;
     ac_type?: 'none' | 'split' | 'central' | 'mini_central' | null;
     vaad_bayit_monthly?: number | null;
+     furnished_status?: 'fully' | 'semi' | 'unfurnished' | null;
+     furniture_items?: string[] | null;
   };
   onShare?: () => void;
   onSave?: () => void;
   isSaved?: boolean;
 }
 
+ // Furniture item labels mapping
+ const furnitureItemLabels: Record<string, string> = {
+   refrigerator: 'Refrigerator',
+   oven_stove: 'Oven/Stove',
+   microwave: 'Microwave',
+   dishwasher: 'Dishwasher',
+   washing_machine: 'Washing Machine',
+   dryer: 'Dryer',
+   sofa: 'Sofa',
+   tv: 'TV',
+   coffee_table: 'Coffee Table',
+   dining_set: 'Dining Table + Chairs',
+   bookshelf: 'Bookshelf',
+   bed_double: 'Double Bed',
+   bed_single: 'Single Bed(s)',
+   wardrobe: 'Wardrobe/Closet',
+   desk_chair: 'Desk + Chair',
+   ac_units: 'Air Conditioner Units',
+   curtains: 'Curtains/Blinds',
+   light_fixtures: 'Light Fixtures',
+ };
+ 
 // Generate highlights automatically from property data
 function generateHighlights(property: PropertyQuickSummaryProps['property']): Array<{ label: string; icon: React.ElementType }> {
   const highlights: Array<{ label: string; icon: React.ElementType }> = [];
@@ -460,6 +485,24 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           </div>
         )}
 
+         {/* Furniture Items - Show when furnished and has items */}
+         {(property.furnished_status === 'fully' || property.furnished_status === 'semi') && 
+          property.furniture_items && property.furniture_items.length > 0 && (
+           <div className="space-y-2">
+             <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+               <Armchair className="h-4 w-4" />
+               What's Included
+             </h3>
+             <div className="flex flex-wrap gap-2">
+               {property.furniture_items.map((itemId) => (
+                 <Badge key={itemId} variant="outline" className="text-sm font-normal">
+                   {furnitureItemLabels[itemId] || itemId}
+                 </Badge>
+               ))}
+             </div>
+           </div>
+         )}
+         
         {/* Activity & Social Proof Bar - Days on Market now more prominent */}
         <div className="flex flex-wrap items-center gap-4 text-sm">
           {/* Days on Market - Enhanced prominence */}
