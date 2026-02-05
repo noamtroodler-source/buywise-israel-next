@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
- import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { ChevronDown, ChevronUp, HelpCircle, MapPin, DollarSign, LayoutGrid, Bath, Building2, SlidersHorizontal, ArrowUpDown, Bell, X, Search, Check, Sparkles, Car, Layers, ArrowRight, Calendar, Clock, Home, PawPrint, CalendarCheck, Cat, Dog, Loader2, RotateCcw, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -17,9 +17,9 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { ViewToggle } from '@/components/filters/ViewToggle';
- import { useGeolocation } from '@/hooks/useGeolocation';
- import { findNearestCity } from '@/lib/utils/findNearestCity';
-
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { findNearestCity } from '@/lib/utils/findNearestCity';
+import { HoverOnlyTooltip } from '@/components/filters/HoverOnlyTooltip';
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
   onFiltersChange: (filters: PropertyFiltersType) => void;
@@ -114,7 +114,51 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
-   const [geoError, setGeoError] = useState<string | null>(null);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  
+  // Arming logic for hover-only tooltips: prevents tooltip from opening when popover appears under cursor
+  const [tooltipsArmed, setTooltipsArmed] = useState(false);
+  const armingCleanupRef = useRef<(() => void) | null>(null);
+  
+  // When bedsAndBathsOpen changes, handle arming
+  useEffect(() => {
+    // Cleanup any previous listener
+    if (armingCleanupRef.current) {
+      armingCleanupRef.current();
+      armingCleanupRef.current = null;
+    }
+    
+    if (bedsAndBathsOpen) {
+      // Popover just opened - disarm tooltips until pointer moves
+      setTooltipsArmed(false);
+      
+      const handlePointerMove = () => {
+        setTooltipsArmed(true);
+        // Remove listener after first move
+        window.removeEventListener('pointermove', handlePointerMove);
+        armingCleanupRef.current = null;
+      };
+      
+      // Small delay to avoid immediate triggering
+      const timeoutId = setTimeout(() => {
+        window.addEventListener('pointermove', handlePointerMove, { once: true });
+        armingCleanupRef.current = () => {
+          window.removeEventListener('pointermove', handlePointerMove);
+        };
+      }, 50);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        if (armingCleanupRef.current) {
+          armingCleanupRef.current();
+          armingCleanupRef.current = null;
+        }
+      };
+    } else {
+      // Popover closed - disarm
+      setTooltipsArmed(false);
+    }
+  }, [bedsAndBathsOpen]);
   
   const { data: cities } = useCities();
   const { user } = useAuth();
@@ -600,16 +644,14 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-medium">Rooms</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button type="button" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm">
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-[250px]">
-                        <p className="text-sm">In Israel, "rooms" includes living areas. A 3-room apartment typically has 2 bedrooms + a living room.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    <HoverOnlyTooltip
+                      armed={tooltipsArmed}
+                      content={
+                        <p className="text-sm max-w-[250px]">In Israel, "rooms" includes living areas. A 3-room apartment typically has 2 bedrooms + a living room.</p>
+                      }
+                    >
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </HoverOnlyTooltip>
                   </div>
                   <div className="flex gap-2">
                     {[undefined, 2, 3, 4, 5].map(num => (
