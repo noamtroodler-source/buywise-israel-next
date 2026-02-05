@@ -5,6 +5,8 @@ export type ListingType = 'buy' | 'rent' | 'project';
 
 export interface ListingData {
   type: ListingType;
+  entity_id?: string;   // property_id or project_id for caching
+  entity_type?: 'property' | 'project';  // for caching
   price?: number;
   size_sqm?: number;
   price_per_sqm?: number;
@@ -38,7 +40,7 @@ export interface GeneratedQuestion {
 
 interface QuestionsResponse {
   questions: GeneratedQuestion[];
-  source: 'ai' | 'fallback' | 'empty';
+  source: 'ai' | 'fallback' | 'empty' | 'cached';
 }
 
 async function fetchListingQuestions(listing: ListingData): Promise<QuestionsResponse> {
@@ -56,10 +58,16 @@ async function fetchListingQuestions(listing: ListingData): Promise<QuestionsRes
 
 /**
  * Generate a stable cache key from listing data.
- * Uses key identifying fields rather than entire object.
+ * Uses entity_id if available (best for server-side cache hits),
+ * otherwise falls back to key identifying fields.
  */
 function getListingCacheKey(listing: ListingData): string {
-  // Create a stable key from core listing identifiers
+  // If we have entity_id, use it as primary key for best cache hits
+  if (listing.entity_id) {
+    return `${listing.entity_type || 'unknown'}:${listing.entity_id}`;
+  }
+  
+  // Fallback to composite key from listing data
   const keyParts = [
     listing.type,
     listing.price?.toString() || '',

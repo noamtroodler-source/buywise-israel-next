@@ -120,6 +120,8 @@ export default function ProjectDetail() {
               <ProjectQuestionsToAsk 
                 listing={{
                   type: 'project',
+                  entity_id: project.id,
+                  entity_type: 'project',
                   price: project.price_from || undefined,
                   city: project.city,
                   neighborhood: project.neighborhood || undefined,
