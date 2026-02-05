@@ -1,99 +1,86 @@
 
-
-# Add Furniture Items Selection for Furnished Properties
+# Add "My Location" to City Dropdown Filters
 
 ## Overview
-When an agent selects "Fully Furnished" or "Semi Furnished" in the property wizard, a new section will appear allowing them to specify which furniture/appliances come with the property. This helps buyers/renters understand exactly what's included, especially important for the Israeli market where furnished status varies widely.
+Add a "My Location" option to the city filter dropdowns on the Buy, Rent, and Projects grid view pages. When clicked, this will use the browser's geolocation API to determine the user's current position and automatically select the nearest city from the database.
 
 ## User Experience
 
-**Agent Flow:**
-1. Agent selects "Semi Furnished" or "Fully Furnished" from the Furnished Status dropdown
-2. A new expandable section appears below with an encouraging message
-3. Agent can optionally select from common furniture categories (chips/badges that toggle on/off)
-4. The selection is saved with the property and displayed on the listing page
-
-**Visual Design (matching BuyWise standards):**
-- Same chip/badge style as existing Property Features selection
-- Organized into logical categories (Kitchen, Living, Bedroom, Bathroom, etc.)
-- Encouraging hint text: "Help renters know what's included - listings with furniture details get 40% more inquiries"
-- Subtle animation when the section appears/disappears
+1. User opens the City filter dropdown on Listings (Buy/Rent) or Projects page
+2. At the top of the city list, they see a new "My Location" option with a crosshairs/target icon
+3. When clicked:
+   - Browser prompts for location permission (if not already granted)
+   - Brief loading state shows while getting location
+   - System finds the nearest city from the database using coordinates
+   - City filter is automatically set to that city
+   - Dropdown closes
+4. If location access is denied or no city found within range, show a subtle error message
 
 ## Technical Implementation
 
-### Step 1: Database Migration
-Add a new column to the `properties` table:
+### Step 1: Create useGeolocation Hook
+Create a reusable hook at `src/hooks/useGeolocation.ts` that:
+- Wraps the browser's `navigator.geolocation.getCurrentPosition` API
+- Returns loading state, error state, and coordinates
+- Handles permission denied and timeout scenarios
 
-```sql
-ALTER TABLE properties 
-ADD COLUMN furniture_items text[] DEFAULT NULL;
-```
+### Step 2: Create findNearestCity Utility
+Create a utility function at `src/lib/utils/findNearestCity.ts` that:
+- Takes user coordinates and array of cities with center_lat/center_lng
+- Uses the existing `getDistanceInMeters` helper from `src/lib/utils/geometry.ts`
+- Returns the nearest city within a reasonable radius (10km, matching existing MapSearchLayout pattern)
 
-This stores an array of furniture item identifiers (e.g., `['refrigerator', 'washing_machine', 'bed_double', 'sofa']`).
+### Step 3: Update PropertyFilters Component
+Modify `src/components/filters/PropertyFilters.tsx`:
+- Add "My Location" button at the top of the city list inside the popover
+- Wire up geolocation and nearest-city logic
+- Show loading spinner while fetching location
+- Display inline error if location denied or no city found
 
-### Step 2: Update PropertyWizardContext
-Add `furniture_items: string[]` to `PropertyWizardData` interface with a default of `[]`.
+### Step 4: Update ProjectFilters Component
+Apply the same changes to `src/components/filters/ProjectFilters.tsx`:
+- Add identical "My Location" button to the city dropdown
+- Reuse the same geolocation hook and nearest-city utility
 
-### Step 3: Update StepFeatures.tsx
-Below the "Furnished Status" dropdown, conditionally render a furniture selection section when `furnished_status` is `'fully'` or `'semi'`:
-
-**Furniture items grouped by room:**
-
-| Category | Items |
-|----------|-------|
-| Kitchen | Refrigerator, Oven/Stove, Microwave, Dishwasher, Washing Machine, Dryer |
-| Living Room | Sofa, TV, Coffee Table, Dining Table + Chairs, Bookshelf |
-| Bedroom | Double Bed, Single Bed(s), Wardrobe/Closet, Desk + Chair |
-| Bathroom | Bathroom Cabinet, Mirror |
-| General | Air Conditioner Units, Curtains/Blinds, Light Fixtures |
-
-**UI pattern:**
-- Reuse the same toggleable chip/badge pattern from Property Features
-- Primary-tinted background when selected, muted border when not
-- Grid layout: 2 columns mobile, 3 columns desktop
-- Smooth AnimatePresence transition when section appears
-
-### Step 4: Update Property Submission
-Update `NewPropertyWizard.tsx` and `EditPropertyWizard.tsx` to include `furniture_items` in the property creation/update payload.
-
-### Step 5: Display on Property Detail Page
-Update `PropertyQuickSummary.tsx` or create a new `PropertyFurnitureItems` component:
-- Only show when `furnished_status` is `'fully'` or `'semi'` AND `furniture_items` has items
-- Display as a compact badge row under the furnished status
-- Use appropriate icons per category (Refrigerator icon, Sofa icon, Bed icon, etc.)
-
-### Step 6: Update useAgentProperties Hook
-Ensure the hook includes `furniture_items` in the property insert/update type definitions.
-
-## Files to Modify/Create
+## Files to Create/Modify
 
 | File | Action |
 |------|--------|
-| Database | Add `furniture_items text[]` column |
-| `src/components/agent/wizard/PropertyWizardContext.tsx` | Add `furniture_items` to data interface |
-| `src/components/agent/wizard/steps/StepFeatures.tsx` | Add conditional furniture selection UI |
-| `src/pages/agent/NewPropertyWizard.tsx` | Include `furniture_items` in submission |
-| `src/pages/agent/EditPropertyWizard.tsx` | Include `furniture_items` in edit/load |
-| `src/hooks/useAgentProperties.tsx` | Add `furniture_items` to types |
-| `src/types/database.ts` | Add `furniture_items` to Property interface |
-| `src/components/property/PropertyQuickSummary.tsx` | Display furniture items on listing |
+| `src/hooks/useGeolocation.ts` | Create - Geolocation hook |
+| `src/lib/utils/findNearestCity.ts` | Create - Nearest city utility |
+| `src/components/filters/PropertyFilters.tsx` | Modify - Add "My Location" to city popover |
+| `src/components/filters/ProjectFilters.tsx` | Modify - Add "My Location" to city popover |
 
-## Design Specifications
+## UI Design
 
-**Encouragement text:**
-"Let renters know what's included - detailed furniture lists help your listing stand out"
+**"My Location" Button:**
+- Icon: `Navigation` or `Crosshair` from lucide-react
+- Text: "Use my location"
+- Position: Top of city list, separated by a subtle divider
+- Style: Text button with primary color accent
+- Loading state: Show `Loader2` spinner animation
+- Error state: Inline muted text below the button
 
-**Section header:**
-- Icon: `Armchair` (lucide-react) in primary/10 rounded container
-- Title: "What's Included"
-- Subtitle (muted): "Select the furniture and appliances that come with this property"
+**Visual Layout:**
+```text
++---------------------------+
+| Select City               |
++---------------------------+
+| [Search city...]          |
++---------------------------+
+| ○ Use my location         |  <-- New
+|---------------------------|
+| Ashdod                    |
+| Ashkelon                  |
+| Beer Sheva                |
+| ...                       |
++---------------------------+
+```
 
-**Selected state:**
-- Background: `bg-primary/10`
-- Border: `border-primary`
-- Text: `text-primary font-medium`
+## Edge Cases Handled
 
-**Unselected state:**
-- Border: `border-border`
-- Hover: `hover:border-primary/50 hover:bg-muted/50`
-
+1. **Location permission denied**: Show "Location access denied" message
+2. **Geolocation not supported**: Hide the option gracefully
+3. **No city within range**: Show "No supported city nearby" message
+4. **Slow location fetch**: Show loading spinner with "Locating..." text
+5. **Cities data not loaded yet**: Disable the button until cities are available
