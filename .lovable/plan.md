@@ -1,200 +1,110 @@
 
 
-# Strategic Data Transparency Disclaimers - Multi-Source Approach
+# Add Back Button to All Guide Pages
 
-## Key Insight: Your Data is Richer Than We Thought
+## Overview
 
-The site uses a **multi-layered sourcing strategy**, not just government data:
+Currently, only `BuyingInIsraelGuide` has a back button to return to the guides listing. All other guides (11 total) are missing this navigation, which can leave users feeling "trapped" on a guide page without an obvious way to browse other guides.
 
-| Data Type | Source Level | Granularity |
-|-----------|--------------|-------------|
-| Price Trends (chart) | CBS District Index | Regional (6 districts) |
-| Current Prices | CBS + Madlan + Madadirot | City/Neighborhood specific |
-| Rentals | Yad2 + Numbeo + Janglo + Bizportal | City-specific listings |
-| Arnona | Municipality rate tables | City-specific |
-| Market Factors | Local news + Municipal announcements | City-specific |
+## Strategic Placement
 
-**This changes the disclaimer strategy**: Instead of apologizing for data limitations, we're highlighting a robust verification process.
+The back button should appear in the **top-left corner**, integrated into the hero section. Two approaches work well with the existing designs:
 
----
+| Guide Style | Placement Strategy |
+|-------------|-------------------|
+| Full-bleed hero image (RentVsBuy) | Floating button over the image, top-left of container |
+| Gradient hero (TrueCost, Mortgages) | Above the hero content, left-aligned |
 
-## Implementation Strategy
+## Design Pattern
 
-### Approach: "Transparency as Trust Signal"
-
-Rather than defensive disclaimers, frame this as transparency that builds credibility:
-
-> "Here's exactly how we verified this data so you can trust it."
-
-### Placement Decisions
-
-| Location | What to Add | Why |
-|----------|-------------|-----|
-| `CitySourceAttribution` | Add "Understanding Our Data" expandable section | Already the credibility anchor - enhance it |
-| `PriceTrendsSection` | Keep existing info banner (already well-done) | District context is already clear |
-| `MarketOverviewCards` | Add subtle source indicators per card | Connect specific data to specific sources |
-
----
-
-## Changes to Implement
-
-### 1. Enhance CitySourceAttribution Component
-
-**File**: `src/components/city/CitySourceAttribution.tsx`
-
-Add a new expandable section above the methodology that explains the multi-source approach:
+Using the existing pattern from `BuyingInIsraelGuide`:
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│ ✓ Data verified from official sources · Last updated Feb 2025  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ Price Data: CBS, Madlan (Q1 2025)                              │
-│ Rental Data: Yad2, Numbeo (Jan 2025)                           │
-│ Arnona: Municipality rate tables (2025)                         │
-│                                                                 │
-│ [🏛️ Government verified source]                                │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ 📊 Understanding our data                              [▼]     │  <-- NEW
-│                                                                 │
-│ (Expands to show:)                                             │
-│                                                                 │
-│ We combine multiple verified sources to give you a complete    │
-│ picture:                                                        │
-│                                                                 │
-│ • Government data (CBS, municipalities) forms our foundation   │
-│ • Listing platforms (Madlan, Yad2) provide real-time pricing   │
-│ • Industry research validates market trends                     │
-│                                                                 │
-│ For price trends, Israel's CBS publishes indices at the        │
-│ regional level. [City] is part of the [District] region -      │
-│ this provides verified context, while our city-specific        │
-│ metrics come from aggregated transaction data.                  │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ 📖 How we verify this data                             [▼]     │
-│ (existing methodology section)                                  │
-└─────────────────────────────────────────────────────────────────┘
+[ ← Back to Guides ]     <- Ghost button with arrow icon
 ```
 
-**Special variant for Jerusalem**:
-> "Jerusalem encompasses remarkably diverse neighborhoods — each with distinct market dynamics. Our regional data provides context, but we recommend neighborhood-level research for the most accurate picture."
-
-### 2. Add Props to CitySourceAttribution
-
-Pass district information to enable dynamic messaging:
-
-```typescript
-interface CitySourceAttributionProps {
-  sources?: Record<string, SourceValue> | null;
-  lastVerified?: string | null;
-  className?: string;
-  cityName?: string;       // NEW
-  districtName?: string;   // NEW
-}
-```
-
-### 3. Update AreaDetail.tsx to Pass Props
-
-**File**: `src/pages/AreaDetail.tsx`
-
-```typescript
-<CitySourceAttribution 
-  sources={(city as any).data_sources} 
-  lastVerified={canonicalMetrics?.updated_at}
-  cityName={city.name}
-  districtName={districtName}
-/>
-```
-
-### 4. Optional: Add Source Indicators to MarketOverviewCards
-
-For each card, add a subtle source label at the bottom:
-
-```text
-┌─ Average Price ─────────────┐
-│ ₪42,500/sqm                 │
-│ ▲ 12% vs national           │
-│                             │
-│ 📍 CBS + Madlan             │  <-- Subtle source indicator
-└─────────────────────────────┘
-```
-
-This is optional but reinforces multi-source credibility.
-
----
-
-## Copy: Final Messaging
-
-### "Understanding Our Data" Section (Default Cities)
-
-> **Understanding our data**
->
-> We combine multiple verified sources to give you a complete picture:
->
-> • **Government sources** (CBS, municipalities) form our foundation for verified statistics
-> • **Listing platforms** (Madlan, Yad2) provide real-time market pricing
-> • **Industry research** validates trends and provides market context
->
-> For price trends, Israel's CBS publishes indices at the regional level. [City] is part of the [District] region — this gives you verified government context, while city-specific metrics come from aggregated transaction and listing data.
->
-> Different sources have different strengths. We cross-reference them to help you make informed decisions.
-
-### Jerusalem Variant
-
-> **Understanding our data**
->
-> Jerusalem encompasses remarkably diverse neighborhoods — from ultra-Orthodox communities to secular areas — each with distinct market dynamics and pricing.
->
-> Our data combines CBS regional statistics with listing platform data and local market analysis. Given Jerusalem's diversity, we especially recommend:
->
-> • Consulting with local agents familiar with your target neighborhoods
-> • Reviewing recent transactions in specific areas you're considering
-> • Using our regional trends as context, not as neighborhood-specific predictions
-
-### Tel Aviv Variant (Optional)
-
-> **Understanding our data**
->
-> Tel Aviv benefits from extensive market coverage, with city-specific data available from multiple sources including CBS city-level statistics, Madlan transaction records, and active listing analysis.
->
-> This page combines government statistics with real-time market data to give you one of the most complete pictures available for any Israeli city.
-
----
+- Uses `Button variant="ghost"` with `ArrowLeft` icon
+- Links directly to `/guides`
+- Positioned at container level, above or at start of hero content
+- Works on both mobile and desktop
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/city/CitySourceAttribution.tsx` | Add "Understanding Our Data" expandable section with city/district-aware messaging |
-| `src/pages/AreaDetail.tsx` | Pass `cityName` and `districtName` to CitySourceAttribution |
+| File | Current State | Change |
+|------|---------------|--------|
+| `src/pages/guides/MortgagesGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/TrueCostGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/RentVsBuyGuide.tsx` | No back button | Add floating back button in hero |
+| `src/pages/guides/ListingsGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/PurchaseTaxGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/NewVsResaleGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/TalkingToProfessionalsGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/NewConstructionGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/OlehBuyerGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/InvestmentPropertyGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/BuyingPropertyGuide.tsx` | No back button | Add back button above hero content |
+| `src/pages/guides/BuyingInIsraelGuide.tsx` | Already has back button | No change needed |
 
----
+## Implementation Details
 
-## Technical Notes
+### Import Addition
+Each file will need `ArrowLeft` added to the lucide-react import (if not already present) and ensure `Button` is imported.
 
-### District Detection
-Uses existing `getDistrictForCity()` from `src/lib/utils/districtMapping.ts`
-
-### City-Specific Variants
-```typescript
-const isJerusalem = cityName?.toLowerCase() === 'jerusalem';
-const isTelAviv = cityName?.toLowerCase() === 'tel aviv';
+### Code Pattern
+For gradient-style heroes (most guides):
+```jsx
+<div className="container relative py-12 md:py-16">
+  {/* Back Button - Added */}
+  <Link to="/guides">
+    <Button variant="ghost" className="gap-2 -ml-2 mb-4">
+      <ArrowLeft className="h-4 w-4" />
+      Back to Guides
+    </Button>
+  </Link>
+  
+  {/* Existing hero content */}
+  <motion.div ...>
 ```
 
-### Collapsible Pattern
-Matches existing methodology section using `@radix-ui/react-collapsible`
+For full-bleed image heroes (RentVsBuyGuide):
+```jsx
+<div className="container relative h-full flex flex-col justify-end pb-12">
+  {/* Back Button - Positioned at top */}
+  <Link to="/guides" className="absolute top-6 left-0">
+    <Button variant="ghost" className="gap-2 bg-background/80 backdrop-blur-sm hover:bg-background/90">
+      <ArrowLeft className="h-4 w-4" />
+      Back to Guides
+    </Button>
+  </Link>
+  
+  {/* Existing hero content */}
+  <motion.div ...>
+```
 
----
+## Visual Result
 
-## Summary
+Before:
+```text
+┌─────────────────────────────────────────┐
+│ [Hero Section - No back navigation]      │
+│                                          │
+│   Essential Guide                        │
+│   Mortgages in Israel                    │
+```
 
-This approach:
-- Turns a potential weakness (district-level trends) into a strength (multi-source verification)
-- Builds trust through transparency without being defensive
-- Uses existing UI patterns (collapsibles, source badges)
-- Handles special cases (Jerusalem's diversity, Tel Aviv's coverage)
-- Keeps pages clean with expandable sections
-- Follows the "trusted guide" brand voice
+After:
+```text
+┌─────────────────────────────────────────┐
+│ ← Back to Guides                         │  <- Consistent navigation
+│                                          │
+│   Essential Guide                        │
+│   Mortgages in Israel                    │
+```
+
+## User Experience
+
+- Users can easily return to browse other guides
+- Consistent with the back button pattern already used in `BuyingInIsraelGuide`
+- Matches the `MobileHeaderBack` pattern used elsewhere in the app
+- Non-intrusive positioning that doesn't compete with guide content
 
