@@ -24,6 +24,7 @@ import { SimilarProperties } from '@/components/property/SimilarProperties';
 import { RecentNearbySales } from '@/components/property/RecentNearbySales';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
+import { ReportListingButton } from '@/components/property/ReportListingButton';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
 import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
 import { Calculator, BarChart3, MapPin } from 'lucide-react';
@@ -310,6 +311,14 @@ export default function PropertyDetail() {
             <ListingFeedback 
               listingType={property.listing_status === 'for_rent' ? 'rentals' : 'buy'} 
             />
+
+            {/* Report Inaccurate Info - Subtle link for data quality */}
+            <div className="flex justify-center pt-2">
+              <ReportListingButton 
+                propertyId={property.id}
+                listingTitle={property.title}
+              />
+            </div>
           </div>
 
           {/* Sticky Sidebar - Desktop Only */}
