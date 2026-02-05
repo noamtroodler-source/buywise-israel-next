@@ -36,17 +36,14 @@ const fadeInUp = {
 
 // Data: Big Picture insights (11 points)
 const bigPictureInsights = [
-  { icon: MapPin, text: "There is no centralized MLS in Israel; listings live across agencies, platforms, and Facebook groups." },
-  { icon: Home, text: "'Rooms' count the living room plus bedrooms; a '4-room' apartment is often three bedrooms plus a salon." },
-  { icon: Building2, text: "Sizes are measured in square meters (gross or net) – gross can include common areas like elevator shafts." },
-  { icon: Users, text: "Agents are paid at contract signing; each side pays its own agent, and representation can be dual." },
-  { icon: Gavel, text: "Lawyers, not agents, draft contracts and perform due diligence." },
-  { icon: FileWarning, text: "Verbal agreements and informal documents like a Zichron Devarim can still be binding." },
-  { icon: Banknote, text: "Mortgages usually finalize after contract signing, not before." },
-  { icon: Receipt, text: "Payments are staged over time; after paying about 7% in new projects, the developer must provide a bank guarantee." },
-  { icon: Landmark, text: "Registration of ownership in Tabu or Minhal happens after closing and can take months." },
-  { icon: Key, text: "Renting first is common for internationals to understand neighborhoods before buying." },
-  { icon: DollarSign, text: "Currency transfers can take days and incur fees, adding stress to payment timelines." },
+   { icon: Home, text: "A '4-room' apartment means 3 bedrooms plus a living room." },
+   { icon: Building2, text: "Gross square meters can include shared areas like stairwells." },
+   { icon: Gavel, text: "Lawyers draft contracts — agents do not." },
+   { icon: FileWarning, text: "Verbal agreements can be legally binding." },
+   { icon: Banknote, text: "Mortgages finalize after you sign the contract, not before." },
+   { icon: Landmark, text: "Legal ownership registration can take months after closing." },
+   { icon: DollarSign, text: "International wire transfers take days and incur fees." },
+   { icon: Users, text: "Agents may represent both buyer and seller." },
 ];
 
 // Data: Glossary terms (14 essential terms)
@@ -214,46 +211,12 @@ const surprises = [
 
 // Data: Decision points (10 tradeoffs)
 const decisionPoints = [
-  { 
-    title: "Rent first or buy immediately?", 
-    description: "Renting helps you learn neighborhoods but may delay purchase in a rising market." 
-  },
-  { 
-    title: "Agent or no agent?", 
-    description: "Agents can open doors but may represent both sides; commissions are due at signing." 
-  },
-  { 
-    title: "Sign a Zichron Devarim or wait?", 
-    description: "Signing may secure terms but exposes you to risk." 
-  },
-  { 
-    title: "Gross vs net pricing?", 
-    description: "Paying per gross square meter may misstate value; net pricing clarifies actual living space." 
-  },
-  { 
-    title: "New construction vs resale?", 
-    description: "Projects offer modern features but rely on developer timelines and index-linked prices." 
-  },
-  { 
-    title: "Mortgage vs cash purchase?", 
-    description: "Mortgages free up capital but add bank conditions and timing uncertainty." 
-  },
-  { 
-    title: "Inspection intensity?", 
-    description: "Comprehensive inspections cost more but reveal defects; skipping them saves time but increases risk." 
-  },
-  { 
-    title: "Payment timing for currency?", 
-    description: "Locking in exchange rates early provides certainty but could miss favorable shifts; waiting increases volatility." 
-  },
-  { 
-    title: "Freehold vs leasehold land?", 
-    description: "Freehold gives stronger rights; leasehold may have restrictions and additional fees." 
-  },
-  { 
-    title: "Project reservation or multiple options?", 
-    description: "Reserving one unit secures your place but ties up funds; exploring multiple projects preserves flexibility." 
-  },
+   { title: "Rent first or buy now?", description: "Learn neighborhoods vs. risk price increases." },
+   { title: "New construction vs resale?", description: "Modern features vs. faster possession." },
+   { title: "Mortgage vs cash?", description: "Preserve capital vs. simpler closing." },
+   { title: "Freehold vs leasehold?", description: "Stronger rights vs. potential restrictions." },
+   { title: "Comprehensive inspection?", description: "Reveal defects vs. save time and cost." },
+   { title: "Lock exchange rate early?", description: "Certainty vs. potential better rates later." },
 ];
 
 // Data: Exit considerations
