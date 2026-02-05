@@ -466,10 +466,13 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           )}
         </div>
 
-        {/* Auto-Generated Highlights */}
+        {/* Amenities & Features */}
         {highlights.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">At a Glance</h3>
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Amenities & Features
+            </h3>
             <div className="flex flex-wrap gap-2">
               {highlights.map((highlight, index) => {
                 const Icon = highlight.icon;
