@@ -35,8 +35,8 @@ const BUYER_TYPE_OPTIONS: {
   { value: 'first_time', label: 'First-Time Buyer', maxLtv: 75, description: 'Buying your first residential property in Israel' },
   { value: 'upgrader', label: 'Upgrading (Selling Current)', maxLtv: 70, description: 'Selling your current home to buy a new one' },
   { value: 'investor', label: 'Additional Property', maxLtv: 50, description: 'Buying a second property (investment or vacation)' },
-  { value: 'oleh', label: 'Oleh Hadash', maxLtv: 75, description: 'New immigrant within 7 years of Aliyah' },
-  { value: 'foreign', label: 'Non-Resident', maxLtv: 50, description: 'Not a resident of Israel' },
+  { value: 'oleh', label: 'Oleh Hadash', maxLtv: 75, description: 'New immigrant within 7 years. May qualify for government mortgage at ~3% fixed rate.' },
+  { value: 'foreign', label: 'Non-Resident', maxLtv: 50, description: 'Not a resident of Israel. Foreign income discounted 20-30%. May require Israeli guarantor.' },
 ];
 
 const LOAN_TERMS = [10, 15, 20, 25, 30];

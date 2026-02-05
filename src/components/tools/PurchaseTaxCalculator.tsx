@@ -341,6 +341,14 @@ export function PurchaseTaxCalculator() {
           </p>
         </div>
 
+        {/* Payment Warning */}
+        <Alert className="bg-amber-50 border-amber-200">
+          <Calendar className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <strong>Payment due within 60 days</strong> of contract signing. Late payment incurs ~5% monthly interest.
+          </AlertDescription>
+        </Alert>
+
         {/* Savings Alert */}
         {taxResult.savings && taxResult.savings.vsInvestor > 0 && 
          buyerType !== 'investor' && buyerType !== 'foreign' && buyerType !== 'company' && (
