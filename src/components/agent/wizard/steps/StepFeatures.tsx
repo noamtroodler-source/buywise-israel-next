@@ -405,8 +405,8 @@ export function StepFeatures() {
                      </div>
                    </div>
                    
-                   <p className="text-xs text-primary/80 bg-primary/5 p-2 rounded-lg">
-                     💡 Listings with detailed furniture lists get 40% more inquiries
+                     <p className="text-xs text-muted-foreground italic">
+                       Listings with detailed furniture lists get more inquiries
                    </p>
                    
                    <div className="space-y-4">
