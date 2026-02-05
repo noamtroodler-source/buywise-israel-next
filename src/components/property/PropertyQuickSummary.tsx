@@ -65,7 +65,6 @@ interface PropertyQuickSummaryProps {
    bed_single: 'Single Bed(s)',
    wardrobe: 'Wardrobe/Closet',
    desk_chair: 'Desk + Chair',
-   ac_units: 'Air Conditioner Units',
    curtains: 'Curtains/Blinds',
    light_fixtures: 'Light Fixtures',
  };

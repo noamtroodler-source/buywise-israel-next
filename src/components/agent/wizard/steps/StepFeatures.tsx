@@ -104,7 +104,6 @@ const commonFeatures = [
    {
      name: 'General',
      items: [
-       { id: 'ac_units', label: 'Air Conditioner Units' },
        { id: 'curtains', label: 'Curtains/Blinds' },
        { id: 'light_fixtures', label: 'Light Fixtures' },
      ],
