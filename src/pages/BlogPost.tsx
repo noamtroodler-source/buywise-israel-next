@@ -21,6 +21,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateArticleMeta, generateArticleJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function BlogPost() {
@@ -89,10 +90,23 @@ export default function BlogPost() {
         {/* Hero Section with Gradient Background */}
         <div className="bg-gradient-to-b from-primary/5 to-background">
           <div className="container py-8 max-w-5xl">
+            {/* Dual Navigation */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4"
+            >
+              <DualNavigation
+                parentLabel="All Articles"
+                parentPath="/blog"
+              />
+            </motion.div>
+            
             {/* Breadcrumb */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
               className="mb-6"
             >
               <Breadcrumb>

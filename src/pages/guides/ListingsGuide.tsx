@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   Home, MapPin, Building2, Users, FileText, Eye, Camera, 
   DollarSign, HelpCircle, CheckCircle, AlertTriangle, Lightbulb,
@@ -247,13 +248,12 @@ export default function ListingsGuide() {
         <section id="overview" className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
           <div className="container relative py-16 md:py-24">
-            {/* Back Button */}
-            <Link to="/guides">
-              <Button variant="ghost" className="gap-2 -ml-2 mb-4">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Guides
-              </Button>
-            </Link>
+            {/* Dual Navigation */}
+            <DualNavigation
+              parentLabel="All Guides"
+              parentPath="/guides"
+              className="mb-4"
+            />
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateDeveloperMeta, generateDeveloperJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function DeveloperDetail() {
@@ -193,22 +194,11 @@ export default function DeveloperDetail() {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
         >
-          {/* Back Button */}
-          {isOwnProfile ? (
-            <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
-              <Link to="/developer">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Link>
-            </Button>
-          ) : (
-            <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
-              <Link to="/developers">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                All Developers
-              </Link>
-            </Button>
-          )}
+          {/* Dual Navigation */}
+          <DualNavigation
+            parentLabel={isOwnProfile ? "Dashboard" : "All Developers"}
+            parentPath={isOwnProfile ? "/developer" : "/developers"}
+          />
 
           {/* Hero Card */}
           <Card className="overflow-hidden">

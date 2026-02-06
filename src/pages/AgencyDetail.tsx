@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { useState } from 'react';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateAgencyMeta, generateAgencyJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function AgencyDetail() {
@@ -118,15 +119,11 @@ export default function AgencyDetail() {
         jsonLd={jsonLd}
       />
       <div className="container py-8 space-y-8">
-        {/* Back Navigation */}
-        {isOwner && (
-          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
-            <Link to="/agency">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        )}
+        {/* Dual Navigation */}
+        <DualNavigation
+          parentLabel={isOwner ? "Dashboard" : "All Agencies"}
+          parentPath={isOwner ? "/agency" : "/agencies"}
+        />
 
         {/* Hero Card */}
         <Card className="overflow-hidden">

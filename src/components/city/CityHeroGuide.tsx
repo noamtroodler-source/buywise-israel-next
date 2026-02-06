@@ -1,8 +1,7 @@
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, ChevronDown, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MapPin, ChevronDown, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 
 interface CityHeroGuideProps {
   cityName: string;
@@ -32,26 +31,25 @@ export function CityHeroGuide({
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/50 to-foreground/20" />
 
+      {/* Dual Navigation - Overlay style */}
+      <div className="absolute top-4 left-0 right-0 z-20">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <DualNavigation
+              parentLabel="All Cities"
+              parentPath="/areas"
+              variant="overlay"
+            />
+          </motion.div>
+        </div>
+      </div>
+
       {/* Content */}
       <div className="relative z-10 container pb-16">
-        {/* Back Link */}
-        <motion.div
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.05 }}
-          className="mb-6"
-        >
-          <Button 
-            variant="ghost" 
-            className="text-white/80 hover:text-white hover:bg-white/10 -ml-3" 
-            asChild
-          >
-            <Link to="/areas">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              All Cities
-            </Link>
-          </Button>
-        </motion.div>
 
         {/* Badge */}
         <motion.div

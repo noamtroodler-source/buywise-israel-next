@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   BadgeDollarSign, 
   Clock, 
@@ -245,13 +246,12 @@ export default function TrueCostGuide() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/3 to-transparent" />
         <div className="container relative py-12 md:py-16">
-          {/* Back Button */}
-          <Link to="/guides">
-            <Button variant="ghost" className="gap-2 -ml-2 mb-4">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Guides
-            </Button>
-          </Link>
+          {/* Dual Navigation */}
+          <DualNavigation
+            parentLabel="All Guides"
+            parentPath="/guides"
+            className="mb-4"
+          />
           <motion.div {...fadeInUp} className="max-w-3xl mx-auto text-center">
             <Badge variant="secondary" className="mb-4">
               <BadgeDollarSign className="h-3 w-3 mr-1" />
