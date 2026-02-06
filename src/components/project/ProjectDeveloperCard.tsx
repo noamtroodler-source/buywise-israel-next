@@ -40,7 +40,10 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Link to={`/developers/${developer.slug}`}>
-                <h3 className="font-semibold hover:text-primary hover:underline transition-colors">{developer.name}</h3>
+                <h3 className="font-semibold hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
+                  {developer.name}
+                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                </h3>
               </Link>
               {developer.is_verified && (
                 <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">

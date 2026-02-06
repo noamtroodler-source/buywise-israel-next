@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MessageCircle, Mail } from 'lucide-react';
+import { MessageCircle, Mail, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -91,9 +91,10 @@ export function AgentContactSection({ agent, propertyTitle, propertyId }: AgentC
               {agent.id ? (
                 <Link 
                   to={`/agents/${agent.id}`} 
-                  className="font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                  className="font-semibold text-foreground hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
                 >
                   {agent.name}
+                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 </Link>
               ) : (
                 <p className="font-semibold text-foreground">{agent.name}</p>

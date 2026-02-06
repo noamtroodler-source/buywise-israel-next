@@ -1,4 +1,4 @@
-import { MessageCircle, Mail, Phone, Building, Shield, CheckCircle, User, TrendingUp, BookOpen, ChevronDown } from 'lucide-react';
+import { MessageCircle, Mail, Phone, Building, Shield, CheckCircle, User, TrendingUp, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -96,10 +96,20 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
             <User className="h-6 w-6 text-primary" />
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold truncate">{representingAgent?.name}</span>
-            {representingAgent?.is_verified && (
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              {representingAgent?.id ? (
+                <Link 
+                  to={`/agents/${representingAgent.id}`}
+                  className="font-semibold truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
+                >
+                  {representingAgent?.name}
+                  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                </Link>
+              ) : (
+                <span className="font-semibold truncate">{representingAgent?.name}</span>
+              )}
+              {representingAgent?.is_verified && (
               <Shield className="h-4 w-4 text-primary flex-shrink-0" />
             )}
           </div>
@@ -155,9 +165,10 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
             <div className="flex items-center gap-1.5">
               <Link 
                 to={`/developers/${developer.slug}`}
-                className="font-semibold truncate hover:text-primary transition-colors"
+                className="font-semibold truncate hover:text-primary transition-colors inline-flex items-center gap-1"
               >
                 {developer.name}
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               </Link>
             </div>
             <p className="text-sm text-muted-foreground">
