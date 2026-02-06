@@ -20,7 +20,6 @@ import {
   ProjectMobileContactBar,
   SimilarProjects,
   ProjectFAQ,
-  ProjectBreadcrumb,
   ProjectQuickSummary,
   ProjectDescription,
   ProjectNextSteps,
@@ -94,9 +93,6 @@ export default function ProjectDetail() {
             parentPath="/projects"
             className="mb-4"
           />
-          
-          {/* Breadcrumb Navigation */}
-          <ProjectBreadcrumb projectName={project.name} city={project.city} />
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
