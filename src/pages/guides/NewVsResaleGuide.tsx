@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   Scale, 
   BookOpen, 
@@ -146,13 +147,12 @@ export default function NewVsResaleGuide() {
       <div className="min-h-screen bg-background">
         <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background">
           <div className="container py-12 md:py-16">
-            {/* Back Button */}
-            <Link to="/guides">
-              <Button variant="ghost" className="gap-2 -ml-2 mb-4">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Guides
-              </Button>
-            </Link>
+            {/* Dual Navigation */}
+            <DualNavigation
+              parentLabel="All Guides"
+              parentPath="/guides"
+              className="mb-4"
+            />
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto text-center">
               <Badge variant="secondary" className="mb-4"><Scale className="h-3 w-3 mr-1" />Essential Guide</Badge>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">New Construction vs Resale in <span className="text-primary">Israel</span><span className="block mt-2">What's Really Different</span></h1>

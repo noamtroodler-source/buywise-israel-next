@@ -5,7 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Calculator, Wallet, Scale, TrendingUp, Receipt, 
   Hammer, ClipboardList, ArrowRight, ArrowLeft, Compass,
-  Search, Home
+  Search, Home, ChevronRight
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
@@ -20,6 +20,7 @@ import { RentVsBuyCalculator } from '@/components/tools/RentVsBuyCalculator';
 import { InvestmentReturnCalculator } from '@/components/tools/InvestmentReturnCalculator';
 import { RenovationCostEstimator } from '@/components/tools/RenovationCostEstimator';
 import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -246,14 +247,12 @@ export default function Tools() {
               animate={{ opacity: 1, y: 0 }}
               className="max-w-4xl mx-auto space-y-4"
             >
-              <Button
-                variant="ghost"
-                onClick={() => setSearchParams({})}
-                className="gap-2 -ml-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to all tools
-              </Button>
+              <DualNavigation
+                parentLabel="All Tools"
+                parentPath="/tools"
+                backLabel="Go back"
+                className="mb-2"
+              />
               {ActiveComponent && <ActiveComponent />}
             </motion.div>
           </div>

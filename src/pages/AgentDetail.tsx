@@ -32,6 +32,7 @@ import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
 import { buildWhatsAppUrl, openWhatsApp } from '@/lib/whatsapp';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateAgentMeta, generateAgentJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function AgentDetail() {
@@ -150,15 +151,11 @@ export default function AgentDetail() {
         jsonLd={jsonLd}
       />
       <div className="container py-6 md:py-8 space-y-6">
-        {/* Back Navigation */}
-        {isOwnProfile && (
-          <Button variant="ghost" asChild className="rounded-xl hover:bg-primary/5 -ml-2">
-            <Link to="/agent">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        )}
+        {/* Dual Navigation */}
+        <DualNavigation
+          parentLabel={isOwnProfile ? "Dashboard" : "Browse Listings"}
+          parentPath={isOwnProfile ? "/agent" : "/listings"}
+        />
 
         {/* Hero Section */}
         <Card className="overflow-hidden">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   ArrowLeft, MapPin, Clock, ChevronDown, ChevronUp,
   Gift, Landmark, FileText, Calendar, Heart,
@@ -578,13 +579,11 @@ export default function OlehBuyerGuide() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            {/* Back Button */}
-            <Link to="/guides">
-              <Button variant="ghost" className="gap-2 -ml-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Guides
-              </Button>
-            </Link>
+            {/* Dual Navigation */}
+            <DualNavigation
+              parentLabel="All Guides"
+              parentPath="/guides"
+            />
 
             {/* Header */}
             <div className="space-y-4">

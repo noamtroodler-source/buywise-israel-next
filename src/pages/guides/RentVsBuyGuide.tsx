@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { 
   Scale, Clock, BookOpen, ChevronRight, Home, DollarSign,
   TrendingUp, Users, Shield, FileText, Calendar, Key, Heart,
@@ -252,13 +253,14 @@ export default function RentVsBuyGuide() {
           </div>
           
           <div className="container relative h-full flex flex-col justify-end pb-12">
-            {/* Back Button - Positioned at top */}
-            <Link to="/guides" className="absolute top-6 left-0">
-              <Button variant="ghost" className="gap-2 bg-background/80 backdrop-blur-sm hover:bg-background/90">
-                <ArrowLeft className="h-4 w-4" />
-                Back to Guides
-              </Button>
-            </Link>
+            {/* Dual Navigation - Overlay style */}
+            <div className="absolute top-6 left-0">
+              <DualNavigation
+                parentLabel="All Guides"
+                parentPath="/guides"
+                variant="overlay"
+              />
+            </div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

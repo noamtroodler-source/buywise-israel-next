@@ -26,6 +26,7 @@ import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
+import { DualNavigation } from '@/components/shared/DualNavigation';
 import { MobileCollapsibleSection } from '@/components/property/MobileCollapsibleSection';
 import { Calculator, BarChart3, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
@@ -140,6 +141,15 @@ export default function PropertyDetail() {
       <MobileSectionNav />
       
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
+        {/* Dual Navigation - Desktop only (mobile has MobileHeaderBack) */}
+        <div className="hidden md:block mb-4">
+          <DualNavigation
+            parentLabel="All Listings"
+            parentPath="/listings"
+            fallbackPath="/buy"
+          />
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
