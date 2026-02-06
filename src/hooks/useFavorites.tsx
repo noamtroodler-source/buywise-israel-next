@@ -1,17 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { createGuestClient } from '@/integrations/supabase/guestClient';
 import { getOrCreateGuestId } from '@/utils/guestId';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { Property } from '@/types/database';
 import { useCallback } from 'react';
-import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
 import { useFavoritesContext } from '@/contexts/FavoritesContext';
 import { triggerHaptic } from './useHapticFeedback';
 import { useCompare } from '@/contexts/CompareContext';
 
-const GUEST_FAVORITES_KEY = 'buywise_guest_favorites';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 interface GuestFavorite {
   property_id: string;
@@ -106,12 +104,17 @@ export function useFavorites() {
           return [{ property_id: propertyId, price: currentPrice }, ...filtered];
         });
         
-        // Also insert into guest_property_saves for counting
+        // Persist to backend via edge function
         const guestId = getOrCreateGuestId();
-        const guestClient = createGuestClient(guestId);
-        await guestClient
-          .from('guest_property_saves')
-          .upsert({ property_id: propertyId, guest_id: guestId }, { onConflict: 'property_id,guest_id' });
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/guest-save-property`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ propertyId, guestId, action: 'save' })
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save guest property:', await response.text());
+        }
         return;
       }
       
@@ -159,14 +162,17 @@ export function useFavorites() {
         // Guest: update context (which syncs to sessionStorage)
         setGuestFavorites(current => current.filter(f => f.property_id !== propertyId));
         
-        // Also delete from guest_property_saves
+        // Remove from backend via edge function
         const guestId = getOrCreateGuestId();
-        const guestClient = createGuestClient(guestId);
-        await guestClient
-          .from('guest_property_saves')
-          .delete()
-          .eq('property_id', propertyId)
-          .eq('guest_id', guestId);
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/guest-save-property`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ propertyId, guestId, action: 'unsave' })
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to unsave guest property:', await response.text());
+        }
         return;
       }
       
