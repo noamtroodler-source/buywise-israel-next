@@ -104,6 +104,7 @@ export function StickyContactCard({
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground mb-0.5">Agent</p>
                 {agent.id ? (
                   <Link 
                     to={`/agents/${agent.id}`} 
