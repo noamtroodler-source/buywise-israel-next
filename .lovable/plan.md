@@ -1,104 +1,63 @@
 
-# Add Chevron Indicator to Agent/Developer Profile Links
+# Clean Up Navigation: Single Consistent Dual-Nav Pattern
 
-## Goal
-Make it visually clear that agent and developer names are clickable links to their profiles by adding a small `ChevronRight` icon after the name — a subtle but effective navigation cue.
+## Current State & Issues
 
-## Files to Update
+| Page | Current Navigation | Problem |
+|------|-------------------|---------|
+| Property (Buy) | `← Go back · All Listings` | Label should be "All Properties" |
+| Property (Rent) | `← Go back · All Listings` | Label should be "All Rentals" |
+| Project | `← Go back · All Projects` + Breadcrumb below | Redundant - two navigation rows |
 
-### 1. `src/components/property/StickyContactCard.tsx` (Buy/Rent listings sidebar)
-**Line 109-114** - Agent name link
+## Solution: Option A Implementation
+
+### 1. PropertyDetail.tsx (Buy/Rent Listings)
+**Change**: Update `parentLabel` to be context-aware based on listing status
+
 ```tsx
 // Before
-<Link 
-  to={`/agents/${agent.id}`} 
-  className="font-semibold text-foreground truncate block hover:text-primary hover:underline transition-colors"
->
-  {agent.name}
-</Link>
+<DualNavigation
+  parentLabel="All Listings"
+  parentPath="/listings"
+  fallbackPath="/buy"
+/>
 
-// After
-<Link 
-  to={`/agents/${agent.id}`} 
-  className="font-semibold text-foreground truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
->
-  {agent.name}
-  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-</Link>
+// After - dynamic label based on listing type
+<DualNavigation
+  parentLabel={property.listing_status === 'for_rent' ? 'All Rentals' : 'All Properties'}
+  parentPath={`/listings?status=${property.listing_status}`}
+  fallbackPath={property.listing_status === 'for_rent' ? '/listings?status=for_rent' : '/listings?status=for_sale'}
+/>
 ```
 
-### 2. `src/components/property/AgentContactSection.tsx` (In-page agent section)
-**Line 92-97** - Agent name link
+### 2. ProjectDetail.tsx
+**Change**: Remove the `ProjectBreadcrumb` component entirely - keep only `DualNavigation`
+
 ```tsx
-// After
-<Link 
-  to={`/agents/${agent.id}`} 
-  className="font-semibold text-foreground hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
->
-  {agent.name}
-  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-</Link>
+// Remove this line and import:
+<ProjectBreadcrumb projectName={project.name} city={project.city} />
 ```
 
-### 3. `src/components/project/ProjectStickyCard.tsx` (Projects sidebar)
-**Lines 100-101** - Agent name in AgentContactSection (currently no link - needs to be made clickable)
-```tsx
-// Before (not a link)
-<span className="font-semibold truncate">{representingAgent?.name}</span>
+### 3. ProjectBreadcrumb.tsx (Optional Cleanup)
+**Change**: Delete the file if no longer used elsewhere, or keep for potential future use.
 
-// After (with link + chevron)
-{representingAgent?.id ? (
-  <Link 
-    to={`/agents/${representingAgent.id}`}
-    className="font-semibold truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
-  >
-    {representingAgent?.name}
-    <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-  </Link>
-) : (
-  <span className="font-semibold truncate">{representingAgent?.name}</span>
-)}
-```
+## Files to Modify
 
-**Lines 156-161** - Developer name link (already has link, add chevron)
-```tsx
-// After
-<Link 
-  to={`/developers/${developer.slug}`}
-  className="font-semibold truncate hover:text-primary transition-colors inline-flex items-center gap-1"
->
-  {developer.name}
-  <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-</Link>
-```
+| File | Action |
+|------|--------|
+| `src/pages/PropertyDetail.tsx` | Update `parentLabel` and `parentPath` to be listing-status-aware |
+| `src/pages/ProjectDetail.tsx` | Remove `ProjectBreadcrumb` import and usage |
+| `src/components/project/index.ts` | Remove `ProjectBreadcrumb` export (if present) |
+| `src/components/project/ProjectBreadcrumb.tsx` | Delete (or keep for future) |
 
-### 4. `src/components/project/ProjectDeveloperCard.tsx` (Full developer card)
-**Lines 42-44** - Developer name link (already has chevron pattern on buttons, but not on name)
-```tsx
-// After
-<Link to={`/developers/${developer.slug}`}>
-  <h3 className="font-semibold hover:text-primary hover:underline transition-colors inline-flex items-center gap-1">
-    {developer.name}
-    <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-  </h3>
-</Link>
-```
+## Result
 
-## Visual Result
+After cleanup, all detail pages will have a single, clean navigation row:
+
 ```text
-┌────────────────────────────────┐
-│  Agent                         │
-│  John Smith ›                  │  ← chevron signals "click to view profile"
-│  ABC Realty                    │
-└────────────────────────────────┘
+Property (For Sale):  ← Go back · All Properties
+Property (For Rent):  ← Go back · All Rentals  
+Project:              ← Go back · All Projects
 ```
 
-## Styling Details
-- Icon: `ChevronRight` at `h-3 w-3` (12px)
-- Color: `text-muted-foreground` (subtle gray, not primary blue)
-- Layout: `inline-flex items-center gap-1` to keep name + chevron on same line
-- `flex-shrink-0` prevents chevron from being squished on truncated names
-
-## Import Updates
-- Add `ChevronRight` to lucide-react imports in `StickyContactCard.tsx` and `AgentContactSection.tsx`
-- Already imported in `ProjectStickyCard.tsx` and `ProjectDeveloperCard.tsx`
+No duplicate navigation, consistent pattern, context-aware labels.
