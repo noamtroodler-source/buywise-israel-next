@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronDown } from 'lucide-react';
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -108,9 +108,10 @@ export function StickyContactCard({
                 {agent.id ? (
                   <Link 
                     to={`/agents/${agent.id}`} 
-                    className="font-semibold text-foreground truncate block hover:text-primary hover:underline transition-colors"
+                    className="font-semibold text-foreground truncate hover:text-primary hover:underline transition-colors inline-flex items-center gap-1"
                   >
                     {agent.name}
+                    <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                   </Link>
                 ) : (
                   <p className="font-semibold text-foreground truncate">{agent.name}</p>
