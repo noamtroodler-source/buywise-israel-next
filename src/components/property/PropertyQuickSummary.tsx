@@ -357,7 +357,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                   <p className="text-sm font-medium truncate">
                     {property.year_built || 'Not specified'}
                   </p>
-                  <p className="text-xs text-muted-foreground">Built</p>
+                  <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Built</p>
                 </div>
               </div>
             </TooltipTrigger>
@@ -373,7 +373,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <Layers className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getFloorDisplay()}</p>
-                  <p className="text-xs text-muted-foreground">Floor</p>
+                  <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Floor</p>
                 </div>
               </div>
             </TooltipTrigger>
@@ -413,7 +413,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <Car className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getParkingDisplay()}</p>
-                  <p className="text-xs text-muted-foreground">Parking</p>
+                  <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Parking</p>
                 </div>
               </div>
             </TooltipTrigger>
@@ -438,7 +438,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <CalendarCheck className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{getEntryDateDisplay()}</p>
-                  <p className="text-xs text-muted-foreground">Available</p>
+                  <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Available</p>
                 </div>
               </div>
             </TooltipTrigger>
@@ -455,7 +455,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                   <Thermometer className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{getAcTypeDisplay()}</p>
-                    <p className="text-xs text-muted-foreground">A/C</p>
+                    <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">A/C</p>
                   </div>
                 </div>
               </TooltipTrigger>
