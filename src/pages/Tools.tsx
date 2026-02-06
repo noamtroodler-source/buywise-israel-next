@@ -23,6 +23,7 @@ import { DocumentChecklistTool } from '@/components/tools/DocumentChecklistTool'
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { TOOLS_BY_PHASE } from '@/lib/navigationConfig';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 
 interface Tool {
@@ -203,6 +204,7 @@ function ToolsCarousel({ tools, phaseKey, onToolClick }: ToolsCarouselProps) {
 }
 
 export default function Tools() {
+  useTrackContentVisit('tool');
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const isMobile = useIsMobile();

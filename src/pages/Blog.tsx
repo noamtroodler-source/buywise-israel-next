@@ -13,6 +13,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 // Debounce hook for search
 function useDebounceValue<T>(value: T, delay: number): T {
@@ -32,6 +33,7 @@ function useDebounceValue<T>(value: T, delay: number): T {
 }
 
 export default function Blog() {
+  useTrackContentVisit('blog');
   const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();

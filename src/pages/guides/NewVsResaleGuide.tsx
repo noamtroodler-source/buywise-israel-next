@@ -40,6 +40,7 @@ import { Layout as PageLayout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 const navSections = [
   { id: 'overview', label: 'Overview' },
@@ -112,6 +113,7 @@ const buywiseFeatures = [
 ];
 
 export default function NewVsResaleGuide() {
+  useTrackContentVisit('guide');
   const [activeSection, setActiveSection] = useState('overview');
   const [showStickyNav, setShowStickyNav] = useState(false);
 

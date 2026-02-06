@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Check } from "lucide-react";
+import { useContentVisits } from "@/hooks/useContentVisits";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -17,6 +18,7 @@ interface MegaMenuProps {
 }
 
 export function MegaMenu({ config, className }: MegaMenuProps) {
+  const { isVisited } = useContentVisits();
   const columnCount = config.columns.length;
   
   return (
@@ -53,7 +55,10 @@ export function MegaMenu({ config, className }: MegaMenuProps) {
                               to={item.href}
                               className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                             >
-                              <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                              <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                                {isVisited(item.href) && (
+                                  <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                                )}
                                 {item.label}
                               </span>
                               {item.description && (

@@ -10,6 +10,7 @@ import { CarouselDots } from '@/components/shared/CarouselDots';
 import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
 import understandingListingsHero from '@/assets/guides/understanding-listings-hero.jpg';
@@ -166,6 +167,7 @@ function GuidesCarousel({ guides, phaseIndex }: GuidesCarouselProps) {
 }
 
 export default function Guides() {
+  useTrackContentVisit('guide');
   const isMobile = useIsMobile();
 
   return (

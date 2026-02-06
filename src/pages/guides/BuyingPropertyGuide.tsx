@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 // Navigation sections
 const navSections = [
@@ -358,6 +359,7 @@ const StageCard = ({ stage, index }: { stage: typeof timelineStages[0]; index: n
 );
 
 export default function BuyingPropertyGuide() {
+  useTrackContentVisit('guide');
   const [activeSection, setActiveSection] = useState('overview');
   const [isNavVisible, setIsNavVisible] = useState(false);
 

@@ -23,6 +23,7 @@ import { CityFeaturedProperties } from '@/components/city/CityFeaturedProperties
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { generateCityMeta, generateCityJsonLd, SITE_CONFIG } from '@/lib/seo';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 // Generic fallback for cities without identity_sentence in database
 
@@ -101,6 +102,7 @@ const cityHeroImages: Record<string, string> = {
 };
 
 export default function CityDetail() {
+  useTrackContentVisit('area');
   const { slug } = useParams<{ slug: string }>();
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: cityDetails } = useCityDetails(slug || '');
