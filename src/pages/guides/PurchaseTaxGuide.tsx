@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -215,6 +216,7 @@ const commonAssumptions = [
 ];
 
 export default function PurchaseTaxGuide() {
+  useTrackContentVisit('guide');
   const [activeSection, setActiveSection] = useState('overview');
   const [showStickyNav, setShowStickyNav] = useState(false);
 

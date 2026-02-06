@@ -28,6 +28,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -181,6 +182,7 @@ const surprises = [
 ];
 
 export default function TrueCostGuide() {
+  useTrackContentVisit('guide');
   const [showNav, setShowNav] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
 

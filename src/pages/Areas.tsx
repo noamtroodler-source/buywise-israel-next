@@ -6,6 +6,7 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { cityMatchesQuery } from '@/lib/utils/cityMatcher';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 // City images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -360,6 +361,7 @@ function RegionCarousel({ region, index }: { region: Region; index: number }) {
 }
 
 export default function Areas() {
+  useTrackContentVisit('area');
   const [activeRegion, setActiveRegion] = useState(regions[0].id);
   const [searchQuery, setSearchQuery] = useState('');
 

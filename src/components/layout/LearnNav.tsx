@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -7,8 +8,10 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { useContentVisits } from "@/hooks/useContentVisits";
 
 export function LearnNav() {
+  const { isVisited } = useContentVisits();
   return (
     <NavigationMenu className="!z-50">
       <NavigationMenuList className="space-x-0">
@@ -28,7 +31,10 @@ export function LearnNav() {
                         to="/blog"
                         className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                          {isVisited("/blog") && (
+                            <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
                           Blog
                         </span>
                         <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
@@ -43,7 +49,10 @@ export function LearnNav() {
                         to="/guides"
                         className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                          {isVisited("/guides") && (
+                            <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
                           All Guides
                         </span>
                         <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
@@ -58,7 +67,10 @@ export function LearnNav() {
                         to="/tools"
                         className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                          {isVisited("/tools") && (
+                            <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
                           All Tools
                         </span>
                         <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">
@@ -73,7 +85,10 @@ export function LearnNav() {
                         to="/glossary"
                         className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent transition-colors"
                       >
-                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground">
+                        <span className="text-sm font-medium text-foreground group-hover:text-accent-foreground flex items-center gap-1.5">
+                          {isVisited("/glossary") && (
+                            <Check className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
                           Hebrew Glossary
                         </span>
                         <span className="text-xs text-muted-foreground group-hover:text-accent-foreground/70">

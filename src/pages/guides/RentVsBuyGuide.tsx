@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 import rentVsBuyHero from '@/assets/guides/rent-vs-buy-hero.jpg';
 
@@ -206,6 +207,7 @@ const buywiseHelps = [
 ];
 
 export default function RentVsBuyGuide() {
+  useTrackContentVisit('guide');
   const [activeSection, setActiveSection] = useState('overview');
   const [showStickyNav, setShowStickyNav] = useState(false);
 

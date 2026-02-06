@@ -30,6 +30,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 import { Button } from '@/components/ui/button';
 
 const navSections = [
@@ -227,6 +228,7 @@ const buywiseHelps = [
 ];
 
 export default function MortgagesGuide() {
+  useTrackContentVisit('guide');
   const [showNav, setShowNav] = useState(false);
   const [activeSection, setActiveSection] = useState('overview');
 

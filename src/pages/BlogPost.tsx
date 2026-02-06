@@ -23,8 +23,10 @@ import {
 import { SEOHead } from '@/components/seo/SEOHead';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateArticleMeta, generateArticleJsonLd, SITE_CONFIG } from '@/lib/seo';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 export default function BlogPost() {
+  useTrackContentVisit('blog');
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = useBlogPost(slug || '');
   const { data: relatedPosts = [] } = useRelatedPosts(post?.category_id ?? undefined, post?.id);

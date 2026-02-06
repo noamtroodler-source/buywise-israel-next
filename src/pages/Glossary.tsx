@@ -17,6 +17,7 @@ import {
 } from '@/components/glossary';
 import { useGlossary, useGlossarySearch, GlossaryTerm } from '@/hooks/useGlossary';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 // Map terms to journey stages based on category and usage context
 function getTermJourneyStage(term: GlossaryTerm): string {
@@ -65,6 +66,7 @@ function getTermJourneyStage(term: GlossaryTerm): string {
 }
 
 export default function Glossary() {
+  useTrackContentVisit('glossary');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

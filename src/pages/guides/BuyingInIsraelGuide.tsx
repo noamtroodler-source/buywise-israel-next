@@ -11,6 +11,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { GlossaryTooltip } from '@/components/shared/GlossaryTooltip';
+import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 interface Section {
   id: string;
@@ -55,6 +56,7 @@ function CollapsibleSection({ section, isOpen, onToggle }: {
 }
 
 export default function BuyingInIsraelGuide() {
+  useTrackContentVisit('guide');
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(['overview']));
   const [readSections, setReadSections] = useState<Set<string>>(new Set());
 

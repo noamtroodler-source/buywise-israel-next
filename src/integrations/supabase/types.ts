@@ -1483,6 +1483,36 @@ export type Database = {
         }
         Relationships: []
       }
+      content_visits: {
+        Row: {
+          content_path: string
+          content_type: string
+          first_visited_at: string
+          id: string
+          last_visited_at: string
+          user_id: string
+          visit_count: number
+        }
+        Insert: {
+          content_path: string
+          content_type: string
+          first_visited_at?: string
+          id?: string
+          last_visited_at?: string
+          user_id: string
+          visit_count?: number
+        }
+        Update: {
+          content_path?: string
+          content_type?: string
+          first_visited_at?: string
+          id?: string
+          last_visited_at?: string
+          user_id?: string
+          visit_count?: number
+        }
+        Relationships: []
+      }
       developer_notifications: {
         Row: {
           action_url: string | null
