@@ -426,9 +426,6 @@ export default function Areas() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Understand the buying landscape before you search. Each city page breaks down pricing, yields, and market dynamics.
             </p>
-            <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto">
-              Select a city to explore price-per-sqm ranges, rental yields, historical trends, and key factors shaping each market.
-            </p>
             
             {/* Search Input */}
             <div className="max-w-md mx-auto">
