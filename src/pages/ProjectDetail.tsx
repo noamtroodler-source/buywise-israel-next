@@ -87,12 +87,14 @@ export default function ProjectDetail() {
       />
       <div className="min-h-screen pb-24 lg:pb-8">
         <div className="container py-4 md:py-6">
-          {/* Dual Navigation - Go back + All Projects */}
-          <DualNavigation
-            parentLabel="All Projects"
-            parentPath="/projects"
-            className="mb-4"
-          />
+          {/* Dual Navigation - Desktop only */}
+          <div className="hidden md:block">
+            <DualNavigation
+              parentLabel="All Projects"
+              parentPath="/projects"
+              className="mb-4"
+            />
+          </div>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import useEmblaCarousel from 'embla-carousel-react';
-import { ChevronLeft, ChevronRight, Share2, Heart, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Project } from '@/types/projects';
@@ -114,14 +113,6 @@ export function ProjectHero({ project, onShare, onSave, isSaved = false }: Proje
         animate={{ opacity: 1 }}
         className="space-y-4"
       >
-        {/* Back Button */}
-        <Button variant="ghost" size="sm" className="gap-2 -ml-2" asChild>
-          <Link to="/projects">
-            <ArrowLeft className="h-4 w-4" />
-            All Projects
-          </Link>
-        </Button>
-
         {/* Main Image */}
         <div 
           className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group"
