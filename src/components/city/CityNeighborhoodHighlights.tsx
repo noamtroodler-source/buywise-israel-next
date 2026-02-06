@@ -10,23 +10,14 @@ interface CityNeighborhoodHighlightsProps {
   neighborhoods: FeaturedNeighborhood[];
 }
 
+// Uniform blue styling for all price tiers (brand-compliant)
+const uniformBadgeStyle = 'bg-primary/10 text-primary border-primary/20';
+
 const priceTierConfig: Record<PriceTier, { label: string; className: string }> = {
-  'budget': { 
-    label: 'Budget-friendly', 
-    className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' 
-  },
-  'mid-range': { 
-    label: 'Mid-range', 
-    className: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' 
-  },
-  'premium': { 
-    label: 'Premium', 
-    className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20' 
-  },
-  'ultra-premium': { 
-    label: 'Ultra-premium', 
-    className: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20' 
-  },
+  'budget': { label: 'Budget-friendly', className: uniformBadgeStyle },
+  'mid-range': { label: 'Mid-range', className: uniformBadgeStyle },
+  'premium': { label: 'Premium', className: uniformBadgeStyle },
+  'ultra-premium': { label: 'Ultra-premium', className: uniformBadgeStyle },
 };
 
 function NeighborhoodCard({ neighborhood }: { neighborhood: FeaturedNeighborhood }) {
