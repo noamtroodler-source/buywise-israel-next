@@ -8,7 +8,7 @@ export { ProjectAmenities } from './ProjectAmenities';
 export { ProjectStickyCard, ProjectMobileContactBar } from './ProjectStickyCard';
 export { SimilarProjects } from './SimilarProjects';
 export { ProjectFAQ } from './ProjectFAQ';
-export { ProjectBreadcrumb } from './ProjectBreadcrumb';
+
 export { ProjectQuickSummary } from './ProjectQuickSummary';
 export { ProjectDescription } from './ProjectDescription';
 export { ProjectNextSteps } from './ProjectNextSteps';

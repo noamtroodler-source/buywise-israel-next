@@ -144,9 +144,9 @@ export default function PropertyDetail() {
         {/* Dual Navigation - Desktop only (mobile has MobileHeaderBack) */}
         <div className="hidden md:block mb-4">
           <DualNavigation
-            parentLabel="All Listings"
-            parentPath="/listings"
-            fallbackPath="/buy"
+            parentLabel={property.listing_status === 'for_rent' ? 'All Rentals' : 'All Properties'}
+            parentPath={`/listings?status=${property.listing_status}`}
+            fallbackPath={property.listing_status === 'for_rent' ? '/listings?status=for_rent' : '/listings?status=for_sale'}
           />
         </div>
         
