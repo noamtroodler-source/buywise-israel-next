@@ -871,6 +871,7 @@ export type Database = {
           created_at: string
           data_sources: Json | null
           description: string | null
+          featured_neighborhoods: Json | null
           gross_yield_percent: number | null
           gross_yield_percent_max: number | null
           gross_yield_percent_min: number | null
@@ -938,6 +939,7 @@ export type Database = {
           created_at?: string
           data_sources?: Json | null
           description?: string | null
+          featured_neighborhoods?: Json | null
           gross_yield_percent?: number | null
           gross_yield_percent_max?: number | null
           gross_yield_percent_min?: number | null
@@ -1005,6 +1007,7 @@ export type Database = {
           created_at?: string
           data_sources?: Json | null
           description?: string | null
+          featured_neighborhoods?: Json | null
           gross_yield_percent?: number | null
           gross_yield_percent_max?: number | null
           gross_yield_percent_min?: number | null

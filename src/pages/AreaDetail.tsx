@@ -7,10 +7,12 @@ import { useProperties } from '@/hooks/useProperties';
 import { useMarketData } from '@/hooks/useMarketData';
 import { useCanonicalMetrics } from '@/hooks/useCanonicalMetrics';
 import { useCityMarketFactors } from '@/hooks/useCityMarketFactors';
+import { useCityNeighborhoods } from '@/hooks/useCityNeighborhoods';
 import { getDistrictForCity } from '@/lib/utils/districtMapping';
 // New guide-style components
 import { CityHeroGuide } from '@/components/city/CityHeroGuide';
 import { CitySourceAttribution } from '@/components/city/CitySourceAttribution';
+import { CityNeighborhoodHighlights } from '@/components/city/CityNeighborhoodHighlights';
 // Existing components (kept)
 import { CityQuickStats } from '@/components/city/CityQuickStats';
 import { MarketOverviewCards } from '@/components/city/MarketOverviewCards';
@@ -103,6 +105,7 @@ export default function CityDetail() {
   const { data: city, isLoading: cityLoading, error } = useCity(slug || '');
   const { data: cityDetails } = useCityDetails(slug || '');
   const { data: dbMarketFactors = [] } = useCityMarketFactors(slug || '');
+  const { data: neighborhoods = [] } = useCityNeighborhoods(slug || '');
   const { data: properties = [] } = useProperties(city ? { city: city.name } : undefined);
   const { data: marketData = [], isLoading: marketLoading } = useMarketData(city?.name);
   const { data: canonicalMetrics } = useCanonicalMetrics(slug || '');
@@ -226,6 +229,14 @@ export default function CityDetail() {
             }}
             dataSources={(city as any).data_sources}
             lastVerified={canonicalMetrics?.updated_at}
+          />
+        )}
+
+        {/* 2.5. Neighborhood Highlights */}
+        {neighborhoods.length > 0 && (
+          <CityNeighborhoodHighlights 
+            cityName={city.name}
+            neighborhoods={neighborhoods}
           />
         )}
 
