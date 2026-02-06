@@ -424,10 +424,10 @@ export default function Areas() {
               Explore Market Environments
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Each city has its own rhythm, pricing, and lifestyle. Let's find one that fits you.
+              Understand the buying landscape before you search. Each city page breaks down pricing, yields, and market dynamics.
             </p>
             <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto">
-              Browse by region or search for a specific city. Click any area to see real market data, pricing trends, and what to expect.
+              Select a city to explore price-per-sqm ranges, rental yields, historical trends, and key factors shaping each market.
             </p>
             
             {/* Search Input */}
