@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -104,14 +103,6 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
         transition={{ duration: 0.4 }}
         className="w-full"
       >
-        {/* Back Button */}
-        <Button variant="ghost" size="sm" className="gap-2 -ml-2 mb-4" asChild>
-          <Link to={property.listing_status === 'for_rent' ? '/listings?status=for_rent' : '/listings?status=for_sale'}>
-            <ArrowLeft className="h-4 w-4" />
-            {property.listing_status === 'for_rent' ? 'All Rentals' : 'All Properties'}
-          </Link>
-        </Button>
-
         {/* Main Image */}
         <div className="relative w-full">
           <div 
