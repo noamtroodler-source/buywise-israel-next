@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -19,11 +19,11 @@ interface DualNavigationProps {
 }
 
 /**
- * DualNavigation provides two navigation options:
- * 1. A history-based "Go back" button that returns to the previous page
- * 2. A static link to the parent section for browsing similar items
+ * DualNavigation provides two navigation options grouped on the left:
+ * 1. A history-based "Go back" button (primary) that returns to the previous page
+ * 2. A static link to the parent section (secondary) for browsing similar items
  * 
- * This follows the industry pattern used by Zillow, Airbnb, etc.
+ * This follows the industry pattern used by Amazon, YouTube, etc.
  */
 export function DualNavigation({
   parentLabel,
@@ -53,12 +53,12 @@ export function DualNavigation({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-4',
+        'flex items-center gap-2',
         isOverlay && 'text-white',
         className
       )}
     >
-      {/* Left: Go back button */}
+      {/* Primary: Go back button */}
       <Button
         variant="ghost"
         size="sm"
@@ -66,7 +66,7 @@ export function DualNavigation({
         className={cn(
           '-ml-2 gap-1.5',
           isOverlay
-            ? 'text-white/80 hover:text-white hover:bg-white/10'
+            ? 'text-white/90 hover:text-white hover:bg-white/10'
             : 'hover:bg-primary/5'
         )}
       >
@@ -75,18 +75,27 @@ export function DualNavigation({
         <span className="sm:hidden">Back</span>
       </Button>
 
-      {/* Right: Parent section link */}
+      {/* Separator */}
+      <span
+        className={cn(
+          'text-sm',
+          isOverlay ? 'text-white/40' : 'text-muted-foreground/40'
+        )}
+      >
+        ·
+      </span>
+
+      {/* Secondary: Parent section link */}
       <Link
         to={parentPath}
         className={cn(
-          'flex items-center gap-1 text-sm font-medium transition-colors',
+          'text-sm transition-colors',
           isOverlay
-            ? 'text-white/70 hover:text-white'
-            : 'text-muted-foreground hover:text-primary'
+            ? 'text-white/60 hover:text-white'
+            : 'text-muted-foreground/70 hover:text-foreground'
         )}
       >
         {parentLabel}
-        <ChevronRight className="h-4 w-4" />
       </Link>
     </div>
   );
