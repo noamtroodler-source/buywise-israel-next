@@ -421,7 +421,7 @@ export default function Areas() {
             className="text-center space-y-6"
           >
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Explore Areas
+              Explore Market Environments
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Each city has its own rhythm, pricing, and lifestyle. Let's find one that fits you.
