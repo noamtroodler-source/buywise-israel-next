@@ -118,12 +118,14 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
               {/* Click hint overlay */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
               
-              {/* Status Badge */}
-              <div className="absolute top-4 left-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <Badge className="text-sm px-3 py-1.5 bg-background/90 text-foreground backdrop-blur-sm border-0">
-                  {statusLabels[property.listing_status] || property.listing_status}
-                </Badge>
-              </div>
+              {/* Status Badge - only show for sold/rented (terminal states) */}
+              {(property.listing_status === 'sold' || property.listing_status === 'rented') && (
+                <div className="absolute top-4 left-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Badge className="text-sm px-3 py-1.5 bg-background/90 text-foreground backdrop-blur-sm border-0">
+                    {statusLabels[property.listing_status] || property.listing_status}
+                  </Badge>
+                </div>
+              )}
 
               {/* Navigation Arrows */}
               {images.length > 1 && (
