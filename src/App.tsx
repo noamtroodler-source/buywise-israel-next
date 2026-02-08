@@ -41,7 +41,7 @@ const AgencyDetail = lazy(() => import("./pages/AgencyDetail"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Principles = lazy(() => import("./pages/Principles"));
 const ForAgents = lazy(() => import("./pages/ForAgents"));
-const ForDevelopers = lazy(() => import("./pages/ForDevelopers"));
+
 const Advertise = lazy(() => import("./pages/Advertise"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -213,7 +213,7 @@ const App = () => (
                         <Route path="/contact" element={<Contact />} />
                         <Route path="/about" element={<Principles />} />
                         <Route path="/for-agents" element={<ForAgents />} />
-                        <Route path="/for-developers" element={<ForDevelopers />} />
+                        
                         <Route path="/advertise" element={<Advertise />} />
                         
                         {/* Legal pages */}

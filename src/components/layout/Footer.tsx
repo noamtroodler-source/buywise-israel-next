@@ -30,15 +30,6 @@ export function Footer() {
               <Link to="/listings?status=for_rent" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Rent Property
               </Link>
-              <Link to="/listings?type=apartment" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Apartments
-              </Link>
-              <Link to="/listings?type=house" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Houses
-              </Link>
-              <Link to="/listings?type=penthouse" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Penthouses
-              </Link>
               <Link to="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Tools & Calculators
               </Link>
@@ -46,7 +37,7 @@ export function Footer() {
                 Explore Areas
               </Link>
               <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Our Principles
+                About Us
               </Link>
             </nav>
           </div>
@@ -73,9 +64,6 @@ export function Footer() {
               </Link>
               <Link to="/for-agents" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 For Agents & Agencies
-              </Link>
-              <Link to="/for-developers" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                For Developers
               </Link>
               <Link to="/agent/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Register as Agent

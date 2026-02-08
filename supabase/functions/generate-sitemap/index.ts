@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       { url: '/contact', priority: '0.5', changefreq: 'monthly' },
       { url: '/about', priority: '0.5', changefreq: 'monthly' },
       { url: '/for-agents', priority: '0.5', changefreq: 'monthly' },
-      { url: '/for-developers', priority: '0.5', changefreq: 'monthly' },
+      
       { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
       { url: '/terms', priority: '0.3', changefreq: 'yearly' },
       // Guide pages
