@@ -1,170 +1,227 @@
 
-# Fix Location Adding Flow - Clear Input and Handle Order Issues
+# Progressive Onboarding with Step-by-Step Persistence
 
 ## Summary
-Fix two bugs in the buyer onboarding location flow:
-1. The address input doesn't visually clear after adding a location
-2. If user selects an address before entering a location name, they have to re-do the address search
+Save user progress after each wizard step so they never lose data if they exit early. When they return to Profile, show a friendly "Resume Setup" prompt that takes them back to where they left off.
 
 ---
 
-## Current Problems
+## Key Concept: `onboarding_step` Field
 
-**Problem 1: Address doesn't clear visually**
-- The `AddressAutocomplete` component manages its own internal state via `usePlacesAutocomplete`
-- When parent calls `setLocationAddress('')`, it updates the prop but the internal `inputValue` in the component doesn't reset
-- This is why the address stays visible even after being added
-
-**Problem 2: Order-dependent flow is confusing**
-- Current logic: Auto-add only works if `locationLabel` is already filled when address is selected
-- If user types address first → it's stored but not added
-- User then types a name → nothing happens, address input still shows old value
-- User has to re-search the address
+Add a new field to `buyer_profiles` to track progress:
+- `onboarding_step`: `null` (not started), `1-7` (in progress), or `'complete'` (finished)
+- Each wizard step saves its data + updates `onboarding_step`
+- `onboarding_completed` becomes `true` only when all steps are done
 
 ---
 
-## Solution
+## Implementation
 
-### Part 1: Add a `reset` mechanism to AddressAutocomplete
+### Part 1: Database Change
 
-Add a `key` prop pattern to force the component to remount and reset internal state:
+Add `onboarding_step` column to `buyer_profiles`:
 
-```tsx
-// In BuyerOnboarding.tsx
-const [addressInputKey, setAddressInputKey] = useState(0);
+```sql
+ALTER TABLE public.buyer_profiles 
+ADD COLUMN IF NOT EXISTS onboarding_step text DEFAULT NULL;
 
-// When we want to clear:
-setAddressInputKey(prev => prev + 1);
+COMMENT ON COLUMN public.buyer_profiles.onboarding_step IS 
+  'Tracks wizard progress: null=not started, 1-7=current step, complete=finished';
 ```
-
-```tsx
-<AddressAutocomplete
-  key={addressInputKey}  // Forces remount on change
-  value={locationAddress}
-  ...
-/>
-```
-
-### Part 2: Handle address-first flow with pending state
-
-If user selects an address without a label, store it as "pending". When they enter a label, auto-add the pending address:
-
-```tsx
-// In handleAddressSelect:
-if (locationLabel.trim()) {
-  // Existing auto-add logic
-  addLocationAndReset(address);
-} else {
-  // Just store it - will be used when label is entered
-  setParsedAddress(address);
-  setLocationAddress(address.fullAddress);
-}
-
-// New effect to auto-add when label becomes available:
-useEffect(() => {
-  if (locationLabel.trim() && parsedAddress) {
-    addLocationAndReset(parsedAddress);
-  }
-}, [locationLabel]);
-```
-
-### Part 3: Update helper text based on state
-
-Show contextual guidance:
-- No label, no address: "Enter a name, then search for the address"
-- Label filled, no address: "Select an address to add it instantly"
-- No label, address selected: "Now enter a name to save this location"
 
 ---
 
-## Implementation Details
+### Part 2: Create Profile Early (After Step 1)
 
-### Changes to `BuyerOnboarding.tsx`
+Currently, profile is created only when the entire wizard completes. Change this to create/update after each step.
 
-1. **Add key state for address reset**
+**New approach in `BuyerOnboarding.tsx`:**
+
 ```typescript
-const [addressInputKey, setAddressInputKey] = useState(0);
-```
-
-2. **Refactor add logic into helper function**
-```typescript
-const addLocationAndReset = (address: ParsedAddress) => {
-  const newLocation: OnboardingLocation = {
-    label: locationLabel.trim(),
-    icon: locationIcon,
-    address: address.fullAddress,
-    latitude: address.latitude,
-    longitude: address.longitude,
+// Save progress after each step
+const saveStepProgress = async (stepNumber: number) => {
+  const partialData = {
+    ...getCurrentStepData(stepNumber),
+    onboarding_step: stepNumber.toString(),
+    onboarding_completed: false,
   };
   
-  setOnboardingLocations(prev => [...prev, newLocation]);
-  
-  // Reset ALL form state including forcing input to remount
-  setLocationLabel('');
-  setLocationIcon('home');
-  setLocationAddress('');
-  setParsedAddress(null);
-  setAddressInputKey(prev => prev + 1); // Force AddressAutocomplete to reset
-};
-```
-
-3. **Update handleAddressSelect to handle both cases**
-```typescript
-const handleAddressSelect = (address: ParsedAddress) => {
-  if (locationLabel.trim()) {
-    // Label exists - add immediately
-    addLocationAndReset(address);
+  if (existingProfile) {
+    await updateProfile.mutateAsync(partialData);
   } else {
-    // No label yet - store address as pending
-    setParsedAddress(address);
-    setLocationAddress(address.fullAddress);
+    await createProfile.mutateAsync(partialData);
   }
+};
+
+// Modify handleNext to save before advancing
+const handleNext = async () => {
+  const currentStepNumber = getStepNumber();
+  
+  // Save current step's data
+  if (typeof step === 'number') {
+    await saveStepProgress(currentStepNumber);
+  }
+  
+  // Then advance to next step
+  const nextStep = getNextStep(step);
+  setStep(nextStep);
 };
 ```
 
-4. **Add effect to auto-add when label is entered after address**
+**Data saved per step:**
+
+| Step | Data Saved |
+|------|------------|
+| 1 | `residency_status` |
+| 2 | `aliyah_year` (if Oleh) |
+| 3 | `is_first_property`, `is_upgrading` |
+| 4 | `purchase_purpose` |
+| 5 | `buyer_entity` |
+| 6 | `mortgage_preferences` (optional) |
+| 7 | `saved_locations` (optional) |
+
+---
+
+### Part 3: Resume from Saved Step
+
+When opening the wizard with an existing profile that has `onboarding_step` set (but not 'complete'), start from that step.
+
 ```typescript
+// In BuyerOnboarding.tsx useEffect
 useEffect(() => {
-  if (locationLabel.trim() && parsedAddress) {
-    addLocationAndReset(parsedAddress);
+  if (open) {
+    setAnswers(getInitialAnswers(existingProfile));
+    
+    // Resume from saved step if incomplete
+    if (existingProfile?.onboarding_step && 
+        existingProfile.onboarding_step !== 'complete') {
+      const savedStep = parseInt(existingProfile.onboarding_step);
+      setStep(savedStep as Step);
+    } else {
+      setStep('intro');
+    }
   }
-}, [locationLabel]);
-```
-
-5. **Update helper text to be dynamic**
-```tsx
-<p className="text-xs text-muted-foreground mt-1">
-  {parsedAddress && !locationLabel.trim()
-    ? "Now enter a name above to save this location"
-    : "Select an address to add it instantly"}
-</p>
-```
-
-6. **Apply key to AddressAutocomplete**
-```tsx
-<AddressAutocomplete
-  key={addressInputKey}
-  value={locationAddress}
-  onAddressSelect={handleAddressSelect}
-  onInputChange={setLocationAddress}
-  placeholder="Search for an address..."
-/>
+}, [open, existingProfile]);
 ```
 
 ---
 
-## User Flow After Fix
+### Part 4: Profile Page "Resume Setup" Card
 
-**Flow A: Name first (preferred)**
-1. Type "Mom's House" → icon auto-selects 🏠
-2. Search "Gissin Street 6" → click suggestion
-3. ✅ Location added instantly, form clears completely
+When profile exists but `onboarding_completed === false`, show a special card in `ProfileWelcomeHeader.tsx`:
 
-**Flow B: Address first (now works)**
-1. Search "Gissin Street 6" → click suggestion
-2. Address shows in input, helper says "Now enter a name above..."
-3. Type "Mom's House"
-4. ✅ Location added instantly, form clears completely
+```tsx
+// New component: ResumeSetupPrompt
+{!profile?.onboarding_completed && profile?.onboarding_step && (
+  <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 mt-4">
+    <div className="flex items-center gap-3">
+      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+        <Play className="h-5 w-5 text-primary" />
+      </div>
+      <div className="flex-1">
+        <p className="font-medium text-foreground">Pick up where you left off</p>
+        <p className="text-sm text-muted-foreground">
+          You're on step {profile.onboarding_step} of 7 — just a few more to unlock personalized insights
+        </p>
+      </div>
+      <Button size="sm" onClick={() => setShowOnboarding(true)}>
+        Resume
+        <ArrowRight className="h-4 w-4 ml-1" />
+      </Button>
+    </div>
+  </div>
+)}
+```
+
+---
+
+### Part 5: Update Completion Logic
+
+Mark complete when finishing final step:
+
+```typescript
+const handleComplete = async () => {
+  const profileData = {
+    ...answers,
+    onboarding_completed: true,
+    onboarding_step: 'complete',
+    mortgage_preferences: mortgagePreferences,
+    ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
+  };
+
+  // Update or create final profile
+  if (existingProfile) {
+    await updateProfile.mutateAsync(profileData);
+  } else {
+    await createProfile.mutateAsync(profileData);
+  }
+  onComplete();
+};
+```
+
+---
+
+### Part 6: Update Profile Completion Hook
+
+Adjust `useProfileCompletion.tsx` to handle partial profiles:
+
+```typescript
+// Buyer profile is "complete" only if onboarding_completed is true
+{
+  key: 'buyer-profile',
+  label: 'Buyer Profile',
+  isComplete: buyerProfile?.onboarding_completed === true,
+  description: buyerProfile?.onboarding_step && !buyerProfile.onboarding_completed
+    ? 'Resume setup to finish'
+    : 'Tax status and property ownership',
+}
+```
+
+---
+
+## User Experience Flow
+
+**User exits mid-wizard:**
+1. Completes Step 3 (property ownership) → Data saved
+2. Clicks X to close → Toast: "Progress saved — pick up anytime from your profile"
+3. Navigates elsewhere or closes browser
+
+**User returns later:**
+1. Goes to Profile page
+2. Sees "Pick up where you left off" card showing Step 4
+3. Clicks "Resume" → Wizard opens at Step 4
+4. Completes remaining steps → Full profile activated
+
+---
+
+## Visual: Profile Header States
+
+**State A: Never started**
+```
+┌────────────────────────────────────────────────┐
+│  ○ 0%   Profile Setup                          │
+│         Next step: Set up buyer profile        │
+└────────────────────────────────────────────────┘
+```
+
+**State B: Partially complete (new!)**
+```
+┌────────────────────────────────────────────────┐
+│  🎯 Pick up where you left off                 │
+│     Step 4 of 7 — almost there!     [Resume →] │
+└────────────────────────────────────────────────┘
+│  ○ 25%  Profile Setup                          │
+│         Resume setup to finish                 │
+└────────────────────────────────────────────────┘
+```
+
+**State C: Complete**
+```
+┌────────────────────────────────────────────────┐
+│  ✓ 100%  Profile Setup                         │
+│          All set! Your profile is complete.   │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -172,5 +229,22 @@ useEffect(() => {
 
 | File | Changes |
 |------|---------|
-| `src/components/onboarding/BuyerOnboarding.tsx` | Add key-based reset, refactor add logic, handle address-first flow, dynamic helper text |
-| **Total** | **1 file** |
+| **Database Migration** | Add `onboarding_step` column to `buyer_profiles` |
+| `src/components/onboarding/BuyerOnboarding.tsx` | Save after each step, resume from saved step |
+| `src/components/profile/ProfileWelcomeHeader.tsx` | Add "Resume Setup" prompt card |
+| `src/hooks/useProfileCompletion.tsx` | Update completion logic for partial profiles |
+| `src/hooks/useBuyerProfile.tsx` | Add `onboarding_step` to type interface |
+| `src/pages/Auth.tsx` | Update close handler toast message |
+| **Total** | **5 code files + 1 migration** |
+
+---
+
+## Edge Cases Handled
+
+| Scenario | Behavior |
+|----------|----------|
+| User clears browser data | Profile persisted in DB, loads on next login |
+| User returns after days/weeks | Resume prompt still shows saved step |
+| User wants to start over | "Edit Profile" restarts from intro |
+| Multiple devices | Profile syncs via Supabase |
+| User skips optional steps | Skip still saves current progress |
