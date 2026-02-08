@@ -190,7 +190,7 @@ export default function Auth() {
 
   const handleOnboardingClose = () => {
     setShowOnboarding(false);
-    toast('You can complete setup anytime from your profile', { icon: '👋' });
+    toast('Progress saved — pick up anytime from your profile', { icon: '👋' });
     navigate('/');
   };
 

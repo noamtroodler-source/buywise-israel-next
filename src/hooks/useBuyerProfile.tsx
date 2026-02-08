@@ -49,6 +49,8 @@ export interface BuyerProfile {
   budget_max?: number | null;
   // Readiness snapshot from tool
   readiness_snapshot?: ReadinessSnapshot | null;
+  // Onboarding progress tracking
+  onboarding_step?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, Briefcase, ArrowRight, Loader2, Pencil, Check, X } from 'lucide-react';
+import { LogOut, Shield, Briefcase, ArrowRight, Loader2, Pencil, Check, X, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ProfileCompletionRing } from './ProfileCompletionRing';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useUpdateProfile } from '@/hooks/useProfile';
+import { useBuyerProfile } from '@/hooks/useBuyerProfile';
+import { BuyerOnboarding } from '@/components/onboarding/BuyerOnboarding';
 
 interface ProfileWelcomeHeaderProps {
   fullName: string | null;
@@ -26,9 +28,11 @@ export function ProfileWelcomeHeader({
   const navigate = useNavigate();
   const { percentage, nextIncomplete, insight, isLoading } = useProfileCompletion();
   const updateProfile = useUpdateProfile();
+  const { data: buyerProfile } = useBuyerProfile();
   
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(fullName || '');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const firstName = fullName?.split(' ')[0] || 'there';
   
@@ -134,6 +138,27 @@ export function ProfileWelcomeHeader({
         </Button>
       </div>
 
+      {/* Resume Setup Prompt - Shows when onboarding incomplete */}
+      {buyerProfile && !buyerProfile.onboarding_completed && buyerProfile.onboarding_step && (
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Play className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-foreground">Pick up where you left off</p>
+              <p className="text-sm text-muted-foreground">
+                You're on step {buyerProfile.onboarding_step} of 7 — just a few more to unlock personalized insights
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setShowOnboarding(true)}>
+              Resume
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Progress Card */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl bg-muted/40 border border-border">
         {isLoading ? (
@@ -164,6 +189,14 @@ export function ProfileWelcomeHeader({
           </>
         )}
       </div>
+
+      {/* Onboarding Dialog */}
+      <BuyerOnboarding
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+        onClose={() => setShowOnboarding(false)}
+        existingProfile={buyerProfile}
+      />
     </div>
   );
 }
