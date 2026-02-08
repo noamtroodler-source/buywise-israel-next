@@ -46,6 +46,7 @@ export interface DeveloperProject {
   is_featured: boolean | null;
   is_published: boolean | null;
   views_count: number | null;
+  featured_highlight: string | null;
   verification_status: string | null;
   admin_feedback: string | null;
   last_renewed_at: string | null;
@@ -117,6 +118,7 @@ export function useCreateProject() {
       images?: string[];
       floor_plans?: string[];
       unit_types?: UnitTypeData[];
+      featured_highlight?: string;
       submitForReview?: boolean;
     }) => {
       // Fetch developer profile fresh at mutation time to avoid stale closure issues
@@ -165,6 +167,7 @@ export function useCreateProject() {
           amenities: projectData.amenities || null,
           images: projectData.images || null,
           floor_plans: projectData.floor_plans || null,
+          featured_highlight: projectData.featured_highlight || null,
           verification_status: verificationStatus,
           submitted_at: submittedAt,
           is_published: false,

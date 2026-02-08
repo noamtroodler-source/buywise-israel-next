@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { MapPin, Building, Calendar, Eye, Share2, Heart, CheckCircle } from 'lucide-react';
+import { MapPin, Building, Calendar, Eye, Share2, Heart, CheckCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { Project, Developer } from '@/types/projects';
 
 interface ProjectQuickSummaryProps {
-  project: Project & { construction_progress_percent?: number };
+  project: Project & { construction_progress_percent?: number; featured_highlight?: string | null };
   developer?: Developer | null;
   onShare?: () => void;
   onSave?: () => void;
@@ -114,6 +114,18 @@ export function ProjectQuickSummary({
           {project.city}
         </span>
       </div>
+
+      {/* Featured Selling Point */}
+      {project.featured_highlight && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary"
+        >
+          <Star className="h-4 w-4 text-primary fill-primary" />
+          <span className="text-sm font-medium text-foreground">{project.featured_highlight}</span>
+        </motion.div>
+      )}
 
       {/* Key Stats Bar - 2-column grid on mobile, flex on larger */}
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 py-3 sm:py-4 border-y border-border">

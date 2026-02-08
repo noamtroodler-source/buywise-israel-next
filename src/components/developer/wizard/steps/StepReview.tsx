@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye, Home, Bed, Bath } from 'lucide-react';
+import { Edit2, MapPin, Building, DollarSign, Calendar, Sparkles, Eye, Home, Bed, Bath, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useProjectWizard } from '../ProjectWizardContext';
@@ -67,6 +67,14 @@ export function StepReview({ onEditStep }: StepReviewProps) {
       </div>
 
       <ProjectPreviewDialog open={showPreview} onOpenChange={setShowPreview} />
+
+      {/* Featured Selling Point Preview */}
+      {data.featured_highlight && (
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary">
+          <Star className="h-4 w-4 text-primary fill-primary" />
+          <span className="text-sm font-medium text-foreground">{data.featured_highlight}</span>
+        </div>
+      )}
 
       {/* Main Image Preview */}
       {data.images.length > 0 && (
