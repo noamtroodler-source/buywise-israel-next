@@ -120,10 +120,10 @@ export function ProjectQuickSummary({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary"
+          className="flex items-center gap-2 border-l-2 border-primary/40 pl-3"
         >
-          <Star className="h-4 w-4 text-primary fill-primary" />
-          <span className="text-sm font-medium text-foreground">{project.featured_highlight}</span>
+          <Star className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{project.featured_highlight}</span>
         </motion.div>
       )}
 
