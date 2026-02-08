@@ -65,6 +65,7 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   const [locationIcon, setLocationIcon] = useState<LocationIcon>('home');
   const [locationAddress, setLocationAddress] = useState('');
   const [parsedAddress, setParsedAddress] = useState<ParsedAddress | null>(null);
+  const [addressInputKey, setAddressInputKey] = useState(0); // Force reset of AddressAutocomplete
   
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
@@ -228,24 +229,24 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     return answers.residency_status === 'oleh_hadash' ? 7 : 6;
   };
 
-  // Step 7: Add location handlers
-  const handleAddLocation = () => {
-    if (!locationLabel.trim() || !parsedAddress) return;
-    
+  // Step 7: Add location helper function
+  const addLocationAndReset = (address: ParsedAddress) => {
     const newLocation: OnboardingLocation = {
       label: locationLabel.trim(),
       icon: locationIcon,
-      address: parsedAddress.fullAddress,
-      latitude: parsedAddress.latitude,
-      longitude: parsedAddress.longitude,
+      address: address.fullAddress,
+      latitude: address.latitude,
+      longitude: address.longitude,
     };
     
-    setOnboardingLocations([...onboardingLocations, newLocation]);
-    // Reset form
+    setOnboardingLocations(prev => [...prev, newLocation]);
+    
+    // Reset ALL form state including forcing input to remount
     setLocationLabel('');
     setLocationIcon('home');
     setLocationAddress('');
     setParsedAddress(null);
+    setAddressInputKey(prev => prev + 1); // Force AddressAutocomplete to reset
   };
 
   const handleRemoveLocation = (index: number) => {
@@ -253,28 +254,23 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   };
 
   const handleAddressSelect = (address: ParsedAddress) => {
-    setParsedAddress(address);
-    setLocationAddress(address.fullAddress);
-    
-    // Auto-add if label is already filled
     if (locationLabel.trim()) {
-      const newLocation: OnboardingLocation = {
-        label: locationLabel.trim(),
-        icon: locationIcon,
-        address: address.fullAddress,
-        latitude: address.latitude,
-        longitude: address.longitude,
-      };
-      
-      setOnboardingLocations(prev => [...prev, newLocation]);
-      
-      // Reset form for next entry
-      setLocationLabel('');
-      setLocationIcon('home');
-      setLocationAddress('');
-      setParsedAddress(null);
+      // Label exists - add immediately
+      addLocationAndReset(address);
+    } else {
+      // No label yet - store address as pending
+      setParsedAddress(address);
+      setLocationAddress(address.fullAddress);
     }
   };
+  
+  // Auto-add when label is entered after address was selected
+  useEffect(() => {
+    if (locationLabel.trim() && parsedAddress) {
+      addLocationAndReset(parsedAddress);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationLabel]);
 
   // Auto-suggest icon based on label
   useEffect(() => {
@@ -849,13 +845,16 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                     <div className="space-y-1.5">
                       <Label className="text-sm">Address</Label>
                       <AddressAutocomplete
+                        key={addressInputKey}
                         value={locationAddress}
                         onAddressSelect={handleAddressSelect}
                         onInputChange={setLocationAddress}
                         placeholder="Search for an address..."
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Select an address to add it instantly
+                        {parsedAddress && !locationLabel.trim()
+                          ? "Now enter a name above to save this location"
+                          : "Select an address to add it instantly"}
                       </p>
                     </div>
                   </div>
