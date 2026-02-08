@@ -188,6 +188,12 @@ export default function Auth() {
     setShowPostSignupSuggestions(true);
   };
 
+  const handleOnboardingClose = () => {
+    setShowOnboarding(false);
+    toast('You can complete setup anytime from your profile', { icon: '👋' });
+    navigate('/');
+  };
+
   const handlePostSignupClose = () => {
     setShowPostSignupSuggestions(false);
     navigate('/');
@@ -387,7 +393,8 @@ export default function Auth() {
         <>
           <BuyerOnboarding 
             open={showOnboarding} 
-            onComplete={handleOnboardingComplete} 
+            onComplete={handleOnboardingComplete}
+            onClose={handleOnboardingClose}
           />
           
           <PostSignupSuggestions
