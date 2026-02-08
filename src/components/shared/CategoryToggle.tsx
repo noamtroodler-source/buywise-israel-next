@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-import { Home, Key } from 'lucide-react';
 
 interface CategoryToggleProps {
   value: 'buy' | 'rent';
@@ -31,7 +30,6 @@ export function CategoryToggle({
         )}
         onClick={() => onChange('buy')}
       >
-        <Home className="h-4 w-4" />
         Buy
         {buyCount !== undefined && (
           <span className={cn(
@@ -52,7 +50,6 @@ export function CategoryToggle({
         )}
         onClick={() => onChange('rent')}
       >
-        <Key className="h-4 w-4" />
         Rent
         {rentCount !== undefined && (
           <span className={cn(
