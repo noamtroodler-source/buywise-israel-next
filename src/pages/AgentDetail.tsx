@@ -295,6 +295,16 @@ export default function AgentDetail() {
           </CardContent>
         </Card>
 
+        {/* Category Toggle */}
+        <div className="flex justify-center">
+          <CategoryToggle
+            value={category}
+            onChange={setCategory}
+            buyCount={buyTotal}
+            rentCount={rentTotal}
+          />
+        </div>
+
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -329,16 +339,6 @@ export default function AgentDetail() {
               <p className="text-sm text-muted-foreground">Years Experience</p>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Category Toggle */}
-        <div className="flex justify-center">
-          <CategoryToggle
-            value={category}
-            onChange={setCategory}
-            buyCount={buyTotal}
-            rentCount={rentTotal}
-          />
         </div>
 
         {/* Tabs */}

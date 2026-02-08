@@ -248,6 +248,16 @@ export default function AgencyDetail() {
           </CardContent>
         </Card>
 
+        {/* Category Toggle */}
+        <div className="flex justify-center">
+          <CategoryToggle
+            value={category}
+            onChange={setCategory}
+            buyCount={buyTotal}
+            rentCount={rentTotal}
+          />
+        </div>
+
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -286,16 +296,6 @@ export default function AgencyDetail() {
               <p className="text-sm text-muted-foreground">Avg. Days on Market</p>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Category Toggle */}
-        <div className="flex justify-center">
-          <CategoryToggle
-            value={category}
-            onChange={setCategory}
-            buyCount={buyTotal}
-            rentCount={rentTotal}
-          />
         </div>
 
         {/* Our Team */}
