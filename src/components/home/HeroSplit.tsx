@@ -151,7 +151,7 @@ export function HeroSplit() {
                     For Sale
                   </div>
                 </div>
-                <div className="w-px h-6 bg-white/30" />
+                <div className="w-px h-8 bg-white/60" style={{ boxShadow: '0 0 4px rgba(0,0,0,0.3)' }} />
                 <div className="text-center">
                   <div 
                     className="text-base sm:text-lg font-semibold text-white"
@@ -166,7 +166,7 @@ export function HeroSplit() {
                     Rentals
                   </div>
                 </div>
-                <div className="w-px h-6 bg-white/30" />
+                <div className="w-px h-8 bg-white/60" style={{ boxShadow: '0 0 4px rgba(0,0,0,0.3)' }} />
                 <div className="text-center">
                   <div 
                     className="text-base sm:text-lg font-semibold text-white"
