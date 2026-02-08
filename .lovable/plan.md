@@ -1,368 +1,228 @@
 
-
-# Comprehensive Room System Overhaul: Bedrooms + Additional Rooms
+# Featured Highlight: Agent-Selected Standout Feature
 
 ## Summary
-This plan converts the entire platform from the traditional Israeli "rooms" counting system (which includes living areas) to a clearer **"Bedrooms + Additional Rooms"** model. This affects **all filters, wizards, cards, detail pages, mock data, and documentation**.
+This feature allows agents to select **one key highlight** for their property listing that will be prominently displayed at the top of the property detail page. This creates a visual "hero feature" that catches buyers' attention immediately.
 
 ---
 
-## Phase 1: Database Schema Update
+## Best Practice Options for Display Location
 
-**Migration to run:**
-```sql
--- Add additional_rooms to properties table
-ALTER TABLE properties ADD COLUMN additional_rooms integer DEFAULT 0;
+Based on the current page layout (from your screenshot), here are the recommended placement options:
 
--- Add additional_rooms to project_units table  
-ALTER TABLE project_units ADD COLUMN additional_rooms integer DEFAULT 0;
+### **Recommended: Between Address and Hero Stats Bar**
+```
+$2,298,630  $17,682/m²                    [Share] [Save]
+3 Room apartment in Herzliya
+📍 134 HaNassi Street, Nof Yam, Herzliya
+
+┌─────────────────────────────────────────────────────┐
+│  ✨ Featured: Private Pool with Sun Deck            │   ← NEW HIGHLIGHT
+└─────────────────────────────────────────────────────┘
+
+🛏️ 3+1 Bedrooms  |  🛁 1 Bath  |  📐 130m²  |  🏢 Apartment
 ```
 
+This placement:
+- Immediately visible after reading title/address
+- Doesn't interrupt the core property stats flow
+- Creates a natural "hook" before diving into details
+
 ---
 
-## Phase 2: Type Definitions Update
+## Visual Design Options
+
+### **Option A: Accent Banner (Recommended)**
+A subtle, eye-catching banner with brand styling:
+```
+┌─────────────────────────────────────────────────────┐
+│  ✨  Private Pool with Sun Deck                     │
+└─────────────────────────────────────────────────────┘
+```
+- Background: `bg-gradient-to-r from-primary/10 to-primary/5`
+- Border: `border-l-4 border-primary`
+- Icon: `Sparkles` or contextual icon (Pool icon for pool, etc.)
+
+### **Option B: Inline Badge (More Subtle)**
+A prominent badge inline with location:
+```
+📍 134 HaNassi Street, Herzliya  [✨ Private Pool]
+```
+
+### **Option C: Hero Chip Row**
+A dedicated row with the single standout:
+```
+      ┌────────────────────────────┐
+      │ ⭐ Highlight: Private Pool │
+      └────────────────────────────┘
+```
+
+**Recommendation: Option A** - The accent banner is the most effective because:
+1. High visibility without being intrusive
+2. Creates visual hierarchy
+3. Professional appearance
+4. Easy for agents to understand the value
+
+---
+
+## Implementation Plan
+
+### Phase 1: Database Schema
+Add a new column to store the featured highlight:
+
+```sql
+ALTER TABLE properties 
+ADD COLUMN featured_highlight TEXT DEFAULT NULL;
+```
+
+This is a simple text field because:
+- Agent can enter custom text (e.g., "Massive 40m² Balcony", "Private Rooftop Pool")
+- More flexible than predefined options
+- Allows specificity ("Ocean View from Every Room" vs just "Sea View")
+
+### Phase 2: Type Definitions
 
 **File: `src/types/database.ts`**
-- Add `additional_rooms: number | null` to the `Property` interface (around line 88)
+```typescript
+// Add to Property interface
+featured_highlight: string | null;
+```
 
 **File: `src/components/agent/wizard/PropertyWizardContext.tsx`**
-- Add `additional_rooms: number` to `PropertyWizardData` interface
-- Add default value `additional_rooms: 0` to `defaultPropertyData`
+```typescript
+// Add to PropertyWizardData interface
+featured_highlight: string;
 
-**File: `src/components/developer/wizard/ProjectWizardContext.tsx`**
-- Add `additionalRooms: number` to `UnitTypeData` interface
-- Add default value `additionalRooms: 0` to `defaultUnitType`
-
----
-
-## Phase 3: Agent Property Wizard Update
-
-**File: `src/components/agent/wizard/steps/StepDetails.tsx`**
-
-Current layout:
-```
-┌─────────────────────┐  ┌─────────────────────┐
-│ Rooms *             │  │ Bathrooms *         │
-└─────────────────────┘  └─────────────────────┘
+// Add to defaultPropertyData
+featured_highlight: '',
 ```
 
-New layout:
-```
-┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
-│ Bedrooms *          │  │ Other Rooms         │  │ Bathrooms *         │
-└─────────────────────┘  └─────────────────────┘  └─────────────────────┘
-```
+### Phase 3: Agent Wizard Update
 
-Changes:
-- Change section header from "Rooms" to "Layout"
-- Change "Rooms *" label to "Bedrooms *"
-- Add new "Other Rooms" input field with helper text "Living room, office, etc."
+**File: `src/components/agent/wizard/steps/StepFeatures.tsx`**
 
----
-
-## Phase 4: Developer Project Wizard Update
-
-**File: `src/components/developer/wizard/steps/StepUnitTypes.tsx`**
-
-Changes:
-- Change "Rooms *" label to "Bedrooms *" in unit type dialog
-- Add "Other Rooms" field next to it
-- Update `UNIT_TYPE_PRESETS` constant:
+Add a new section at the **top** of the Features step (making it the first thing agents see):
 
 ```
-Before: '2-Room Apartment', '3-Room Apartment', '4-Room Apartment', ...
-After:  '1 Bedroom', '2 Bedroom', '3 Bedroom', '4 Bedroom', ...
+┌─────────────────────────────────────────────────────────────────────┐
+│  ⭐ Featured Highlight                                              │
+│                                                                     │
+│  What's the ONE thing that makes this property special?             │
+│  This will be prominently displayed at the top of your listing.     │
+│                                                                     │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  [Input: e.g., "Private rooftop terrace with city views"]   │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  💡 Examples: "Private pool", "Massive 50m² balcony",              │
+│     "Fully renovated kitchen", "Sea view from every room"          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
----
+Design notes:
+- Use `Star` icon (from lucide-react) for the section header
+- Input field with placeholder text showing examples
+- Optional: Character limit (e.g., 60 chars) to keep it concise
+- Helper text explaining the prominence
 
-## Phase 5: Filter Components Update (Buy, Rent, Projects)
-
-### Desktop Filters
-
-**File: `src/components/filters/PropertyFilters.tsx`** (Buy & Rent)
-- Line 646: Change "Rooms" label to "Bedrooms"
-- Lines 647-654: **Remove the Israeli room tooltip** entirely (the HoverOnlyTooltip explaining "3-room = 2 bedrooms + living")
-- Keep filter logic working on `min_rooms` field
-
-**File: `src/components/filters/ProjectFilters.tsx`** (Projects)
-- Line 370: Change "Rooms" to "Bedrooms"
-- Lines 371-388: **Remove the Tooltip component** explaining Israeli room convention
-- Keep filter logic as-is
-
-### Mobile Filters
-
-**File: `src/components/filters/MobileFilterSheet.tsx`** (Buy & Rent mobile)
-- Line 233: Change section header from "Rooms" to "Bedrooms"
-- No tooltip exists here, just the label change
-
-**File: `src/components/filters/ProjectMobileFilterSheet.tsx`** (Projects mobile)
-- Line 179: Change "Rooms" to "Bedrooms"
-- Keep all filter button logic as-is
-
----
-
-## Phase 6: Property Cards Update
-
-**File: `src/components/property/PropertyCard.tsx`**
-
-Compact mode (line ~340):
-```tsx
-// Before:
-{property.bedrooms} bd | {property.bathrooms} ba
-
-// After:
-{property.bedrooms} bd{property.additional_rooms ? ` + ${property.additional_rooms}` : ''} | {property.bathrooms} ba
-```
-
-Standard mode (line ~531):
-- Add `DoorOpen` icon import from lucide-react
-- Show additional rooms stat when > 0:
-```
-🛏️ 3  🚪 +1  🛁 2  📐 95m²
-```
-
----
-
-## Phase 7: Property Detail Pages Update
+### Phase 4: Property Quick Summary Display
 
 **File: `src/components/property/PropertyQuickSummary.tsx`**
 
-Hero Stats Bar (lines ~306-313):
-- Change "Beds" label to "Bedrooms"
-- Add new stat for additional rooms when present:
+Add the featured highlight banner **after the address, before the Hero Stats Bar**:
 
 ```tsx
-{property.additional_rooms > 0 && (
-  <div className="flex items-center gap-2">
-    <DoorOpen className="h-5 w-5 text-muted-foreground" />
-    <div>
-      <p className="text-lg font-semibold">+{property.additional_rooms}</p>
-      <p className="text-xs text-muted-foreground">Other Rooms</p>
-    </div>
-  </div>
+{/* Featured Highlight */}
+{property.featured_highlight && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary"
+  >
+    <Star className="h-4 w-4 text-primary fill-primary" />
+    <span className="text-sm font-medium text-foreground">{property.featured_highlight}</span>
+  </motion.div>
 )}
 ```
 
----
+Position: Lines ~283-290 (after the address/location, before the Hero Stats Bar)
 
-## Phase 8: Project Display Updates
+### Phase 5: Property Card Consideration (Optional)
 
-**File: `src/components/project/ProjectFloorPlans.tsx`**
-- Change "Rooms" table header to "Beds"
-- Add "Other" column if `additional_rooms` data exists
-- Update mobile cards similarly
+The featured highlight could also appear on property cards as a badge, but this may clutter the compact card layout. 
 
-**File: `src/components/home/ProjectCarousel.tsx`**
-- Update unit display from "X Room" to "X Bed"
+**Recommendation: Don't show on cards initially.** The highlight is most impactful on the detail page where agents want to "close the deal." Cards should stay clean for quick scanning.
 
----
+### Phase 6: Update Submit Handlers
 
-## Phase 9: Calculator Tools Update
+**File: `src/pages/agent/NewPropertyWizard.tsx`**
+Add `featured_highlight` to the submission payload.
 
-**File: `src/components/tools/RentVsBuyCalculator.tsx`**
-- Change "Property Size (Rooms)" label to "Bedrooms"
-- **Remove the tooltip** explaining Israeli room convention
-- Update select options from "X rooms" to "X bedrooms"
+**File: `src/pages/agent/EditPropertyWizard.tsx`**
+Add `featured_highlight` to both form loading and submission.
 
-**File: `src/components/tools/InvestmentReturnCalculator.tsx`**
-- Same changes as above
+### Phase 7: Update StepReview
+
+**File: `src/components/agent/wizard/steps/StepReview.tsx`**
+Display the featured highlight in the review step so agents can verify it before submitting.
 
 ---
 
-## Phase 10: Other Components & Pages
+## Predefined Suggestions (Optional Enhancement)
 
-| File | Change |
-|------|--------|
-| `src/pages/agent/EditProperty.tsx` | Add "Other Rooms" field |
-| `src/pages/agent/EditPropertyWizard.tsx` | Add "Other Rooms" field |
-| `src/pages/agent/NewPropertyWizard.tsx` | Include `additional_rooms` in submit data |
-| `src/components/agent/wizard/steps/StepReview.tsx` | Display "X bedrooms + Y other rooms" |
-| `src/components/profile/RecentlyViewedSection.tsx` | Update display format |
-| `src/components/map-search/MapPropertyPopup.tsx` | Update display |
-| `src/pages/Listings.tsx` | **Remove empty state suggestion** about Israeli rooms |
-| `src/components/filters/CreateAlertDialog.tsx` | Update filter display label |
-| `src/components/developer/wizard/steps/ProjectPreviewDialog.tsx` | Update display |
-| `src/components/admin/UnitTypesPreview.tsx` | Update "Rooms" table header |
-| `src/pages/guides/ListingsGuide.tsx` | Remove "4-room apartment" confusion entry |
+To help agents, provide quick-select suggestions based on their existing data:
 
----
-
-## Phase 11: Remove All Israeli Room Convention References
-
-| File | Line | What to Remove |
-|------|------|----------------|
-| `PropertyFilters.tsx` | 647-654 | HoverOnlyTooltip about "3-room = 2 bedrooms" |
-| `ProjectFilters.tsx` | 371-388 | Tooltip about "4-room apt = 3 bedrooms" |
-| `RentVsBuyCalculator.tsx` | ~629 | InfoTooltip about room counting |
-| `InvestmentReturnCalculator.tsx` | ~467 | InfoTooltip about room counting |
-| `Listings.tsx` | ~342 | Empty state suggestion mentioning Israeli rooms |
-| `ListingsGuide.tsx` | ~146 | FAQ entry about "4-room apartment" confusion |
-
----
-
-## Phase 12: Update Mock Data Seeding
-
-**File: `supabase/functions/seed-demo-data/index.ts`**
-
-### Properties (Sale & Rent - lines 410-537)
-Add `additional_rooms` field to property inserts:
-
-```typescript
-// Current bedrooms logic:
-const bedrooms = propertyType === 'penthouse' ? randomInt(4, 6) : ...
-
-// Add additional rooms (typically 1 for living room, sometimes 2 for office/study):
-const additionalRooms = propertyType === 'house' ? randomInt(1, 3) :
-                        propertyType === 'penthouse' ? randomInt(1, 2) : 
-                        randomInt(1, 2);
-
-// In insert:
-bedrooms: bedrooms,
-additional_rooms: additionalRooms,
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Quick picks based on your listing:                                │
+│                                                                     │
+│  [Private Garden]  [Elevator Access]  [Double Parking]  [Custom]   │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-Update property titles:
-```typescript
-// Before:
-title: `${bedrooms}-Room ${propertyType}...`
-
-// After:
-title: `${bedrooms} Bedroom ${propertyType}...`
-```
-
-Update `generatePropertyDescription` function (line 224):
-```typescript
-// Before:
-`Stunning ${bedrooms}-room ${type} in...`
-
-// After:
-`Stunning ${bedrooms} bedroom ${type} in...`
-```
-
-### Project Units (lines 608-638)
-Update unit type definitions:
-
-```typescript
-// Before:
-const unitTypes = [
-  { type: '3-Room Apartment', bedrooms: 3, sizeMin: 70, sizeMax: 90 },
-  { type: '4-Room Apartment', bedrooms: 4, sizeMin: 90, sizeMax: 120 },
-  ...
-];
-
-// After:
-const unitTypes = [
-  { type: '2 Bedroom', bedrooms: 2, additionalRooms: 1, sizeMin: 70, sizeMax: 90 },
-  { type: '3 Bedroom', bedrooms: 3, additionalRooms: 1, sizeMin: 90, sizeMax: 120 },
-  { type: '4 Bedroom', bedrooms: 4, additionalRooms: 1, sizeMin: 120, sizeMax: 150 },
-  { type: 'Penthouse', bedrooms: 4, additionalRooms: 2, sizeMin: 150, sizeMax: 250 },
-  { type: 'Garden Apartment', bedrooms: 3, additionalRooms: 1, sizeMin: 100, sizeMax: 140 },
-];
-```
-
-Add `additional_rooms` to unit insert:
-```typescript
-additional_rooms: unitType.additionalRooms,
-```
-
----
-
-## Phase 13: Update Existing Database Records
-
-**SQL migration to update existing mock data:**
-```sql
--- Update existing properties with randomized additional_rooms
-UPDATE properties 
-SET additional_rooms = CASE 
-  WHEN property_type IN ('penthouse', 'house') THEN floor(random() * 2 + 1)::int
-  ELSE floor(random() * 2 + 1)::int
-END
-WHERE additional_rooms = 0 OR additional_rooms IS NULL;
-
--- Update existing project_units
-UPDATE project_units 
-SET additional_rooms = CASE 
-  WHEN unit_type ILIKE '%penthouse%' THEN 2
-  ELSE 1
-END
-WHERE additional_rooms = 0 OR additional_rooms IS NULL;
-```
-
----
-
-## Display Format Examples
-
-### Cards
-```
-Before: 3 bd | 2 ba | 95m²
-After:  3 bd + 1 | 2 ba | 95m²
-```
-
-### Detail Page Hero Stats
-```
-Before: 🛏️ 3 Beds  🛁 2 Baths  📐 95m²
-After:  🛏️ 3 Bedrooms  🚪 +1 Other  🛁 2 Baths  📐 95m²
-```
-
-### Filters
-```
-Before: "Rooms" with tooltip explaining Israeli convention
-After:  "Bedrooms" (clean, no tooltip)
-```
-
-### Property Titles
-```
-Before: "3-Room Apartment in Tel Aviv"
-After:  "3 Bedroom Apartment in Tel Aviv"
-```
+These would be generated from the features they've already selected, making it even easier.
 
 ---
 
 ## Files Changed Summary
 
-| Category | Files | Changes |
-|----------|-------|---------|
-| **Database** | 1 migration | Add `additional_rooms` to properties + project_units |
-| **Types** | 3 files | Add `additional_rooms` to interfaces |
-| **Agent Wizard** | 4 files | Split rooms into bedrooms + other rooms |
-| **Developer Wizard** | 2 files | Same split, update presets |
-| **Filters (Desktop)** | 2 files | Change labels, remove tooltips |
-| **Filters (Mobile)** | 2 files | Change labels |
-| **Cards** | 2 files | Update display format |
-| **Detail Pages** | 2 files | Add other rooms stat |
-| **Calculators** | 2 files | Remove tooltips, update labels |
-| **Mock Data** | 1 file | Update seeding logic + unit types |
-| **Other** | ~10 files | Various label and format updates |
-| **Total** | **~31 files** | |
+| File | Changes |
+|------|---------|
+| Database | Add `featured_highlight TEXT` column |
+| `src/types/database.ts` | Add to Property interface |
+| `src/components/agent/wizard/PropertyWizardContext.tsx` | Add to wizard data |
+| `src/components/agent/wizard/steps/StepFeatures.tsx` | Add input section at top |
+| `src/components/agent/wizard/steps/StepReview.tsx` | Display in review |
+| `src/components/property/PropertyQuickSummary.tsx` | Display banner |
+| `src/pages/agent/NewPropertyWizard.tsx` | Include in submit |
+| `src/pages/agent/EditPropertyWizard.tsx` | Include in form/submit |
+| `supabase/functions/seed-demo-data/index.ts` | Add mock highlights |
+| **Total** | **~9 files** |
 
 ---
 
-## Implementation Notes
+## Example Mock Data Highlights
 
-### Icons
-- Bedrooms: `Bed` (existing)
-- Other Rooms: `DoorOpen` from lucide-react
+For demo purposes, properties could have highlights like:
+- "Private rooftop terrace with panoramic views"
+- "Fully renovated with designer finishes"
+- "Direct beach access"
+- "Smart home automation throughout"
+- "Gourmet chef's kitchen"
+- "40m² south-facing balcony"
+- "Protected room with sea view"
+- "Private swimming pool"
 
-### Filter Logic
-The filter field `min_rooms` continues to filter on the `bedrooms` database column only. Users filter by bedrooms needed, not total rooms.
+---
 
-### Backward Compatibility
-- Existing data works as-is (`additional_rooms` defaults to 0)
-- Cards and detail pages only show "+X" when additional_rooms > 0
-- Filters continue working unchanged
+## Summary
 
-### Verification Checklist
-After implementation, verify:
-- [ ] Agent wizard shows Bedrooms + Other Rooms inputs
-- [ ] Developer wizard shows updated fields and presets
-- [ ] Buy filters show "Bedrooms" (no tooltip)
-- [ ] Rent filters show "Bedrooms" (no tooltip)
-- [ ] Project filters show "Bedrooms" (no tooltip)
-- [ ] Mobile filters for all three tabs updated
-- [ ] Property cards display format correct
-- [ ] Property detail pages show both stats
-- [ ] Calculators updated (no tooltips)
-- [ ] Mock data includes additional_rooms values
-- [ ] No Israeli room convention references remain
+This feature creates a clear visual hierarchy:
+1. **Price/Title** - What is it?
+2. **Address** - Where is it?
+3. **✨ Featured Highlight** - Why is it special? (NEW)
+4. **Hero Stats** - Core specs
+5. **Quick Facts** - Secondary details
+6. **Amenities** - Full feature list
 
+The agent gets to control the narrative by choosing what buyers see first after the basics.
