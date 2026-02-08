@@ -1,173 +1,407 @@
 
-# Fix AI Comparison Summary Reliability
+# Buy vs Rent Category Toggle for Agent & Agency Pages
 
 ## Summary
-The AI summary sometimes fails and shows an error that persists without recovering. This is caused by timing issues and lack of automatic retry when the API call fails.
+Add a **Buy | Rent** toggle to agent and agency profile pages. When toggled, all stats, tab labels, and listing grids update to show only sales or rentals data. The design stays clean by reusing existing toggle patterns from the map page.
 
 ---
 
-## Root Causes Identified
+## Current Issues
 
-**1. Race Condition with Winner Data**
-- `generateSummary()` fires when `properties` arrive
-- But `winnerCounts` (computed from `properties`) may still be empty or stale at that moment
-- The AI receives incomplete data, potentially causing issues
-
-**2. No Automatic Retry**
-- If the edge function fails (network, cold start, rate limit), the error persists
-- User must manually click "Try again" which many won't notice
-
-**3. Dependency Array Issue**
-- `generateSummary` is in the useEffect dependency array
-- When `winnerCounts` updates, it recreates the callback but doesn't re-trigger the effect properly
+| Problem | Impact |
+|---------|--------|
+| Stats mix sales + rentals | "Median Price" shows $500K sales mixed with ₪3K rentals |
+| "Active Listings" combines all types | Can't see sales vs rental track record |
+| "Past Listings" says "No past sales" | Confusing when agent has rented units |
+| Tab labels are static | "For Sale" tab doesn't exist for rental-focused agents |
 
 ---
 
-## Solution
+## Solution: Category-Aware Pages
 
-### Part 1: Fix the Timing with Proper Guards
+### Design Concept
 
-Only call the API when data is fully ready:
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  [Agent Hero Card]                                          │
+│                                                              │
+│  ╔═══════════════╗  ╔═══════════════╗  ╔═══════════════╗   │
+│  ║  Active: 12   ║  ║ Median: ₪2.1M ║  ║ Days: 45      ║   │
+│  ╚═══════════════╝  ╚═══════════════╝  ╚═══════════════╝   │
+│                                                              │
+│  ┌──────────────────┐                                        │
+│  │ [Buy] [Rent]     │  ← Category Toggle                    │
+│  └──────────────────┘                                        │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │ For Sale (5)  |  Sold (8)  |  Blog (3)                │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  [Property Cards Grid...]                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Toggle "Rent":**
+- Stats recalculate for rentals only
+- Tabs change to: **For Rent (7) | Rented (2) | Blog (3)**
+- Grid shows only rental properties
+
+---
+
+## Part 1: Update Hooks to Accept Category Parameter
+
+### useAgentListings (src/hooks/useAgent.tsx)
+
+Add category filter to the listings query:
 
 ```typescript
-const generateSummary = useCallback(async () => {
-  // Guard: Need at least 2 properties with complete data
-  if (properties.length < 2) return;
-  
-  // Guard: Properties must have IDs (not placeholder/loading data)
-  if (!properties.every(p => p.id && p.title)) return;
+export function useAgentListings(
+  agentId: string, 
+  status: 'active' | 'past',
+  category: 'buy' | 'rent' = 'buy'  // NEW PARAM
+) {
+  return useQuery({
+    queryKey: ['agent-listings', agentId, status, category],
+    queryFn: async () => {
+      // Map category + status to listing_status values
+      const statusFilter = category === 'buy'
+        ? (status === 'active' ? ['for_sale'] : ['sold'])
+        : (status === 'active' ? ['for_rent'] : ['rented']);
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('agent_id', agentId)
+        .in('listing_status', statusFilter)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!agentId,
+  });
+}
+```
 
-  setLoading(true);
-  setError(null);
-  // ... rest of fetch logic
-}, [properties, isRental]); // Remove winnerCounts - compute fresh in the call
+### useAgentStats (src/hooks/useAgent.tsx)
 
-useEffect(() => {
-  const newIds = properties.map(p => p.id).sort().join(',');
+Add category filter to stats calculation:
+
+```typescript
+export function useAgentStats(agentId: string, category: 'buy' | 'rent' = 'buy') {
+  return useQuery({
+    queryKey: ['agent-stats', agentId, category],
+    queryFn: async () => {
+      const activeStatus = category === 'buy' ? 'for_sale' : 'for_rent';
+      const pastStatus = category === 'buy' ? 'sold' : 'rented';
+      
+      const { data: properties, error } = await supabase
+        .from('properties')
+        .select('price, listing_status, created_at')
+        .eq('agent_id', agentId)
+        .eq('is_published', true)
+        .in('listing_status', [activeStatus, pastStatus]);
+      
+      // ... rest of median/days calculation (unchanged logic)
+      
+      return {
+        activeListingsCount: activeListings.length,
+        pastListingsCount: pastListings.length,
+        medianPrice,
+        avgDaysOnMarket,
+      };
+    },
+    enabled: !!agentId,
+  });
+}
+```
+
+### useAgencyListings & useAgencyStats (src/hooks/useAgency.tsx)
+
+Same pattern - add `category` parameter:
+
+```typescript
+export function useAgencyListings(
+  agencyId: string | undefined, 
+  status: 'active' | 'past',
+  category: 'buy' | 'rent' = 'buy'
+) {
+  // Filter by for_sale/sold or for_rent/rented based on category
+}
+
+export function useAgencyStats(agencyId: string | undefined, category: 'buy' | 'rent' = 'buy') {
+  // Calculate stats for selected category only
+}
+```
+
+---
+
+## Part 2: Create Reusable Category Toggle Component
+
+Create a shared component that can be reused on both agent and agency pages:
+
+### New: src/components/shared/CategoryToggle.tsx
+
+```typescript
+import { cn } from '@/lib/utils';
+import { Home, Key } from 'lucide-react';
+
+interface CategoryToggleProps {
+  value: 'buy' | 'rent';
+  onChange: (value: 'buy' | 'rent') => void;
+  buyCount?: number;
+  rentCount?: number;
+  className?: string;
+}
+
+export function CategoryToggle({ 
+  value, 
+  onChange, 
+  buyCount, 
+  rentCount,
+  className 
+}: CategoryToggleProps) {
+  return (
+    <div className={cn(
+      "inline-flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden",
+      className
+    )}>
+      <button
+        className={cn(
+          "px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
+          value === 'buy' 
+            ? "bg-primary text-primary-foreground" 
+            : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => onChange('buy')}
+      >
+        <Home className="h-4 w-4" />
+        Buy
+        {buyCount !== undefined && (
+          <span className="text-xs opacity-80">({buyCount})</span>
+        )}
+      </button>
+      <button
+        className={cn(
+          "px-4 py-2 text-sm font-medium transition-all flex items-center gap-2",
+          value === 'rent' 
+            ? "bg-primary text-primary-foreground" 
+            : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={() => onChange('rent')}
+      >
+        <Key className="h-4 w-4" />
+        Rent
+        {rentCount !== undefined && (
+          <span className="text-xs opacity-80">({rentCount})</span>
+        )}
+      </button>
+    </div>
+  );
+}
+```
+
+---
+
+## Part 3: Update AgentDetail.tsx
+
+### Add State and Pass Category to Hooks
+
+```typescript
+export default function AgentDetail() {
+  const { id } = useParams<{ id: string }>();
+  const [category, setCategory] = useState<'buy' | 'rent'>('buy');
   
-  // Only trigger when IDs change AND we have valid data
-  if (newIds && newIds !== propertyIds && properties.length >= 2) {
-    setPropertyIds(newIds);
-    setSummary(null);
-    generateSummary();
+  const { data: agent, isLoading: agentLoading } = useAgent(id || '');
+  
+  // Pass category to all data hooks
+  const { data: activeListings, isLoading: activeLoading } = useAgentListings(id || '', 'active', category);
+  const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past', category);
+  const { data: stats } = useAgentStats(id || '', category);
+  
+  // Also get total counts for toggle badges
+  const { data: buyStats } = useAgentStats(id || '', 'buy');
+  const { data: rentStats } = useAgentStats(id || '', 'rent');
+  
+  // ... rest of component
+}
+```
+
+### Add Toggle Between Stats and Tabs
+
+```tsx
+{/* Stats Bar */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+  {/* ... existing stat cards ... */}
+</div>
+
+{/* Category Toggle */}
+<div className="flex justify-center">
+  <CategoryToggle
+    value={category}
+    onChange={setCategory}
+    buyCount={(buyStats?.activeListingsCount ?? 0) + (buyStats?.pastListingsCount ?? 0)}
+    rentCount={(rentStats?.activeListingsCount ?? 0) + (rentStats?.pastListingsCount ?? 0)}
+  />
+</div>
+
+{/* Tabs - Now with dynamic labels */}
+<Tabs defaultValue="active" className="space-y-6">
+  <TabsList>
+    <TabsTrigger value="active">
+      {category === 'buy' ? 'For Sale' : 'For Rent'}
+      <span className="ml-1.5 ...">{stats?.activeListingsCount ?? 0}</span>
+    </TabsTrigger>
+    <TabsTrigger value="past">
+      {category === 'buy' ? 'Sold' : 'Rented'}
+      <span className="ml-1.5 ...">{stats?.pastListingsCount ?? 0}</span>
+    </TabsTrigger>
+    <TabsTrigger value="blog">Blog</TabsTrigger>
+  </TabsList>
+  {/* ... tab content unchanged ... */}
+</Tabs>
+```
+
+### Update Empty State Messages
+
+```tsx
+{/* Active tab empty state */}
+<p className="text-muted-foreground">
+  {category === 'buy' 
+    ? 'No properties for sale at this time.'
+    : 'No rentals available at this time.'
   }
-}, [properties, propertyIds, generateSummary]);
-```
+</p>
 
-### Part 2: Add Automatic Retry with Exponential Backoff
-
-If the call fails, retry automatically (up to 2 times):
-
-```typescript
-const [retryCount, setRetryCount] = useState(0);
-const MAX_RETRIES = 2;
-
-const generateSummary = useCallback(async () => {
-  if (properties.length < 2) return;
-  
-  setLoading(true);
-  setError(null);
-
-  try {
-    // ... fetch logic
-    
-    if (!response.ok) {
-      // Don't retry on rate limit or payment errors
-      if (response.status === 429 || response.status === 402) {
-        setError('AI service temporarily unavailable');
-        return;
-      }
-      throw new Error('Failed to generate summary');
-    }
-    
-    // Success - reset retry count
-    setRetryCount(0);
-    // ... handle success
-  } catch (err) {
-    console.error('Error generating AI summary:', err);
-    
-    // Auto-retry on transient failures
-    if (retryCount < MAX_RETRIES) {
-      setRetryCount(prev => prev + 1);
-      // Retry after delay (1s, then 2s)
-      setTimeout(() => generateSummary(), 1000 * (retryCount + 1));
-      return;
-    }
-    
-    setError('Unable to generate AI summary');
-  } finally {
-    setLoading(false);
+{/* Past tab empty state */}
+<p className="text-muted-foreground">
+  {category === 'buy'
+    ? 'No past sales recorded yet.'
+    : 'No past rentals recorded yet.'
   }
-}, [properties, isRental, retryCount]);
-```
-
-### Part 3: Compute winnerCounts Inside the Call
-
-Instead of passing `winnerCounts` as a dependency (which causes stale data issues), compute it fresh at call time:
-
-```typescript
-const generateSummary = useCallback(async () => {
-  if (properties.length < 2) return;
-  
-  // Compute winner data fresh at call time
-  const freshWinnerData = properties.map(p => ({
-    title: p.title,
-    wins: 0 // Basic version - or compute from rows if needed
-  }));
-  
-  const payload = {
-    properties: properties.map(p => ({...})),
-    isRental,
-    winnerData: winnerCounts.map(w => ({ title: w.title, wins: w.wins })),
-  };
-  // ... rest
-}, [properties, isRental, winnerCounts]);
-```
-
-### Part 4: Reset State on Property Change
-
-Ensure clean state when properties change:
-
-```typescript
-// Reset retry count when properties change
-useEffect(() => {
-  setRetryCount(0);
-}, [properties]);
+</p>
 ```
 
 ---
 
-## Summary of Changes
+## Part 4: Update AgencyDetail.tsx
 
-| Issue | Fix |
-|-------|-----|
-| Race condition with data | Add guards to ensure data is complete before calling |
-| No auto-retry | Add exponential backoff retry (max 2 attempts) |
-| Stale winnerCounts | Keep winnerCounts in deps but ensure proper timing |
-| Error persists forever | Auto-retry on transient failures |
+Same pattern as AgentDetail:
+
+```typescript
+export default function AgencyDetail() {
+  const [category, setCategory] = useState<'buy' | 'rent'>('buy');
+  
+  // Pass category to hooks
+  const { data: activeListings } = useAgencyListings(agency?.id, 'active', category);
+  const { data: pastListings } = useAgencyListings(agency?.id, 'past', category);
+  const { data: stats } = useAgencyStats(agency?.id, category);
+  
+  // Get both stats for toggle badges
+  const { data: buyStats } = useAgencyStats(agency?.id, 'buy');
+  const { data: rentStats } = useAgencyStats(agency?.id, 'rent');
+  
+  // ... add CategoryToggle before Tabs
+  // ... update tab labels dynamically
+}
+```
+
+### Update "Our Team" Section (Optional Enhancement)
+
+Show agents' listing counts filtered by category:
+
+```tsx
+<Badge variant="secondary" className="text-xs">
+  {agent.activeListingsCount} {category === 'buy' ? 'for sale' : 'for rent'}
+</Badge>
+```
+
+This would require updating `useAgencyAgents` to accept category param.
 
 ---
 
-## Files Changed
+## Part 5: Update Stats Label for Rentals
+
+The "Median Price" label doesn't make sense for rentals. Update dynamically:
+
+```tsx
+{/* Median Price Card */}
+<Card>
+  <CardContent className="p-4 text-center">
+    <p className="text-2xl font-bold text-primary">
+      {stats?.medianPrice ? formatPrice(stats.medianPrice, 'ILS') : '—'}
+    </p>
+    <p className="text-sm text-muted-foreground">
+      {category === 'buy' ? 'Median Price' : 'Median Rent'}
+    </p>
+  </CardContent>
+</Card>
+```
+
+---
+
+## Summary of Files Changed
 
 | File | Changes |
 |------|---------|
-| `src/components/compare/CompareAISummary.tsx` | Add retry logic, improve guards, fix timing |
+| **src/components/shared/CategoryToggle.tsx** | NEW - Reusable Buy/Rent toggle component |
+| **src/hooks/useAgent.tsx** | Add `category` param to `useAgentListings` and `useAgentStats` |
+| **src/hooks/useAgency.tsx** | Add `category` param to `useAgencyListings`, `useAgencyStats`, optionally `useAgencyAgents` |
+| **src/pages/AgentDetail.tsx** | Add state, CategoryToggle, dynamic tab labels, dynamic empty states |
+| **src/pages/AgencyDetail.tsx** | Same changes as AgentDetail |
 
 ---
 
-## Behavior After Fix
+## User Experience Flow
 
-**Before:**
-1. Properties load
-2. API call fires immediately (maybe with stale winner data)
-3. If fails → "Unable to generate" shows forever
-4. User must manually click "Try again"
+**Visitor lands on agent page:**
+1. Sees "Buy" selected by default
+2. Stats show sales-only: "Median Price ₪2.1M", "12 Active" (for sale)
+3. Tabs show: "For Sale (5) | Sold (8) | Blog"
+4. Clicks "Rent" toggle
+5. Stats update: "Median Rent ₪8,500", "7 Active" (for rent)
+6. Tabs change: "For Rent (7) | Rented (2) | Blog"
+7. Grid refreshes with only rental properties
 
-**After:**
-1. Properties load
-2. Component waits for complete data
-3. API call fires with correct data
-4. If fails → Auto-retry after 1s, then 2s
-5. After 2 retries → Shows error with "Try again" button
-6. Much more resilient to network hiccups and cold starts
+**Agency page works identically**, with additional "Our Team" section showing filtered counts per agent.
+
+---
+
+## Edge Cases Handled
+
+| Scenario | Behavior |
+|----------|----------|
+| Agent has only sales, no rentals | Rent toggle shows (0), tabs show empty state |
+| Agent has only rentals, no sales | Buy toggle shows (0), default could switch to rent if detected |
+| Mixed agent with both | Both toggles show counts, user can switch freely |
+| Stats calculation | Only calculates for selected category, no mixing |
+| URL sharing | Could add `?category=rent` param for shareable links (optional enhancement) |
+
+---
+
+## Visual: Before vs After
+
+**Before (current):**
+```text
+┌─────────────────────────────────────────────────┐
+│  Active: 19  │  Median: ₪485K  │  Days: 67    │
+│  (mixed!)    │  (mixed!)       │  (mixed!)    │
+├─────────────────────────────────────────────────┤
+│  Active Listings (19)  │  Past Listings (10)   │
+│  [Mix of sales + rentals in same grid]         │
+└─────────────────────────────────────────────────┘
+```
+
+**After (with toggle):**
+```text
+┌─────────────────────────────────────────────────┐
+│  Active: 12  │  Median: ₪2.1M  │  Days: 45    │
+│  (sales only)│  (sales only)   │  (sales only)│
+├─────────────────────────────────────────────────┤
+│           [Buy (20)] [Rent (9)]                 │
+├─────────────────────────────────────────────────┤
+│  For Sale (12)  │  Sold (8)  │  Blog (3)       │
+│  [Only sales properties in grid]               │
+└─────────────────────────────────────────────────┘
+```
