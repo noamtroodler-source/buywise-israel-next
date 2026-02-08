@@ -140,6 +140,14 @@ export function StepReview({ onEditStep }: StepReviewProps) {
             </Button>
           </div>
 
+          {/* Featured Highlight */}
+          {data.featured_highlight && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary">
+              <CheckCircle className="h-4 w-4 text-primary fill-primary" />
+              <span className="text-sm font-medium">{data.featured_highlight}</span>
+            </div>
+          )}
+
           {/* Features */}
           <div>
             <div className="flex items-center justify-between mb-3">

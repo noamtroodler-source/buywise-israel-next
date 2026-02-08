@@ -52,6 +52,7 @@ export interface CreatePropertyData {
   pets_policy?: string;
   agent_fee_required?: boolean;
    furniture_items?: string[];
+   featured_highlight?: string | null;
 }
 
 export function useAgentProfile() {

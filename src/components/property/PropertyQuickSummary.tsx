@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap } from 'lucide-react';
+import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap, Star } from 'lucide-react';
  import { Armchair, Refrigerator, Tv, UtensilsCrossed, WashingMachine } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
@@ -42,6 +42,7 @@ interface PropertyQuickSummaryProps {
     vaad_bayit_monthly?: number | null;
      furnished_status?: 'fully' | 'semi' | 'unfurnished' | null;
      furniture_items?: string[] | null;
+     featured_highlight?: string | null;
   };
   onShare?: () => void;
   onSave?: () => void;
@@ -300,6 +301,18 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
             </Button>
           </div>
         </div>
+
+        {/* Featured Highlight Banner */}
+        {property.featured_highlight && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border-l-4 border-primary"
+          >
+            <Star className="h-4 w-4 text-primary fill-primary shrink-0" />
+            <span className="text-sm font-medium text-foreground">{property.featured_highlight}</span>
+          </motion.div>
+        )}
 
         {/* Hero Stats Bar */}
         <div className="flex flex-wrap gap-6 py-4 border-y border-border">

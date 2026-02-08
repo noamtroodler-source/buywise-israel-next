@@ -47,6 +47,9 @@ export interface PropertyWizardData {
    
    // Furniture items for furnished properties
    furniture_items: string[];
+   
+   // Featured highlight - agent's standout feature
+   featured_highlight: string;
   
   // Step 4: Photos
   images: string[];
@@ -108,6 +111,8 @@ export const defaultPropertyData: PropertyWizardData = {
   agent_fee_required: undefined,
    // Furniture items
    furniture_items: [],
+   // Featured highlight
+   featured_highlight: '',
   images: [],
   description: '',
   highlights: [],
