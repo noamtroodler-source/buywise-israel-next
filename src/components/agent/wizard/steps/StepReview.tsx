@@ -111,7 +111,7 @@ export function StepReview({ onEditStep }: StepReviewProps) {
           <div className="flex flex-wrap gap-4 py-4 border-y border-border">
             <div className="flex items-center gap-1.5">
               <Bed className="h-4 w-4 text-muted-foreground" />
-              <span>{data.bedrooms} beds</span>
+              <span>{data.bedrooms} beds{data.additional_rooms ? ` + ${data.additional_rooms} other` : ''}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Bath className="h-4 w-4 text-muted-foreground" />

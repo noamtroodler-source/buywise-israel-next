@@ -93,10 +93,10 @@ const TIME_HORIZONS = [5, 10, 15, 20, 25];
 
 // Room options for rental matching
 const ROOM_OPTIONS = [
-  { value: '2', label: '2 Rooms' },
-  { value: '3', label: '3 Rooms' },
-  { value: '4', label: '4 Rooms' },
-  { value: '5', label: '5+ Rooms' },
+  { value: '2', label: '2 Bedrooms' },
+  { value: '3', label: '3 Bedrooms' },
+  { value: '4', label: '4 Bedrooms' },
+  { value: '5', label: '5+ Bedrooms' },
 ];
 
 // Estimated sqm per room count
@@ -622,11 +622,10 @@ export function RentVsBuyCalculator() {
             </Select>
           </div>
           
-          {/* Rooms */}
+          {/* Bedrooms */}
           <div className="space-y-2">
             <Label htmlFor="rooms" className="flex items-center text-sm font-medium">
-              Property Size (Rooms)
-              <InfoTooltip content="Israeli room count includes living room and bedrooms. A '3-room' apartment typically has 2 bedrooms + living room." />
+              Bedrooms
             </Label>
             <Select value={rooms} onValueChange={setRooms}>
               <SelectTrigger className="h-11">

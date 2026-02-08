@@ -196,7 +196,7 @@ export function ProjectFloorPlans({ units, developer }: ProjectFloorPlansProps) 
                 <TableRow>
                   <TableHead>Unit Type</TableHead>
                   <TableHead className="text-center">Floor Plan</TableHead>
-                  <TableHead className="text-center">Rooms</TableHead>
+                  <TableHead className="text-center">Beds</TableHead>
                   <TableHead className="text-center">Baths</TableHead>
                   <TableHead className="text-center">Size ({areaUnitSymbol})</TableHead>
                   <TableHead className="text-center">Floors</TableHead>

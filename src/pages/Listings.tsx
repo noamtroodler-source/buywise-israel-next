@@ -339,7 +339,7 @@ export default function Listings() {
               }] : []),
               ...(filters.min_rooms ? [{
                 icon: Home,
-                text: 'In Israel, "rooms" include living areas — a 3-room apartment typically has 2 bedrooms',
+                text: 'Try lowering your bedroom requirement to see more options',
               }] : []),
               ...(!filters.city && !filters.min_price && !filters.max_price && !filters.min_rooms ? [{
                 icon: Lightbulb,

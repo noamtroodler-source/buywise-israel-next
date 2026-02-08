@@ -337,7 +337,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {property.bedrooms} bd | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
+                  {property.bedrooms} bd{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''} | {property.bathrooms} ba{property.size_sqm ? ` | ${formatArea(property.size_sqm)}` : ''}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
@@ -528,7 +528,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Bed className="h-3.5 w-3.5" />
-                    <span className="text-xs">{property.bedrooms}</span>
+                    <span className="text-xs">{property.bedrooms}{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Bath className="h-3.5 w-3.5" />

@@ -16,6 +16,7 @@ export interface PropertyWizardData {
   
   // Step 2: Details
   bedrooms: number;
+  additional_rooms: number;
   bathrooms: number;
   size_sqm: number | undefined;
   lot_size_sqm: number | undefined;
@@ -81,6 +82,7 @@ export const defaultPropertyData: PropertyWizardData = {
   longitude: null,
   place_id: '',
   bedrooms: 0,
+  additional_rooms: 0,
   bathrooms: 0,
   size_sqm: undefined,
   lot_size_sqm: undefined,

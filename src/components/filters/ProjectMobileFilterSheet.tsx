@@ -172,11 +172,11 @@ export function ProjectMobileFilterSheet({
               />
             </section>
 
-            {/* Rooms Section */}
+            {/* Bedrooms Section */}
             <section className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
                 <LayoutGrid className="h-4 w-4 text-primary" />
-                Rooms
+                Bedrooms
               </h3>
               <div className="flex flex-wrap gap-2">
                 <button

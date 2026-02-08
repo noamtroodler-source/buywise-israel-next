@@ -364,28 +364,10 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 )}
               </div>
 
-              {/* Rooms Section */}
+              {/* Bedrooms Section */}
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">Rooms</span>
-                  <TooltipProvider delayDuration={400}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          type="button" 
-                          className="cursor-help"
-                          tabIndex={-1}
-                          aria-label="Rooms info"
-                          onFocus={(e) => e.currentTarget.blur()}
-                        >
-                          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-[250px]">
-                        <p className="text-sm">In Israel, rooms = bedrooms + living areas. A "4-room" apt typically has 3 bedrooms.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <span className="font-medium text-sm">Bedrooms</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
