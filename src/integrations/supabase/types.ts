@@ -732,6 +732,7 @@ export type Database = {
           is_upgrading: boolean | null
           mortgage_preferences: Json | null
           onboarding_completed: boolean
+          onboarding_step: string | null
           property_type_preferences: string[] | null
           purchase_purpose: string
           purchase_timeline: string | null
@@ -757,6 +758,7 @@ export type Database = {
           is_upgrading?: boolean | null
           mortgage_preferences?: Json | null
           onboarding_completed?: boolean
+          onboarding_step?: string | null
           property_type_preferences?: string[] | null
           purchase_purpose?: string
           purchase_timeline?: string | null
@@ -782,6 +784,7 @@ export type Database = {
           is_upgrading?: boolean | null
           mortgage_preferences?: Json | null
           onboarding_completed?: boolean
+          onboarding_step?: string | null
           property_type_preferences?: string[] | null
           purchase_purpose?: string
           purchase_timeline?: string | null

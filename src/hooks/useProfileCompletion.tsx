@@ -24,8 +24,10 @@ export function useProfileCompletion() {
       {
         key: 'buyer-profile',
         label: 'Buyer Profile',
-        isComplete: buyerProfile?.onboarding_completed ?? false,
-        description: 'Tax status and property ownership',
+        isComplete: buyerProfile?.onboarding_completed === true,
+        description: buyerProfile?.onboarding_step && !buyerProfile.onboarding_completed
+          ? 'Resume setup to finish'
+          : 'Tax status and property ownership',
       },
       {
         key: 'mortgage',

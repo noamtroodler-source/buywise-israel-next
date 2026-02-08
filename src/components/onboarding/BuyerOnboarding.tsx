@@ -70,11 +70,24 @@ export function BuyerOnboarding({ open, onComplete, onClose, existingProfile }: 
   const createProfile = useCreateBuyerProfile();
   const updateProfile = useUpdateBuyerProfile();
 
-  // Reset answers when dialog opens with different profile
+  // Reset answers when dialog opens with different profile, resume from saved step if incomplete
   useEffect(() => {
     if (open) {
       setAnswers(getInitialAnswers(existingProfile));
-      setStep('intro');
+      
+      // Resume from saved step if profile exists but not complete
+      if (existingProfile?.onboarding_step && 
+          existingProfile.onboarding_step !== 'complete' &&
+          !existingProfile.onboarding_completed) {
+        const savedStep = parseInt(existingProfile.onboarding_step);
+        if (!isNaN(savedStep) && savedStep >= 1 && savedStep <= 7) {
+          setStep(savedStep as Step);
+        } else {
+          setStep('intro');
+        }
+      } else {
+        setStep('intro');
+      }
     }
   }, [open, existingProfile]);
 
@@ -126,8 +139,57 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     return 'intro';
   };
 
-  const handleNext = () => {
+  // Get the data to save for the current step
+  const getStepData = (currentStep: Step): Partial<BuyerProfile> => {
+    switch (currentStep) {
+      case 1:
+        return { residency_status: answers.residency_status as BuyerProfile['residency_status'] };
+      case 2:
+        return { aliyah_year: answers.aliyah_year };
+      case 3:
+        return { is_first_property: answers.is_first_property, is_upgrading: answers.is_upgrading };
+      case 4:
+        return { purchase_purpose: answers.purchase_purpose as BuyerProfile['purchase_purpose'] };
+      case 5:
+        return { buyer_entity: answers.buyer_entity as BuyerProfile['buyer_entity'] };
+      default:
+        return {};
+    }
+  };
+
+  // Save progress after each step
+  const saveStepProgress = async (stepNumber: number) => {
+    const stepData = getStepData(stepNumber as Step);
+    
+    // Only save if we have data for this step
+    if (Object.keys(stepData).length === 0) return;
+    
+    const partialData = {
+      ...stepData,
+      onboarding_step: stepNumber.toString(),
+      onboarding_completed: false,
+    };
+    
+    try {
+      if (existingProfile) {
+        await updateProfile.mutateAsync(partialData);
+      } else {
+        await createProfile.mutateAsync(partialData);
+      }
+    } catch (error) {
+      console.error('Failed to save step progress:', error);
+      // Don't block navigation on save failure
+    }
+  };
+
+  const handleNext = async () => {
     const nextStep = getNextStep(step);
+    
+    // Save current step's data if it's a numbered step (not intro)
+    if (typeof step === 'number' && step >= 1 && step <= 5) {
+      await saveStepProgress(step);
+    }
+    
     if (nextStep === 'intro' || (typeof nextStep === 'number' && nextStep <= 7)) {
       setStep(nextStep);
     } else {
@@ -141,8 +203,30 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     }
   };
 
-  const handleSkipStep = () => {
+  const handleSkipStep = async () => {
+    // Save step 6 progress before skipping
     if (step === 6) {
+      const mortgagePreferences = {
+        include_mortgage: financingMethod === 'mortgage',
+        down_payment_percent: financingMethod === 'mortgage' && downPaymentMode === 'percent' 
+          ? mortgagePrefs.down_payment_percent : null,
+        down_payment_amount: financingMethod === 'mortgage' && downPaymentMode === 'amount' 
+          ? downPaymentAmount : null,
+        term_years: mortgagePrefs.term_years,
+        assumed_rate: 5.25,
+        monthly_income: financingMethod === 'mortgage' ? mortgagePrefs.monthly_income : null,
+        income_type: financingMethod === 'mortgage' ? mortgagePrefs.income_type : null,
+      };
+      
+      try {
+        await updateProfile.mutateAsync({ 
+          mortgage_preferences: mortgagePreferences,
+          onboarding_step: '6',
+        });
+      } catch (error) {
+        console.error('Failed to save mortgage step:', error);
+      }
+      
       setStep(7); // Skip mortgage, go to locations
     } else {
       handleComplete(); // Skip locations, complete onboarding
@@ -173,6 +257,7 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
     const profileData = {
       ...answers,
       onboarding_completed: true,
+      onboarding_step: 'complete',
       mortgage_preferences: mortgagePreferences,
       ...(savedLocations.length > 0 && { saved_locations: savedLocations }),
     };
