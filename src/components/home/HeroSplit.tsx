@@ -145,8 +145,8 @@ export function HeroSplit() {
                     {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}
                   </div>
                   <div 
-                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                    className="text-[10px] sm:text-xs text-white/90 uppercase tracking-wide font-medium"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                   >
                     For Sale
                   </div>
@@ -160,8 +160,8 @@ export function HeroSplit() {
                     {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}
                   </div>
                   <div 
-                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                    className="text-[10px] sm:text-xs text-white/90 uppercase tracking-wide font-medium"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                   >
                     Rentals
                   </div>
@@ -175,8 +175,8 @@ export function HeroSplit() {
                     {stats?.projectsCount ?? 15}+
                   </div>
                   <div 
-                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                    className="text-[10px] sm:text-xs text-white/90 uppercase tracking-wide font-medium"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                   >
                     Projects
                   </div>
