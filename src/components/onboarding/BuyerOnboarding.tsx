@@ -255,6 +255,25 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
   const handleAddressSelect = (address: ParsedAddress) => {
     setParsedAddress(address);
     setLocationAddress(address.fullAddress);
+    
+    // Auto-add if label is already filled
+    if (locationLabel.trim()) {
+      const newLocation: OnboardingLocation = {
+        label: locationLabel.trim(),
+        icon: locationIcon,
+        address: address.fullAddress,
+        latitude: address.latitude,
+        longitude: address.longitude,
+      };
+      
+      setOnboardingLocations(prev => [...prev, newLocation]);
+      
+      // Reset form for next entry
+      setLocationLabel('');
+      setLocationIcon('home');
+      setLocationAddress('');
+      setParsedAddress(null);
+    }
   };
 
   // Auto-suggest icon based on label
@@ -835,20 +854,10 @@ function getInitialAnswers(profile?: BuyerProfile | null): Partial<BuyerProfileI
                         onInputChange={setLocationAddress}
                         placeholder="Search for an address..."
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Select an address to add it instantly
+                      </p>
                     </div>
-
-                    {/* Add button */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddLocation}
-                      disabled={!locationLabel.trim() || !parsedAddress}
-                      className="w-full"
-                    >
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Add Location
-                    </Button>
                   </div>
                 )}
 
