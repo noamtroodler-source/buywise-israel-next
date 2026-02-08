@@ -45,6 +45,10 @@ const AMENITIES = [
   { value: 'garden', label: 'Garden/Yard' },
   { value: 'safe_room', label: 'Safe Room' },
   { value: 'sea_view', label: 'Sea View' },
+  { value: 'pool', label: 'Pool' },
+  { value: 'parking', label: 'Parking' },
+  { value: 'ac', label: 'A/C' },
+  { value: 'accessible', label: 'Accessible' },
 ];
 
 const DAYS_ON_MARKET_OPTIONS = [
