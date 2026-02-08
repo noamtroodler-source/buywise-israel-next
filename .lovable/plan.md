@@ -1,34 +1,29 @@
 
+
 # Comprehensive Room System Overhaul: Bedrooms + Additional Rooms
 
 ## Summary
-This plan converts the platform from the traditional Israeli "rooms" counting system (which includes living areas) to a clearer **"Bedrooms + Additional Rooms"** model that international users are more familiar with.
+This plan converts the entire platform from the traditional Israeli "rooms" counting system (which includes living areas) to a clearer **"Bedrooms + Additional Rooms"** model. This affects **all filters, wizards, cards, detail pages, mock data, and documentation**.
 
-## Current State Analysis
-The codebase currently uses `bedrooms` as the database field but the UI often labels it as "Rooms" with explanatory tooltips about Israeli conventions. This creates confusion because:
-- The database field is `bedrooms` (integer)
-- UI labels sometimes say "Rooms" and sometimes "Beds"
-- Tooltips explain the Israeli room convention (e.g., "3-room = 2 bedrooms + living room")
+---
 
-## Proposed Changes
+## Phase 1: Database Schema Update
 
-### Phase 1: Database Schema Update
-Add a new column `additional_rooms` to capture non-bedroom rooms (living room, office, storage room, etc.)
-
-**New field for `properties` table:**
+**Migration to run:**
 ```sql
+-- Add additional_rooms to properties table
 ALTER TABLE properties ADD COLUMN additional_rooms integer DEFAULT 0;
-```
 
-**New field for `project_units` table:**
-```sql
+-- Add additional_rooms to project_units table  
 ALTER TABLE project_units ADD COLUMN additional_rooms integer DEFAULT 0;
 ```
 
-### Phase 2: Type Definitions Update
+---
+
+## Phase 2: Type Definitions Update
 
 **File: `src/types/database.ts`**
-- Add `additional_rooms: number | null` to the `Property` interface
+- Add `additional_rooms: number | null` to the `Property` interface (around line 88)
 
 **File: `src/components/agent/wizard/PropertyWizardContext.tsx`**
 - Add `additional_rooms: number` to `PropertyWizardData` interface
@@ -38,107 +33,106 @@ ALTER TABLE project_units ADD COLUMN additional_rooms integer DEFAULT 0;
 - Add `additionalRooms: number` to `UnitTypeData` interface
 - Add default value `additionalRooms: 0` to `defaultUnitType`
 
-### Phase 3: Agent Property Wizard Update
+---
+
+## Phase 3: Agent Property Wizard Update
 
 **File: `src/components/agent/wizard/steps/StepDetails.tsx`**
-Change the Rooms section from a single "Rooms" input to two inputs:
 
+Current layout:
 ```
-Before:
 ┌─────────────────────┐  ┌─────────────────────┐
 │ Rooms *             │  │ Bathrooms *         │
-│ [Input field]       │  │ [Input field]       │
 └─────────────────────┘  └─────────────────────┘
+```
 
-After:
+New layout:
+```
 ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐
 │ Bedrooms *          │  │ Other Rooms         │  │ Bathrooms *         │
-│ [Input field]       │  │ [Input field]       │  │ [Input field]       │
 └─────────────────────┘  └─────────────────────┘  └─────────────────────┘
 ```
 
 Changes:
+- Change section header from "Rooms" to "Layout"
 - Change "Rooms *" label to "Bedrooms *"
-- Add new "Other Rooms" input with helper text "Living room, office, etc."
-- Section header change from "Rooms" to "Layout"
+- Add new "Other Rooms" input field with helper text "Living room, office, etc."
 
-### Phase 4: Developer Project Wizard Update
+---
+
+## Phase 4: Developer Project Wizard Update
 
 **File: `src/components/developer/wizard/steps/StepUnitTypes.tsx`**
-- Change "Rooms *" label to "Bedrooms *" in the unit type dialog
-- Add "Other Rooms" field next to it
-- Update `UNIT_TYPE_PRESETS` from "X-Room Apartment" to "X Bedroom Apartment"
-
-```
-Before presets:
-'2-Room Apartment', '3-Room Apartment', '4-Room Apartment', ...
-
-After presets:
-'1 Bedroom', '2 Bedroom', '3 Bedroom', '4 Bedroom', ...
-```
-
-### Phase 5: Filter Components Update
-
-**Files to update:**
-- `src/components/filters/PropertyFilters.tsx`
-- `src/components/filters/ProjectFilters.tsx`
-- `src/components/filters/MobileFilterSheet.tsx`
-- `src/components/filters/ProjectMobileFilterSheet.tsx`
 
 Changes:
-1. Change "Rooms" label to "Bedrooms"
-2. **Remove the Israeli room tooltip** (the one explaining "3-room = 2 bedrooms + living")
-3. Keep the filter logic working on `min_rooms` field (maps to `bedrooms` in DB)
+- Change "Rooms *" label to "Bedrooms *" in unit type dialog
+- Add "Other Rooms" field next to it
+- Update `UNIT_TYPE_PRESETS` constant:
 
-Example from `PropertyFilters.tsx`:
-```tsx
-// Remove this tooltip:
-<HoverOnlyTooltip content="In Israel, 'rooms' includes living areas...">
-
-// Change label from:
-<Label>Rooms</Label>
-// To:
-<Label>Bedrooms</Label>
+```
+Before: '2-Room Apartment', '3-Room Apartment', '4-Room Apartment', ...
+After:  '1 Bedroom', '2 Bedroom', '3 Bedroom', '4 Bedroom', ...
 ```
 
-### Phase 6: Property Cards Update
+---
+
+## Phase 5: Filter Components Update (Buy, Rent, Projects)
+
+### Desktop Filters
+
+**File: `src/components/filters/PropertyFilters.tsx`** (Buy & Rent)
+- Line 646: Change "Rooms" label to "Bedrooms"
+- Lines 647-654: **Remove the Israeli room tooltip** entirely (the HoverOnlyTooltip explaining "3-room = 2 bedrooms + living")
+- Keep filter logic working on `min_rooms` field
+
+**File: `src/components/filters/ProjectFilters.tsx`** (Projects)
+- Line 370: Change "Rooms" to "Bedrooms"
+- Lines 371-388: **Remove the Tooltip component** explaining Israeli room convention
+- Keep filter logic as-is
+
+### Mobile Filters
+
+**File: `src/components/filters/MobileFilterSheet.tsx`** (Buy & Rent mobile)
+- Line 233: Change section header from "Rooms" to "Bedrooms"
+- No tooltip exists here, just the label change
+
+**File: `src/components/filters/ProjectMobileFilterSheet.tsx`** (Projects mobile)
+- Line 179: Change "Rooms" to "Bedrooms"
+- Keep all filter button logic as-is
+
+---
+
+## Phase 6: Property Cards Update
 
 **File: `src/components/property/PropertyCard.tsx`**
-Line 340 (compact mode) and line 531 (standard mode):
 
+Compact mode (line ~340):
 ```tsx
 // Before:
 {property.bedrooms} bd | {property.bathrooms} ba
 
-// After (show both if additional_rooms exists):
-{property.bedrooms} bd{property.additional_rooms ? ` + ${property.additional_rooms} rm` : ''} | {property.bathrooms} ba
+// After:
+{property.bedrooms} bd{property.additional_rooms ? ` + ${property.additional_rooms}` : ''} | {property.bathrooms} ba
 ```
 
-For non-compact mode, show as icon + number pairs:
+Standard mode (line ~531):
+- Add `DoorOpen` icon import from lucide-react
+- Show additional rooms stat when > 0:
 ```
-🛏️ 3  🚪 1  🛁 2  📐 95m²
-     ↑      ↑
-   beds  other rooms
+🛏️ 3  🚪 +1  🛁 2  📐 95m²
 ```
 
-### Phase 7: Property Detail Pages Update
+---
+
+## Phase 7: Property Detail Pages Update
 
 **File: `src/components/property/PropertyQuickSummary.tsx`**
-Lines 306-313 (Hero Stats Bar):
+
+Hero Stats Bar (lines ~306-313):
+- Change "Beds" label to "Bedrooms"
+- Add new stat for additional rooms when present:
 
 ```tsx
-// Before:
-<p className="text-lg font-semibold">{property.bedrooms}</p>
-<p className="text-xs text-muted-foreground">Beds</p>
-
-// After - add additional rooms if present:
-<div className="flex items-center gap-2">
-  <Bed className="h-5 w-5 text-muted-foreground" />
-  <div>
-    <p className="text-lg font-semibold">{property.bedrooms}</p>
-    <p className="text-xs text-muted-foreground">Bedrooms</p>
-  </div>
-</div>
 {property.additional_rooms > 0 && (
   <div className="flex items-center gap-2">
     <DoorOpen className="h-5 w-5 text-muted-foreground" />
@@ -150,111 +144,225 @@ Lines 306-313 (Hero Stats Bar):
 )}
 ```
 
-### Phase 8: Project Display Updates
+---
+
+## Phase 8: Project Display Updates
 
 **File: `src/components/project/ProjectFloorPlans.tsx`**
 - Change "Rooms" table header to "Beds"
-- Add "Other" column if additional_rooms data exists
+- Add "Other" column if `additional_rooms` data exists
 - Update mobile cards similarly
 
 **File: `src/components/home/ProjectCarousel.tsx`**
-- Update unit display to show "X Bed" instead of "X Room"
+- Update unit display from "X Room" to "X Bed"
 
-### Phase 9: Calculator Tools Update
+---
 
-**Files:**
-- `src/components/tools/RentVsBuyCalculator.tsx`
-- `src/components/tools/InvestmentReturnCalculator.tsx`
+## Phase 9: Calculator Tools Update
 
-Changes:
-- Change "Property Size (Rooms)" to "Bedrooms"
-- **Remove the tooltip explaining Israeli room convention**
+**File: `src/components/tools/RentVsBuyCalculator.tsx`**
+- Change "Property Size (Rooms)" label to "Bedrooms"
+- **Remove the tooltip** explaining Israeli room convention
 - Update select options from "X rooms" to "X bedrooms"
 
-```tsx
-// Before:
-<InfoTooltip content="Israeli room count includes living room and bedrooms..." />
+**File: `src/components/tools/InvestmentReturnCalculator.tsx`**
+- Same changes as above
 
-// After: Remove this tooltip entirely
+---
+
+## Phase 10: Other Components & Pages
+
+| File | Change |
+|------|--------|
+| `src/pages/agent/EditProperty.tsx` | Add "Other Rooms" field |
+| `src/pages/agent/EditPropertyWizard.tsx` | Add "Other Rooms" field |
+| `src/pages/agent/NewPropertyWizard.tsx` | Include `additional_rooms` in submit data |
+| `src/components/agent/wizard/steps/StepReview.tsx` | Display "X bedrooms + Y other rooms" |
+| `src/components/profile/RecentlyViewedSection.tsx` | Update display format |
+| `src/components/map-search/MapPropertyPopup.tsx` | Update display |
+| `src/pages/Listings.tsx` | **Remove empty state suggestion** about Israeli rooms |
+| `src/components/filters/CreateAlertDialog.tsx` | Update filter display label |
+| `src/components/developer/wizard/steps/ProjectPreviewDialog.tsx` | Update display |
+| `src/components/admin/UnitTypesPreview.tsx` | Update "Rooms" table header |
+| `src/pages/guides/ListingsGuide.tsx` | Remove "4-room apartment" confusion entry |
+
+---
+
+## Phase 11: Remove All Israeli Room Convention References
+
+| File | Line | What to Remove |
+|------|------|----------------|
+| `PropertyFilters.tsx` | 647-654 | HoverOnlyTooltip about "3-room = 2 bedrooms" |
+| `ProjectFilters.tsx` | 371-388 | Tooltip about "4-room apt = 3 bedrooms" |
+| `RentVsBuyCalculator.tsx` | ~629 | InfoTooltip about room counting |
+| `InvestmentReturnCalculator.tsx` | ~467 | InfoTooltip about room counting |
+| `Listings.tsx` | ~342 | Empty state suggestion mentioning Israeli rooms |
+| `ListingsGuide.tsx` | ~146 | FAQ entry about "4-room apartment" confusion |
+
+---
+
+## Phase 12: Update Mock Data Seeding
+
+**File: `supabase/functions/seed-demo-data/index.ts`**
+
+### Properties (Sale & Rent - lines 410-537)
+Add `additional_rooms` field to property inserts:
+
+```typescript
+// Current bedrooms logic:
+const bedrooms = propertyType === 'penthouse' ? randomInt(4, 6) : ...
+
+// Add additional rooms (typically 1 for living room, sometimes 2 for office/study):
+const additionalRooms = propertyType === 'house' ? randomInt(1, 3) :
+                        propertyType === 'penthouse' ? randomInt(1, 2) : 
+                        randomInt(1, 2);
+
+// In insert:
+bedrooms: bedrooms,
+additional_rooms: additionalRooms,
 ```
 
-### Phase 10: Other Components & Pages
+Update property titles:
+```typescript
+// Before:
+title: `${bedrooms}-Room ${propertyType}...`
 
-**Files to update:**
-1. `src/pages/agent/EditProperty.tsx` - Label change "Bedrooms" → "Bedrooms", add "Other Rooms"
-2. `src/pages/agent/EditPropertyWizard.tsx` - Same updates
-3. `src/pages/agent/NewPropertyWizard.tsx` - Update submit data
-4. `src/components/agent/wizard/steps/StepReview.tsx` - Display "X beds + Y rooms"
-5. `src/components/profile/RecentlyViewedSection.tsx` - Update display format
-6. `src/components/map-search/MapPropertyPopup.tsx` - Update display
-7. `src/pages/Listings.tsx` - **Remove the empty state suggestion about Israeli rooms**
-8. `src/components/filters/CreateAlertDialog.tsx` - Update display label
-9. `src/components/developer/wizard/steps/ProjectPreviewDialog.tsx` - Update display
-10. `src/components/admin/UnitTypesPreview.tsx` - Update table header
-11. `src/pages/guides/ListingsGuide.tsx` - Update documentation content
+// After:
+title: `${bedrooms} Bedroom ${propertyType}...`
+```
 
-### Phase 11: Remove Israeli Room Convention References
+Update `generatePropertyDescription` function (line 224):
+```typescript
+// Before:
+`Stunning ${bedrooms}-room ${type} in...`
 
-Locations to clean up:
-1. `PropertyFilters.tsx` line 650 - Remove tooltip
-2. `ProjectFilters.tsx` line 385 - Remove tooltip
-3. `RentVsBuyCalculator.tsx` line 629 - Remove tooltip
-4. `InvestmentReturnCalculator.tsx` line 467 - Remove tooltip
-5. `Listings.tsx` line 342 - Remove empty state suggestion
-6. `ListingsGuide.tsx` line 146 - Remove "4-room apartment" confusion entry
+// After:
+`Stunning ${bedrooms} bedroom ${type} in...`
+```
+
+### Project Units (lines 608-638)
+Update unit type definitions:
+
+```typescript
+// Before:
+const unitTypes = [
+  { type: '3-Room Apartment', bedrooms: 3, sizeMin: 70, sizeMax: 90 },
+  { type: '4-Room Apartment', bedrooms: 4, sizeMin: 90, sizeMax: 120 },
+  ...
+];
+
+// After:
+const unitTypes = [
+  { type: '2 Bedroom', bedrooms: 2, additionalRooms: 1, sizeMin: 70, sizeMax: 90 },
+  { type: '3 Bedroom', bedrooms: 3, additionalRooms: 1, sizeMin: 90, sizeMax: 120 },
+  { type: '4 Bedroom', bedrooms: 4, additionalRooms: 1, sizeMin: 120, sizeMax: 150 },
+  { type: 'Penthouse', bedrooms: 4, additionalRooms: 2, sizeMin: 150, sizeMax: 250 },
+  { type: 'Garden Apartment', bedrooms: 3, additionalRooms: 1, sizeMin: 100, sizeMax: 140 },
+];
+```
+
+Add `additional_rooms` to unit insert:
+```typescript
+additional_rooms: unitType.additionalRooms,
+```
+
+---
+
+## Phase 13: Update Existing Database Records
+
+**SQL migration to update existing mock data:**
+```sql
+-- Update existing properties with randomized additional_rooms
+UPDATE properties 
+SET additional_rooms = CASE 
+  WHEN property_type IN ('penthouse', 'house') THEN floor(random() * 2 + 1)::int
+  ELSE floor(random() * 2 + 1)::int
+END
+WHERE additional_rooms = 0 OR additional_rooms IS NULL;
+
+-- Update existing project_units
+UPDATE project_units 
+SET additional_rooms = CASE 
+  WHEN unit_type ILIKE '%penthouse%' THEN 2
+  ELSE 1
+END
+WHERE additional_rooms = 0 OR additional_rooms IS NULL;
+```
+
+---
 
 ## Display Format Examples
 
-**Cards:**
+### Cards
 ```
 Before: 3 bd | 2 ba | 95m²
 After:  3 bd + 1 | 2 ba | 95m²
 ```
 
-**Detail Page Hero Stats:**
+### Detail Page Hero Stats
 ```
 Before: 🛏️ 3 Beds  🛁 2 Baths  📐 95m²
-
-After:  🛏️ 3 Bedrooms  🚪 +1 Other Rooms  🛁 2 Baths  📐 95m²
+After:  🛏️ 3 Bedrooms  🚪 +1 Other  🛁 2 Baths  📐 95m²
 ```
 
-**Filters:**
+### Filters
 ```
 Before: "Rooms" with tooltip explaining Israeli convention
-After:  "Bedrooms" (no tooltip needed)
+After:  "Bedrooms" (clean, no tooltip)
 ```
 
-## Data Migration Consideration
-For existing properties that only have `bedrooms` data:
-- `additional_rooms` will default to 0
-- Agents can update their listings to add the additional rooms count
-- No automatic conversion is attempted (would be inaccurate)
+### Property Titles
+```
+Before: "3-Room Apartment in Tel Aviv"
+After:  "3 Bedroom Apartment in Tel Aviv"
+```
+
+---
 
 ## Files Changed Summary
 
 | Category | Files | Changes |
 |----------|-------|---------|
-| Database | Migration | Add `additional_rooms` column to properties and project_units |
-| Types | 2 files | Add `additional_rooms` to interfaces |
-| Agent Wizard | 3 files | Split rooms into bedrooms + other rooms inputs |
-| Developer Wizard | 2 files | Same split, update presets |
-| Filters | 4 files | Change labels, remove Israeli tooltips |
-| Cards | 2 files | Update display format |
-| Detail Pages | 2 files | Add other rooms display |
-| Calculators | 2 files | Remove tooltips, update labels |
-| Other | ~10 files | Various label and format updates |
-| **Total** | **~27 files** | |
+| **Database** | 1 migration | Add `additional_rooms` to properties + project_units |
+| **Types** | 3 files | Add `additional_rooms` to interfaces |
+| **Agent Wizard** | 4 files | Split rooms into bedrooms + other rooms |
+| **Developer Wizard** | 2 files | Same split, update presets |
+| **Filters (Desktop)** | 2 files | Change labels, remove tooltips |
+| **Filters (Mobile)** | 2 files | Change labels |
+| **Cards** | 2 files | Update display format |
+| **Detail Pages** | 2 files | Add other rooms stat |
+| **Calculators** | 2 files | Remove tooltips, update labels |
+| **Mock Data** | 1 file | Update seeding logic + unit types |
+| **Other** | ~10 files | Various label and format updates |
+| **Total** | **~31 files** | |
 
-## Implementation Notes for Developer
+---
 
-### Icons to Use
-- Bedrooms: `Bed` (already used)
-- Other Rooms: `DoorOpen` from lucide-react (represents generic rooms)
+## Implementation Notes
+
+### Icons
+- Bedrooms: `Bed` (existing)
+- Other Rooms: `DoorOpen` from lucide-react
 
 ### Filter Logic
-The filter field `min_rooms` will continue to filter on `bedrooms` column only. This keeps the filter simple - users filter by how many bedrooms they need, not total rooms.
+The filter field `min_rooms` continues to filter on the `bedrooms` database column only. Users filter by bedrooms needed, not total rooms.
 
 ### Backward Compatibility
 - Existing data works as-is (`additional_rooms` defaults to 0)
-- Filters continue working
-- No breaking changes to API or data structure
+- Cards and detail pages only show "+X" when additional_rooms > 0
+- Filters continue working unchanged
+
+### Verification Checklist
+After implementation, verify:
+- [ ] Agent wizard shows Bedrooms + Other Rooms inputs
+- [ ] Developer wizard shows updated fields and presets
+- [ ] Buy filters show "Bedrooms" (no tooltip)
+- [ ] Rent filters show "Bedrooms" (no tooltip)
+- [ ] Project filters show "Bedrooms" (no tooltip)
+- [ ] Mobile filters for all three tabs updated
+- [ ] Property cards display format correct
+- [ ] Property detail pages show both stats
+- [ ] Calculators updated (no tooltips)
+- [ ] Mock data includes additional_rooms values
+- [ ] No Israeli room convention references remain
+
