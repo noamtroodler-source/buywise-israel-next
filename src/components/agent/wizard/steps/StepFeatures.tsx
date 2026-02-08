@@ -67,6 +67,8 @@ const commonFeatures = [
   { id: 'pool', label: 'Pool Access' },
   { id: 'gym', label: 'Gym Access' },
   { id: 'doorman', label: 'Doorman/Concierge' },
+  { id: 'parking', label: 'Parking' },
+  { id: 'sea_view', label: 'Sea View' },
 ];
  
  // Furniture items grouped by category
