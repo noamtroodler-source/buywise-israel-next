@@ -136,7 +136,7 @@ export function HeroSplit() {
               transition={{ duration: 0.6, delay: 0.5 }}
               className="pt-2 md:pt-3"
             >
-              <div className="inline-flex items-center bg-black/20 rounded-lg px-4 py-2 gap-4 sm:gap-6">
+              <div className="inline-flex items-center gap-4 sm:gap-6">
                 <div className="text-center">
                   <div className="text-base sm:text-lg font-semibold text-white">
                     {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}
