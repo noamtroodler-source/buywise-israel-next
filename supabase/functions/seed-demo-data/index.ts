@@ -223,10 +223,10 @@ function getRandomImages(count: number, type: 'interior' | 'exterior' | 'buildin
 
 function generatePropertyDescription(city: string, type: string, bedrooms: number, features: string[]): string {
   const intros = [
-    `Stunning ${bedrooms}-room ${type.replace('_', ' ')} in the heart of ${city}.`,
-    `Beautiful ${type.replace('_', ' ')} offering ${bedrooms} spacious rooms in ${city}.`,
-    `Exceptional ${bedrooms}-room residence in one of ${city}'s most sought-after locations.`,
-    `Gorgeous ${type.replace('_', ' ')} featuring ${bedrooms} rooms in prestigious ${city}.`,
+    `Stunning ${bedrooms} bedroom ${type.replace('_', ' ')} in the heart of ${city}.`,
+    `Beautiful ${type.replace('_', ' ')} offering ${bedrooms} spacious bedrooms in ${city}.`,
+    `Exceptional ${bedrooms} bedroom residence in one of ${city}'s most sought-after locations.`,
+    `Gorgeous ${type.replace('_', ' ')} featuring ${bedrooms} bedrooms in prestigious ${city}.`,
   ];
   
   const mids = [
@@ -417,7 +417,7 @@ serve(async (req) => {
         const bedrooms = propertyType === 'penthouse' ? randomInt(4, 6) : 
                         propertyType === 'garden_apartment' ? randomInt(3, 5) :
                         propertyType === 'house' ? randomInt(4, 6) : randomInt(2, 4);
-        const bathrooms = Math.max(1, Math.floor(bedrooms / 2) + randomInt(0, 1));
+        const additionalRooms = propertyType === 'house' ? randomInt(1, 3) : randomInt(1, 2);
         const sizeSqm = propertyType === 'penthouse' ? randomInt(120, 250) :
                        propertyType === 'house' ? randomInt(150, 300) :
                        propertyType === 'garden_apartment' ? randomInt(90, 150) :
@@ -432,7 +432,7 @@ serve(async (req) => {
         const { error } = await supabase
           .from('properties')
           .insert({
-            title: `${bedrooms}-Room ${propertyType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} in ${city.name}`,
+            title: `${bedrooms} Bedroom ${propertyType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} in ${city.name}`,
             description: generatePropertyDescription(city.name, propertyType, bedrooms, features),
             property_type: propertyType,
             listing_status: 'for_sale',
@@ -444,6 +444,7 @@ serve(async (req) => {
             latitude: city.lat + (Math.random() - 0.5) * 0.05,
             longitude: city.lng + (Math.random() - 0.5) * 0.05,
             bedrooms: bedrooms,
+            additional_rooms: additionalRooms,
             bathrooms: bathrooms,
             size_sqm: sizeSqm,
             floor: floor,
@@ -479,6 +480,7 @@ serve(async (req) => {
         const bedrooms = propertyType === 'penthouse' ? randomInt(4, 6) : 
                         propertyType === 'garden_apartment' ? randomInt(3, 5) :
                         propertyType === 'house' ? randomInt(4, 6) : randomInt(2, 4);
+        const additionalRooms = propertyType === 'house' ? randomInt(1, 3) : randomInt(1, 2);
         const bathrooms = Math.max(1, Math.floor(bedrooms / 2) + randomInt(0, 1));
         const sizeSqm = propertyType === 'penthouse' ? randomInt(120, 250) :
                        propertyType === 'house' ? randomInt(150, 300) :
@@ -494,7 +496,7 @@ serve(async (req) => {
         const { error } = await supabase
           .from('properties')
           .insert({
-            title: `${bedrooms}-Room ${propertyType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} for Rent in ${city.name}`,
+            title: `${bedrooms} Bedroom ${propertyType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} for Rent in ${city.name}`,
             description: generatePropertyDescription(city.name, propertyType, bedrooms, features),
             property_type: propertyType,
             listing_status: 'for_rent',
@@ -506,6 +508,7 @@ serve(async (req) => {
             latitude: city.lat + (Math.random() - 0.5) * 0.05,
             longitude: city.lng + (Math.random() - 0.5) * 0.05,
             bedrooms: bedrooms,
+            additional_rooms: additionalRooms,
             bathrooms: bathrooms,
             size_sqm: sizeSqm,
             floor: floor,
@@ -606,11 +609,11 @@ serve(async (req) => {
 
         // Create project units
         const unitTypes = [
-          { type: '3-Room Apartment', bedrooms: 3, sizeMin: 70, sizeMax: 90 },
-          { type: '4-Room Apartment', bedrooms: 4, sizeMin: 90, sizeMax: 120 },
-          { type: '5-Room Apartment', bedrooms: 5, sizeMin: 120, sizeMax: 150 },
-          { type: 'Penthouse', bedrooms: 5, sizeMin: 150, sizeMax: 250 },
-          { type: 'Garden Apartment', bedrooms: 4, sizeMin: 100, sizeMax: 140 },
+          { type: '2 Bedroom', bedrooms: 2, additionalRooms: 1, sizeMin: 70, sizeMax: 90 },
+          { type: '3 Bedroom', bedrooms: 3, additionalRooms: 1, sizeMin: 90, sizeMax: 120 },
+          { type: '4 Bedroom', bedrooms: 4, additionalRooms: 1, sizeMin: 120, sizeMax: 150 },
+          { type: 'Penthouse', bedrooms: 4, additionalRooms: 2, sizeMin: 150, sizeMax: 250 },
+          { type: 'Garden Apartment', bedrooms: 3, additionalRooms: 1, sizeMin: 100, sizeMax: 140 },
         ];
 
         for (const unitType of randomChoices(unitTypes, randomInt(3, 5))) {
@@ -622,6 +625,7 @@ serve(async (req) => {
               project_id: project.id,
               unit_type: unitType.type,
               bedrooms: unitType.bedrooms,
+              additional_rooms: unitType.additionalRooms,
               bathrooms: Math.floor(unitType.bedrooms / 2) + 1,
               size_sqm: randomInt(unitType.sizeMin, unitType.sizeMax),
               floor: randomInt(1, 20),

@@ -307,8 +307,8 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
             <div className="flex items-center gap-2">
               <Bed className="h-5 w-5 text-muted-foreground" />
               <div>
-                <p className="text-lg font-semibold">{property.bedrooms}</p>
-                <p className="text-xs text-muted-foreground">Beds</p>
+                <p className="text-lg font-semibold">{property.bedrooms}{(property as any).additional_rooms ? ` + ${(property as any).additional_rooms}` : ''}</p>
+                <p className="text-xs text-muted-foreground">Bedrooms{(property as any).additional_rooms ? ' + Other' : ''}</p>
               </div>
             </div>
           )}

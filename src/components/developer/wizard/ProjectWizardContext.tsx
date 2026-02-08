@@ -8,6 +8,7 @@ export interface UnitTypeData {
   id: string;
   name: string;
   bedrooms: number;
+  additionalRooms: number;
   bathrooms: number;
   sizeMin: number | undefined;
   sizeMax: number | undefined;

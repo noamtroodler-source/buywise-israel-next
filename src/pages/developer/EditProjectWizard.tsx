@@ -89,6 +89,7 @@ function convertUnitsToUnitTypes(units: ProjectUnit[]): UnitTypeData[] {
         id: crypto.randomUUID(),
         name: unit.unit_type,
         bedrooms: unit.bedrooms || 0,
+        additionalRooms: (unit as any).additional_rooms || 1,
         bathrooms: unit.bathrooms || 0,
         sizeMin: unit.size_sqm ?? undefined,
         sizeMax: unit.size_sqm ?? undefined,

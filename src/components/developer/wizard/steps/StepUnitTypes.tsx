@@ -33,10 +33,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const UNIT_TYPE_PRESETS = [
-  '2-Room Apartment',
-  '3-Room Apartment',
-  '4-Room Apartment',
-  '5-Room Apartment',
+  '1 Bedroom',
+  '2 Bedroom',
+  '3 Bedroom',
+  '4 Bedroom',
+  '5 Bedroom',
   'Garden Apartment',
   'Penthouse',
   'Duplex',
@@ -55,6 +56,7 @@ const OUTDOOR_SPACE_OPTIONS: { value: OutdoorSpaceType; label: string }[] = [
 const defaultUnitType: Omit<UnitTypeData, 'id'> = {
   name: '',
   bedrooms: 2,
+  additionalRooms: 1,
   bathrooms: 1,
   sizeMin: undefined,
   sizeMax: undefined,
@@ -244,6 +246,7 @@ export function StepUnitTypes() {
     setFormData({
       name: unitType.name,
       bedrooms: unitType.bedrooms,
+      additionalRooms: unitType.additionalRooms,
       bathrooms: unitType.bathrooms,
       sizeMin: unitType.sizeMin,
       sizeMax: unitType.sizeMax,
@@ -507,10 +510,10 @@ export function StepUnitTypes() {
               )}
             </div>
 
-{/* Rooms & Bathrooms */}
-              <div className="grid grid-cols-2 gap-4">
+{/* Bedrooms, Other Rooms & Bathrooms */}
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Rooms *</Label>
+                  <Label>Bedrooms *</Label>
                 <Select
                   value={String(formData.bedrooms)}
                   onValueChange={(v) => setFormData(prev => ({ ...prev, bedrooms: Number(v) }))}
@@ -520,6 +523,22 @@ export function StepUnitTypes() {
                   </SelectTrigger>
                   <SelectContent>
                     {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+                      <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Other Rooms</Label>
+                <Select
+                  value={String(formData.additionalRooms)}
+                  onValueChange={(v) => setFormData(prev => ({ ...prev, additionalRooms: Number(v) }))}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[0, 1, 2, 3].map((n) => (
                       <SelectItem key={n} value={String(n)}>{n}</SelectItem>
                     ))}
                   </SelectContent>

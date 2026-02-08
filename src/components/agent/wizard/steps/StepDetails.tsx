@@ -46,18 +46,18 @@ export function StepDetails() {
           </div>
         )}
 
-        {/* Rooms - hide for land */}
+        {/* Layout - hide for land */}
         {!isLand && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bed className="h-4 w-4 text-primary" />
               </div>
-              <h3 className="font-semibold">Rooms</h3>
+              <h3 className="font-semibold">Layout</h3>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="bedrooms">Rooms *</Label>
+                <Label htmlFor="bedrooms">Bedrooms *</Label>
                 <Input
                   id="bedrooms"
                   type="number"
@@ -69,6 +69,21 @@ export function StepDetails() {
                   placeholder="0"
                   className="h-11 rounded-xl"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="additional_rooms">Other Rooms</Label>
+                <Input
+                  id="additional_rooms"
+                  type="number"
+                  min="0"
+                  max="10"
+                  value={data.additional_rooms || ''}
+                  onChange={(e) => updateData({ additional_rooms: Number(e.target.value) || 0 })}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="0"
+                  className="h-11 rounded-xl"
+                />
+                <p className="text-xs text-muted-foreground">Living room, office, etc.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bathrooms">Bathrooms *</Label>

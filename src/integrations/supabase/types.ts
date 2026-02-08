@@ -3035,6 +3035,7 @@ export type Database = {
       }
       project_units: {
         Row: {
+          additional_rooms: number | null
           bathrooms: number | null
           bedrooms: number | null
           created_at: string
@@ -3050,6 +3051,7 @@ export type Database = {
           unit_type: string
         }
         Insert: {
+          additional_rooms?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
@@ -3065,6 +3067,7 @@ export type Database = {
           unit_type: string
         }
         Update: {
+          additional_rooms?: number | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
@@ -3256,6 +3259,7 @@ export type Database = {
       properties: {
         Row: {
           ac_type: string | null
+          additional_rooms: number | null
           address: string
           admin_notes: string | null
           agent_fee_required: boolean | null
@@ -3313,6 +3317,7 @@ export type Database = {
         }
         Insert: {
           ac_type?: string | null
+          additional_rooms?: number | null
           address: string
           admin_notes?: string | null
           agent_fee_required?: boolean | null
@@ -3370,6 +3375,7 @@ export type Database = {
         }
         Update: {
           ac_type?: string | null
+          additional_rooms?: number | null
           address?: string
           admin_notes?: string | null
           agent_fee_required?: boolean | null

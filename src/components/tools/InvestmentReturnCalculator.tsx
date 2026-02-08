@@ -463,15 +463,14 @@ function InvestmentCalculatorContent() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center">
-                <Label className="text-sm font-medium">Rooms</Label>
-                <InfoTooltip content="Number of rooms. Israeli listings count bedrooms + living room as 'rooms'." />
+                <Label className="text-sm font-medium">Bedrooms</Label>
               </div>
               <Select value={rooms.toString()} onValueChange={(v) => setRooms(parseInt(v))}>
                 <SelectTrigger className="h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[2, 3, 4, 5].map(r => <SelectItem key={r} value={r.toString()}>{r} rooms</SelectItem>)}
+                  {[2, 3, 4, 5].map(r => <SelectItem key={r} value={r.toString()}>{r} bedrooms</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

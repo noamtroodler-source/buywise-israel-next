@@ -640,18 +640,10 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                   )}
                 </div>
 
-                {/* Rooms */}
+                {/* Bedrooms */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Rooms</Label>
-                    <HoverOnlyTooltip
-                      armed={tooltipsArmed}
-                      content={
-                        <p className="text-sm max-w-[250px]">In Israel, "rooms" includes living areas. A 3-room apartment typically has 2 bedrooms + a living room.</p>
-                      }
-                    >
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </HoverOnlyTooltip>
+                    <Label className="text-sm font-medium">Bedrooms</Label>
                   </div>
                   <div className="flex gap-2">
                     {[undefined, 2, 3, 4, 5].map(num => (

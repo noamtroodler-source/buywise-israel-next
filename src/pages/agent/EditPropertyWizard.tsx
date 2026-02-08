@@ -116,6 +116,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         longitude: property.longitude || null,
         place_id: '',
         bedrooms: property.bedrooms || 0,
+        additional_rooms: (property as any).additional_rooms || 0,
         bathrooms: property.bathrooms || 0,
         size_sqm: property.size_sqm || undefined,
         lot_size_sqm: property.lot_size_sqm || undefined,
