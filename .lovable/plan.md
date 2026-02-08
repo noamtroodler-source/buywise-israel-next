@@ -1,120 +1,138 @@
 
-
-# Add Mock Data for Featured Highlights
+# Auto-Add Location on Address Selection
 
 ## Summary
-Update the seeding functions to populate the new `featured_highlight` field for properties (rentals and resale) and projects so the accent banners display with real content.
+Remove the extra "Add Location" button click by automatically adding the location when a user selects an address from the Google Maps suggestions. If the location name is already filled, selecting an address immediately saves it and clears the form for the next entry.
+
+---
+
+## Current vs New Flow
+
+**Current (3-step):**
+1. Enter location name (e.g., "Mom's House")
+2. Select icon
+3. Search address → click suggestion
+4. **Click "Add Location" button** ← extra step
+
+**New (auto-add):**
+1. Enter location name (e.g., "Mom's House")
+2. Select icon  
+3. Search address → click suggestion → **automatically added!** ✓
+   - Form clears instantly, ready for next location
 
 ---
 
 ## Implementation
 
-### Phase 1: Define Highlight Arrays
+### Changes to `BuyerOnboarding.tsx`
 
-Add curated arrays of realistic highlights that make sense for each category:
+**Modify `handleAddressSelect`** (lines 255-258):
 
-**Property Highlights (Sale):**
+Current:
 ```typescript
-const SALE_HIGHLIGHTS = [
-  "Panoramic sea views from every room",
-  "Massive 40m² south-facing balcony",
-  "Fully renovated with designer finishes",
-  "Private rooftop terrace",
-  "Smart home automation throughout",
-  "Protected room with natural light",
-  "Gourmet chef's kitchen",
-  "Direct elevator to apartment",
-  "Walk-in closet in master suite",
-  "Floor-to-ceiling windows",
-  "High ceilings throughout",
-  "Corner apartment with cross ventilation",
-];
+const handleAddressSelect = (address: ParsedAddress) => {
+  setParsedAddress(address);
+  setLocationAddress(address.fullAddress);
+};
 ```
 
-**Property Highlights (Rental):**
+New:
 ```typescript
-const RENTAL_HIGHLIGHTS = [
-  "Move-in ready, fully furnished",
-  "Pet-friendly with private garden",
-  "All bills included in rent",
-  "Flexible lease terms available",
-  "Home office with separate entrance",
-  "Quiet apartment, faces inner courtyard",
-  "Walking distance to beach",
-  "Near top-rated schools",
-  "Underground parking included",
-  "New central A/C system",
-  "Recently renovated bathroom",
-  "Bright and airy with balcony",
-];
+const handleAddressSelect = (address: ParsedAddress) => {
+  setParsedAddress(address);
+  setLocationAddress(address.fullAddress);
+  
+  // Auto-add if label is already filled
+  if (locationLabel.trim()) {
+    const newLocation: OnboardingLocation = {
+      label: locationLabel.trim(),
+      icon: locationIcon,
+      address: address.fullAddress,
+      latitude: address.latitude,
+      longitude: address.longitude,
+    };
+    
+    setOnboardingLocations(prev => [...prev, newLocation]);
+    
+    // Reset form for next entry
+    setLocationLabel('');
+    setLocationIcon('home');
+    setLocationAddress('');
+    setParsedAddress(null);
+  }
+};
 ```
 
-**Project Highlights:**
-```typescript
-const PROJECT_HIGHLIGHTS = [
-  "Rooftop infinity pool with sea views",
-  "Smart home technology in every unit",
-  "5-star hotel-style concierge service",
-  "Private landscaped gardens per unit",
-  "Direct beach access for residents",
-  "24/7 spa and wellness center",
-  "EV charging in every parking spot",
-  "Award-winning architectural design",
-  "LEED-certified green building",
-  "Exclusive residents-only lounge",
-  "Underground parking with storage",
-  "Premium designer finishes included",
-];
+**Remove the "Add Location" button** (lines 840-851):
+
+Delete this entire block:
+```tsx
+{/* Add button */}
+<Button
+  type="button"
+  variant="outline"
+  size="sm"
+  onClick={handleAddLocation}
+  disabled={!locationLabel.trim() || !parsedAddress}
+  className="w-full"
+>
+  <MapPin className="h-4 w-4 mr-2" />
+  Add Location
+</Button>
 ```
 
-### Phase 2: Distribution Logic
+**Add helper text** explaining the auto-add behavior:
 
-Not every listing should have a highlight - this makes the feature feel more authentic:
-
-```typescript
-// ~40% of properties get a highlight (makes it special)
-if (Math.random() < 0.4) {
-  property.featured_highlight = randomChoice(SALE_HIGHLIGHTS);
-}
-
-// ~50% of projects get a highlight (developers use this more)
-if (Math.random() < 0.5) {
-  project.featured_highlight = randomChoice(PROJECT_HIGHLIGHTS);
-}
+After the Address input, add a subtle hint:
+```tsx
+<p className="text-xs text-muted-foreground mt-1">
+  Select an address to add it instantly
+</p>
 ```
-
-### Phase 3: File Changes
-
-**File 1: `supabase/functions/seed-demo-data/index.ts`**
-
-1. Add the three highlight arrays near the top with other constants
-2. In the for-sale properties loop (~line 432-463): Add conditional `featured_highlight`
-3. In the rental properties loop (~line 496-533): Add conditional `featured_highlight`
-4. In the projects loop (~line 574-598): Add conditional `featured_highlight`
-
-**File 2: `supabase/functions/seed-additional-properties/index.ts`**
-
-1. Add `SALE_HIGHLIGHTS` and `RENTAL_HIGHLIGHTS` arrays
-2. In `generateProperty()` function (~line 213-247): Add conditional `featured_highlight` based on listing status
 
 ---
 
-## Files Changed Summary
+## Edge Cases Handled
+
+| Scenario | Behavior |
+|----------|----------|
+| No label entered yet | Address is stored but not auto-added. User can enter label first. |
+| Label filled, click address | Instantly added, form clears |
+| Max locations reached (5) | Form section hidden (existing logic) |
+| User clears label after adding | Icon auto-suggests based on new label |
+
+---
+
+## Visual Change
+
+**Before:**
+```
+┌─────────────────────────────────────────────────┐
+│  Location Name: [Mom's House      ]             │
+│  Icon: [🏠] [💼] [❤️] [⭐] [🏢]                 │
+│  Address: [Gesson Street 6, Tel Aviv     ]      │
+│                                                 │
+│  ┌─────────────────────────────────────────┐    │
+│  │     ⊙  Add Location                     │ ← GONE │
+│  └─────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────┘
+```
+
+**After:**
+```
+┌─────────────────────────────────────────────────┐
+│  Location Name: [Mom's House      ]             │
+│  Icon: [🏠] [💼] [❤️] [⭐] [🏢]                 │
+│  Address: [Search for an address...       ]     │
+│  ↳ Select an address to add it instantly        │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## Files Changed
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/seed-demo-data/index.ts` | Add highlight arrays + populate for properties & projects |
-| `supabase/functions/seed-additional-properties/index.ts` | Add highlight arrays + populate in generateProperty() |
-| **Total** | **2 files** |
-
----
-
-## After Deployment
-
-The existing mock data won't automatically have highlights. To backfill:
-
-1. **Option A (Quick):** Run a SQL update to add random highlights to existing records
-2. **Option B (Clean):** Clear and re-seed the data
-
-I can add a `?action=backfill-highlights` mode to the seed function if you'd like to update existing data without re-seeding everything.
-
+| `src/components/onboarding/BuyerOnboarding.tsx` | Modify `handleAddressSelect` to auto-add, remove "Add Location" button, add helper text |
+| **Total** | **1 file** |
