@@ -157,7 +157,7 @@ export function HeroSplit() {
                     className="text-lg sm:text-xl font-semibold text-white"
                     style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
                   >
-                    {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '2,300+'}
+                    2,300+
                   </div>
                   <div 
                     className="text-[10px] sm:text-xs text-white/90 uppercase tracking-wide font-medium"
