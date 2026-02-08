@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
@@ -19,14 +19,40 @@ interface CompareAISummaryProps {
   isRental: boolean;
 }
 
+const MAX_RETRIES = 2;
+
 export function CompareAISummary({ properties, winnerCounts, isRental }: CompareAISummaryProps) {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [propertyIds, setPropertyIds] = useState<string>('');
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // Use ref to track if we're currently generating to prevent duplicate calls
+  const isGeneratingRef = useRef(false);
+  // Track the retry timeout so we can clear it if properties change
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset retry count when properties change
+  useEffect(() => {
+    setRetryCount(0);
+    // Clear any pending retry
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, [properties]);
 
   const generateSummary = useCallback(async () => {
+    // Guard: Need at least 2 properties with complete data
     if (properties.length < 2) return;
+    
+    // Guard: Properties must have IDs and titles (not placeholder/loading data)
+    if (!properties.every(p => p.id && p.title)) return;
+    
+    // Prevent duplicate concurrent calls
+    if (isGeneratingRef.current) return;
+    isGeneratingRef.current = true;
 
     setLoading(true);
     setError(null);
@@ -64,13 +90,20 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
       );
 
       if (!response.ok) {
+        // Don't retry on rate limit or payment errors - these are intentional limits
         if (response.status === 429) {
           toast.error('AI is busy, please try again in a moment');
-          throw new Error('Rate limited');
+          setError('AI service temporarily unavailable');
+          setLoading(false);
+          isGeneratingRef.current = false;
+          return;
         }
         if (response.status === 402) {
           toast.error('AI service temporarily unavailable');
-          throw new Error('Payment required');
+          setError('AI service temporarily unavailable');
+          setLoading(false);
+          isGeneratingRef.current = false;
+          return;
         }
         throw new Error('Failed to generate summary');
       }
@@ -78,26 +111,69 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
       const data = await response.json();
       if (data.summary) {
         setSummary(data.summary);
+        setRetryCount(0); // Reset on success
       } else {
         throw new Error('No summary in response');
       }
     } catch (err) {
       console.error('Error generating AI summary:', err);
+      
+      // Auto-retry on transient failures
+      if (retryCount < MAX_RETRIES) {
+        const nextRetry = retryCount + 1;
+        setRetryCount(nextRetry);
+        
+        // Retry after delay (1s, then 2s) - exponential backoff
+        const delay = 1000 * nextRetry;
+        console.log(`AI summary retry ${nextRetry}/${MAX_RETRIES} in ${delay}ms`);
+        
+        retryTimeoutRef.current = setTimeout(() => {
+          isGeneratingRef.current = false;
+          generateSummary();
+        }, delay);
+        
+        // Keep loading state during retry
+        return;
+      }
+      
       setError('Unable to generate AI summary');
     } finally {
       setLoading(false);
+      isGeneratingRef.current = false;
     }
-  }, [properties, winnerCounts, isRental]);
+  }, [properties, winnerCounts, isRental, retryCount]);
 
   // Generate summary when properties change
   useEffect(() => {
     const newIds = properties.map(p => p.id).sort().join(',');
-    if (newIds !== propertyIds && properties.length >= 2) {
-      setPropertyIds(newIds);
-      setSummary(null);
-      generateSummary();
+    
+    // Only trigger when IDs change AND we have valid data
+    if (newIds && newIds !== propertyIds && properties.length >= 2) {
+      // Ensure all properties have required data
+      if (properties.every(p => p.id && p.title)) {
+        setPropertyIds(newIds);
+        setSummary(null);
+        setError(null);
+        isGeneratingRef.current = false; // Reset the ref when starting fresh
+        generateSummary();
+      }
     }
   }, [properties, propertyIds, generateSummary]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleManualRetry = () => {
+    setRetryCount(0);
+    isGeneratingRef.current = false;
+    generateSummary();
+  };
 
   if (properties.length < 2) return null;
 
@@ -145,7 +221,7 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
           >
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{error}</span>
-            <Button variant="link" size="sm" onClick={generateSummary} className="p-0 h-auto">
+            <Button variant="link" size="sm" onClick={handleManualRetry} className="p-0 h-auto">
               Try again
             </Button>
           </motion.div>
