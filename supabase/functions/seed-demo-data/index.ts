@@ -188,6 +188,52 @@ const SPECIALIZATIONS = ['First-time buyers', 'Investment properties', 'Luxury h
 const PROJECT_STATUS = ['planning', 'pre_sale', 'under_construction', 'completed'];
 const PROJECT_AMENITIES = ['gym', 'pool', 'lobby', 'underground_parking', 'rooftop_terrace', 'playground', 'security_24_7', 'concierge', 'storage_units', 'ev_charging'];
 
+// ============ FEATURED HIGHLIGHTS ============
+const SALE_HIGHLIGHTS = [
+  "Panoramic sea views from every room",
+  "Massive 40m² south-facing balcony",
+  "Fully renovated with designer finishes",
+  "Private rooftop terrace",
+  "Smart home automation throughout",
+  "Protected room with natural light",
+  "Gourmet chef's kitchen",
+  "Direct elevator to apartment",
+  "Walk-in closet in master suite",
+  "Floor-to-ceiling windows",
+  "High ceilings throughout",
+  "Corner apartment with cross ventilation",
+];
+
+const RENTAL_HIGHLIGHTS = [
+  "Move-in ready, fully furnished",
+  "Pet-friendly with private garden",
+  "All bills included in rent",
+  "Flexible lease terms available",
+  "Home office with separate entrance",
+  "Quiet apartment, faces inner courtyard",
+  "Walking distance to beach",
+  "Near top-rated schools",
+  "Underground parking included",
+  "New central A/C system",
+  "Recently renovated bathroom",
+  "Bright and airy with balcony",
+];
+
+const PROJECT_HIGHLIGHTS = [
+  "Rooftop infinity pool with sea views",
+  "Smart home technology in every unit",
+  "5-star hotel-style concierge service",
+  "Private landscaped gardens per unit",
+  "Direct beach access for residents",
+  "24/7 spa and wellness center",
+  "EV charging in every parking spot",
+  "Award-winning architectural design",
+  "LEED-certified green building",
+  "Exclusive residents-only lounge",
+  "Underground parking with storage",
+  "Premium designer finishes included",
+];
+
 // ============ HELPER FUNCTIONS ============
 
 function randomInt(min: number, max: number): number {
@@ -460,6 +506,7 @@ serve(async (req) => {
             agent_id: randomChoice(agentIds),
             is_published: true,
             is_featured: Math.random() > 0.85,
+            featured_highlight: Math.random() < 0.4 ? randomChoice(SALE_HIGHLIGHTS) : null,
           });
 
         if (error) {
@@ -530,6 +577,7 @@ serve(async (req) => {
             agent_id: randomChoice(agentIds),
             is_published: true,
             is_featured: Math.random() > 0.9,
+            featured_highlight: Math.random() < 0.4 ? randomChoice(RENTAL_HIGHLIGHTS) : null,
           });
 
         if (error) {
@@ -595,6 +643,7 @@ serve(async (req) => {
             representing_agent_id: randomChoice(agentIds),
             is_published: true,
             is_featured: Math.random() > 0.85,
+            featured_highlight: Math.random() < 0.5 ? randomChoice(PROJECT_HIGHLIGHTS) : null,
           })
           .select('id')
           .single();

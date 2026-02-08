@@ -56,6 +56,37 @@ const FEATURES_POOL = [
   'security', 'concierge', 'gym', 'pool', 'sauna', 'shabbat_elevator',
 ];
 
+// Featured Highlights for properties
+const SALE_HIGHLIGHTS = [
+  "Panoramic sea views from every room",
+  "Massive 40m² south-facing balcony",
+  "Fully renovated with designer finishes",
+  "Private rooftop terrace",
+  "Smart home automation throughout",
+  "Protected room with natural light",
+  "Gourmet chef's kitchen",
+  "Direct elevator to apartment",
+  "Walk-in closet in master suite",
+  "Floor-to-ceiling windows",
+  "High ceilings throughout",
+  "Corner apartment with cross ventilation",
+];
+
+const RENTAL_HIGHLIGHTS = [
+  "Move-in ready, fully furnished",
+  "Pet-friendly with private garden",
+  "All bills included in rent",
+  "Flexible lease terms available",
+  "Home office with separate entrance",
+  "Quiet apartment, faces inner courtyard",
+  "Walking distance to beach",
+  "Near top-rated schools",
+  "Underground parking included",
+  "New central A/C system",
+  "Recently renovated bathroom",
+  "Bright and airy with balcony",
+];
+
 const STREET_NAMES = [
   'Herzl', 'Rothschild', 'Ben Gurion', 'Weizmann', 'Jabotinsky', 'Dizengoff',
   'Allenby', 'HaYarkon', 'King George', 'Bialik', 'Nordau', 'Sokolov',
@@ -244,6 +275,9 @@ function generateProperty(
     verification_status: 'approved',
     created_at: createdAt.toISOString(),
     updated_at: createdAt.toISOString(),
+    featured_highlight: Math.random() < 0.4 
+      ? randomChoice(listingStatus === 'for_rent' ? RENTAL_HIGHLIGHTS : SALE_HIGHLIGHTS) 
+      : null,
   };
   
   // Add rental-specific fields
