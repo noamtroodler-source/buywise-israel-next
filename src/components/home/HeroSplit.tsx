@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, Building2, Home, Key, House, KeyRound, HardHat } from 'lucide-react';
+import { Search, Building2, Home, Key } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -129,34 +129,23 @@ export function HeroSplit() {
               </form>
             </motion.div>
 
-            {/* Trust Indicators - Pyramid layout on mobile */}
+            {/* Trust Indicators - Inline text with separators */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
               className="pt-1 md:pt-2"
             >
-              <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3">
-                {/* Top row on mobile / inline on desktop */}
-                <div className="flex items-center justify-center gap-2 sm:gap-3">
-                  <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                    <House className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                    <span className="font-medium">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
-                    <span className="text-white/70">For Sale</span>
-                  </span>
-                  <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                    <KeyRound className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                    <span className="font-medium">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
-                    <span className="text-white/70">Rentals</span>
-                  </span>
-                </div>
-                {/* Bottom centered on mobile / inline on desktop */}
-                <span className="flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm text-white">
-                  <HardHat className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" />
-                  <span className="font-medium">{stats?.projectsCount ?? 15}+</span>
-                  <span className="text-white/70">Projects</span>
-                </span>
-              </div>
+              <p className="text-xs sm:text-sm text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
+                <span className="font-medium text-white">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
+                {' '}For Sale
+                <span className="mx-2 text-white/40">·</span>
+                <span className="font-medium text-white">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
+                {' '}Rentals
+                <span className="mx-2 text-white/40">·</span>
+                <span className="font-medium text-white">{stats?.projectsCount ?? 15}+</span>
+                {' '}Projects
+              </p>
             </motion.div>
           </motion.div>
         </div>
