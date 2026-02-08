@@ -95,6 +95,7 @@ function WizardContent() {
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
+         featured_highlight: data.featured_highlight || null,
         submitForReview: false,
       });
       autoSave.clearSavedData();
@@ -139,6 +140,7 @@ function WizardContent() {
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
+         featured_highlight: data.featured_highlight || null,
         submitForReview: true,
       });
       

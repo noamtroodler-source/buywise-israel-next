@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormattedNumberInput } from '@/components/ui/formatted-number-input';
 import { usePropertyWizard } from '../PropertyWizardContext';
-import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote } from 'lucide-react';
+import { Thermometer, Calendar, Wrench, Sparkles, Building, FileText, Home, Banknote, Star, Lightbulb } from 'lucide-react';
  import { Armchair } from 'lucide-react';
  import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -152,6 +152,41 @@ export function StepFeatures() {
       </div>
 
       <div className="space-y-6">
+        {/* Featured Highlight - First Section */}
+        <div className="space-y-4 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+          <div className="flex items-start gap-3">
+            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+              <Star className="h-4 w-4 text-primary fill-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold">Featured Highlight</h3>
+              <p className="text-sm text-muted-foreground">
+                What's the ONE thing that makes this property special? This will be prominently displayed at the top of your listing.
+              </p>
+            </div>
+          </div>
+          
+          <Input
+            value={data.featured_highlight}
+            onChange={(e) => updateData({ featured_highlight: e.target.value.slice(0, 60) })}
+            placeholder="e.g., Private rooftop terrace with city views"
+            className="h-11 rounded-xl bg-background"
+            maxLength={60}
+          />
+          
+          <div className="flex items-start gap-2 text-xs text-muted-foreground">
+            <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <p>
+              Examples: "Private pool", "Massive 50m² balcony", "Fully renovated kitchen", "Sea view from every room"
+            </p>
+          </div>
+          
+          {data.featured_highlight && (
+            <p className="text-xs text-right text-muted-foreground">
+              {data.featured_highlight.length}/60 characters
+            </p>
+          )}
+        </div>
         {/* Condition */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">

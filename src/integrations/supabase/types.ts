@@ -3275,6 +3275,7 @@ export type Database = {
           currency: string | null
           description: string | null
           entry_date: string | null
+          featured_highlight: string | null
           features: string[] | null
           floor: number | null
           furnished_status: string | null
@@ -3333,6 +3334,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           entry_date?: string | null
+          featured_highlight?: string | null
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null
@@ -3391,6 +3393,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           entry_date?: string | null
+          featured_highlight?: string | null
           features?: string[] | null
           floor?: number | null
           furnished_status?: string | null

@@ -144,6 +144,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         description: property.description || '',
         highlights: [],
          furniture_items: (property as any).furniture_items || [],
+         featured_highlight: (property as any).featured_highlight || '',
       };
       loadFromSaved(wizardData);
       setHasLoaded(true);
@@ -194,6 +195,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
+         featured_highlight: data.featured_highlight || null,
       } as any);
       navigate('/agent/properties');
     } finally {
@@ -237,6 +239,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         furnished_status: data.furnished_status,
         pets_policy: data.pets_policy,
          furniture_items: data.furniture_items,
+         featured_highlight: data.featured_highlight || null,
       } as any);
       
       // Then submit for review

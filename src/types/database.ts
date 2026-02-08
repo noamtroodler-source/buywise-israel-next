@@ -97,6 +97,8 @@ export interface Property {
   checks_required: boolean | null;
    // Furniture items for furnished properties
    furniture_items: string[] | null;
+   // Featured highlight - agent's choice standout feature
+   featured_highlight: string | null;
   created_at: string;
   updated_at: string;
   agent?: Agent;
