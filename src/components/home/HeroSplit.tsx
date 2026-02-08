@@ -129,23 +129,35 @@ export function HeroSplit() {
               </form>
             </motion.div>
 
-            {/* Trust Indicators - Inline text with separators */}
+            {/* Trust Indicators - Unified subtle container */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="pt-1 md:pt-2"
+              className="pt-2 md:pt-3"
             >
-              <p className="text-xs sm:text-sm text-white/80" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                <span className="font-medium text-white">{stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}</span>
-                {' '}For Sale
-                <span className="mx-2 text-white/40">·</span>
-                <span className="font-medium text-white">{stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}</span>
-                {' '}Rentals
-                <span className="mx-2 text-white/40">·</span>
-                <span className="font-medium text-white">{stats?.projectsCount ?? 15}+</span>
-                {' '}Projects
-              </p>
+              <div className="inline-flex items-center bg-white/8 backdrop-blur-sm rounded-lg px-4 py-2 gap-4 sm:gap-6">
+                <div className="text-center">
+                  <div className="text-base sm:text-lg font-semibold text-white">
+                    {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">For Sale</div>
+                </div>
+                <div className="w-px h-6 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-base sm:text-lg font-semibold text-white">
+                    {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">Rentals</div>
+                </div>
+                <div className="w-px h-6 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-base sm:text-lg font-semibold text-white">
+                    {stats?.projectsCount ?? 15}+
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">Projects</div>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         </div>
