@@ -1,132 +1,170 @@
 
-# Auto-Add Location on Address Selection
+# Fix Location Adding Flow - Clear Input and Handle Order Issues
 
 ## Summary
-Remove the extra "Add Location" button click by automatically adding the location when a user selects an address from the Google Maps suggestions. If the location name is already filled, selecting an address immediately saves it and clears the form for the next entry.
+Fix two bugs in the buyer onboarding location flow:
+1. The address input doesn't visually clear after adding a location
+2. If user selects an address before entering a location name, they have to re-do the address search
 
 ---
 
-## Current vs New Flow
+## Current Problems
 
-**Current (3-step):**
-1. Enter location name (e.g., "Mom's House")
-2. Select icon
-3. Search address → click suggestion
-4. **Click "Add Location" button** ← extra step
+**Problem 1: Address doesn't clear visually**
+- The `AddressAutocomplete` component manages its own internal state via `usePlacesAutocomplete`
+- When parent calls `setLocationAddress('')`, it updates the prop but the internal `inputValue` in the component doesn't reset
+- This is why the address stays visible even after being added
 
-**New (auto-add):**
-1. Enter location name (e.g., "Mom's House")
-2. Select icon  
-3. Search address → click suggestion → **automatically added!** ✓
-   - Form clears instantly, ready for next location
+**Problem 2: Order-dependent flow is confusing**
+- Current logic: Auto-add only works if `locationLabel` is already filled when address is selected
+- If user types address first → it's stored but not added
+- User then types a name → nothing happens, address input still shows old value
+- User has to re-search the address
 
 ---
 
-## Implementation
+## Solution
+
+### Part 1: Add a `reset` mechanism to AddressAutocomplete
+
+Add a `key` prop pattern to force the component to remount and reset internal state:
+
+```tsx
+// In BuyerOnboarding.tsx
+const [addressInputKey, setAddressInputKey] = useState(0);
+
+// When we want to clear:
+setAddressInputKey(prev => prev + 1);
+```
+
+```tsx
+<AddressAutocomplete
+  key={addressInputKey}  // Forces remount on change
+  value={locationAddress}
+  ...
+/>
+```
+
+### Part 2: Handle address-first flow with pending state
+
+If user selects an address without a label, store it as "pending". When they enter a label, auto-add the pending address:
+
+```tsx
+// In handleAddressSelect:
+if (locationLabel.trim()) {
+  // Existing auto-add logic
+  addLocationAndReset(address);
+} else {
+  // Just store it - will be used when label is entered
+  setParsedAddress(address);
+  setLocationAddress(address.fullAddress);
+}
+
+// New effect to auto-add when label becomes available:
+useEffect(() => {
+  if (locationLabel.trim() && parsedAddress) {
+    addLocationAndReset(parsedAddress);
+  }
+}, [locationLabel]);
+```
+
+### Part 3: Update helper text based on state
+
+Show contextual guidance:
+- No label, no address: "Enter a name, then search for the address"
+- Label filled, no address: "Select an address to add it instantly"
+- No label, address selected: "Now enter a name to save this location"
+
+---
+
+## Implementation Details
 
 ### Changes to `BuyerOnboarding.tsx`
 
-**Modify `handleAddressSelect`** (lines 255-258):
-
-Current:
+1. **Add key state for address reset**
 ```typescript
-const handleAddressSelect = (address: ParsedAddress) => {
-  setParsedAddress(address);
-  setLocationAddress(address.fullAddress);
+const [addressInputKey, setAddressInputKey] = useState(0);
+```
+
+2. **Refactor add logic into helper function**
+```typescript
+const addLocationAndReset = (address: ParsedAddress) => {
+  const newLocation: OnboardingLocation = {
+    label: locationLabel.trim(),
+    icon: locationIcon,
+    address: address.fullAddress,
+    latitude: address.latitude,
+    longitude: address.longitude,
+  };
+  
+  setOnboardingLocations(prev => [...prev, newLocation]);
+  
+  // Reset ALL form state including forcing input to remount
+  setLocationLabel('');
+  setLocationIcon('home');
+  setLocationAddress('');
+  setParsedAddress(null);
+  setAddressInputKey(prev => prev + 1); // Force AddressAutocomplete to reset
 };
 ```
 
-New:
+3. **Update handleAddressSelect to handle both cases**
 ```typescript
 const handleAddressSelect = (address: ParsedAddress) => {
-  setParsedAddress(address);
-  setLocationAddress(address.fullAddress);
-  
-  // Auto-add if label is already filled
   if (locationLabel.trim()) {
-    const newLocation: OnboardingLocation = {
-      label: locationLabel.trim(),
-      icon: locationIcon,
-      address: address.fullAddress,
-      latitude: address.latitude,
-      longitude: address.longitude,
-    };
-    
-    setOnboardingLocations(prev => [...prev, newLocation]);
-    
-    // Reset form for next entry
-    setLocationLabel('');
-    setLocationIcon('home');
-    setLocationAddress('');
-    setParsedAddress(null);
+    // Label exists - add immediately
+    addLocationAndReset(address);
+  } else {
+    // No label yet - store address as pending
+    setParsedAddress(address);
+    setLocationAddress(address.fullAddress);
   }
 };
 ```
 
-**Remove the "Add Location" button** (lines 840-851):
-
-Delete this entire block:
-```tsx
-{/* Add button */}
-<Button
-  type="button"
-  variant="outline"
-  size="sm"
-  onClick={handleAddLocation}
-  disabled={!locationLabel.trim() || !parsedAddress}
-  className="w-full"
->
-  <MapPin className="h-4 w-4 mr-2" />
-  Add Location
-</Button>
+4. **Add effect to auto-add when label is entered after address**
+```typescript
+useEffect(() => {
+  if (locationLabel.trim() && parsedAddress) {
+    addLocationAndReset(parsedAddress);
+  }
+}, [locationLabel]);
 ```
 
-**Add helper text** explaining the auto-add behavior:
-
-After the Address input, add a subtle hint:
+5. **Update helper text to be dynamic**
 ```tsx
 <p className="text-xs text-muted-foreground mt-1">
-  Select an address to add it instantly
+  {parsedAddress && !locationLabel.trim()
+    ? "Now enter a name above to save this location"
+    : "Select an address to add it instantly"}
 </p>
 ```
 
+6. **Apply key to AddressAutocomplete**
+```tsx
+<AddressAutocomplete
+  key={addressInputKey}
+  value={locationAddress}
+  onAddressSelect={handleAddressSelect}
+  onInputChange={setLocationAddress}
+  placeholder="Search for an address..."
+/>
+```
+
 ---
 
-## Edge Cases Handled
+## User Flow After Fix
 
-| Scenario | Behavior |
-|----------|----------|
-| No label entered yet | Address is stored but not auto-added. User can enter label first. |
-| Label filled, click address | Instantly added, form clears |
-| Max locations reached (5) | Form section hidden (existing logic) |
-| User clears label after adding | Icon auto-suggests based on new label |
+**Flow A: Name first (preferred)**
+1. Type "Mom's House" → icon auto-selects 🏠
+2. Search "Gissin Street 6" → click suggestion
+3. ✅ Location added instantly, form clears completely
 
----
-
-## Visual Change
-
-**Before:**
-```
-┌─────────────────────────────────────────────────┐
-│  Location Name: [Mom's House      ]             │
-│  Icon: [🏠] [💼] [❤️] [⭐] [🏢]                 │
-│  Address: [Gesson Street 6, Tel Aviv     ]      │
-│                                                 │
-│  ┌─────────────────────────────────────────┐    │
-│  │     ⊙  Add Location                     │ ← GONE │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
-```
-
-**After:**
-```
-┌─────────────────────────────────────────────────┐
-│  Location Name: [Mom's House      ]             │
-│  Icon: [🏠] [💼] [❤️] [⭐] [🏢]                 │
-│  Address: [Search for an address...       ]     │
-│  ↳ Select an address to add it instantly        │
-└─────────────────────────────────────────────────┘
-```
+**Flow B: Address first (now works)**
+1. Search "Gissin Street 6" → click suggestion
+2. Address shows in input, helper says "Now enter a name above..."
+3. Type "Mom's House"
+4. ✅ Location added instantly, form clears completely
 
 ---
 
@@ -134,5 +172,5 @@ After the Address input, add a subtle hint:
 
 | File | Changes |
 |------|---------|
-| `src/components/onboarding/BuyerOnboarding.tsx` | Modify `handleAddressSelect` to auto-add, remove "Add Location" button, add helper text |
+| `src/components/onboarding/BuyerOnboarding.tsx` | Add key-based reset, refactor add logic, handle address-first flow, dynamic helper text |
 | **Total** | **1 file** |
