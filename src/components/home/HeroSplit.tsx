@@ -138,24 +138,48 @@ export function HeroSplit() {
             >
               <div className="inline-flex items-center gap-4 sm:gap-6">
                 <div className="text-center">
-                  <div className="text-base sm:text-lg font-semibold text-white">
+                  <div 
+                    className="text-base sm:text-lg font-semibold text-white"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+                  >
                     {stats?.forSaleCount ? `${Math.floor(stats.forSaleCount / 5) * 5}+` : '65+'}
                   </div>
-                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">For Sale</div>
+                  <div 
+                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  >
+                    For Sale
+                  </div>
                 </div>
-                <div className="w-px h-6 bg-white/20" />
+                <div className="w-px h-6 bg-white/30" />
                 <div className="text-center">
-                  <div className="text-base sm:text-lg font-semibold text-white">
+                  <div 
+                    className="text-base sm:text-lg font-semibold text-white"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+                  >
                     {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}
                   </div>
-                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">Rentals</div>
+                  <div 
+                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  >
+                    Rentals
+                  </div>
                 </div>
-                <div className="w-px h-6 bg-white/20" />
+                <div className="w-px h-6 bg-white/30" />
                 <div className="text-center">
-                  <div className="text-base sm:text-lg font-semibold text-white">
+                  <div 
+                    className="text-base sm:text-lg font-semibold text-white"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+                  >
                     {stats?.projectsCount ?? 15}+
                   </div>
-                  <div className="text-[10px] sm:text-xs text-white/60 uppercase tracking-wide">Projects</div>
+                  <div 
+                    className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wide"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  >
+                    Projects
+                  </div>
                 </div>
               </div>
             </motion.div>
