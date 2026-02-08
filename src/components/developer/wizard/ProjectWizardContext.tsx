@@ -53,6 +53,9 @@ export interface ProjectWizardData {
   
   // Step 6: Description
   description: string;
+  
+  // Featured Selling Point
+  featured_highlight: string;
 }
 
 interface ProjectWizardContextType {
@@ -89,6 +92,7 @@ export const defaultProjectData: ProjectWizardData = {
   images: [],
   floor_plans: [],
   description: '',
+  featured_highlight: '',
 };
 
 const ProjectWizardContext = createContext<ProjectWizardContextType | undefined>(undefined);

@@ -3138,6 +3138,7 @@ export type Database = {
           currency: string | null
           description: string | null
           developer_id: string | null
+          featured_highlight: string | null
           floor_plans: string[] | null
           id: string
           images: string[] | null
@@ -3176,6 +3177,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           developer_id?: string | null
+          featured_highlight?: string | null
           floor_plans?: string[] | null
           id?: string
           images?: string[] | null
@@ -3214,6 +3216,7 @@ export type Database = {
           currency?: string | null
           description?: string | null
           developer_id?: string | null
+          featured_highlight?: string | null
           floor_plans?: string[] | null
           id?: string
           images?: string[] | null
