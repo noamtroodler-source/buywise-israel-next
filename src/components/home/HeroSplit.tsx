@@ -154,7 +154,7 @@ export function HeroSplit() {
                 <div className="w-px h-8 bg-white/60" style={{ boxShadow: '0 0 4px rgba(0,0,0,0.3)' }} />
                 <div className="text-center">
                   <div 
-                    className="text-base sm:text-lg font-semibold text-white"
+                    className="text-lg sm:text-xl font-semibold text-white"
                     style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
                   >
                     {stats?.rentalsCount ? `${Math.floor(stats.rentalsCount / 5) * 5}+` : '20+'}
