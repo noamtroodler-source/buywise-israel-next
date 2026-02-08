@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAgent, useAgentListings, useAgentStats } from '@/hooks/useAgent';
@@ -11,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { BlogCard } from '@/components/blog/BlogCard';
+import { CategoryToggle } from '@/components/shared/CategoryToggle';
 import { 
   MessageCircle, 
   Mail, 
@@ -20,7 +22,6 @@ import {
   MapPin,
   FileText,
   ShieldCheck,
-  ArrowLeft,
   Linkedin,
   Instagram,
   Facebook
@@ -37,10 +38,17 @@ import { generateAgentMeta, generateAgentJsonLd, SITE_CONFIG } from '@/lib/seo';
 
 export default function AgentDetail() {
   const { id } = useParams<{ id: string }>();
+  const [category, setCategory] = useState<'buy' | 'rent'>('buy');
+  
   const { data: agent, isLoading: agentLoading } = useAgent(id || '');
-  const { data: activeListings, isLoading: activeLoading } = useAgentListings(id || '', 'active');
-  const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past');
-  const { data: stats } = useAgentStats(id || '');
+  const { data: activeListings, isLoading: activeLoading } = useAgentListings(id || '', 'active', category);
+  const { data: pastListings, isLoading: pastLoading } = useAgentListings(id || '', 'past', category);
+  const { data: stats } = useAgentStats(id || '', category);
+  
+  // Get both stats for toggle badges
+  const { data: buyStats } = useAgentStats(id || '', 'buy');
+  const { data: rentStats } = useAgentStats(id || '', 'rent');
+  
   const { data: blogPosts = [], isLoading: blogLoading } = useAuthorBlogPosts('agent', agent?.id);
   const { isArticleSaved, toggleSave } = useSavedArticles();
   const formatPrice = useFormatPrice();
@@ -49,7 +57,6 @@ export default function AgentDetail() {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
-
 
   const whatsappUrl = agent?.phone 
     ? buildWhatsAppUrl(agent.phone, `Hi ${agent?.name || ''}, I found your profile on BuyWise Israel and would like to connect.`)
@@ -71,7 +78,6 @@ export default function AgentDetail() {
 
   const handleEmail = () => {
     if (agent?.email) {
-      // Track inquiry (use first active listing if available)
       const propertyId = activeListings?.[0]?.id;
       if (propertyId && agent.id) {
         trackInquiry({
@@ -134,12 +140,12 @@ export default function AgentDetail() {
     );
   }
 
-  // Check if current user owns this agent profile
   const isOwnProfile = agent && user?.id === agent.user_id;
-
-  // Generate SEO meta and JSON-LD
   const seoMeta = generateAgentMeta(agent);
   const jsonLd = generateAgentJsonLd(agent);
+  
+  const buyTotal = (buyStats?.activeListingsCount ?? 0) + (buyStats?.pastListingsCount ?? 0);
+  const rentTotal = (rentStats?.activeListingsCount ?? 0) + (rentStats?.pastListingsCount ?? 0);
 
   return (
     <Layout>
@@ -151,7 +157,6 @@ export default function AgentDetail() {
         jsonLd={jsonLd}
       />
       <div className="container py-6 md:py-8 space-y-6">
-        {/* Dual Navigation */}
         <DualNavigation
           parentLabel={isOwnProfile ? "Dashboard" : "Browse Listings"}
           parentPath={isOwnProfile ? "/agent" : "/listings"}
@@ -161,7 +166,6 @@ export default function AgentDetail() {
         <Card className="overflow-hidden">
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6">
-              {/* Avatar */}
               <Avatar className="h-24 w-24 md:h-28 md:w-28 ring-2 ring-border">
                 <AvatarImage src={agent.avatar_url || undefined} alt={agent.name} />
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
@@ -169,7 +173,6 @@ export default function AgentDetail() {
                 </AvatarFallback>
               </Avatar>
 
-              {/* Info */}
               <div className="flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl md:text-3xl font-bold text-foreground">{agent.name}</h1>
@@ -198,7 +201,6 @@ export default function AgentDetail() {
                   </div>
                 ) : null}
 
-                {/* License Number */}
                 {agent.license_number && (
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <ShieldCheck className="h-4 w-4" />
@@ -206,8 +208,6 @@ export default function AgentDetail() {
                   </div>
                 )}
 
-
-                {/* Languages */}
                 {agent.languages && agent.languages.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {agent.languages.map((lang) => (
@@ -218,7 +218,6 @@ export default function AgentDetail() {
                   </div>
                 )}
 
-                {/* Specializations */}
                 {agent.specializations && agent.specializations.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {agent.specializations.map((spec) => (
@@ -230,7 +229,6 @@ export default function AgentDetail() {
                 )}
               </div>
 
-              {/* Contact Buttons */}
               <div className="flex flex-col gap-2 md:min-w-[160px]">
                 {agent.phone && whatsappUrl && (
                   <Button className="gap-2" onClick={handleWhatsAppClick}>
@@ -275,12 +273,10 @@ export default function AgentDetail() {
               </div>
             </div>
 
-            {/* Bio */}
             {agent.bio && (
               <p className="mt-6 text-muted-foreground leading-relaxed line-clamp-2">{agent.bio}</p>
             )}
 
-            {/* Neighborhoods Covered */}
             {agent.neighborhoods_covered && agent.neighborhoods_covered.length > 0 && (
               <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground mb-3">
@@ -304,7 +300,9 @@ export default function AgentDetail() {
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold text-primary">{stats?.activeListingsCount ?? 0}</p>
-              <p className="text-sm text-muted-foreground">Active Listings</p>
+              <p className="text-sm text-muted-foreground">
+                {category === 'buy' ? 'For Sale' : 'For Rent'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -312,7 +310,9 @@ export default function AgentDetail() {
               <p className="text-2xl font-bold text-primary">
                 {stats?.medianPrice ? formatPrice(stats.medianPrice, 'ILS') : '—'}
               </p>
-              <p className="text-sm text-muted-foreground">Median Price</p>
+              <p className="text-sm text-muted-foreground">
+                {category === 'buy' ? 'Median Price' : 'Median Rent'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -331,17 +331,27 @@ export default function AgentDetail() {
           </Card>
         </div>
 
+        {/* Category Toggle */}
+        <div className="flex justify-center">
+          <CategoryToggle
+            value={category}
+            onChange={setCategory}
+            buyCount={buyTotal}
+            rentCount={rentTotal}
+          />
+        </div>
+
         {/* Tabs */}
         <Tabs defaultValue="active" className="space-y-6">
           <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="active" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Active Listings
+              {category === 'buy' ? 'For Sale' : 'For Rent'}
               <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
                 {stats?.activeListingsCount ?? 0}
               </span>
             </TabsTrigger>
             <TabsTrigger value="past" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Past Listings
+              {category === 'buy' ? 'Sold' : 'Rented'}
               <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
                 {stats?.pastListingsCount ?? 0}
               </span>
@@ -371,7 +381,12 @@ export default function AgentDetail() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <MapPin className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No active listings at this time.</p>
+                  <p className="text-muted-foreground">
+                    {category === 'buy' 
+                      ? 'No properties for sale at this time.'
+                      : 'No rentals available at this time.'
+                    }
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -394,7 +409,12 @@ export default function AgentDetail() {
               <Card>
                 <CardContent className="p-8 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No past sales recorded yet.</p>
+                  <p className="text-muted-foreground">
+                    {category === 'buy'
+                      ? 'No past sales recorded yet.'
+                      : 'No past rentals recorded yet.'
+                    }
+                  </p>
                 </CardContent>
               </Card>
             )}

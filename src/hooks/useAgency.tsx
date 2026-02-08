@@ -65,9 +65,12 @@ export function useAgencies() {
   });
 }
 
-export function useAgencyAgents(agencyId: string | undefined) {
+export function useAgencyAgents(
+  agencyId: string | undefined,
+  category: 'buy' | 'rent' = 'buy'
+) {
   return useQuery({
-    queryKey: ['agency-agents', agencyId],
+    queryKey: ['agency-agents', agencyId, category],
     queryFn: async () => {
       if (!agencyId) return [];
 
@@ -78,7 +81,9 @@ export function useAgencyAgents(agencyId: string | undefined) {
 
       if (error) throw error;
 
-      // Get active listings count for each agent
+      // Get active listings count for each agent filtered by category
+      const activeStatus = category === 'buy' ? 'for_sale' : 'for_rent';
+      
       const agentsWithCounts = await Promise.all(
         (agents || []).map(async (agent) => {
           const { count } = await supabase
@@ -86,7 +91,7 @@ export function useAgencyAgents(agencyId: string | undefined) {
             .select('*', { count: 'exact', head: true })
             .eq('agent_id', agent.id)
             .eq('is_published', true)
-            .in('listing_status', ['for_sale', 'for_rent']);
+            .eq('listing_status', activeStatus);
 
           return {
             ...agent,
@@ -101,9 +106,13 @@ export function useAgencyAgents(agencyId: string | undefined) {
   });
 }
 
-export function useAgencyListings(agencyId: string | undefined, status: 'active' | 'past') {
+export function useAgencyListings(
+  agencyId: string | undefined, 
+  status: 'active' | 'past',
+  category: 'buy' | 'rent' = 'buy'
+) {
   return useQuery({
-    queryKey: ['agency-listings', agencyId, status],
+    queryKey: ['agency-listings', agencyId, status, category],
     queryFn: async () => {
       if (!agencyId) return [];
 
@@ -118,10 +127,10 @@ export function useAgencyListings(agencyId: string | undefined, status: 'active'
 
       const agentIds = agents.map((a) => a.id);
 
-      // Then get properties for those agents
-      const statusFilter = status === 'active' 
-        ? ['for_sale', 'for_rent'] as const
-        : ['sold', 'rented'] as const;
+      // Map category + status to listing_status values
+      const statusFilter = category === 'buy'
+        ? (status === 'active' ? ['for_sale'] as const : ['sold'] as const)
+        : (status === 'active' ? ['for_rent'] as const : ['rented'] as const);
 
       const { data: properties, error } = await supabase
         .from('properties')
@@ -138,9 +147,12 @@ export function useAgencyListings(agencyId: string | undefined, status: 'active'
   });
 }
 
-export function useAgencyStats(agencyId: string | undefined) {
+export function useAgencyStats(
+  agencyId: string | undefined,
+  category: 'buy' | 'rent' = 'buy'
+) {
   return useQuery({
-    queryKey: ['agency-stats', agencyId],
+    queryKey: ['agency-stats', agencyId, category],
     queryFn: async () => {
       if (!agencyId) return null;
 
@@ -162,24 +174,26 @@ export function useAgencyStats(agencyId: string | undefined) {
       }
 
       const agentIds = agents.map((a) => a.id);
+      const activeStatus = category === 'buy' ? 'for_sale' : 'for_rent';
+      const pastStatus = category === 'buy' ? 'sold' : 'rented';
 
-      // Get active listings
+      // Get active listings for this category
       const { data: activeListings, error: activeError } = await supabase
         .from('properties')
         .select('price, created_at')
         .in('agent_id', agentIds)
         .eq('is_published', true)
-        .in('listing_status', ['for_sale', 'for_rent'] as const);
+        .eq('listing_status', activeStatus);
 
       if (activeError) throw activeError;
 
-      // Get past listings count
+      // Get past listings count for this category
       const { count: pastCount } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
         .in('agent_id', agentIds)
         .eq('is_published', true)
-        .in('listing_status', ['sold', 'rented'] as const);
+        .eq('listing_status', pastStatus);
 
       // Calculate median price
       let medianPrice = null;

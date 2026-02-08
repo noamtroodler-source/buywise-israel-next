@@ -49,13 +49,18 @@ export function useAgent(agentId: string) {
   });
 }
 
-export function useAgentListings(agentId: string, status: 'active' | 'past') {
+export function useAgentListings(
+  agentId: string, 
+  status: 'active' | 'past',
+  category: 'buy' | 'rent' = 'buy'
+) {
   return useQuery({
-    queryKey: ['agent-listings', agentId, status],
+    queryKey: ['agent-listings', agentId, status, category],
     queryFn: async () => {
-      const statusFilter = status === 'active' 
-        ? ['for_sale', 'for_rent'] as const
-        : ['sold', 'rented'] as const;
+      // Map category + status to listing_status values
+      const statusFilter = category === 'buy'
+        ? (status === 'active' ? ['for_sale'] as const : ['sold'] as const)
+        : (status === 'active' ? ['for_rent'] as const : ['rented'] as const);
       
       const { data, error } = await supabase
         .from('properties')
@@ -72,25 +77,29 @@ export function useAgentListings(agentId: string, status: 'active' | 'past') {
   });
 }
 
-export function useAgentStats(agentId: string) {
+export function useAgentStats(agentId: string, category: 'buy' | 'rent' = 'buy') {
   return useQuery({
-    queryKey: ['agent-stats', agentId],
+    queryKey: ['agent-stats', agentId, category],
     queryFn: async () => {
-      // Get all properties for this agent
+      const activeStatus = category === 'buy' ? 'for_sale' : 'for_rent';
+      const pastStatus = category === 'buy' ? 'sold' : 'rented';
+      
+      // Get properties for this category only
       const { data: properties, error } = await supabase
         .from('properties')
         .select('price, listing_status, created_at')
         .eq('agent_id', agentId)
-        .eq('is_published', true);
+        .eq('is_published', true)
+        .in('listing_status', [activeStatus, pastStatus]);
       
       if (error) throw error;
       
       const activeListings = properties?.filter(p => 
-        p.listing_status === 'for_sale' || p.listing_status === 'for_rent'
+        p.listing_status === activeStatus
       ) || [];
       
       const pastListings = properties?.filter(p => 
-        p.listing_status === 'sold' || p.listing_status === 'rented'
+        p.listing_status === pastStatus
       ) || [];
       
       // Calculate median price of active listings
@@ -99,7 +108,7 @@ export function useAgentStats(agentId: string) {
         ? activePrices[Math.floor(activePrices.length / 2)] 
         : null;
       
-      // Calculate average days on market (for sold listings, or active if none sold)
+      // Calculate average days on market (for sold/rented listings, or active if none)
       const listingsForDays = pastListings.length > 0 ? pastListings : activeListings;
       let avgDaysOnMarket: number | null = null;
       

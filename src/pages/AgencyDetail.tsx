@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, ArrowLeft, FileText, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, FileText, Linkedin, Instagram, Facebook, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { BlogCard } from '@/components/blog/BlogCard';
+import { CategoryToggle } from '@/components/shared/CategoryToggle';
 import { useAgency, useAgencyAgents, useAgencyListings, useAgencyStats } from '@/hooks/useAgency';
 import { useAuthorBlogPosts } from '@/hooks/useBlog';
 import { useSavedArticles } from '@/hooks/useSavedArticles';
@@ -18,7 +20,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
-import { useState } from 'react';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { generateAgencyMeta, generateAgencyJsonLd, SITE_CONFIG } from '@/lib/seo';
@@ -26,14 +27,21 @@ import { generateAgencyMeta, generateAgencyJsonLd, SITE_CONFIG } from '@/lib/seo
 export default function AgencyDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const [category, setCategory] = useState<'buy' | 'rent'>('buy');
+  const [logoError, setLogoError] = useState(false);
+  
   const { data: agency, isLoading: agencyLoading, error } = useAgency(slug || '');
-  const { data: agents, isLoading: agentsLoading } = useAgencyAgents(agency?.id);
-  const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active');
-  const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past');
-  const { data: stats } = useAgencyStats(agency?.id);
+  const { data: agents, isLoading: agentsLoading } = useAgencyAgents(agency?.id, category);
+  const { data: activeListings, isLoading: activeLoading } = useAgencyListings(agency?.id, 'active', category);
+  const { data: pastListings, isLoading: pastLoading } = useAgencyListings(agency?.id, 'past', category);
+  const { data: stats } = useAgencyStats(agency?.id, category);
+  
+  // Get both stats for toggle badges
+  const { data: buyStats } = useAgencyStats(agency?.id, 'buy');
+  const { data: rentStats } = useAgencyStats(agency?.id, 'rent');
+  
   const { data: blogPosts = [], isLoading: blogLoading } = useAuthorBlogPosts('agency', agency?.id);
   const { isArticleSaved, toggleSave } = useSavedArticles();
-  const [logoError, setLogoError] = useState(false);
   
   const { data: userAgent } = useQuery({
     queryKey: ['user-agent', user?.id],
@@ -105,9 +113,11 @@ export default function AgencyDetail() {
     );
   }
 
-  // Generate SEO meta and JSON-LD
   const seoMeta = generateAgencyMeta(agency);
   const jsonLd = generateAgencyJsonLd(agency);
+  
+  const buyTotal = (buyStats?.activeListingsCount ?? 0) + (buyStats?.pastListingsCount ?? 0);
+  const rentTotal = (rentStats?.activeListingsCount ?? 0) + (rentStats?.pastListingsCount ?? 0);
 
   return (
     <Layout>
@@ -119,7 +129,6 @@ export default function AgencyDetail() {
         jsonLd={jsonLd}
       />
       <div className="container py-8 space-y-8">
-        {/* Dual Navigation */}
         <DualNavigation
           parentLabel={isOwner ? "Dashboard" : "All Agencies"}
           parentPath={isOwner ? "/agency" : "/agencies"}
@@ -129,7 +138,6 @@ export default function AgencyDetail() {
         <Card className="overflow-hidden">
           <CardContent className="p-6 md:p-8">
             <div className="flex flex-col md:flex-row gap-6">
-              {/* Logo */}
               <div className="flex-shrink-0">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
                   {agency.logo_url && !logoError ? (
@@ -145,7 +153,6 @@ export default function AgencyDetail() {
                 </div>
               </div>
 
-              {/* Info */}
               <div className="flex-1 space-y-4">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -166,7 +173,6 @@ export default function AgencyDetail() {
                   <p className="text-muted-foreground line-clamp-2">{agency.description}</p>
                 )}
 
-                {/* Cities & Specializations */}
                 <div className="flex flex-wrap gap-2">
                   {agency.cities_covered?.map((city) => (
                     <Badge key={city} variant="outline" className="gap-1">
@@ -181,7 +187,6 @@ export default function AgencyDetail() {
                   ))}
                 </div>
 
-                {/* Contact Buttons */}
                 <div className="flex flex-wrap gap-2 pt-2">
                   {agency.website && (
                     <Button variant="outline" size="sm" asChild>
@@ -211,7 +216,6 @@ export default function AgencyDetail() {
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
-                  {/* Social Links */}
                   {(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook) && (
                     <>
                       <Separator orientation="vertical" className="h-6 mx-1" />
@@ -255,16 +259,24 @@ export default function AgencyDetail() {
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <Home className="h-5 w-5 mx-auto text-primary mb-2" />
+              {category === 'buy' ? (
+                <Home className="h-5 w-5 mx-auto text-primary mb-2" />
+              ) : (
+                <Key className="h-5 w-5 mx-auto text-primary mb-2" />
+              )}
               <p className="text-2xl font-bold">{stats?.activeListingsCount ?? 0}</p>
-              <p className="text-sm text-muted-foreground">Active Listings</p>
+              <p className="text-sm text-muted-foreground">
+                {category === 'buy' ? 'For Sale' : 'For Rent'}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingUp className="h-5 w-5 mx-auto text-primary mb-2" />
               <p className="text-2xl font-bold">{formatPrice(stats?.medianPrice ?? null)}</p>
-              <p className="text-sm text-muted-foreground">Median Price</p>
+              <p className="text-sm text-muted-foreground">
+                {category === 'buy' ? 'Median Price' : 'Median Rent'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -274,6 +286,16 @@ export default function AgencyDetail() {
               <p className="text-sm text-muted-foreground">Avg. Days on Market</p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Category Toggle */}
+        <div className="flex justify-center">
+          <CategoryToggle
+            value={category}
+            onChange={setCategory}
+            buyCount={buyTotal}
+            rentCount={rentTotal}
+          />
         </div>
 
         {/* Our Team */}
@@ -302,7 +324,7 @@ export default function AgencyDetail() {
                           {agent.years_experience}+ years
                         </p>
                         <Badge variant="secondary" className="text-xs">
-                          {agent.activeListingsCount} listings
+                          {agent.activeListingsCount} {category === 'buy' ? 'for sale' : 'for rent'}
                         </Badge>
                       </CardContent>
                     </Card>
@@ -317,13 +339,13 @@ export default function AgencyDetail() {
         <Tabs defaultValue="active" className="space-y-6">
           <TabsList className="h-12 p-1 bg-muted/50 rounded-xl">
             <TabsTrigger value="active" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Active Listings
+              {category === 'buy' ? 'For Sale' : 'For Rent'}
               <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
                 {stats?.activeListingsCount ?? 0}
               </span>
             </TabsTrigger>
             <TabsTrigger value="past" className="gap-2 h-10 px-4 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Past Listings
+              {category === 'buy' ? 'Sold' : 'Rented'}
               <span className="ml-1.5 px-2 py-0.5 text-xs font-medium rounded-full bg-primary/10 text-primary">
                 {stats?.pastListingsCount ?? 0}
               </span>
@@ -352,9 +374,20 @@ export default function AgencyDetail() {
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Active Listings</h3>
-                  <p className="text-muted-foreground">This agency doesn't have any active listings right now.</p>
+                  {category === 'buy' ? (
+                    <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  ) : (
+                    <Key className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  )}
+                  <h3 className="text-lg font-medium mb-2">
+                    {category === 'buy' ? 'No Properties For Sale' : 'No Rentals Available'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {category === 'buy' 
+                      ? "This agency doesn't have any properties for sale right now."
+                      : "This agency doesn't have any rentals available right now."
+                    }
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -376,9 +409,16 @@ export default function AgencyDetail() {
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Home className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Past Listings</h3>
-                  <p className="text-muted-foreground">No past listings to display yet.</p>
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    {category === 'buy' ? 'No Past Sales' : 'No Past Rentals'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {category === 'buy'
+                      ? 'No past sales to display yet.'
+                      : 'No past rentals to display yet.'
+                    }
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -407,8 +447,8 @@ export default function AgencyDetail() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Articles Yet</h3>
-                  <p className="text-muted-foreground">This agency hasn't published any articles yet.</p>
+                  <h3 className="text-lg font-medium mb-2">No Blog Posts</h3>
+                  <p className="text-muted-foreground">This agency hasn't published any blog posts yet.</p>
                 </CardContent>
               </Card>
             )}
