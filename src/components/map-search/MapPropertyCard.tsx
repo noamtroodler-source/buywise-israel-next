@@ -83,7 +83,7 @@ export const MapPropertyCard = memo(function MapPropertyCard({
         {/* Status badges overlay */}
         <div className="absolute top-1 left-1 flex gap-1">
           {isHot && (
-            <Badge className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5">
+            <Badge className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5">
               <Flame className="h-2.5 w-2.5 mr-0.5" />
               Hot
             </Badge>
@@ -145,7 +145,7 @@ export const MapPropertyCard = memo(function MapPropertyCard({
           {daysOnMarket !== null && (
             <span className={cn(
               "text-xs flex items-center gap-1",
-              isHot ? "text-amber-600 font-medium" : "text-muted-foreground"
+              isHot ? "text-primary font-medium" : "text-muted-foreground"
             )}>
               <Clock className="h-3 w-3" />
               {daysOnMarket === 0 ? 'Today' : `${daysOnMarket}d`}

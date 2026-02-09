@@ -111,8 +111,8 @@ export function AdminNavSection({
                         className={cn(
                           "h-5 px-1.5 text-[10px]",
                           isActive 
-                            ? "bg-primary-foreground text-primary" 
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500"
+                             ? "bg-primary-foreground text-primary" 
+                             : "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
                         )}
                       >
                         {item.badge > 99 ? '99+' : item.badge}
@@ -160,7 +160,7 @@ export function AdminNavItem({ href, label, icon: Icon, badge }: AdminNavItemPro
           className={cn(
             isActive 
               ? "bg-primary-foreground text-primary" 
-              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500"
+               : "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
           )}
         >
           {badge > 99 ? '99+' : badge}
