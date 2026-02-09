@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Settings, Pencil, Loader2 } from 'lucide-react';
+import { Settings, Pencil, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProfileSection } from '../ProfileSection';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useContentVisits } from '@/hooks/useContentVisits';
 import { DeleteAccountDialog } from '../DeleteAccountDialog';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 export function AccountSection() {
   const { data: profile, isLoading } = useProfile();
   const { isAgent, isDeveloper } = useUserRole();
   const updateProfile = useUpdateProfile();
+  const { clearHistory, visitedPaths } = useContentVisits();
   const [isEditing, setIsEditing] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   
   const hasProfessionalRole = isAgent || isDeveloper;
   
@@ -21,6 +25,18 @@ export function AccountSection() {
     fullName: profile?.full_name || '',
     phone: profile?.phone || '',
   });
+
+  const handleClearHistory = async () => {
+    setIsClearing(true);
+    try {
+      await clearHistory();
+      toast.success('Browsing history cleared');
+    } catch {
+      toast.error('Failed to clear history');
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const handleSave = () => {
     updateProfile.mutate({
@@ -126,6 +142,23 @@ export function AccountSection() {
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
             Edit Account
           </Button>
+
+          {visitedPaths.size > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearHistory}
+              disabled={isClearing}
+              className="w-full text-muted-foreground hover:text-foreground"
+            >
+              {isClearing ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              Clear Browsing History
+            </Button>
+          )}
 
           <DeleteAccountDialog hasProfessionalRole={hasProfessionalRole} />
         </div>
