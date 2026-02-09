@@ -293,10 +293,20 @@ export default function Auth() {
                       name="fullName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>
+                            {roleParam === 'agency' ? 'Your Name (Admin)' : 'Full Name'}
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="John Doe" {...field} />
+                            <Input 
+                              placeholder={roleParam === 'agency' ? 'Your name as admin' : 'John Doe'} 
+                              {...field} 
+                            />
                           </FormControl>
+                          {roleParam === 'agency' && (
+                            <p className="text-xs text-muted-foreground">
+                              You'll add your agency name in the next step
+                            </p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
