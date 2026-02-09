@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -99,6 +99,8 @@ const roleConfig = {
   },
 };
 
+const POST_AUTH_REDIRECT_KEY = 'post_auth_redirect';
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -119,10 +121,11 @@ export default function Auth() {
   const [showPostSignupSuggestions, setShowPostSignupSuggestions] = useState(false);
   const [justSignedUp, setJustSignedUp] = useState(false);
   
-  // Get professional role, invite code, and intent from URL params
+  // Get professional role, invite code, intent, and redirect from URL params
   const roleParam = searchParams.get('role') as ProfessionalRole;
   const inviteCode = searchParams.get('code');
   const intentParam = searchParams.get('intent');
+  const redirectParam = searchParams.get('redirect');
   const isProfessionalSignup = roleParam && ['agent', 'agency', 'developer'].includes(roleParam);
   const config = isProfessionalSignup ? roleConfig[roleParam] : roleConfig.default;
   
@@ -132,34 +135,58 @@ export default function Auth() {
   // Use intent icon if available and not a professional signup, otherwise use config icon
   const IconComponent = (!isProfessionalSignup && intentInfo?.icon) ? intentInfo.icon : config.icon;
 
+  // Helper to get the target redirect URL
+  const getTargetRedirect = useCallback(() => {
+    // First priority: explicit redirect param
+    if (redirectParam) return redirectParam;
+    // Second priority: professional signup flow
+    if (isProfessionalSignup) {
+      return inviteCode 
+        ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
+        : config.redirectTo;
+    }
+    // Third priority: stored redirect from previous session
+    const stored = localStorage.getItem(POST_AUTH_REDIRECT_KEY);
+    if (stored) {
+      localStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+      return stored;
+    }
+    return null;
+  }, [redirectParam, isProfessionalSignup, inviteCode, config.redirectTo]);
+
+  // Store intended redirect for email confirmation flows
+  const storeRedirectForLater = useCallback(() => {
+    const targetRedirect = redirectParam || (isProfessionalSignup ? config.redirectTo : null);
+    if (targetRedirect) {
+      localStorage.setItem(POST_AUTH_REDIRECT_KEY, targetRedirect);
+    }
+  }, [redirectParam, isProfessionalSignup, config.redirectTo]);
+
   const form = useForm<AuthFormData>({
     resolver: zodResolver(authSchema),
     defaultValues: { email: '', password: '', fullName: '' },
   });
 
-  // Handle already logged-in users with professional role
+  // Handle already logged-in users - respect redirect param
   useEffect(() => {
-    if (user && !loading && isProfessionalSignup) {
-      // Already logged in and trying to register as professional - go directly to registration
-      const redirectUrl = inviteCode 
-        ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
-        : config.redirectTo;
-      navigate(redirectUrl);
-      return;
+    if (user && !loading) {
+      const targetRedirect = getTargetRedirect();
+      if (targetRedirect) {
+        navigate(targetRedirect);
+        return;
+      }
     }
-  }, [user, loading, isProfessionalSignup, config.redirectTo, navigate, inviteCode]);
+  }, [user, loading, navigate, getTargetRedirect]);
 
   // Track if we've already sent welcome email to prevent duplicates
   const welcomeEmailSentRef = useRef(false);
 
   useEffect(() => {
     if (user && !loading && !profileLoading) {
-      // If professional signup, redirect to registration page
-      if (isProfessionalSignup) {
-        const redirectUrl = inviteCode 
-          ? `${config.redirectTo}?code=${encodeURIComponent(inviteCode)}`
-          : config.redirectTo;
-        navigate(redirectUrl);
+      // Check for explicit redirect first
+      const targetRedirect = getTargetRedirect();
+      if (targetRedirect) {
+        navigate(targetRedirect);
         return;
       }
       
@@ -179,7 +206,7 @@ export default function Auth() {
         navigate('/');
       }
     }
-  }, [user, loading, profileLoading, buyerProfile, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, config.redirectTo, inviteCode]);
+  }, [user, loading, profileLoading, buyerProfile, showOnboarding, showPostSignupSuggestions, navigate, isProfessionalSignup, getTargetRedirect]);
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
@@ -203,6 +230,9 @@ export default function Auth() {
     setIsSubmitting(true);
     try {
       if (activeTab === 'signup') {
+        // Store redirect for email confirmation flow
+        storeRedirectForLater();
+        
         const { error } = await signUp(data.email, data.password, data.fullName);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -224,9 +254,10 @@ export default function Auth() {
           toast.error('Invalid email or password');
         } else {
           toast.success('Welcome back!');
-          // If signing in with professional role, redirect to registration
-          if (isProfessionalSignup) {
-            navigate(config.redirectTo);
+          // Respect redirect param, then professional role, then default
+          const targetRedirect = getTargetRedirect();
+          if (targetRedirect) {
+            navigate(targetRedirect);
           } else {
             navigate('/');
           }

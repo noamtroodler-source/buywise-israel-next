@@ -24,7 +24,17 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   if (!user) {
-    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}&intent=view_profile`} replace />;
+    // Determine role context based on pathname for professional flows
+    let roleParam = '';
+    if (location.pathname.startsWith('/agency')) {
+      roleParam = '&role=agency';
+    } else if (location.pathname.startsWith('/agent')) {
+      roleParam = '&role=agent';
+    } else if (location.pathname.startsWith('/developer')) {
+      roleParam = '&role=developer';
+    }
+    
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}${roleParam}&intent=view_profile`} replace />;
   }
 
   if (requiredRole && !hasRole(requiredRole)) {
