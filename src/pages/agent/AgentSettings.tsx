@@ -597,7 +597,7 @@ export default function AgentSettings() {
               </motion.div>
 
               {/* Sticky Save Bar */}
-              <motion.div variants={itemVariants} className="sticky bottom-4 z-10">
+              <motion.div variants={itemVariants} className="z-10">
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
                   <Button 
                     type="button" 

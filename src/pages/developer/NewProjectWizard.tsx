@@ -199,7 +199,7 @@ function WizardContent() {
             </motion.div>
 
             {/* Navigation */}
-            <motion.div variants={itemVariants} className="sticky bottom-4">
+            <motion.div variants={itemVariants}>
               <div className="flex flex-col gap-4 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
                 {isLastStep && !isDeveloperVerified && (
                   <Alert variant="default" className="bg-primary/5 border-primary/20">

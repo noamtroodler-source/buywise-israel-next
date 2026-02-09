@@ -499,7 +499,7 @@ export default function NewProperty() {
               </motion.div>
 
               {/* Sticky Submit */}
-              <motion.div variants={itemVariants} className="sticky bottom-4">
+              <motion.div variants={itemVariants}>
                 <div className="flex flex-col sm:flex-row items-center gap-3 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
                   <Button
                     type="button"
