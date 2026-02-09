@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Menu, X, User, LogOut, Heart, Building2, Shield, Settings, Users, Landmark, ChevronDown, ChevronRight } from 'lucide-react';
+import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useProfile } from '@/hooks/useProfile';
@@ -19,15 +18,13 @@ import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
-import { usePreferences } from '@/contexts/PreferencesContext';
+
 import { MoreNav } from './MoreNav';
 import { LearnNav } from './LearnNav';
 import { MegaMenu } from './MegaMenu';
 import { NAV_CONFIG } from '@/lib/navigationConfig';
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
@@ -38,14 +35,10 @@ export function Header() {
   const { projectFavoriteIds } = useProjectFavorites();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
-  const { currency, areaUnit } = usePreferences();
-  
   const favoriteCount = (favoriteIds?.length || 0) + (projectFavoriteIds?.length || 0);
   const isAgencyAdmin = !!myAgency;
   const hasDeveloperProfile = !!developerProfile;
   const hasProfessionalRole = isAgent || isAgencyAdmin || hasDeveloperProfile || isDeveloper || isAdmin;
-  const currencySymbol = currency === 'USD' ? '$' : '₪';
-  const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
 
   const handleSignOut = async () => {
     await signOut();
@@ -172,313 +165,8 @@ export function Header() {
             </div>
           )}
 
-          {/* Mobile Menu Button - 44px touch target */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden h-10 w-10"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
         </div>
       </div>
-
-      {/* Mobile Menu with smooth animation */}
-      <div 
-        className={`md:hidden border-t border-border bg-background overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <nav className="container py-4 flex flex-col gap-1">
-            {/* User Section (when logged in) */}
-            {user ? (
-              <>
-                <div className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg mb-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-foreground truncate">
-                      {profile?.full_name || 'Welcome back'}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                </div>
-                
-                {/* Quick access links - min 44px touch targets */}
-                <Link 
-                  to="/profile" 
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="h-5 w-5" />
-                  My Profile
-                </Link>
-                {isAgent && (
-                  <Link 
-                    to="/agent" 
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Building2 className="h-5 w-5" />
-                    Agent Dashboard
-                  </Link>
-                )}
-                {isAgencyAdmin && (
-                  <Link 
-                    to="/agency" 
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Users className="h-5 w-5" />
-                    Agency Portal
-                  </Link>
-                )}
-                {(isDeveloper || hasDeveloperProfile) && (
-                  <Link 
-                    to="/developer" 
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Landmark className="h-5 w-5" />
-                    Developer Portal
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link 
-                    to="/admin" 
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Shield className="h-5 w-5" />
-                    Admin Panel
-                  </Link>
-                )}
-                <hr className="my-2 border-border" />
-              </>
-            ) : (
-              /* Guest Favorites Section */
-              <>
-                <div className="px-4 py-3 bg-muted/50 rounded-lg mb-2">
-                  <Link 
-                    to="/favorites" 
-                    className="flex items-center justify-between"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Heart className={favoriteCount > 0 ? "h-5 w-5 text-primary fill-primary" : "h-5 w-5 text-primary"} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm text-foreground">Saved Properties</p>
-                        <p className="text-xs text-muted-foreground">Saved to this browser</p>
-                      </div>
-                    </div>
-                    {favoriteCount > 0 && (
-                      <Badge variant="secondary" className="rounded-full text-xs">
-                        {favoriteCount}
-                      </Badge>
-                    )}
-                  </Link>
-                </div>
-                <hr className="my-2 border-border" />
-              </>
-            )}
-            
-            {/* Main navigation with accordions for mega-menu sections */}
-            <Accordion type="multiple" className="w-full">
-              {/* Buy Accordion */}
-              <AccordionItem value="buy" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
-                  Buy
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="pl-4 space-y-1">
-                    {NAV_CONFIG.buy.columns.map((column) => (
-                      <div key={column.title} className="mb-2">
-                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {column.title}
-                        </p>
-                        {column.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              {/* Projects Accordion */}
-              <AccordionItem value="projects" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
-                  Projects
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="pl-4 space-y-1">
-                    {NAV_CONFIG.projects.columns.map((column) => (
-                      <div key={column.title} className="mb-2">
-                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {column.title}
-                        </p>
-                        {column.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              {/* Rent Accordion */}
-              <AccordionItem value="rent" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
-                  Rent
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="pl-4 space-y-1">
-                    {NAV_CONFIG.rent.columns.map((column) => (
-                      <div key={column.title} className="mb-2">
-                        <p className="px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          {column.title}
-                        </p>
-                        {column.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                            onClick={() => setMobileMenuOpen(false)}
-                          >
-                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              
-              {/* Learn Accordion */}
-              <AccordionItem value="learn" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg hover:no-underline">
-                  Learn
-                </AccordionTrigger>
-                <AccordionContent className="pb-2">
-                  <div className="pl-4 space-y-1">
-                    <Link
-                      to="/blog"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      Blog
-                    </Link>
-                    <Link
-                      to="/guides"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      All Guides
-                    </Link>
-                    <Link
-                      to="/tools"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      All Tools
-                    </Link>
-                    <Link
-                      to="/glossary"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      Hebrew Glossary
-                    </Link>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            
-            {/* Static nav links */}
-            <Link 
-              to="/about" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              About
-            </Link>
-            <Link 
-              to="/contact" 
-              className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Contact
-            </Link>
-            <hr className="my-2 border-border" />
-            <PreferencesDialog 
-              trigger={
-                <button className="flex items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted rounded-md w-full">
-                  <span className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Preferences
-                  </span>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    {currencySymbol} · {unitLabel}
-                  </span>
-                </button>
-              }
-            />
-            {user ? (
-              <button 
-                onClick={() => { handleSignOut(); setMobileMenuOpen(false); }}
-                className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg active:bg-muted/80 w-full text-left"
-              >
-                <LogOut className="h-5 w-5" />
-                Sign Out
-              </button>
-            ) : (
-              <>
-                <hr className="my-2 border-border" />
-                <Link 
-                  to="/auth" 
-                  className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg active:bg-muted/80"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Link 
-                  to="/auth?tab=signup" 
-                  className="px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg active:bg-primary/20"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Create Free Account
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
     </header>
   );
 }

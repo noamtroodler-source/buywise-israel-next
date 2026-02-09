@@ -4,7 +4,7 @@ import { PropertyMap } from './PropertyMap';
 import { MapPropertyCard } from './MapPropertyCard';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Loader2, ChevronUp, ChevronDown, List, Map } from 'lucide-react';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
 import { cn } from '@/lib/utils';
@@ -167,12 +167,27 @@ export function MobileMapSheet({
       {/* Property List Sheet */}
       <div 
         className={cn(
-          "bg-background border-t rounded-t-2xl shadow-lg mobile-sheet",
+          "relative bg-background border-t rounded-t-2xl shadow-lg mobile-sheet",
           getSheetHeight()
         )}
         role="region"
         aria-label="Property list"
       >
+        {/* Floating Map/List Toggle */}
+        <button
+          onClick={() => {
+            hapticLight();
+            setSheetState(prev => prev === 'full' ? 'peek' : 'full');
+          }}
+          className="absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-xs font-medium shadow-lg"
+        >
+          {sheetState === 'full' ? (
+            <><Map className="h-3.5 w-3.5" /> Map</>
+          ) : (
+            <><List className="h-3.5 w-3.5" /> List</>
+          )}
+        </button>
+
         {/* Drag Handle */}
         <button
           onClick={toggleSheet}
@@ -262,7 +277,7 @@ export function MobileMapSheet({
               {properties.slice(0, 5).map((property) => (
                 <div 
                   key={property.id} 
-                  className="flex-shrink-0 w-[200px]"
+                  className="flex-shrink-0 w-[240px]"
                 >
                   <MapPropertyCard
                     property={property}
