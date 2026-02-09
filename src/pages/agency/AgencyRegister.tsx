@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -67,6 +67,24 @@ const itemVariants = {
   }
 };
 
+const DRAFT_STORAGE_KEY = 'agency_registration_draft';
+
+interface DraftData {
+  formData: {
+    name: string;
+    description: string;
+    website: string;
+    email: string;
+    phone: string;
+    cities_covered: string[];
+    specializations: string[];
+    logo_url: string | null;
+  };
+  currentStep: number;
+  isEmailVerified: boolean;
+  savedAt: number;
+}
+
 export default function AgencyRegister() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
@@ -78,6 +96,29 @@ export default function AgencyRegister() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showResumeDraft, setShowResumeDraft] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<DraftData | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Scroll to top of wizard when step changes
+  const scrollToWizardTop = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (cardRef.current) {
+        const headerOffset = 100;
+        const elementPosition = cardRef.current.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }, []);
+
+  // Trigger scroll reset when step changes
+  useEffect(() => {
+    scrollToWizardTop();
+  }, [currentStep, scrollToWizardTop]);
 
   // Redirect non-authenticated users to auth page with role context
   useEffect(() => {
@@ -96,6 +137,81 @@ export default function AgencyRegister() {
     specializations: [] as string[],
     logo_url: null as string | null,
   });
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    if (user && !loading) {
+      try {
+        const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (stored) {
+          const draft: DraftData = JSON.parse(stored);
+          // Only restore if draft is less than 24 hours old
+          const isRecent = Date.now() - draft.savedAt < 24 * 60 * 60 * 1000;
+          if (isRecent && draft.currentStep > 0) {
+            setPendingDraft(draft);
+            setShowResumeDraft(true);
+          } else {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
+    }
+  }, [user, loading]);
+
+  // Save draft to localStorage (debounced)
+  const saveDraft = useCallback(() => {
+    if (draftSaveTimeoutRef.current) {
+      clearTimeout(draftSaveTimeoutRef.current);
+    }
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      try {
+        const draft: DraftData = {
+          formData,
+          currentStep,
+          isEmailVerified,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch (e) {
+        console.error('Failed to save draft:', e);
+      }
+    }, 500);
+  }, [formData, currentStep, isEmailVerified]);
+
+  // Save draft whenever form data or step changes
+  useEffect(() => {
+    if (user && formData.name) {
+      saveDraft();
+    }
+  }, [formData, currentStep, isEmailVerified, user, saveDraft]);
+
+  // Handle resume draft
+  const handleResumeDraft = () => {
+    if (pendingDraft) {
+      setFormData(pendingDraft.formData);
+      setCurrentStep(pendingDraft.currentStep);
+      setIsEmailVerified(pendingDraft.isEmailVerified);
+      if (pendingDraft.formData.logo_url) {
+        setLogoPreview(pendingDraft.formData.logo_url);
+      }
+    }
+    setShowResumeDraft(false);
+    setPendingDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setShowResumeDraft(false);
+    setPendingDraft(null);
+  };
+
+  // Clear draft on successful submission
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  };
 
   // Update email when user loads
   useEffect(() => {
@@ -226,12 +342,14 @@ export default function AgencyRegister() {
   const goNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
+      scrollToWizardTop();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      scrollToWizardTop();
     }
   };
 
@@ -300,6 +418,7 @@ export default function AgencyRegister() {
         console.error('Failed to send welcome email:', emailError);
       }
 
+      clearDraft();
       setShowSuccessDialog(true);
     } catch (error: unknown) {
       toast.error(getUserFriendlyError(error, 'Registration failed. Please try again.'));
@@ -704,8 +823,35 @@ export default function AgencyRegister() {
               })}
             </div>
 
+            {/* Resume Draft Prompt */}
+            {showResumeDraft && pendingDraft && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-primary/5 border border-primary/20 rounded-xl p-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-sm">Resume where you left off?</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You have a saved draft from step {pendingDraft.currentStep + 1}
+                      {pendingDraft.formData.logo_url ? '' : ' (logo will need to be re-uploaded)'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button size="sm" variant="outline" onClick={handleDiscardDraft} className="rounded-lg">
+                      Start Fresh
+                    </Button>
+                    <Button size="sm" onClick={handleResumeDraft} className="rounded-lg">
+                      Resume
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Premium Main Card */}
-            <Card className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+            <Card ref={cardRef} className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
               <CardHeader className="text-center pb-2 pt-8">
                 <motion.div 
                   key={currentStep}
