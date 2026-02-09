@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.generate-listing-questions]
 verify_jwt = false
+
+[functions.update-exchange-rate]
+verify_jwt = false
