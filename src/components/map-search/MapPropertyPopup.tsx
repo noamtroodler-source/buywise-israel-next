@@ -38,8 +38,10 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
       className="property-popup"
       maxWidth={260}
       minWidth={260}
+      autoPan={false}
+      offset={[0, -8]}
     >
-      <div className="bg-card text-card-foreground rounded-xl overflow-hidden">
+      <div className="bg-card text-card-foreground rounded-xl overflow-hidden shadow-lg">
         {/* Image Header - compact 16:10 ratio */}
         <div className="relative h-32 overflow-hidden">
           <img
