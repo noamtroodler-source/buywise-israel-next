@@ -88,7 +88,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
       description: 'Connect LinkedIn, Instagram, or Facebook',
       icon: Share2,
       isComplete: !!(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook),
-      link: '/agency/settings',
+      link: '/agency/settings#social-links',
     },
     {
       id: 'cities',
