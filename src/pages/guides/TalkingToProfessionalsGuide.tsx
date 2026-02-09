@@ -497,6 +497,24 @@ export default function TalkingToProfessionalsGuide() {
                 </ul>
               </div>
             </div>
+
+            <div className="mt-4 p-5 rounded-xl bg-muted/30 border">
+              <h4 className="font-medium text-foreground mb-3 text-sm">What a Good Agent Brings to the Table</h4>
+              <ul className="space-y-2">
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  Cross-references comparable sales from the tax authority, local MLS systems, and their own recent transactions in the area
+                </li>
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  Can explain why two similar properties sold for different prices — contextual insight that data alone won't reveal
+                </li>
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  Finds the balance between showing you "enough but not too many" properties — an experienced agent narrows the field efficiently
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Lawyers */}
@@ -543,6 +561,28 @@ export default function TalkingToProfessionalsGuide() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 p-5 rounded-xl bg-muted/30 border">
+              <h4 className="font-medium text-foreground mb-3 text-sm">How to Choose the Right Attorney</h4>
+              <ul className="space-y-2">
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span><strong>Specialization:</strong> Real estate law is not general law — tax rules and contract requirements change frequently and require dedicated expertise</span>
+                </li>
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span><strong>Local knowledge:</strong> A locally-based attorney can expedite due diligence by knowing the right municipal contacts and understanding local registration types like church leases</span>
+                </li>
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span><strong>Foreign buyer experience:</strong> Critical for opening escrow accounts, transferring money internationally, and navigating tax regulations for non-residents</span>
+                </li>
+                <li className="text-sm text-muted-foreground flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span><strong>English-speaking ability:</strong> Essential for international buyers to fully understand contract terms and legal implications</span>
+                </li>
+              </ul>
             </div>
           </div>
 
