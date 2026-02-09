@@ -6,10 +6,11 @@ import { PropertyMap } from './PropertyMap';
 import { MapPropertyList } from './MapPropertyList';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { MobileMapSheet } from './MobileMapSheet';
-import { MobileQuickFilters } from './MobileQuickFilters';
+import { MobileMapFilterBar } from './MobileMapFilterBar';
 import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
 import { MapOnboardingHints } from './MapOnboardingHints';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
+import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
@@ -18,8 +19,6 @@ import { useRecentSearchCity, saveRecentCity } from '@/hooks/useRecentSearchCity
 import { useCities } from '@/hooks/useCities';
 import { PropertyFilters as PropertyFiltersType, ListingStatus, Property } from '@/types/database';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
-import { List, Map as MapIcon, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isPointInPolygon, getDistanceInMeters, type Polygon } from '@/lib/utils/geometry';
 import type { CommuteFilterValue } from './CommuteFilter';
@@ -88,7 +87,9 @@ export default function MapSearchLayout() {
   const [commuteFilter, setCommuteFilter] = useState<CommuteFilterValue | null>(null);
   
   // Mobile view state
-  const [mobileView, setMobileView] = useState<'map' | 'list' | 'split'>('split');
+  // Mobile filter sheet state
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileCityOpen, setMobileCityOpen] = useState(false);
   
   // Layer toggles state (for keyboard shortcuts)
   const [showSavedLocations, setShowSavedLocations] = useState(true);
@@ -483,103 +484,60 @@ export default function MapSearchLayout() {
   if (isMobile) {
     return (
       <div className="flex flex-col h-[calc(100vh-64px)]">
-        {/* Filter Bar */}
-        <PropertyFilters
+        {/* Compact Mobile Filter Bar */}
+        <MobileMapFilterBar
           filters={filters}
-          onFiltersChange={handleFiltersChange}
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
-          showBuyRentToggle={true}
           onBuyRentChange={(type) => {
             const params = new URLSearchParams(searchParams);
             params.set('status', type);
             setSearchParams(params);
           }}
-          previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
-          isCountLoading={isFetching}
-          activeView="map"
-          onCreateAlert={() => setShowAlertDialog(true)}
+          onOpenFilters={() => setMobileFiltersOpen(true)}
+          onCityClick={() => setMobileCityOpen(true)}
         />
 
-        {/* Mobile Quick Filters */}
-        <MobileQuickFilters
+        {/* Map + Bottom Sheet (sole mobile view) */}
+        <div className="flex-1 relative overflow-hidden">
+          <MobileMapSheet
+            properties={properties}
+            mappableProperties={mappableProperties}
+            mapCenter={mapCenter}
+            mapZoom={mapZoom}
+            onBoundsChange={handleBoundsChange}
+            hoveredPropertyId={hoveredPropertyId}
+            selectedPropertyId={selectedPropertyId}
+            onPropertyHover={handlePropertyHover}
+            onPropertySelect={handlePropertySelect}
+            searchAsMove={searchAsMove}
+            onSearchAsMoveChange={handleSearchAsMoveChange}
+            listingStatus={listingStatus}
+            drawnPolygon={drawnPolygon}
+            onPolygonChange={handlePolygonChange}
+            selectedNeighborhoods={selectedNeighborhoods}
+            onNeighborhoodToggle={handleNeighborhoodToggle}
+            onClearNeighborhoods={handleClearNeighborhoods}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            hasNextPage={hasNextPage}
+            loadMore={loadMore}
+          />
+        </div>
+
+        {/* Mobile Filter Sheet */}
+        <MobileFilterSheet
+          open={mobileFiltersOpen}
+          onOpenChange={setMobileFiltersOpen}
           filters={filters}
           onFiltersChange={handleFiltersChange}
           listingType={listingStatus === 'for_rent' ? 'for_rent' : 'for_sale'}
+          cities={allCities?.map(c => ({ id: c.id, name: c.name })) || []}
+          previewCount={drawnPolygon || commuteFilter ? properties.length : totalCount}
+          isCountLoading={isFetching}
+          currency="ILS"
+          exchangeRate={1}
         />
-        
-        {/* Mobile View Toggle */}
-        <div className="flex items-center justify-center gap-1 p-2 border-b bg-background">
-          <Button
-            variant={mobileView === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setMobileView('list')}
-            aria-pressed={mobileView === 'list'}
-          >
-            <List className="h-4 w-4 mr-1" />
-            List
-          </Button>
-          <Button
-            variant={mobileView === 'split' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setMobileView('split')}
-            aria-pressed={mobileView === 'split'}
-          >
-            <Layers className="h-4 w-4 mr-1" />
-            Split
-          </Button>
-          <Button
-            variant={mobileView === 'map' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setMobileView('map')}
-            aria-pressed={mobileView === 'map'}
-          >
-            <MapIcon className="h-4 w-4 mr-1" />
-            Map
-          </Button>
-        </div>
-        
-        {/* Mobile Content */}
-        <div className="flex-1 relative overflow-hidden">
-          {mobileView === 'map' ? (
-            <PropertyMap {...propertyMapProps} />
-          ) : mobileView === 'list' ? (
-            <MapPropertyList
-              properties={properties}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              hasNextPage={hasNextPage}
-              loadMore={loadMore}
-              hoveredPropertyId={hoveredPropertyId}
-              onPropertyHover={handlePropertyHover}
-              onPropertySelect={handlePropertySelect}
-            />
-          ) : (
-            <MobileMapSheet
-              properties={properties}
-              mappableProperties={mappableProperties}
-              mapCenter={mapCenter}
-              mapZoom={mapZoom}
-              onBoundsChange={handleBoundsChange}
-              hoveredPropertyId={hoveredPropertyId}
-              selectedPropertyId={selectedPropertyId}
-              onPropertyHover={handlePropertyHover}
-              onPropertySelect={handlePropertySelect}
-              searchAsMove={searchAsMove}
-              onSearchAsMoveChange={handleSearchAsMoveChange}
-              listingStatus={listingStatus}
-              drawnPolygon={drawnPolygon}
-              onPolygonChange={handlePolygonChange}
-              selectedNeighborhoods={selectedNeighborhoods}
-              onNeighborhoodToggle={handleNeighborhoodToggle}
-              onClearNeighborhoods={handleClearNeighborhoods}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              hasNextPage={hasNextPage}
-              loadMore={loadMore}
-            />
-          )}
-        </div>
-        
+
         {/* Create Alert Dialog */}
         <CreateAlertDialog
           open={showAlertDialog}
