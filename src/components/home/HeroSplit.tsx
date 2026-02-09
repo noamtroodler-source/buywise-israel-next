@@ -46,7 +46,7 @@ export function HeroSplit() {
   };
 
   return (
-    <section className="relative min-h-[50vh] md:min-h-[55vh] flex items-center">
+    <section className="relative min-h-[40vh] md:min-h-[55vh] flex items-center">
       {/* Background Image - Full Width */}
       <div className="absolute inset-0">
         <img 
@@ -121,9 +121,9 @@ export function HeroSplit() {
                   </Select>
 
                 {/* Search Button */}
-                  <Button type="submit" className="h-11 px-6 gap-2 rounded-lg">
+                  <Button type="submit" className="h-11 w-full sm:w-auto px-6 gap-2 rounded-lg">
                     <Search className="h-4 w-4" />
-                    <span className="hidden sm:inline">Search</span>
+                    Search
                   </Button>
                 </div>
               </form>

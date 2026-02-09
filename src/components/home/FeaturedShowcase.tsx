@@ -140,7 +140,7 @@ export function FeaturedShowcase() {
                 {displayProperties.map((property, index) => (
                   <div 
                     key={property.id} 
-                    className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
+                    className="flex-[0_0_85%] min-w-0 pl-4 first:pl-4"
                   >
                     <PropertyCard 
                       property={property} 
@@ -183,7 +183,7 @@ export function FeaturedShowcase() {
         {/* Mobile "See All" CTA */}
         {!isLoading && isMobile && totalCount > 0 && (
           <div className="mt-4 sm:hidden">
-            <Button variant="outline" asChild className="w-full gap-2">
+            <Button variant="default" asChild className="w-full gap-2">
               <Link to={viewAllLink}>
                 See All {totalCount} Properties
                 <ArrowRight className="h-4 w-4" />

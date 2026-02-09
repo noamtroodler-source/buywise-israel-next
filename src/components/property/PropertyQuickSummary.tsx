@@ -131,7 +131,7 @@ function generateHighlights(property: PropertyQuickSummaryProps['property']): Ar
     highlights.push({ label: 'Modern Build', icon: Sparkles });
   }
 
-  return highlights.slice(0, 6); // Max 6 highlights
+  return highlights.slice(0, typeof window !== 'undefined' && window.innerWidth < 768 ? 4 : 6);
 }
 
 export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: PropertyQuickSummaryProps) {
@@ -315,7 +315,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
         )}
 
         {/* Hero Stats Bar */}
-        <div className="flex flex-wrap gap-6 py-4 border-y border-border">
+        <div className="grid grid-cols-4 gap-2 md:flex md:flex-wrap md:gap-6 py-4 border-y border-border">
           {property.bedrooms !== undefined && property.bedrooms !== null && (
             (property as any).additional_rooms ? (
               <Tooltip>

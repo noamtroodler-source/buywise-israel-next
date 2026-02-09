@@ -114,7 +114,7 @@ export function RegionExplorer() {
   }, [emblaApi]);
 
   return (
-    <section className="py-10 md:py-14 bg-muted/30">
+    <section className="py-8 md:py-14 bg-muted/30">
       <div className="container">
         {/* Header */}
         <motion.div
@@ -140,7 +140,7 @@ export function RegionExplorer() {
         </motion.div>
 
         {/* Region Tabs - Enhanced touch targets */}
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
           {(Object.keys(regions) as Region[]).map((region) => {
             const { label, icon: Icon } = regions[region];
             const isActive = activeRegion === region;
@@ -148,7 +148,7 @@ export function RegionExplorer() {
               <button
                 key={region}
                 onClick={() => setActiveRegion(region)}
-                className={`flex items-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all active:scale-[0.98] ${
+                className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-sm font-medium transition-all active:scale-[0.98] ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-background text-muted-foreground hover:text-foreground hover:bg-background/80 border border-border'
@@ -177,7 +177,7 @@ export function RegionExplorer() {
                     {cities.map((city, index) => (
                       <div 
                         key={city.slug} 
-                        className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
+                        className="flex-[0_0_85%] min-w-0 pl-4 first:pl-4"
                       >
                         <Link
                           to={`/areas/${city.slug}`}
