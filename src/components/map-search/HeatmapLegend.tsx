@@ -5,7 +5,7 @@ interface HeatmapLegendProps {
 }
 
 export function HeatmapLegend({ visible }: HeatmapLegendProps) {
-  const { currency, exchangeRate } = usePreferences();
+  const { currency, exchangeRate, areaUnit } = usePreferences();
 
   if (!visible) return null;
 
@@ -27,9 +27,11 @@ export function HeatmapLegend({ visible }: HeatmapLegendProps) {
     { label: `> ${formatThreshold(70000)}`, color: 'hsl(230, 70%, 30%)', maxPrice: Infinity },
   ];
 
+  const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
+
   return (
     <div className="heatmap-legend">
-      <p className="heatmap-legend-title">Price per m²</p>
+      <p className="heatmap-legend-title">Price per {unitLabel}</p>
       {PRICE_RANGES.map((range) => (
         <div key={range.label} className="heatmap-legend-item">
           <div
