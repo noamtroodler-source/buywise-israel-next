@@ -359,6 +359,25 @@
   transition: all 200ms ease;
 }
 
+/* Active state applied via JS class toggle — no icon rebuild */
+.marker-active .property-marker-wrapper {
+  transform: scale(1.1);
+}
+
+.marker-active .property-marker-pill {
+  background-color: hsl(213, 94%, 45%) !important;
+  color: white !important;
+  border-color: white !important;
+}
+
+.marker-active .property-marker-pointer {
+  border-top-color: white !important;
+}
+
+.marker-active .property-marker-pointer-inner {
+  border-top-color: hsl(213, 94%, 45%) !important;
+}
+
 /* =========================
    Marker Badges (Price Drop, Hot)
    ========================= */
