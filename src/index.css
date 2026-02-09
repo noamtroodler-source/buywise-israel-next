@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BuyWise Israel Design System - Zillow-inspired with blue primary and yellow accent */
+/* BuyWise Israel Design System - Blue primary palette */
 
 @layer base {
   :root {
@@ -13,10 +13,10 @@
     --primary-foreground: 0 0% 100%;
     --primary-hover: 213 94% 38%;
     
-    /* Yellow accent palette */
-    --accent: 45 100% 51%;
-    --accent-foreground: 0 0% 10%;
-    --accent-hover: 45 100% 45%;
+    /* Blue accent palette */
+    --accent: 213 40% 95%;
+    --accent-foreground: 213 94% 30%;
+    --accent-hover: 213 40% 90%;
     
     /* Backgrounds */
     --background: 0 0% 100%;
@@ -86,8 +86,8 @@
     --primary-foreground: 0 0% 100%;
     --primary-hover: 213 94% 60%;
     
-    --accent: 45 100% 51%;
-    --accent-foreground: 0 0% 10%;
+    --accent: 213 40% 20%;
+    --accent-foreground: 213 40% 90%;
     
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
