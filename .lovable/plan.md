@@ -1,52 +1,80 @@
 
 
-## Audit and Clean Up Redundant Toast Notifications
+## Beef Up Guides with Brochure Content
 
-### The Problem
-Many toast notifications ("Property saved to favorites", "Property removed from favorites", etc.) pop up in the bottom-right corner even though the UI already clearly communicates the action -- the heart icon fills/unfills, the item appears/disappears from the list, etc. These redundant toasts add visual noise without value.
+The Gabai Real Estate brochure contains practical, expert-level details about buying property in Israel that can fill specific gaps in the existing guides. Here's what to enhance, without adding new pages or restructuring anything.
 
-### Approach
-Remove success toasts where the UI already gives clear feedback. Keep toasts where they're the only way the user knows something happened (errors, clipboard copies, form submissions, admin actions).
+---
 
-### Toasts to REMOVE (redundant)
+### 1. Complete Buying Guide (`BuyingInIsraelGuide.tsx`)
 
-| Location | Toast Message | Why Redundant |
-|----------|--------------|---------------|
-| `src/hooks/useFavorites.tsx` | "Property saved to favorites" (logged-in user) | Heart icon fills blue -- obvious |
-| `src/hooks/useFavorites.tsx` | "Property removed from favorites" | Heart unfills; on favorites page, the card disappears |
-| `src/hooks/useProjectFavorites.tsx` | "Project saved to favorites" (logged-in user) | Heart icon fills blue |
-| `src/hooks/useProjectFavorites.tsx` | "Project removed from favorites" | Heart unfills; card disappears from list |
-| `src/hooks/useSavedLocations.ts` | "Location saved" / "Location removed" | UI updates inline (list adds/removes item) |
-| `src/hooks/useSavedCalculatorResults.tsx` | "Saved result deleted" | Item disappears from the list |
-| `src/pages/Auth.tsx` | "Account created successfully!" | Onboarding dialog appears immediately after |
-| `src/pages/Auth.tsx` | "Welcome back!" (on sign in) | User is redirected to their destination -- the redirect IS the confirmation |
-| `src/pages/Auth.tsx` | "Welcome to BuyWise Israel!" (onboarding complete) | Post-signup suggestions dialog appears right after |
-| `src/components/profile/sections/AccountSection.tsx` | "Browsing history cleared" | Button already shows loading state, then history list empties |
+This guide currently has only 6 collapsible sections and is the thinnest of all guides despite being labeled "Complete Guide" with "14 chapters."
 
-### Toasts to KEEP (necessary)
+**Add a new section: "7. Home Inspections"**
+- Specific inspection checklist from the brochure: structural integrity, current condition, quality of build, dampness and susceptibility to future dampness, plumbing status, electrical level, drainage, appliances
+- Note that in Israel it is the buyer's responsibility to check and the seller's responsibility to declare issues
+- Recommend hiring a licensed engineer specializing in home inspections, done after sides agree on price
 
-- **All error toasts** -- always needed since nothing else indicates failure
-- **Guest favorite toasts** -- these include a "Create an account" CTA with description text, which is valuable guidance (not just confirmation)
-- **Clipboard copy toasts** ("Link copied", "Questions copied") -- no other way to confirm clipboard worked
-- **Auth error toasts** ("Invalid email", "already registered") -- critical feedback
-- **Professional signup toast** ("Account created! Redirecting...") -- explains upcoming redirect
-- **Admin/Agent/Developer dashboard toasts** -- data operations where list refresh may not be immediate or obvious
-- **Blog/Project CRUD toasts** -- form-based workflows where confirmation is expected
-- **Contact form submission** -- confirms the message was sent
-- **WhatsApp fallback toasts** -- copy confirmations in the fallback modal
+**Add a new section: "8. Making an Offer"**
+- Factors to consider when making an offer (from brochure): why the owner is selling, how long on market, property registration type (church lease, private), building infractions, structural issues, mortgage and payment terms, additional competing offers, carrying costs, date of occupancy, property/building restrictions
+- Note about cross-referencing comparable sales from the tax authority website
+
+**Add a new section: "9. The Walk-Through"**
+- From the brochure's process checklist: on the date of last payment or occupancy, schedule a walk-through with your agent and seller, ensure property is in appropriate condition, transfer utilities and municipal taxes into your name
+
+**Enhance existing section "4. Taxes and Purchase Costs"**
+- Add the brochure's concrete benchmark: "On a $1M USD property, a local buyer pays approximately 6.5% in total costs (2.5% tax + 2% agent + 1% lawyer + 1% other). A foreign buyer pays approximately 12% (8% tax + 2% agent + 1% lawyer + 1% other)."
+
+**Enhance existing section "3. Financing"**
+- Add the detail that banks will not necessarily appraise the property for the full purchase amount, so buyers should get a realistic appraisal estimate before signing
+- Add recommendation to work with a mortgage broker who can navigate the Israeli banking system
+
+---
+
+### 2. Talking to Professionals Guide (`TalkingToProfessionalsGuide.tsx`)
+
+**Enhance the lawyer section** with the brochure's 4 attorney selection criteria:
+- Specialization: Real estate law is not general law; tax rules and contract requirements change frequently
+- Local knowledge: A Jerusalem-based attorney can expedite due diligence by knowing the right municipal contacts; understands local registration types like church leases
+- Foreign buyer experience: Critical for opening escrow accounts and transferring money internationally; navigating tax regulations
+- English-speaking ability: Important for international buyers
+
+**Enhance the agent section** with specific value points:
+- A good agent cross-references comparable sales from the tax authority, local MLS systems, and their own sales in the area
+- They can explain why two similar properties sold for different prices (contextual insight)
+- Seeing "enough but not too many" properties -- an experienced agent finds the balance
+
+---
+
+### 3. True Cost Guide (`TrueCostGuide.tsx`)
+
+**Add a concrete cost summary benchmark** in the overview or a new subsection:
+- Local buyer total on a ~$1M property: approximately 6.5% above purchase price (2.5% tax + 2% agent + 1% lawyer + 1% other)
+- Foreign buyer total on a ~$1M property: approximately 12% above purchase price (8% tax + 2% agent + 1% lawyer + 1% other)
+- This gives readers an instant mental model before diving into the details
+
+---
+
+### 4. Mortgages Guide (`MortgagesGuide.tsx`)
+
+**Enhance the "How Much Can I Borrow" section** with more specific practical guidance:
+- Banks will not necessarily appraise the property at the full purchase price -- get a realistic appraisal estimate before signing a sales contract
+- Emphasize working with a mortgage broker to navigate the process, as mortgage products in Israel vary greatly from other countries
+
+---
 
 ### Files to Modify
 
-1. **`src/hooks/useFavorites.tsx`** -- Remove success toasts for logged-in add/remove; keep guest toast with CTA; keep error toasts
-2. **`src/hooks/useProjectFavorites.tsx`** -- Same pattern as above
-3. **`src/hooks/useSavedLocations.ts`** -- Remove "Location saved" and "Location removed" success toasts
-4. **`src/hooks/useSavedCalculatorResults.tsx`** -- Remove "Saved result deleted" toast
-5. **`src/pages/Auth.tsx`** -- Remove "Account created successfully!", "Welcome back!", and "Welcome to BuyWise Israel!" success toasts
-6. **`src/components/profile/sections/AccountSection.tsx`** -- Remove "Browsing history cleared" toast
+| File | Enhancement |
+|------|------------|
+| `src/pages/guides/BuyingInIsraelGuide.tsx` | Add 3 new sections (Inspections, Offers, Walk-Through) + enhance 2 existing sections with concrete data |
+| `src/pages/guides/TalkingToProfessionalsGuide.tsx` | Enhance lawyer and agent detail sections with specific selection criteria |
+| `src/pages/guides/TrueCostGuide.tsx` | Add a concrete cost benchmark card in overview |
+| `src/pages/guides/MortgagesGuide.tsx` | Enhance borrowing section with appraisal and broker guidance |
 
 ### What Won't Change
-- No structural or layout changes
-- No new components
-- Error handling remains intact everywhere
-- Guest favorite toasts with account creation CTAs remain
-
+- No new guide pages
+- No navigation config changes
+- No new dependencies
+- Existing section structure and styling patterns preserved
+- All new content follows the same card/list/callout patterns already used
