@@ -215,11 +215,8 @@ export function useFavorites() {
       }
       toast.error('Failed to remove property');
     },
-    onSuccess: (_, propertyId) => {
-      // Invalidate saves count to reflect the removal
-      queryClient.invalidateQueries({ queryKey: ['savesCount', propertyId] });
-      
-      // Guest updates are reactive via context - no invalidation needed
+    onSuccess: () => {
+      // Don't invalidate savesCount here -- saves are permanent (never decrease)
       toast.success('Property removed from favorites');
     },
     onSettled: () => {

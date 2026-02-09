@@ -3171,6 +3171,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["project_status"] | null
           submitted_at: string | null
+          total_saves: number
           total_units: number | null
           updated_at: string
           verification_status: string | null
@@ -3210,6 +3211,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["project_status"] | null
           submitted_at?: string | null
+          total_saves?: number
           total_units?: number | null
           updated_at?: string
           verification_status?: string | null
@@ -3249,6 +3251,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["project_status"] | null
           submitted_at?: string | null
+          total_saves?: number
           total_units?: number | null
           updated_at?: string
           verification_status?: string | null
@@ -3325,6 +3328,7 @@ export type Database = {
           submitted_at: string | null
           title: string
           total_floors: number | null
+          total_saves: number
           updated_at: string
           vaad_bayit_monthly: number | null
           verification_status: Database["public"]["Enums"]["verification_status"]
@@ -3384,6 +3388,7 @@ export type Database = {
           submitted_at?: string | null
           title: string
           total_floors?: number | null
+          total_saves?: number
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
@@ -3443,6 +3448,7 @@ export type Database = {
           submitted_at?: string | null
           title?: string
           total_floors?: number | null
+          total_saves?: number
           updated_at?: string
           vaad_bayit_monthly?: number | null
           verification_status?: Database["public"]["Enums"]["verification_status"]
