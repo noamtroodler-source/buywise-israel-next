@@ -16,12 +16,8 @@ export default function AgentRegister() {
   const { user, loading } = useAuth();
   const agentRegistration = useAgentRegistration();
 
-  // Redirect non-authenticated users to auth page with role context
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth?tab=signup&role=agent');
-    }
-  }, [user, loading, navigate]);
+  // ProtectedRoute handles auth redirect with role=agent context
+  // No manual redirect needed here
 
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.full_name || '',
