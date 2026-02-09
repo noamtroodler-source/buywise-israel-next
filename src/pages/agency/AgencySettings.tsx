@@ -778,7 +778,7 @@ export default function AgencySettings() {
               {/* Sticky Save Button */}
               <motion.div 
                 variants={itemVariants}
-                className="sticky bottom-4"
+                
               >
                 <div className="flex items-center justify-end gap-3 p-4 rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-lg">
                   <Button type="button" variant="outline" onClick={() => navigate('/agency')} className="rounded-xl">
