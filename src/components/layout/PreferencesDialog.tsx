@@ -6,7 +6,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
@@ -46,25 +45,9 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
   const {
     currency,
     setCurrency,
-    exchangeRate,
-    setExchangeRate,
-    isCustomRate,
-    setIsCustomRate,
     areaUnit,
     setAreaUnit,
-    defaultExchangeRate,
   } = usePreferences();
-
-  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || value === String(defaultExchangeRate)) {
-      setIsCustomRate(false);
-      setExchangeRate(defaultExchangeRate);
-    } else {
-      setIsCustomRate(true);
-      setExchangeRate(parseFloat(value) || defaultExchangeRate);
-    }
-  };
 
   const currencySymbol = currency === 'USD' ? '$' : '₪';
   const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
@@ -97,25 +80,9 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
           <RadioOption value="USD" selected={currency === 'USD'} onClick={() => setCurrency('USD')}>
             $ USD
           </RadioOption>
-        </div>
-
-        <DropdownMenuSeparator className="my-4" />
-
-        {/* Exchange Rate Section */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Exchange Rate</h4>
-          <p className="text-sm text-muted-foreground">
-            Default rate updated weekly. Enter current rate for most accurate conversions ({currency === 'USD' ? 'USD per 1 ₪' : 'ILS per $1 USD'})
+          <p className="text-xs text-muted-foreground mt-2 pl-1">
+            Exchange rate updated daily
           </p>
-          <Input
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={isCustomRate ? exchangeRate : ''}
-            onChange={handleRateChange}
-            placeholder={`Default: ${currency === 'USD' ? (1 / defaultExchangeRate).toFixed(3) : defaultExchangeRate.toFixed(2)}`}
-            className="h-10"
-          />
         </div>
 
         <DropdownMenuSeparator className="my-4" />

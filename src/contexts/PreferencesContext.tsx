@@ -10,12 +10,8 @@ interface PreferencesContextType {
   currency: Currency;
   setCurrency: (c: Currency) => void;
   exchangeRate: number;
-  setExchangeRate: (rate: number) => void;
-  isCustomRate: boolean;
-  setIsCustomRate: (custom: boolean) => void;
   areaUnit: AreaUnit;
   setAreaUnit: (u: AreaUnit) => void;
-  defaultExchangeRate: number;
 }
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
@@ -26,8 +22,6 @@ const SQM_TO_SQFT = 10.764;
 
 interface StoredPreferences {
   currency: Currency;
-  exchangeRate: number;
-  isCustomRate: boolean;
   areaUnit: AreaUnit;
 }
 
@@ -37,14 +31,12 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const updateProfile = useUpdateProfile();
   
   const [currency, setCurrencyState] = useState<Currency>('USD');
-  const [exchangeRate, setExchangeRateState] = useState(FALLBACK_EXCHANGE_RATE);
-  const [isCustomRate, setIsCustomRateState] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
   const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqft');
-  const [defaultExchangeRate, setDefaultExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
   const [isLoaded, setIsLoaded] = useState(false);
   const profileLoadedRef = useRef(false);
 
-  // Fetch default exchange rate from database
+  // Fetch exchange rate from database (updated daily by cron job)
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
@@ -56,7 +48,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (!error && data?.value_numeric) {
-          setDefaultExchangeRate(Number(data.value_numeric));
+          setExchangeRate(Number(data.value_numeric));
         }
       } catch (e) {
         console.error('Failed to fetch exchange rate:', e);
@@ -73,8 +65,6 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       if (stored) {
         const prefs: StoredPreferences = JSON.parse(stored);
         setCurrencyState(prefs.currency || 'USD');
-        setExchangeRateState(prefs.exchangeRate || FALLBACK_EXCHANGE_RATE);
-        setIsCustomRateState(prefs.isCustomRate || false);
         setAreaUnitState(prefs.areaUnit || 'sqft');
       }
     } catch (e) {
@@ -106,29 +96,18 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     try {
       const prefs: StoredPreferences = {
         currency,
-        exchangeRate,
-        isCustomRate,
         areaUnit,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
     } catch (e) {
       console.error('Failed to save preferences:', e);
     }
-  }, [currency, exchangeRate, isCustomRate, areaUnit, isLoaded]);
+  }, [currency, areaUnit, isLoaded]);
 
   const setCurrency = (c: Currency) => {
     setCurrencyState(c);
     if (user) {
       updateProfile.mutate({ preferred_currency: c });
-    }
-  };
-  
-  const setExchangeRate = (rate: number) => setExchangeRateState(rate);
-  
-  const setIsCustomRate = (custom: boolean) => {
-    setIsCustomRateState(custom);
-    if (!custom) {
-      setExchangeRateState(defaultExchangeRate);
     }
   };
   
@@ -144,12 +123,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       currency,
       setCurrency,
       exchangeRate,
-      setExchangeRate,
-      isCustomRate,
-      setIsCustomRate,
       areaUnit,
       setAreaUnit,
-      defaultExchangeRate,
     }}>
       {children}
     </PreferencesContext.Provider>
@@ -164,12 +139,8 @@ export function usePreferences() {
       currency: 'USD' as Currency,
       setCurrency: () => {},
       exchangeRate: FALLBACK_EXCHANGE_RATE,
-      setExchangeRate: () => {},
-      isCustomRate: false,
-      setIsCustomRate: () => {},
       areaUnit: 'sqft' as AreaUnit,
       setAreaUnit: () => {},
-      defaultExchangeRate: FALLBACK_EXCHANGE_RATE,
     };
   }
   return context;
