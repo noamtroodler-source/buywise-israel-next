@@ -7,6 +7,7 @@ import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
 import { ProjectMarker } from './ProjectMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
+import { MapHoverPopup } from './MapHoverPopup';
 import { MapToolbar } from './MapToolbar';
 import { SavedLocationsLayer } from './SavedLocationsLayer';
 import { DrawControl, DrawnPolygon, type DrawMode } from './DrawControl';
@@ -399,6 +400,12 @@ export function PropertyMap({
             />
           ))}
         
+        {/* Hover popup (only when no property is click-selected) */}
+        {!showCityOverlay && hoveredPropertyId && !selectedPropertyId && (() => {
+          const hoveredProperty = properties.find(p => p.id === hoveredPropertyId);
+          return hoveredProperty ? <MapHoverPopup property={hoveredProperty} /> : null;
+        })()}
+
         {/* Project Markers (Buy mode only, when zoomed in enough) */}
         {!showCityOverlay && listingStatus === 'for_sale' && projects?.map(project => (
           <ProjectMarker
