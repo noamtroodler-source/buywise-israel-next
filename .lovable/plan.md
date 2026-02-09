@@ -1,45 +1,51 @@
 
 
-## Fix: Logo/Image Uploads Failing for Agencies, Developers, and Agents
+## Opt-In Agent Profile During Agency Registration + Onboarding Text Update
 
-### The Problem
+### What Changes
 
-When you try to upload an agency logo, you get "Failed to upload logo" because the file storage security policy **only allows users with the "agent" role** to upload files. Agency admins and developers don't have that role, so the upload is blocked with a 403 Forbidden error.
+**1. New optional step in the agency registration wizard**
 
-This same issue affects:
-- **Agency settings** -- logo upload (your current issue)
-- **Agency registration wizard** -- logo upload during signup
-- **Developer settings** -- logo upload
-- **Developer registration** -- logo upload during signup
-- **Agent settings** -- avatar upload (agents may work if they have the role, but the policy also checks the wrong folder path for some cases)
+After the existing "Coverage & Focus" step (step 2) and before "Review" (step 3), add a new step called **"Your Agent Profile"** that appears conditionally:
 
-### The Fix
+- At the end of Step 2 (Coverage & Focus), show a toggle/checkbox: **"I'm also an active agent"** with a brief explanation like "List properties and receive inquiries under your own name, within your agency."
+- If they opt in, a new Step 3 appears: **"Your Agent Profile"** -- collecting agent-specific fields:
+  - Real Estate License Number (required if opted in)
+  - Years of Experience (dropdown)
+  - Languages spoken (chip selector, pre-filled with Hebrew/English)
+  - Specializations (chip selector, max 3)
+  - Short bio (optional textarea)
+- The "Review" step shifts to Step 4 (or stays Step 3 if they skip)
+- The step indicator dynamically shows 3 or 4 steps based on the opt-in choice
 
-One database change to update the storage security rule so that **any logged-in user** can upload to the `property-images` storage bucket. Since each user uploads to their own folder (e.g., `agencies/{id}/`, `developers/{id}/`, `{user_id}/`), this is safe -- and the bucket is already publicly readable.
+**2. Submit logic creates agent profile when opted in**
 
-### Technical Details
+In `handleSubmit`, after creating the agency, if the user opted in:
+- Insert into the `agents` table with `agency_id`, `joined_via: 'agency_admin'`, `status: 'active'`
+- Insert the `agent` role into `user_roles` (ignore duplicates)
+- The agent is automatically linked to the agency they just created
 
-**Database migration** -- Replace the restrictive upload policy:
+**3. Onboarding checklist text update**
 
-```sql
--- Drop the old policy that only allows agents
-DROP POLICY IF EXISTS "Agents can upload property images" ON storage.objects;
+In `AgencyOnboardingProgress.tsx`:
+- Change label from `"Add first team member"` to `"Add additional team member"`
+- Change description from `"Build your team"` to `"Invite someone to join your agency"`
+- Change completion threshold from `teamCount >= 1` to `teamCount >= 2` (since the admin may count as the first agent)
 
--- Create a new policy allowing any authenticated user to upload
-CREATE POLICY "Authenticated users can upload to property-images"
-ON storage.objects
-FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'property-images');
-```
+**4. Review step shows agent info when opted in**
 
-This single change fixes uploads for all three professional types (agencies, developers, agents) across both their registration flows and settings pages.
+The Review step will show a section for agent profile details if the user opted in, so they can confirm before submitting.
 
-### No code changes needed
+### Files to Modify
 
-The upload code in all files (`AgencySettings.tsx`, `DeveloperSettings.tsx`, `AgentSettings.tsx`, `DeveloperRegister.tsx`, `AgencyRegister.tsx`) is already correct -- it uploads to the right paths and handles errors properly. The only blocker was this storage security rule.
+| File | Change |
+|------|--------|
+| `src/pages/agency/AgencyRegister.tsx` | Add opt-in checkbox on Step 2, conditional agent profile step, dynamic step array, agent creation in handleSubmit, agent fields in review |
+| `src/components/agency/AgencyOnboardingProgress.tsx` | Update team label/description/threshold |
 
-### Files to modify
-- **New database migration** -- update the storage upload policy (one SQL statement)
-- No application code changes required
+### Edge Cases
 
+- If user already has an agent profile (rare but possible), the agent insert fails gracefully -- non-blocking
+- If user already has agent role, the role insert is non-blocking
+- Draft saving will include the new agent opt-in state and agent form fields
+- The opt-in is completely optional -- if unchecked, the wizard behaves exactly as it does today (3 steps)
