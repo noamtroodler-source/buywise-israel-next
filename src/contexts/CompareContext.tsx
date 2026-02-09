@@ -10,6 +10,7 @@ interface CompareContextType {
   removeFromCompare: (id: string) => void;
   isInCompare: (id: string) => boolean;
   clearCompare: () => void;
+  syncCompareWithFavorites: (validIds: string[]) => void;
   maxItems: number;
 }
 
@@ -86,6 +87,16 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     setCompareCategory(null);
   };
 
+  const syncCompareWithFavorites = (validIds: string[]) => {
+    setCompareIds(prev => {
+      const validSet = new Set(validIds);
+      const filtered = prev.filter(id => validSet.has(id));
+      if (filtered.length === prev.length) return prev;
+      if (filtered.length === 0) setCompareCategory(null);
+      return filtered;
+    });
+  };
+
   return (
     <CompareContext.Provider value={{
       compareIds,
@@ -94,6 +105,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
       removeFromCompare,
       isInCompare,
       clearCompare,
+      syncCompareWithFavorites,
       maxItems: MAX_COMPARE_ITEMS,
     }}>
       {children}

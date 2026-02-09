@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, Calculator, ArrowRight, Bell, BellOff, Building, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -27,14 +27,20 @@ import { useQueryClient } from '@tanstack/react-query';
 const popularCities = ['Tel Aviv', 'Jerusalem', 'Herzliya', 'Ra\'anana', 'Netanya'];
 
 export default function Favorites() {
-  const { favorites, favoriteProperties, isLoading } = useFavorites();
-  const { projectFavorites, isLoading: isLoadingProjects, removeProjectFavorite } = useProjectFavorites();
+  const { favorites, favoriteProperties, favoriteIds, isLoading } = useFavorites();
+  const { projectFavorites, projectFavoriteIds, isLoading: isLoadingProjects, removeProjectFavorite } = useProjectFavorites();
   const { togglePriceAlert, isTogglingAlert } = usePriceDropAlerts();
-  const { compareCategory } = useCompare();
+  const { compareCategory, syncCompareWithFavorites } = useCompare();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'buy' | 'rent' | 'projects'>('buy');
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+
+  // Sync compare list with current favorites — prune stale IDs
+  useEffect(() => {
+    const allValidIds = [...favoriteIds, ...projectFavoriteIds];
+    syncCompareWithFavorites(allValidIds);
+  }, [favoriteIds, projectFavoriteIds, syncCompareWithFavorites]);
 
   // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
