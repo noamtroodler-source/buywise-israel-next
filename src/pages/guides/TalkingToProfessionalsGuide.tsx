@@ -113,7 +113,9 @@ const lawyerDetails = {
     'Draft and negotiate contracts',
     'File purchase tax declarations',
     'Handle registration at the land registry',
-    'Represent the buyer\'s legal interests'
+    'Represent the buyer\'s legal interests',
+    'Verify the property has proper building permits (Heter B\'nia) and occupancy permits (Tofes 4)',
+    'Hold funds in escrow until seller produces tax clearance certificates and municipal approvals'
   ],
   notResponsible: [
     'Search for properties',
@@ -128,7 +130,8 @@ const mortgageDetails = {
   timeline: [
     'Mortgage discussions often begin after the contract is signed',
     'Banks require a signed contract and property appraisal before issuing final approval',
-    'Pre-approval letters exist, but are indicative rather than binding'
+    'Pre-approval letters exist, but are indicative rather than binding',
+    'Mortgage approval for foreigners takes about 4-6 weeks'
   ],
   whyLater: [
     'No financing contingency in typical Israeli contracts',
@@ -139,7 +142,8 @@ const mortgageDetails = {
     'Banks evaluate income, credit history and residency status',
     'Foreign buyers may face stricter documentation requirements',
     'Foreign buyers often have lower loan-to-value ratios',
-    'Olim sometimes receive preferential terms'
+    'Olim sometimes receive preferential terms',
+    'Required documents include valid passport, proof of income, credit report, bank statements, and signed purchase agreement'
   ]
 };
 

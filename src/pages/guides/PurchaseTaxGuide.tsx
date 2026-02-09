@@ -115,7 +115,7 @@ const termsData = [
   {
     term: 'Aliyah Benefit',
     assumption: 'Automatic tax break for all Jews',
-    reality: 'Reduced rates (0.5% up to ₪6M) available only within 7 years of aliyah date. First ₪1.98M may be exempt.',
+    reality: 'Reduced rates (0.5% up to ₪6M) available only within 7 years of aliyah date. First ₪1.98M may be exempt. The Zakaut mortgage eligibility window is separate — up to 15 years after aliyah.',
   },
   {
     term: 'New Construction',
@@ -151,6 +151,11 @@ const termsData = [
     term: 'Late Payment Interest',
     assumption: 'Small penalty for late payment',
     reality: 'Interest up to 5% monthly on unpaid capital gains tax. Purchase tax also accrues significant interest if not paid within 60 days.',
+  },
+  {
+    term: 'Betterment Levy (Heitel Hashbacha)',
+    assumption: 'No tax on building rights changes',
+    reality: 'A municipal tax on value increases due to new building rights (e.g., adding floors, balconies). Must be paid before title transfer. Outstanding levies can block registration.',
   },
 ];
 
@@ -213,6 +218,7 @@ const commonAssumptions = [
   'They think off-plan and resale transactions are taxed the same way.',
   'They consider purchase tax negotiable or waivable.',
   'They underestimate the proportion of total cost purchase tax represents.',
+  'They underestimate late payment penalties — interest up to 5% monthly on unpaid capital gains tax.',
 ];
 
 export default function PurchaseTaxGuide() {

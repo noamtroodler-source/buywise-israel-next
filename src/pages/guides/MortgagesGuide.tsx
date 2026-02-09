@@ -69,6 +69,7 @@ const commonAssumptions = [
   { icon: MessageSquare, text: 'Banks communicate with lawyers seamlessly' },
   { icon: Calendar, text: 'Mortgage offers stay valid for months' },
   { icon: Handshake, text: 'Brokers work like in US/UK' },
+  { icon: Clock, text: 'Mortgage offers stay valid indefinitely' },
 ];
 
 const howMortgagesDiffer = [
@@ -82,7 +83,7 @@ const howMortgagesDiffer = [
   },
   {
     title: 'Buyer status determines LTV limits',
-    description: 'Bank of Israel regulations set maximum loan-to-value ratios: 75% for first-time Israeli buyers and Olim, 70% for upgraders, 50% for investors and foreign buyers (some lenders offer up to 70% for strong foreign profiles).',
+    description: 'Bank of Israel regulations set maximum loan-to-value ratios: 75% for first-time Israeli buyers and Olim, 70% for upgraders, 50% for investors and foreign buyers. Some lenders offer up to 70% for strong foreign profiles with substantial assets or dual residency.',
   },
   {
     title: 'Appraisals may fall short of purchase price',
@@ -111,13 +112,25 @@ const howMortgagesDiffer = [
   },
   {
     title: 'Pre-payment penalties vary by loan type',
-    description: 'Variable-rate loans generally have no pre-payment penalties. Fixed-rate loans may incur penalties if paid off when market rates are lower than your contracted rate.',
+    description: 'Variable-rate loans generally have no pre-payment penalties. Fixed-rate loans (available up to 20 years) may incur significant penalties if market rates drop below your contracted rate.',
     badge: 'VARIES BY LOAN TYPE',
   },
   {
-    title: 'Olim may access government mortgage',
-    description: 'New immigrants may be eligible for a government-backed mortgage (Mashkanta Zkaim) with favorable terms — typically fixed 3% rate for 20-25 years on a limited amount.',
+    title: 'Olim may access government mortgage (Zakaut)',
+    description: 'New immigrants may be eligible for a government-backed Zakaut mortgage within 15 years of aliyah — typically a fixed inflation-linked rate (~3%) with no prepayment penalty, on a limited amount.',
     badge: 'OLIM BENEFIT',
+  },
+  {
+    title: 'Mortgage sub-loan flexibility',
+    description: 'Israeli mortgages can combine multiple sub-loans (prime-linked, CPI-linked, fixed, foreign-currency), each with different terms and risk profiles. This flexibility is uncommon in the US/UK and allows tailored structuring.',
+  },
+  {
+    title: 'No rate locks',
+    description: 'Israeli mortgage lenders rarely offer rate locks. Interest rates can change between pre-approval and closing, so borrowers should plan for fluctuations and avoid assuming quoted rates are final.',
+  },
+  {
+    title: 'Foreign-currency loans',
+    description: 'Loans denominated in USD or EUR are available, with interest based on LIBOR + premium. These match foreign income currency but carry exchange-rate risk — a weakening shekel increases repayments in real terms.',
   },
 ];
 
@@ -148,7 +161,7 @@ const processSteps = [
   {
     stage: 'After accepted offer',
     action: 'Consult banks or mortgage brokers',
-    detail: 'Banks provide non-binding indications based on income and assets.',
+    detail: 'Banks provide non-binding indications based on income and assets. Foreigners generally need 50% down and should gather: passport, proof of income, credit report, bank statements, and signed purchase agreement.',
   },
   {
     stage: 'At contract signing',

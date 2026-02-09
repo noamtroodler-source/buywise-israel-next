@@ -32,6 +32,10 @@ const faqs = [
     question: 'What are my rights if something is wrong with the apartment?',
     answer: `New apartments come with mandatory warranty periods. The "inspection period" (Tekufat Bedek) covers defects for 1-7 years depending on the issue: 1 year for general items, 2 years for plumbing and electrical, 5 years for cracks and dampness, 7 years for external cladding. Beyond that, a 3-year structural warranty applies. Document any issues in writing immediately — verbal complaints aren't legally valid. Most buyers hire a private engineer for a pre-handover inspection.`,
   },
+  {
+    question: 'What legal protections exist for off-plan buyers?',
+    answer: `Israeli law requires developers to provide one of five legal safeguards before collecting more than 7% of the purchase price: a bank guarantee, insurance policy, first mortgage on the property, a warning notice (He'arat Azhara) in the land registry, or transfer of property rights to the buyer. The developer must issue a declaration within 7 days of signing confirming which safeguard is in place. These protections ensure that if the developer defaults or goes bankrupt, your payments are recoverable. Keep all guarantee letters and declarations in a safe place and verify they're issued promptly after each payment.`,
+  },
 ];
 
 export function ProjectFAQ() {

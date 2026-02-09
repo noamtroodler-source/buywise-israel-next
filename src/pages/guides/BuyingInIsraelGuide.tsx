@@ -110,16 +110,20 @@ export default function BuyingInIsraelGuide() {
           <h4 className="font-semibold">Property Ownership Types:</h4>
           <ul className="list-disc pl-5 space-y-2">
             <li>
-              <strong><GlossaryTooltip term="טאבו">Tabu (Full Ownership)</GlossaryTooltip>:</strong> Complete private ownership registered 
-              with the Land Registry
+              <strong><GlossaryTooltip term="טאבו">Tabu / Freehold (Full Ownership)</GlossaryTooltip>:</strong> Complete private ownership of both land and building, registered with the Land Registry.
             </li>
             <li>
-              <strong>Minhal (Leasehold):</strong> Long-term lease from the Israel Land Authority, typically 49-98 years
+              <strong>Minhal / Leasehold:</strong> Long-term lease of state-owned land (usually up to 99 years) while owning the building. Resale or renovation may require approval from the Israel Land Authority.
             </li>
             <li>
               <strong>Cooperative Housing:</strong> Ownership of shares in a housing company
             </li>
           </ul>
+          <div className="bg-muted/50 p-3 rounded-lg mt-2">
+            <p className="text-sm text-muted-foreground">
+              <strong>Key distinction:</strong> Israeli property deals are only legally binding once a written contract is signed and registered. Verbal agreements, WhatsApp messages, or handshakes carry no legal weight.
+            </p>
+          </div>
           <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
             <p className="text-sm flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
@@ -258,7 +262,7 @@ export default function BuyingInIsraelGuide() {
               <strong>Contract Signing:</strong> Sign purchase agreement, pay initial deposit (typically 10%)
             </li>
             <li>
-              <strong><GlossaryTooltip term="הערת אזהרה">Hearat Azhara</GlossaryTooltip>:</strong> Register warning note to protect your rights
+              <strong><GlossaryTooltip term="הערת אזהרה">Hearat Azhara</GlossaryTooltip>:</strong> Your lawyer should file a cautionary note (He'arat Azhara) in the Tabu immediately after signing to protect your rights before final registration.
             </li>
             <li>
               <strong>Mortgage Finalization:</strong> Complete mortgage application and approval
@@ -269,7 +273,7 @@ export default function BuyingInIsraelGuide() {
           </ol>
           <div className="bg-primary/5 p-4 rounded-lg mt-4">
             <p className="text-sm">
-              <strong>⏱️ Timeline:</strong> The entire process typically takes 2-4 months from offer to closing.
+              <strong>⏱️ Timeline:</strong> The entire process typically takes 2-4 months from offer to closing. Title transfer can take months after receiving keys — final registration requires tax clearances and municipal certificates. Funds should be held in escrow until completion.
             </p>
           </div>
         </div>
@@ -361,6 +365,12 @@ export default function BuyingInIsraelGuide() {
             <li><strong>Carrying costs:</strong> Ongoing expenses like Arnona, Vaad Bayit</li>
             <li><strong>Date of occupancy:</strong> When can you actually move in?</li>
             <li><strong>Property restrictions:</strong> Any building or usage restrictions?</li>
+          </ul>
+          <h4 className="font-semibold mt-4">Red Flags to Watch For:</h4>
+          <ul className="list-disc pl-5 space-y-1 text-destructive/80">
+            <li>Seller cannot provide proof of ownership or a current Tabu extract</li>
+            <li>Pressure to sign a "verbal deal" or commit without legal review</li>
+            <li>Developer asking for more than 7% deposit without offering legally required safeguards (bank guarantee, insurance, first mortgage, warning notice, or property rights transfer)</li>
           </ul>
           <div className="bg-primary/5 p-4 rounded-lg mt-4">
             <p className="text-sm">

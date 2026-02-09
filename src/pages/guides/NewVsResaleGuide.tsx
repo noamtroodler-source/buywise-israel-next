@@ -96,6 +96,7 @@ const surprises = [
   { text: 'Expecting identical tax treatments', detail: 'VAT often applies to developer sales, whereas resale deals may not; purchase tax rates vary.' },
   { text: 'Assuming amenities are included', detail: 'Parking, storage, and community facilities in new developments may incur extra cost.' },
   { text: 'Trusting renderings as reality', detail: 'Marketing materials may not reflect final finishes, layouts, or neighborhood development.' },
+  { text: 'Not knowing about the 7% safeguard rule', detail: 'Developers must provide one of five legal safeguards (bank guarantee, insurance, first mortgage, warning notice, or property rights transfer) before collecting payments exceeding 7% of the price.' },
 ];
 
 const buyerStatuses = [
@@ -213,7 +214,8 @@ export default function NewVsResaleGuide() {
                 <div className="p-6 rounded-xl bg-muted/30 border space-y-4">
                   {[{ icon: HardHat, title: 'Developer-Issued Contract', desc: 'Buyers sign a standardized contract that includes a technical specification (mifrat) detailing promised finishes and fixtures, as required by law.' },
                     { icon: CreditCard, title: 'Staged Payments', desc: 'Payments are made in stages tied to construction milestones or time intervals, not concentrated at closing.' },
-                    { icon: Shield, title: 'Bank Guarantee Protection', desc: 'Once more than a small portion of the price is paid, the developer must provide a bank guarantee to protect the buyer\'s funds.' },
+                    { icon: Shield, title: 'Bank Guarantee Protection', desc: 'Developers are prohibited from collecting more than 7% of the price without offering one of five legal safeguards: bank guarantee, insurance, first mortgage, warning notice in the registry, or transfer of property rights.' },
+                    { icon: CreditCard, title: 'Designated Payment Channels', desc: 'Payments must be made via vouchers issued by the financing bank into a designated project account — never directly to the developer\'s personal account.' },
                     { icon: Layout, title: 'Customization Options', desc: 'Buyers may have options to choose materials or request design changes during construction, within developer rules.' },
                     { icon: FileCheck, title: 'Tofes 4 Required', desc: 'Possession is only possible after the project receives a certificate of occupancy (Tofes 4).' },
                     { icon: Clock, title: 'Delayed Registration', desc: 'Ownership registration can occur months or years after key handover, first recorded in a housing company ledger before migrating to the Land Registry.' }
