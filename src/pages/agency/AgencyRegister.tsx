@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -6,6 +6,7 @@ import {
   Loader2, 
   ArrowLeft, 
   ArrowRight,
+  UserCheck,
   Sparkles, 
   Check, 
   Lightbulb, 
@@ -34,12 +35,16 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AgencySubmittedDialog } from '@/components/agency/AgencySubmittedDialog';
 import { getUserFriendlyError } from '@/utils/userFriendlyErrors';
+import { AgentProfileStep, type AgentProfileData } from '@/components/agency/AgentProfileStep';
+import { Switch } from '@/components/ui/switch';
 
-const steps = [
-  { title: 'Agency Basics', description: 'Your agency details', icon: Building2 },
-  { title: 'Coverage & Focus', description: 'Where and what you specialize in', icon: MapPin },
-  { title: 'Review', description: 'Confirm & submit', icon: CheckCircle2 },
+const baseSteps = [
+  { id: 'basics', title: 'Agency Basics', description: 'Your agency details', icon: Building2 },
+  { id: 'coverage', title: 'Coverage & Focus', description: 'Where and what you specialize in', icon: MapPin },
+  { id: 'review', title: 'Review', description: 'Confirm & submit', icon: CheckCircle2 },
 ];
+
+const agentStep = { id: 'agent', title: 'Agent Profile', description: 'Your personal agent details', icon: UserCheck };
 
 const specializations = ['Residential', 'Luxury', 'New Construction', 'Rentals', 'Anglo Market', 'Investment Properties'];
 
@@ -83,6 +88,8 @@ interface DraftData {
   currentStep: number;
   isEmailVerified: boolean;
   savedAt: number;
+  wantsAgentProfile?: boolean;
+  agentData?: AgentProfileData;
 }
 
 export default function AgencyRegister() {
@@ -98,8 +105,24 @@ export default function AgencyRegister() {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showResumeDraft, setShowResumeDraft] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<DraftData | null>(null);
+  const [wantsAgentProfile, setWantsAgentProfile] = useState(false);
+  const [agentData, setAgentData] = useState<AgentProfileData>({
+    licenseNumber: '',
+    yearsExperience: '',
+    languages: ['Hebrew', 'English'],
+    agentSpecializations: [],
+    bio: '',
+  });
   const cardRef = useRef<HTMLDivElement>(null);
   const draftSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dynamic steps based on opt-in
+  const steps = useMemo(() => {
+    if (wantsAgentProfile) {
+      return [baseSteps[0], baseSteps[1], agentStep, baseSteps[2]];
+    }
+    return baseSteps;
+  }, [wantsAgentProfile]);
 
   // Scroll to top of wizard when step changes
   const scrollToWizardTop = useCallback(() => {
@@ -173,13 +196,15 @@ export default function AgencyRegister() {
           currentStep,
           isEmailVerified,
           savedAt: Date.now(),
+          wantsAgentProfile,
+          agentData,
         };
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
       } catch (e) {
         console.error('Failed to save draft:', e);
       }
     }, 500);
-  }, [formData, currentStep, isEmailVerified]);
+  }, [formData, currentStep, isEmailVerified, wantsAgentProfile, agentData]);
 
   // Save draft whenever form data or step changes
   useEffect(() => {
@@ -194,6 +219,8 @@ export default function AgencyRegister() {
       setFormData(pendingDraft.formData);
       setCurrentStep(pendingDraft.currentStep);
       setIsEmailVerified(pendingDraft.isEmailVerified);
+      if (pendingDraft.wantsAgentProfile) setWantsAgentProfile(true);
+      if (pendingDraft.agentData) setAgentData(pendingDraft.agentData);
       if (pendingDraft.formData.logo_url) {
         setLogoPreview(pendingDraft.formData.logo_url);
       }
@@ -326,13 +353,17 @@ export default function AgencyRegister() {
     }
   };
 
+  const currentStepId = steps[currentStep]?.id;
+
   const canGoNext = () => {
-    switch (currentStep) {
-      case 0:
+    switch (currentStepId) {
+      case 'basics':
         return formData.name && formData.email && isEmailVerified;
-      case 1:
-        return true; // Optional step
-      case 2:
+      case 'coverage':
+        return true;
+      case 'agent':
+        return !!agentData.licenseNumber;
+      case 'review':
         return true;
       default:
         return false;
@@ -409,6 +440,39 @@ export default function AgencyRegister() {
           is_active: true,
         });
 
+      // Create agent profile if opted in
+      if (wantsAgentProfile) {
+        const { error: agentError } = await supabase
+          .from('agents')
+          .insert({
+            user_id: user.id,
+            name: user.user_metadata?.full_name || formData.name,
+            email: formData.email,
+            phone: formData.phone || null,
+            agency_id: agency.id,
+            agency_name: formData.name,
+            license_number: agentData.licenseNumber || null,
+            years_experience: parseInt(agentData.yearsExperience) || 0,
+            languages: agentData.languages.length > 0 ? agentData.languages : ['Hebrew', 'English'],
+            specializations: agentData.agentSpecializations.length > 0 ? agentData.agentSpecializations : null,
+            bio: agentData.bio || null,
+            status: 'active',
+            joined_via: 'agency_admin',
+            email_verified_at: new Date().toISOString(),
+            onboarding_completed_at: new Date().toISOString(),
+          });
+
+        if (agentError && !agentError.message.includes('duplicate')) {
+          console.error('Failed to create agent profile:', agentError);
+        }
+
+        // Assign agent role (ignore if exists)
+        await supabase
+          .from('user_roles')
+          .insert({ user_id: user.id, role: 'agent' as const })
+          .select();
+      }
+
       // Send welcome email
       try {
         await supabase.functions.invoke('send-welcome-email', {
@@ -439,8 +503,8 @@ export default function AgencyRegister() {
   const feedback = getDescriptionFeedback();
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 0:
+    switch (currentStepId) {
+      case 'basics':
         return (
           <motion.div
             variants={containerVariants}
@@ -551,7 +615,7 @@ export default function AgencyRegister() {
           </motion.div>
         );
 
-      case 1:
+      case 'coverage':
         return (
           <motion.div
             variants={containerVariants}
@@ -641,10 +705,34 @@ export default function AgencyRegister() {
                 <p>Include your founding story, expertise, team culture, and what sets you apart.</p>
               </div>
             </motion.div>
+
+            {/* Agent Profile Opt-in */}
+            <motion.div variants={itemVariants} className="border border-primary/20 rounded-xl p-4 bg-primary/5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <UserCheck className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">I'm also an active agent</p>
+                    <p className="text-xs text-muted-foreground">List properties and receive inquiries under your own name</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={wantsAgentProfile}
+                  onCheckedChange={setWantsAgentProfile}
+                />
+              </div>
+            </motion.div>
           </motion.div>
         );
 
-      case 2:
+      case 'agent':
+        return (
+          <AgentProfileStep data={agentData} onChange={setAgentData} />
+        );
+
+      case 'review':
         return (
           <motion.div
             variants={containerVariants}
@@ -700,6 +788,38 @@ export default function AgencyRegister() {
                 </div>
               )}
             </motion.div>
+
+            {/* Agent Profile Review Section */}
+            {wantsAgentProfile && (
+              <motion.div 
+                variants={itemVariants}
+                className="bg-gradient-to-br from-primary/5 via-background to-primary/5 p-6 rounded-2xl border border-primary/20"
+              >
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                  <UserCheck className="h-4 w-4 text-primary" />
+                  Your Agent Profile
+                </h4>
+                <div className="grid gap-3">
+                  {[
+                    { label: 'License Number', value: agentData.licenseNumber || 'Not provided' },
+                    { label: 'Experience', value: agentData.yearsExperience ? `${agentData.yearsExperience}+ years` : 'Not specified' },
+                    { label: 'Languages', value: agentData.languages.join(', ') || 'Not specified' },
+                    { label: 'Specializations', value: agentData.agentSpecializations.join(', ') || 'None selected' },
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-center justify-between py-1.5 border-b border-border/30 last:border-0">
+                      <span className="text-muted-foreground text-sm">{item.label}</span>
+                      <span className="font-medium text-sm text-right max-w-[200px] truncate">{item.value}</span>
+                    </div>
+                  ))}
+                  {agentData.bio && (
+                    <div className="pt-2 mt-1 border-t border-border/30">
+                      <p className="text-muted-foreground text-sm mb-1">Bio:</p>
+                      <p className="text-sm break-words">{agentData.bio}</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
             <motion.div 
               variants={itemVariants}
