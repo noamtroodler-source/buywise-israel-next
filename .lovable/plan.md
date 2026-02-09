@@ -1,68 +1,59 @@
 
-## Fix: Compare List Showing Items That Aren't in Favorites
+
+## Improve Map Hover Interaction (Zillow/Redfin Style)
 
 ### Problem
-The compare list (stored in `sessionStorage`) is completely independent from the favorites list. You can add properties to compare, then unfavorite them (or have no favorites at all), and the compare bar still shows those items at the bottom of the page.
+Currently, hovering over a map marker causes the property list on the right to auto-scroll to that property, which is jarring. You want a Zillow/Redfin-style experience where hovering a marker shows a popup card directly on the map, and the list stays put.
 
-### Root Cause
-`CompareContext` persists IDs in `sessionStorage` but never checks whether those IDs are still in the user's favorites. The only cleanup happens when `removeFavorite` is called (which calls `removeFromCompare`), but this doesn't cover:
-- Session data from a previous browsing session where favorites were cleared differently
-- Stale sessionStorage data
+### Changes
 
-### Solution
-Add a synchronization effect in `CompareContext` that filters out any compare IDs that are not in the current favorites list. This ensures the compare list is always a subset of favorites.
+#### 1. Remove auto-scroll on marker hover (`src/components/map-search/MapPropertyList.tsx`)
+- Delete the `useEffect` (lines 42-48) that calls `scrollIntoView` when `hoveredPropertyId` changes
+- Remove the associated `cardRefs` ref since it's no longer needed
+- Remove the `setCardRef` callback
+- Keep the visual highlight ring on the list card for the hovered property (existing `ring-2 ring-primary` class stays)
 
-**File: `src/contexts/CompareContext.tsx`**
-- Import `useFavoritesContext` from `FavoritesContext` (not `useFavorites` to avoid circular deps)
-- Add a `useEffect` that runs whenever `compareIds` or the favorite IDs change
-- Filter out any compare IDs that are not present in the combined favorite IDs (property favorites + project favorites)
-- This acts as a passive guard -- if any compare ID isn't favorited, it gets removed automatically
+#### 2. Add hover popup on map markers (`src/components/map-search/PropertyMap.tsx`)
+- Track a separate `hoveredPopupId` state for the hover popup (distinct from `selectedPropertyId` which is for clicks)
+- When a marker is hovered, show a lightweight popup card at that marker's position
+- When the marker is unhovered, dismiss the popup
+- If a property is clicked (selected), the click popup takes precedence and hover popup is hidden
 
-### Technical Detail
+#### 3. Create a new `MapHoverPopup` component (`src/components/map-search/MapHoverPopup.tsx`)
+- A simpler, more compact version of `MapPropertyPopup` designed for hover state
+- Shows: property image, price, beds/baths/sqm, address -- similar to Zillow's hover cards and matching BuyWise design language
+- No close button needed (dismisses on mouseout)
+- Appears directly at the marker position using Leaflet's `Popup` component
+- Styled to match BuyWise's card design: rounded corners, card background, clean typography
+- Uses existing `useFormatPrice` and `useFormatArea` hooks for consistency
+- Includes favorite button and share button matching the reference screenshots
 
-```typescript
-// In CompareProvider, after existing state setup:
-const { guestFavorites, guestProjectFavoriteIds } = useFavoritesContext();
+#### 4. Bidirectional hover (list to map) stays the same
+- Hovering a card in the list still highlights the marker on the map (no change needed)
+- The marker gets the blue/active style as it does today
 
-// Also need to read DB favorite IDs for logged-in users
-// We'll query favoriteIds from the existing useQuery pattern
-
-useEffect(() => {
-  // Build set of all valid favorite IDs
-  const validIds = new Set([
-    ...guestFavorites.map(f => f.property_id),
-    ...guestProjectFavoriteIds,
-    ...dbFavoriteIds,  // from auth user's DB favorites
-  ]);
-  
-  const filtered = compareIds.filter(id => validIds.has(id));
-  if (filtered.length !== compareIds.length) {
-    setCompareIds(filtered);
-    if (filtered.length === 0) setCompareCategory(null);
-  }
-}, [compareIds, guestFavorites, guestProjectFavoriteIds, dbFavoriteIds]);
-```
-
-However, since `CompareContext` is a context provider and shouldn't use hooks like `useQuery` directly, the cleaner approach is:
-
-**Option chosen**: Move the sync logic into a small component rendered inside both providers, or pass favorite IDs into CompareProvider. The simplest approach:
-
-1. **`src/contexts/CompareContext.tsx`** -- Accept an optional `validFavoriteIds` prop or add a `syncWithFavorites(ids: string[])` method
-2. **`src/components/CompareSync.tsx`** (new file) -- A tiny component that sits inside both providers, reads favorite IDs from `useFavorites`, and calls sync on CompareContext
-
-Actually, the simplest fix with minimal changes:
-
-**`src/contexts/CompareContext.tsx`**:
-- Add a new method `syncCompareWithFavorites(favoriteIds: string[])` to the context
-- This filters `compareIds` to only include IDs present in `favoriteIds`
-
-**`src/pages/Favorites.tsx`**:
-- Call the sync method with current `favoriteIds` on mount/change, since this is where the compare bar is shown
-- This ensures that by the time the user sees the compare bar on the favorites page, stale items are cleaned out
-
-### Files to Modify
+### Technical Details
 
 | File | Change |
 |------|--------|
-| `src/contexts/CompareContext.tsx` | Add `syncCompareWithFavorites` method to context |
-| `src/pages/Favorites.tsx` | Call sync on mount with current favorite IDs to prune stale compare items |
+| `src/components/map-search/MapPropertyList.tsx` | Remove `scrollIntoView` effect and `cardRefs` |
+| `src/components/map-search/MapHoverPopup.tsx` | New component -- compact hover popup card |
+| `src/components/map-search/PropertyMap.tsx` | Add hover popup rendering using `MapHoverPopup` when `hoveredPropertyId` is set (and no `selectedPropertyId` active) |
+
+### Hover popup design (matching BuyWise + Zillow reference)
+- Width: ~280px
+- Property photo (16:10 aspect, rounded top)
+- Favorite button overlay on image (top-right)
+- Price (bold, formatted with currency preference)
+- Beds, baths, sqm stats row with icons
+- Address line (truncated)
+- No "View Details" button (the click popup already has that)
+- Smooth fade-in animation
+- Positioned above the marker with Leaflet's popup offset
+
+### Interaction flow after changes
+- Hover marker on map: Show hover popup on map, highlight card in list (no scroll)
+- Leave marker: Dismiss hover popup
+- Click marker: Show full click popup (existing `MapPropertyPopup`), dismiss hover popup
+- Hover card in list: Highlight marker on map (no popup, keeping it clean)
+- Click card in list: Navigate to property detail page (existing behavior via Link)
