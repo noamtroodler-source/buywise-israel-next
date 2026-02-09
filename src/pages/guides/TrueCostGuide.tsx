@@ -133,7 +133,7 @@ const costCategories = [
   {
     icon: PaintBucket,
     title: 'Renovation or Fit-out',
-    description: 'Upgrading kitchens, bathrooms, air conditioning, wardrobes or furnishing a property is common in second-hand purchases.'
+    description: 'Common in resale purchases. Typical benchmarks: repainting (~₪4,000), flooring (~₪15-22k), full bathroom (~₪25-30k each). Budget 5-10% of purchase price for renovations.'
   }
 ];
 
@@ -178,7 +178,9 @@ const surprises = [
   'Assuming new construction has fewer costs than resale',
   'Confusing purchase tax with annual Arnona property tax',
   'Believing Olim benefits or single-residence benefits apply automatically',
-  'Overlooking registration and administrative fees'
+  'Overlooking registration and administrative fees',
+  'Ignoring currency risks when taking foreign-currency mortgages — exchange-rate shifts can offset any tax savings',
+  'Failing to budget for renovation and furnishing, which can add tens of thousands of shekels to the total'
 ];
 
 export default function TrueCostGuide() {

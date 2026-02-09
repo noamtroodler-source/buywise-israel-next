@@ -7,7 +7,7 @@ import {
   TrendingUp, Users, Shield, FileText, Calendar, Key, Heart,
   ArrowRightLeft, ArrowLeft, CheckCircle, Plane, Receipt, AlertCircle,
   Building, Handshake, MapPin, Globe, Briefcase, UserCheck,
-  HelpCircle, Lightbulb, Calculator, BookMarked
+  HelpCircle, Lightbulb, Calculator, BookMarked, Wrench
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -87,12 +87,12 @@ const rentingAspects = [
   {
     icon: Calendar,
     title: 'Lease Norms',
-    description: 'Typically 1-year contracts with limited renewal certainty. Early termination clauses (if they exist) usually require 60 days notice from tenant, 90 days from landlord.',
+    description: 'Typically 1-year contracts with limited renewal certainty. Early termination clauses (if they exist) usually require 60 days notice from tenant, 90 days from landlord. Israeli leases often include only the bare apartment — appliances, lighting fixtures, and furnishings are usually excluded unless explicitly listed in the contract.',
   },
   {
     icon: DollarSign,
     title: 'Security Deposits and Guarantees',
-    description: 'Security deposits cannot exceed 3 months rent by law. Landlords may hold deposit up to 60 days after lease ends for damage inspection. Bank guarantees are common for higher-end rentals.',
+    description: 'Security deposits cannot exceed 3 months rent by law. Deposits must be returned within 60 days of lease end; they can be cash, post-dated cheques, or bank guarantees. Bank guarantees are common for higher-end rentals.',
   },
   {
     icon: Shield,
@@ -113,6 +113,16 @@ const rentingAspects = [
     icon: Building,
     title: 'Dirat Le\'haskara Programme',
     description: 'Government long-term rental programme in some areas offers more tenant protections and stability than private market rentals.',
+  },
+  {
+    icon: Wrench,
+    title: 'Landlord Repair Obligations',
+    description: 'Landlords must fix structural issues (leaks, mold, safety hazards) within a reasonable time, not later than 30 days from written notification. Tenants must repair damages caused by unreasonable use.',
+  },
+  {
+    icon: Handshake,
+    title: 'Brokerage Agreements',
+    description: 'Brokers may ask tenants to sign a brokerage agreement before viewing an apartment. Once signed, the fee is due if the tenant proceeds with that property. Clarify who pays the fee before signing anything.',
   },
 ];
 
