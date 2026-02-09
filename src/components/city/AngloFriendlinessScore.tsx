@@ -64,7 +64,7 @@ export function AngloFriendlinessScore({ angloPresence, socioeconomicRank, cityN
                 key={star}
                 className={`h-4 w-4 ${
                   star <= config.stars 
-                    ? 'fill-amber-400 text-amber-400' 
+                    ? 'fill-primary text-primary' 
                     : 'fill-muted text-muted'
                 }`}
               />

@@ -160,7 +160,7 @@ export function AdminCitiesPage() {
                         disabled={toggleFeaturedMutation.isPending}
                       >
                         {city.is_featured ? (
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <Star className="h-4 w-4 fill-primary text-primary" />
                         ) : (
                           <StarOff className="h-4 w-4 text-muted-foreground" />
                         )}

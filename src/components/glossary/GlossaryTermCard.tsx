@@ -78,7 +78,7 @@ export function GlossaryTermCard({
                       e.stopPropagation();
                       onToggleSave();
                     }}
-                    className={`h-9 w-9 ${isSaved ? 'text-yellow-500 hover:text-yellow-600' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`h-9 w-9 ${isSaved ? 'text-primary hover:text-primary/80' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     {isSaved ? (
                       <Star className="h-5 w-5 fill-current" />

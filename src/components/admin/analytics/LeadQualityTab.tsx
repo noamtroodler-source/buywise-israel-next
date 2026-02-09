@@ -186,7 +186,7 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-primary" />
             Agent Response Leaderboard
           </CardTitle>
         </CardHeader>
@@ -197,7 +197,7 @@ export function LeadQualityTab({ dateRange }: LeadQualityTabProps) {
                 <div key={agent.agentId} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
                   <div className="flex items-center gap-4">
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold ${
-                      i === 0 ? 'bg-yellow-500/20 text-yellow-600' :
+                      i === 0 ? 'bg-primary/20 text-primary' :
                       i === 1 ? 'bg-gray-300/30 text-gray-600' :
                       i === 2 ? 'bg-orange-500/20 text-orange-600' :
                       'bg-muted text-muted-foreground'

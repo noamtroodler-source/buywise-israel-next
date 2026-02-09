@@ -32,7 +32,7 @@ const metricConfig = {
 };
 
 const rankBadges = [
-  { rank: 1, icon: Trophy, color: 'text-yellow-500 bg-yellow-50 border-yellow-200' },
+  { rank: 1, icon: Trophy, color: 'text-primary bg-primary/10 border-primary/20' },
   { rank: 2, icon: Medal, color: 'text-gray-400 bg-gray-50 border-gray-200' },
   { rank: 3, icon: Medal, color: 'text-amber-600 bg-amber-50 border-amber-200' },
 ];
@@ -58,7 +58,7 @@ export function AgentLeaderboard({ agents, className }: AgentLeaderboardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-primary" />
             Team Leaderboard
           </CardTitle>
         </div>

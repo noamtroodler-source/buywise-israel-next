@@ -80,7 +80,7 @@ export function ToolFeedback({ toolName, className, variant = 'default' }: ToolF
             className={cn(
               "h-5 w-5 transition-colors",
               (hoveredRating || rating) >= star
-                ? "fill-amber-400 text-amber-400"
+                ? "fill-primary text-primary"
                 : "text-muted-foreground/40"
             )}
           />
