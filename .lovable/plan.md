@@ -1,84 +1,114 @@
 
-# Footer Link Updates & ForDevelopers Page Removal
+# Default to USD + sqft & Improve Unit Display Formatting
 
 ## Overview
-This plan addresses three changes to the footer navigation and removes the ForDevelopers page from the application.
+This plan changes the site defaults to USD and square feet for international buyers, and updates the display format from `ft²` to `sqft` for better readability while keeping `m²` as the metric display.
 
 ---
 
 ## Changes Summary
 
-### 1. Remove Property Type Links from Footer
-**Current state:** The "Quick Links" section includes:
-- Apartments
-- Houses
-- Penthouses
+### 1. Change Default Preferences (New Visitors)
+| Setting | Current Default | New Default |
+|---------|-----------------|-------------|
+| Currency | ILS (₪) | USD ($) |
+| Area Unit | sqm | sqft |
 
-**Action:** Remove these three links from the footer (lines 33-41 in Footer.tsx)
+This means first-time visitors see familiar US-style formatting immediately.
 
----
-
-### 2. Rename "Our Principles" to "About Us"
-**Current state:** Link text says "Our Principles" (line 49 in Footer.tsx)
-
-**Action:** Change the text from "Our Principles" to "About Us"
-
----
-
-### 3. Change "For Developers" to "Register As Developer" & Remove Page
-**Current state:** 
-- Footer has a link "For Developers" pointing to `/for-developers` 
-- There's also a separate "Register as Developer" link pointing to `/developer/register`
-
-**Action:** 
-- Remove the "For Developers" link entirely (it's redundant since "Register as Developer" already exists)
-- Remove the ForDevelopers page and its route
+### 2. Update Unit Display Labels
+| Location | Current | New |
+|----------|---------|-----|
+| Formatted area output | `X ft²` | `X sqft` |
+| Formatted area output | `X m²` | `X m²` (unchanged) |
+| Header toggle button | `ft²` | `sqft` |
+| Header toggle button | `m²` | `m²` (unchanged) |
+| Price per area | `/ft²` | `/sqft` |
+| Price per area | `/m²` | `/m²` (unchanged) |
 
 ---
 
 ## Files to Modify
 
+### Core Context & Formatting
 | File | Changes |
 |------|---------|
-| `src/components/layout/Footer.tsx` | Remove Apartments/Houses/Penthouses links, rename "Our Principles" to "About Us", remove "For Developers" link |
-| `src/App.tsx` | Remove the ForDevelopers import and route |
-| `supabase/functions/generate-sitemap/index.ts` | Remove `/for-developers` from sitemap |
+| `src/contexts/PreferencesContext.tsx` | Change defaults from 'ILS'/'sqm' to 'USD'/'sqft'; update format functions to output 'sqft' instead of 'ft²' |
 
-## File to Delete
+### UI Components  
+| File | Changes |
+|------|---------|
+| `src/components/layout/PreferencesDialog.tsx` | Change `ft²` to `sqft` in display; keep `m²` |
 
-| File | Reason |
-|------|--------|
-| `src/pages/ForDevelopers.tsx` | Page no longer needed |
+### Map Components
+| File | Changes |
+|------|---------|
+| `src/components/map-search/HeatmapLegend.tsx` | Update title to use preference-based unit label |
 
 ---
 
 ## Technical Details
 
-### Footer.tsx Changes
-```text
-Quick Links section will become:
-- Buy Property
-- Rent Property
-- Tools & Calculators
-- Explore Areas
-- About Us (previously "Our Principles")
+### PreferencesContext.tsx Changes
 
-For Professionals section will become:
-- Advertise with Us
-- For Agents & Agencies
-- Register as Agent
-- Register as Developer
+**Default state changes (lines 33, 36, 68, 71, 127, 134):**
+```typescript
+// Before
+const [currency, setCurrencyState] = useState<Currency>('ILS');
+const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqm');
+
+// After  
+const [currency, setCurrencyState] = useState<Currency>('USD');
+const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqft');
 ```
 
-### App.tsx Changes
-- Remove line 44: `const ForDevelopers = lazy(() => import("./pages/ForDevelopers"));`
-- Remove line 216: `<Route path="/for-developers" element={<ForDevelopers />} />`
+**Format function updates:**
+```typescript
+// useFormatArea (line 174)
+// Before: return `${sqft.toLocaleString()} ft²`;
+// After:  return `${sqft.toLocaleString()} sqft`;
 
-### Sitemap Changes
-- Remove the `/for-developers` entry from the static pages array
+// useFormatPricePerArea (line 209)
+// Before: const unit = areaUnit === 'sqft' ? 'ft²' : 'm²';
+// After:  const unit = areaUnit === 'sqft' ? 'sqft' : 'm²';
+```
+
+### PreferencesDialog.tsx Changes
+
+**Header display (line 70):**
+```typescript
+// Before
+const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
+
+// After
+const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
+```
+
+### HeatmapLegend.tsx Changes
+
+**Dynamic unit in title (line 32):**
+```typescript
+// Before
+<p className="heatmap-legend-title">Price per m²</p>
+
+// After (with preferences hook)
+const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
+<p className="heatmap-legend-title">Price per {unitLabel}</p>
+```
 
 ---
 
-## Impact Assessment
-- **SEO:** Any existing links to `/for-developers` will result in 404. Consider adding a redirect to `/developer/register` if external links exist.
-- **User flow:** Users can still access developer registration via the "Register as Developer" link which remains in the footer.
+## User Experience Impact
+
+### For New Visitors (No Saved Preferences)
+- See `$` prices and `sqft` areas immediately
+- Familiar experience for US-based international buyers
+- Can switch to ₪/m² anytime via preferences toggle
+
+### For Returning Visitors (Have Saved Preferences)  
+- No change - their saved preferences are loaded from localStorage
+- Existing ILS/sqm users continue seeing ILS/sqm
+
+### For Power Users
+- Toggle remains easily accessible in header
+- All formatting updates in real-time when preferences change
