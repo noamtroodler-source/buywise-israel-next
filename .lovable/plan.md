@@ -1,114 +1,134 @@
 
-# Default to USD + sqft & Improve Unit Display Formatting
+# Persist User Preferences to Account
 
 ## Overview
-This plan changes the site defaults to USD and square feet for international buyers, and updates the display format from `ft²` to `sqft` for better readability while keeping `m²` as the metric display.
+This plan adds account-based preference persistence so logged-in users' currency and area unit choices are saved to their profile and follow them across devices.
+
+---
+
+## Current Behavior
+- **Default**: USD + sqft (already implemented)
+- **Anonymous users**: Preferences saved in browser localStorage
+- **Logged-in users**: Same as anonymous (localStorage only)
+
+## New Behavior
+- **Default**: USD + sqft (no change)
+- **Anonymous users**: Continue using localStorage
+- **Logged-in users**: Preferences sync to database AND localStorage as backup
 
 ---
 
 ## Changes Summary
 
-### 1. Change Default Preferences (New Visitors)
-| Setting | Current Default | New Default |
-|---------|-----------------|-------------|
-| Currency | ILS (₪) | USD ($) |
-| Area Unit | sqm | sqft |
+### 1. Database Migration
+Add two columns to the `profiles` table:
+- `preferred_currency`: Stores 'ILS' or 'USD'
+- `preferred_area_unit`: Stores 'sqm' or 'sqft'
 
-This means first-time visitors see familiar US-style formatting immediately.
-
-### 2. Update Unit Display Labels
-| Location | Current | New |
-|----------|---------|-----|
-| Formatted area output | `X ft²` | `X sqft` |
-| Formatted area output | `X m²` | `X m²` (unchanged) |
-| Header toggle button | `ft²` | `sqft` |
-| Header toggle button | `m²` | `m²` (unchanged) |
-| Price per area | `/ft²` | `/sqft` |
-| Price per area | `/m²` | `/m²` (unchanged) |
+### 2. Update PreferencesContext
+Modify the context to:
+1. Check if user is logged in (via useAuth)
+2. If logged in: load preferences from database profile
+3. If anonymous: load from localStorage (current behavior)
+4. When preferences change for logged-in user: save to database
 
 ---
 
 ## Files to Modify
 
-### Core Context & Formatting
 | File | Changes |
 |------|---------|
-| `src/contexts/PreferencesContext.tsx` | Change defaults from 'ILS'/'sqm' to 'USD'/'sqft'; update format functions to output 'sqft' instead of 'ft²' |
-
-### UI Components  
-| File | Changes |
-|------|---------|
-| `src/components/layout/PreferencesDialog.tsx` | Change `ft²` to `sqft` in display; keep `m²` |
-
-### Map Components
-| File | Changes |
-|------|---------|
-| `src/components/map-search/HeatmapLegend.tsx` | Update title to use preference-based unit label |
+| Database migration | Add `preferred_currency` and `preferred_area_unit` columns to `profiles` |
+| `src/types/database.ts` | Add the new fields to the Profile interface |
+| `src/contexts/PreferencesContext.tsx` | Integrate auth state and database sync |
 
 ---
 
 ## Technical Details
 
-### PreferencesContext.tsx Changes
-
-**Default state changes (lines 33, 36, 68, 71, 127, 134):**
-```typescript
-// Before
-const [currency, setCurrencyState] = useState<Currency>('ILS');
-const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqm');
-
-// After  
-const [currency, setCurrencyState] = useState<Currency>('USD');
-const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqft');
+### Database Migration
+```sql
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS preferred_currency text DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS preferred_area_unit text DEFAULT NULL;
 ```
 
-**Format function updates:**
-```typescript
-// useFormatArea (line 174)
-// Before: return `${sqft.toLocaleString()} ft²`;
-// After:  return `${sqft.toLocaleString()} sqft`;
+- `NULL` means "use site default" (USD/sqft)
+- Only stores user's explicit choice
 
-// useFormatPricePerArea (line 209)
-// Before: const unit = areaUnit === 'sqft' ? 'ft²' : 'm²';
-// After:  const unit = areaUnit === 'sqft' ? 'sqft' : 'm²';
+### Profile Type Update
+```typescript
+export interface Profile {
+  // ... existing fields ...
+  preferred_currency: 'ILS' | 'USD' | null;
+  preferred_area_unit: 'sqm' | 'sqft' | null;
+}
 ```
 
-### PreferencesDialog.tsx Changes
+### PreferencesContext Changes
 
-**Header display (line 70):**
+**Add user state integration:**
 ```typescript
-// Before
-const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
-
-// After
-const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 ```
 
-### HeatmapLegend.tsx Changes
-
-**Dynamic unit in title (line 32):**
+**Load from profile when logged in:**
 ```typescript
-// Before
-<p className="heatmap-legend-title">Price per m²</p>
+// If user is logged in and has profile preferences, use those
+useEffect(() => {
+  if (profile?.preferred_currency) {
+    setCurrencyState(profile.preferred_currency);
+  }
+  if (profile?.preferred_area_unit) {
+    setAreaUnitState(profile.preferred_area_unit);
+  }
+}, [profile]);
+```
 
-// After (with preferences hook)
-const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
-<p className="heatmap-legend-title">Price per {unitLabel}</p>
+**Save to profile on change:**
+```typescript
+const setCurrency = (c: Currency) => {
+  setCurrencyState(c);
+  if (user) {
+    updateProfile.mutate({ preferred_currency: c });
+  }
+};
 ```
 
 ---
 
-## User Experience Impact
+## User Experience Flow
 
-### For New Visitors (No Saved Preferences)
-- See `$` prices and `sqft` areas immediately
-- Familiar experience for US-based international buyers
-- Can switch to ₪/m² anytime via preferences toggle
+### New Visitor (Anonymous)
+1. Sees USD + sqft by default
+2. Can change preferences via toggle
+3. Changes saved to localStorage
+4. Returns to site → same preferences (from localStorage)
 
-### For Returning Visitors (Have Saved Preferences)  
-- No change - their saved preferences are loaded from localStorage
-- Existing ILS/sqm users continue seeing ILS/sqm
+### User Signs Up
+1. Profile created with `preferred_currency: NULL`, `preferred_area_unit: NULL`
+2. Current localStorage preferences are synced to profile
+3. Future changes save to both database AND localStorage
 
-### For Power Users
-- Toggle remains easily accessible in header
-- All formatting updates in real-time when preferences change
+### User Logs In (Existing Account)
+1. If profile has saved preferences → use those
+2. If profile preferences are NULL → use localStorage or defaults
+3. Preferences follow them across devices
+
+### User Logs Out
+1. Local preferences remain in localStorage
+2. Next time they log in, their account preferences are restored
+
+---
+
+## Edge Cases Handled
+
+| Scenario | Behavior |
+|----------|----------|
+| First visit, no localStorage | USD + sqft (defaults) |
+| Has localStorage, not logged in | Use localStorage |
+| Logged in, profile has preferences | Use profile preferences |
+| Logged in, profile preferences NULL | Use localStorage, then defaults |
+| Changes preference while logged in | Saves to profile + localStorage |
+| Changes preference while logged out | Saves to localStorage only |
