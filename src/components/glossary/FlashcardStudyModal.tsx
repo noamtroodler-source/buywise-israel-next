@@ -32,22 +32,26 @@ export function FlashcardStudyModal({
   
   const [phase, setPhase] = useState<StudyPhase>('deck_selection');
   const [deckTerms, setDeckTerms] = useState<GlossaryTerm[]>([]);
+  const [originalDeckSize, setOriginalDeckSize] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionMastered, setSessionMastered] = useState<Set<string>>(new Set());
   const [sessionLearning, setSessionLearning] = useState<Set<string>>(new Set());
   const [streak, setStreak] = useState(0);
+  const [cardsReviewed, setCardsReviewed] = useState(0);
 
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setPhase('deck_selection');
       setDeckTerms([]);
+      setOriginalDeckSize(0);
       setCurrentIndex(0);
       setIsFlipped(false);
       setSessionMastered(new Set());
       setSessionLearning(new Set());
       setStreak(0);
+      setCardsReviewed(0);
     }
   }, [open]);
 
@@ -94,19 +98,18 @@ export function FlashcardStudyModal({
     // Shuffle the terms
     const shuffled = [...selectedTerms].sort(() => Math.random() - 0.5);
     setDeckTerms(shuffled);
+    setOriginalDeckSize(shuffled.length);
     setCurrentIndex(0);
+    setCardsReviewed(0);
     setIsFlipped(false);
     setPhase('studying');
   }, [terms, savedTerms, masteredSet, getTermJourneyStage]);
 
   const currentTerm = useMemo(() => deckTerms[currentIndex], [deckTerms, currentIndex]);
 
-  const goToNext = useCallback(() => {
-    setIsFlipped(false);
-    if (currentIndex < deckTerms.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    } else {
-      // Session complete
+  // Check if session is complete (when we've gone past the last card)
+  useEffect(() => {
+    if (phase === 'studying' && currentIndex >= deckTerms.length && deckTerms.length > 0) {
       completeSession();
       setPhase('complete');
       
@@ -118,7 +121,7 @@ export function FlashcardStudyModal({
         colors: ['#3b82f6', '#60a5fa', '#93c5fd'],
       });
     }
-  }, [currentIndex, deckTerms.length, completeSession]);
+  }, [phase, currentIndex, deckTerms.length, completeSession]);
 
   const handleGotIt = useCallback(() => {
     if (!currentTerm) return;
@@ -126,27 +129,35 @@ export function FlashcardStudyModal({
     markMastered(currentTerm.id);
     setSessionMastered(prev => new Set([...prev, currentTerm.id]));
     setStreak(prev => prev + 1);
-    goToNext();
-  }, [currentTerm, markMastered, goToNext]);
+    setCardsReviewed(prev => prev + 1);
+    setIsFlipped(false);
+    setCurrentIndex(prev => prev + 1);
+  }, [currentTerm, markMastered]);
 
   const handleStillLearning = useCallback(() => {
     if (!currentTerm) return;
     
     setSessionLearning(prev => new Set([...prev, currentTerm.id]));
     setStreak(0);
+    setCardsReviewed(prev => prev + 1);
     
     // Re-add the term to the end of the deck so user sees it again
     setDeckTerms(prev => {
       const remaining = prev.slice(currentIndex + 1);
-      // Only re-add if not already at the end and card isn't already queued
-      if (remaining.length > 0 && !remaining.some(t => t.id === currentTerm.id)) {
-        return [...prev.slice(0, currentIndex + 1), ...remaining, currentTerm];
+      // Check if this card is already queued later in the deck
+      const alreadyQueued = remaining.some(t => t.id === currentTerm.id);
+      
+      if (!alreadyQueued) {
+        // Add current card to the end of the deck for another review
+        return [...prev, currentTerm];
       }
       return prev;
     });
     
-    goToNext();
-  }, [currentTerm, currentIndex, goToNext]);
+    // Move to next card
+    setIsFlipped(false);
+    setCurrentIndex(prev => prev + 1);
+  }, [currentTerm, currentIndex]);
 
   const handleExit = useCallback(() => {
     if (phase === 'studying' && currentIndex > 0) {
@@ -157,7 +168,10 @@ export function FlashcardStudyModal({
 
   const handleStudyAgain = useCallback(() => {
     setPhase('deck_selection');
+    setDeckTerms([]);
+    setOriginalDeckSize(0);
     setCurrentIndex(0);
+    setCardsReviewed(0);
     setIsFlipped(false);
     setSessionMastered(new Set());
     setSessionLearning(new Set());
@@ -218,6 +232,7 @@ export function FlashcardStudyModal({
                   <FlashcardProgress
                     current={currentIndex + 1}
                     total={deckTerms.length}
+                    originalTotal={originalDeckSize}
                     masteredInSession={sessionMastered.size}
                     stillLearningInSession={sessionLearning.size}
                     streak={streak}
