@@ -99,7 +99,7 @@ export default function AgencyDashboard() {
     { label: 'Team Members', value: stats?.totalAgents || 0, icon: Users },
     { label: 'Active Listings', value: stats?.activeListings || 0, icon: Home },
     { label: 'Pending Review', value: stats?.pendingListings || 0, icon: Clock },
-    { label: 'Total Views', value: stats?.totalViews || 0, icon: Eye },
+    { label: 'All-Time Views', value: stats?.totalViews || 0, icon: Eye },
   ];
 
   return (
