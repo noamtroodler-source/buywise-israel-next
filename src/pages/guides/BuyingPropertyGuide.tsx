@@ -218,9 +218,8 @@ const decisionPoints = [
    { title: "Rent first or buy now?", description: "Learn neighborhoods vs. risk price increases." },
    { title: "New construction vs resale?", description: "Modern features vs. faster possession." },
    { title: "Mortgage vs cash?", description: "Preserve capital vs. simpler closing." },
-   { title: "Freehold vs leasehold?", description: "Stronger rights vs. potential restrictions." },
-   { title: "Comprehensive inspection?", description: "Reveal defects vs. save time and cost." },
-   { title: "Lock exchange rate early?", description: "Certainty vs. potential better rates later." },
+    { title: "Freehold vs leasehold?", description: "Stronger rights vs. potential restrictions." },
+    { title: "Comprehensive inspection?", description: "Reveal defects vs. save time and cost." },
 ];
 
 // Data: Exit considerations
