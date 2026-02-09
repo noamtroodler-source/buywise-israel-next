@@ -478,6 +478,9 @@ export default function MapSearchLayout() {
     onCitySelect: handleCitySelect,
     isProgrammaticMoveRef,
     currentCity: filters.city || null,
+    commuteFilter,
+    savedLocationsData: savedLocations,
+    onCommuteFilterChange: setCommuteFilter,
   };
 
   // Mobile layout

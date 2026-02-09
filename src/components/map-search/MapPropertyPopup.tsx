@@ -8,16 +8,17 @@ import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { CommuteInfo } from './CommuteLines';
 import { SavedLocation } from '@/types/savedLocation';
-import { Bed, Bath, Maximize, X } from 'lucide-react';
+import { Bed, Bath, Maximize, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface MapPropertyPopupProps {
   propertyId: string;
   properties: Property[];
   onClose: () => void;
   savedLocations?: SavedLocation[];
+  onNavigate?: (direction: 'prev' | 'next') => void;
 }
 
-export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations }: MapPropertyPopupProps) {
+export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations, onNavigate }: MapPropertyPopupProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   
@@ -58,6 +59,26 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
           >
             <X className="h-3.5 w-3.5 text-foreground" />
           </button>
+
+          {/* Navigation arrows */}
+          {onNavigate && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-background/80 hover:bg-background flex items-center justify-center shadow-sm transition-colors"
+                aria-label="Previous property"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-background/80 hover:bg-background flex items-center justify-center shadow-sm transition-colors"
+                aria-label="Next property"
+              >
+                <ChevronRight className="h-3.5 w-3.5 text-foreground" />
+              </button>
+            </>
+          )}
           
           {/* Status badge - top left */}
           <Badge 

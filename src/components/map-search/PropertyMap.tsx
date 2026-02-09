@@ -7,6 +7,8 @@ import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
 import { ProjectMarker } from './ProjectMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
+import { MarkerClusterLayer } from './MarkerClusterLayer';
+import { SearchThisAreaButton } from './SearchThisAreaButton';
 
 import { MapToolbar } from './MapToolbar';
 import { SavedLocationsLayer } from './SavedLocationsLayer';
@@ -17,6 +19,7 @@ import { TrainStationLayer } from './TrainStationLayer';
 import { PriceHeatmapLayer } from './PriceHeatmapLayer';
 import { HeatmapLegend } from './HeatmapLegend';
 import { CommuteLines } from './CommuteLines';
+import { CommuteFilter, type CommuteFilterValue } from './CommuteFilter';
 import { AngloCommunityLayer } from './AngloCommunityLayer';
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { ClearDrawingButton } from './ClearDrawingButton';
@@ -25,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
+import type { SavedLocation } from '@/types/savedLocation';
 import 'leaflet/dist/leaflet.css';
 
 interface PropertyMapProps {
@@ -52,14 +56,16 @@ interface PropertyMapProps {
   isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
   // Current city for boundary layer
   currentCity?: string | null;
+  // Commute filter
+  commuteFilter?: CommuteFilterValue | null;
+  savedLocationsData?: SavedLocation[];
+  onCommuteFilterChange?: (value: CommuteFilterValue | null) => void;
 }
 
 // Map click handler to deselect property when clicking empty map
 function MapClickHandler({ onDeselect }: { onDeselect: () => void }) {
   useMapEvents({
     click: (e) => {
-      // Only deselect if clicking on empty map (not on a marker)
-      // Markers stop propagation, so this only fires for empty space
       onDeselect();
     },
   });
@@ -80,7 +86,6 @@ function MapBoundsListener({
   const debounceRef = useRef<NodeJS.Timeout>();
 
   const handleMoveEnd = useCallback(() => {
-    // Skip if programmatic flight in progress
     if (isFlyingRef.current) return;
     if (!searchAsMove) return;
     
@@ -136,6 +141,26 @@ function ZoomTracker({ onZoomChange }: { onZoomChange: (zoom: number) => void })
   return null;
 }
 
+// Track user pans when searchAsMove is off
+function PanTracker({ 
+  searchAsMove, 
+  isFlyingRef,
+  onUserPanned,
+}: { 
+  searchAsMove: boolean;
+  isFlyingRef: React.RefObject<boolean>;
+  onUserPanned: () => void;
+}) {
+  useMapEvents({
+    moveend: () => {
+      if (!searchAsMove && !isFlyingRef.current) {
+        onUserPanned();
+      }
+    },
+  });
+  return null;
+}
+
 // Syncs external center/zoom state to the map (for city selection)
 function MapViewUpdater({ 
   center, 
@@ -148,14 +173,13 @@ function MapViewUpdater({
   zoom: number;
   isFlyingRef: React.MutableRefObject<boolean>;
   isProgrammaticMoveRef?: React.MutableRefObject<boolean>;
-  onBoundsChange: (bounds: import('./MapSearchLayout').MapBounds, center: [number, number], zoom: number) => void;
+  onBoundsChange: (bounds: MapBounds, center: [number, number], zoom: number) => void;
 }) {
   const map = useMap();
   const prevCenterRef = useRef<[number, number]>(center);
   const prevZoomRef = useRef<number>(zoom);
   
   useEffect(() => {
-    // Check if center or zoom actually changed (comparing values, not references)
     const centerChanged = 
       center[0] !== prevCenterRef.current[0] || 
       center[1] !== prevCenterRef.current[1];
@@ -163,33 +187,21 @@ function MapViewUpdater({
 
     if (!centerChanged && !zoomChanged) return;
 
-    // IMPORTANT:
-    // The parent updates `center/zoom` state on *manual* map navigation (moveend/zoomend)
-    // so we can keep URL + UI in sync.
-    // If we call `flyTo()` in response to those changes, the map starts “fighting itself”
-    // (manual pan -> state update -> flyTo -> moveend -> refetch -> flicker).
-    // Therefore, only run flyTo when the parent explicitly marks this as programmatic.
     if (isProgrammaticMoveRef && !isProgrammaticMoveRef.current) {
       prevCenterRef.current = center;
       prevZoomRef.current = zoom;
       return;
     }
     
-    // Mark as flying to prevent bounds updates during animation
     isFlyingRef.current = true;
-    
-    // Fly to new location with smooth animation
     map.flyTo(center, zoom, { duration: 1.5 });
     
-    // Clear flying flag when animation ends and push final bounds
     map.once('moveend', () => {
       isFlyingRef.current = false;
-      // Clear programmatic move flag after animation completes
       if (isProgrammaticMoveRef) {
         isProgrammaticMoveRef.current = false;
       }
       
-      // Force a final bounds sync so property query updates to new city
       const finalBounds = map.getBounds();
       const finalCenter = map.getCenter();
       const finalZoom = map.getZoom();
@@ -205,7 +217,6 @@ function MapViewUpdater({
       );
     });
     
-    // Update refs
     prevCenterRef.current = center;
     prevZoomRef.current = zoom;
   }, [map, center, zoom, isFlyingRef, isProgrammaticMoveRef, onBoundsChange]);
@@ -234,6 +245,9 @@ export function PropertyMap({
   onCitySelect,
   isProgrammaticMoveRef,
   currentCity,
+  commuteFilter,
+  savedLocationsData,
+  onCommuteFilterChange,
 }: PropertyMapProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -249,6 +263,7 @@ export function PropertyMap({
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
+  const [showSearchButton, setShowSearchButton] = useState(false);
 
   // Fetch projects for Buy mode (only when zoomed in enough)
   const { data: projects } = useQuery({
@@ -279,8 +294,6 @@ export function PropertyMap({
 
   // Handle draw completion
   const handleDrawComplete = useCallback((polygon: Polygon) => {
-    // Capture current map bounds BEFORE disabling searchAsMove
-    // This ensures the backend query uses the correct geographic area
     if (mapRef.current) {
       const bounds = mapRef.current.getBounds();
       const center = mapRef.current.getCenter();
@@ -299,7 +312,6 @@ export function PropertyMap({
     
     onPolygonChange(polygon);
     setDrawMode(null);
-    // Disable search as move when polygon is drawn
     onSearchAsMoveChange(false);
   }, [onPolygonChange, onSearchAsMoveChange, onBoundsChange]);
 
@@ -312,18 +324,73 @@ export function PropertyMap({
   const handleClearPolygon = useCallback(() => {
     onPolygonChange(null);
     onSearchAsMoveChange(true);
+    setShowSearchButton(false);
   }, [onPolygonChange, onSearchAsMoveChange]);
 
   // Handle city click from overlay
   const handleCityClick = useCallback((cityName: string, cityCenter: [number, number]) => {
-    // Update filters with selected city
     onCitySelect?.(cityName);
   }, [onCitySelect]);
+
+  // Handle "Search this area" click
+  const handleSearchThisArea = useCallback(() => {
+    setShowSearchButton(false);
+    onSearchAsMoveChange(true);
+    // Force bounds update
+    if (mapRef.current) {
+      const bounds = mapRef.current.getBounds();
+      const center = mapRef.current.getCenter();
+      const zoom = mapRef.current.getZoom();
+      onBoundsChange(
+        {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        },
+        [center.lat, center.lng],
+        zoom
+      );
+    }
+  }, [onSearchAsMoveChange, onBoundsChange]);
+
+  // Handle user pan when searchAsMove is off
+  const handleUserPanned = useCallback(() => {
+    if (!drawnPolygon) {
+      setShowSearchButton(true);
+    }
+  }, [drawnPolygon]);
+
+  // Hide search button when searchAsMove gets enabled
+  useEffect(() => {
+    if (searchAsMove) {
+      setShowSearchButton(false);
+    }
+  }, [searchAsMove]);
+
+  // Popup navigation
+  const visiblePropertyIds = useMemo(() => 
+    properties.filter(p => p.latitude && p.longitude).map(p => p.id),
+    [properties]
+  );
+
+  const handlePopupNavigate = useCallback((direction: 'prev' | 'next') => {
+    if (!selectedPropertyId || visiblePropertyIds.length === 0) return;
+    const idx = visiblePropertyIds.indexOf(selectedPropertyId);
+    if (idx === -1) return;
+    const nextIdx = direction === 'next'
+      ? (idx + 1) % visiblePropertyIds.length
+      : (idx - 1 + visiblePropertyIds.length) % visiblePropertyIds.length;
+    onPropertySelect(visiblePropertyIds[nextIdx]);
+  }, [selectedPropertyId, visiblePropertyIds, onPropertySelect]);
 
   // Show city overlay when zoomed out
   const showCityOverlay = currentZoom < 10;
   // Show neighborhood chips when zoomed in
   const showNeighborhoodChips = currentZoom >= 12;
+
+  // Effective saved locations (prefer prop, fallback to hook)
+  const effectiveSavedLocations = savedLocationsData || savedLocations;
 
   return (
     <div className="relative h-full w-full">
@@ -350,7 +417,6 @@ export function PropertyMap({
           isFlyingRef={isFlyingRef}
         />
 
-        {/* Sync external center/zoom to map (for city selection) */}
         <MapViewUpdater 
           center={center} 
           zoom={zoom} 
@@ -361,47 +427,48 @@ export function PropertyMap({
 
         <ZoomTracker onZoomChange={setCurrentZoom} />
 
-        {/* Click handler to deselect when clicking empty map */}
+        {/* Track user pans for "Search this area" button */}
+        <PanTracker 
+          searchAsMove={searchAsMove} 
+          isFlyingRef={isFlyingRef}
+          onUserPanned={handleUserPanned}
+        />
+
         <MapClickHandler onDeselect={() => {
           onPropertySelect(null);
           onPropertyHover(null);
         }} />
 
-        {/* Draw Control */}
         <DrawControl
           drawMode={drawMode}
           onDrawComplete={handleDrawComplete}
           onDrawCancel={handleDrawCancel}
         />
 
-        {/* Display drawn polygon */}
         {drawnPolygon && (
           <DrawnPolygon polygon={drawnPolygon} onClear={handleClearPolygon} />
         )}
 
-        {/* City Overlay (when zoomed out) */}
         <CityOverlay
           visible={showCityOverlay}
           listingStatus={listingStatus}
           onCityClick={handleCityClick}
         />
         
-        {/* Property Markers (when zoomed in enough) */}
-        {!showCityOverlay && properties
-          .filter(p => p.latitude && p.longitude)
-          .map(property => (
-            <PropertyMarker
-              key={property.id}
-              property={property}
-              isHovered={hoveredPropertyId === property.id}
-              isSelected={selectedPropertyId === property.id}
-              onHover={onPropertyHover}
-              onClick={onPropertySelect}
-            />
-          ))}
-        
+        {/* Property Markers with clustering */}
+        {!showCityOverlay && (
+          <MarkerClusterLayer
+            properties={properties.filter(p => p.latitude && p.longitude)}
+            mapBounds={mapBounds}
+            zoom={currentZoom}
+            hoveredPropertyId={hoveredPropertyId}
+            selectedPropertyId={selectedPropertyId}
+            onHover={onPropertyHover}
+            onClick={onPropertySelect}
+          />
+        )}
 
-        {/* Project Markers (Buy mode only, when zoomed in enough) */}
+        {/* Project Markers (Buy mode only) */}
         {!showCityOverlay && listingStatus === 'for_sale' && projects?.map(project => (
           <ProjectMarker
             key={`project-${project.id}`}
@@ -413,28 +480,22 @@ export function PropertyMap({
         ))}
         
         {/* Saved Locations Layer */}
-        {user && showSavedLocations && savedLocations && savedLocations.length > 0 && (
-          <SavedLocationsLayer locations={savedLocations} />
+        {user && showSavedLocations && effectiveSavedLocations && effectiveSavedLocations.length > 0 && (
+          <SavedLocationsLayer locations={effectiveSavedLocations} />
         )}
 
-        {/* Commute Lines (when property is selected and user has saved locations) */}
-        {user && showSavedLocations && savedLocations && savedLocations.length > 0 && selectedPropertyId && (
+        {/* Commute Lines */}
+        {user && showSavedLocations && effectiveSavedLocations && effectiveSavedLocations.length > 0 && selectedPropertyId && (
           <CommuteLines
             property={properties.find(p => p.id === selectedPropertyId) || null}
-            savedLocations={savedLocations}
+            savedLocations={effectiveSavedLocations}
           />
         )}
 
-        {/* Train Station Layer */}
         <TrainStationLayer visible={showTrainStations} />
-
-        {/* Price Heatmap Layer */}
         <PriceHeatmapLayer visible={showPriceHeatmap} />
-
-        {/* Anglo Community Layer */}
         <AngloCommunityLayer visible={showAngloCommunity} />
 
-        {/* Neighborhood Boundaries Layer */}
         <NeighborhoodBoundariesLayer 
           visible={showNeighborhoodBoundaries} 
           currentCity={currentCity || null} 
@@ -446,17 +507,24 @@ export function PropertyMap({
             propertyId={selectedPropertyId}
             properties={properties}
             onClose={() => onPropertySelect(null)}
-            savedLocations={savedLocations}
+            savedLocations={effectiveSavedLocations}
+            onNavigate={handlePopupNavigate}
           />
         )}
       </MapContainer>
       
+      {/* Search This Area Button */}
+      <SearchThisAreaButton
+        visible={showSearchButton}
+        onClick={handleSearchThisArea}
+      />
+
       {/* Map Toolbar */}
       <MapToolbar
         mapRef={mapRef}
         showSavedLocations={showSavedLocations}
         onToggleSavedLocations={() => setShowSavedLocations(!showSavedLocations)}
-        hasSavedLocations={!!savedLocations?.length}
+        hasSavedLocations={!!effectiveSavedLocations?.length}
         searchAsMove={searchAsMove}
         onSearchAsMoveChange={onSearchAsMoveChange}
         drawMode={drawMode}
@@ -471,16 +539,24 @@ export function PropertyMap({
         onToggleAngloCommunity={() => setShowAngloCommunity(!showAngloCommunity)}
       />
 
-      {/* Heatmap Legend */}
       <HeatmapLegend visible={showPriceHeatmap} />
 
-      {/* Clear Drawing Button - prominent floating button when polygon exists */}
       <ClearDrawingButton 
         visible={!!drawnPolygon} 
         onClear={handleClearPolygon} 
       />
 
-      {/* Neighborhood Chips (when zoomed in) */}
+      {/* Commute Filter - bottom left */}
+      {user && effectiveSavedLocations && effectiveSavedLocations.length > 0 && onCommuteFilterChange && (
+        <div className="absolute bottom-4 left-4 z-[40]">
+          <CommuteFilter
+            savedLocations={effectiveSavedLocations}
+            value={commuteFilter || null}
+            onChange={onCommuteFilterChange}
+          />
+        </div>
+      )}
+
       <NeighborhoodChips
         visible={showNeighborhoodChips}
         mapBounds={mapBounds}
