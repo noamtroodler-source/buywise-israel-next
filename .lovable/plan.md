@@ -1,55 +1,45 @@
 
-## Fix: Agency Users Seeing Buyer Profile Instead of Agency Dashboard
+
+## Fix: Logo/Image Uploads Failing for Agencies, Developers, and Agents
 
 ### The Problem
 
-After completing the agency registration wizard, the success dialog's "Got it" button navigates to `/` (home page). When the user later clicks the profile icon, they go to `/profile` -- which is the **buyer profile page**. There is no detection that this user is an agency admin, so they see buyer-focused content (Buyer Profile, Financing Method, etc.) instead of their agency dashboard.
+When you try to upload an agency logo, you get "Failed to upload logo" because the file storage security policy **only allows users with the "agent" role** to upload files. Agency admins and developers don't have that role, so the upload is blocked with a 403 Forbidden error.
 
-The same gap exists for **developers**: after registration, there is nothing routing them to their dashboard either. Agents are partially covered because `useUserRole` checks for the `agent` role, but agencies and developers have no `app_role` entry -- they are identified by having records in the `agencies`/`developers` tables.
+This same issue affects:
+- **Agency settings** -- logo upload (your current issue)
+- **Agency registration wizard** -- logo upload during signup
+- **Developer settings** -- logo upload
+- **Developer registration** -- logo upload during signup
+- **Agent settings** -- avatar upload (agents may work if they have the role, but the policy also checks the wrong folder path for some cases)
 
-### Root Causes
+### The Fix
 
-1. **AgencySubmittedDialog** navigates to `/` on close -- should navigate to `/agency` (the agency dashboard)
-2. **Profile page** has no awareness of agency admin status -- it shows the buyer hub even if the user owns an agency
-3. **ProfileWelcomeHeader** only shows dashboard links for `isAgent` and `isAdmin` roles -- it has no `isAgencyAdmin` case
-4. The **header profile icon** always links to `/profile` -- there is no role-aware redirect
+One database change to update the storage security rule so that **any logged-in user** can upload to the `property-images` storage bucket. Since each user uploads to their own folder (e.g., `agencies/{id}/`, `developers/{id}/`, `{user_id}/`), this is safe -- and the bucket is already publicly readable.
 
-### Changes
+### Technical Details
 
-#### 1. AgencySubmittedDialog -- navigate to `/agency` instead of `/`
-- File: `src/components/agency/AgencySubmittedDialog.tsx`
-- Change `navigate('/')` to `navigate('/agency')` in `handleClose`
-- This way, after submitting the agency application, the user lands on their agency dashboard (even if pending review)
+**Database migration** -- Replace the restrictive upload policy:
 
-#### 2. Profile page -- detect agency admin and show dashboard link
-- File: `src/pages/Profile.tsx`
-- Import and call `useMyAgency()` from `useAgencyManagement`
-- If the user has an agency record, show a prominent banner at the top: "You're managing [Agency Name]" with a button to go to `/agency`
-- This prevents confusion when an agency admin accidentally lands on `/profile`
+```sql
+-- Drop the old policy that only allows agents
+DROP POLICY IF EXISTS "Agents can upload property images" ON storage.objects;
 
-#### 3. ProfileWelcomeHeader -- add agency admin awareness
-- File: `src/components/profile/ProfileWelcomeHeader.tsx`
-- Add an `isAgencyAdmin` prop (boolean) and optional `agencyName` prop
-- When `isAgencyAdmin` is true, show an "Agency Admin" banner with a dashboard link (similar to existing agent/admin banners)
-- Update the parent `Profile.tsx` to pass these props based on `useMyAgency()` result
+-- Create a new policy allowing any authenticated user to upload
+CREATE POLICY "Authenticated users can upload to property-images"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'property-images');
+```
 
-#### 4. Apply the same pattern for developers
-- File: `src/pages/Profile.tsx`
-- Also check for an existing developer profile (if there is a `useDeveloperProfile` or similar hook)
-- Show a "Developer Account" banner linking to `/developer` dashboard
-- This ensures developers are not confused by the buyer profile page either
+This single change fixes uploads for all three professional types (agencies, developers, agents) across both their registration flows and settings pages.
 
-#### 5. Developer success dialog -- navigate to `/developer` instead of `/`
-- Check if a similar success dialog exists for developers and update its navigation target
+### No code changes needed
+
+The upload code in all files (`AgencySettings.tsx`, `DeveloperSettings.tsx`, `AgentSettings.tsx`, `DeveloperRegister.tsx`, `AgencyRegister.tsx`) is already correct -- it uploads to the right paths and handles errors properly. The only blocker was this storage security rule.
 
 ### Files to modify
-- `src/components/agency/AgencySubmittedDialog.tsx` -- change post-submit navigation from `/` to `/agency`
-- `src/pages/Profile.tsx` -- add `useMyAgency()` check and agency banner
-- `src/components/profile/ProfileWelcomeHeader.tsx` -- add `isAgencyAdmin` banner alongside existing agent/admin banners
-- Developer equivalents (success dialog, profile detection) -- same pattern
+- **New database migration** -- update the storage upload policy (one SQL statement)
+- No application code changes required
 
-### What this fixes
-- Agency admin who just registered sees their agency dashboard, not the buyer profile
-- Agency admin who visits `/profile` sees a clear "You're managing [Agency Name] -- Go to Dashboard" banner
-- Same safeguard for developer accounts
-- No database changes needed -- detection uses existing `agencies.admin_user_id` and developer profile lookups
