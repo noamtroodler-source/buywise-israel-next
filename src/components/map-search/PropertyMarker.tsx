@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { Property } from '@/types/database';
@@ -59,19 +59,16 @@ export function PropertyMarker({
     return `${symbol}${price}`;
   }, [property.price, currency, exchangeRate]);
 
-  // Determine marker style based on listing status and state
+  // Determine marker style based on listing status only (no hover/selected)
   const markerStyle = useMemo(() => {
     const isRental = property.listing_status === 'for_rent';
     const isSold = property.listing_status === 'sold' || property.listing_status === 'rented';
     
-    // Default: neutral white/gray
     let bgColor = 'white';
     let textColor = 'hsl(220, 10%, 40%)';
     let borderColor = 'hsl(220, 13%, 85%)';
     let opacity = '1';
-    let zIndex = 100;
     
-    // Sold/rented: more muted
     if (isSold) {
       bgColor = 'hsl(220, 13%, 95%)';
       textColor = 'hsl(220, 10%, 55%)';
@@ -79,23 +76,13 @@ export function PropertyMarker({
       opacity = '0.7';
     }
     
-    // Hover or selected: primary blue
-    if (isHovered || isSelected) {
-      bgColor = 'hsl(213, 94%, 45%)';
-      textColor = 'white';
-      borderColor = 'white';
-      zIndex = 200;
-    }
-    
-    return { bgColor, textColor, borderColor, opacity, zIndex, isRental };
-  }, [property.listing_status, isHovered, isSelected]);
+    return { bgColor, textColor, borderColor, opacity, isRental };
+  }, [property.listing_status]);
 
-  // Create custom icon with callout shape and badges
+  // Create custom icon - NO hover/selected deps, purely static
   const icon = useMemo(() => {
     const suffix = markerStyle.isRental ? '/mo' : '';
-    const scaleStyle = (isHovered || isSelected) ? 'transform: scale(1.1);' : '';
     
-    // Price drop indicator (top-right) - Uses primary blue per brand standards
     const dropIndicator = priceDropInfo.hasDrop
       ? `<span class="marker-badge marker-badge-drop" title="Price reduced ${priceDropInfo.dropPercent}%">
           <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
@@ -104,7 +91,6 @@ export function PropertyMarker({
         </span>`
       : '';
     
-    // Hot indicator (top-left) - Amber/orange for urgency
     const hotIndicator = isHot && !priceDropInfo.hasDrop
       ? `<span class="marker-badge marker-badge-hot" title="New listing">
           <span style="font-size: 8px; line-height: 1;">🔥</span>
@@ -120,7 +106,6 @@ export function PropertyMarker({
             display: flex;
             flex-direction: column;
             align-items: center;
-            ${scaleStyle}
             transition: transform 200ms ease;
           "
         >
@@ -140,7 +125,7 @@ export function PropertyMarker({
               box-shadow: 0 1px 4px rgba(0,0,0,0.12);
               opacity: ${markerStyle.opacity};
               cursor: pointer;
-              transition: all 200ms ease;
+              transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
             "
           >
             ${displayPrice}${suffix}
@@ -154,6 +139,7 @@ export function PropertyMarker({
               border-right: 5px solid transparent;
               border-top: 5px solid ${markerStyle.borderColor};
               margin-top: -1px;
+              transition: border-top-color 200ms ease;
             "
           ></div>
           <div 
@@ -167,6 +153,7 @@ export function PropertyMarker({
               border-right: 4px solid transparent;
               border-top: 4px solid ${markerStyle.bgColor};
               margin-top: -2px;
+              transition: border-top-color 200ms ease;
             "
           ></div>
         </div>
@@ -175,7 +162,23 @@ export function PropertyMarker({
       iconSize: L.point(0, 0),
       iconAnchor: L.point(0, 32),
     });
-  }, [displayPrice, markerStyle, isHovered, isSelected, priceDropInfo, isHot]);
+  }, [displayPrice, markerStyle, priceDropInfo, isHot]);
+
+  // Toggle CSS class for hover/selected — no icon rebuild
+  const markerRef = useRef<L.Marker | null>(null);
+  
+  useEffect(() => {
+    const el = markerRef.current?.getElement();
+    if (!el) return;
+    
+    if (isHovered || isSelected) {
+      el.classList.add('marker-active');
+      el.style.zIndex = '200';
+    } else {
+      el.classList.remove('marker-active');
+      el.style.zIndex = '100';
+    }
+  }, [isHovered, isSelected]);
 
   const handleMouseEnter = useCallback(() => {
     onHover(property.id);
@@ -193,9 +196,10 @@ export function PropertyMarker({
 
   return (
     <Marker
+      ref={markerRef}
       position={[property.latitude, property.longitude]}
       icon={icon}
-      zIndexOffset={markerStyle.zIndex}
+      zIndexOffset={100}
       eventHandlers={{
         mouseover: handleMouseEnter,
         mouseout: handleMouseLeave,
