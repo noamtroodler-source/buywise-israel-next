@@ -1,38 +1,68 @@
 
-
-## Remove Sticky Navigation from Wizards and Settings Pages
+## Fix: Compare List Showing Items That Aren't in Favorites
 
 ### Problem
-The Previous/Next navigation bar at the bottom of wizard pages is sticky (`sticky bottom-4`), causing it to float over content as you scroll. You want it to just sit naturally at the bottom of the page content, like in the second screenshot.
+The compare list (stored in `sessionStorage`) is completely independent from the favorites list. You can add properties to compare, then unfavorite them (or have no favorites at all), and the compare bar still shows those items at the bottom of the page.
 
-### Changes
+### Root Cause
+`CompareContext` persists IDs in `sessionStorage` but never checks whether those IDs are still in the user's favorites. The only cleanup happens when `removeFavorite` is called (which calls `removeFromCompare`), but this doesn't cover:
+- Session data from a previous browsing session where favorites were cleared differently
+- Stale sessionStorage data
 
-Remove the `sticky bottom-4` class from the navigation container in all affected pages, so the buttons simply appear below the form content in normal document flow.
+### Solution
+Add a synchronization effect in `CompareContext` that filters out any compare IDs that are not in the current favorites list. This ensures the compare list is always a subset of favorites.
 
-**Files to update (8 total):**
-
-| File | Line | Change |
-|------|------|--------|
-| `src/pages/agent/NewPropertyWizard.tsx` | ~240 | Remove `sticky bottom-4` from navigation wrapper |
-| `src/pages/agent/EditPropertyWizard.tsx` | ~397 | Remove `sticky bottom-4` from navigation wrapper |
-| `src/pages/agent/NewProperty.tsx` | ~502 | Remove `sticky bottom-4` from submit wrapper |
-| `src/pages/agent/AgentSettings.tsx` | ~600 | Remove `sticky bottom-4` from save bar |
-| `src/pages/developer/NewProjectWizard.tsx` | ~202 | Remove `sticky bottom-4` from navigation wrapper |
-| `src/pages/developer/EditProjectWizard.tsx` | ~336 | Remove `sticky bottom-4` from navigation wrapper |
-| `src/pages/developer/DeveloperSettings.tsx` | ~687 | Remove `sticky bottom-4` from save bar |
-| `src/pages/agency/AgencySettings.tsx` | ~781 | Remove `sticky bottom-4` from save bar |
-
-Each change is the same: replace `className="sticky bottom-4"` (or similar) with just `className=""` or remove those two classes entirely, keeping the rest of the styling (the rounded card with backdrop blur, shadow, etc.) intact.
+**File: `src/contexts/CompareContext.tsx`**
+- Import `useFavoritesContext` from `FavoritesContext` (not `useFavorites` to avoid circular deps)
+- Add a `useEffect` that runs whenever `compareIds` or the favorite IDs change
+- Filter out any compare IDs that are not present in the combined favorite IDs (property favorites + project favorites)
+- This acts as a passive guard -- if any compare ID isn't favorited, it gets removed automatically
 
 ### Technical Detail
 
-For each file, the change is simply:
-```
-// Before
-<motion.div variants={itemVariants} className="sticky bottom-4">
+```typescript
+// In CompareProvider, after existing state setup:
+const { guestFavorites, guestProjectFavoriteIds } = useFavoritesContext();
 
-// After
-<motion.div variants={itemVariants}>
+// Also need to read DB favorite IDs for logged-in users
+// We'll query favoriteIds from the existing useQuery pattern
+
+useEffect(() => {
+  // Build set of all valid favorite IDs
+  const validIds = new Set([
+    ...guestFavorites.map(f => f.property_id),
+    ...guestProjectFavoriteIds,
+    ...dbFavoriteIds,  // from auth user's DB favorites
+  ]);
+  
+  const filtered = compareIds.filter(id => validIds.has(id));
+  if (filtered.length !== compareIds.length) {
+    setCompareIds(filtered);
+    if (filtered.length === 0) setCompareCategory(null);
+  }
+}, [compareIds, guestFavorites, guestProjectFavoriteIds, dbFavoriteIds]);
 ```
 
-The navigation bar keeps its card-like appearance (border, shadow, backdrop blur) but will sit in normal flow below the form card, exactly matching the second screenshot.
+However, since `CompareContext` is a context provider and shouldn't use hooks like `useQuery` directly, the cleaner approach is:
+
+**Option chosen**: Move the sync logic into a small component rendered inside both providers, or pass favorite IDs into CompareProvider. The simplest approach:
+
+1. **`src/contexts/CompareContext.tsx`** -- Accept an optional `validFavoriteIds` prop or add a `syncWithFavorites(ids: string[])` method
+2. **`src/components/CompareSync.tsx`** (new file) -- A tiny component that sits inside both providers, reads favorite IDs from `useFavorites`, and calls sync on CompareContext
+
+Actually, the simplest fix with minimal changes:
+
+**`src/contexts/CompareContext.tsx`**:
+- Add a new method `syncCompareWithFavorites(favoriteIds: string[])` to the context
+- This filters `compareIds` to only include IDs present in `favoriteIds`
+
+**`src/pages/Favorites.tsx`**:
+- Call the sync method with current `favoriteIds` on mount/change, since this is where the compare bar is shown
+- This ensures that by the time the user sees the compare bar on the favorites page, stale items are cleaned out
+
+### Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/contexts/CompareContext.tsx` | Add `syncCompareWithFavorites` method to context |
+| `src/pages/Favorites.tsx` | Call sync on mount with current favorite IDs to prune stale compare items |
