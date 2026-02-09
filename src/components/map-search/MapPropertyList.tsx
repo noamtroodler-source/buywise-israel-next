@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Property } from '@/types/database';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,27 +34,9 @@ export function MapPropertyList({
   onClearFilters,
 }: MapPropertyListProps) {
   const listRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [showBackToTop, setShowBackToTop] = useState(false);
-
-  // Scroll to hovered property when hovering on map marker
-  useEffect(() => {
-    if (hoveredPropertyId && cardRefs.current.has(hoveredPropertyId)) {
-      const card = cardRefs.current.get(hoveredPropertyId);
-      card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [hoveredPropertyId]);
-
-  const setCardRef = useCallback((id: string, el: HTMLDivElement | null) => {
-    if (el) {
-      cardRefs.current.set(id, el);
-    } else {
-      cardRefs.current.delete(id);
-    }
-  }, []);
-
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setShowBackToTop(e.currentTarget.scrollTop > 400);
   }, []);
@@ -140,7 +122,6 @@ export function MapPropertyList({
           {properties.map((property) => (
             <div
               key={property.id}
-              ref={(el) => setCardRef(property.id, el)}
               onMouseEnter={() => onPropertyHover(property.id)}
               onMouseLeave={() => onPropertyHover(null)}
               onClick={() => onPropertySelect(property.id)}
@@ -158,7 +139,7 @@ export function MapPropertyList({
               />
             </div>
           ))}
-          
+
           {/* Load More */}
           {hasNextPage && (
             <div className="pt-4 pb-2 flex justify-center">
