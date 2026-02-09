@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, Briefcase, ArrowRight, Loader2, Pencil, Check, X, Play } from 'lucide-react';
+import { LogOut, Shield, Briefcase, ArrowRight, Loader2, Pencil, Check, X, Play, Building2, Hammer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,6 +15,10 @@ interface ProfileWelcomeHeaderProps {
   email: string | undefined;
   isAgent: boolean;
   isAdmin: boolean;
+  isAgencyAdmin?: boolean;
+  agencyName?: string;
+  isDeveloper?: boolean;
+  developerName?: string;
   onSignOut: () => void;
 }
 
@@ -23,6 +27,10 @@ export function ProfileWelcomeHeader({
   email, 
   isAgent, 
   isAdmin, 
+  isAgencyAdmin,
+  agencyName,
+  isDeveloper,
+  developerName,
   onSignOut,
 }: ProfileWelcomeHeaderProps) {
   const navigate = useNavigate();
@@ -53,6 +61,48 @@ export function ProfileWelcomeHeader({
 
   return (
     <div className="space-y-4">
+      {/* Agency Admin Banner */}
+      {isAgencyAdmin && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              Managing {agencyName || 'Your Agency'}
+            </span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => navigate('/agency')}
+            className="h-7 text-xs"
+          >
+            Agency Dashboard
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+      )}
+
+      {/* Developer Banner */}
+      {isDeveloper && (
+        <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2">
+            <Hammer className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              Developer: {developerName || 'Your Company'}
+            </span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => navigate('/developer')}
+            className="h-7 text-xs"
+          >
+            Developer Dashboard
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
+        </div>
+      )}
+
       {/* Agent/Admin Banner */}
       {(isAgent || isAdmin) && (
         <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/20">
