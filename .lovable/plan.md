@@ -1,62 +1,52 @@
 
 
-## Mobile Overhaul -- Phases 2, 4, 5 & 7 (Remaining)
+## Audit and Clean Up Redundant Toast Notifications
 
-Continuing from the completed Phase 1 (Homepage), Phase 3 (Property Detail), and Phase 7E (CSS cleanup).
+### The Problem
+Many toast notifications ("Property saved to favorites", "Property removed from favorites", etc.) pop up in the bottom-right corner even though the UI already clearly communicates the action -- the heart icon fills/unfills, the item appears/disappears from the list, etc. These redundant toasts add visual noise without value.
 
----
+### Approach
+Remove success toasts where the UI already gives clear feedback. Keep toasts where they're the only way the user knows something happened (errors, clipboard copies, form submissions, admin actions).
 
-### Phase 2: Listings Page
+### Toasts to REMOVE (redundant)
 
-**`src/pages/Listings.tsx`**
-- Compact mobile header: reduce padding from `py-6` to `py-4`, heading from `text-3xl` to `text-2xl`
-- Hide subtitle paragraph on mobile (`hidden md:block`)
-- Make "Load More" button full-width on mobile (`w-full md:w-auto`)
+| Location | Toast Message | Why Redundant |
+|----------|--------------|---------------|
+| `src/hooks/useFavorites.tsx` | "Property saved to favorites" (logged-in user) | Heart icon fills blue -- obvious |
+| `src/hooks/useFavorites.tsx` | "Property removed from favorites" | Heart unfills; on favorites page, the card disappears |
+| `src/hooks/useProjectFavorites.tsx` | "Project saved to favorites" (logged-in user) | Heart icon fills blue |
+| `src/hooks/useProjectFavorites.tsx` | "Project removed from favorites" | Heart unfills; card disappears from list |
+| `src/hooks/useSavedLocations.ts` | "Location saved" / "Location removed" | UI updates inline (list adds/removes item) |
+| `src/hooks/useSavedCalculatorResults.tsx` | "Saved result deleted" | Item disappears from the list |
+| `src/pages/Auth.tsx` | "Account created successfully!" | Onboarding dialog appears immediately after |
+| `src/pages/Auth.tsx` | "Welcome back!" (on sign in) | User is redirected to their destination -- the redirect IS the confirmation |
+| `src/pages/Auth.tsx` | "Welcome to BuyWise Israel!" (onboarding complete) | Post-signup suggestions dialog appears right after |
+| `src/components/profile/sections/AccountSection.tsx` | "Browsing history cleared" | Button already shows loading state, then history list empties |
 
-**`src/components/filters/QuickFilterChips.tsx`**
-- Hide QuickFilterChips when the filter bar is sticky (they're redundant with the pill row above). Pass `isSticky` down or use `hidden` when parent is sticky via a prop.
+### Toasts to KEEP (necessary)
 
----
+- **All error toasts** -- always needed since nothing else indicates failure
+- **Guest favorite toasts** -- these include a "Create an account" CTA with description text, which is valuable guidance (not just confirmation)
+- **Clipboard copy toasts** ("Link copied", "Questions copied") -- no other way to confirm clipboard worked
+- **Auth error toasts** ("Invalid email", "already registered") -- critical feedback
+- **Professional signup toast** ("Account created! Redirecting...") -- explains upcoming redirect
+- **Admin/Agent/Developer dashboard toasts** -- data operations where list refresh may not be immediate or obvious
+- **Blog/Project CRUD toasts** -- form-based workflows where confirmation is expected
+- **Contact form submission** -- confirms the message was sent
+- **WhatsApp fallback toasts** -- copy confirmations in the fallback modal
 
-### Phase 4: Navigation
+### Files to Modify
 
-**`src/components/layout/Header.tsx`**
-- Remove the mobile hamburger menu button (`md:hidden` block, lines 176-185) and the entire mobile menu dropdown (lines 189-481). The `MobileBottomNav` + "More" sheet already handles all mobile navigation, so the hamburger is redundant.
-- On mobile, the header becomes: Logo (left) | Preferences + Favorites (right). Much cleaner.
+1. **`src/hooks/useFavorites.tsx`** -- Remove success toasts for logged-in add/remove; keep guest toast with CTA; keep error toasts
+2. **`src/hooks/useProjectFavorites.tsx`** -- Same pattern as above
+3. **`src/hooks/useSavedLocations.ts`** -- Remove "Location saved" and "Location removed" success toasts
+4. **`src/hooks/useSavedCalculatorResults.tsx`** -- Remove "Saved result deleted" toast
+5. **`src/pages/Auth.tsx`** -- Remove "Account created successfully!", "Welcome back!", and "Welcome to BuyWise Israel!" success toasts
+6. **`src/components/profile/sections/AccountSection.tsx`** -- Remove "Browsing history cleared" toast
 
-**`src/components/layout/MobileBottomNav.tsx`**
-- No structural changes needed -- it's already solid. Just verify the z-index doesn't conflict with property detail's `MobileContactBar`. The Layout already hides the bottom nav on property detail via `hideMobileNav` prop when needed.
-
----
-
-### Phase 5: Map Search
-
-**`src/components/map-search/MobileMapSheet.tsx`**
-- Increase peek-mode card width from `w-[200px]` to `w-[240px]` for better readability
-- Add a floating "List" / "Map" toggle pill above the sheet handle (a small `position: absolute` button that lets users switch between full-list and full-map without needing to swipe)
-
----
-
-### Phase 7: Global Polish (7A-7D)
-
-**`src/index.css`**
-- Add a utility class for consistent mobile heading scale: `.mobile-h1 { @apply text-2xl md:text-4xl }` etc. (optional, low priority)
-
-**General across files (opportunistic)**
-- Ensure `viewport={{ once: true }}` on framer-motion scroll-triggered animations (spot-check key components)
-- Touch target audit: most buttons already meet 44px, no major gaps found
-
----
-
-### Technical Summary
-
-| File | Changes |
-|------|---------|
-| `src/pages/Listings.tsx` | Compact header, hide subtitle, full-width load more |
-| `src/components/filters/QuickFilterChips.tsx` | Hide when sticky |
-| `src/components/layout/Header.tsx` | Remove mobile hamburger menu + dropdown |
-| `src/components/map-search/MobileMapSheet.tsx` | Wider peek cards, Map/List toggle |
-
-### Implementation Order
-All changes in a single batch -- they're independent and relatively small.
+### What Won't Change
+- No structural or layout changes
+- No new components
+- Error handling remains intact everywhere
+- Guest favorite toasts with account creation CTAs remain
 
