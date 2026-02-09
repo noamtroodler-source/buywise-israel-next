@@ -2895,6 +2895,8 @@ export type Database = {
           notify_recommendations: boolean | null
           notify_search_alerts: boolean | null
           phone: string | null
+          preferred_area_unit: string | null
+          preferred_currency: string | null
           updated_at: string
         }
         Insert: {
@@ -2913,6 +2915,8 @@ export type Database = {
           notify_recommendations?: boolean | null
           notify_search_alerts?: boolean | null
           phone?: string | null
+          preferred_area_unit?: string | null
+          preferred_currency?: string | null
           updated_at?: string
         }
         Update: {
@@ -2931,6 +2935,8 @@ export type Database = {
           notify_recommendations?: boolean | null
           notify_search_alerts?: boolean | null
           phone?: string | null
+          preferred_area_unit?: string | null
+          preferred_currency?: string | null
           updated_at?: string
         }
         Relationships: []

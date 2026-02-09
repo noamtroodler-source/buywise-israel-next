@@ -22,6 +22,8 @@ export interface Profile {
   notify_price_drops: boolean;
   notify_search_alerts: boolean;
   notify_recommendations: boolean;
+  preferred_currency: 'ILS' | 'USD' | null;
+  preferred_area_unit: 'sqm' | 'sqft' | null;
   created_at: string;
   updated_at: string;
 }
