@@ -217,9 +217,9 @@ export default function Listings() {
       
       {/* Page Header */}
       <div className="bg-gradient-to-b from-muted/60 to-background border-b border-border/50">
-        <div className="container py-6 md:py-10">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">{pageContent.title}</h1>
-          <p className="text-muted-foreground">{pageContent.subtitle}</p>
+        <div className="container py-4 md:py-10">
+          <h1 className="text-2xl md:text-4xl font-bold mb-2">{pageContent.title}</h1>
+          <p className="text-muted-foreground hidden md:block">{pageContent.subtitle}</p>
         </div>
       </div>
 
@@ -256,12 +256,14 @@ export default function Listings() {
             isCountLoading={isFetching}
           />
           
-          {/* Quick Filter Chips - Mobile only */}
-          <QuickFilterChips
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            listingType={isRentals ? 'for_rent' : 'for_sale'}
-          />
+           {/* Quick Filter Chips - Mobile only, hidden when sticky */}
+          {!isSticky && (
+            <QuickFilterChips
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              listingType={isRentals ? 'for_rent' : 'for_sale'}
+            />
+          )}
         </div>
 
         {/* Results Count Row - with View Toggle on desktop */}
@@ -299,6 +301,7 @@ export default function Listings() {
                   disabled={isFetching}
                   variant="outline"
                   size="lg"
+                  className="w-full md:w-auto"
                 >
                   {isFetching ? (
                     <>
