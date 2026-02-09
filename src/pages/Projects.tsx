@@ -26,6 +26,7 @@ import { useSearchTracking } from '@/hooks/useSearchTracking';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -37,6 +38,8 @@ export default function Projects() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const showStickyFilters = !isDesktop;
   const queryClient = useQueryClient();
 
   // Use paginated projects hook
@@ -64,7 +67,7 @@ export default function Projects() {
 
   // Sticky filter bar detection
   useEffect(() => {
-    if (!isMobile) return;
+    if (isDesktop) return;
     
     const handleScroll = () => {
       if (filterBarRef.current) {
@@ -75,7 +78,7 @@ export default function Projects() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobile]);
+  }, [isDesktop]);
 
   // Track search results when data changes
   useEffect(() => {
@@ -201,8 +204,9 @@ export default function Projects() {
             ref={filterBarRef}
             className={cn(
               "transition-all duration-200",
-              isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
-              isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
+              showStickyFilters && "sticky top-16 z-40 py-3 bg-background",
+              showStickyFilters && isMobile && "-mx-4 px-4",
+              showStickyFilters && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
             )}
           >
             <ProjectFilters filters={filters} onFiltersChange={setFilters} onCreateAlert={handleCreateAlert} />

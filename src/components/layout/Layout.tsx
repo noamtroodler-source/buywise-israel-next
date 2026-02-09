@@ -18,7 +18,7 @@ export function Layout({ children, hideFooter, hideMobileNav }: LayoutProps) {
       <main className="flex-1">{children}</main>
       {/* Footer has extra padding on mobile to clear bottom nav */}
       {!hideFooter && (
-        <div className="mb-bottom-nav md:mb-0">
+        <div className="mb-bottom-nav lg:mb-0">
           <Footer />
         </div>
       )}

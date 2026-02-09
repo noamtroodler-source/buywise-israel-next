@@ -7,13 +7,13 @@ import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { useFeaturedSaleProperties, useFeaturedRentalProperties } from '@/hooks/useProperties';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 type Tab = 'sale' | 'rent';
 
 export function FeaturedShowcase() {
   const [activeTab, setActiveTab] = useState<Tab>('sale');
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -119,12 +119,12 @@ export function FeaturedShowcase() {
         {/* Loading State */}
         {isLoading && (
           <>
-            {/* Mobile: Single skeleton */}
-            <div className="sm:hidden">
+            {/* Mobile/Tablet: Single skeleton */}
+            <div className="lg:hidden">
               <Skeleton className="aspect-[4/3] rounded-lg" />
             </div>
             {/* Desktop: Grid of skeletons */}
-            <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="hidden lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {[...Array(8)].map((_, i) => (
                 <Skeleton key={i} className="aspect-[16/10] rounded-lg" />
               ))}
@@ -132,15 +132,15 @@ export function FeaturedShowcase() {
           </>
         )}
 
-        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
-        {!isLoading && isMobile && displayProperties.length > 0 && (
-          <div className="sm:hidden animate-fade-in -mx-4">
+        {/* Mobile/Tablet: Horizontal Carousel - Edge-to-edge */}
+        {!isLoading && !isDesktop && displayProperties.length > 0 && (
+          <div className="lg:hidden animate-fade-in -mx-4">
             <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProperties.map((property, index) => (
                   <div 
                     key={property.id} 
-                    className="flex-[0_0_85%] min-w-0 pl-4 first:pl-4"
+                    className="flex-[0_0_85%] sm:flex-[0_0_48%] min-w-0 pl-4 first:pl-4"
                   >
                     <PropertyCard 
                       property={property} 
@@ -165,9 +165,9 @@ export function FeaturedShowcase() {
           </div>
         )}
 
-        {/* Desktop: Property Grid - 4-column layout */}
-        {!isLoading && !isMobile && displayProperties.length > 0 && (
-          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
+        {/* Desktop: Property Grid */}
+        {!isLoading && isDesktop && displayProperties.length > 0 && (
+          <div className="hidden lg:grid lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in">
             {displayProperties.map((property) => (
               <PropertyCard 
                 key={property.id} 
@@ -180,9 +180,9 @@ export function FeaturedShowcase() {
           </div>
         )}
         
-        {/* Mobile "See All" CTA */}
-        {!isLoading && isMobile && totalCount > 0 && (
-          <div className="mt-4 sm:hidden">
+        {/* Mobile/Tablet "See All" CTA */}
+        {!isLoading && !isDesktop && totalCount > 0 && (
+          <div className="mt-4 lg:hidden">
             <Button variant="default" asChild className="w-full gap-2">
               <Link to={viewAllLink}>
                 See All {totalCount} Properties
@@ -201,16 +201,6 @@ export function FeaturedShowcase() {
             </Button>
           </div>
         )}
-
-        {/* Desktop View All - hidden on mobile since we have the CTA above */}
-        <div className="mt-8 hidden">
-          <Button variant="default" asChild className="w-full gap-2">
-            <Link to={viewAllLink}>
-              View All Properties
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
       </div>
     </section>
   );

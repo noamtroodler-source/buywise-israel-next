@@ -11,7 +11,7 @@ import { useFeaturedProjects } from '@/hooks/useProjects';
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 function formatPrice(price: number | null, currency: string = 'ILS') {
   if (!price) return 'Price on request';
@@ -24,7 +24,7 @@ function formatPrice(price: number | null, currency: string = 'ILS') {
 
 export function ProjectsHighlight() {
   const { data: projects, isLoading } = useFeaturedProjects();
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [selectedIndex, setSelectedIndex] = useState(0);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -64,7 +64,7 @@ export function ProjectsHighlight() {
     return (
       <section className="py-10 md:py-14">
         <div className="container">
-          {/* Mobile: Single skeleton */}
+          {/* Mobile/Tablet: Single skeleton */}
           <div className="lg:hidden">
             <Skeleton className="aspect-[16/9] rounded-lg" />
           </div>
@@ -115,15 +115,15 @@ export function ProjectsHighlight() {
           </Button>
         </div>
 
-        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
-        {isMobile && (
+        {/* Mobile/Tablet: Horizontal Carousel */}
+        {!isDesktop && (
           <div className="lg:hidden animate-fade-in -mx-4">
             <div className="overflow-hidden px-4" ref={emblaRef}>
               <div className="flex">
                 {displayProjects.map((project) => (
                   <div 
                     key={project.id} 
-                    className="flex-[0_0_calc(100%-2rem)] min-w-0 pl-4 first:pl-4"
+                    className="flex-[0_0_calc(100%-2rem)] sm:flex-[0_0_calc(50%-1rem)] min-w-0 pl-4 first:pl-4"
                   >
                     <Link
                       to={`/projects/${project.slug}`}
@@ -187,7 +187,7 @@ export function ProjectsHighlight() {
         )}
 
         {/* Desktop: Bento Grid */}
-        {!isMobile && (
+        {isDesktop && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -212,14 +212,12 @@ export function ProjectsHighlight() {
                 
                 {/* Action Buttons - Top Right */}
                 <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                  {/* Share - visible on mobile, hover-only on desktop */}
-                  <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <ProjectShareButton
                       projectSlug={mainProject.slug}
                       projectName={mainProject.name}
                     />
                   </div>
-                  {/* Favorite - always visible */}
                   <ProjectFavoriteButton projectId={mainProject.id} />
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
@@ -267,14 +265,12 @@ export function ProjectsHighlight() {
                   
                   {/* Action Buttons - Top Right */}
                   <div className="absolute top-2 right-2 flex gap-1.5 z-10">
-                    {/* Share - visible on mobile, hover-only on desktop */}
-                    <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <ProjectShareButton
                         projectSlug={project.slug}
                         projectName={project.name}
                       />
                     </div>
-                    {/* Favorite - always visible */}
                     <ProjectFavoriteButton projectId={project.id} />
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-3">

@@ -19,6 +19,7 @@ import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
 import { useSearchTracking } from '@/hooks/useSearchTracking';
@@ -30,6 +31,8 @@ export default function Listings() {
   const [isSticky, setIsSticky] = useState(false);
   const filterBarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const showStickyFilters = !isDesktop; // sticky on mobile + tablet
 
   // Get listing status from URL, default to for_sale
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -121,7 +124,7 @@ export default function Listings() {
 
   // Sticky filter bar detection
   useEffect(() => {
-    if (!isMobile) return;
+    if (isDesktop) return;
     
     const handleScroll = () => {
       if (filterBarRef.current) {
@@ -132,7 +135,7 @@ export default function Listings() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobile]);
+  }, [isDesktop]);
 
   const handleFiltersChange = (newFilters: PropertyFiltersType) => {
     // Always keep the listing_status from URL
@@ -241,7 +244,9 @@ export default function Listings() {
           className={cn(
             "mb-6 md:mb-8 transition-all duration-200",
             isMobile && "sticky top-16 z-40 -mx-4 px-4 py-3 bg-background",
-            isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
+            isMobile && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50",
+            !isMobile && showStickyFilters && "sticky top-16 z-40 py-3 bg-background",
+            !isMobile && showStickyFilters && isSticky && "shadow-md backdrop-blur-sm bg-background/95 border-b border-border/50"
           )}
         >
           <PropertyFilters
@@ -275,7 +280,7 @@ export default function Listings() {
           ) : (
             <div className="h-5 w-40 bg-muted/50 rounded animate-pulse" />
           )}
-          {!isMobile && (
+          {isDesktop && (
             <ViewToggle activeView="grid" size="sm" />
           )}
         </div>
