@@ -571,6 +571,7 @@ export default function MapSearchLayout() {
           isCountLoading={isFetching}
           activeView="map"
           onCreateAlert={() => setShowAlertDialog(true)}
+          mapMode={true}
         />
       </div>
       
@@ -599,6 +600,10 @@ export default function MapSearchLayout() {
             hoveredPropertyId={hoveredPropertyId}
             onPropertyHover={handlePropertyHover}
             onPropertySelect={handlePropertySelect}
+            cityName={filters.city}
+            sortBy={filters.sort_by}
+            onSortChange={(sort) => handleFiltersChange({ ...filters, sort_by: sort })}
+            onCreateAlert={() => setShowAlertDialog(true)}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
