@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -57,6 +57,7 @@ const itemVariants = {
 
 export default function AgencySettings() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { data: agency, isLoading } = useMyAgency();
   const { data: invites = [] } = useAgencyInvites(agency?.id);
@@ -116,6 +117,16 @@ export default function AgencySettings() {
       setLogoUrl(agency.logo_url);
     }
   }, [agency]);
+
+  // Scroll to hash target (e.g. #social-links)
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.querySelector(location.hash);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+      }
+    }
+  }, [location.hash, isLoading]);
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -440,7 +451,7 @@ export default function AgencySettings() {
 
               {/* Social Links Card */}
               <motion.div variants={itemVariants}>
-                <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
+                <Card id="social-links" className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -473,7 +484,7 @@ export default function AgencySettings() {
 
                     <div className="space-y-2">
                       <Label htmlFor="instagram" className="flex items-center gap-2">
-                        <Instagram className="h-4 w-4 text-[#E4405F]" />
+                        <Instagram className="h-4 w-4 text-primary" />
                         Instagram
                       </Label>
                       <Input
