@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 
 type Currency = 'ILS' | 'USD';
 type AreaUnit = 'sqm' | 'sqft';
@@ -30,12 +32,17 @@ interface StoredPreferences {
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-const [currency, setCurrencyState] = useState<Currency>('USD');
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
+  
+  const [currency, setCurrencyState] = useState<Currency>('USD');
   const [exchangeRate, setExchangeRateState] = useState(FALLBACK_EXCHANGE_RATE);
   const [isCustomRate, setIsCustomRateState] = useState(false);
   const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqft');
   const [defaultExchangeRate, setDefaultExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
   const [isLoaded, setIsLoaded] = useState(false);
+  const profileLoadedRef = useRef(false);
 
   // Fetch default exchange rate from database
   useEffect(() => {
@@ -59,7 +66,7 @@ const [currency, setCurrencyState] = useState<Currency>('USD');
     fetchExchangeRate();
   }, []);
 
-  // Load preferences from localStorage on mount
+  // Load preferences from localStorage on mount (for anonymous users or as fallback)
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -75,6 +82,23 @@ const [currency, setCurrencyState] = useState<Currency>('USD');
     }
     setIsLoaded(true);
   }, []);
+
+  // Load preferences from profile when user is logged in
+  useEffect(() => {
+    if (profile && !profileLoadedRef.current) {
+      profileLoadedRef.current = true;
+      if (profile.preferred_currency) {
+        setCurrencyState(profile.preferred_currency);
+      }
+      if (profile.preferred_area_unit) {
+        setAreaUnitState(profile.preferred_area_unit);
+      }
+    }
+    // Reset flag when user logs out
+    if (!user) {
+      profileLoadedRef.current = false;
+    }
+  }, [profile, user]);
 
   // Save preferences to localStorage when they change
   useEffect(() => {
@@ -92,15 +116,28 @@ const [currency, setCurrencyState] = useState<Currency>('USD');
     }
   }, [currency, exchangeRate, isCustomRate, areaUnit, isLoaded]);
 
-  const setCurrency = (c: Currency) => setCurrencyState(c);
+  const setCurrency = (c: Currency) => {
+    setCurrencyState(c);
+    if (user) {
+      updateProfile.mutate({ preferred_currency: c });
+    }
+  };
+  
   const setExchangeRate = (rate: number) => setExchangeRateState(rate);
+  
   const setIsCustomRate = (custom: boolean) => {
     setIsCustomRateState(custom);
     if (!custom) {
       setExchangeRateState(defaultExchangeRate);
     }
   };
-  const setAreaUnit = (u: AreaUnit) => setAreaUnitState(u);
+  
+  const setAreaUnit = (u: AreaUnit) => {
+    setAreaUnitState(u);
+    if (user) {
+      updateProfile.mutate({ preferred_area_unit: u });
+    }
+  };
 
   return (
     <PreferencesContext.Provider value={{
