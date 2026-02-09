@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useCallback, useEffect, useRef, memo } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import { Property } from '@/types/database';
@@ -13,7 +13,7 @@ interface PropertyMarkerProps {
   onClick: (id: string | null) => void;
 }
 
-export function PropertyMarker({
+function PropertyMarkerInner({
   property,
   isHovered,
   isSelected,
@@ -208,3 +208,15 @@ export function PropertyMarker({
     />
   );
 }
+
+export const PropertyMarker = memo(PropertyMarkerInner, (prev, next) => {
+  return (
+    prev.isHovered === next.isHovered &&
+    prev.isSelected === next.isSelected &&
+    prev.property.id === next.property.id &&
+    prev.property.price === next.property.price &&
+    prev.property.listing_status === next.property.listing_status &&
+    prev.property.original_price === next.property.original_price &&
+    prev.property.created_at === next.property.created_at
+  );
+});

@@ -442,6 +442,7 @@ export function PropertyMap({
         
         {selectedPropertyId && (
           <MapPropertyPopup
+            key={selectedPropertyId}
             propertyId={selectedPropertyId}
             properties={properties}
             onClose={() => onPropertySelect(null)}
