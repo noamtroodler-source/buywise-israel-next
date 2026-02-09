@@ -1490,6 +1490,7 @@ export type Database = {
         Row: {
           content_path: string
           content_type: string
+          expires_at: string | null
           first_visited_at: string
           id: string
           last_visited_at: string
@@ -1499,6 +1500,7 @@ export type Database = {
         Insert: {
           content_path: string
           content_type: string
+          expires_at?: string | null
           first_visited_at?: string
           id?: string
           last_visited_at?: string
@@ -1508,6 +1510,7 @@ export type Database = {
         Update: {
           content_path?: string
           content_type?: string
+          expires_at?: string | null
           first_visited_at?: string
           id?: string
           last_visited_at?: string
