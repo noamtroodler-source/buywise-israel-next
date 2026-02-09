@@ -86,7 +86,6 @@ export function useAddSavedLocation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-locations'] });
-      toast.success('Location saved');
     },
     onError: (error) => {
       toast.error(getUserFriendlyError(error, 'Failed to save location'));
@@ -124,7 +123,6 @@ export function useDeleteSavedLocation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-locations'] });
-      toast.success('Location removed');
     },
     onError: (error) => {
       toast.error('Failed to remove location: ' + error.message);

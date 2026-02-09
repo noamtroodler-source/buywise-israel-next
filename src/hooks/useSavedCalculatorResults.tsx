@@ -96,7 +96,7 @@ export function useDeleteCalculatorResult() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['saved-calculator-results'] });
-      toast.success('Saved result deleted');
+      // No toast -- item disappears from list
     },
     onError: (error) => {
       toast.error(getUserFriendlyError(error, 'Failed to delete. Please try again.'));
