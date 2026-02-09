@@ -278,7 +278,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Freshness badge - more prominent for hot/fresh listings (especially rentals)
                     if (freshnessTier === 'hot') {
                       badges.push(
-                        <Badge key="fresh" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                        <Badge key="fresh" className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary text-xs font-medium">
                           <Flame className="h-3 w-3 mr-1" />
                           {isRental ? 'Just Available' : 'Just Listed'}
                         </Badge>
@@ -346,7 +346,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {daysLabel && (
                   <div className={cn(
                     "flex items-center gap-1 pt-1 text-xs",
-                    freshnessTier === 'hot' ? "text-amber-600 dark:text-amber-400 font-medium" :
+                    freshnessTier === 'hot' ? "text-primary font-medium" :
                     freshnessTier === 'fresh' ? "text-primary font-medium" :
                     "text-muted-foreground"
                   )}>

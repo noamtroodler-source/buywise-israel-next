@@ -18,7 +18,7 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 const LINE_COLORS = [
   'hsl(213 94% 45%)',  // Primary blue
-  'hsl(38 92% 50%)',   // Amber
+  'hsl(175 70% 40%)',  // Teal
   'hsl(221 83% 53%)',  // Secondary blue
 ];
 
