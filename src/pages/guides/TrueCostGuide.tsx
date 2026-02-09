@@ -312,6 +312,22 @@ export default function TrueCostGuide() {
             </div>
           </div>
 
+          {/* Cost Benchmark */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-8">
+            <div className="p-5 rounded-xl bg-card border text-center">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Local Buyer (on ~$1M property)</p>
+              <p className="text-3xl font-bold text-primary mb-1">~6.5%</p>
+              <p className="text-xs text-muted-foreground">above purchase price</p>
+              <p className="text-xs text-muted-foreground mt-2">2.5% tax · 2% agent · 1% lawyer · 1% other</p>
+            </div>
+            <div className="p-5 rounded-xl bg-card border text-center">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Foreign Buyer (on ~$1M property)</p>
+              <p className="text-3xl font-bold text-primary mb-1">~12%</p>
+              <p className="text-xs text-muted-foreground">above purchase price</p>
+              <p className="text-xs text-muted-foreground mt-2">8% tax · 2% agent · 1% lawyer · 1% other</p>
+            </div>
+          </div>
+
           {/* CTA Box */}
           <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10">
             <p className="text-lg font-medium text-foreground mb-3 text-center">

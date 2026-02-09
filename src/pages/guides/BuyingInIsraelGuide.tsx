@@ -144,6 +144,13 @@ export default function BuyingInIsraelGuide() {
             Israeli mortgages (<GlossaryTooltip term="משכנתא">Mashkanta</GlossaryTooltip>) have specific regulations 
             set by the Bank of Israel that affect how much you can borrow.
           </p>
+          <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+            <p className="text-sm flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+              <span><strong>Important:</strong> Banks will not necessarily appraise the property at the full purchase price. 
+              Get a realistic appraisal estimate before signing a sales contract to avoid a shortfall in financing.</span>
+            </p>
+          </div>
           <h4 className="font-semibold">Key Mortgage Rules:</h4>
           <ul className="list-disc pl-5 space-y-2">
             <li><strong>First-time buyers:</strong> Up to 75% LTV (Loan-to-Value)</li>
@@ -157,6 +164,13 @@ export default function BuyingInIsraelGuide() {
             <li>Fixed rate (non-linked)</li>
             <li>CPI-linked (inflation-indexed)</li>
           </ul>
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <p className="text-sm">
+              <strong>💡 Pro Tip:</strong> Work with a mortgage broker who specializes in Israeli banking. 
+              Mortgage products in Israel vary greatly from other countries, and a broker can navigate 
+              multiple banks to find the best terms for your profile.
+            </p>
+          </div>
           <div className="flex gap-3 mt-4">
             <Link to="/tools?tool=mortgage">
               <Button variant="outline" size="sm" className="gap-2">
@@ -197,6 +211,21 @@ export default function BuyingInIsraelGuide() {
             <li><strong>Agent fees:</strong> 1-2% + VAT (if applicable)</li>
             <li><strong>Mortgage fees:</strong> Appraisal, opening fees</li>
           </ul>
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <h4 className="font-semibold text-sm mb-2">📊 Quick Benchmark (on a ~$1M USD property):</h4>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="bg-background p-3 rounded-lg border">
+                <p className="text-sm font-medium text-foreground">Local Buyer</p>
+                <p className="text-2xl font-bold text-primary">~6.5%</p>
+                <p className="text-xs text-muted-foreground">2.5% tax + 2% agent + 1% lawyer + 1% other</p>
+              </div>
+              <div className="bg-background p-3 rounded-lg border">
+                <p className="text-sm font-medium text-foreground">Foreign Buyer</p>
+                <p className="text-2xl font-bold text-primary">~12%</p>
+                <p className="text-xs text-muted-foreground">8% tax + 2% agent + 1% lawyer + 1% other</p>
+              </div>
+            </div>
+          </div>
           <Link to="/tools?tool=totalcost">
             <Button variant="outline" size="sm" className="gap-2 mt-4">
               <Calculator className="h-4 w-4" />
@@ -276,6 +305,97 @@ export default function BuyingInIsraelGuide() {
               It's worth the investment for independent representation.
             </p>
           </div>
+        </div>
+      ),
+    },
+    {
+      id: 'inspections',
+      title: '7. Home Inspections',
+      icon: CheckCircle2,
+      content: (
+        <div className="space-y-4">
+          <p>
+            In Israel, it is the <strong>buyer's responsibility</strong> to check the condition of the property, 
+            and the <strong>seller's responsibility</strong> to declare known issues. A thorough inspection 
+            protects you from costly surprises after closing.
+          </p>
+          <h4 className="font-semibold">Inspection Checklist:</h4>
+          <ul className="list-disc pl-5 space-y-2">
+            <li><strong>Structural integrity:</strong> Foundation, walls, load-bearing elements</li>
+            <li><strong>Current condition:</strong> General wear and tear, age-related deterioration</li>
+            <li><strong>Quality of build:</strong> Construction materials and workmanship</li>
+            <li><strong>Dampness:</strong> Current moisture issues and susceptibility to future dampness</li>
+            <li><strong>Plumbing status:</strong> Water pressure, pipe condition, leaks</li>
+            <li><strong>Electrical level:</strong> Wiring, panel capacity, safety compliance</li>
+            <li><strong>Drainage:</strong> Interior and exterior water drainage systems</li>
+            <li><strong>Appliances:</strong> Condition and functionality of included appliances</li>
+          </ul>
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <p className="text-sm">
+              <strong>💡 Pro Tip:</strong> Hire a licensed engineer who specializes in home inspections. 
+              This is typically done after both sides agree on a price but before signing the final contract.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'offers',
+      title: '8. Making an Offer',
+      icon: FileText,
+      content: (
+        <div className="space-y-4">
+          <p>
+            Before making an offer on a property, consider these factors that can significantly 
+            affect your negotiating position and the final price.
+          </p>
+          <h4 className="font-semibold">Factors to Consider:</h4>
+          <ul className="list-disc pl-5 space-y-2">
+            <li><strong>Seller motivation:</strong> Why is the owner selling? Urgency can affect flexibility</li>
+            <li><strong>Time on market:</strong> How long has the property been listed?</li>
+            <li><strong>Registration type:</strong> Is it Tabu (private ownership), Minhal (leasehold), or a church lease? Each carries different implications</li>
+            <li><strong>Building infractions:</strong> Are there any unpermitted additions or modifications?</li>
+            <li><strong>Structural issues:</strong> Any known defects from the inspection?</li>
+            <li><strong>Mortgage & payment terms:</strong> What payment schedule works for both parties?</li>
+            <li><strong>Competing offers:</strong> Are there other buyers interested?</li>
+            <li><strong>Carrying costs:</strong> Ongoing expenses like Arnona, Vaad Bayit</li>
+            <li><strong>Date of occupancy:</strong> When can you actually move in?</li>
+            <li><strong>Property restrictions:</strong> Any building or usage restrictions?</li>
+          </ul>
+          <div className="bg-primary/5 p-4 rounded-lg mt-4">
+            <p className="text-sm">
+              <strong>💡 Pro Tip:</strong> Cross-reference comparable sales from the Israeli Tax Authority 
+              website to validate your offer price. Your agent or lawyer can help interpret these records.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'walkthrough',
+      title: '9. The Walk-Through',
+      icon: CheckCircle2,
+      content: (
+        <div className="space-y-4">
+          <p>
+            On the date of the last payment or occupancy, schedule a final walk-through 
+            with your agent and the seller to ensure everything is in order.
+          </p>
+          <h4 className="font-semibold">Walk-Through Checklist:</h4>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Verify the property is in the agreed-upon condition</li>
+            <li>Check that all items included in the sale are present</li>
+            <li>Confirm any agreed-upon repairs have been completed</li>
+            <li>Document the state of the property (photos/video)</li>
+            <li>Take final meter readings for utilities</li>
+          </ul>
+          <h4 className="font-semibold mt-4">Post Walk-Through Tasks:</h4>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Transfer electricity, water, and gas accounts into your name</li>
+            <li>Register for Arnona (municipal property tax) at the local municipality</li>
+            <li>Update the Vaad Bayit (building committee) with your details</li>
+            <li>Collect all keys, remotes, and access codes</li>
+          </ul>
         </div>
       ),
     },

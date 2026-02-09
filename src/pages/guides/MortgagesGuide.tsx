@@ -85,6 +85,15 @@ const howMortgagesDiffer = [
     description: 'Bank of Israel regulations set maximum loan-to-value ratios: 75% for first-time Israeli buyers and Olim, 70% for upgraders, 50% for investors and foreign buyers (some lenders offer up to 70% for strong foreign profiles).',
   },
   {
+    title: 'Appraisals may fall short of purchase price',
+    description: 'Banks will not necessarily appraise the property at the full purchase price. This means your actual loan amount may be lower than expected. Get a realistic appraisal estimate before signing a sales contract to avoid a financing gap.',
+    badge: 'CRITICAL',
+  },
+  {
+    title: 'Work with a mortgage broker',
+    description: 'Mortgage products in Israel vary greatly from other countries. A qualified broker can navigate the Israeli banking system, compare offers across multiple banks, and negotiate terms that suit your specific profile and income source.',
+  },
+  {
     title: 'Debt-to-income limits apply',
     description: 'The Bank of Israel caps mortgage payments at 33-40% of net monthly income. For example, if your joint net income is ₪30,000, monthly payments cannot exceed ₪10,000-12,000.',
   },
