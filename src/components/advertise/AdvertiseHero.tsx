@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -37,11 +37,18 @@ export function AdvertiseHero() {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" asChild>
-                <Link to="#choose-path">Get Started Free</Link>
+              <Button 
+                size="lg" 
+                onClick={() => document.getElementById('choose-path')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Get Started Free
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link to="#how-it-works">See How It Works</Link>
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                See How It Works
               </Button>
             </div>
 
