@@ -1,59 +1,41 @@
 
 
-## Improve Map Hover Interaction (Zillow/Redfin Style)
+## Make Saves Count Permanent (Never Decrease)
 
 ### Problem
-Currently, hovering over a map marker causes the property list on the right to auto-scroll to that property, which is jarring. You want a Zillow/Redfin-style experience where hovering a marker shows a popup card directly on the map, and the list stays put.
+Currently, the saves count for a property is calculated by counting active rows in the `favorites` and `guest_property_saves` tables. When someone unsaves a property, the row is deleted and the count drops. You want saves to represent cumulative interest -- once someone saves, it counts forever, even if they later unsave.
 
-### Changes
+### Solution
+Add a `total_saves` column to the `properties` table that only increments (never decrements). Update the RPC function and the unsave logic accordingly.
 
-#### 1. Remove auto-scroll on marker hover (`src/components/map-search/MapPropertyList.tsx`)
-- Delete the `useEffect` (lines 42-48) that calls `scrollIntoView` when `hoveredPropertyId` changes
-- Remove the associated `cardRefs` ref since it's no longer needed
-- Remove the `setCardRef` callback
-- Keep the visual highlight ring on the list card for the hovered property (existing `ring-2 ring-primary` class stays)
+### Database Changes
 
-#### 2. Add hover popup on map markers (`src/components/map-search/PropertyMap.tsx`)
-- Track a separate `hoveredPopupId` state for the hover popup (distinct from `selectedPropertyId` which is for clicks)
-- When a marker is hovered, show a lightweight popup card at that marker's position
-- When the marker is unhovered, dismiss the popup
-- If a property is clicked (selected), the click popup takes precedence and hover popup is hidden
+**1. Add `total_saves` column to `properties` table**
+- New integer column, default 0, not null
+- Initialize it with the current count from `favorites` + `guest_property_saves` so existing data is preserved
 
-#### 3. Create a new `MapHoverPopup` component (`src/components/map-search/MapHoverPopup.tsx`)
-- A simpler, more compact version of `MapPropertyPopup` designed for hover state
-- Shows: property image, price, beds/baths/sqm, address -- similar to Zillow's hover cards and matching BuyWise design language
-- No close button needed (dismisses on mouseout)
-- Appears directly at the marker position using Leaflet's `Popup` component
-- Styled to match BuyWise's card design: rounded corners, card background, clean typography
-- Uses existing `useFormatPrice` and `useFormatArea` hooks for consistency
-- Includes favorite button and share button matching the reference screenshots
+**2. Update `get_property_saves_count` RPC**
+- Change it to simply return `total_saves` from the `properties` table instead of counting rows
 
-#### 4. Bidirectional hover (list to map) stays the same
-- Hovering a card in the list still highlights the marker on the map (no change needed)
-- The marker gets the blue/active style as it does today
+**3. Create a trigger to auto-increment `total_saves`**
+- On INSERT into `favorites` table: increment `properties.total_saves` by 1
+- On INSERT into `guest_property_saves` table: increment `properties.total_saves` by 1
+- No trigger on DELETE -- the count never goes down
 
-### Technical Details
+**4. Add `total_saves` to `projects` table too**
+- Same pattern: a permanent counter that increments on save, never decrements
+- Add trigger on INSERT into `project_favorites`
+
+### Code Changes
+
+**`src/hooks/useFavorites.tsx`**
+- Remove the `queryClient.invalidateQueries({ queryKey: ['savesCount', propertyId] })` call from the `removeFavorite.onSuccess` handler (line 220) -- unsaving should not affect the displayed count
+- Keep the invalidation in `addFavorite.onSuccess` (line 134) so the count updates when saving
+
+### Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/components/map-search/MapPropertyList.tsx` | Remove `scrollIntoView` effect and `cardRefs` |
-| `src/components/map-search/MapHoverPopup.tsx` | New component -- compact hover popup card |
-| `src/components/map-search/PropertyMap.tsx` | Add hover popup rendering using `MapHoverPopup` when `hoveredPropertyId` is set (and no `selectedPropertyId` active) |
+| Database migration | Add `total_saves` column to `properties` and `projects`; backfill from current data; create increment-only triggers; update RPC |
+| `src/hooks/useFavorites.tsx` | Remove saves count invalidation on unsave |
 
-### Hover popup design (matching BuyWise + Zillow reference)
-- Width: ~280px
-- Property photo (16:10 aspect, rounded top)
-- Favorite button overlay on image (top-right)
-- Price (bold, formatted with currency preference)
-- Beds, baths, sqm stats row with icons
-- Address line (truncated)
-- No "View Details" button (the click popup already has that)
-- Smooth fade-in animation
-- Positioned above the marker with Leaflet's popup offset
-
-### Interaction flow after changes
-- Hover marker on map: Show hover popup on map, highlight card in list (no scroll)
-- Leave marker: Dismiss hover popup
-- Click marker: Show full click popup (existing `MapPropertyPopup`), dismiss hover popup
-- Hover card in list: Highlight marker on map (no popup, keeping it clean)
-- Click card in list: Navigate to property detail page (existing behavior via Link)
