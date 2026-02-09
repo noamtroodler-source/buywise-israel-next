@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, BarChart3, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, BarChart3, MessageCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export function ThreePillars() {
   };
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="py-8 md:py-16">
       <div className="container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -99,22 +99,24 @@ export function ThreePillars() {
               ))}
             </div>
             
-            {/* Scroll indicators */}
-            <div className="flex justify-center gap-2 mt-4">
-              <button
-                onClick={() => scroll('left')}
-                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:bg-muted/70"
-                aria-label="Previous"
-              >
-                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button
-                onClick={() => scroll('right')}
-                className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:bg-muted/70"
-                aria-label="Next"
-              >
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
+            {/* Scroll dots */}
+            <div className="flex justify-center gap-1.5 mt-4">
+              {pillars.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (scrollRef.current) {
+                      const scrollAmount = scrollRef.current.offsetWidth * 0.85 * i;
+                      scrollRef.current.scrollTo({ left: scrollAmount, behavior: 'smooth' });
+                    }
+                  }}
+                  className={cn(
+                    "w-2 h-2 rounded-full transition-colors",
+                    "bg-muted-foreground/30"
+                  )}
+                  aria-label={`Go to ${pillars[i].title}`}
+                />
+              ))}
             </div>
           </div>
         ) : (

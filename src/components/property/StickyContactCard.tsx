@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronDown, ChevronRight } from 'lucide-react';
+
+import { MessageCircle, Mail, Share2, Heart, BookOpen, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { trackInquiry } from '@/hooks/useInquiryTracking';
 import { useAuth } from '@/hooks/useAuth';
@@ -328,32 +328,6 @@ export function MobileContactBar({
           )}
         </div>
 
-        {/* Permission to Slow Down - Collapsible */}
-        <Collapsible>
-          <CollapsibleTrigger className="w-full text-center py-1">
-            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-              Not ready? That's okay
-              <ChevronDown className="h-3 w-3" />
-            </span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2 space-y-2">
-            <p className="text-xs text-muted-foreground text-center">
-              Take your time. There's no rush.
-            </p>
-            <div className="flex gap-2">
-              {onSave && (
-                <Button variant="outline" size="sm" className="flex-1" onClick={onSave}>
-                  Save for later
-                </Button>
-              )}
-              <Button variant="outline" size="sm" className={cn(onSave ? "flex-1" : "w-full")} asChild>
-                <Link to="/guides/talking-to-professionals">
-                  Prepare first
-                </Link>
-              </Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
       </div>
     </motion.div>
   );

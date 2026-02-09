@@ -106,8 +106,23 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
         {/* Main Image */}
         <div className="relative w-full">
           <div 
-            className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group"
+            className="relative aspect-[16/10] md:rounded-xl overflow-hidden bg-muted cursor-pointer group touch-pan-y"
             onClick={handleImageClick}
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              (e.currentTarget as any)._touchStartX = touch.clientX;
+            }}
+            onTouchEnd={(e) => {
+              const startX = (e.currentTarget as any)._touchStartX;
+              if (startX === undefined) return;
+              const endX = e.changedTouches[0].clientX;
+              const diff = startX - endX;
+              if (Math.abs(diff) > 50) {
+                if (diff > 0) scrollNext();
+                else scrollPrev();
+                e.preventDefault();
+              }
+            }}
           >
               <img 
                 src={images[selectedImageIndex]} 
@@ -127,13 +142,13 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                 </div>
               )}
 
-              {/* Navigation Arrows */}
+              {/* Navigation Arrows - Hidden on mobile (use swipe instead) */}
               {images.length > 1 && (
                 <>
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background hidden md:flex"
                     onClick={(e) => handleNavClick(e, scrollPrev)}
                   >
                     <ChevronLeft className="h-5 w-5" />
@@ -141,7 +156,7 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm hover:bg-background hidden md:flex"
                     onClick={(e) => handleNavClick(e, scrollNext)}
                   >
                     <ChevronRight className="h-5 w-5" />
@@ -150,9 +165,18 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
               )}
 
 
-              {/* Progress Bar Indicator - Bottom of image */}
+              {/* Photo Counter - Mobile */}
               {images.length > 1 && (
-                <div className="absolute bottom-4 left-4 right-20 flex gap-1 z-10" onClick={(e) => e.stopPropagation()}>
+                <div className="absolute bottom-4 right-4 z-10 md:hidden" onClick={(e) => e.stopPropagation()}>
+                  <span className="bg-black/60 text-white text-xs font-medium px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    {selectedImageIndex + 1} / {images.length}
+                  </span>
+                </div>
+              )}
+
+              {/* Progress Bar Indicator - Bottom of image (desktop) */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 left-4 right-20 hidden md:flex gap-1 z-10" onClick={(e) => e.stopPropagation()}>
                   {images.map((_, index) => (
                     <button
                       key={index}
@@ -170,16 +194,16 @@ export function PropertyHero({ property, onSave, onShare, isSaved }: PropertyHer
           </div>
         </div>
 
-        {/* Horizontal Thumbnail Carousel */}
+        {/* Horizontal Thumbnail Carousel - Hidden on mobile */}
         {images.length > 1 && (
-          <div className="mt-3">
+          <div className="mt-3 hidden md:block">
             <div className="overflow-hidden" ref={emblaRef}>
               <div className="flex gap-2">
                 {images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImageIndex(i)}
-                    className={`flex-shrink-0 relative w-20 h-14 md:w-24 md:h-16 rounded-lg overflow-hidden transition-all ${
+                    className={`flex-shrink-0 relative w-24 h-16 rounded-lg overflow-hidden transition-all ${
                       selectedImageIndex === i 
                         ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' 
                         : 'opacity-70 hover:opacity-100'

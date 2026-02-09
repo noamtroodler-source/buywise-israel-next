@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Camera, FileText, Calculator, MapPin, Home } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface Section {
   id: string;
@@ -30,8 +31,8 @@ export function MobileSectionNav({ className }: MobileSectionNavProps) {
 
   // Track which sections are in view
   const handleScroll = useCallback(() => {
-    // Show nav after scrolling past hero (~400px)
-    setIsVisible(window.scrollY > 400);
+    // Show nav after scrolling past hero (~300px)
+    setIsVisible(window.scrollY > 300);
 
     // Find which section is most visible
     let currentSection = 'photos';
@@ -92,8 +93,11 @@ export function MobileSectionNav({ className }: MobileSectionNavProps) {
   if (!isMobile || !isVisible) return null;
 
   return (
-    <nav
+    <motion.nav
       ref={navRef}
+      initial={{ y: -10, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(
         'fixed top-16 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border',
         'overflow-x-auto scrollbar-hide',
@@ -121,6 +125,6 @@ export function MobileSectionNav({ className }: MobileSectionNavProps) {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 }
