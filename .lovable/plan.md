@@ -1,194 +1,197 @@
 
-# Checkmark Expiration System for Content Visits
+# Automated Exchange Rate Updates
 
 ## Overview
-This plan implements a smart expiration system for the "visited" checkmarks in navigation menus. The system will automatically clear checkmarks based on time (30 days) and section completion, while giving users manual control to reset their history.
+This plan removes manual exchange rate entry and implements an automated daily update system using the free Frankfurter API. The exchange rate will update silently in the background, and users will just see a simple note that rates are updated daily.
 
 ---
 
-## Expiration Rules
+## What Changes
 
-| Rule | Trigger | What Happens |
-|------|---------|--------------|
-| **Time-based expiry** | 30 days since last visit to a page | That page's checkmark disappears |
-| **Section completion** | User visits ALL items in a nav section | All checkmarks in that section clear |
-| **Manual reset** | User clicks "Clear History" | All checkmarks cleared |
+### User Experience
+**Before:**
+- "Exchange Rate" section with manual input field
+- Text: "Default rate updated weekly. Enter current rate..."
 
----
+**After:**
+- No manual input field
+- Simple note under Currency section: "Exchange rate updated daily"
 
-## Changes Summary
-
-### 1. Database Updates
-- Add `expires_at` column to `content_visits` table (defaults to 30 days after `last_visited_at`)
-- Create a trigger to auto-update `expires_at` when `last_visited_at` changes
-
-### 2. Hook Updates (`useContentVisits.tsx`)
-- Filter out expired visits (where `expires_at < now()`)
-- Add section completion detection using navigation config
-- Add `clearHistory()` function for manual reset
-- Add `getVisitedBySection()` to track section progress
-
-### 3. localStorage Updates
-- Store `visitedAt` timestamp (already there)
-- Filter expired visits locally (30+ days old)
-
-### 4. UI Updates
-- Add section completion logic in `MegaMenu.tsx` and `LearnNav.tsx`
-- Add "Clear history" option in account settings
+### Backend
+- New edge function to fetch live USD/ILS rate
+- Daily cron job to automatically update the database
 
 ---
 
-## Technical Implementation
+## Implementation Details
 
-### Database Migration
+### 1. Create Edge Function: `update-exchange-rate`
 
-```sql
--- Add expires_at column with 30-day default
-ALTER TABLE public.content_visits
-ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone 
-  DEFAULT (now() + interval '30 days');
-
--- Backfill existing records
-UPDATE public.content_visits
-SET expires_at = last_visited_at + interval '30 days'
-WHERE expires_at IS NULL;
-
--- Create trigger to auto-update expires_at
-CREATE OR REPLACE FUNCTION update_content_visit_expiry()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.expires_at := NEW.last_visited_at + interval '30 days';
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER content_visit_expiry_trigger
-  BEFORE INSERT OR UPDATE OF last_visited_at ON public.content_visits
-  FOR EACH ROW
-  EXECUTE FUNCTION update_content_visit_expiry();
-```
-
-### useContentVisits.tsx Changes
-
-**Add expiry filtering for database visits:**
 ```typescript
-// Filter out expired visits when fetching
-const { data: dbVisits = [] } = useQuery({
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('content_visits')
-      .select('content_path, content_type, visit_count, expires_at')
-      .eq('user_id', user.id)
-      .gt('expires_at', new Date().toISOString()); // Only non-expired
-    return data || [];
-  },
-  // ...
+// supabase/functions/update-exchange-rate/index.ts
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Fetch live rate from Frankfurter API (free, ECB data)
+    const response = await fetch("https://api.frankfurter.app/latest?from=USD&to=ILS");
+    const data = await response.json();
+    const rate = data.rates.ILS;
+
+    if (!rate || typeof rate !== "number") {
+      throw new Error("Invalid rate received from API");
+    }
+
+    // Update database
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { error } = await supabase
+      .from("calculator_constants")
+      .update({
+        value_numeric: rate,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("constant_key", "EXCHANGE_RATE_USD_ILS")
+      .eq("is_current", true);
+
+    if (error) throw error;
+
+    return new Response(
+      JSON.stringify({ success: true, rate, updated_at: new Date().toISOString() }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Exchange rate update failed:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 });
 ```
 
-**Add expiry filtering for localStorage:**
-```typescript
-// Filter expired local visits (30+ days old)
-const EXPIRY_DAYS = 30;
-const isExpired = (visitedAt: string) => {
-  const visitDate = new Date(visitedAt);
-  const expiryDate = new Date(visitDate.getTime() + EXPIRY_DAYS * 24 * 60 * 60 * 1000);
-  return expiryDate < new Date();
-};
+### 2. Add to config.toml
+
+```toml
+[functions.update-exchange-rate]
+verify_jwt = false
 ```
 
-**Add section completion detection:**
-```typescript
-import { NAV_CONFIG } from '@/lib/navigationConfig';
+### 3. Set Up Daily Cron Job
 
-// Get all items in a section
-const getSectionItems = (sectionKey: string) => {
-  const section = NAV_CONFIG[sectionKey];
-  if (!section) return [];
-  return section.columns.flatMap(col => col.items.map(item => item.href));
-};
+Enable the `pg_cron` and `pg_net` extensions (if not already enabled), then schedule the job:
 
-// Check if all items in a section are visited
-const isSectionComplete = (sectionKey: string) => {
-  const sectionItems = getSectionItems(sectionKey);
-  return sectionItems.every(href => visitedPaths.has(href));
-};
-
-// When section is complete, clear those visits
-useEffect(() => {
-  ['buy', 'rent', 'projects'].forEach(sectionKey => {
-    if (isSectionComplete(sectionKey)) {
-      clearSectionVisits(sectionKey);
-    }
-  });
-}, [visitedPaths]);
+```sql
+-- Run daily at 6:00 AM Israel time (3:00 AM UTC)
+SELECT cron.schedule(
+  'update-exchange-rate-daily',
+  '0 3 * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://eveqhyqxdibjayliazxm.supabase.co/functions/v1/update-exchange-rate',
+    headers := '{"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}'::jsonb
+  );
+  $$
+);
 ```
 
-**Add clear functions:**
-```typescript
-// Clear all history
-const clearHistory = useCallback(async () => {
-  if (user) {
-    await supabase
-      .from('content_visits')
-      .delete()
-      .eq('user_id', user.id);
-    queryClient.invalidateQueries({ queryKey: ['content-visits', user.id] });
-  } else {
-    clearLocalVisits();
-    setLocalVisits({});
-  }
-}, [user, queryClient]);
+### 4. Simplify PreferencesContext
 
-// Clear section-specific visits
-const clearSectionVisits = useCallback(async (sectionKey: string) => {
-  const sectionItems = getSectionItems(sectionKey);
-  if (user) {
-    await supabase
-      .from('content_visits')
-      .delete()
-      .eq('user_id', user.id)
-      .in('content_path', sectionItems);
-    queryClient.invalidateQueries({ queryKey: ['content-visits', user.id] });
-  } else {
-    setLocalVisits(prev => {
-      const updated = { ...prev };
-      sectionItems.forEach(path => delete updated[path]);
-      saveLocalVisits(updated);
-      return updated;
-    });
-  }
-}, [user, queryClient]);
+Remove custom rate logic since the database rate is always current:
+
+```typescript
+// Simplified context - removes isCustomRate, setExchangeRate, setIsCustomRate
+interface PreferencesContextType {
+  currency: Currency;
+  setCurrency: (c: Currency) => void;
+  exchangeRate: number;  // Read-only now
+  areaUnit: AreaUnit;
+  setAreaUnit: (u: AreaUnit) => void;
+}
+```
+
+Also remove these from localStorage storage (no longer needed).
+
+### 5. Simplify PreferencesDialog
+
+**Remove:**
+- The entire "Exchange Rate" section (lines 102-121)
+- `handleRateChange` function
+- `exchangeRate`, `setExchangeRate`, `isCustomRate`, `setIsCustomRate`, `defaultExchangeRate` from destructuring
+
+**Add:**
+- A subtle note under the Currency section
+
+```tsx
+{/* Currency Section */}
+<div className="space-y-1">
+  <h4 className="font-medium text-foreground mb-2">Currency</h4>
+  <RadioOption value="ILS" selected={currency === 'ILS'} onClick={() => setCurrency('ILS')}>
+    ₪ NIS
+  </RadioOption>
+  <RadioOption value="USD" selected={currency === 'USD'} onClick={() => setCurrency('USD')}>
+    $ USD
+  </RadioOption>
+  <p className="text-xs text-muted-foreground mt-2 pl-1">
+    Exchange rate updated daily
+  </p>
+</div>
 ```
 
 ---
 
-## Files to Modify
+## Files to Create/Modify
 
-| File | Changes |
-|------|---------|
-| **Database migration** | Add `expires_at` column and trigger |
-| `src/hooks/useContentVisits.tsx` | Add expiry filtering, section completion, clear functions |
-| `src/components/layout/MegaMenu.tsx` | No changes needed (uses `isVisited` which handles expiry) |
-| `src/components/layout/LearnNav.tsx` | No changes needed (uses `isVisited` which handles expiry) |
-| `src/pages/Settings.tsx` or profile page | Add "Clear browsing history" button |
+| File | Action |
+|------|--------|
+| `supabase/functions/update-exchange-rate/index.ts` | **Create** - Edge function to fetch and update rate |
+| `supabase/config.toml` | **Modify** - Add function config |
+| `src/contexts/PreferencesContext.tsx` | **Modify** - Remove custom rate logic |
+| `src/components/layout/PreferencesDialog.tsx` | **Modify** - Remove input, add note |
+| Database (pg_cron) | **Run SQL** - Set up daily schedule |
 
 ---
 
-## User Experience
+## Frankfurter API Details
 
-### Anonymous User Flow
-1. Visits guides → checkmarks appear
-2. After 30 days without revisiting → checkmarks fade away
-3. If completes all items in "Buy" section → "Buy" checkmarks clear
-4. Can manually clear via settings
+- **URL**: `https://api.frankfurter.app/latest?from=USD&to=ILS`
+- **Updates**: Daily (European Central Bank data)
+- **Cost**: Free, no API key required
+- **Rate limit**: Generous (no documented limit for reasonable usage)
+- **Reliability**: High - maintained open-source project
 
-### Logged-in User Flow
-- Same behavior, but synced across devices
-- Expiry tracked in database
+Example response:
+```json
+{
+  "amount": 1,
+  "base": "USD",
+  "date": "2026-02-07",
+  "rates": {
+    "ILS": 3.6523
+  }
+}
+```
 
-### Why This Works
-- **30 days**: Matches typical property search timeline
-- **Section completion**: Provides closure without cluttering UI
-- **Manual reset**: Gives power users control
-- **Silent expiry**: Old visits just disappear, no UI noise
+---
+
+## Verification Steps
+
+After implementation:
+1. Deploy the edge function
+2. Test it manually by calling the endpoint
+3. Verify the database is updated
+4. Set up the cron job
+5. Confirm the UI shows "Exchange rate updated daily" without the input field
