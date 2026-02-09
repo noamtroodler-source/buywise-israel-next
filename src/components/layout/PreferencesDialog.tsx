@@ -67,7 +67,7 @@ export function PreferencesDialog({ trigger }: PreferencesDialogProps) {
   };
 
   const currencySymbol = currency === 'USD' ? '$' : '₪';
-  const unitLabel = areaUnit === 'sqft' ? 'ft²' : 'm²';
+  const unitLabel = areaUnit === 'sqft' ? 'sqft' : 'm²';
 
   return (
     <DropdownMenu>

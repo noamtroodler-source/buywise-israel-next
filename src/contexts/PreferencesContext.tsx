@@ -30,10 +30,10 @@ interface StoredPreferences {
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>('ILS');
+const [currency, setCurrencyState] = useState<Currency>('USD');
   const [exchangeRate, setExchangeRateState] = useState(FALLBACK_EXCHANGE_RATE);
   const [isCustomRate, setIsCustomRateState] = useState(false);
-  const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqm');
+  const [areaUnit, setAreaUnitState] = useState<AreaUnit>('sqft');
   const [defaultExchangeRate, setDefaultExchangeRate] = useState(FALLBACK_EXCHANGE_RATE);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -65,10 +65,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const prefs: StoredPreferences = JSON.parse(stored);
-        setCurrencyState(prefs.currency || 'ILS');
+        setCurrencyState(prefs.currency || 'USD');
         setExchangeRateState(prefs.exchangeRate || FALLBACK_EXCHANGE_RATE);
         setIsCustomRateState(prefs.isCustomRate || false);
-        setAreaUnitState(prefs.areaUnit || 'sqm');
+        setAreaUnitState(prefs.areaUnit || 'sqft');
       }
     } catch (e) {
       console.error('Failed to load preferences:', e);
@@ -124,13 +124,13 @@ export function usePreferences() {
   if (!context) {
     // Return default values if context is not available (e.g., during HMR or testing)
     return {
-      currency: 'ILS' as Currency,
+      currency: 'USD' as Currency,
       setCurrency: () => {},
       exchangeRate: FALLBACK_EXCHANGE_RATE,
       setExchangeRate: () => {},
       isCustomRate: false,
       setIsCustomRate: () => {},
-      areaUnit: 'sqm' as AreaUnit,
+      areaUnit: 'sqft' as AreaUnit,
       setAreaUnit: () => {},
       defaultExchangeRate: FALLBACK_EXCHANGE_RATE,
     };
@@ -171,7 +171,7 @@ export function useFormatArea() {
   return useCallback((sqm: number): string => {
     if (areaUnit === 'sqft') {
       const sqft = Math.round(sqm * SQM_TO_SQFT);
-      return `${sqft.toLocaleString()} ft²`;
+      return `${sqft.toLocaleString()} sqft`;
     }
     return `${sqm.toLocaleString()} m²`;
   }, [areaUnit]);
@@ -206,7 +206,7 @@ export function useFormatPricePerArea() {
     }
 
     const priceInUSD = displayPrice / exchangeRate;
-    const unit = areaUnit === 'sqft' ? 'ft²' : 'm²';
+    const unit = areaUnit === 'sqft' ? 'sqft' : 'm²';
 
     const formatILS = (val: number) => 
       `₪${val.toLocaleString('en-US', { maximumFractionDigits: 0 })}/${unit}`;
