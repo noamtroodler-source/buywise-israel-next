@@ -1,51 +1,38 @@
 
 
-## Opt-In Agent Profile During Agency Registration + Onboarding Text Update
+## Remove Sticky Navigation from Wizards and Settings Pages
 
-### What Changes
+### Problem
+The Previous/Next navigation bar at the bottom of wizard pages is sticky (`sticky bottom-4`), causing it to float over content as you scroll. You want it to just sit naturally at the bottom of the page content, like in the second screenshot.
 
-**1. New optional step in the agency registration wizard**
+### Changes
 
-After the existing "Coverage & Focus" step (step 2) and before "Review" (step 3), add a new step called **"Your Agent Profile"** that appears conditionally:
+Remove the `sticky bottom-4` class from the navigation container in all affected pages, so the buttons simply appear below the form content in normal document flow.
 
-- At the end of Step 2 (Coverage & Focus), show a toggle/checkbox: **"I'm also an active agent"** with a brief explanation like "List properties and receive inquiries under your own name, within your agency."
-- If they opt in, a new Step 3 appears: **"Your Agent Profile"** -- collecting agent-specific fields:
-  - Real Estate License Number (required if opted in)
-  - Years of Experience (dropdown)
-  - Languages spoken (chip selector, pre-filled with Hebrew/English)
-  - Specializations (chip selector, max 3)
-  - Short bio (optional textarea)
-- The "Review" step shifts to Step 4 (or stays Step 3 if they skip)
-- The step indicator dynamically shows 3 or 4 steps based on the opt-in choice
+**Files to update (8 total):**
 
-**2. Submit logic creates agent profile when opted in**
+| File | Line | Change |
+|------|------|--------|
+| `src/pages/agent/NewPropertyWizard.tsx` | ~240 | Remove `sticky bottom-4` from navigation wrapper |
+| `src/pages/agent/EditPropertyWizard.tsx` | ~397 | Remove `sticky bottom-4` from navigation wrapper |
+| `src/pages/agent/NewProperty.tsx` | ~502 | Remove `sticky bottom-4` from submit wrapper |
+| `src/pages/agent/AgentSettings.tsx` | ~600 | Remove `sticky bottom-4` from save bar |
+| `src/pages/developer/NewProjectWizard.tsx` | ~202 | Remove `sticky bottom-4` from navigation wrapper |
+| `src/pages/developer/EditProjectWizard.tsx` | ~336 | Remove `sticky bottom-4` from navigation wrapper |
+| `src/pages/developer/DeveloperSettings.tsx` | ~687 | Remove `sticky bottom-4` from save bar |
+| `src/pages/agency/AgencySettings.tsx` | ~781 | Remove `sticky bottom-4` from save bar |
 
-In `handleSubmit`, after creating the agency, if the user opted in:
-- Insert into the `agents` table with `agency_id`, `joined_via: 'agency_admin'`, `status: 'active'`
-- Insert the `agent` role into `user_roles` (ignore duplicates)
-- The agent is automatically linked to the agency they just created
+Each change is the same: replace `className="sticky bottom-4"` (or similar) with just `className=""` or remove those two classes entirely, keeping the rest of the styling (the rounded card with backdrop blur, shadow, etc.) intact.
 
-**3. Onboarding checklist text update**
+### Technical Detail
 
-In `AgencyOnboardingProgress.tsx`:
-- Change label from `"Add first team member"` to `"Add additional team member"`
-- Change description from `"Build your team"` to `"Invite someone to join your agency"`
-- Change completion threshold from `teamCount >= 1` to `teamCount >= 2` (since the admin may count as the first agent)
+For each file, the change is simply:
+```
+// Before
+<motion.div variants={itemVariants} className="sticky bottom-4">
 
-**4. Review step shows agent info when opted in**
+// After
+<motion.div variants={itemVariants}>
+```
 
-The Review step will show a section for agent profile details if the user opted in, so they can confirm before submitting.
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/pages/agency/AgencyRegister.tsx` | Add opt-in checkbox on Step 2, conditional agent profile step, dynamic step array, agent creation in handleSubmit, agent fields in review |
-| `src/components/agency/AgencyOnboardingProgress.tsx` | Update team label/description/threshold |
-
-### Edge Cases
-
-- If user already has an agent profile (rare but possible), the agent insert fails gracefully -- non-blocking
-- If user already has agent role, the role insert is non-blocking
-- Draft saving will include the new agent opt-in state and agent form fields
-- The opt-in is completely optional -- if unchecked, the wizard behaves exactly as it does today (3 steps)
+The navigation bar keeps its card-like appearance (border, shadow, backdrop blur) but will sit in normal flow below the form card, exactly matching the second screenshot.
