@@ -1,43 +1,39 @@
 
 
-## Fix Map Marker Hover Glitching
+## Fix Map Marker Glitching -- Root Cause and Solution
 
-### Root Cause
-In `PropertyMarker.tsx`, the Leaflet `divIcon` is recreated every time `isHovered` or `isSelected` changes (line 178 dependencies). Leaflet replaces the entire DOM node when the icon object changes, causing a visible flicker as you move between markers.
+### The Real Problem
 
-### Solution
-Decouple the hover/selected visual styling from the icon creation. The icon should only depend on static property data (price, listing status, badges). Hover and selected states should be applied via CSS class toggling on the existing DOM element, which Leaflet handles without replacing the node.
+When you hover over a property in the list (or a marker on the map), the parent component sets `hoveredPropertyId` in state. This causes **every single `PropertyMarker`** on the map to re-render, even though only 2 markers actually changed (the one being hovered, and the one being un-hovered). With dozens or hundreds of markers, this triggers a cascade of unnecessary React reconciliation work, causing visible flickering/glitching.
+
+The icon itself is stable (good -- we fixed that), but React is still re-rendering every `PropertyMarker` component on every hover change because none of them are memoized.
+
+### Solution: Wrap PropertyMarker in React.memo
+
+`React.memo` will skip re-rendering a marker if its props haven't changed. Since most markers go from `isHovered=false` to `isHovered=false` on any given hover event, they'll be skipped entirely.
 
 ### Changes
 
 **`src/components/map-search/PropertyMarker.tsx`**
+- Wrap the component export with `React.memo` and a custom comparator
+- The comparator checks: `property.id`, `property.price`, `property.listing_status`, `isHovered`, `isSelected` -- only re-render if one of these actually changed
+- This reduces re-renders from N markers to exactly 2 (previous hovered + new hovered)
 
-1. Split the icon into two concerns:
-   - **Base icon** (`useMemo`): depends only on `displayPrice`, `markerStyle.isRental`, `priceDropInfo`, `isHot`, and base colors (neutral/default state). Remove `isHovered` and `isSelected` from its dependencies.
-   - **CSS class**: Add a data attribute or CSS class to the marker wrapper (e.g., `data-hovered`, `data-selected`) and use CSS transitions for the blue highlight and scale effect.
+**`src/components/map-search/PropertyMap.tsx`**
+- Stabilize the `onPropertyHover` and `onPropertySelect` callbacks passed to markers (they're already stable via `useCallback` in `MapSearchLayout`, so no change needed here)
 
-2. Use a `useEffect` to apply/remove a CSS class on the marker's DOM element when `isHovered` or `isSelected` changes, instead of rebuilding the icon:
-   - Add class `marker-active` which applies the blue background, white text, border, scale(1.1), and z-index bump
-   - This avoids Leaflet's icon replacement entirely
+**`src/components/map-search/MapPropertyPopup.tsx`**
+- Add a `key={propertyId}` to the Popup so that when you click a different marker, the popup cleanly unmounts/remounts at the new position instead of animating/glitching between positions
 
-3. Move the hover/selected styles into a global CSS block (or inline `<style>` in the icon HTML) using the class `.marker-active`:
-   ```css
-   .marker-active .property-marker-pill {
-     background-color: hsl(213, 94%, 45%) !important;
-     color: white !important;
-     border-color: white !important;
-   }
-   .marker-active .property-marker-wrapper {
-     transform: scale(1.1);
-   }
-   ```
+### Technical Details
 
-4. Update the `Marker` ref to access its container element and toggle the class in a `useEffect` keyed on `isHovered` and `isSelected`.
-
-**`src/index.css` (or equivalent global styles)**
-- Add the `.marker-active` CSS rules for the hover/selected state so they're applied via class toggle, not icon recreation.
+| File | Change |
+|------|--------|
+| `src/components/map-search/PropertyMarker.tsx` | Wrap with `React.memo` + custom comparison function |
+| `src/components/map-search/MapPropertyPopup.tsx` | Ensure clean popup transition between properties |
 
 ### Result
-- Hovering a marker: smooth blue highlight via CSS class, no DOM rebuild, no flicker
-- Clicking a marker: popup card appears (existing `MapPropertyPopup`), marker stays blue
-- Moving between markers: instant CSS transitions, zero glitching
+- Hovering: only 2 markers re-render (old + new), not all of them -- no more glitching
+- Clicking: popup cleanly switches between properties
+- Scales well as marker count grows
+
