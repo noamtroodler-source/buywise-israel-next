@@ -96,7 +96,7 @@ export function BlogFilters({
   return (
     <div className="space-y-4">
       {/* Sleek Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50 backdrop-blur-sm">
+      <div className="flex flex-col lg:flex-row justify-center items-center gap-4 p-4 rounded-2xl bg-muted/30 border border-border/50 backdrop-blur-sm">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,7 +212,7 @@ export function BlogFilters({
 
         <div 
           ref={scrollContainerRef}
-          className="flex gap-2 pb-2 overflow-x-auto scrollbar-hide"
+          className="flex justify-center gap-2 pb-2 overflow-x-auto scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <Button
@@ -249,7 +249,7 @@ export function BlogFilters({
 
       {/* Active Filters */}
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap justify-center gap-2 items-center">
           <span className="text-xs text-muted-foreground font-medium">Active:</span>
           {selectedCategory && (
             <Badge variant="secondary" className="text-xs gap-1.5 rounded-full px-3 py-1 bg-primary/10 text-primary border-0">
