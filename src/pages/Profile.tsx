@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMyAgency } from '@/hooks/useAgencyManagement';
+import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { ProfileWelcomeHeader } from '@/components/profile/ProfileWelcomeHeader';
 import { BuyerProfileSection } from '@/components/profile/sections/BuyerProfileSection';
 import { MortgageSection } from '@/components/profile/sections/MortgageSection';
@@ -21,6 +23,8 @@ export default function Profile() {
   const { user, signOut } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { isAgent, isAdmin } = useUserRole();
+  const { data: myAgency } = useMyAgency();
+  const { data: developerProfile } = useDeveloperProfile();
   const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
@@ -47,6 +51,10 @@ export default function Profile() {
           email={user?.email}
           isAgent={isAgent}
           isAdmin={isAdmin}
+          isAgencyAdmin={!!myAgency}
+          agencyName={myAgency?.name}
+          isDeveloper={!!developerProfile}
+          developerName={developerProfile?.name}
           onSignOut={handleSignOut}
         />
 

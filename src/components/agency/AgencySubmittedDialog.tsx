@@ -53,7 +53,7 @@ export function AgencySubmittedDialog({ open, onOpenChange }: AgencySubmittedDia
 
   const handleClose = () => {
     onOpenChange(false);
-    navigate('/');
+    navigate('/agency');
   };
 
   return (

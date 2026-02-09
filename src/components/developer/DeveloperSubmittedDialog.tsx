@@ -53,7 +53,7 @@ export function DeveloperSubmittedDialog({ open, onOpenChange }: DeveloperSubmit
 
   const handleClose = () => {
     onOpenChange(false);
-    navigate('/');
+    navigate('/developer');
   };
 
   return (
