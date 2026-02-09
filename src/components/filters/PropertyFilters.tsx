@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
-import { ViewToggle } from '@/components/filters/ViewToggle';
+
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
 import { HoverOnlyTooltip } from '@/components/filters/HoverOnlyTooltip';
@@ -35,6 +35,8 @@ interface PropertyFiltersProps {
   onBuyRentChange?: (type: 'for_sale' | 'for_rent') => void;
   // View toggle context
   activeView?: 'grid' | 'map';
+  // Map mode: hides sort & create alert (moved to list panel), replaces ViewToggle with icon button
+  mapMode?: boolean;
 }
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -109,7 +111,7 @@ const parseCommaNumber = (value: string): number | undefined => {
   return isNaN(num) ? undefined : num;
 };
 
-export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading, showBuyRentToggle, onBuyRentChange, activeView = 'grid' }: PropertyFiltersProps) {
+export function PropertyFilters({ filters, onFiltersChange, listingType, onCreateAlert, showSoldToggle, isSoldView, onSoldToggle, previewCount, isCountLoading, showBuyRentToggle, onBuyRentChange, activeView = 'grid', mapMode = false }: PropertyFiltersProps) {
   const [cityOpen, setCityOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
@@ -778,44 +780,46 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 </Button>
               )}
 
-              {/* Sort */}
-              <div className="flex items-center gap-1">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <Popover open={sortOpen} onOpenChange={setSortOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className="h-10 gap-1 px-2 font-medium hover:bg-muted/50"
-                    >
-                      <span>{getSortLabel()}</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
-                    {SORT_OPTIONS.map(option => (
-                      <button
-                        key={option.value}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
-                          filters.sort_by === option.value 
-                            ? "bg-primary/10 text-primary font-medium" 
-                            : "hover:bg-muted"
-                        )}
-                        onClick={() => {
-                          updateFilter('sort_by', option.value);
-                          setSortOpen(false);
-                        }}
+              {/* Sort - hidden in mapMode (moved to list panel) */}
+              {!mapMode && (
+                <div className="flex items-center gap-1">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <Popover open={sortOpen} onOpenChange={setSortOpen}>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="h-10 gap-1 px-2 font-medium hover:bg-muted/50"
                       >
-                        {filters.sort_by === option.value && <Check className="h-4 w-4" />}
-                        <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              </div>
+                        <span>{getSortLabel()}</span>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
+                      {SORT_OPTIONS.map(option => (
+                        <button
+                          key={option.value}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                            filters.sort_by === option.value 
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "hover:bg-muted"
+                          )}
+                          onClick={() => {
+                            updateFilter('sort_by', option.value);
+                            setSortOpen(false);
+                          }}
+                        >
+                          {filters.sort_by === option.value && <Check className="h-4 w-4" />}
+                          <span className={filters.sort_by !== option.value ? "ml-6" : ""}>{option.label}</span>
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
-              {/* Create Alert Button - Icon only with tooltip */}
-              {onCreateAlert && (
+              {/* Create Alert Button - hidden in mapMode (moved to list panel) */}
+              {!mapMode && onCreateAlert && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
@@ -826,6 +830,26 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Create search alert</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Switch to Grid - only in mapMode */}
+              {mapMode && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-lg"
+                      onClick={() => {
+                        const params = new URLSearchParams(window.location.search);
+                        navigate(`/listings${params.toString() ? `?${params.toString()}` : ''}`);
+                      }}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Switch to grid view</TooltipContent>
                 </Tooltip>
               )}
             </div>
