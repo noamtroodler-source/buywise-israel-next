@@ -400,10 +400,10 @@ export function PropertyMap({
             />
           ))}
         
-        {/* Hover popup (only when no property is click-selected) */}
-        {!showCityOverlay && hoveredPropertyId && !selectedPropertyId && (() => {
-          const hoveredProperty = properties.find(p => p.id === hoveredPropertyId);
-          return hoveredProperty ? <MapHoverPopup property={hoveredProperty} /> : null;
+        {/* Compact popup on click-selected property */}
+        {!showCityOverlay && selectedPropertyId && (() => {
+          const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+          return selectedProperty ? <MapHoverPopup property={selectedProperty} /> : null;
         })()}
 
         {/* Project Markers (Buy mode only, when zoomed in enough) */}
