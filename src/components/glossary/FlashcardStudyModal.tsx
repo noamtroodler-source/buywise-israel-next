@@ -55,29 +55,6 @@ export function FlashcardStudyModal({
     }
   }, [open]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (!open || phase !== 'studying') return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        setIsFlipped(prev => !prev);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handleStillLearning();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handleGotIt();
-      } else if (e.key === 'Escape') {
-        handleExit();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, phase, currentIndex, deckTerms.length]);
-
   const handleSelectDeck = useCallback((deckKey: string) => {
     let selectedTerms: GlossaryTerm[] = [];
 
@@ -136,28 +113,14 @@ export function FlashcardStudyModal({
 
   const handleStillLearning = useCallback(() => {
     if (!currentTerm) return;
-    
+
     setSessionLearning(prev => new Set([...prev, currentTerm.id]));
     setStreak(0);
-    setCardsReviewed(prev => prev + 1);
-    
-    // Re-add the term to the end of the deck so user sees it again
-    setDeckTerms(prev => {
-      const remaining = prev.slice(currentIndex + 1);
-      // Check if this card is already queued later in the deck
-      const alreadyQueued = remaining.some(t => t.id === currentTerm.id);
-      
-      if (!alreadyQueued) {
-        // Add current card to the end of the deck for another review
-        return [...prev, currentTerm];
-      }
-      return prev;
-    });
-    
-    // Move to next card
+
+    // Still Learning = go back one card (like a "left" action)
     setIsFlipped(false);
-    setCurrentIndex(prev => prev + 1);
-  }, [currentTerm, currentIndex]);
+    setCurrentIndex(prev => Math.max(0, prev - 1));
+  }, [currentTerm]);
 
   const handleExit = useCallback(() => {
     if (phase === 'studying' && currentIndex > 0) {
@@ -165,6 +128,29 @@ export function FlashcardStudyModal({
     }
     onClose();
   }, [phase, currentIndex, onClose]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!open || phase !== 'studying') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        setIsFlipped(prev => !prev);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handleStillLearning();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleGotIt();
+      } else if (e.key === 'Escape') {
+        handleExit();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, phase, handleStillLearning, handleGotIt, handleExit]);
 
   const handleStudyAgain = useCallback(() => {
     setPhase('deck_selection');
