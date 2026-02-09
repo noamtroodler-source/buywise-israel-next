@@ -282,14 +282,15 @@ export function FlashcardStudyModal({
                 <Button
                   variant="outline"
                   onClick={handleStillLearning}
-                  className="gap-2"
+                  className="gap-2 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Still Learning
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={handleGotIt}
-                  className="gap-2"
+                  className="gap-2 hover:bg-primary hover:text-primary-foreground hover:border-primary"
                 >
                   Got It!
                   <ArrowRight className="h-4 w-4" />
