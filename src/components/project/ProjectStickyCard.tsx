@@ -109,16 +109,12 @@ export function ProjectStickyCard({ project, developer, representingAgent, selec
               ) : (
                 <span className="font-semibold truncate">{representingAgent?.name}</span>
               )}
-              {representingAgent?.is_verified && (
-              <Shield className="h-4 w-4 text-primary flex-shrink-0" />
-            )}
           </div>
           {representingAgent?.agency_name && (
             <p className="text-sm text-muted-foreground truncate">
               {representingAgent.agency_name}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">Sales Representative</p>
         </div>
       </div>
       <div className="space-y-2">
