@@ -60,7 +60,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation - True Center */}
-        <nav className="hidden md:flex items-center justify-center gap-6">
+        <nav className="hidden lg:flex items-center justify-center gap-6">
           <MegaMenu config={NAV_CONFIG.buy} />
           <MegaMenu config={NAV_CONFIG.projects} />
           <MegaMenu config={NAV_CONFIG.rent} />
@@ -155,7 +155,7 @@ export function Header() {
               </Button>
             )
           ) : (
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2">
               <Button variant="ghost" asChild>
                 <Link to="/auth">Sign In</Link>
               </Button>

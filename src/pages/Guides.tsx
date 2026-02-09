@@ -9,7 +9,7 @@ import { GuideCard } from '@/components/guides';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { GUIDES_BY_PHASE } from '@/lib/navigationConfig';
 import { SupportFooter } from '@/components/shared/SupportFooter';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTrackContentVisit } from '@/hooks/useTrackContentVisit';
 
 import buyingInIsraelHero from '@/assets/guides/buying-in-israel-hero.jpg';
@@ -168,7 +168,7 @@ function GuidesCarousel({ guides, phaseIndex }: GuidesCarouselProps) {
 
 export default function Guides() {
   useTrackContentVisit('guide');
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   return (
     <Layout>
@@ -233,7 +233,7 @@ export default function Guides() {
                 </div>
                 
                 {/* Mobile: Carousel */}
-                {isMobile ? (
+                {!isDesktop ? (
                   <GuidesCarousel guides={phaseGuides} phaseIndex={phaseIndex} />
                 ) : (
                   /* Desktop: Grid */

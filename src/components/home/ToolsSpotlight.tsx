@@ -4,6 +4,7 @@ import { ArrowRight, Calculator, PiggyBank, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const tools = [
   {
@@ -35,8 +36,9 @@ const tools = [
 
 export function ToolsSpotlight() {
   const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   
-  // Show only 2 tools on mobile
+  // Show only 2 tools on phone, all 3 on tablet+
   const displayTools = isMobile ? tools.slice(0, 2) : tools;
 
   return (
@@ -66,7 +68,7 @@ export function ToolsSpotlight() {
         </motion.div>
 
         {/* Tools Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayTools.map((tool, index) => (
             <motion.div
               key={tool.id}

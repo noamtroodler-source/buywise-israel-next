@@ -55,7 +55,7 @@ export function MobileHeaderBack({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border md:hidden -mx-4 px-4 py-3",
+        "sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border lg:hidden -mx-4 px-4 py-3",
         className
       )}
     >

@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, BarChart3, MessageCircle } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 
 const pillars = [
@@ -35,7 +35,8 @@ const pillars = [
 ];
 
 export function ThreePillars() {
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const showCarousel = !isDesktop;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -64,7 +65,7 @@ export function ThreePillars() {
         </motion.div>
 
         {/* Mobile: Horizontal scrollable carousel */}
-        {isMobile ? (
+        {showCarousel ? (
           <div className="relative -mx-4">
             {/* Scroll container */}
             <div

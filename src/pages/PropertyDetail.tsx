@@ -142,7 +142,7 @@ export default function PropertyDetail() {
       
       <div className="container py-6 md:py-8 pb-24 md:pb-8">
         {/* Dual Navigation - Desktop only (mobile has MobileHeaderBack) */}
-        <div className="hidden md:block mb-4">
+        <div className="hidden lg:block mb-4">
           <DualNavigation
             parentLabel={property.listing_status === 'for_rent' ? 'All Rentals' : 'All Properties'}
             parentPath={`/listings?status=${property.listing_status}`}

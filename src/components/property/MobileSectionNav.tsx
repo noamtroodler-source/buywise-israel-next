@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Camera, FileText, Calculator, MapPin, Home } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -23,7 +23,7 @@ interface MobileSectionNavProps {
 }
 
 export function MobileSectionNav({ className }: MobileSectionNavProps) {
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [activeSection, setActiveSection] = useState('photos');
   const [isVisible, setIsVisible] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
@@ -89,8 +89,8 @@ export function MobileSectionNav({ className }: MobileSectionNavProps) {
     }
   };
 
-  // Only show on mobile and when scrolled past hero
-  if (!isMobile || !isVisible) return null;
+  // Only show on mobile/tablet and when scrolled past hero
+  if (isDesktop || !isVisible) return null;
 
   return (
     <motion.nav

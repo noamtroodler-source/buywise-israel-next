@@ -88,7 +88,7 @@ export default function ProjectDetail() {
       <div className="min-h-screen pb-24 lg:pb-8">
         <div className="container py-4 md:py-6">
           {/* Dual Navigation - Desktop only */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <DualNavigation
               parentLabel="All Projects"
               parentPath="/projects"

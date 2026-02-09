@@ -5,7 +5,7 @@ import { ArrowRight, Waves, Building, Mountain, Sun } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { CarouselDots } from '@/components/shared/CarouselDots';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // Import city images
 import telAvivImg from '@/assets/cities/tel-aviv.jpg';
@@ -73,7 +73,7 @@ const regions: Record<Region, { label: string; icon: React.ElementType; cities: 
 export function RegionExplorer() {
   const [activeRegion, setActiveRegion] = useState<Region>('coastal');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'start',
@@ -161,9 +161,9 @@ export function RegionExplorer() {
           })}
         </div>
 
-        {/* Mobile: Horizontal Carousel - Edge-to-edge */}
-        {isMobile && (
-          <div className="sm:hidden -mx-4">
+        {/* Mobile/Tablet: Horizontal Carousel */}
+        {!isDesktop && (
+          <div className="lg:hidden -mx-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeRegion}
@@ -177,7 +177,7 @@ export function RegionExplorer() {
                     {cities.map((city, index) => (
                       <div 
                         key={city.slug} 
-                        className="flex-[0_0_85%] min-w-0 pl-4 first:pl-4"
+                        className="flex-[0_0_85%] sm:flex-[0_0_48%] min-w-0 pl-4 first:pl-4"
                       >
                         <Link
                           to={`/areas/${city.slug}`}
@@ -216,7 +216,7 @@ export function RegionExplorer() {
         )}
 
         {/* Desktop: Cities Grid */}
-        {!isMobile && (
+        {isDesktop && (
           <AnimatePresence mode="wait">
             <motion.div
               key={activeRegion}
@@ -224,7 +224,7 @@ export function RegionExplorer() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="hidden sm:grid sm:grid-cols-4 gap-3"
+              className="hidden lg:grid lg:grid-cols-4 gap-3"
             >
               {cities.map((city, index) => (
                 <motion.div

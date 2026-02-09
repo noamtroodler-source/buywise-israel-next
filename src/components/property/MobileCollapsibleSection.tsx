@@ -1,7 +1,7 @@
 import { useState, useEffect, ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { safeSessionGet, safeSessionSet } from '@/utils/sessionStorage';
 import { cn } from '@/lib/utils';
 
@@ -27,7 +27,7 @@ export function MobileCollapsibleSection({
   alwaysStartClosed = false,
   className,
 }: MobileCollapsibleSectionProps) {
-  const isMobile = useIsMobile();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const storageKey = `section_expanded_${id}`;
   
   // Initialize state - if alwaysStartClosed, ignore session storage
@@ -51,8 +51,8 @@ export function MobileCollapsibleSection({
     }
   };
 
-  // On desktop, always show expanded content
-  if (!isMobile) {
+  // On desktop (1024px+), always show expanded content
+  if (isDesktop) {
     return <div className={className}>{children}</div>;
   }
 

@@ -270,7 +270,7 @@ export function MobileContactBar({
         opacity: isVisible ? 1 : 0 
       }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 md:hidden pb-safe"
+      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 z-50 lg:hidden pb-safe"
     >
       <div className="max-w-lg mx-auto space-y-2">
         {/* Price display */}
