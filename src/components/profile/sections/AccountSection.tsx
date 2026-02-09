@@ -30,7 +30,6 @@ export function AccountSection() {
     setIsClearing(true);
     try {
       await clearHistory();
-      toast.success('Browsing history cleared');
     } catch {
       toast.error('Failed to clear history');
     } finally {

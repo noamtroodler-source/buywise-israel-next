@@ -136,7 +136,6 @@ export function useFavorites() {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['favorites'] });
         queryClient.invalidateQueries({ queryKey: ['favoriteIds'] });
-        toast.success('Property saved to favorites');
       } else {
         // Guest updates are reactive via context - no invalidation needed
         toast.success('Property saved to favorites', {
@@ -217,7 +216,7 @@ export function useFavorites() {
     },
     onSuccess: () => {
       // Don't invalidate savesCount here -- saves are permanent (never decrease)
-      toast.success('Property removed from favorites');
+      // No toast -- UI already reflects the removal
     },
     onSettled: () => {
       if (user) {

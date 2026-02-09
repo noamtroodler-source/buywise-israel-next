@@ -210,7 +210,7 @@ export default function Auth() {
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    toast.success('Welcome to BuyWise Israel!');
+    // No toast -- post-signup suggestions dialog appears next
     // Show post-signup suggestions after onboarding
     setShowPostSignupSuggestions(true);
   };
@@ -240,20 +240,18 @@ export default function Auth() {
           } else {
             toast.error(error.message);
           }
-        } else {
-          setJustSignedUp(true);
-          if (isProfessionalSignup) {
-            toast.success('Account created! Redirecting to complete your registration...');
           } else {
-            toast.success('Account created successfully!');
+            setJustSignedUp(true);
+            if (isProfessionalSignup) {
+              toast.success('Account created! Redirecting to complete your registration...');
+            }
           }
-        }
       } else {
         const { error } = await signIn(data.email, data.password);
         if (error) {
           toast.error('Invalid email or password');
         } else {
-          toast.success('Welcome back!');
+          // No toast -- redirect is the confirmation
           // Respect redirect param, then professional role, then default
           const targetRedirect = getTargetRedirect();
           if (targetRedirect) {

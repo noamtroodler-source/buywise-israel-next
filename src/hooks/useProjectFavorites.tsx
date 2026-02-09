@@ -102,7 +102,6 @@ export function useProjectFavorites() {
       if (user) {
         queryClient.invalidateQueries({ queryKey: ['projectFavorites'] });
         queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
-        toast.success('Project saved to favorites');
       } else {
         // Guest updates are reactive via context - no invalidation needed
         toast.success('Project saved to favorites', {
@@ -141,7 +140,7 @@ export function useProjectFavorites() {
         queryClient.invalidateQueries({ queryKey: ['projectFavoriteIds'] });
       }
       // Guest updates are reactive via context - no invalidation needed
-      toast.success('Project removed from favorites');
+      // No toast -- UI already reflects the removal
     },
     onError: (error) => {
       toast.error('Failed to remove project: ' + (error as Error).message);
