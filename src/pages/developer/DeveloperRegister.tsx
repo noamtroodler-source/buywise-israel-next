@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -81,6 +81,29 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
+const DRAFT_STORAGE_KEY = 'developer_registration_draft';
+
+interface DraftData {
+  formData: typeof defaultFormData;
+  currentStep: number;
+  savedAt: string;
+  isEmailVerified: boolean;
+}
+
+const defaultFormData = {
+  name: '',
+  email: '',
+  phone: '',
+  website: '',
+  description: '',
+  founded_year: undefined as number | undefined,
+  logo_url: '',
+  company_size: '',
+  company_type: '',
+  office_city: '',
+  specialties: [] as string[],
+};
+
 export default function DeveloperRegister() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -93,35 +116,106 @@ export default function DeveloperRegister() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const draftLoadedRef = useRef(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: user?.email || '',
-    phone: '',
-    website: '',
-    description: '',
-    founded_year: undefined as number | undefined,
-    logo_url: '',
-    company_size: '',
-    company_type: '',
-    office_city: '',
-    specialties: [] as string[],
-  });
+  const [formData, setFormData] = useState({ ...defaultFormData, email: user?.email || '' });
+
+  // Scroll to top of wizard on step change
+  const scrollToWizardTop = useCallback(() => {
+    requestAnimationFrame(() => {
+      if (cardRef.current) {
+        const elementPosition = cardRef.current.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - 100;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    scrollToWizardTop();
+  }, [currentStep, scrollToWizardTop]);
 
   // Redirect if already registered
   useEffect(() => {
     if (existingProfile) {
       toast.info('You already have a developer profile');
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
       navigate('/developer');
     }
   }, [existingProfile, navigate]);
 
-  // Redirect if not logged in
+  // ProtectedRoute handles auth redirect with role=developer context
+  // No manual redirect needed here
+
+  // Draft persistence: save on changes (debounced)
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth?tab=signup&role=developer');
+    if (!user || existingProfile || !draftLoadedRef.current) return;
+    const timer = setTimeout(() => {
+      const draft: DraftData = {
+        formData,
+        currentStep,
+        savedAt: new Date().toISOString(),
+        isEmailVerified,
+      };
+      try {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+      } catch (e) {
+        console.warn('Failed to save developer draft:', e);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData, currentStep, isEmailVerified, user, existingProfile]);
+
+  // Draft recovery: check on mount
+  useEffect(() => {
+    if (!user || profileLoading || existingProfile || draftLoadedRef.current) return;
+    draftLoadedRef.current = true;
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft: DraftData = JSON.parse(saved);
+        // Only offer resume if draft is less than 7 days old
+        const savedAt = new Date(draft.savedAt);
+        const daysSinceSave = (Date.now() - savedAt.getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSinceSave < 7 && draft.formData?.name) {
+          setShowResumePrompt(true);
+        } else {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load developer draft:', e);
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, profileLoading, existingProfile]);
+
+  const resumeDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) {
+        const draft: DraftData = JSON.parse(saved);
+        setFormData(draft.formData);
+        setCurrentStep(draft.currentStep);
+        setIsEmailVerified(draft.isEmailVerified);
+        if (draft.formData.logo_url) {
+          setLogoPreview(null); // Can't restore file preview, user must re-upload
+          toast.info('Please re-upload your logo if needed');
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to resume developer draft:', e);
+    }
+    setShowResumePrompt(false);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setShowResumePrompt(false);
+  };
 
   const updateField = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -198,12 +292,14 @@ export default function DeveloperRegister() {
   const goNext = () => {
     if (validateStep(currentStep) && currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
+      scrollToWizardTop();
     }
   };
 
   const goBack = () => {
     if (currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      scrollToWizardTop();
     }
   };
 
@@ -277,6 +373,9 @@ export default function DeveloperRegister() {
         founded_year: formData.founded_year,
         logo_url: formData.logo_url || undefined,
       });
+      
+      // Clear draft on successful submission
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
       
       // Send welcome email
       try {
@@ -783,8 +882,30 @@ export default function DeveloperRegister() {
               })}
             </div>
 
+            {/* Resume Draft Prompt */}
+            {showResumePrompt && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-primary/5 border border-primary/20 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              >
+                <div>
+                  <h4 className="font-semibold text-sm">Resume where you left off?</h4>
+                  <p className="text-sm text-muted-foreground">We found a saved draft of your registration.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={discardDraft} className="rounded-xl">
+                    Start Fresh
+                  </Button>
+                  <Button size="sm" onClick={resumeDraft} className="rounded-xl">
+                    Resume
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
             {/* Premium Main Card */}
-            <Card className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+            <Card ref={cardRef} className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
               <CardHeader className="text-center pb-2 pt-8">
                 <motion.div 
                   key={currentStep}
