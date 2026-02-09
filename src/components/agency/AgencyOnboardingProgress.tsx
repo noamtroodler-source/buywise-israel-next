@@ -108,7 +108,7 @@ export function AgencyOnboardingProgress({ agency, teamCount, listingsCount = 0 
     },
     {
       id: 'team',
-      label: 'Invite first team member',
+      label: 'Add first team member',
       description: 'Build your team',
       icon: Users,
       isComplete: teamCount >= 1,
