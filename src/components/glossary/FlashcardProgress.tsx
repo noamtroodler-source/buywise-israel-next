@@ -4,6 +4,7 @@ import { Flame, CheckCircle2, RotateCcw } from 'lucide-react';
 interface FlashcardProgressProps {
   current: number;
   total: number;
+  originalTotal: number;
   masteredInSession: number;
   stillLearningInSession: number;
   streak: number;
@@ -12,11 +13,16 @@ interface FlashcardProgressProps {
 export function FlashcardProgress({
   current,
   total,
+  originalTotal,
   masteredInSession,
   stillLearningInSession,
   streak,
 }: FlashcardProgressProps) {
-  const progressPercent = total > 0 ? (current / total) * 100 : 0;
+  // Show progress as mastered cards vs original deck size for clearer UX
+  const progressPercent = originalTotal > 0 ? (masteredInSession / originalTotal) * 100 : 0;
+  
+  // Number of cards remaining (including re-queued ones)
+  const cardsRemaining = total - current + 1;
 
   return (
     <div className="space-y-3">
@@ -24,6 +30,11 @@ export function FlashcardProgress({
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
           Card {current} of {total}
+          {total > originalTotal && (
+            <span className="text-xs ml-1">
+              (+{total - originalTotal} to review)
+            </span>
+          )}
         </span>
         {streak >= 3 && (
           <span className="flex items-center gap-1 text-primary font-medium animate-pulse">
