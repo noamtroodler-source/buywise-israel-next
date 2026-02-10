@@ -241,6 +241,10 @@ function applySorting(query: any, filters?: PropertyFilters) {
   switch (filters.sort_by) {
     case 'newest':
       return query.order('created_at', { ascending: false });
+    case 'price_drop':
+      return query
+        .order('price_reduced_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
     case 'price_asc':
       return query.order('price', { ascending: true });
     case 'price_desc':
