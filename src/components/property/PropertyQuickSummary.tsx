@@ -235,11 +235,6 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                   {formatPrice(property.original_price, property.currency || 'ILS')}
                 </span>
               )}
-              {pricePerSqm && (
-                <span className="text-muted-foreground text-sm">
-                  {formatPricePerArea(pricePerSqm, property.currency || 'ILS')}
-                </span>
-              )}
             </div>
             
             {/* Price Drop Badge */}
