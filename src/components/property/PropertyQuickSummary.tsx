@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap, Star } from 'lucide-react';
+import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap, Star, TrendingDown } from 'lucide-react';
  import { Armchair, Refrigerator, Tv, UtensilsCrossed, WashingMachine } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
@@ -16,6 +16,8 @@ interface PropertyQuickSummaryProps {
   property: {
     id: string;
     price: number;
+    original_price?: number | null;
+    price_reduced_at?: string | null;
     currency?: string;
     title: string;
     address: string;
@@ -228,12 +230,38 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               <h1 className="text-3xl font-bold text-foreground">
                 {formatPrice(property.price, property.currency || 'ILS')}
               </h1>
+              {property.original_price && property.original_price > property.price && (
+                <span className="text-lg text-muted-foreground line-through">
+                  {formatPrice(property.original_price, property.currency || 'ILS')}
+                </span>
+              )}
               {pricePerSqm && (
                 <span className="text-muted-foreground text-sm">
                   {formatPricePerArea(pricePerSqm, property.currency || 'ILS')}
                 </span>
               )}
             </div>
+            
+            {/* Price Drop Badge */}
+            {property.original_price && property.original_price > property.price && (() => {
+              const reduction = property.original_price - property.price;
+              const pct = Math.round((reduction / property.original_price) * 100);
+              const reducedAt = property.price_reduced_at ? new Date(property.price_reduced_at) : null;
+              const daysAgo = reducedAt ? Math.floor((Date.now() - reducedAt.getTime()) / (1000 * 60 * 60 * 24)) : null;
+              return (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className="bg-primary/10 text-primary border-primary/20 text-sm font-medium">
+                    <TrendingDown className="h-3.5 w-3.5 mr-1" />
+                    Reduced {formatPrice(reduction, property.currency || 'ILS')} ({pct}%)
+                  </Badge>
+                  {daysAgo !== null && (
+                    <span className="text-xs text-muted-foreground">
+                      {daysAgo === 0 ? 'Price reduced today' : daysAgo === 1 ? 'Price reduced yesterday' : `Price reduced ${daysAgo} days ago`}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
             
             {/* Estimated Monthly Payment Range - Only show when mortgage is enabled */}
             {showMortgageEstimate && mortgageEstimate && mortgageEstimate.hasCustomPreferences !== false && (

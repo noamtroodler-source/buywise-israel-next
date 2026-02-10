@@ -239,6 +239,9 @@ export function useProperties(filters?: PropertyFilters) {
           case 'rooms_desc':
             query = query.order('bedrooms', { ascending: false });
             break;
+          case 'price_drop':
+            query = query.order('price_reduced_at', { ascending: false, nullsFirst: false });
+            break;
         }
       }
 
