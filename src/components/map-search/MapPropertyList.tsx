@@ -45,6 +45,7 @@ const InfiniteScrollSentinel = memo(function InfiniteScrollSentinel({
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest Listings' },
+  { value: 'price_drop', label: 'Price Drops First' },
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
   { value: 'size_desc', label: 'Largest First' },
