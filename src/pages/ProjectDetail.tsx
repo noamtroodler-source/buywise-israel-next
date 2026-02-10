@@ -5,6 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { useProject, useProjectUnits } from '@/hooks/useProjects';
 import { useProjectViewTracking } from '@/hooks/useProjectViewTracking';
+import { useProjectFavorites } from '@/hooks/useProjectFavorites';
 import { useAuth } from '@/hooks/useAuth';
 import { useBuyerProfile, getEffectiveBuyerType } from '@/hooks/useBuyerProfile';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
@@ -42,6 +43,7 @@ export default function ProjectDetail() {
   
   // Derive buyer type from profile for personalization
   const derivedBuyerType = buyerProfile ? getEffectiveBuyerType(buyerProfile) : null;
+  const { toggleProjectFavorite, isProjectFavorite } = useProjectFavorites();
 
   // Track project views
   useProjectViewTracking(project?.id);
@@ -105,7 +107,7 @@ export default function ProjectDetail() {
             <div className="lg:col-span-2 space-y-4 md:space-y-8">
             {/* Hero - Edge-to-edge on mobile */}
             <div className="-mx-4 md:mx-0">
-              <ProjectHero project={project} />
+              <ProjectHero project={project} onSave={() => toggleProjectFavorite(project.id)} isSaved={isProjectFavorite(project.id)} />
             </div>
               {/* Quick Summary - Price, Title, Stats */}
               <ProjectQuickSummary 
