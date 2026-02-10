@@ -1,94 +1,52 @@
 
 
-# Seed Mock Price Drop Data
+# Fix: Create Missing Agent & Developer Profiles for Your Account
 
-## Current State
-All the UI components are already built and ready:
-- **PropertyQuickSummary** (detail page): Shows strikethrough original price + "Reduced X (Y%)" badge + "Price reduced N days ago"
-- **PropertyCard** (grid/list): Shows "Price Drop" badge on image + strikethrough price
-- **MapPropertyCard** (map sidebar): Shows strikethrough price
-- **PropertyMarker** (map pins): Shows down-arrow indicator on markers
-- **Sort option**: "Price Drops First" already exists in filter dropdowns
+## The Problem
+Your account has the `agent` and `developer` roles assigned, but no matching records in the `agents` or `developers` tables. The property creation wizard requires an agent profile to exist -- without it, saving or submitting a listing silently fails.
 
-The problem: zero properties have `original_price` or `price_reduced_at` set, so none of this shows up.
+This is a data issue specific to your account, not a systemic bug. The registration flows (`useAgentRegistration`, `useDeveloperRegistration`) correctly create both the role and the profile record together.
 
-## What This Migration Does
+## The Fix
 
-Run a single SQL migration that directly sets `original_price` and `price_reduced_at` on a realistic subset of existing mock listings:
+### Step 1: Insert missing agent profile
+Run a database migration to create the agent record for your user ID, linking it to your existing account info.
 
-**For Sale properties (~150 listings, ~10% of 1,554)**
-- Spread across multiple cities (Tel Aviv, Jerusalem, Herzliya, Netanya, Haifa, etc.)
-- Realistic reduction amounts: 3-8% (typical Israeli market drops)
-- Varied timing: some reduced today, some 2 days ago, some 1-2 weeks ago, some a month ago
+### Step 2: Insert missing developer profile  
+Similarly create the developer record.
 
-**For Rent properties (~50 listings, ~3% of 1,554)**
-- Smaller absolute drops (rental reductions are more modest)
-- Reduction amounts: 3-10% of monthly rent
-- Recent timing (rentals adjust faster)
-
-**Projects (~3-5 projects)**
-- Set `original_price_from` and `price_reduced_at` on a few projects
+Both will use your existing profile data (name, email) and be set to `active` status so you can immediately use the agent dashboard and create listings.
 
 ## Technical Details
 
-**Single migration file** with SQL like:
+**Database migration (new):**
 
 ```sql
--- Seed ~150 for_sale properties with price drops (3-8% reduction)
-UPDATE properties
-SET 
-  original_price = price + ROUND(price * (0.03 + RANDOM() * 0.05)),
-  price_reduced_at = NOW() - (FLOOR(RANDOM() * 30) || ' days')::interval
-WHERE id IN (
-  SELECT id FROM properties 
-  WHERE listing_status = 'for_sale' 
-    AND original_price IS NULL
-  ORDER BY RANDOM() 
-  LIMIT 150
-);
+-- Create missing agent profile
+INSERT INTO agents (user_id, name, email, status)
+SELECT 
+  '7e7d2499-f0ff-4f46-920c-f565bde6e532',
+  COALESCE(p.full_name, 'Noam Troodler'),
+  'noam.troodler@gmail.com',
+  'active'
+FROM profiles p
+WHERE p.id = '7e7d2499-f0ff-4f46-920c-f565bde6e532'
+ON CONFLICT DO NOTHING;
 
--- Seed ~50 for_rent properties with price drops
-UPDATE properties
-SET
-  original_price = price + ROUND(price * (0.03 + RANDOM() * 0.10)),
-  price_reduced_at = NOW() - (FLOOR(RANDOM() * 14) || ' days')::interval
-WHERE id IN (
-  SELECT id FROM properties 
-  WHERE listing_status = 'for_rent' 
-    AND original_price IS NULL
-  ORDER BY RANDOM() 
-  LIMIT 50
-);
-
--- Seed 3 projects with price drops
-UPDATE projects
-SET
-  original_price_from = price_from + ROUND(price_from * (0.03 + RANDOM() * 0.05)),
-  price_reduced_at = NOW() - (FLOOR(RANDOM() * 21) || ' days')::interval
-WHERE id IN (
-  SELECT id FROM projects
-  WHERE original_price_from IS NULL
-    AND price_from IS NOT NULL
-  ORDER BY RANDOM()
-  LIMIT 3
-);
+-- Create missing developer profile
+INSERT INTO developers (user_id, name, slug, email, status, verification_status, is_verified, total_projects)
+VALUES (
+  '7e7d2499-f0ff-4f46-920c-f565bde6e532',
+  'Noam Troodler',
+  'noam-troodler',
+  'noam.troodler@gmail.com',
+  'approved',
+  'approved',
+  true,
+  0
+)
+ON CONFLICT DO NOTHING;
 ```
 
-This uses `RANDOM()` so each property gets a unique, realistic drop percentage and date.
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| Database migration (new) | Seed `original_price` + `price_reduced_at` on ~200 properties and ~3 projects |
-
-No code changes needed -- all UI components already handle these fields.
-
-## After This
-
-You'll immediately see:
-- "Price Drop" badges on listing cards in search results
-- Down-arrow indicators on map markers
-- Strikethrough prices with "Reduced" badges on detail pages
-- "Price Drops First" sort actually returning results
+No code changes needed. After this migration, the agent dashboard and property creation wizard will work immediately.
 
