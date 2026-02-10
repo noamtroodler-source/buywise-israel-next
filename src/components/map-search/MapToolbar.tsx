@@ -67,7 +67,7 @@ export function MapToolbar({
   const isMobile = useIsMobile();
   const [drawMenuOpen, setDrawMenuOpen] = useState(false);
 
-  const buttonSize = isMobile ? 'h-10 w-10' : 'h-8 w-8';
+  const buttonSize = isMobile ? 'h-11 w-11' : 'h-8 w-8';
   const iconSize = isMobile ? 'h-4 w-4' : 'h-3.5 w-3.5';
 
   const handleZoomIn = useCallback(() => {
@@ -116,7 +116,7 @@ export function MapToolbar({
 
   return (
     <div 
-      className="absolute top-4 right-4 z-[40] flex flex-col gap-1.5"
+      className={cn("absolute right-4 z-[40] flex flex-col gap-1.5", isMobile ? "top-14" : "top-4")}
       role="toolbar"
       aria-label="Map controls"
       aria-orientation="vertical"

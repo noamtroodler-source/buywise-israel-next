@@ -9,6 +9,7 @@ import { ProjectMarker } from './ProjectMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 
 import { MapToolbar } from './MapToolbar';
 import { SavedLocationsLayer } from './SavedLocationsLayer';
@@ -87,7 +88,6 @@ function MapBoundsListener({
 
   const handleMoveEnd = useCallback(() => {
     if (isFlyingRef.current) return;
-    if (!searchAsMove) return;
     
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -98,6 +98,8 @@ function MapBoundsListener({
       const center = map.getCenter();
       const zoom = map.getZoom();
       
+      // Always report bounds for position tracking (URL, zoom level, etc.)
+      // The parent (MapSearchLayout) gates property queries via frozenBounds
       onBoundsChange(
         {
           north: bounds.getNorth(),
@@ -109,7 +111,7 @@ function MapBoundsListener({
         zoom
       );
     }, 300);
-  }, [map, onBoundsChange, searchAsMove, isFlyingRef]);
+  }, [map, onBoundsChange, isFlyingRef]);
 
   useMapEvents({
     moveend: handleMoveEnd,
@@ -251,6 +253,8 @@ export function PropertyMap({
 }: PropertyMapProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { recentPropertyIds } = useRecentlyViewed();
+  const viewedPropertyIds = useMemo(() => new Set(recentPropertyIds), [recentPropertyIds]);
   const { data: savedLocations } = useSavedLocations();
   const mapRef = useRef<L.Map>(null);
   const isFlyingRef = useRef(false);
@@ -463,6 +467,7 @@ export function PropertyMap({
             zoom={currentZoom}
             hoveredPropertyId={hoveredPropertyId}
             selectedPropertyId={selectedPropertyId}
+            viewedPropertyIds={viewedPropertyIds}
             onHover={onPropertyHover}
             onClick={onPropertySelect}
           />
@@ -518,6 +523,13 @@ export function PropertyMap({
         visible={showSearchButton}
         onClick={handleSearchThisArea}
       />
+
+      {/* Map empty state */}
+      {properties.length === 0 && currentZoom >= 10 && !showCityOverlay && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[40] bg-background/95 backdrop-blur-sm px-4 py-2.5 rounded-full shadow-md border text-sm text-muted-foreground">
+          No properties here. Try zooming out or adjusting filters.
+        </div>
+      )}
 
       {/* Map Toolbar */}
       <MapToolbar

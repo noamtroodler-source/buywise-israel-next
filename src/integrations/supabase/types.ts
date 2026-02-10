@@ -4585,6 +4585,13 @@ export type Database = {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
       }
+      get_city_property_counts: {
+        Args: { p_listing_status: string }
+        Returns: {
+          city: string
+          count: number
+        }[]
+      }
       get_nearby_sold_comps: {
         Args: {
           p_city: string

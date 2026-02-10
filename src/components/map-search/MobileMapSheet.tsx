@@ -273,11 +273,11 @@ export function MobileMapSheet({
         {/* Peek Preview */}
         {sheetState === 'peek' && properties.length > 0 && (
           <div className="px-4 pb-2">
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-              {properties.slice(0, 5).map((property) => (
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+              {properties.slice(0, 8).map((property) => (
                 <div 
                   key={property.id} 
-                  className="flex-shrink-0 w-[240px]"
+                  className="flex-shrink-0 w-[280px] snap-start"
                 >
                   <MapPropertyCard
                     property={property}

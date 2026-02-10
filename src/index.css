@@ -252,7 +252,7 @@
    Map Marker Styles
    ========================= */
 
-/* Property price markers */
+/* Property price markers - legacy (kept for backward compat) */
 .property-marker {
   white-space: nowrap;
   padding: 6px 12px;
@@ -265,28 +265,9 @@
   border: 2px solid transparent;
 }
 
-.property-marker.for-sale {
-  background: hsl(213 94% 45%);
-  color: white;
-}
-
-.property-marker.for-rent {
-  background: hsl(142 76% 36%);
-  color: white;
-}
-
-.property-marker.hovered,
-.property-marker.selected {
-  transform: scale(1.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  border-color: white;
-  z-index: 1000 !important;
-}
-
-/* Cluster markers - white background with blue text for readability */
+/* Cluster markers */
 .cluster-marker {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: white;
@@ -294,60 +275,15 @@
   border-radius: 9999px;
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid hsl(213 94% 75%);
 }
 
 .cluster-marker:hover {
   transform: scale(1.08);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.cluster-marker.small {
-  width: 50px;
-  height: 50px;
-}
-
-.cluster-marker.medium {
-  width: 65px;
-  height: 65px;
-}
-
-.cluster-marker.large {
-  width: 80px;
-  height: 80px;
-}
-
-.cluster-marker .cluster-count {
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.cluster-marker.small .cluster-count {
-  font-size: 13px;
-}
-
-.cluster-marker.medium .cluster-count {
-  font-size: 15px;
-}
-
-.cluster-marker.large .cluster-count {
-  font-size: 18px;
-}
-
-.cluster-marker .cluster-price {
-  opacity: 0.85;
-  line-height: 1.2;
-}
-
-.cluster-marker.small .cluster-price {
-  font-size: 9px;
-}
-
-.cluster-marker.medium .cluster-price {
-  font-size: 10px;
-}
-
-.cluster-marker.large .cluster-price {
-  font-size: 11px;
 }
 
 /* Property marker wrapper transitions */
@@ -376,6 +312,11 @@
 
 .marker-active .property-marker-pointer-inner {
   border-top-color: hsl(213, 94%, 45%) !important;
+}
+
+/* Viewed marker - subtle opacity reduction */
+.marker-viewed .property-marker-pill {
+  opacity: 0.65;
 }
 
 /* =========================

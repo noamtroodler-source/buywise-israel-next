@@ -12,6 +12,7 @@ interface MarkerClusterLayerProps {
   zoom: number;
   hoveredPropertyId: string | null;
   selectedPropertyId: string | null;
+  viewedPropertyIds?: Set<string>;
   onHover: (id: string | null) => void;
   onClick: (id: string | null) => void;
 }
@@ -22,6 +23,7 @@ export function MarkerClusterLayer({
   zoom,
   hoveredPropertyId,
   selectedPropertyId,
+  viewedPropertyIds,
   onHover,
   onClick,
 }: MarkerClusterLayerProps) {
@@ -76,6 +78,7 @@ export function MarkerClusterLayer({
               property={property}
               isHovered={hoveredPropertyId === property.id}
               isSelected={selectedPropertyId === property.id}
+              isViewed={viewedPropertyIds?.has(property.id)}
               onHover={onHover}
               onClick={onClick}
             />
@@ -119,6 +122,7 @@ export function MarkerClusterLayer({
             property={property}
             isHovered={hoveredPropertyId === property.id}
             isSelected={selectedPropertyId === property.id}
+            isViewed={viewedPropertyIds?.has(property.id)}
             onHover={onHover}
             onClick={onClick}
           />
