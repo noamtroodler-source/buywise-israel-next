@@ -435,18 +435,6 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
             </TooltipContent>
           </Tooltip>
 
-          {/* Price per sqm */}
-          {pricePerSqm && (
-            <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-lg bg-muted/50">
-              <DollarSign className="h-5 w-5 text-muted-foreground shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {formatPricePerArea(pricePerSqm, property.currency || 'ILS')}
-                </p>
-                <p className="text-xs text-muted-foreground">Price/{areaUnitLabel}</p>
-              </div>
-            </div>
-          )}
 
           {/* Lot Size (only for houses) */}
           {property.lot_size_sqm && (
