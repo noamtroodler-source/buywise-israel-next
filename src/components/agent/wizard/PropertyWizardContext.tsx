@@ -50,6 +50,9 @@ export interface PropertyWizardData {
    
    // Featured highlight - agent's standout feature
    featured_highlight: string;
+   
+   // Edit mode: the saved/published price for comparison
+   savedPrice?: number;
   
   // Step 4: Photos
   images: string[];

@@ -145,6 +145,7 @@ function EditWizardContent({ propertyId }: EditWizardContentProps) {
         highlights: [],
          furniture_items: (property as any).furniture_items || [],
          featured_highlight: (property as any).featured_highlight || '',
+         savedPrice: property.price || undefined,
       };
       loadFromSaved(wizardData);
       setHasLoaded(true);
