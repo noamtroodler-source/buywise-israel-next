@@ -11,6 +11,7 @@ import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
 import { MapOnboardingHints } from './MapOnboardingHints';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
+import { MobileCitySheet } from './MobileCitySheet';
 
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
@@ -102,6 +103,15 @@ export default function MapSearchLayout() {
   
   // Alert dialog state
   const [showAlertDialog, setShowAlertDialog] = useState(false);
+  
+  // Scroll-to-property state (for "Find in list" from popup)
+  const [scrollToPropertyId, setScrollToPropertyId] = useState<string | null>(null);
+  
+  const handleFindInList = useCallback((propertyId: string) => {
+    setScrollToPropertyId(propertyId);
+    // Clear after a tick to allow re-triggering
+    setTimeout(() => setScrollToPropertyId(null), 100);
+  }, []);
   
   // Get listing status from URL
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -488,6 +498,7 @@ export default function MapSearchLayout() {
     commuteFilter,
     savedLocationsData: savedLocations,
     onCommuteFilterChange: setCommuteFilter,
+    onFindInList: handleFindInList,
   };
 
   // Mobile layout
@@ -546,6 +557,17 @@ export default function MapSearchLayout() {
           isCountLoading={isFetching}
           currency="ILS"
           exchangeRate={1}
+        />
+
+        {/* Mobile City Sheet */}
+        <MobileCitySheet
+          open={mobileCityOpen}
+          onOpenChange={setMobileCityOpen}
+          onCitySelect={(city) => {
+            handleFiltersChange({ ...filters, city });
+          }}
+          currentCity={filters.city}
+          listingStatus={listingStatus}
         />
 
         {/* Create Alert Dialog */}
@@ -640,6 +662,7 @@ export default function MapSearchLayout() {
             sortBy={filters.sort_by}
             onSortChange={(sort) => handleFiltersChange({ ...filters, sort_by: sort })}
             onCreateAlert={() => setShowAlertDialog(true)}
+            scrollToPropertyId={scrollToPropertyId}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

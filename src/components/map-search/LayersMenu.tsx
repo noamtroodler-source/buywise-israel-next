@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Layers, Train, Users, Thermometer, MapPin } from 'lucide-react';
+import { Layers, Train, Users, Thermometer, MapPin, Hexagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayersMenuProps {
@@ -16,11 +16,14 @@ interface LayersMenuProps {
   showSavedLocations: boolean;
   onToggleSavedLocations: () => void;
   hasSavedLocations: boolean;
+  showNeighborhoodBoundaries?: boolean;
+  onToggleNeighborhoodBoundaries?: () => void;
   buttonClassName?: string;
   iconClassName?: string;
 }
 
 const LAYERS = [
+  { key: 'neighborhoods', label: 'Neighborhoods', icon: Hexagon },
   { key: 'trainStations', label: 'Train Stations', icon: Train },
   { key: 'angloCommunity', label: 'Anglo Community', icon: Users },
   { key: 'priceHeatmap', label: 'Price Heatmap', icon: Thermometer },
@@ -37,10 +40,13 @@ export function LayersMenu({
   showSavedLocations,
   onToggleSavedLocations,
   hasSavedLocations,
+  showNeighborhoodBoundaries = true,
+  onToggleNeighborhoodBoundaries,
   buttonClassName,
   iconClassName,
 }: LayersMenuProps) {
   const layerStates: Record<string, { checked: boolean; toggle: () => void }> = {
+    neighborhoods: { checked: showNeighborhoodBoundaries, toggle: onToggleNeighborhoodBoundaries || (() => {}) },
     trainStations: { checked: showTrainStations, toggle: onToggleTrainStations },
     angloCommunity: { checked: showAngloCommunity, toggle: onToggleAngloCommunity },
     priceHeatmap: { checked: showPriceHeatmap, toggle: onTogglePriceHeatmap },
@@ -49,15 +55,16 @@ export function LayersMenu({
 
   const activeCount = useMemo(() => {
     let count = 0;
+    if (showNeighborhoodBoundaries) count++;
     if (showTrainStations) count++;
     if (showAngloCommunity) count++;
     if (showPriceHeatmap) count++;
     if (hasSavedLocations && showSavedLocations) count++;
     return count;
-  }, [showTrainStations, showAngloCommunity, showPriceHeatmap, showSavedLocations, hasSavedLocations]);
+  }, [showNeighborhoodBoundaries, showTrainStations, showAngloCommunity, showPriceHeatmap, showSavedLocations, hasSavedLocations]);
 
   const visibleLayers = LAYERS.filter(
-    l => l.key !== 'savedLocations' || hasSavedLocations
+    l => (l.key !== 'savedLocations' || hasSavedLocations) && (l.key !== 'neighborhoods' || onToggleNeighborhoodBoundaries)
   );
 
   return (

@@ -43,6 +43,8 @@ interface MapToolbarProps {
   onTogglePriceHeatmap: () => void;
   showAngloCommunity: boolean;
   onToggleAngloCommunity: () => void;
+  showNeighborhoodBoundaries?: boolean;
+  onToggleNeighborhoodBoundaries?: () => void;
   // Keyboard shortcuts
   onShowKeyboardShortcuts?: () => void;
 }
@@ -62,6 +64,8 @@ export function MapToolbar({
   onTogglePriceHeatmap,
   showAngloCommunity,
   onToggleAngloCommunity,
+  showNeighborhoodBoundaries,
+  onToggleNeighborhoodBoundaries,
   onShowKeyboardShortcuts,
 }: MapToolbarProps) {
   const isMobile = useIsMobile();
@@ -211,6 +215,8 @@ export function MapToolbar({
           showSavedLocations={showSavedLocations}
           onToggleSavedLocations={onToggleSavedLocations}
           hasSavedLocations={hasSavedLocations}
+          showNeighborhoodBoundaries={showNeighborhoodBoundaries}
+          onToggleNeighborhoodBoundaries={onToggleNeighborhoodBoundaries}
           buttonClassName={btnBase}
           iconClassName={iconSize}
         />

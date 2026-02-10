@@ -16,9 +16,10 @@ interface MapPropertyPopupProps {
   onClose: () => void;
   savedLocations?: SavedLocation[];
   onNavigate?: (direction: 'prev' | 'next') => void;
+  onFindInList?: (propertyId: string) => void;
 }
 
-export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations, onNavigate }: MapPropertyPopupProps) {
+export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations, onNavigate, onFindInList }: MapPropertyPopupProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [imageIndex, setImageIndex] = useState(0);
@@ -180,6 +181,16 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
               </button>
             )}
           </div>
+
+          {/* Find in list */}
+          {onFindInList && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onFindInList(propertyId); }}
+              className="text-xs text-primary hover:underline w-full text-center"
+            >
+              Find in list
+            </button>
+          )}
 
           {/* Commute Info (if user has saved locations) */}
           {savedLocations && savedLocations.length > 0 && (

@@ -4,6 +4,7 @@ import { PropertyMap } from './PropertyMap';
 import { MapPropertyCard } from './MapPropertyCard';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, ChevronUp, ChevronDown, List, Map } from 'lucide-react';
 import type { MapBounds } from './MapSearchLayout';
 import type { Polygon } from '@/lib/utils/geometry';
@@ -271,22 +272,37 @@ export function MobileMapSheet({
         )}
 
         {/* Peek Preview */}
-        {sheetState === 'peek' && properties.length > 0 && (
+        {sheetState === 'peek' && (
           <div className="px-4 pb-2">
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
-              {properties.slice(0, 8).map((property) => (
-                <div 
-                  key={property.id} 
-                  className="flex-shrink-0 w-[280px] snap-start"
-                >
-                  <MapPropertyCard
-                    property={property}
-                    isHovered={hoveredPropertyId === property.id}
-                    onHover={onPropertyHover}
-                    onSelect={onPropertySelect}
-                  />
-                </div>
-              ))}
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+              {isLoading ? (
+                // Skeleton peek cards
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-[280px] snap-start">
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <Skeleton className="h-20 w-full rounded-md" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                ))
+              ) : properties.length > 0 ? (
+                properties.slice(0, 8).map((property) => (
+                  <div 
+                    key={property.id} 
+                    className="flex-shrink-0 w-[280px] snap-start"
+                  >
+                    <MapPropertyCard
+                      property={property}
+                      isHovered={hoveredPropertyId === property.id}
+                      onHover={onPropertyHover}
+                      onSelect={onPropertySelect}
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">No properties in this area</p>
+              )}
             </div>
           </div>
         )}
