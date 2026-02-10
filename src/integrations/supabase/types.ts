@@ -4342,6 +4342,81 @@ export type Database = {
           },
         ]
       }
+      trusted_professionals: {
+        Row: {
+          booking_url: string | null
+          category: string
+          cities_covered: string[] | null
+          company: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          email: string | null
+          id: string
+          is_featured: boolean | null
+          is_published: boolean | null
+          languages: string[] | null
+          logo_url: string | null
+          long_description: string | null
+          name: string
+          phone: string | null
+          slug: string
+          specializations: string[] | null
+          updated_at: string | null
+          website: string | null
+          whatsapp: string | null
+          works_with_internationals: boolean | null
+        }
+        Insert: {
+          booking_url?: string | null
+          category: string
+          cities_covered?: string[] | null
+          company?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          languages?: string[] | null
+          logo_url?: string | null
+          long_description?: string | null
+          name: string
+          phone?: string | null
+          slug: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          works_with_internationals?: boolean | null
+        }
+        Update: {
+          booking_url?: string | null
+          category?: string
+          cities_covered?: string[] | null
+          company?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          email?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          languages?: string[] | null
+          logo_url?: string | null
+          long_description?: string | null
+          name?: string
+          phone?: string | null
+          slug?: string
+          specializations?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          works_with_internationals?: boolean | null
+        }
+        Relationships: []
+      }
       user_events: {
         Row: {
           component: string | null

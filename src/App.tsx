@@ -38,6 +38,8 @@ const DeveloperDetail = lazy(() => import("./pages/DeveloperDetail"));
 const AgentDetail = lazy(() => import("./pages/AgentDetail"));
 const Agencies = lazy(() => import("./pages/Agencies"));
 const AgencyDetail = lazy(() => import("./pages/AgencyDetail"));
+const Professionals = lazy(() => import("./pages/Professionals"));
+const ProfessionalDetail = lazy(() => import("./pages/ProfessionalDetail"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Principles = lazy(() => import("./pages/Principles"));
 const ForAgents = lazy(() => import("./pages/ForAgents"));
@@ -210,6 +212,8 @@ const App = () => (
                         <Route path="/agents/:id" element={<AgentDetail />} />
                         <Route path="/agencies" element={<Agencies />} />
                         <Route path="/agencies/:slug" element={<AgencyDetail />} />
+                        <Route path="/professionals" element={<Professionals />} />
+                        <Route path="/professionals/:slug" element={<ProfessionalDetail />} />
                         <Route path="/contact" element={<Contact />} />
                         <Route path="/about" element={<Principles />} />
                         <Route path="/for-agents" element={<ForAgents />} />

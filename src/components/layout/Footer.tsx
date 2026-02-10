@@ -55,6 +55,9 @@ export function Footer() {
               <Link to="/blog" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Blog & Articles
               </Link>
+              <Link to="/professionals" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Trusted Professionals
+              </Link>
             </nav>
             
             <h4 className="text-sm font-semibold text-foreground mt-6">For Professionals</h4>
