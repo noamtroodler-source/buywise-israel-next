@@ -19,6 +19,7 @@ export const ROUTES = {
   COMPARE_PROJECTS: '/compare-projects',
   DEVELOPERS: '/developers',
   AGENCIES: '/agencies',
+  PROFESSIONALS: '/professionals',
 } as const;
 
 // Tool IDs matching the Tools page query parameter

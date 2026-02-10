@@ -9,6 +9,7 @@ export {
   generateAgentMeta,
   generateDeveloperMeta,
   generateAgencyMeta,
+  generateProfessionalMeta,
 } from './metaGenerators';
 
 export {

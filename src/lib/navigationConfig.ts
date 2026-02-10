@@ -60,6 +60,7 @@ export const NAV_CONFIG: Record<string, NavSection> = {
           { label: 'True Cost of Buying', href: '/guides/true-cost', description: 'Hidden costs revealed', phase: 'check' },
           { label: 'Mortgages in Israel', href: '/guides/mortgages', description: 'Financing for foreigners', phase: 'move_forward' },
           { label: 'New vs Resale', href: '/guides/new-vs-resale', description: 'Which path fits you?', phase: 'explore' },
+          { label: 'Trusted Professionals', href: '/professionals', description: 'Vetted lawyers & advisors', phase: 'move_forward' },
         ]
       }
     ],

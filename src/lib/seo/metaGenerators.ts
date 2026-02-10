@@ -288,3 +288,37 @@ export function generateAgencyMeta(agency: AgencyMetaInput): { title: string; de
     description: truncateDescription(description),
   };
 }
+
+// Professional meta generation
+interface ProfessionalMetaInput {
+  name: string;
+  slug: string;
+  category: string;
+  company?: string | null;
+  description?: string | null;
+  cities_covered?: string[] | null;
+  languages?: string[] | null;
+}
+
+export function generateProfessionalMeta(professional: ProfessionalMetaInput): { title: string; description: string } {
+  const CATEGORY_LABELS: Record<string, string> = {
+    lawyer: 'Lawyer',
+    mortgage_broker: 'Mortgage Broker',
+    accountant: 'Accountant & Tax Advisor',
+  };
+  const categoryLabel = CATEGORY_LABELS[professional.category] || professional.category;
+  const companyText = professional.company ? ` — ${professional.company}` : '';
+  const title = `${professional.name}${companyText} | ${categoryLabel} | ${SITE_CONFIG.siteName}`;
+
+  let description = professional.description || `${professional.name} is a ${categoryLabel.toLowerCase()} working with international buyers in Israel.`;
+
+  if (professional.cities_covered?.length) {
+    const cities = professional.cities_covered.slice(0, 3).join(', ');
+    description += ` Serving ${cities}.`;
+  }
+
+  return {
+    title: title.slice(0, 60),
+    description: truncateDescription(description),
+  };
+}
