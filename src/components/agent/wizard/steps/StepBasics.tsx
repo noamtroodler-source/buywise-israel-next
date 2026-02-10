@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePropertyWizard } from '../PropertyWizardContext';
 import { PropertyType, ListingStatus } from '@/types/database';
-import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Home, MapPin, DollarSign, AlertCircle, ShieldCheck, TrendingDown, TrendingUp } from 'lucide-react';
 import { AddressAutocomplete, ParsedAddress } from '../AddressAutocomplete';
 import { PropertyMiniMapWrapper } from '@/components/property/PropertyMiniMapWrapper';
 import { useCities } from '@/hooks/useCities';
@@ -178,6 +178,30 @@ export function StepBasics() {
               placeholder={data.listing_status === 'for_rent' ? 'e.g., 8,000' : 'e.g., 2,500,000'}
               className="h-11 rounded-xl"
             />
+            {/* Price change indicator (edit mode only) */}
+            {data.savedPrice && data.savedPrice > 0 && (() => {
+              const diff = data.price - data.savedPrice;
+              const pct = ((diff / data.savedPrice) * 100);
+              if (diff === 0) return null;
+              const isDropping = diff < 0;
+              return (
+                <div className={`flex items-center gap-2 text-sm rounded-lg p-3 ${
+                  isDropping 
+                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' 
+                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                }`}>
+                  {isDropping ? <TrendingDown className="h-4 w-4 shrink-0" /> : <TrendingUp className="h-4 w-4 shrink-0" />}
+                  <div>
+                    <span className="font-medium">
+                      {isDropping ? 'Price drop' : 'Price increase'}: {pct > 0 ? '+' : ''}{pct.toFixed(1)}%
+                    </span>
+                    <span className="ml-1.5 text-xs opacity-80">
+                      ({diff > 0 ? '+' : ''}{diff.toLocaleString('en-US')} ₪ from ₪{data.savedPrice.toLocaleString('en-US')})
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
