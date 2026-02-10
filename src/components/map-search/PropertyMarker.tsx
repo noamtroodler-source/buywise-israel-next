@@ -9,6 +9,7 @@ interface PropertyMarkerProps {
   property: Property;
   isHovered: boolean;
   isSelected: boolean;
+  isViewed?: boolean;
   onHover: (id: string | null) => void;
   onClick: (id: string | null) => void;
 }
@@ -17,6 +18,7 @@ function PropertyMarkerInner({
   property,
   isHovered,
   isSelected,
+  isViewed,
   onHover,
   onClick,
 }: PropertyMarkerProps) {
@@ -178,7 +180,13 @@ function PropertyMarkerInner({
       el.classList.remove('marker-active');
       el.style.zIndex = '100';
     }
-  }, [isHovered, isSelected]);
+    
+    if (isViewed) {
+      el.classList.add('marker-viewed');
+    } else {
+      el.classList.remove('marker-viewed');
+    }
+  }, [isHovered, isSelected, isViewed]);
 
   const handleMouseEnter = useCallback(() => {
     onHover(property.id);
@@ -213,6 +221,7 @@ export const PropertyMarker = memo(PropertyMarkerInner, (prev, next) => {
   return (
     prev.isHovered === next.isHovered &&
     prev.isSelected === next.isSelected &&
+    prev.isViewed === next.isViewed &&
     prev.property.id === next.property.id &&
     prev.property.price === next.property.price &&
     prev.property.listing_status === next.property.listing_status &&

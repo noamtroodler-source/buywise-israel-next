@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect, memo } from 'react';
 import { Property, SortOption } from '@/types/database';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +9,39 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// Infinite scroll sentinel component
+const InfiniteScrollSentinel = memo(function InfiniteScrollSentinel({ 
+  loadMore, 
+  isFetching 
+}: { 
+  loadMore: () => void; 
+  isFetching: boolean;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetching) {
+          loadMore();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore, isFetching]);
+
+  return (
+    <div ref={sentinelRef} className="pt-4 pb-2 flex justify-center">
+      {isFetching && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+    </div>
+  );
+});
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest Listings' },
@@ -248,24 +281,9 @@ export function MapPropertyList({
               </div>
             ))}
 
-            {/* Load More */}
+            {/* Infinite scroll sentinel */}
             {hasNextPage && (
-              <div className="pt-4 pb-2 flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={loadMore}
-                  disabled={isFetching}
-                >
-                  {isFetching ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load More'
-                  )}
-                </Button>
-              </div>
+              <InfiniteScrollSentinel loadMore={loadMore} isFetching={isFetching} />
             )}
           </div>
         </ScrollArea>

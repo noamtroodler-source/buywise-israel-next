@@ -16,24 +16,18 @@ export function CityOverlay({ visible, listingStatus, onCityClick }: CityOverlay
   const map = useMap();
   const { data: cities } = useCities();
 
-  // Fetch property counts per city
+  // Fetch property counts per city using RPC (efficient GROUP BY)
   const { data: cityCounts } = useQuery({
     queryKey: ['city-property-counts', listingStatus],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('properties')
-        .select('city')
-        .eq('listing_status', listingStatus)
-        .eq('is_published', true);
+        .rpc('get_city_property_counts', { p_listing_status: listingStatus });
 
       if (error) throw error;
 
-      // Count properties per city
       const counts: Record<string, number> = {};
-      data?.forEach((p) => {
-        if (p.city) {
-          counts[p.city] = (counts[p.city] || 0) + 1;
-        }
+      data?.forEach((row: { city: string; count: number }) => {
+        counts[row.city] = row.count;
       });
       return counts;
     },

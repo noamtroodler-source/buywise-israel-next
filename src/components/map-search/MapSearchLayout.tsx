@@ -420,8 +420,15 @@ export default function MapSearchLayout() {
     }, 800);
   }, [detectAndUpdateCity]); // Minimal dependencies - much more stable
 
+  // Debounced hover handler to reduce re-renders during fast mouse movement
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handlePropertyHover = useCallback((propertyId: string | null) => {
-    setHoveredPropertyId(propertyId);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (propertyId) {
+      hoverTimeoutRef.current = setTimeout(() => setHoveredPropertyId(propertyId), 50);
+    } else {
+      setHoveredPropertyId(null);
+    }
   }, []);
 
   const handlePropertySelect = useCallback((propertyId: string | null) => {
@@ -579,8 +586,24 @@ export default function MapSearchLayout() {
       </div>
       
       {/* Split View */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={55} minSize={35} maxSize={75}>
+      <ResizablePanelGroup 
+        direction="horizontal" 
+        className="flex-1"
+        onLayout={(sizes) => {
+          try { localStorage.setItem('bw_map_panel_sizes', JSON.stringify(sizes)); } catch {}
+        }}
+      >
+        <ResizablePanel 
+          defaultSize={(() => {
+            try {
+              const saved = localStorage.getItem('bw_map_panel_sizes');
+              if (saved) return JSON.parse(saved)[0];
+            } catch {}
+            return 55;
+          })()} 
+          minSize={35} 
+          maxSize={75}
+        >
           <div className="relative h-full">
             <PropertyMap {...propertyMapProps} />
             {/* Onboarding Hints */}
@@ -593,7 +616,17 @@ export default function MapSearchLayout() {
         
         <ResizableHandle withHandle />
         
-        <ResizablePanel defaultSize={45} minSize={25} maxSize={65}>
+        <ResizablePanel 
+          defaultSize={(() => {
+            try {
+              const saved = localStorage.getItem('bw_map_panel_sizes');
+              if (saved) return JSON.parse(saved)[1];
+            } catch {}
+            return 45;
+          })()} 
+          minSize={25} 
+          maxSize={65}
+        >
           <MapPropertyList
             properties={properties}
             isLoading={isLoading}

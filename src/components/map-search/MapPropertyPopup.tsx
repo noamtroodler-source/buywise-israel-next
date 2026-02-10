@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { Property } from '@/types/database';
@@ -21,15 +21,35 @@ interface MapPropertyPopupProps {
 export function MapPropertyPopup({ propertyId, properties, onClose, savedLocations, onNavigate }: MapPropertyPopupProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const [imageIndex, setImageIndex] = useState(0);
   
   const property = useMemo(() => 
     properties.find(p => p.id === propertyId),
     [properties, propertyId]
   );
 
+  const images = useMemo(() => {
+    if (!property?.images?.length) return ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60'];
+    return property.images.slice(0, 5);
+  }, [property?.images]);
+
+  // Reset image index when property changes
+  useEffect(() => {
+    setImageIndex(0);
+  }, [propertyId]);
+
+  const handleImagePrev = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImageIndex(prev => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const handleImageNext = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setImageIndex(prev => (prev + 1) % images.length);
+  }, [images.length]);
+
   if (!property || !property.latitude || !property.longitude) return null;
 
-  const image = property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
   const isRental = property.listing_status === 'for_rent';
 
   return (
@@ -43,12 +63,12 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
       offset={[0, -8]}
     >
       <div className="bg-card text-card-foreground rounded-xl overflow-hidden shadow-lg">
-        {/* Image Header - compact 16:10 ratio */}
+        {/* Image Header with carousel */}
         <div className="relative h-32 overflow-hidden">
           <img
-            src={image}
+            src={images[imageIndex]}
             alt={property.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-opacity duration-200"
           />
           
           {/* Close button - top right */}
@@ -60,23 +80,32 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
             <X className="h-3.5 w-3.5 text-foreground" />
           </button>
 
-          {/* Navigation arrows */}
-          {onNavigate && (
+          {/* Image carousel arrows (only if multiple images) */}
+          {images.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
+                onClick={handleImagePrev}
                 className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-background/80 hover:bg-background flex items-center justify-center shadow-sm transition-colors"
-                aria-label="Previous property"
+                aria-label="Previous image"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
+                onClick={handleImageNext}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-background/80 hover:bg-background flex items-center justify-center shadow-sm transition-colors"
-                aria-label="Next property"
+                aria-label="Next image"
               >
                 <ChevronRight className="h-3.5 w-3.5 text-foreground" />
               </button>
+              {/* Dot indicators */}
+              <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10 flex gap-1">
+                {images.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`w-1.5 h-1.5 rounded-full transition-colors ${i === imageIndex ? 'bg-background' : 'bg-background/50'}`}
+                  />
+                ))}
+              </div>
             </>
           )}
           
@@ -125,12 +154,32 @@ export function MapPropertyPopup({ propertyId, properties, onClose, savedLocatio
             {property.address || `${property.neighborhood ? property.neighborhood + ', ' : ''}${property.city}`}
           </p>
           
-          {/* View Details Button */}
-          <Button asChild className="w-full h-8 text-xs" size="sm">
-            <Link to={`/property/${property.id}`}>
-              View Details
-            </Link>
-          </Button>
+          {/* Property navigation + View Details */}
+          <div className="flex items-center gap-1.5">
+            {onNavigate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }}
+                className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+                aria-label="Previous property"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+            )}
+            <Button asChild className="flex-1 h-8 text-xs" size="sm">
+              <Link to={`/property/${property.id}`}>
+                View Details
+              </Link>
+            </Button>
+            {onNavigate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate('next'); }}
+                className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+                aria-label="Next property"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
 
           {/* Commute Info (if user has saved locations) */}
           {savedLocations && savedLocations.length > 0 && (
