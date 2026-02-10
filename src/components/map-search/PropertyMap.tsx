@@ -7,6 +7,7 @@ import { Property, ListingStatus } from '@/types/database';
 import { PropertyMarker } from './PropertyMarker';
 import { ProjectMarker } from './ProjectMarker';
 import { MapPropertyPopup } from './MapPropertyPopup';
+import { MapProjectPopup } from './MapProjectPopup';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
@@ -61,6 +62,8 @@ interface PropertyMapProps {
   commuteFilter?: CommuteFilterValue | null;
   savedLocationsData?: SavedLocation[];
   onCommuteFilterChange?: (value: CommuteFilterValue | null) => void;
+  // Find in list callback
+  onFindInList?: (propertyId: string) => void;
 }
 
 // Map click handler to deselect property when clicking empty map
@@ -250,6 +253,7 @@ export function PropertyMap({
   commuteFilter,
   savedLocationsData,
   onCommuteFilterChange,
+  onFindInList,
 }: PropertyMapProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -267,6 +271,7 @@ export function PropertyMap({
   const [currentZoom, setCurrentZoom] = useState(zoom);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [showSearchButton, setShowSearchButton] = useState(false);
 
   // Fetch projects for Buy mode (only when zoomed in enough)
@@ -441,6 +446,7 @@ export function PropertyMap({
         <MapClickHandler onDeselect={() => {
           onPropertySelect(null);
           onPropertyHover(null);
+          setSelectedProjectId(null);
         }} />
 
         <DrawControl
@@ -479,11 +485,15 @@ export function PropertyMap({
             key={`project-${project.id}`}
             project={project}
             isHovered={hoveredProjectId === project.id}
+            isSelected={selectedProjectId === project.id}
             onHover={setHoveredProjectId}
-            onClick={(slug) => navigate(`/projects/${slug}`)}
+            onClick={(_slug: string) => {
+              onPropertySelect(null); // clear property popup
+              setSelectedProjectId(project.id);
+            }}
           />
         ))}
-        
+
         {/* Saved Locations Layer */}
         {user && showSavedLocations && effectiveSavedLocations && effectiveSavedLocations.length > 0 && (
           <SavedLocationsLayer locations={effectiveSavedLocations} />
@@ -506,7 +516,7 @@ export function PropertyMap({
           currentCity={currentCity || null} 
         />
         
-        {selectedPropertyId && (
+        {selectedPropertyId && !selectedProjectId && (
           <MapPropertyPopup
             key={selectedPropertyId}
             propertyId={selectedPropertyId}
@@ -514,8 +524,21 @@ export function PropertyMap({
             onClose={() => onPropertySelect(null)}
             savedLocations={effectiveSavedLocations}
             onNavigate={handlePopupNavigate}
+            onFindInList={onFindInList}
           />
         )}
+
+        {/* Project Popup */}
+        {selectedProjectId && (() => {
+          const proj = projects?.find(p => p.id === selectedProjectId);
+          return proj ? (
+            <MapProjectPopup
+              key={selectedProjectId}
+              project={proj}
+              onClose={() => setSelectedProjectId(null)}
+            />
+          ) : null;
+        })()}
       </MapContainer>
       
       {/* Search This Area Button */}
@@ -549,6 +572,8 @@ export function PropertyMap({
         onTogglePriceHeatmap={() => setShowPriceHeatmap(!showPriceHeatmap)}
         showAngloCommunity={showAngloCommunity}
         onToggleAngloCommunity={() => setShowAngloCommunity(!showAngloCommunity)}
+        showNeighborhoodBoundaries={showNeighborhoodBoundaries}
+        onToggleNeighborhoodBoundaries={() => setShowNeighborhoodBoundaries(!showNeighborhoodBoundaries)}
       />
 
       <HeatmapLegend visible={showPriceHeatmap} />

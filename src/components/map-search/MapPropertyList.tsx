@@ -66,6 +66,7 @@ interface MapPropertyListProps {
   sortBy?: SortOption;
   onSortChange?: (sort: SortOption) => void;
   onCreateAlert?: () => void;
+  scrollToPropertyId?: string | null;
 }
 
 export function MapPropertyList({
@@ -83,6 +84,7 @@ export function MapPropertyList({
   sortBy,
   onSortChange,
   onCreateAlert,
+  scrollToPropertyId,
 }: MapPropertyListProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -112,6 +114,15 @@ export function MapPropertyList({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Scroll to property when requested from map popup "Find in list"
+  useEffect(() => {
+    if (!scrollToPropertyId || !listRef.current) return;
+    const el = listRef.current.querySelector(`[data-property-id="${scrollToPropertyId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [scrollToPropertyId]);
 
   const getSortLabel = () => {
     if (sortBy) {
@@ -257,12 +268,14 @@ export function MapPropertyList({
             ref={listRef} 
             className={cn(
               "p-3 gap-3",
-              isMobile || useNarrowLayout ? "space-y-3" : "grid grid-cols-2"
+              isMobile || useNarrowLayout ? "space-y-3" : "grid grid-cols-2",
+              isFetching && !isLoading && "opacity-50 pointer-events-none transition-opacity"
             )}
           >
             {properties.map((property) => (
               <div
                 key={property.id}
+                data-property-id={property.id}
                 onMouseEnter={() => onPropertyHover(property.id)}
                 onMouseLeave={() => onPropertyHover(null)}
                 onClick={() => onPropertySelect(property.id)}
@@ -289,13 +302,7 @@ export function MapPropertyList({
         </ScrollArea>
         
         {/* Loading overlay */}
-        {isFetching && !isLoading && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center pointer-events-none">
-            <div className="bg-background rounded-full p-3 shadow-lg">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          </div>
-        )}
+        {/* Removed full overlay spinner - grid now dims via opacity-50 during fetch */}
 
         {/* Back to Top button */}
         {showBackToTop && (
