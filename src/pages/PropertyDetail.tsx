@@ -16,12 +16,13 @@ import { PropertyDescription } from '@/components/property/PropertyDescription';
 import { PropertyQuestionsToAsk } from '@/components/property/PropertyQuestionsToAsk';
 import { StickyContactCard, MobileContactBar } from '@/components/property/StickyContactCard';
 import { PropertyValueSnapshot } from '@/components/property/PropertyValueSnapshot';
+import { MarketIntelligence } from '@/components/property/MarketIntelligence';
 import { PropertyCostBreakdown } from '@/components/property/PropertyCostBreakdown';
 import { PropertyLocation } from '@/components/property/PropertyLocation';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
-import { RecentNearbySales } from '@/components/property/RecentNearbySales';
+// RecentNearbySales is now used inside MarketIntelligence
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
@@ -176,55 +177,51 @@ export default function PropertyDetail() {
             {/* Description */}
             <PropertyDescription description={property.description} />
 
-            {/* Value Snapshot - Collapsible on mobile */}
+            {/* Market Intelligence (sale/sold) or Rental Snapshot */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
               className="py-6 border-b border-border md:border-none"
             >
-              <MobileCollapsibleSection
-                id="value-snapshot"
-                title="AI Value Snapshot"
-                icon={<BarChart3 className="h-5 w-5" />}
-                summary={`${formatPrice(property.price, 'ILS')} • ${property.city}`}
-                alwaysStartClosed
-              >
-                <PropertyValueSnapshot 
-                  price={property.price}
-                  sizeSqm={property.size_sqm}
-                  city={property.city}
-                  averagePriceSqm={cityData?.average_price_sqm}
-                  priceChange={cityData?.yoy_price_change}
-                  listingStatus={property.listing_status}
-                  bedrooms={property.bedrooms}
-                  cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
-                  cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
-                  vaadBayitMonthly={property.vaad_bayit_monthly}
-                  cityArnonaRate={cityData?.arnona_rate_sqm}
-                  cityAvgVaadBayit={cityData?.average_vaad_bayit}
-                />
-              </MobileCollapsibleSection>
+              {property.listing_status === 'for_rent' ? (
+                <MobileCollapsibleSection
+                  id="value-snapshot"
+                  title="AI Rental Snapshot"
+                  icon={<BarChart3 className="h-5 w-5" />}
+                  summary={`${formatPrice(property.price, 'ILS')}/mo • ${property.city}`}
+                  alwaysStartClosed
+                >
+                  <PropertyValueSnapshot 
+                    price={property.price}
+                    sizeSqm={property.size_sqm}
+                    city={property.city}
+                    averagePriceSqm={cityData?.average_price_sqm}
+                    priceChange={cityData?.yoy_price_change}
+                    listingStatus={property.listing_status}
+                    bedrooms={property.bedrooms}
+                    cityRentalMin={property.bedrooms === 4 ? cityData?.rental_4_room_min : cityData?.rental_3_room_min}
+                    cityRentalMax={property.bedrooms === 4 ? cityData?.rental_4_room_max : cityData?.rental_3_room_max}
+                    vaadBayitMonthly={property.vaad_bayit_monthly}
+                    cityArnonaRate={cityData?.arnona_rate_sqm}
+                    cityAvgVaadBayit={cityData?.average_vaad_bayit}
+                  />
+                </MobileCollapsibleSection>
+              ) : (
+                <MobileCollapsibleSection
+                  id="market-intelligence"
+                  title="Market Intelligence"
+                  icon={<BarChart3 className="h-5 w-5" />}
+                  summary={`${formatPrice(property.price, 'ILS')} • ${property.city}`}
+                  alwaysStartClosed
+                >
+                  <MarketIntelligence
+                    property={property}
+                    cityData={cityData}
+                  />
+                </MobileCollapsibleSection>
+              )}
             </motion.div>
-
-            {/* Recent Nearby Sales - Only for sale/sold properties, not rentals */}
-            {property.latitude && property.longitude && property.listing_status !== 'for_rent' && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className="py-6 border-b border-border"
-              >
-                <RecentNearbySales
-                  latitude={property.latitude}
-                  longitude={property.longitude}
-                  city={property.city}
-                  propertyRooms={property.bedrooms}
-                  propertyPrice={property.price}
-                  propertySizeSqm={property.size_sqm}
-                />
-              </motion.div>
-            )}
 
             {/* Cost Breakdown - Collapsible on mobile */}
             {(property.listing_status === 'for_sale' || property.listing_status === 'for_rent') && (

@@ -16,6 +16,8 @@ interface PropertyValueSnapshotProps {
   vaadBayitMonthly?: number | null;
   cityArnonaRate?: number | null;
   cityAvgVaadBayit?: number | null;
+  /** When true, skip the section header (used when embedded in MarketIntelligence) */
+  hideHeader?: boolean;
 }
 
 export function PropertyValueSnapshot({ 
@@ -31,6 +33,7 @@ export function PropertyValueSnapshot({
   vaadBayitMonthly,
   cityArnonaRate,
   cityAvgVaadBayit,
+  hideHeader = false,
 }: PropertyValueSnapshotProps) {
   const formatPrice = useFormatPrice();
   const formatPricePerArea = useFormatPricePerArea();
@@ -101,10 +104,12 @@ export function PropertyValueSnapshot({
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">AI Rental Snapshot</h3>
-        </div>
+        {!hideHeader && (
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">AI Rental Snapshot</h3>
+          </div>
+        )}
         
         <div className={`grid ${gridCols} gap-4`}>
           {/* Total Monthly Commitment */}
@@ -185,11 +190,13 @@ export function PropertyValueSnapshot({
       : 'grid-cols-1';
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold text-foreground">AI Value Snapshot</h3>
-      </div>
+    <div className={hideHeader ? undefined : "space-y-4"}>
+      {!hideHeader && (
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">AI Value Snapshot</h3>
+        </div>
+      )}
       
       <div className={`grid ${gridCols} gap-4`}>
         {/* Card 1: This Property (Price/m²) */}
