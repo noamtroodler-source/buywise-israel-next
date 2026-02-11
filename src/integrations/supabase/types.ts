@@ -916,6 +916,9 @@ export type Database = {
           tama38_expiry_date: string | null
           tama38_notes: string | null
           tama38_status: string | null
+          train_station_lat: number | null
+          train_station_lng: number | null
+          train_station_name: string | null
           updated_at: string
           yoy_price_change: number | null
         }
@@ -984,6 +987,9 @@ export type Database = {
           tama38_expiry_date?: string | null
           tama38_notes?: string | null
           tama38_status?: string | null
+          train_station_lat?: number | null
+          train_station_lng?: number | null
+          train_station_name?: string | null
           updated_at?: string
           yoy_price_change?: number | null
         }
@@ -1052,6 +1058,9 @@ export type Database = {
           tama38_expiry_date?: string | null
           tama38_notes?: string | null
           tama38_status?: string | null
+          train_station_lat?: number | null
+          train_station_lng?: number | null
+          train_station_name?: string | null
           updated_at?: string
           yoy_price_change?: number | null
         }
