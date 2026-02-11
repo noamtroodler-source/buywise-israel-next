@@ -68,7 +68,7 @@
     --semantic-amber-foreground: 0 0% 10%;
     --semantic-red: 0 72% 51%;
     --semantic-red-foreground: 0 0% 100%;
-    --semantic-teal: 265 55% 52%;
+    --semantic-teal: 265 35% 58%;
     --semantic-teal-foreground: 0 0% 100%;
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
@@ -138,7 +138,7 @@
     --semantic-amber-foreground: 0 0% 10%;
     --semantic-red: 0 65% 55%;
     --semantic-red-foreground: 0 0% 100%;
-    --semantic-teal: 265 50% 58%;
+    --semantic-teal: 265 30% 62%;
     --semantic-teal-foreground: 0 0% 100%;
 
     --sidebar-background: 222 47% 8%;
