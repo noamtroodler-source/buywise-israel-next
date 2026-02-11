@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, Flame, Zap } from 'lucide-react';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -58,7 +58,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
   
   // Memoize expensive calculations - only recompute when property data changes
-  const { daysOnMarket, isNewListing, daysLabel, freshnessTier, hasPriceDrop, priceDropPercent } = useMemo(() => {
+  const { daysOnMarket, isNewListing, daysLabel, freshnessTier, hasPriceDrop, priceDropPercent, hasPriceIncrease } = useMemo(() => {
     const days = property.created_at 
       ? differenceInDays(new Date(), new Date(property.created_at)) 
       : null;
@@ -79,6 +79,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
       ? Math.round(((property.original_price! - property.price) / property.original_price!) * 100)
       : 0;
     
+    const hasIncrease = !!(property.original_price && property.original_price < property.price);
+    
     // Clearer labeling
     let label: string | null = null;
     if (days !== null) {
@@ -88,7 +90,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
       else label = `Listed ${days} days`;
     }
     
-    return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, freshnessTier: tier, hasPriceDrop: hasDrop, priceDropPercent: dropPercent };
+    return { daysOnMarket: days, isNewListing: isNew, daysLabel: label, freshnessTier: tier, hasPriceDrop: hasDrop, priceDropPercent: dropPercent, hasPriceIncrease: hasIncrease };
   }, [property.created_at, property.original_price, property.price]);
 
   // Check if this is a rental (for more prominent freshness treatment)
@@ -301,6 +303,15 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       );
                     }
                     
+                    if (hasPriceIncrease) {
+                      badges.push(
+                        <Badge key="price-up" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Price Up
+                        </Badge>
+                      );
+                    }
+                    
                     return badges.slice(0, maxBadges);
                   })()}
                 </div>
@@ -331,6 +342,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     )}
                   </p>
                   {hasPriceDrop && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatPrice(property.original_price!, property.currency || 'ILS')}
+                    </span>
+                  )}
+                  {hasPriceIncrease && (
                     <span className="text-sm text-muted-foreground line-through">
                       {formatPrice(property.original_price!, property.currency || 'ILS')}
                     </span>
@@ -477,6 +493,15 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       );
                     }
                     
+                    if (hasPriceIncrease) {
+                      badges.push(
+                        <Badge key="price-up" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Price Up
+                        </Badge>
+                      );
+                    }
+                    
                     return badges.slice(0, maxBadges);
                   })()}
                 </div>
@@ -506,6 +531,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       )}
                     </span>
                     {hasPriceDrop && (
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatPrice(property.original_price!, property.currency || 'ILS')}
+                      </span>
+                    )}
+                    {hasPriceIncrease && (
                       <span className="text-sm text-muted-foreground line-through">
                         {formatPrice(property.original_price!, property.currency || 'ILS')}
                       </span>
