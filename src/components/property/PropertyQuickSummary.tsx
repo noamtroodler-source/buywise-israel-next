@@ -662,9 +662,9 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           <div className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
            freshnessTier === 'hot' 
-              ? "bg-semantic-amber text-semantic-amber-foreground" 
+              ? "bg-primary text-primary-foreground" 
               : freshnessTier === 'fresh' 
-                ? "bg-semantic-green text-semantic-green-foreground" 
+                ? "bg-primary/80 text-primary-foreground" 
                 : "bg-muted text-muted-foreground"
           )}>
             {freshnessTier === 'hot' ? (
