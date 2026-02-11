@@ -7,7 +7,8 @@ import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Cale
 import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { formatMonthlyRange } from '@/lib/utils/formatRange';
+import { formatMonthlyRange, RENTAL_FEE_RANGES, VAT_RATE } from '@/lib/utils/formatRange';
+import { useCityDetails } from '@/hooks/useCityDetails';
 import { useSavesCount } from '@/hooks/useSavesCount';
 import { useBuyerProfile } from '@/hooks/useBuyerProfile';
 import { useAuth } from '@/hooks/useAuth';
@@ -149,7 +150,32 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   
   // Get mortgage estimate using user's profile preferences (or defaults)
   const mortgageEstimate = useMortgageEstimate(property.price);
-  const showMortgageEstimate = property.listing_status !== 'for_rent';
+  const isRental = property.listing_status === 'for_rent';
+  const showMortgageEstimate = !isRental;
+
+  // Rental cost summary data
+  const citySlug = property.city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
+  const { data: cityData } = useCityDetails(citySlug);
+
+  const rentalSummary = (() => {
+    if (!isRental || !property.price) return null;
+    const rent = property.price;
+    const arnonaMonthly = property.size_sqm && cityData?.arnona_rate_sqm
+      ? Math.round((property.size_sqm * cityData.arnona_rate_sqm) / 12)
+      : cityData?.arnona_monthly_avg || 0;
+    const vaadBayit = property.vaad_bayit_monthly ?? cityData?.average_vaad_bayit ?? 0;
+    const totalMonthly = rent + arnonaMonthly + vaadBayit;
+
+    const depositLow = rent * RENTAL_FEE_RANGES.securityDeposit.min;
+    const depositHigh = rent * RENTAL_FEE_RANGES.securityDeposit.max;
+    const agentFee = (property as any).agent_fee_required !== false
+      ? Math.round(rent * RENTAL_FEE_RANGES.agentFee.base * (1 + VAT_RATE))
+      : 0;
+    const moveInLow = Math.round(depositLow + rent + agentFee);
+    const moveInHigh = Math.round(depositHigh + rent + agentFee);
+
+    return { totalMonthly, moveInLow, moveInHigh, arnonaMonthly, vaadBayit, agentFee };
+  })();
   
   // Calculate days on market and freshness tier
   const createdDate = new Date(property.created_at);
@@ -159,7 +185,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   // Freshness tier for enhanced display
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
   const freshnessTier: FreshnessTier = daysOnMarket <= 3 ? 'hot' : daysOnMarket <= 7 ? 'fresh' : daysOnMarket <= 30 ? 'standard' : 'stale';
-  const isRental = property.listing_status === 'for_rent';
+  
   
   // Get freshness label
   const getFreshnessLabel = () => {
@@ -314,7 +340,63 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               </div>
             )}
 
-            <h2 className="text-xl font-semibold text-foreground">{property.title}</h2>
+            {/* Rental Cost Summary - "What You'll Pay" whisper */}
+            {isRental && rentalSummary && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
+                      ~₪{rentalSummary.totalMonthly.toLocaleString()}/mo total
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <div className="space-y-1">
+                      <p className="font-medium">Estimated monthly total</p>
+                      <p className="text-xs">Rent: ₪{property.price.toLocaleString()}</p>
+                      {rentalSummary.arnonaMonthly > 0 && (
+                        <p className="text-xs">Arnona (est.): ₪{rentalSummary.arnonaMonthly.toLocaleString()}</p>
+                      )}
+                      {rentalSummary.vaadBayit > 0 && (
+                        <p className="text-xs">Va'ad Bayit: ₪{rentalSummary.vaadBayit.toLocaleString()}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                        Excludes utilities (water, electric, gas)
+                      </p>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-muted-foreground/60">·</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
+                      ₪{Math.round(rentalSummary.moveInLow / 1000)}k–{Math.round(rentalSummary.moveInHigh / 1000)}k to move in
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <div className="space-y-1">
+                      <p className="font-medium">Estimated move-in costs</p>
+                      <p className="text-xs">First month: ₪{property.price.toLocaleString()}</p>
+                      <p className="text-xs">Security deposit: {RENTAL_FEE_RANGES.securityDeposit.label} rent</p>
+                      {rentalSummary.agentFee > 0 && (
+                        <p className="text-xs">Agent fee: {RENTAL_FEE_RANGES.agentFee.label}</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-muted-foreground/60">•</span>
+                <a
+                  href="#section-costs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('section-costs')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-primary hover:underline text-xs"
+                >
+                  See full breakdown
+                </a>
+              </div>
+            )}
+
             <p className="text-muted-foreground flex items-center gap-1.5">
               <MapPin className="h-4 w-4 shrink-0" />
               <span>{property.address}, {locationText}</span>
