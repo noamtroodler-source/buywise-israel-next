@@ -1,98 +1,51 @@
 
 
-## Consolidate "AI Value Snapshot" + "Recent Nearby Sales" into "Market Intelligence"
+## Replace "Customize" Link with Mortgage Popover
 
-**Goal:** Merge two separate sections into a single cohesive section that answers "Is this a fair price?" with a narrative flow: Verdict -> Evidence -> Action.
+**Goal:** Replace the current "Customize" link (which navigates away to `/tools`) with an inline popover that lets users adjust mortgage preferences without leaving the listing page. Changes persist across all listings via the existing preference system.
 
 ---
 
 ### What Changes
 
-#### 1. New Component: `src/components/property/MarketIntelligence.tsx`
+#### 1. Update `PropertyQuickSummary.tsx`
 
-A wrapper component that combines both sub-sections under one unified header. Structure:
+Replace the `<Link to="/tools?calculator=mortgage&...">Customize</Link>` with a `<Popover>` wrapping the existing `MortgageInlineEdit` component.
 
+**Before:**
 ```text
-Market Intelligence
-├── Section header with icon + "Government verified" badge
-├── Market Verdict Badge (promoted from RecentNearbySales to hero position)
-│   - Blue: "Priced in line" or "Below average"
-│   - Amber: "Above average" (+10-20%)
-│   - Rose: "Significantly above" (+20%)
-│   - Falls back to "Limited data" when no comps exist
-├── Value Snapshot Cards (3 metric cards: Price/sqm, vs City Avg, 12-mo Trend)
-│   - Rendered inline (no sub-header), pulled from existing PropertyValueSnapshot logic
-├── Divider + "Based on X verified sales within 500m"
-├── Recent Nearby Sales comps list (existing comp cards, no duplicate header)
-│   - Desktop: show 3 + "Show more"
-│   - Mobile: carousel
-├── Source attribution footer (existing "Government verified data" line)
-└── Link: "Explore [City] Market Data" -> /areas/{citySlug}
+Est. 8,500-10,200/mo  *  [Customize -> navigates to /tools page]
 ```
 
-This component receives all the props that both `PropertyValueSnapshot` and `RecentNearbySales` currently receive, and composes them internally.
-
-#### 2. Update `PropertyValueSnapshot.tsx`
-
-- Remove the standalone header ("AI Value Snapshot" with BarChart3 icon) since the parent `MarketIntelligence` now owns the header
-- Export the metric cards grid as-is but without the wrapping `space-y-4` div and header
-- Essentially just strip the top-level title — the cards remain unchanged
-
-#### 3. Update `RecentNearbySales.tsx`
-
-- Remove the standalone header ("Recent Nearby Sales" with TrendingUp icon)
-- Remove the Market Verdict badge (it moves up to the parent `MarketIntelligence` level)
-- Export the verdict calculation logic (or keep it internal but expose `avgComparison` via a prop/callback so the parent can use it) — simplest approach: keep the verdict inside `RecentNearbySales` but add a `hideHeader` and `hideVerdict` prop so the parent controls layout
-- Keep the comps list, carousel, loading/empty states, and source footer intact
-
-#### 4. Update `PropertyDetail.tsx`
-
-Replace the two separate `motion.div` blocks (lines 179-227) with a single block:
-
-```tsx
-{/* Market Intelligence - Unified section */}
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.4, delay: 0.1 }}
-  className="py-6 border-b border-border md:border-none"
->
-  <MobileCollapsibleSection
-    id="market-intelligence"
-    title="Market Intelligence"
-    icon={<BarChart3 className="h-5 w-5" />}
-    summary={verdictSummaryText}
-    alwaysStartClosed
-  >
-    <MarketIntelligence
-      property={property}
-      cityData={cityData}
-    />
-  </MobileCollapsibleSection>
-</motion.div>
+**After:**
+```text
+Est. 8,500-10,200/mo  *  [Customize -> opens popover with down payment + term fields]
 ```
 
-- The rental path keeps the existing `PropertyValueSnapshot` rendering (rental snapshot logic is separate and stays as-is)
-- For `for_sale` / `sold` listings, the new `MarketIntelligence` component replaces both sections
+The popover will:
+- Anchor to the "Customize" button
+- Contain the `MortgageInlineEdit` form (down payment toggle between amount/percent, loan term select)
+- Close on save or cancel
+- Immediately update the estimate line since both read from the same `useMortgagePreferences` hook
+
+#### 2. Minor cleanup to `MortgageInlineEdit.tsx`
+
+- Remove the left border styling (`border-l-2 border-primary/20`) since it was designed for inline accordion context, not a popover
+- Adjust padding to fit naturally inside a popover container
 
 ---
+
+### Persistence Behavior (already works, no changes needed)
+
+- **Guest users**: Preferences save to `localStorage` under `mortgage_preferences` key. Persists across all listings within the same browser session. Cleared when browser data is cleared.
+- **Logged-in users**: Preferences save to their profile in the database. Persists permanently across devices.
+- **Both locations stay in sync**: The cost breakdown's `PersonalizationHeader` and the quick summary's estimate both read from the same `useMortgagePreferences` hook. A change in the popover automatically reflects in the cost breakdown section below, and vice versa.
 
 ### Technical Details
 
 **Files modified:**
-- `src/components/property/PropertyValueSnapshot.tsx` — Add `hideHeader` prop; when true, skip the title row
-- `src/components/property/RecentNearbySales.tsx` — Add `hideHeader` and `hideVerdict` props; expose `avgComparison` calculation. When these props are set, the parent controls header and verdict placement
-- `src/pages/PropertyDetail.tsx` — Replace two separate motion blocks with one unified `MarketIntelligence` block for non-rental listings
+- `src/components/property/PropertyQuickSummary.tsx` — Replace `<Link>` with `<Popover>` + `<MortgageInlineEdit>`. Add state for popover open/close. Import Popover components and MortgageInlineEdit.
+- `src/components/property/MortgageInlineEdit.tsx` — Remove left-border styling, adjust padding for popover context.
 
-**New file:**
-- `src/components/property/MarketIntelligence.tsx` — Composition component that renders the verdict badge at top, then value snapshot cards, then comps evidence
-
-**No database changes.** No new hooks. Same data sources, just restructured presentation.
-
-**Mobile behavior:** The entire "Market Intelligence" section becomes one `MobileCollapsibleSection` instead of two separate ones. On desktop, everything renders expanded as a single flowing section.
-
-**Edge cases:**
-- No comps available: Show value snapshot cards only, with a "No nearby sales data yet" note below
-- No value snapshot data (no city data): Show comps only with the verdict badge
-- Rental listings: Skip this component entirely — rentals keep their existing separate "AI Rental Snapshot" section unchanged
+**No new files. No database changes. No new hooks.**
 
