@@ -200,6 +200,12 @@ interface RecentNearbySalesProps {
   propertyRooms?: number;
   propertyPrice?: number;
   propertySizeSqm?: number;
+  /** When true, skip the section header (used when embedded in MarketIntelligence) */
+  hideHeader?: boolean;
+  /** When true, skip the verdict badge (parent renders it) */
+  hideVerdict?: boolean;
+  /** Callback to expose the computed average comparison to parent */
+  onVerdictComputed?: (avgComparison: number | null, compsCount: number) => void;
 }
 
 export function RecentNearbySales({
@@ -209,6 +215,9 @@ export function RecentNearbySales({
   propertyRooms,
   propertyPrice,
   propertySizeSqm,
+  hideHeader = false,
+  hideVerdict = false,
+  onVerdictComputed,
 }: RecentNearbySalesProps) {
   const formatPrice = useFormatPrice();
   const isMobile = useIsMobile();
@@ -258,11 +267,6 @@ export function RecentNearbySales({
   // Generate city slug for links
   const citySlug = city?.toLowerCase().replace(/['']/g, '').replace(/\s+/g, '-') || '';
 
-  // Don't render if we don't have coordinates
-  if (!latitude || !longitude) {
-    return null;
-  }
-
   // Format distance
   const formatDistance = (meters: number) => {
     if (meters < 50) return 'Same building';
@@ -302,13 +306,27 @@ export function RecentNearbySales({
 
   const avgComparison = calculateAverageComparison();
 
+  // Expose verdict data to parent (must be before early returns)
+  useEffect(() => {
+    if (onVerdictComputed) {
+      onVerdictComputed(avgComparison, comps?.length ?? 0);
+    }
+  }, [avgComparison, comps?.length, onVerdictComputed]);
+
+  // Don't render if we don't have coordinates
+  if (!latitude || !longitude) {
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
-        </div>
+        {!hideHeader && (
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Recent Nearby Sales</h3>
+          </div>
+        )}
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-20 w-full rounded-lg" />
@@ -322,23 +340,25 @@ export function RecentNearbySales({
     return (
       <TooltipProvider>
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-                  Recent Nearby Sales
-                </h3>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm">
-                <p className="font-medium mb-1">Government Transaction Data</p>
-                <p className="text-xs text-muted-foreground">
-                  Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
-                  These are actual recorded transactions—not listing prices.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          {!hideHeader && (
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                    Recent Nearby Sales
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-sm">
+                  <p className="font-medium mb-1">Government Transaction Data</p>
+                  <p className="text-xs text-muted-foreground">
+                    Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
+                    These are actual recorded transactions—not listing prices.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
           <div className="rounded-lg border border-border bg-muted/30 p-6 text-center">
             <Building2 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
             <p className="text-sm font-medium text-foreground mb-1">
@@ -362,40 +382,42 @@ export function RecentNearbySales({
     <TooltipProvider>
       <div className="space-y-4">
         {/* Header with educational tooltips */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
+        {!hideHeader && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                    Recent Nearby Sales
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-sm">
+                  <p className="font-medium mb-1">Government Transaction Data</p>
+                  <p className="text-xs text-muted-foreground">
+                    Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
+                    These are actual recorded transactions—not listing prices.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <h3 className="text-lg font-semibold text-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-                  Recent Nearby Sales
-                </h3>
+                <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
+                  Last 24 months • Within 500m
+                </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm">
-                <p className="font-medium mb-1">Government Transaction Data</p>
-                <p className="text-xs text-muted-foreground">
-                  Official sold prices from Israel Tax Authority & Nadlan.gov.il. 
-                  These are actual recorded transactions—not listing prices.
+              <TooltipContent side="left" className="max-w-xs">
+                <p className="text-xs">
+                  Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.
                 </p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-xs text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">
-                Last 24 months • Within 500m
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-xs">
-              <p className="text-xs">
-                Shows properties sold within 500 meters of this listing in the past 24 months. Closer matches appear first.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        )}
 
         {/* Compact Market Verdict - inline badge */}
-        {avgComparison !== null && (
+        {!hideVerdict && avgComparison !== null && (
           <div className="flex items-center gap-2">
             {avgComparison >= -5 && avgComparison <= 10 ? (
               <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
