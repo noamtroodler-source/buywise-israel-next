@@ -1,64 +1,82 @@
 
 
-# Semantic Color Token Migration for Calculator Tools
+# Add Transit Context Line to Property Location
 
-## Overview
-Migrate 5 calculator tools from raw Tailwind color classes (e.g., `bg-amber-50`, `text-green-600`, `bg-destructive/10`) to the project's semantic color tokens (`bg-semantic-amber`, `bg-semantic-green`, `bg-semantic-red`). This ensures visual consistency across all tools and aligns with the existing semantic color system used in AffordabilityBadge, ResultCard, and LTVIndicator.
+## What We're Building
+A single contextual line below the address and map buttons showing train station proximity (travel time from this specific property to the nearest train station), adapting to the user's selected travel mode. For cities without a train station, a graceful note. Plus: removing train station entries from the city anchor cards to avoid duplication, replacing them with more useful local anchors.
 
-## Strategy
-- **Warnings/caution alerts** (payment deadlines, index linkage, budget warnings): `semantic-amber`
-- **Positive signals** (tax savings, below-median price): `semantic-green`
-- **Negative/cost signals** (estimated linked price increase): `semantic-red`
-- **Informational banners** (blue): remain unchanged (already brand-compliant)
-- **Investment grades**: map A+/A to `semantic-green`, B+/B to neutral, C/D to muted (keeping it "honest but not alarming")
+## Data Layer
 
-## Changes by File
+### 1. Add train station coordinates to cities table
+Add 3 new columns to the `cities` table so train station info lives at the city level (not duplicated in anchors):
 
-### 1. Affordability Calculator (`AffordabilityCalculator.tsx`)
-**Affordability Score indicator** (line ~404): Replace the current `text-primary` / `text-muted-foreground` pattern with semantic colors for the score label and progress bar.
+- `train_station_name` (text, nullable)
+- `train_station_lat` (numeric, nullable)  
+- `train_station_lng` (numeric, nullable)
 
-| Score | Current | New |
-|-------|---------|-----|
-| Comfortable (>=80) | `text-primary`, `bg-primary` bar | `text-semantic-green-foreground`, `bg-semantic-green` bar |
-| Stretched (>=60) | `text-muted-foreground`, `bg-primary/60` bar | `text-semantic-amber-foreground`, `bg-semantic-amber` bar |
-| At Limit (<60) | `text-foreground`, `bg-muted-foreground` bar | `text-semantic-red-foreground`, `bg-semantic-red` bar |
+### 2. Populate from existing anchor data
+Copy coordinates from the 17 train station city_anchors into the new cities columns. Also fix Ra'anana which has `has_train_station = false` but actually has a train station anchor with coordinates.
 
-### 2. Investment Return Calculator (`InvestmentReturnCalculator.tsx`)
-**Investment grade badge** (lines 56-68 and line ~753): Replace the current primary/muted color classes with semantic tokens.
+### 3. Remove train station anchors and replace
+Delete the 17 train station entries from `city_anchors` and insert replacement mobility anchors. Proposed replacements (focused on useful transport/mobility context for each city):
 
-| Grade | Current | New |
-|-------|---------|-----|
-| A+/A (Excellent/Strong) | `text-primary bg-primary/10 border-primary/20` | `text-semantic-green-foreground bg-semantic-green border-semantic-green` |
-| B+/B (Good/Solid) | `text-foreground bg-muted border-border` | No change (neutral is appropriate) |
-| C+/C/D (Moderate/Fair/Weak) | `text-muted-foreground bg-muted border-border` | No change (neutral is appropriate) |
+| City | Removed | Replacement |
+|------|---------|-------------|
+| Ashdod | Ashdod Ad Halom Train Station | Route 4 (Ashdod–Tel Aviv) Access |
+| Ashkelon | Ashkelon Train Station | Route 4 South Access |
+| Beer Sheva | Be'er Sheva Center Train Station | Route 40 (Be'er Sheva–Tel Aviv) |
+| Beit Shemesh | Beit Shemesh Train Station | Route 38 / Route 1 Junction |
+| Hadera | Hadera West Train Station | Route 65 / Wadi Ara Junction |
+| Haifa | Haifa Center HaShmona | Carmelit / Metronit Network |
+| Herzliya | Herzliya Train Station | Ayalon Highway North Access |
+| Hod HaSharon | Kfar Saba-Nordau Station | Route 531 Access |
+| Jerusalem | Yitzhak Navon Station | Jerusalem Light Rail (Red/Green Lines) |
+| Kfar Saba | Kfar Saba-Nordau Station | Route 6 / Trans-Israel Highway Access |
+| Modi'in | Modiin Center Station | Route 443 (Modi'in–Jerusalem) |
+| Netanya | Netanya Train Station | Route 2 Coastal Highway Access |
+| Pardes Hanna | Pardes Hanna Station | Route 65 Junction |
+| Petah Tikva | Petah Tikva-Segula Station | Geha Road / Route 4 Junction |
+| Ramat Gan | Savidor Center / Ayalon | Ayalon Highway Central Access |
+| Tel Aviv | Tel Aviv Savidor Center | Ayalon Highway / Light Rail Access |
+| Zichron Yaakov | Binyamina Station | Route 4 / Route 70 Junction |
+| Ra'anana | Ra'anana West Train Station | Route 531 / Glilot Access |
 
-### 3. Purchase Tax Calculator (`PurchaseTaxCalculator.tsx`)
-3 token swaps:
+These replacements keep the "mobility" anchor type but shift from train (now handled by the transit line) to road/transit network access points that are genuinely useful for orientation.
 
-- **Payment warning alert** (line ~345): `bg-amber-50 border-amber-200` + `text-amber-600/800` replaced with `bg-semantic-amber border-semantic-amber` + `text-semantic-amber-foreground`
-- **Savings alert** (line ~355): `bg-green-50 border-green-200` + `text-green-600/800` replaced with `bg-semantic-green border-semantic-green` + `text-semantic-green-foreground`
-- **Upgrader timeline section** (line ~280): `bg-amber-50 border-amber-200` + `text-amber-600/700/800` replaced with `bg-semantic-amber border-semantic-amber` + `text-semantic-amber-foreground`
+## Frontend Changes
 
-### 4. New Construction Cost Calculator (`NewConstructionCostCalculator.tsx`)
-3 token swaps:
+### 4. New hook: `useCityTransitInfo`
+A small hook that queries the `cities` table for `has_train_station`, `train_station_name`, `train_station_lat`, `train_station_lng` given a city name. Uses the same slug-matching logic as `useCityAnchors`. Cached for 1 hour.
 
-- **Index warning alert** (line ~289): `bg-amber-50 border-amber-200` + `text-amber-600/800` replaced with `bg-semantic-amber border-semantic-amber` + `text-semantic-amber-foreground`
-- **Estimated linked price card** (line ~304): `bg-destructive/10` + `text-destructive` replaced with `bg-semantic-red` + `text-semantic-red-foreground`
-- **Linkage cost line items** (lines ~339, ~363): `text-amber-600` replaced with `text-semantic-amber-foreground`
+### 5. Transit line in PropertyLocation
+Placed between the address/buttons block and the "Search a location" section (around line 203). Uses the same `travelMode` state that already exists in the component.
 
-### 5. True Cost Calculator (`TrueCostCalculator.tsx`)
-3 token swaps:
+**When city has a train station:**
+```
+[TrainFront icon] [Station Name] · [X] min [mode] from here
+```
+Example: "Jerusalem Yitzhak Navon Station · 12 min walk from here"
 
-- **Price comparison text** (line ~475): `text-amber-600` (above median) stays as `text-semantic-amber-foreground`
-- **New construction alert** (line ~607): `bg-amber-500/10 border-amber-500/30` + `text-amber-600/700` replaced with `bg-semantic-amber border-semantic-amber` + `text-semantic-amber-foreground`
-- **New construction costs section** (line ~825): `bg-amber-500/5 border-amber-500/20` + `text-amber-700` replaced with `bg-semantic-amber/10 border-semantic-amber` + `text-semantic-amber-foreground`
+Travel time calculated using the same Haversine + mode formula already used in CityAnchorCard (walk: 12 min/km, transit: 1.8 min/km + 10, drive: 1.2 min/km + 2).
 
-## What is NOT changing
-- Blue info banners (these are branding, not status)
-- Primary-colored hero numbers (property price, net yield headline)
-- The Oleh benefits info panel (blue = informational, not a warning)
-- `text-destructive` for the "benefits expired" message (that is a genuine error state, and destructive is appropriate for inline error text in forms)
+**When city has no train station:**
+```
+[TrainFront icon] No train station in [City] · Nearest access via bus
+```
 
-## Total
-5 files, ~15 color swaps, no logic changes.
+Styled as a single `text-sm text-muted-foreground` line with an icon, matching the existing address line style. Nothing flashy.
+
+### 6. Filter train anchors from cards
+In PropertyLocation's rendering of city anchors, filter out any anchor with `icon === 'train'` as a safety net (in case some remain or are re-added later). This prevents duplication even without the data cleanup.
+
+## Files to Create/Edit
+- **New**: `src/hooks/useCityTransitInfo.ts` (small query hook)
+- **Edit**: `src/components/property/PropertyLocation.tsx` (add transit line + filter train anchors)
+- **DB migration**: Add columns to cities, populate data, swap anchors
+
+## What's NOT Changing
+- The travel mode toggle stays where it is
+- City anchor cards continue to work as before (minus train entries)
+- No new sections or visual weight added
+- The map, address, buttons all stay the same
 
