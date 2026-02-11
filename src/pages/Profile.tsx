@@ -87,9 +87,10 @@ export default function Profile() {
               <MortgageSection />
               <LocationsSection />
               <AccountSection />
+              <RecentlyViewedRow />
               
               {/* Support Footer */}
-              <SupportFooter 
+              <SupportFooter
                 message="Questions about your account? [We're here to help]."
                 linkText="We're here to help"
                 variant="subtle"
@@ -103,7 +104,6 @@ export default function Profile() {
               <AlertsCompact />
               <SavedPropertiesPreview />
               <SavedCalculationsCompact />
-              <RecentlyViewedRow />
             </div>
           </div>
         )}
