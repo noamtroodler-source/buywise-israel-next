@@ -35,7 +35,7 @@ function MetricCard({ title, value, previousValue, icon: Icon, suffix = '' }: Me
           {previousValue !== undefined && (
             <div className={cn(
               "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-              isPositive && "bg-primary/10 text-primary",
+              isPositive && "bg-semantic-green text-semantic-green-foreground",
               !isPositive && !isNeutral && "bg-muted text-muted-foreground",
               isNeutral && "bg-muted text-muted-foreground"
             )}>

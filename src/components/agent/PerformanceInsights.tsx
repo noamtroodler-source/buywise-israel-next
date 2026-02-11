@@ -100,7 +100,7 @@ export function PerformanceInsights({ metrics, topListingTitle, className }: Per
                   </span>
                   <div className={cn(
                     'flex items-center gap-0.5 text-xs font-medium',
-                    isPositive ? 'text-green-600' : 'text-red-500'
+                    isPositive ? 'text-semantic-green' : 'text-muted-foreground'
                   )}>
                     {isPositive ? (
                       <TrendingUp className="h-3 w-3" />
