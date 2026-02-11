@@ -12,6 +12,7 @@ export interface DeveloperRegistrationData {
   description?: string;
   founded_year?: number;
   logo_url?: string;
+  value_proposition?: string;
 }
 
 export function useDeveloperRegistration() {
@@ -41,6 +42,7 @@ export function useDeveloperRegistration() {
           description: data.description || null,
           founded_year: data.founded_year || null,
           logo_url: data.logo_url || null,
+          value_proposition: data.value_proposition || null,
           status: 'pending',
           verification_status: 'pending',
           is_verified: false,
