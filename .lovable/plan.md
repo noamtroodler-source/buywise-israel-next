@@ -1,42 +1,62 @@
 
 
-# Enable Price Editing with Change Feedback in Agent Edit Wizard
+# Track and Display Price Increases on Listings
 
-## Current State
-The price field already exists in the edit wizard (Step 1: Basics), and the database already has two triggers that automatically track price reductions (`original_price`, `price_reduced_at`). When an agent saves a price change, the triggers fire correctly.
+## Problem
+The price change tracking system only handles price **drops**. When an agent raises a price (e.g., ₪5M to ₪5.5M), the system doesn't record the original price, so the listing page shows no indication that the price changed. The listing page also only displays "Price Reduced" badges, with no equivalent for increases.
 
-**What's missing**: The agent has no visual feedback about the price change -- they can't see the current listed price vs. their new price, whether it constitutes a drop or increase, and what percentage change it represents.
+Your property did save correctly at ₪5,500,000 (confirmed in the database). The ₪5M you saw on the listing page was likely a cached/stale page -- a refresh should show the updated price. But there's no indicator showing it was originally ₪5M.
 
 ## What Changes
 
-### 1. Show Current Price Context in StepBasics (edit mode only)
-When editing an existing property, display the current published price alongside the editable price field:
-- Show "Current price: 2,500,000" above the input
-- If the new price differs, show a live indicator: "Price drop: -5% (-125,000)" in green, or "Price increase: +3% (+75,000)" in amber
-- If price goes back above `original_price`, note that the price drop badge will be cleared
+### 1. Database trigger update
+Modify the `handle_price_reduction` trigger to also store `original_price` when a price is **increased** (not just decreased). The trigger will:
+- Store the old price as `original_price` on ANY price change (up or down), if not already set
+- Only set `price_reduced_at` on decreases (unchanged behavior)
+- Clear `original_price` only when price returns exactly to the original value
 
-### 2. Pass Edit Context into Wizard
-The `PropertyWizardContext` needs a small addition to store the original (saved) price so StepBasics can compare against it. This is loaded from the property data in `EditPropertyWizard.tsx`.
+### 2. Listing page -- show "Price Increased" indicator
+Update `PropertyQuickSummary` to show a badge when `original_price < price` (price went up):
+- Show strikethrough original price: ~~₪5,000,000~~
+- Show amber badge: "Increased ₪500,000 (10%)" with a TrendingUp icon
+- This mirrors the existing green "Reduced" badge but with amber styling
+
+### 3. Listing card -- show price increase on cards too
+Update `PropertyCard` to also detect and display price increases in the card view, using the same `original_price < price` logic.
+
+### 4. Fix the specific property
+Run a one-time data fix: set `original_price = 5000000` on your property since the trigger wasn't tracking increases when the change was made.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/agent/wizard/PropertyWizardContext.tsx` | Add optional `savedPrice` field to wizard data for edit-mode comparison |
-| `src/components/agent/wizard/steps/StepBasics.tsx` | Show current price and live change indicator when editing |
-| `src/pages/agent/EditPropertyWizard.tsx` | Pass `savedPrice` when loading property data into wizard |
+| New migration SQL | Update `handle_price_reduction()` trigger to track increases |
+| New migration SQL | Fix data: set `original_price` on the specific property |
+| `src/components/property/PropertyQuickSummary.tsx` | Add "Price Increased" badge and strikethrough when `original_price < price` |
+| `src/components/property/PropertyCard.tsx` | Add price increase detection alongside existing price drop logic |
 
 ## Technical Details
 
-**PropertyWizardContext.tsx**: Add `savedPrice?: number` to `PropertyWizardData`. This is only populated during edit, not new listings.
-
-**StepBasics.tsx**: Below the price input, add a small info block:
+**Updated trigger logic:**
+```sql
+-- Track ANY price change (up or down)
+IF NEW.price <> OLD.price THEN
+  IF OLD.original_price IS NULL THEN
+    NEW.original_price := OLD.price;
+  END IF;
+  IF NEW.price < OLD.price THEN
+    NEW.price_reduced_at := NOW();
+  END IF;
+END IF;
+-- Clear when price returns to original
+IF NEW.original_price IS NOT NULL AND NEW.price = NEW.original_price THEN
+  NEW.original_price := NULL;
+  NEW.price_reduced_at := NULL;
+END IF;
 ```
-Current listed price: 2,500,000
-Your change: -125,000 (-5.0%) -- Price drop badge will appear
-```
-Uses simple math: `((newPrice - savedPrice) / savedPrice * 100)`. Only shown when `savedPrice` exists and differs from current input.
 
-**EditPropertyWizard.tsx**: Set `savedPrice: property.price` in the `wizardData` object at line ~111.
-
-No database changes needed -- the existing triggers handle all price drop tracking automatically.
+**UI indicator logic (PropertyQuickSummary):**
+- `original_price > price` = Price Drop (green, TrendingDown) -- existing behavior
+- `original_price < price` = Price Increase (amber, TrendingUp) -- new behavior
+- Shows: "Increased ₪500,000 (10%)" with the original price struck through
