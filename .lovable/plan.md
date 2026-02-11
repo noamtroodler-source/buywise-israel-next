@@ -1,46 +1,33 @@
 
 
-# Fix: Construction Timeline Stage/Progress Mismatch
+## Move Mortgage Estimate Higher — Resale Listings Only
 
-## Root Cause
-The timeline component has a hardcoded stages array with 6 statuses (`planning`, `pre_sale`, `foundation`, `structure`, `finishing`, `delivery`), but the database contains statuses like `under_construction` that don't match any of them. When `findIndex` fails, it returns `-1`, which gets clamped to `0` (Planning). Meanwhile, the "X% Complete" badge reads directly from `construction_progress_percent` in the database -- a completely independent value.
+**Goal:** Make the estimated monthly mortgage payment a first-class line below the price on all for-sale property pages, visible to every visitor — not just those who've saved mortgage preferences.
 
-This means any project with a non-matching status OR a manually-set percentage will show contradictory information.
+---
 
-## The Fix (in `ProjectTimeline.tsx`)
+### What Changes
 
-### 1. Derive the displayed progress from the stage, not the database
-Instead of blindly showing `construction_progress_percent`, calculate it from the current stage index. This guarantees the percentage always matches the stepper visually.
+**File: `src/components/property/PropertyQuickSummary.tsx`**
 
-Stage-based progress mapping:
-- Planning = 0%
-- Pre-Sale = 10%
-- Foundation = 30%
-- Structure = 50%
-- Finishing = 75%
-- Delivery = 100%
+1. **Remove the conditional gate** on line 302 (`mortgageEstimate.hasCustomPreferences !== false`). The estimate will always show for non-rental listings, using sensible defaults (75% LTV, 4.5-6% rates, 25-year term) when the user hasn't personalized.
 
-### 2. Add a status-mapping layer for unrecognized statuses
-Map known database statuses that don't appear in the stages array to the closest stage:
-- `under_construction` maps to `structure` (mid-construction)
-- `completed` maps to `delivery`
-- Any other unknown status: infer from `construction_progress_percent` as a fallback (e.g., 94% would land on "Finishing")
+2. **Promote visual styling** — change the estimate from small muted helper text to a clear secondary price line:
+   - Larger text (text-base instead of text-sm)
+   - Prefix with "Est." for clarity
+   - Semi-bold weight so it reads as a natural secondary line under the price
 
-### 3. Update the TypeScript type
-Add `under_construction` and `completed` to the `ProjectStatus` union in `types/projects.ts` so this is explicit.
+3. **Rename the CTA** from "Calculate Exact" to "Customize" — shorter, action-oriented, and links to the same mortgage calculator tool page.
 
-## Files to Change
+4. **Keep the tooltip** with breakdown details (down payment %, rate range, term) and the personalization nudge for signed-out or non-customized users.
 
-**`src/components/project/ProjectTimeline.tsx`**
-- Add a `STATUS_MAP` to normalize database statuses to timeline stages
-- Add a `STAGE_PROGRESS` array mapping each stage index to a percentage
-- Replace `const progress = project.construction_progress_percent || 0` with derived progress from stage index
-- Add fallback logic: if status is unrecognized, use `construction_progress_percent` to pick the closest stage
+---
 
-**`src/types/projects.ts`**
-- Expand `ProjectStatus` to include `under_construction` and `completed`
+### Technical Details
 
-## What This Prevents
-- Any future status value that doesn't match the 6-stage array will be gracefully mapped instead of defaulting to Planning
-- The percentage and the stepper will always agree since percentage is derived from the stage position
-- No more contradictory UI (e.g., "Planning" + "94% Complete")
+- Only the condition on line 302 and the styling/text within lines 301-341 of `PropertyQuickSummary.tsx` are modified
+- No new components, hooks, or database changes needed
+- The `useMortgageEstimate` hook already returns default estimates when no preferences are saved — we're just removing the UI gate
+- Rental listings (`for_rent`) remain unchanged — they already show their own "total monthly" line
+- Project pages are not affected (per the agreed decision)
+
