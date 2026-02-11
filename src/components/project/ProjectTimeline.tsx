@@ -59,7 +59,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
           >
             <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
               isCompleted 
-                ? 'bg-primary text-primary-foreground' 
+                ? 'bg-semantic-green text-semantic-green-foreground' 
                 : isCurrent 
                   ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' 
                   : 'bg-muted text-muted-foreground'
@@ -110,7 +110,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
             <div key={index} className="flex flex-col items-center" style={{ width: '16.66%' }}>
               <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
                 isCompleted 
-                  ? 'bg-primary text-primary-foreground' 
+                  ? 'bg-semantic-green text-semantic-green-foreground' 
                   : isCurrent 
                     ? 'bg-primary text-primary-foreground ring-4 ring-primary/20' 
                     : 'bg-muted text-muted-foreground'

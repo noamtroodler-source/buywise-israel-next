@@ -427,15 +427,15 @@ export function InvestmentROICalculator() {
             {/* City Benchmark Comparison */}
             {selectedCity && (
               <Alert variant={calculations.yieldVsBenchmark >= 0 ? 'default' : 'default'} 
-                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-primary/5 border-primary/20' : ''}>
+                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-semantic-green/5 border-semantic-green/20' : 'bg-semantic-red/5 border-semantic-red/20'}>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   {calculations.yieldVsBenchmark >= 0 ? (
-                    <span className="text-primary">
+                    <span className="text-semantic-green">
                       {calculations.yieldVsBenchmark.toFixed(2)}% above {selectedCityData?.name} average yield
                     </span>
                   ) : (
-                    <span>
+                    <span className="text-semantic-red">
                       {Math.abs(calculations.yieldVsBenchmark).toFixed(2)}% below {selectedCityData?.name} average yield
                     </span>
                   )}
@@ -485,7 +485,7 @@ export function InvestmentROICalculator() {
                 <hr />
                 <div className="flex justify-between font-semibold">
                   <span>Annual Cash Flow:</span>
-                  <span className={calculations.annualCashFlow >= 0 ? 'text-primary' : 'text-muted-foreground'}>
+                  <span className={calculations.annualCashFlow >= 0 ? 'text-semantic-green' : 'text-semantic-red'}>
                     {formatCurrency(calculations.annualCashFlow)}
                   </span>
                 </div>
@@ -506,11 +506,11 @@ export function InvestmentROICalculator() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Rental Income:</span>
-                  <span className="font-medium text-green-600">{formatCurrency(calculations.projection.totalRentalIncome)}</span>
+                  <span className="font-medium text-semantic-green">{formatCurrency(calculations.projection.totalRentalIncome)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Appreciation:</span>
-                  <span className="font-medium text-green-600">{formatCurrency(calculations.projection.equityGain)}</span>
+                  <span className="font-medium text-semantic-green">{formatCurrency(calculations.projection.equityGain)}</span>
                 </div>
                 <hr />
                 <div className="flex justify-between font-semibold">

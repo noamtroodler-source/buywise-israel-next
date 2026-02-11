@@ -33,24 +33,24 @@ export function AffordabilityBadge({ price, variant = 'badge', showMonthly = tru
       case 'comfortable':
         return {
           icon: CheckCircle2,
-          color: 'text-primary',
-          bg: 'bg-primary/5 border-primary/20',
+          color: 'text-semantic-green',
+          bg: 'bg-semantic-green/10 border-semantic-green/20',
           label: 'Comfortable',
           description: 'Well within your budget',
         };
       case 'stretch':
         return {
           icon: AlertCircle,
-          color: 'text-muted-foreground',
-          bg: 'bg-muted border-border',
+          color: 'text-semantic-amber',
+          bg: 'bg-semantic-amber/10 border-semantic-amber/20',
           label: 'Stretch',
           description: 'At your budget limit',
         };
       case 'out_of_reach':
         return {
           icon: XCircle,
-          color: 'text-foreground',
-          bg: 'bg-muted/50 border-border',
+          color: 'text-semantic-red',
+          bg: 'bg-semantic-red/10 border-semantic-red/20',
           label: 'Over Budget',
           description: 'Exceeds your max budget',
         };

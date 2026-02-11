@@ -25,11 +25,11 @@ export function ProjectQuickSummary({
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'planning': return 'Planning Phase';
-      case 'pre_sale': return 'Pre-Sale';
-      case 'under_construction': return 'Under Construction';
-      case 'completed': return 'Ready to Move In';
-      default: return status;
+      case 'planning': return { label: 'Planning Phase', className: '' };
+      case 'pre_sale': return { label: 'Pre-Sale', className: '' };
+      case 'under_construction': return { label: 'Under Construction', className: 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20' };
+      case 'completed': return { label: 'Ready to Move In', className: 'bg-semantic-green/10 text-semantic-green border-semantic-green/20' };
+      default: return { label: status, className: '' };
     }
   };
 
@@ -154,9 +154,14 @@ export function ProjectQuickSummary({
           </div>
         )}
         <div className="text-center flex items-center justify-center">
-          <Badge variant="secondary" className="font-medium text-xs sm:text-sm">
-            {getStatusLabel(project.status || 'planning')}
-          </Badge>
+          {(() => {
+            const statusInfo = getStatusLabel(project.status || 'planning');
+            return (
+              <Badge variant="outline" className={`font-medium text-xs sm:text-sm ${statusInfo.className}`}>
+                {statusInfo.label}
+              </Badge>
+            );
+          })()}
         </div>
       </div>
 
