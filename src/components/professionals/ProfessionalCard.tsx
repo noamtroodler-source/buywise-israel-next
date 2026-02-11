@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Globe, ArrowRight } from 'lucide-react';
 import type { TrustedProfessional } from '@/hooks/useTrustedProfessionals';
+import { PROFESSIONAL_LOGOS } from './professionalLogos';
 
 interface ProfessionalCardProps {
   professional: TrustedProfessional;
@@ -24,9 +25,9 @@ export function ProfessionalCard({ professional, index = 0 }: ProfessionalCardPr
             <div className="flex items-start gap-4">
               {/* Logo or fallback */}
               <div className="shrink-0 h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                {professional.logo_url ? (
+                {(professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]) ? (
                   <img
-                    src={professional.logo_url}
+                    src={professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]}
                     alt={`${professional.name} logo`}
                     className="h-full w-full object-cover rounded-xl"
                   />
