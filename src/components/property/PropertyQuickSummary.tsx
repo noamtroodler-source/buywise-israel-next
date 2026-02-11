@@ -188,7 +188,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
   
   // Freshness tier for enhanced display
   type FreshnessTier = 'hot' | 'fresh' | 'standard' | 'stale';
-  const freshnessTier: FreshnessTier = daysOnMarket <= 3 ? 'hot' : daysOnMarket <= 7 ? 'fresh' : daysOnMarket <= 30 ? 'standard' : 'stale';
+  const freshnessTier: FreshnessTier = daysOnMarket <= 3 ? 'hot' : daysOnMarket <= 14 ? 'fresh' : daysOnMarket <= 30 ? 'standard' : 'stale';
   
   
   // Get freshness label

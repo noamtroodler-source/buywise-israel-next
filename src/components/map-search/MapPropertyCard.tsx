@@ -38,7 +38,7 @@ export const MapPropertyCard = memo(function MapPropertyCard({
     : null;
   
   const isHot = daysOnMarket !== null && daysOnMarket <= 3;
-  const isNew = daysOnMarket !== null && daysOnMarket <= 7;
+  const isNew = daysOnMarket !== null && daysOnMarket <= 14;
   
   const hasPriceDrop = property.original_price && property.original_price > property.price;
 

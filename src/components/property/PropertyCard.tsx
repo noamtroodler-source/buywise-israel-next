@@ -63,13 +63,13 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
       ? differenceInDays(new Date(), new Date(property.created_at)) 
       : null;
     
-    const isNew = days !== null && days <= 7;
+    const isNew = days !== null && days <= 14;
     
     // Determine freshness tier
     let tier: FreshnessTier = 'standard';
     if (days !== null) {
       if (days <= 3) tier = 'hot';
-      else if (days <= 7) tier = 'fresh';
+      else if (days <= 14) tier = 'fresh';
       else if (days <= 30) tier = 'standard';
       else tier = 'stale';
     }
