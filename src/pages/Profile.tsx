@@ -17,6 +17,7 @@ import { SavedPropertiesPreview } from '@/components/profile/SavedPropertiesPrev
 import { SavedCalculationsCompact } from '@/components/profile/SavedCalculationsCompact';
 import { RecentlyViewedRow } from '@/components/profile/RecentlyViewedRow';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { ResearchJourneyCard } from '@/components/profile/ResearchJourneyCard';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -61,6 +62,7 @@ export default function Profile() {
         {isMobile ? (
           /* Mobile: Single column interleaved layout */
           <div className="space-y-3 mt-4">
+            <ResearchJourneyCard />
             <BuyerProfileSection />
             <AlertsCompact />
             <MortgageSection />
@@ -97,6 +99,7 @@ export default function Profile() {
             {/* Right Column - Activity & Saved */}
             <div className="space-y-4">
               <h2 className="text-lg font-semibold text-foreground">Activity</h2>
+              <ResearchJourneyCard />
               <AlertsCompact />
               <SavedPropertiesPreview />
               <SavedCalculationsCompact />
