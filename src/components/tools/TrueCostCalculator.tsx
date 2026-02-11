@@ -472,7 +472,7 @@ export function TrueCostCalculator() {
                 {priceComparison && Math.abs(parseFloat(priceComparison.percentDiff)) > 5 && (
                   <p className={cn(
                     "text-xs px-2.5",
-                    priceComparison.isAbove ? "text-amber-600" : "text-primary"
+                    priceComparison.isAbove ? "text-semantic-amber-foreground" : "text-primary"
                   )}>
                     {priceComparison.percentDiff}% {priceComparison.isAbove ? 'above' : 'below'} city median ({formatPrice(priceComparison.median)})
                   </p>
@@ -604,9 +604,9 @@ export function TrueCostCalculator() {
                   <strong>VAT is included:</strong> Israeli developer prices already include 18% VAT.
                 </AlertDescription>
               </Alert>
-              <Alert className="bg-amber-500/10 border-amber-500/30">
-                <Building2 className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-sm text-amber-700 dark:text-amber-400">
+              <Alert className="bg-semantic-amber border-semantic-amber">
+                <Building2 className="h-4 w-4 text-semantic-amber-foreground" />
+                <AlertDescription className="text-sm text-semantic-amber-foreground">
                   Prices are linked to the building cost index (מדד). Final price may be 3-8% higher.
                 </AlertDescription>
               </Alert>
@@ -822,11 +822,11 @@ export function TrueCostCalculator() {
 
       {/* New Construction Extras */}
       {isNewConstruction && (calculations.madadCost > 0 || calculations.developerLawyerFee > 0) && (
-        <div className="px-4 py-3 bg-amber-500/5 border-t border-amber-500/20">
+        <div className="px-4 py-3 bg-semantic-amber/10 border-t border-semantic-amber">
           <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">New Construction Costs</p>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Index Linkage (Madad)</span>
-            <span className="font-medium text-amber-700 dark:text-amber-400">{formatPrice(Math.round(calculations.madadCost))}</span>
+            <span className="font-medium text-semantic-amber-foreground">{formatPrice(Math.round(calculations.madadCost))}</span>
           </div>
           {calculations.developerLawyerFee > 0 && (
             <div className="flex justify-between text-sm mt-1">

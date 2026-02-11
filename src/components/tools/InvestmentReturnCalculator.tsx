@@ -59,8 +59,8 @@ function calculateInvestmentGrade(netYield: number, cashOnCash: number, apprecia
   colorClass: string;
 } {
   const score = (netYield * 0.4) + (cashOnCash * 0.15) + (appreciation * 0.45);
-  if (score >= 8) return { grade: 'A+', label: 'Excellent Investment', colorClass: 'text-primary bg-primary/10 border-primary/20' };
-  if (score >= 6.5) return { grade: 'A', label: 'Strong Investment', colorClass: 'text-primary bg-primary/10 border-primary/20' };
+  if (score >= 8) return { grade: 'A+', label: 'Excellent Investment', colorClass: 'text-semantic-green-foreground bg-semantic-green border-semantic-green' };
+  if (score >= 6.5) return { grade: 'A', label: 'Strong Investment', colorClass: 'text-semantic-green-foreground bg-semantic-green border-semantic-green' };
   if (score >= 5) return { grade: 'B+', label: 'Good Investment', colorClass: 'text-foreground bg-muted border-border' };
   if (score >= 4) return { grade: 'B', label: 'Solid Investment', colorClass: 'text-foreground bg-muted border-border' };
   if (score >= 3) return { grade: 'C+', label: 'Moderate Investment', colorClass: 'text-muted-foreground bg-muted border-border' };

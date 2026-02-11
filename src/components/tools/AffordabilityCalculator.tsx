@@ -401,8 +401,8 @@ function AffordabilityCalculatorContent() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Affordability Score</span><span className={cn("font-medium", calculations.affordabilityScore >= 80 ? "text-primary" : calculations.affordabilityScore >= 60 ? "text-muted-foreground" : "text-foreground")}>{calculations.affordabilityScore >= 80 ? 'Comfortable' : calculations.affordabilityScore >= 60 ? 'Stretched' : 'At Limit'}</span></div>
-                <Progress value={calculations.affordabilityScore} className={cn("h-2", calculations.affordabilityScore >= 80 ? "[&>div]:bg-primary" : calculations.affordabilityScore >= 60 ? "[&>div]:bg-primary/60" : "[&>div]:bg-muted-foreground")} />
+                <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Affordability Score</span><span className={cn("font-medium", calculations.affordabilityScore >= 80 ? "text-semantic-green-foreground" : calculations.affordabilityScore >= 60 ? "text-semantic-amber-foreground" : "text-semantic-red-foreground")}>{calculations.affordabilityScore >= 80 ? 'Comfortable' : calculations.affordabilityScore >= 60 ? 'Stretched' : 'At Limit'}</span></div>
+                <Progress value={calculations.affordabilityScore} className={cn("h-2", calculations.affordabilityScore >= 80 ? "[&>div]:bg-semantic-green" : calculations.affordabilityScore >= 60 ? "[&>div]:bg-semantic-amber" : "[&>div]:bg-semantic-red")} />
               </div>
               <div className="space-y-2 pt-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Income Breakdown</p>

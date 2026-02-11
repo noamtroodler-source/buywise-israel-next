@@ -277,10 +277,10 @@ export function PurchaseTaxCalculator() {
 
       {/* Upgrader-specific fields */}
       {buyerType === 'upgrader' && (
-        <div className="space-y-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
+        <div className="space-y-3 p-4 rounded-lg bg-semantic-amber border border-semantic-amber">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-amber-600" />
-            <Label className="font-semibold text-amber-800">Upgrader Timeline</Label>
+            <Calendar className="h-4 w-4 text-semantic-amber-foreground" />
+            <Label className="font-semibold text-semantic-amber-foreground">Upgrader Timeline</Label>
           </div>
           <div className="space-y-2">
             <Label className="text-sm">New Property Purchase Date</Label>
@@ -308,7 +308,7 @@ export function PurchaseTaxCalculator() {
               )}
             </div>
           )}
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-semantic-amber-foreground">
             Sell your existing property within 18 months to get first-time buyer rates
           </p>
         </div>
@@ -342,9 +342,9 @@ export function PurchaseTaxCalculator() {
         </div>
 
         {/* Payment Warning */}
-        <Alert className="bg-amber-50 border-amber-200">
-          <Calendar className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
+        <Alert className="bg-semantic-amber border-semantic-amber">
+          <Calendar className="h-4 w-4 text-semantic-amber-foreground" />
+          <AlertDescription className="text-semantic-amber-foreground">
             <strong>Payment due within 60 days</strong> of contract signing. Late payment incurs ~5% monthly interest.
           </AlertDescription>
         </Alert>
@@ -352,9 +352,9 @@ export function PurchaseTaxCalculator() {
         {/* Savings Alert */}
         {taxResult.savings && taxResult.savings.vsInvestor > 0 && 
          buyerType !== 'investor' && buyerType !== 'foreign' && buyerType !== 'company' && (
-          <Alert className="bg-green-50 border-green-200">
-            <TrendingDown className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
+          <Alert className="bg-semantic-green border-semantic-green">
+            <TrendingDown className="h-4 w-4 text-semantic-green-foreground" />
+            <AlertDescription className="text-semantic-green-foreground">
               <strong>You save {formatCurrency(taxResult.savings.vsInvestor)}</strong> compared to investor rates!
             </AlertDescription>
           </Alert>
