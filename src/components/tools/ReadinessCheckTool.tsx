@@ -326,7 +326,7 @@ export function ReadinessCheckTool() {
                   <div className="space-y-1.5">
                     {result.strengths.map((strength, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                        <Check className="h-4 w-4 text-semantic-green flex-shrink-0" />
                         <span>{strength}</span>
                       </div>
                     ))}

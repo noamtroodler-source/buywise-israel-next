@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Minus, Star, BarChart3, Home, Percent, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -147,20 +148,20 @@ export function PropertyInvestmentScore({
   }, [price, city, sizeSqm, bedrooms, cityData, historicalPrices]);
 
   const getScoreColor = (score: number) => {
-    if (score >= 7) return 'text-primary';
-    if (score >= 5) return 'text-muted-foreground';
-    return 'text-foreground';
+    if (score >= 7) return 'text-semantic-green';
+    if (score >= 5) return 'text-semantic-amber';
+    return 'text-semantic-red';
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 7) return 'bg-primary';
-    if (score >= 5) return 'bg-primary/50';
-    return 'bg-muted-foreground';
+    if (score >= 7) return 'bg-semantic-green';
+    if (score >= 5) return 'bg-semantic-amber';
+    return 'bg-semantic-red';
   };
 
   const getTrendIcon = (value: number) => {
-    if (value > 0) return <TrendingUp className="h-4 w-4 text-primary" />;
-    if (value < 0) return <TrendingDown className="h-4 w-4 text-muted-foreground" />;
+    if (value > 0) return <TrendingUp className="h-4 w-4 text-semantic-green" />;
+    if (value < 0) return <TrendingDown className="h-4 w-4 text-semantic-red" />;
     return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
@@ -186,7 +187,12 @@ export function PropertyInvestmentScore({
           </div>
           <div className="flex flex-col items-end gap-1">
             <Badge 
-              variant={metrics.appreciationPotential === 'high' ? 'default' : 'secondary'}
+              variant="outline"
+              className={cn(
+                metrics.appreciationPotential === 'high' ? 'bg-semantic-green/10 text-semantic-green border-semantic-green/20' :
+                metrics.appreciationPotential === 'medium' ? 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20' :
+                'bg-semantic-red/10 text-semantic-red border-semantic-red/20'
+              )}
             >
               {metrics.appreciationPotential.charAt(0).toUpperCase() + metrics.appreciationPotential.slice(1)} Potential
             </Badge>
@@ -276,7 +282,7 @@ export function PropertyInvestmentScore({
               <Home className="h-3.5 w-3.5" />
               <span className="text-xs">Price vs City Avg</span>
             </div>
-            <p className={`font-semibold ${metrics.priceVsCityAvg < 0 ? 'text-primary' : ''}`}>
+            <p className={`font-semibold ${metrics.priceVsCityAvg < 0 ? 'text-semantic-green' : metrics.priceVsCityAvg > 10 ? 'text-semantic-red' : ''}`}>
               {metrics.priceVsCityAvg > 0 ? '+' : ''}{metrics.priceVsCityAvg}%
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -300,7 +306,12 @@ export function PropertyInvestmentScore({
         </div>
 
         {/* Recommendation */}
-        <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+        <div className={cn(
+          "p-3 rounded-lg border",
+          metrics.overallScore >= 7 ? "bg-semantic-green/5 border-semantic-green/20" :
+          metrics.overallScore >= 5 ? "bg-semantic-amber/5 border-semantic-amber/20" :
+          "bg-semantic-red/5 border-semantic-red/20"
+        )}>
           <p className="text-sm text-foreground">{metrics.recommendation}</p>
         </div>
 

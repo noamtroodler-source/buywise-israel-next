@@ -61,6 +61,14 @@
     --project: 175 70% 40%;
     --project-foreground: 0 0% 100%;
 
+    /* Semantic traffic-light colors */
+    --semantic-green: 152 60% 36%;
+    --semantic-green-foreground: 0 0% 100%;
+    --semantic-amber: 38 92% 50%;
+    --semantic-amber-foreground: 0 0% 10%;
+    --semantic-red: 0 72% 51%;
+    --semantic-red-foreground: 0 0% 100%;
+
     /* Sidebar */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -121,6 +129,14 @@
     /* Project state - New Construction */
     --project: 175 70% 45%;
     --project-foreground: 0 0% 100%;
+
+    /* Semantic traffic-light colors - dark mode */
+    --semantic-green: 152 55% 45%;
+    --semantic-green-foreground: 0 0% 100%;
+    --semantic-amber: 38 85% 55%;
+    --semantic-amber-foreground: 0 0% 10%;
+    --semantic-red: 0 65% 55%;
+    --semantic-red-foreground: 0 0% 100%;
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 98%;

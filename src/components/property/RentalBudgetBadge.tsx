@@ -45,7 +45,7 @@ export function RentalBudgetBadge({
           <div className="text-sm">
             <p className="font-medium">Monthly Rent: {formattedRent}</p>
             {hasbudget && (
-              <p className={affordabilityLevel === 'within' ? 'text-primary' : 'text-amber-500'}>
+              <p className={affordabilityLevel === 'within' ? 'text-semantic-green' : 'text-semantic-red'}>
                 {percentOfBudget}% of your {currencySymbol}{rentalBudget.toLocaleString()} budget
               </p>
             )}
@@ -72,8 +72,8 @@ export function RentalBudgetBadge({
           variant="secondary" 
           className={`gap-1 ${
             affordabilityLevel === 'within' 
-              ? 'bg-primary/10 text-primary' 
-              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+              ? 'bg-semantic-green/10 text-semantic-green' 
+              : 'bg-semantic-red/10 text-semantic-red'
           } ${className}`}
         >
           {affordabilityLevel === 'within' ? (
@@ -88,7 +88,7 @@ export function RentalBudgetBadge({
         <div className="text-sm space-y-1">
           <p>Monthly Rent: <span className="font-medium">{formattedRent}</span></p>
           <p>Your Budget: <span className="font-medium">{currencySymbol}{rentalBudget.toLocaleString()}/mo</span></p>
-          <p className={affordabilityLevel === 'within' ? 'text-primary' : 'text-amber-500'}>
+          <p className={affordabilityLevel === 'within' ? 'text-semantic-green' : 'text-semantic-red'}>
             {percentOfBudget}% of budget
           </p>
         </div>

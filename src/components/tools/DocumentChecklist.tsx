@@ -165,7 +165,7 @@ export function DocumentChecklist() {
           </div>
           <Progress value={progress} className="h-3" />
           {progress === 100 && (
-            <p className="text-sm text-primary flex items-center gap-1">
+            <p className="text-sm text-semantic-green flex items-center gap-1">
               <Check className="h-4 w-4" />
               All documents collected! You're ready to proceed.
             </p>
@@ -190,7 +190,7 @@ export function DocumentChecklist() {
                       ({category.items.filter(i => i.checked).length}/{category.items.length})
                     </span>
                     {categoryProgress === 100 && (
-                      <Check className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 text-semantic-green" />
                     )}
                   </div>
                 </AccordionTrigger>

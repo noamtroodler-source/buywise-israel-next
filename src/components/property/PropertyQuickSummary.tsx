@@ -245,7 +245,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               const daysAgo = reducedAt ? Math.floor((Date.now() - reducedAt.getTime()) / (1000 * 60 * 60 * 24)) : null;
               return (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-primary/10 text-primary border-primary/20 text-sm font-medium">
+                  <Badge className="bg-semantic-green/10 text-semantic-green border-semantic-green/20 text-sm font-medium">
                     <TrendingDown className="h-3.5 w-3.5 mr-1" />
                     Reduced {formatPrice(reduction, property.currency || 'ILS')} ({pct}%)
                   </Badge>
@@ -264,7 +264,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               const pct = Math.round((increase / property.original_price) * 100);
               return (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 text-sm font-medium">
+                  <Badge className="bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20 dark:bg-semantic-amber/15 dark:text-semantic-amber text-sm font-medium">
                     <TrendingUp className="h-3.5 w-3.5 mr-1" />
                     Increased {formatPrice(increase, property.currency || 'ILS')} ({pct}%)
                   </Badge>
@@ -565,10 +565,10 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
           {/* Days on Market - Enhanced prominence */}
           <div className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-            freshnessTier === 'hot' 
-              ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300" 
+           freshnessTier === 'hot' 
+              ? "bg-semantic-amber/10 text-semantic-amber" 
               : freshnessTier === 'fresh' 
-                ? "bg-primary/10 text-primary" 
+                ? "bg-semantic-green/10 text-semantic-green" 
                 : "bg-muted text-muted-foreground"
           )}>
             {freshnessTier === 'hot' ? (

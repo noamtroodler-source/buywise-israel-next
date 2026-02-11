@@ -19,9 +19,9 @@ export function LTVIndicator({ ltv, maxLTV, className }: LTVIndicatorProps) {
   const status = getStatus();
 
   const variantStyles = {
-    success: 'bg-primary/10 text-primary border-primary/20',
-    warning: 'bg-muted text-muted-foreground border-border',
-    danger: 'bg-muted text-foreground border-border',
+    success: 'bg-semantic-green/10 text-semantic-green border-semantic-green/20',
+    warning: 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20',
+    danger: 'bg-semantic-red/10 text-semantic-red border-semantic-red/20',
   };
 
   return (
@@ -33,11 +33,11 @@ export function LTVIndicator({ ltv, maxLTV, className }: LTVIndicatorProps) {
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div 
-            className={cn(
+           className={cn(
               "h-full rounded-full transition-all",
-              status.variant === 'success' && "bg-primary",
-              status.variant === 'warning' && "bg-primary/60",
-              status.variant === 'danger' && "bg-muted-foreground"
+              status.variant === 'success' && "bg-semantic-green",
+              status.variant === 'warning' && "bg-semantic-amber",
+              status.variant === 'danger' && "bg-semantic-red"
             )}
             style={{ width: `${Math.min(ltv / maxLTV * 100, 100)}%` }}
           />

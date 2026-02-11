@@ -69,6 +69,18 @@ export default {
           DEFAULT: "hsl(var(--project))",
           foreground: "hsl(var(--project-foreground))",
         },
+        "semantic-green": {
+          DEFAULT: "hsl(var(--semantic-green))",
+          foreground: "hsl(var(--semantic-green-foreground))",
+        },
+        "semantic-amber": {
+          DEFAULT: "hsl(var(--semantic-amber))",
+          foreground: "hsl(var(--semantic-amber-foreground))",
+        },
+        "semantic-red": {
+          DEFAULT: "hsl(var(--semantic-red))",
+          foreground: "hsl(var(--semantic-red-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

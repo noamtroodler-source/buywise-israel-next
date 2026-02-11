@@ -280,14 +280,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Freshness badge - more prominent for hot/fresh listings (especially rentals)
                     if (freshnessTier === 'hot') {
                       badges.push(
-                        <Badge key="fresh" className="bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary text-xs font-medium">
+                        <Badge key="fresh" className="bg-semantic-amber/10 dark:bg-semantic-amber/20 text-semantic-amber text-xs font-medium">
                           <Flame className="h-3 w-3 mr-1" />
                           {isRental ? 'Just Available' : 'Just Listed'}
                         </Badge>
                       );
                     } else if (freshnessTier === 'fresh') {
                       badges.push(
-                        <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
+                        <Badge key="new" className="bg-semantic-green/10 text-semantic-green text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
                           New
                         </Badge>
@@ -296,7 +296,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     
                     if (hasPriceDrop && priceDropPercent >= 1) {
                       badges.push(
-                        <Badge key="price-drop" className="bg-muted text-foreground text-xs font-medium">
+                        <Badge key="price-drop" className="bg-semantic-green/10 text-semantic-green text-xs font-medium">
                           <TrendingDown className="h-3 w-3 mr-1" />
                           Price Drop
                         </Badge>
@@ -305,7 +305,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     
                     if (hasPriceIncrease) {
                       badges.push(
-                        <Badge key="price-up" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                      <Badge key="price-up" className="bg-semantic-amber/10 dark:bg-semantic-amber/20 text-semantic-amber text-xs font-medium">
                           <TrendingUp className="h-3 w-3 mr-1" />
                           Price Up
                         </Badge>
@@ -362,8 +362,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {daysLabel && (
                   <div className={cn(
                     "flex items-center gap-1 pt-1 text-xs",
-                    freshnessTier === 'hot' ? "text-primary font-medium" :
-                    freshnessTier === 'fresh' ? "text-primary font-medium" :
+                   freshnessTier === 'hot' ? "text-semantic-amber font-medium" :
+                    freshnessTier === 'fresh' ? "text-semantic-green font-medium" :
                     "text-muted-foreground"
                   )}>
                     {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -470,14 +470,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Freshness badge - more prominent for hot/fresh listings (especially rentals)
                     if (freshnessTier === 'hot') {
                       badges.push(
-                        <Badge key="fresh" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                        <Badge key="fresh" className="bg-semantic-amber/10 dark:bg-semantic-amber/20 text-semantic-amber text-xs font-medium">
                           <Flame className="h-3 w-3 mr-1" />
                           {isRental ? 'Just Available' : 'Just Listed'}
                         </Badge>
                       );
                     } else if (freshnessTier === 'fresh') {
                       badges.push(
-                        <Badge key="new" className="bg-project text-project-foreground text-xs font-medium">
+                        <Badge key="new" className="bg-semantic-green/10 text-semantic-green text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
                           New
                         </Badge>
@@ -486,7 +486,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     
                     if (hasPriceDrop && priceDropPercent >= 1) {
                       badges.push(
-                        <Badge key="price-drop" className="bg-muted text-foreground text-xs font-medium">
+                        <Badge key="price-drop" className="bg-semantic-green/10 text-semantic-green text-xs font-medium">
                           <TrendingDown className="h-3 w-3 mr-1" />
                           Price Drop
                         </Badge>
@@ -495,7 +495,7 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     
                     if (hasPriceIncrease) {
                       badges.push(
-                        <Badge key="price-up" className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                      <Badge key="price-up" className="bg-semantic-amber/10 dark:bg-semantic-amber/20 text-semantic-amber text-xs font-medium">
                           <TrendingUp className="h-3 w-3 mr-1" />
                           Price Up
                         </Badge>

@@ -339,6 +339,15 @@ function MortgageCalculatorContent() {
     }
   };
 
+  const getRiskBadgeClass = (risk: string | null) => {
+    switch (risk) {
+      case 'low': return 'bg-semantic-green/10 text-semantic-green border-semantic-green/20';
+      case 'medium': return 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20';
+      case 'high': return 'bg-semantic-red/10 text-semantic-red border-semantic-red/20';
+      default: return '';
+    }
+  };
+
   // Header Actions
   const headerActions = (
     <>
@@ -625,7 +634,7 @@ function MortgageCalculatorContent() {
                               </span>
                             </TableCell>
                             <TableCell className="py-3">
-                              <Badge variant={getRiskBadgeVariant(track.risk_level)} className="text-xs capitalize">
+                              <Badge variant="outline" className={cn("text-xs capitalize", getRiskBadgeClass(track.risk_level))}>
                                 {track.risk_level}
                               </Badge>
                             </TableCell>
@@ -673,14 +682,14 @@ function MortgageCalculatorContent() {
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 1).toFixed(1)}% (+1%)</p>
                     <p className="text-xl font-semibold">{formatCurrency(stressTest.plus1.stressedPayment)}/mo</p>
-                    <p className="text-xs text-primary mt-1">
+                    <p className="text-xs text-semantic-amber mt-1">
                       +{formatCurrency(stressTest.plus1.increase)} ({stressTest.plus1.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
                   <div className="p-4 rounded-lg bg-muted/50 border">
                     <p className="text-xs text-muted-foreground mb-1">At {(interestRate + 2).toFixed(1)}% (+2%)</p>
                     <p className="text-xl font-semibold">{formatCurrency(stressTest.plus2.stressedPayment)}/mo</p>
-                    <p className="text-xs text-primary mt-1">
+                    <p className="text-xs text-semantic-red mt-1">
                       +{formatCurrency(stressTest.plus2.increase)} ({stressTest.plus2.increasePercent.toFixed(1)}% higher)
                     </p>
                   </div>
