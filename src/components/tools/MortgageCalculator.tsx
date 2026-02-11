@@ -341,9 +341,9 @@ function MortgageCalculatorContent() {
 
   const getRiskBadgeClass = (risk: string | null) => {
     switch (risk) {
-      case 'low': return 'bg-semantic-green/10 text-semantic-green border-semantic-green/20';
-      case 'medium': return 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20';
-      case 'high': return 'bg-semantic-red/10 text-semantic-red border-semantic-red/20';
+      case 'low': return 'bg-semantic-green text-white border-semantic-green';
+      case 'medium': return 'bg-semantic-amber text-white border-semantic-amber';
+      case 'high': return 'bg-semantic-red text-white border-semantic-red';
       default: return '';
     }
   };
