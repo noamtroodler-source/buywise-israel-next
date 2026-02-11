@@ -1,4 +1,4 @@
-export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery';
+export type ProjectStatus = 'planning' | 'pre_sale' | 'foundation' | 'structure' | 'finishing' | 'delivery' | 'under_construction' | 'completed';
 
 export interface Developer {
   id: string;
