@@ -189,9 +189,9 @@ export function PropertyInvestmentScore({
             <Badge 
               variant="outline"
               className={cn(
-                metrics.appreciationPotential === 'high' ? 'bg-semantic-green/10 text-semantic-green border-semantic-green/20' :
-                metrics.appreciationPotential === 'medium' ? 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20' :
-                'bg-semantic-red/10 text-semantic-red border-semantic-red/20'
+                metrics.appreciationPotential === 'high' ? 'bg-semantic-green text-semantic-green-foreground border-semantic-green' :
+                metrics.appreciationPotential === 'medium' ? 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber' :
+                'bg-semantic-red text-semantic-red-foreground border-semantic-red'
               )}
             >
               {metrics.appreciationPotential.charAt(0).toUpperCase() + metrics.appreciationPotential.slice(1)} Potential
@@ -308,11 +308,11 @@ export function PropertyInvestmentScore({
         {/* Recommendation */}
         <div className={cn(
           "p-3 rounded-lg border",
-          metrics.overallScore >= 7 ? "bg-semantic-green/5 border-semantic-green/20" :
-          metrics.overallScore >= 5 ? "bg-semantic-amber/5 border-semantic-amber/20" :
-          "bg-semantic-red/5 border-semantic-red/20"
+          metrics.overallScore >= 7 ? "bg-semantic-green border-semantic-green text-semantic-green-foreground" :
+          metrics.overallScore >= 5 ? "bg-semantic-amber border-semantic-amber text-semantic-amber-foreground" :
+          "bg-semantic-red border-semantic-red text-semantic-red-foreground"
         )}>
-          <p className="text-sm text-foreground">{metrics.recommendation}</p>
+          <p className="text-sm">{metrics.recommendation}</p>
         </div>
 
         <p className="text-xs text-muted-foreground">

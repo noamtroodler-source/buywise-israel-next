@@ -27,8 +27,8 @@ export function ProjectQuickSummary({
     switch (status) {
       case 'planning': return { label: 'Planning Phase', className: '' };
       case 'pre_sale': return { label: 'Pre-Sale', className: '' };
-      case 'under_construction': return { label: 'Under Construction', className: 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20' };
-      case 'completed': return { label: 'Ready to Move In', className: 'bg-semantic-green/10 text-semantic-green border-semantic-green/20' };
+      case 'under_construction': return { label: 'Under Construction', className: 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber' };
+      case 'completed': return { label: 'Ready to Move In', className: 'bg-semantic-green text-semantic-green-foreground border-semantic-green' };
       default: return { label: status, className: '' };
     }
   };
