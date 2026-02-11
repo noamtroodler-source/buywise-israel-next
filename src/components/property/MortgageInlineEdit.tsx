@@ -69,7 +69,7 @@ export function MortgageInlineEdit({
   };
   
   return (
-    <div className={cn("pl-6 pt-3 pb-2 space-y-3 border-l-2 border-primary/20", className)}>
+    <div className={cn("space-y-3", className)}>
       {/* Down Payment */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">

@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MapPin, Share2, Heart, Bed, Bath, Maximize, Building2, Eye, Clock, Calendar, Layers, DollarSign, Car, Wrench, Calculator, Home, Shield, Sparkles, Trees, Users, Baby, Accessibility, Sofa, User, Thermometer, CalendarCheck, Flame, Zap, Star, TrendingDown, TrendingUp } from 'lucide-react';
  import { Armchair, Refrigerator, Tv, UtensilsCrossed, WashingMachine } from 'lucide-react';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea, useAreaUnitLabel } from '@/contexts/PreferencesContext';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { MortgageInlineEdit } from './MortgageInlineEdit';
 import { formatMonthlyRange, RENTAL_FEE_RANGES, VAT_RATE } from '@/lib/utils/formatRange';
 import { useCityDetails } from '@/hooks/useCityDetails';
 import { useSavesCount } from '@/hooks/useSavesCount';
@@ -138,6 +141,7 @@ function generateHighlights(property: PropertyQuickSummaryProps['property']): Ar
 }
 
 export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: PropertyQuickSummaryProps) {
+  const [mortgagePopoverOpen, setMortgagePopoverOpen] = useState(false);
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const formatPricePerArea = useFormatPricePerArea();
@@ -330,13 +334,23 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                   </TooltipContent>
                 </Tooltip>
                 <span className="text-muted-foreground/60">•</span>
-                <Link 
-                  to={`/tools?calculator=mortgage&price=${property.price}`}
-                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  <Calculator className="h-3.5 w-3.5" />
-                  Customize
-                </Link>
+                <Popover open={mortgagePopoverOpen} onOpenChange={setMortgagePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Calculator className="h-3.5 w-3.5" />
+                      Customize
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-72 p-3">
+                    <MortgageInlineEdit
+                      propertyPrice={property.price}
+                      ltvLimit={mortgageEstimate.ltvLimit}
+                      onClose={() => setMortgagePopoverOpen(false)}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
