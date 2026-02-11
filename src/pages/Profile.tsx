@@ -4,7 +4,6 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { ProfileWelcomeHeader } from '@/components/profile/ProfileWelcomeHeader';
@@ -18,6 +17,8 @@ import { SavedCalculationsCompact } from '@/components/profile/SavedCalculations
 import { RecentlyViewedRow } from '@/components/profile/RecentlyViewedRow';
 import { SupportFooter } from '@/components/shared/SupportFooter';
 import { ResearchJourneyCard } from '@/components/profile/ResearchJourneyCard';
+import { ProfileQuickStats } from '@/components/profile/ProfileQuickStats';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -26,7 +27,6 @@ export default function Profile() {
   const { isAgent, isAdmin } = useUserRole();
   const { data: myAgency } = useMyAgency();
   const { data: developerProfile } = useDeveloperProfile();
-  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     await signOut();
@@ -45,8 +45,8 @@ export default function Profile() {
 
   return (
     <Layout>
-      <div className="container py-4 md:py-6 max-w-6xl">
-        {/* Welcome Header with Completion Ring */}
+      <div className="container py-4 md:py-6 max-w-4xl">
+        {/* Compact Welcome Header */}
         <ProfileWelcomeHeader
           fullName={profile?.full_name || null}
           email={user?.email}
@@ -59,54 +59,56 @@ export default function Profile() {
           onSignOut={handleSignOut}
         />
 
-        {isMobile ? (
-          /* Mobile: Single column interleaved layout */
-          <div className="space-y-3 mt-4">
+        {/* Tab Navigation */}
+        <Tabs defaultValue="overview" className="mt-6">
+          <TabsList className="w-full h-11 bg-muted/60 rounded-xl p-1 grid grid-cols-3">
+            <TabsTrigger
+              value="overview"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="profile"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              My Profile
+            </TabsTrigger>
+            <TabsTrigger
+              value="saved"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              Saved & Alerts
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="mt-6 space-y-6">
+            <ProfileQuickStats />
             <ResearchJourneyCard />
-            <BuyerProfileSection />
-            <AlertsCompact />
-            <MortgageSection />
-            <SavedPropertiesPreview />
-            <LocationsSection />
             <RecentlyViewedRow />
-            <AccountSection />
-            <SavedCalculationsCompact />
-            <SupportFooter 
+            <SupportFooter
               message="Questions about your account? [We're here to help]."
               linkText="We're here to help"
               variant="subtle"
             />
-          </div>
-        ) : (
-          /* Desktop: Two-Column Layout */
-          <div className="grid lg:grid-cols-[1fr,380px] gap-6 mt-6">
-            {/* Left Column - Profile Setup */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Profile Setup</h2>
-              <BuyerProfileSection />
-              <MortgageSection />
-              <LocationsSection />
-              <AccountSection />
-              <RecentlyViewedRow />
-              
-              {/* Support Footer */}
-              <SupportFooter
-                message="Questions about your account? [We're here to help]."
-                linkText="We're here to help"
-                variant="subtle"
-              />
-            </div>
+          </TabsContent>
 
-            {/* Right Column - Activity & Saved */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">Activity</h2>
-              <ResearchJourneyCard />
-              <AlertsCompact />
-              <SavedPropertiesPreview />
-              <SavedCalculationsCompact />
-            </div>
-          </div>
-        )}
+          {/* My Profile Tab */}
+          <TabsContent value="profile" className="mt-6 space-y-6">
+            <BuyerProfileSection />
+            <MortgageSection />
+            <LocationsSection />
+            <AccountSection />
+          </TabsContent>
+
+          {/* Saved & Alerts Tab */}
+          <TabsContent value="saved" className="mt-6 space-y-6">
+            <AlertsCompact />
+            <SavedPropertiesPreview />
+            <SavedCalculationsCompact />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
