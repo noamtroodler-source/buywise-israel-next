@@ -1,46 +1,32 @@
 
+# Semantic Color Update for Agent and Developer Performance Trends
 
-# Replace Transparent Semantic Colors with Solid Colors Site-Wide
+## Overview
+Update the trend indicators in both portals to use semantic color tokens, with a strategic approach: celebrate positive trends with green, and keep negative trends neutral (muted) rather than alarming red.
 
-## What's Changing
+## Strategy: "Honest but not alarming"
+- Positive trends (up arrow + percentage): solid semantic green text
+- Neutral trends (no change): muted foreground (unchanged)
+- Negative trends (down arrow + percentage): muted foreground instead of red -- the down arrow already communicates the direction, no need for red to amplify it
 
-Every badge, indicator, and highlight that currently uses faded/transparent semantic colors (like `bg-semantic-green/10 text-semantic-green`) will be updated to use solid backgrounds with white text (like `bg-semantic-green text-white`), matching the style you approved on the mortgage risk badges.
+This keeps things honest (numbers and arrows are visible) without making the dashboard feel like a warning screen when metrics dip.
 
-## Files to Update
+## Changes
 
-### Tools (3 files)
+### 1. Agent PerformanceInsights.tsx
+**File:** `src/components/agent/PerformanceInsights.tsx`
 
-| File | What Changes |
-|------|-------------|
-| `src/components/tools/shared/LTVIndicator.tsx` | LTV status badge: solid green/amber/red with white text |
-| `src/components/tools/RentVsBuyCalculator.tsx` | Buy vs rent verdict box: solid green or amber bg with white text |
-| `src/components/tools/InvestmentROICalculator.tsx` | Yield benchmark alert: solid green or red bg with white text |
+Line 103: Replace `text-green-600` with `text-semantic-green` and `text-red-500` with `text-muted-foreground`
 
-### Property Listings (6 files)
+### 2. Developer DeveloperPerformanceInsights.tsx  
+**File:** `src/components/developer/DeveloperPerformanceInsights.tsx`
 
-| File | What Changes |
-|------|-------------|
-| `src/components/property/AffordabilityBadge.tsx` | Comfortable/Stretch/Over Budget badges: solid colors |
-| `src/components/property/RentalBudgetBadge.tsx` | Within/Over Budget badge: solid green or red |
-| `src/components/property/PropertyQuickSummary.tsx` | Price drop (green), price increase (amber), freshness badges: all solid |
-| `src/components/property/PropertyCard.tsx` | Same badges on cards: solid colors |
-| `src/components/property/PropertyInvestmentScore.tsx` | Appreciation potential badge + recommendation box: solid colors |
-| `src/components/property/RecentNearbySales.tsx` | Market verdict badges + comparison badges: solid colors |
+Lines 38-40: Replace `bg-primary/10 text-primary` (positive) with `bg-semantic-green text-semantic-green-foreground`, and keep `bg-muted text-muted-foreground` for negative/neutral (already neutral, no change needed)
 
-### Projects (1 file)
+## What's NOT changing
+- Agency portal: no semantic color spots found
+- Renewal badges: don't exist in agent components
+- Changes Requested badges: only in admin review cards (not agent/developer-facing)
+- Wizards: no status indicators to update
 
-| File | What Changes |
-|------|-------------|
-| `src/components/project/ProjectQuickSummary.tsx` | Status badges (Under Construction = amber, Ready = green): solid |
-
-## The Pattern
-
-Every instance follows the same swap:
-
-**Before:** `bg-semantic-green/10 text-semantic-green border-semantic-green/20`
-**After:** `bg-semantic-green text-semantic-green-foreground border-semantic-green`
-
-The `*-foreground` CSS variables are already defined in the CSS (white for green/red, dark for amber), so text contrast will be handled automatically.
-
-Total: 10 files, all class name replacements only -- no logic changes.
-
+Total: 2 files, text color swaps only.
