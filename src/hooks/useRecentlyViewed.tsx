@@ -174,9 +174,14 @@ export function useRecentlyViewed() {
     clearMutation.mutate();
   }, [clearMutation]);
 
+  const viewedDates: string[] = user
+    ? dbRecentlyViewed.map((item: any) => item.viewed_at).filter(Boolean)
+    : [];
+
   return {
     recentProperties,
     recentPropertyIds,
+    viewedDates,
     isLoading: user ? isLoading : false,
     addToRecentlyViewed,
     clearRecentlyViewed,
