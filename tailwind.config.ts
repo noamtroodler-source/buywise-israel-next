@@ -81,6 +81,10 @@ export default {
           DEFAULT: "hsl(var(--semantic-red))",
           foreground: "hsl(var(--semantic-red-foreground))",
         },
+        "semantic-teal": {
+          DEFAULT: "hsl(var(--semantic-teal))",
+          foreground: "hsl(var(--semantic-teal-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
