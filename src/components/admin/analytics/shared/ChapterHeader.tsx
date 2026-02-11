@@ -25,21 +25,21 @@ export function ChapterHeader({
   const statusConfig = {
     green: { 
       label: 'Strong', 
-      bgClass: 'bg-emerald-500/10', 
-      textClass: 'text-emerald-600',
-      dotClass: 'bg-emerald-500'
+      bgClass: 'bg-semantic-green', 
+      textClass: 'text-semantic-green-foreground',
+      dotClass: 'bg-white/80'
     },
     yellow: { 
       label: 'Watch', 
-      bgClass: 'bg-amber-500/10', 
-      textClass: 'text-amber-600',
-      dotClass: 'bg-amber-500'
+      bgClass: 'bg-semantic-amber', 
+      textClass: 'text-semantic-amber-foreground',
+      dotClass: 'bg-white/80'
     },
     red: { 
       label: 'Action', 
-      bgClass: 'bg-destructive/10', 
-      textClass: 'text-destructive',
-      dotClass: 'bg-destructive'
+      bgClass: 'bg-semantic-red', 
+      textClass: 'text-semantic-red-foreground',
+      dotClass: 'bg-white/80'
     }
   };
 

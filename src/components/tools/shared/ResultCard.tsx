@@ -23,9 +23,9 @@ const variantStyles = {
 };
 
 const badgeVariantStyles = {
-  success: 'bg-success/10 text-success border-success/20',
-  warning: 'bg-warning/10 text-warning-foreground border-warning/20',
-  danger: 'bg-destructive/10 text-destructive border-destructive/20',
+  success: 'bg-semantic-green text-semantic-green-foreground border-semantic-green',
+  warning: 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber',
+  danger: 'bg-semantic-red text-semantic-red-foreground border-semantic-red',
   default: 'bg-muted text-muted-foreground border-border',
 };
 

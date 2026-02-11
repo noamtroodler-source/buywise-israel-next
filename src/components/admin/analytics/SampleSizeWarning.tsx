@@ -30,22 +30,22 @@ const reliabilityConfig: Record<Reliability, {
 }> = {
   reliable: {
     icon: CheckCircle2,
-    color: 'text-green-600',
-    bgColor: 'bg-green-500/10',
+    color: 'text-semantic-green-foreground',
+    bgColor: 'bg-semantic-green',
     label: 'Reliable',
     tooltip: 'Sample size ≥100: Statistically significant data',
   },
   limited: {
     icon: Info,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-500/10',
+    color: 'text-semantic-amber-foreground',
+    bgColor: 'bg-semantic-amber',
     label: 'Limited',
     tooltip: 'Sample size 30-99: Results may have higher variance',
   },
   insufficient: {
     icon: AlertTriangle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-500/10',
+    color: 'text-semantic-red-foreground',
+    bgColor: 'bg-semantic-red',
     label: 'Insufficient',
     tooltip: 'Sample size <30: Not statistically significant - interpret with caution',
   },
