@@ -19,9 +19,9 @@ export function LTVIndicator({ ltv, maxLTV, className }: LTVIndicatorProps) {
   const status = getStatus();
 
   const variantStyles = {
-    success: 'bg-semantic-green/10 text-semantic-green border-semantic-green/20',
-    warning: 'bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20',
-    danger: 'bg-semantic-red/10 text-semantic-red border-semantic-red/20',
+    success: 'bg-semantic-green text-semantic-green-foreground border-semantic-green',
+    warning: 'bg-semantic-amber text-semantic-amber-foreground border-semantic-amber',
+    danger: 'bg-semantic-red text-semantic-red-foreground border-semantic-red',
   };
 
   return (

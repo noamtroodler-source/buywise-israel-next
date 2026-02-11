@@ -72,8 +72,8 @@ export function RentalBudgetBadge({
           variant="secondary" 
           className={`gap-1 ${
             affordabilityLevel === 'within' 
-              ? 'bg-semantic-green/10 text-semantic-green' 
-              : 'bg-semantic-red/10 text-semantic-red'
+              ? 'bg-semantic-green text-semantic-green-foreground' 
+              : 'bg-semantic-red text-semantic-red-foreground'
           } ${className}`}
         >
           {affordabilityLevel === 'within' ? (

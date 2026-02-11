@@ -951,7 +951,7 @@ export function RentVsBuyCalculator() {
             {/* Verdict */}
             <p className={cn(
               "text-center text-sm font-medium mt-4 p-2 rounded-lg",
-              calculations.buyingIsBetter ? "text-semantic-green bg-semantic-green/10" : "text-semantic-amber bg-semantic-amber/10"
+              calculations.buyingIsBetter ? "text-semantic-green-foreground bg-semantic-green" : "text-semantic-amber-foreground bg-semantic-amber"
             )}>
               {calculations.buyingIsBetter 
                 ? `Buying builds ${formatPrice(Math.round(calculations.wealthDifference))} more wealth`

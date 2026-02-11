@@ -427,15 +427,15 @@ export function InvestmentROICalculator() {
             {/* City Benchmark Comparison */}
             {selectedCity && (
               <Alert variant={calculations.yieldVsBenchmark >= 0 ? 'default' : 'default'} 
-                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-semantic-green/5 border-semantic-green/20' : 'bg-semantic-red/5 border-semantic-red/20'}>
+                     className={calculations.yieldVsBenchmark >= 0 ? 'bg-semantic-green border-semantic-green text-semantic-green-foreground' : 'bg-semantic-red border-semantic-red text-semantic-red-foreground'}>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   {calculations.yieldVsBenchmark >= 0 ? (
-                    <span className="text-semantic-green">
+                    <span>
                       {calculations.yieldVsBenchmark.toFixed(2)}% above {selectedCityData?.name} average yield
                     </span>
                   ) : (
-                    <span className="text-semantic-red">
+                    <span>
                       {Math.abs(calculations.yieldVsBenchmark).toFixed(2)}% below {selectedCityData?.name} average yield
                     </span>
                   )}

@@ -135,8 +135,8 @@ function DesktopCompsList({
                     className={cn(
                       "text-xs cursor-help",
                       comparison > 0 
-                        ? "bg-semantic-red/10 text-semantic-red hover:bg-semantic-red/15"
-                        : "bg-semantic-green/10 text-semantic-green hover:bg-semantic-green/15"
+                        ? "bg-semantic-red text-semantic-red-foreground hover:bg-semantic-red/90"
+                        : "bg-semantic-green text-semantic-green-foreground hover:bg-semantic-green/90"
                     )}
                   >
                     {comparison > 0 
@@ -398,19 +398,19 @@ export function RecentNearbySales({
         {avgComparison !== null && (
           <div className="flex items-center gap-2">
             {avgComparison >= -5 && avgComparison <= 10 ? (
-              <Badge className="bg-semantic-green/10 text-semantic-green border-semantic-green/20 hover:bg-semantic-green/15">
+              <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
                 Priced in line with recent sales
               </Badge>
             ) : avgComparison > 10 && avgComparison <= 20 ? (
-              <Badge className="bg-semantic-amber/10 text-semantic-amber border-semantic-amber/20 hover:bg-semantic-amber/15">
+              <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
                 Above average for this area (+{avgComparison.toFixed(0)}%)
               </Badge>
             ) : avgComparison > 20 ? (
-              <Badge className="bg-semantic-red/10 text-semantic-red border-semantic-red/20 hover:bg-semantic-red/15">
+              <Badge className="bg-semantic-red text-semantic-red-foreground border-semantic-red">
                 Significantly above market (+{avgComparison.toFixed(0)}%)
               </Badge>
             ) : avgComparison < -5 ? (
-              <Badge className="bg-semantic-green/10 text-semantic-green border-semantic-green/20 hover:bg-semantic-green/15">
+              <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
                 Below average — potential value ({avgComparison.toFixed(0)}%)
               </Badge>
             ) : null}
