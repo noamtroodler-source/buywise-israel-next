@@ -115,7 +115,7 @@ export function useCreateBuyerProfile() {
 
       const { data, error } = await supabase
         .from('buyer_profiles')
-        .insert(insertData as never)
+        .upsert(insertData as never, { onConflict: 'user_id' })
         .select()
         .single();
 
