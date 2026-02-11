@@ -1602,6 +1602,7 @@ export type Database = {
           total_projects: number | null
           updated_at: string
           user_id: string | null
+          value_proposition: string | null
           verification_status: string | null
           website: string | null
         }
@@ -1637,6 +1638,7 @@ export type Database = {
           total_projects?: number | null
           updated_at?: string
           user_id?: string | null
+          value_proposition?: string | null
           verification_status?: string | null
           website?: string | null
         }
@@ -1672,6 +1674,7 @@ export type Database = {
           total_projects?: number | null
           updated_at?: string
           user_id?: string | null
+          value_proposition?: string | null
           verification_status?: string | null
           website?: string | null
         }

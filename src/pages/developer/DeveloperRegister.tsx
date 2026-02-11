@@ -102,6 +102,7 @@ const defaultFormData = {
   company_type: '',
   office_city: '',
   specialties: [] as string[],
+  value_proposition: '',
 };
 
 export default function DeveloperRegister() {
@@ -372,6 +373,7 @@ export default function DeveloperRegister() {
         description: formData.description || undefined,
         founded_year: formData.founded_year,
         logo_url: formData.logo_url || undefined,
+        value_proposition: formData.value_proposition || undefined,
       });
       
       // Clear draft on successful submission
@@ -687,6 +689,31 @@ export default function DeveloperRegister() {
                 <span className="text-muted-foreground">Recommended: 150-500</span>
               </div>
               {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label htmlFor="value_proposition" className="text-sm font-medium flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-muted-foreground" />
+                Why Choose Your Company?
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                This appears on every project page as "Why This Developer" — tell buyers what sets you apart.
+              </p>
+              <Textarea
+                id="value_proposition"
+                value={formData.value_proposition}
+                onChange={(e) => updateField('value_proposition', e.target.value)}
+                placeholder="e.g. Family-owned since 1998, we've delivered 40+ projects across the Gush Dan area with zero delays. Every unit includes a 5-year structural warranty."
+                rows={3}
+                maxLength={500}
+                className="rounded-xl resize-none"
+              />
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground">
+                  {formData.value_proposition.length}/500 characters
+                </span>
+                <span className="text-muted-foreground">Recommended: 80-300</span>
+              </div>
             </motion.div>
           </motion.div>
         );

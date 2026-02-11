@@ -26,6 +26,7 @@ export interface Developer {
   company_size: string | null;
   company_type: string | null;
   specialties: string[] | null;
+  value_proposition: string | null;
 }
 
 export interface Project {

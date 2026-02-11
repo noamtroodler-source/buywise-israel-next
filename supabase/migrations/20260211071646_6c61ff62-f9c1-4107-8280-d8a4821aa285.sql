@@ -1,0 +1,1 @@
+ALTER TABLE public.developers ADD COLUMN value_proposition TEXT;

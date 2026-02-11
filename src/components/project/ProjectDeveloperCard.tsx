@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building, Phone, Mail, Globe, CheckCircle, ChevronRight, Calendar } from 'lucide-react';
+import { Building, Phone, Mail, Globe, CheckCircle, ChevronRight, Calendar, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,8 +16,8 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <Building className="h-5 w-5 text-primary" />
-          Developer
+          <Star className="h-5 w-5 text-primary" />
+          Why This Developer
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 md:p-6 space-y-4">
@@ -67,8 +67,17 @@ export function ProjectDeveloperCard({ developer }: ProjectDeveloperCardProps) {
           </div>
         </div>
 
-        {/* Description */}
-        {developer.description && (
+        {/* Value Proposition */}
+        {developer.value_proposition && (
+          <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+            <p className="text-sm text-foreground leading-relaxed italic">
+              "{developer.value_proposition}"
+            </p>
+          </div>
+        )}
+
+        {/* Description fallback */}
+        {!developer.value_proposition && developer.description && (
           <p className="text-sm text-muted-foreground line-clamp-3">
             {developer.description}
           </p>
