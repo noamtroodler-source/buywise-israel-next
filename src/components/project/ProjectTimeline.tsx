@@ -17,15 +17,38 @@ const stages = [
   { name: 'Delivery', status: 'delivery' },
 ];
 
+const STAGE_PROGRESS = [0, 10, 30, 50, 75, 100];
+
+// Map non-standard DB statuses to the closest timeline stage
+const STATUS_MAP: Record<string, string> = {
+  under_construction: 'structure',
+  completed: 'delivery',
+};
+
+// Given a raw percentage, pick the closest stage index
+const inferStageFromPercent = (percent: number): number => {
+  let closest = 0;
+  let minDiff = Infinity;
+  for (let i = 0; i < STAGE_PROGRESS.length; i++) {
+    const diff = Math.abs(STAGE_PROGRESS[i] - percent);
+    if (diff < minDiff) { minDiff = diff; closest = i; }
+  }
+  return closest;
+};
+
 export function ProjectTimeline({ project }: ProjectTimelineProps) {
-  const progress = project.construction_progress_percent || 0;
   const isMobile = useIsMobile();
-  
+
   const getCurrentStageIndex = () => {
-    return stages.findIndex(stage => stage.status === project.status);
+    const normalizedStatus = STATUS_MAP[project.status] || project.status;
+    const idx = stages.findIndex(stage => stage.status === normalizedStatus);
+    if (idx !== -1) return idx;
+    // Status not recognized — infer from construction_progress_percent
+    return inferStageFromPercent(project.construction_progress_percent || 0);
   };
 
-  const currentStageIndex = Math.max(0, getCurrentStageIndex());
+  const currentStageIndex = getCurrentStageIndex();
+  const progress = STAGE_PROGRESS[currentStageIndex];
   
   // Calculate visual progress based on stage index
   const stageProgress = ((currentStageIndex) / (stages.length - 1)) * 100;
