@@ -204,7 +204,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
   // Format floor display
   const getFloorDisplay = () => {
-    if (property.floor === null || property.floor === undefined) return 'Not specified';
+    if (property.floor === null || property.floor === undefined) return 'Ask the agent';
     if (property.floor === 0) return 'Ground';
     if (property.total_floors) return `${property.floor} of ${property.total_floors}`;
     return `Floor ${property.floor}`;
@@ -212,7 +212,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
 
   // Format condition display
   const getConditionDisplay = () => {
-    if (!property.condition) return 'Not specified';
+    if (!property.condition) return 'Ask the agent';
     return property.condition.charAt(0).toUpperCase() + property.condition.slice(1);
   };
 
@@ -504,7 +504,7 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <Calendar className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {property.year_built || 'Not specified'}
+                    {property.year_built || 'Ask the agent'}
                   </p>
                   <p className="text-xs text-muted-foreground border-b border-dotted border-muted-foreground/30">Built</p>
                 </div>
