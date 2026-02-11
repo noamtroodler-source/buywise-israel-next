@@ -40,23 +40,21 @@ function MarketVerdictBadge({ avgComparison, compsCount }: { avgComparison: numb
     );
   }
 
-  const badge = avgComparison >= -5 && avgComparison <= 10 ? (
-    <Badge className="bg-primary text-primary-foreground border-primary">
-      Priced in line with recent sales
+  const badge = avgComparison <= 10 ? (
+    <Badge className="bg-semantic-green text-semantic-green-foreground border-semantic-green">
+      {avgComparison < -5 
+        ? `Below average — potential value (${avgComparison.toFixed(0)}%)` 
+        : 'Priced in line with recent sales'}
     </Badge>
-  ) : avgComparison > 10 && avgComparison <= 20 ? (
+  ) : avgComparison <= 20 ? (
     <Badge className="bg-semantic-amber text-semantic-amber-foreground border-semantic-amber">
       Above average for this area (+{avgComparison.toFixed(0)}%)
     </Badge>
-  ) : avgComparison > 20 ? (
+  ) : (
     <Badge className="bg-semantic-red text-semantic-red-foreground border-semantic-red">
       Significantly above market (+{avgComparison.toFixed(0)}%)
     </Badge>
-  ) : avgComparison < -5 ? (
-    <Badge className="bg-primary text-primary-foreground border-primary">
-      Below average — potential value ({avgComparison.toFixed(0)}%)
-    </Badge>
-  ) : null;
+  );
 
   return (
     <div className="flex items-center gap-2">
