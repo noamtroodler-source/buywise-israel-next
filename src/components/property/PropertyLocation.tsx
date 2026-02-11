@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { MapPin, ExternalLink, Footprints, Bus, Car, Compass, Loader2 } from 'lucide-react';
+import { MapPin, ExternalLink, Footprints, Bus, Car, Compass, Loader2, TrainFront } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { PropertyMiniMapWrapper } from './PropertyMiniMapWrapper';
 import { CityAnchorCard } from './CityAnchorCard';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
 import { LocationSearchInput, type SearchedLocation } from './LocationSearchInput';
+import { TransitContextLine } from './TransitContextLine';
 import { SearchedLocationCard } from './SearchedLocationCard';
 import { useAutoGeocode } from '@/hooks/useAutoGeocode';
 import { SavedLocationsSection } from './SavedLocationsSection';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { useCityTransitInfo } from '@/hooks/useCityTransitInfo';
 
 interface PropertyLocationProps {
   address: string;
@@ -57,6 +59,9 @@ export function PropertyLocation({
   
   // Fetch user's saved locations for map display
   const { data: savedLocations } = useSavedLocations();
+  
+  // Fetch transit info for the city
+  const { data: transitInfo } = useCityTransitInfo(city);
   
   // Handle adding a searched location
   const handleLocationSelect = (location: SearchedLocation) => {
@@ -202,6 +207,16 @@ export function PropertyLocation({
           </div>
         </div>
 
+        {/* Transit context line */}
+        {transitInfo && (
+          <TransitContextLine
+            transitInfo={transitInfo}
+            propertyLat={latitude}
+            propertyLng={longitude}
+            travelMode={travelMode}
+          />
+        )}
+
         {/* Search a location */}
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">Search a location</h4>
@@ -262,8 +277,8 @@ export function PropertyLocation({
                 />
               )}
               
-              {/* City reference points */}
-              {cityAnchors?.map((anchor) => (
+              {/* City reference points (filter out train anchors) */}
+              {cityAnchors?.filter(a => a.icon !== 'train').map((anchor) => (
                 <CityAnchorCard
                   key={anchor.id}
                   anchor={anchor}
