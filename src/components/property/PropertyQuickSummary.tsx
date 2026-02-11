@@ -298,14 +298,14 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
               );
             })()}
             
-            {/* Estimated Monthly Payment Range - Only show when mortgage is enabled */}
-            {showMortgageEstimate && mortgageEstimate && mortgageEstimate.hasCustomPreferences !== false && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {/* Estimated Monthly Payment Range - Always show for resale listings */}
+            {showMortgageEstimate && mortgageEstimate && (
+              <div className="flex items-center gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1">
-                      {mortgageEstimate.hasCustomPreferences && <User className="h-3 w-3 text-primary" />}
-                      {formatMonthlyRange(mortgageEstimate.monthlyPaymentLow, mortgageEstimate.monthlyPaymentHigh, 'ILS')}
+                    <span className="cursor-help border-b border-dotted border-muted-foreground/50 inline-flex items-center gap-1 text-base font-semibold text-foreground">
+                      {mortgageEstimate.hasCustomPreferences && <User className="h-3.5 w-3.5 text-primary" />}
+                      Est. {formatMonthlyRange(mortgageEstimate.monthlyPaymentLow, mortgageEstimate.monthlyPaymentHigh, 'ILS')}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
@@ -332,10 +332,10 @@ export function PropertyQuickSummary({ property, onShare, onSave, isSaved }: Pro
                 <span className="text-muted-foreground/60">•</span>
                 <Link 
                   to={`/tools?calculator=mortgage&price=${property.price}`}
-                  className="text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
                 >
                   <Calculator className="h-3.5 w-3.5" />
-                  Calculate Exact
+                  Customize
                 </Link>
               </div>
             )}
