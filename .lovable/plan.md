@@ -1,51 +1,57 @@
 
 
-## Replace "Customize" Link with Mortgage Popover
+## Research Journey Widget
 
-**Goal:** Replace the current "Customize" link (which navigates away to `/tools`) with an inline popover that lets users adjust mortgage preferences without leaving the listing page. Changes persist across all listings via the existing preference system.
-
----
-
-### What Changes
-
-#### 1. Update `PropertyQuickSummary.tsx`
-
-Replace the `<Link to="/tools?calculator=mortgage&...">Customize</Link>` with a `<Popover>` wrapping the existing `MortgageInlineEdit` component.
-
-**Before:**
-```text
-Est. 8,500-10,200/mo  *  [Customize -> navigates to /tools page]
-```
-
-**After:**
-```text
-Est. 8,500-10,200/mo  *  [Customize -> opens popover with down payment + term fields]
-```
-
-The popover will:
-- Anchor to the "Customize" button
-- Contain the `MortgageInlineEdit` form (down payment toggle between amount/percent, loan term select)
-- Close on save or cancel
-- Immediately update the estimate line since both read from the same `useMortgagePreferences` hook
-
-#### 2. Minor cleanup to `MortgageInlineEdit.tsx`
-
-- Remove the left border styling (`border-l-2 border-primary/20`) since it was designed for inline accordion context, not a popover
-- Adjust padding to fit naturally inside a popover container
+A compact, motivational card at the top of the Profile Activity column showing the user's property research progress.
 
 ---
 
-### Persistence Behavior (already works, no changes needed)
+### What It Shows
 
-- **Guest users**: Preferences save to `localStorage` under `mortgage_preferences` key. Persists across all listings within the same browser session. Cleared when browser data is cleared.
-- **Logged-in users**: Preferences save to their profile in the database. Persists permanently across devices.
-- **Both locations stay in sync**: The cost breakdown's `PersonalizationHeader` and the quick summary's estimate both read from the same `useMortgagePreferences` hook. A change in the popover automatically reflects in the cost breakdown section below, and vice versa.
+A single card with a summary line and 3 stat pills:
+
+```text
+[Search icon] Your Research Journey
+"You've explored 12 properties across 3 cities over the past 2 weeks"
+
+[12 Properties]  [3 Cities]  [Top: Ra'anana]
+```
+
+- **Properties researched**: Count of recently viewed properties
+- **Cities explored**: Unique city count from viewed properties
+- **Top city**: Most frequently viewed city
+- **Time span**: Calculated from earliest to latest `viewed_at` timestamp (e.g., "2 weeks", "3 days")
+
+### Display Rules
+
+- Only shown for **logged-in users** (guests don't have persistent history worth celebrating)
+- Only rendered when the user has viewed **3 or more** properties (avoids awkward "You've explored 1 property across 1 city")
+- No empty state -- the widget simply doesn't appear below the threshold
+
+### Where It Appears
+
+- **Desktop**: Top of the right "Activity" column on the Profile page, above Search Alerts
+- **Mobile**: After the welcome header, before Buyer Profile section (first content card)
+
+---
 
 ### Technical Details
 
-**Files modified:**
-- `src/components/property/PropertyQuickSummary.tsx` — Replace `<Link>` with `<Popover>` + `<MortgageInlineEdit>`. Add state for popover open/close. Import Popover components and MortgageInlineEdit.
-- `src/components/property/MortgageInlineEdit.tsx` — Remove left-border styling, adjust padding for popover context.
+**New file:** `src/components/profile/ResearchJourneyCard.tsx`
+- A single component that consumes `useRecentlyViewed()` 
+- Derives stats from `recentProperties` (city counts) and `dbRecentlyViewed` timestamps
+- Uses `date-fns` `formatDistanceToNow` or manual calculation for the time span
+- Styled to match existing card pattern: `rounded-xl border border-border bg-card p-4`
+- Subtle gradient or primary-tinted background to make it feel like an achievement card
 
-**No new files. No database changes. No new hooks.**
+**Modified file:** `src/hooks/useRecentlyViewed.tsx`
+- Expose `dbRecentlyViewed` raw data (or just the `viewed_at` timestamps) so the widget can compute the research duration
+- Minor change: add `viewedDates` to the return object (array of `viewed_at` strings from DB results)
+
+**Modified file:** `src/pages/Profile.tsx`
+- Import `ResearchJourneyCard`
+- Desktop: Place above `<AlertsCompact />` in the right column
+- Mobile: Place as second item after `<ProfileWelcomeHeader />`
+
+**No database changes. No new hooks. No new dependencies.**
 
