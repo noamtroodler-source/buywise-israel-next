@@ -83,13 +83,13 @@ export const MapPropertyCard = memo(function MapPropertyCard({
         {/* Status badges overlay */}
         <div className="absolute top-1 left-1 flex gap-1">
           {isHot && (
-            <Badge className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5">
+            <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5">
               <Flame className="h-2.5 w-2.5 mr-0.5" />
-              Hot
+              Just Listed
             </Badge>
           )}
           {!isHot && isNew && (
-            <Badge className="bg-project text-project-foreground text-[10px] px-1.5 py-0.5">
+            <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5">
               <Sparkles className="h-2.5 w-2.5 mr-0.5" />
               New
             </Badge>

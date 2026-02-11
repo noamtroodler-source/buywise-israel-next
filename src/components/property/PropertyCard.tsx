@@ -280,14 +280,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Freshness badge - more prominent for hot/fresh listings (especially rentals)
                     if (freshnessTier === 'hot') {
                       badges.push(
-                        <Badge key="fresh" className="bg-semantic-amber text-semantic-amber-foreground text-xs font-medium">
+                        <Badge key="fresh" className="bg-primary text-primary-foreground text-xs font-medium">
                           <Flame className="h-3 w-3 mr-1" />
                           {isRental ? 'Just Available' : 'Just Listed'}
                         </Badge>
                       );
                     } else if (freshnessTier === 'fresh') {
                       badges.push(
-                        <Badge key="new" className="bg-semantic-green text-semantic-green-foreground text-xs font-medium">
+                        <Badge key="new" className="bg-primary text-primary-foreground text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
                           New
                         </Badge>
@@ -362,8 +362,8 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 {daysLabel && (
                   <div className={cn(
                     "flex items-center gap-1 pt-1 text-xs",
-                   freshnessTier === 'hot' ? "text-semantic-amber font-medium" :
-                    freshnessTier === 'fresh' ? "text-semantic-green font-medium" :
+                   freshnessTier === 'hot' ? "text-primary font-medium" :
+                    freshnessTier === 'fresh' ? "text-primary font-medium" :
                     "text-muted-foreground"
                   )}>
                     {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
@@ -470,14 +470,14 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                     // Freshness badge - more prominent for hot/fresh listings (especially rentals)
                     if (freshnessTier === 'hot') {
                       badges.push(
-                        <Badge key="fresh" className="bg-semantic-amber text-semantic-amber-foreground text-xs font-medium">
+                        <Badge key="fresh" className="bg-primary text-primary-foreground text-xs font-medium">
                           <Flame className="h-3 w-3 mr-1" />
                           {isRental ? 'Just Available' : 'Just Listed'}
                         </Badge>
                       );
                     } else if (freshnessTier === 'fresh') {
                       badges.push(
-                        <Badge key="new" className="bg-semantic-green text-semantic-green-foreground text-xs font-medium">
+                        <Badge key="new" className="bg-primary text-primary-foreground text-xs font-medium">
                           <Sparkles className="h-3 w-3 mr-1" />
                           New
                         </Badge>
