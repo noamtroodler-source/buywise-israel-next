@@ -286,9 +286,9 @@ export function NewConstructionCostCalculator() {
     <Card className="lg:sticky lg:top-20 lg:self-start">
       <CardContent className="p-6 space-y-4">
         {/* Index Warning */}
-        <Alert variant="default" className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
+        <Alert variant="default" className="bg-semantic-amber border-semantic-amber">
+          <AlertTriangle className="h-4 w-4 text-semantic-amber-foreground" />
+          <AlertDescription className="text-semantic-amber-foreground">
             <strong>Building Index Linkage:</strong> Your final price may increase by 
             <strong> {formatCurrency(indexLinkage.linkageAmount)} </strong>
             ({((totalWithLinkage / contractPrice - 1) * 100).toFixed(1)}%) over {constructionMonths} months.
@@ -301,10 +301,10 @@ export function NewConstructionCostCalculator() {
             <p className="text-sm text-muted-foreground">Contract Price</p>
             <p className="text-xl font-bold text-primary">{formatCurrency(contractPrice)}</p>
           </div>
-          <div className="p-4 rounded-lg bg-destructive/10 text-center">
-            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-destructive" />
+          <div className="p-4 rounded-lg bg-semantic-red text-center">
+            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-semantic-red-foreground" />
             <p className="text-sm text-muted-foreground">Est. Linked Price</p>
-            <p className="text-xl font-bold text-destructive">{formatCurrency(totalWithLinkage)}</p>
+            <p className="text-xl font-bold text-semantic-red-foreground">{formatCurrency(totalWithLinkage)}</p>
           </div>
         </div>
 
@@ -336,7 +336,7 @@ export function NewConstructionCostCalculator() {
                       Base: {formatCurrency(stage.amount)}
                     </span>
                     {additionalCost > 0 && (
-                      <span className="text-amber-600">
+                      <span className="text-semantic-amber-foreground">
                         +{formatCurrency(additionalCost)} linkage
                       </span>
                     )}
@@ -360,7 +360,7 @@ export function NewConstructionCostCalculator() {
               <span className="text-muted-foreground">Contract Price:</span>
               <span className="font-medium">{formatCurrency(contractPrice)}</span>
             </div>
-            <div className="flex justify-between text-amber-600">
+            <div className="flex justify-between text-semantic-amber-foreground">
               <span>+ Index Linkage (estimated):</span>
               <span>{formatCurrency(indexLinkage.linkageAmount)}</span>
             </div>
