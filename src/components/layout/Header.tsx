@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark } from 'lucide-react';
+import { Home, User, LogOut, Heart, Building2, Shield, Users, Landmark, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,15 +19,15 @@ import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
-import { MoreNav } from './MoreNav';
-import { LearnNav } from './LearnNav';
-import { MegaMenu } from './MegaMenu';
-import { NAV_CONFIG } from '@/lib/navigationConfig';
+import { UnifiedNav } from './UnifiedNav';
+import { CommandPalette } from './CommandPalette';
+import { useCommandPalette } from '@/hooks/useCommandPalette';
 
 export function Header() {
   const { user, signOut } = useAuth();
   const { isAgent, isAdmin, isDeveloper } = useUserRole();
   const navigate = useNavigate();
+  const { toggle: toggleCommandPalette } = useCommandPalette();
   
   // These hooks already have internal `enabled: !!user` checks for performance
   const { data: profile } = useProfile();
@@ -59,17 +59,22 @@ export function Header() {
           <span className="text-xl font-bold text-primary">Israel</span>
         </Link>
 
-        {/* Desktop Navigation - True Center */}
-        <nav className="hidden lg:flex items-center justify-center gap-6">
-          <MegaMenu config={NAV_CONFIG.buy} />
-          <MegaMenu config={NAV_CONFIG.projects} />
-          <MegaMenu config={NAV_CONFIG.rent} />
-          <LearnNav />
-          <MoreNav />
+        {/* Desktop Navigation - True Center (Unified) */}
+        <nav className="hidden lg:flex items-center justify-center">
+          <UnifiedNav />
         </nav>
 
         {/* Right Side */}
         <div className="flex items-center justify-end gap-1 sm:gap-2">
+          {/* Command Palette Trigger */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex rounded-full h-10 w-10"
+            onClick={toggleCommandPalette}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
           {/* Preferences Button */}
           <PreferencesDialog />
           {/* Favorites Icon - visible to all users on all screen sizes */}
@@ -167,6 +172,7 @@ export function Header() {
 
         </div>
       </div>
+      <CommandPalette />
     </header>
   );
 }
