@@ -3,7 +3,10 @@ import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { Plus, Minus, LocateFixed } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
+import { MarkerClusterLayer } from './MarkerClusterLayer';
+import { MapPropertyPopup } from './MapPropertyPopup';
 import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
+import type { Property } from '@/types/database';
 import 'leaflet/dist/leaflet.css';
 
 const ISRAEL_CENTER: [number, number] = [31.5, 34.8];
@@ -13,6 +16,10 @@ const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM<
 
 interface PropertyMapProps {
   onBoundsChange?: (bounds: LatLngBounds) => void;
+  properties?: Property[];
+  hoveredPropertyId?: string | null;
+  onMarkerHover?: (id: string | null) => void;
+  onMarkerClick?: (id: string) => void;
 }
 
 function MapEventHandler({ onBoundsChange }: { onBoundsChange?: (b: LatLngBounds) => void }) {
@@ -67,8 +74,28 @@ function MapControls({ map }: { map: LeafletMap | null }) {
   );
 }
 
-export function PropertyMap({ onBoundsChange }: PropertyMapProps) {
+export function PropertyMap({
+  onBoundsChange,
+  properties = [],
+  hoveredPropertyId = null,
+  onMarkerHover,
+  onMarkerClick,
+}: PropertyMapProps) {
   const [map, setMap] = useState<LeafletMap | null>(null);
+  const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
+
+  const handleMarkerClick = useCallback((id: string) => {
+    setActivePropertyId(prev => prev === id ? null : id);
+    onMarkerClick?.(id);
+  }, [onMarkerClick]);
+
+  const handlePopupClose = useCallback(() => {
+    setActivePropertyId(null);
+  }, []);
+
+  const activeProperty = activePropertyId
+    ? properties.find(p => p.id === activePropertyId)
+    : null;
 
   return (
     <div className="relative h-full w-full">
@@ -82,6 +109,22 @@ export function PropertyMap({ onBoundsChange }: PropertyMapProps) {
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
         <MapEventHandler onBoundsChange={onBoundsChange} />
+        {properties.length > 0 && (
+          <MarkerClusterLayer
+            properties={properties}
+            hoveredPropertyId={hoveredPropertyId}
+            activePropertyId={activePropertyId}
+            onMarkerClick={handleMarkerClick}
+            onMarkerHover={onMarkerHover ?? (() => {})}
+          />
+        )}
+        {activeProperty && activeProperty.latitude && activeProperty.longitude && (
+          <MapPropertyPopup
+            key={activeProperty.id}
+            property={activeProperty}
+            onClose={handlePopupClose}
+          />
+        )}
       </MapContainer>
       <MapControls map={map} />
     </div>

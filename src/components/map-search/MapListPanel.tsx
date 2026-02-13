@@ -25,6 +25,8 @@ interface MapListPanelProps {
   loadMore: () => void;
   sortBy: SortOption;
   onSortChange: (value: SortOption) => void;
+  hoveredPropertyId?: string | null;
+  onCardHover?: (id: string | null) => void;
 }
 
 function CardSkeleton() {
@@ -50,6 +52,8 @@ export function MapListPanel({
   loadMore,
   sortBy,
   onSortChange,
+  hoveredPropertyId,
+  onCardHover,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -118,7 +122,13 @@ export function MapListPanel({
         ) : (
           <div className="grid grid-cols-2 gap-4 p-4">
             {properties.map((property) => (
-              <MapListCard key={property.id} property={property} />
+              <MapListCard
+                key={property.id}
+                property={property}
+                isHovered={hoveredPropertyId === property.id}
+                onHover={() => onCardHover?.(property.id)}
+                onHoverEnd={() => onCardHover?.(null)}
+              />
             ))}
             {/* Infinite scroll sentinel */}
             {hasNextPage && <div ref={sentinelRef} className="col-span-2 h-1" />}
