@@ -929,6 +929,9 @@
   background: none !important;
   border: none !important;
   box-shadow: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
 }
 
 .property-marker-container .leaflet-marker-shadow,
