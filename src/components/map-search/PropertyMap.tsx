@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { MapToolbar } from './MapToolbar';
 import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
-import { CityOverlayLayer } from './CityOverlayLayer';
+
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
@@ -30,7 +30,6 @@ interface PropertyMapProps {
   searchAsMove?: boolean;
   onSearchThisArea?: () => void;
   onPolygonChange?: (polygon: Polygon | null) => void;
-  onCityClick?: (city: string) => void;
   listingStatus?: string;
   cityFilter?: string | null;
   initialCenter?: [number, number];
@@ -63,7 +62,6 @@ export function PropertyMap({
   searchAsMove = true,
   onSearchThisArea,
   onPolygonChange,
-  onCityClick,
   listingStatus = 'for_sale',
   cityFilter = null,
   initialCenter,
@@ -231,17 +229,7 @@ export function PropertyMap({
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
         <MapEventHandler onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange} />
 
-        {/* City overlay at low zoom */}
-        {zoom < 12 && (
-          <CityOverlayLayer
-            bounds={currentBounds}
-            listingStatus={listingStatus}
-            map={map}
-            onCityClick={onCityClick}
-          />
-        )}
-
-        {/* Property markers at higher zoom */}
+        {/* Property markers */}
         {properties.length > 0 && (
           <MarkerClusterLayer
             properties={properties}

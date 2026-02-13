@@ -105,9 +105,6 @@ export default function MapSearchLayout() {
     setFilter('status', type);
   }, [setFilter]);
 
-  const handleCityClick = useCallback((city: string) => {
-    setFilter('city', city);
-  }, [setFilter]);
 
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
@@ -207,7 +204,6 @@ export default function MapSearchLayout() {
             hoveredPropertyId={hoveredPropertyId}
             onMarkerHover={handleMarkerHover}
             onPolygonChange={handlePolygonChange}
-            onCityClick={handleCityClick}
             listingStatus={listingType}
             cityFilter={urlFilters.city}
             initialCenter={initialCenter}
@@ -243,7 +239,7 @@ export default function MapSearchLayout() {
         hoveredPropertyId={hoveredPropertyId}
         onMarkerHover={handleMarkerHover}
         onPolygonChange={handlePolygonChange}
-        onCityClick={handleCityClick}
+        
         listingStatus={listingType}
         cityFilter={urlFilters.city}
         initialCenter={initialCenter}
