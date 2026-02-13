@@ -143,11 +143,15 @@ export default function MapSearchLayout() {
 
   const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
 
-  const mergedFilters: PropertyFilters = useMemo(() => ({
-    ...componentFilters,
-    listing_status: listingType as any,
-    bounds: mapBounds ?? undefined,
-  }), [componentFilters, listingType, mapBounds]);
+  const mergedFilters: PropertyFilters = useMemo(() => {
+    // City is navigation-only (flyTo) — bounds handle spatial filtering
+    const { city, ...filtersWithoutCity } = componentFilters;
+    return {
+      ...filtersWithoutCity,
+      listing_status: listingType as any,
+      bounds: mapBounds ?? undefined,
+    };
+  }, [componentFilters, listingType, mapBounds]);
 
   const {
     properties: rawProperties,
@@ -221,7 +225,6 @@ export default function MapSearchLayout() {
             onSortChange={handleSortChange}
             hoveredPropertyId={hoveredPropertyId}
             onCardHover={handleCardHover}
-            cityFilter={urlFilters.city}
             onClearFilters={handleClearFilters}
           />
         </div>
@@ -273,7 +276,6 @@ export default function MapSearchLayout() {
         onCardHover={handleCardHover}
         activeSnap={mobileSnap}
         onSnapChange={handleSnapChange}
-        cityFilter={urlFilters.city}
       />
     </div>
   );

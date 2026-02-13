@@ -28,7 +28,6 @@ interface MapListPanelProps {
   onSortChange: (value: SortOption) => void;
   hoveredPropertyId?: string | null;
   onCardHover?: (id: string | null) => void;
-  cityFilter?: string | null;
   onClearFilters?: () => void;
 }
 
@@ -57,7 +56,7 @@ export function MapListPanel({
   onSortChange,
   hoveredPropertyId,
   onCardHover,
-  cityFilter,
+  
   onClearFilters,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -90,9 +89,7 @@ export function MapListPanel({
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="text-sm font-semibold text-foreground">
-          {cityFilter
-            ? `${totalCount.toLocaleString()} properties in ${cityFilter}`
-            : `${totalCount.toLocaleString()} results`}
+          {totalCount.toLocaleString()} results
         </span>
         <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
           <SelectTrigger className="w-[150px] h-8 text-xs">
