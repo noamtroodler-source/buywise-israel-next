@@ -18,12 +18,12 @@ function toBounds(b: LatLngBounds): MapBounds {
 export default function MapSearchLayout() {
   const { filters: urlFilters, setFilter } = useMapFilters();
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+  const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
 
   const handleBoundsChange = useCallback((b: LatLngBounds) => {
     setMapBounds(toBounds(b));
   }, []);
 
-  // Merge URL filters + map bounds into PropertyFilters for the query hook
   const mergedFilters: PropertyFilters = useMemo(() => ({
     listing_status: urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale',
     city: urlFilters.city ?? undefined,
@@ -49,16 +49,27 @@ export default function MapSearchLayout() {
     setFilter('sort_by', value);
   }, [setFilter]);
 
+  const handleMarkerHover = useCallback((id: string | null) => {
+    setHoveredPropertyId(id);
+  }, []);
+
+  const handleCardHover = useCallback((id: string | null) => {
+    setHoveredPropertyId(id);
+  }, []);
+
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
-      {/* Filter bar placeholder — reserved for Phase 4 */}
       <div className="h-12 shrink-0 border-b border-border bg-background flex items-center px-4">
         <span className="text-xs text-muted-foreground tracking-wide uppercase">Filters coming soon</span>
       </div>
 
-      {/* Main content: map + list */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
-        <PropertyMap onBoundsChange={handleBoundsChange} />
+        <PropertyMap
+          onBoundsChange={handleBoundsChange}
+          properties={properties}
+          hoveredPropertyId={hoveredPropertyId}
+          onMarkerHover={handleMarkerHover}
+        />
         <MapListPanel
           properties={properties}
           totalCount={totalCount}
@@ -68,6 +79,8 @@ export default function MapSearchLayout() {
           loadMore={loadMore}
           sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
           onSortChange={handleSortChange}
+          hoveredPropertyId={hoveredPropertyId}
+          onCardHover={handleCardHover}
         />
       </div>
     </div>

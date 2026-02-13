@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils';
 
 interface MapListCardProps {
   property: Property;
+  isHovered?: boolean;
+  onHover?: () => void;
+  onHoverEnd?: () => void;
 }
 
 function getStatusBadge(property: Property) {
@@ -36,11 +39,11 @@ function getStatusBadge(property: Property) {
   return null;
 }
 
-export const MapListCard = memo(function MapListCard({ property }: MapListCardProps) {
+export const MapListCard = memo(function MapListCard({ property, isHovered, onHover, onHoverEnd }: MapListCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const [imageIndex, setImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isCardHovered, setIsCardHovered] = useState(false);
 
   const images = property.images?.length ? property.images : [null];
   const totalImages = images.length;
@@ -72,9 +75,12 @@ export const MapListCard = memo(function MapListCard({ property }: MapListCardPr
   return (
     <Link
       to={`/property/${property.id}`}
-      className="group block rounded-lg border border-border bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        "group block rounded-lg border bg-card overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        isHovered ? "border-primary ring-2 ring-primary/30" : "border-border"
+      )}
+      onMouseEnter={() => { setIsCardHovered(true); onHover?.(); }}
+      onMouseLeave={() => { setIsCardHovered(false); onHoverEnd?.(); }}
     >
       {/* Image section */}
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
@@ -100,7 +106,7 @@ export const MapListCard = memo(function MapListCard({ property }: MapListCardPr
         )}
 
         {/* Carousel arrows */}
-        {totalImages > 1 && isHovered && (
+        {totalImages > 1 && isCardHovered && (
           <>
             <button
               onClick={prevImage}
