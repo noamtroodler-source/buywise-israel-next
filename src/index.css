@@ -1007,9 +1007,11 @@
 /* Property popup overrides */
 .property-popup .leaflet-popup-content-wrapper {
   padding: 0;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background: hsl(var(--background));
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  border: 1px solid hsl(var(--border));
 }
 
 .property-popup .leaflet-popup-content {
