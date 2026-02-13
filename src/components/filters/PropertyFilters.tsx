@@ -32,7 +32,7 @@ interface PropertyFiltersProps {
   isCountLoading?: boolean;
   // Buy/Rent toggle for map page
   showBuyRentToggle?: boolean;
-  onBuyRentChange?: (type: 'for_sale' | 'for_rent') => void;
+  onBuyRentChange?: (type: 'for_sale' | 'for_rent' | 'projects') => void;
   // View toggle context
   activeView?: 'grid' | 'map';
   // Map mode: hides sort & create alert (moved to list panel), replaces ViewToggle with icon button
@@ -367,7 +367,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       <>
         {/* Main Filters Row - Single row on desktop */}
         <div className="flex flex-wrap gap-2 items-center">
-          {/* Buy/Rent Toggle - For map page */}
+          {/* Buy/Rent/New Toggle - For map page */}
           {showBuyRentToggle && !isMobile && (
             <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden">
               <button
@@ -391,6 +391,17 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 onClick={() => onBuyRentChange?.('for_rent')}
               >
                 Rent
+              </button>
+              <button
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium transition-all",
+                  listingType === 'projects' 
+                    ? "bg-primary text-primary-foreground" 
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => onBuyRentChange?.('projects')}
+              >
+                New
               </button>
             </div>
           )}

@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { MapPin, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { MapListCard } from './MapListCard';
+import { MapProjectCard } from './MapProjectCard';
 import { Property, SortOption } from '@/types/database';
+import { Project } from '@/types/projects';
+import type { MapItem } from '@/types/mapItem';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -18,7 +21,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 ];
 
 interface MapListPanelProps {
-  properties: Property[];
+  items: MapItem[];
   totalCount: number;
   isLoading: boolean;
   isFetching: boolean;
@@ -46,7 +49,7 @@ function CardSkeleton() {
 }
 
 export function MapListPanel({
-  properties,
+  items,
   totalCount,
   isLoading,
   isFetching,
@@ -56,12 +59,10 @@ export function MapListPanel({
   onSortChange,
   hoveredPropertyId,
   onCardHover,
-  
   onClearFilters,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Infinite scroll observer
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -77,16 +78,14 @@ export function MapListPanel({
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const showEmpty = !isLoading && properties.length === 0;
+  const showEmpty = !isLoading && items.length === 0;
 
   return (
     <div className="hidden lg:flex flex-col border-l border-border bg-background min-h-0">
-      {/* Fetching indicator */}
       {isFetching && !isLoading && (
         <Progress value={undefined} className="h-0.5 w-full rounded-none shrink-0" />
       )}
 
-      {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="text-sm font-semibold text-foreground">
           {totalCount.toLocaleString()} results
@@ -105,7 +104,6 @@ export function MapListPanel({
         </Select>
       </div>
 
-      {/* Content */}
       <ScrollArea className="flex-1">
         {isLoading ? (
           <div className="grid grid-cols-2 gap-4 p-4">
@@ -131,16 +129,31 @@ export function MapListPanel({
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 p-4">
-            {properties.map((property) => (
-              <MapListCard
-                key={property.id}
-                property={property}
-                isHovered={hoveredPropertyId === property.id}
-                onHover={() => onCardHover?.(property.id)}
-                onHoverEnd={() => onCardHover?.(null)}
-              />
-            ))}
-            {/* Infinite scroll sentinel */}
+            {items.map((item) => {
+              if (item.type === 'project') {
+                const project = item.data as Project;
+                const itemId = `project-${project.id}`;
+                return (
+                  <MapProjectCard
+                    key={itemId}
+                    project={project}
+                    isHovered={hoveredPropertyId === itemId}
+                    onHover={() => onCardHover?.(itemId)}
+                    onHoverEnd={() => onCardHover?.(null)}
+                  />
+                );
+              }
+              const property = item.data as Property;
+              return (
+                <MapListCard
+                  key={property.id}
+                  property={property}
+                  isHovered={hoveredPropertyId === property.id}
+                  onHover={() => onCardHover?.(property.id)}
+                  onHoverEnd={() => onCardHover?.(null)}
+                />
+              );
+            })}
             {hasNextPage && <div ref={sentinelRef} className="col-span-2 h-1" />}
           </div>
         )}
