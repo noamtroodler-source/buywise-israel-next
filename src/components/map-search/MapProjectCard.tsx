@@ -139,8 +139,14 @@ export const MapProjectCard = memo(function MapProjectCard({
           <span className="text-base font-bold text-foreground">{priceDisplay}</span>
         </div>
 
-        {project.developer?.name && (
-          <p className="text-xs text-muted-foreground truncate">by {project.developer.name}</p>
+        {project.developer?.name && project.developer?.slug && (
+          <Link
+            to={`/developers/${project.developer.slug}`}
+            className="text-xs text-muted-foreground truncate block hover:text-primary transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            by {project.developer.name}
+          </Link>
         )}
         <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
 
