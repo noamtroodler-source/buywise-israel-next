@@ -139,6 +139,9 @@ export function PropertyMap({
         // Turning off draw mode, clear polygon
         setDrawnPolygon(null);
         onPolygonChange?.(null);
+      } else {
+        // Entering draw mode, dismiss active popup
+        setActivePropertyId(null);
       }
       return !prev;
     });

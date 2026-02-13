@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, HelpCircle } from 'lucide-react';
+import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, Keyboard } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
@@ -101,7 +101,7 @@ export function MapToolbar({
       {onShowHelp && (
         <div className="map-toolbar-group flex-col hidden lg:flex">
           <button onClick={onShowHelp} className={btnBase} aria-label="Keyboard shortcuts">
-            <HelpCircle className="h-4 w-4" />
+            <Keyboard className="h-4 w-4" />
           </button>
         </div>
       )}

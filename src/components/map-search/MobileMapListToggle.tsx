@@ -8,7 +8,7 @@ interface MobileMapListToggleProps {
 
 export function MobileMapListToggle({ activeView, onToggle }: MobileMapListToggleProps) {
   return (
-    <div className="absolute bottom-[160px] left-1/2 -translate-x-1/2 z-[45]">
+    <div className="fixed bottom-[160px] left-1/2 -translate-x-1/2 z-[45] lg:hidden">
       <div className="flex rounded-full border border-border bg-background/95 backdrop-blur-sm shadow-lg p-0.5">
         <button
           onClick={() => onToggle('map')}

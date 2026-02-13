@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo, useRef } from 'react';
+import { useCallback, useState, useMemo, useRef, useEffect } from 'react';
 import { PropertyMap } from './PropertyMap';
 import { MapListPanel } from './MapListPanel';
 import { MobileMapSheet } from './MobileMapSheet';
@@ -116,6 +116,7 @@ export default function MapSearchLayout() {
 
   // Debounced map move → URL persistence
   const moveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(moveTimerRef.current), []);
   const handleMapMove = useCallback((lat: number, lng: number, zoom: number) => {
     clearTimeout(moveTimerRef.current);
     moveTimerRef.current = setTimeout(() => {

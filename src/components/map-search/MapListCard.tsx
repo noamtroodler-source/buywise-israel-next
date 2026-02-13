@@ -37,7 +37,7 @@ function getStatusBadge(property: Property) {
   }
 
   if (daysSinceListed <= 14) {
-    return { label: 'New', variant: 'secondary' as const, icon: null };
+    return { label: 'New', variant: 'outline' as const, icon: null };
   }
 
   return null;
@@ -102,7 +102,13 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
         {/* Badge */}
         {badge && (
           <div className="absolute top-2 left-2 z-10">
-            <Badge variant={badge.variant} className="text-xs gap-1 backdrop-blur-sm">
+            <Badge 
+              variant={badge.variant} 
+              className={cn(
+                "text-xs gap-1 backdrop-blur-sm",
+                badge.label === 'New' && "bg-emerald-500/90 text-white border-emerald-500/90"
+              )}
+            >
               {badge.icon && <badge.icon className="h-3 w-3" />}
               {badge.label}
             </Badge>
