@@ -19,7 +19,10 @@ import { PreferencesDialog } from './PreferencesDialog';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
-import { UnifiedNav } from './UnifiedNav';
+import { MoreNav } from './MoreNav';
+import { LearnNav } from './LearnNav';
+import { MegaMenu } from './MegaMenu';
+import { NAV_CONFIG } from '@/lib/navigationConfig';
 import { CommandPalette } from './CommandPalette';
 import { useCommandPalette } from '@/hooks/useCommandPalette';
 
@@ -59,9 +62,13 @@ export function Header() {
           <span className="text-xl font-bold text-primary">Israel</span>
         </Link>
 
-        {/* Desktop Navigation - True Center (Unified) */}
-        <nav className="hidden lg:flex items-center justify-center">
-          <UnifiedNav />
+        {/* Desktop Navigation - True Center */}
+        <nav className="hidden lg:flex items-center justify-center gap-6">
+          <MegaMenu config={NAV_CONFIG.buy} />
+          <MegaMenu config={NAV_CONFIG.projects} />
+          <MegaMenu config={NAV_CONFIG.rent} />
+          <LearnNav />
+          <MoreNav />
         </nav>
 
         {/* Right Side */}
