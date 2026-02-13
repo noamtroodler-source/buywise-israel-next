@@ -8,7 +8,7 @@ import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
-import { MapPropertyPopup } from './MapPropertyPopup';
+import { MapPropertyOverlay } from './MapPropertyOverlay';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
 import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
@@ -291,10 +291,18 @@ export function PropertyMap({
           />
         )}
 
-        {activeProperty && activeProperty.latitude && activeProperty.longitude && (
-          <MapPropertyPopup key={activeProperty.id} property={activeProperty} onClose={handlePopupClose} />
-        )}
+        {/* Popup rendered outside MapContainer as overlay — see below */}
       </MapContainer>
+
+      {/* Property overlay — rendered OUTSIDE MapContainer to avoid Leaflet reconciliation glitches */}
+      {activeProperty && activeProperty.latitude && activeProperty.longitude && map && (
+        <MapPropertyOverlay
+          key={activeProperty.id}
+          property={activeProperty}
+          map={map}
+          onClose={handlePopupClose}
+        />
+      )}
 
       {/* Toolbar */}
       <MapToolbar
