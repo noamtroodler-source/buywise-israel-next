@@ -271,33 +271,33 @@
    Map Marker Styles
    ========================= */
 
-/* Property price markers - legacy (kept for backward compat) */
+/* Property price markers */
 .property-marker {
   white-space: nowrap;
   padding: 6px 12px;
-  border-radius: 9999px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-weight: 700;
   font-size: 12px;
   cursor: pointer;
   transition: all 200ms ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 2px solid transparent;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
 }
 
-/* Cluster markers */
+/* Cluster markers - semi-transparent blue */
 .cluster-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  color: hsl(213 94% 45%);
+  background: hsl(213 94% 45% / 0.85);
+  color: white;
   border-radius: 9999px;
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease;
   font-weight: 700;
   font-size: 13px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 2px solid hsl(213 94% 75%);
+  border: 2px solid hsl(213 94% 75% / 0.5);
 }
 
 .cluster-marker:hover {
@@ -316,21 +316,14 @@
 
 /* Active state applied via JS class toggle — no icon rebuild */
 .marker-active .property-marker-wrapper {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .marker-active .property-marker-pill {
   background-color: hsl(213, 94%, 45%) !important;
   color: white !important;
   border-color: white !important;
-}
-
-.marker-active .property-marker-pointer {
-  border-top-color: white !important;
-}
-
-.marker-active .property-marker-pointer-inner {
-  border-top-color: hsl(213, 94%, 45%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Viewed marker - subtle opacity reduction */
@@ -460,14 +453,14 @@
 .leaflet-popup-content-wrapper {
   border-radius: 12px !important;
   padding: 0 !important;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
   overflow: hidden !important;
   background: transparent !important;
 }
 
 .leaflet-popup-content {
   margin: 0 !important;
-  width: 260px !important;
+  width: 300px !important;
 }
 
 /* Hide the default pointer/tip completely */

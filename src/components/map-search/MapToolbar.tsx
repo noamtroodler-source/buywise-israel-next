@@ -120,14 +120,15 @@ export function MapToolbar({
 
   return (
     <div 
-      className={cn("absolute right-4 z-[40] flex flex-col gap-1.5", isMobile ? "top-14" : "top-4")}
+      className={cn("absolute right-3 z-[40]", isMobile ? "top-14" : "top-3")}
       role="toolbar"
       aria-label="Map controls"
       aria-orientation="vertical"
     >
-      {/* Group 1: Navigation */}
+      {/* Single unified toolbar card */}
       <div className="map-toolbar-group">
         <div className="flex flex-col gap-0.5">
+          {/* Zoom */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className={btnBase} onClick={handleZoomIn} aria-label="Zoom in (+)">
@@ -146,6 +147,9 @@ export function MapToolbar({
             <TooltipContent side="left">Zoom out (-)</TooltipContent>
           </Tooltip>
 
+          <div className="h-px bg-border mx-1 my-0.5" />
+
+          {/* Locate */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className={btnBase} onClick={handleLocate} aria-label="Find my location (L)">
@@ -154,12 +158,7 @@ export function MapToolbar({
             </TooltipTrigger>
             <TooltipContent side="left">My location (L)</TooltipContent>
           </Tooltip>
-        </div>
-      </div>
 
-      {/* Group 2: Tools */}
-      <div className="map-toolbar-group">
-        <div className="flex flex-col gap-0.5">
           {/* Draw Tool */}
           <DropdownMenu open={drawMenuOpen} onOpenChange={setDrawMenuOpen}>
             <Tooltip>
@@ -178,14 +177,14 @@ export function MapToolbar({
               </TooltipTrigger>
               <TooltipContent side="left">Draw to search (D)</TooltipContent>
             </Tooltip>
-            <DropdownMenuContent side="left" align="start">
-              <DropdownMenuItem onClick={() => handleDrawModeSelect('rectangle')} className={cn(drawMode === 'rectangle' && 'bg-accent')}>
+            <DropdownMenuContent side="left" align="start" className="bg-popover border shadow-lg z-50">
+              <DropdownMenuItem onClick={() => handleDrawModeSelect('rectangle')} className={cn(drawMode === 'rectangle' && 'bg-primary/10')}>
                 <Square className="h-4 w-4 mr-2" /> Rectangle
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDrawModeSelect('polygon')} className={cn(drawMode === 'polygon' && 'bg-accent')}>
+              <DropdownMenuItem onClick={() => handleDrawModeSelect('polygon')} className={cn(drawMode === 'polygon' && 'bg-primary/10')}>
                 <PenTool className="h-4 w-4 mr-2" /> Freehand
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDrawModeSelect('circle')} className={cn(drawMode === 'circle' && 'bg-accent')}>
+              <DropdownMenuItem onClick={() => handleDrawModeSelect('circle')} className={cn(drawMode === 'circle' && 'bg-primary/10')}>
                 <Circle className="h-4 w-4 mr-2" /> Circle
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -200,41 +199,27 @@ export function MapToolbar({
             </TooltipTrigger>
             <TooltipContent side="left">Share this view</TooltipContent>
           </Tooltip>
+
+          <div className="h-px bg-border mx-1 my-0.5" />
+
+          {/* Layers */}
+          <LayersMenu
+            showTrainStations={showTrainStations}
+            onToggleTrainStations={onToggleTrainStations}
+            showAngloCommunity={showAngloCommunity}
+            onToggleAngloCommunity={onToggleAngloCommunity}
+            showPriceHeatmap={showPriceHeatmap}
+            onTogglePriceHeatmap={onTogglePriceHeatmap}
+            showSavedLocations={showSavedLocations}
+            onToggleSavedLocations={onToggleSavedLocations}
+            hasSavedLocations={hasSavedLocations}
+            showNeighborhoodBoundaries={showNeighborhoodBoundaries}
+            onToggleNeighborhoodBoundaries={onToggleNeighborhoodBoundaries}
+            buttonClassName={btnBase}
+            iconClassName={iconSize}
+          />
         </div>
       </div>
-
-      {/* Group 3: Layers */}
-      <div className="map-toolbar-group">
-        <LayersMenu
-          showTrainStations={showTrainStations}
-          onToggleTrainStations={onToggleTrainStations}
-          showAngloCommunity={showAngloCommunity}
-          onToggleAngloCommunity={onToggleAngloCommunity}
-          showPriceHeatmap={showPriceHeatmap}
-          onTogglePriceHeatmap={onTogglePriceHeatmap}
-          showSavedLocations={showSavedLocations}
-          onToggleSavedLocations={onToggleSavedLocations}
-          hasSavedLocations={hasSavedLocations}
-          showNeighborhoodBoundaries={showNeighborhoodBoundaries}
-          onToggleNeighborhoodBoundaries={onToggleNeighborhoodBoundaries}
-          buttonClassName={btnBase}
-          iconClassName={iconSize}
-        />
-      </div>
-
-      {/* Keyboard shortcuts - desktop only */}
-      {!isMobile && onShowKeyboardShortcuts && (
-        <div className="map-toolbar-group">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className={btnBase} onClick={onShowKeyboardShortcuts} aria-label="Keyboard shortcuts (?)">
-                <Keyboard className={iconSize} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Keyboard shortcuts (?)</TooltipContent>
-          </Tooltip>
-        </div>
-      )}
     </div>
   );
 }

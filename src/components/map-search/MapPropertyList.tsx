@@ -1,14 +1,12 @@
 import { useCallback, useRef, useState, useEffect, memo } from 'react';
 import { Property, SortOption } from '@/types/database';
-import { PropertyCard } from '@/components/property/PropertyCard';
+import { MapListCard } from './MapListCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Loader2, Home, ChevronUp, Search, SlidersHorizontal, ArrowUpDown, ChevronDown, Bell, Check } from 'lucide-react';
+import { Loader2, ChevronUp, Search, SlidersHorizontal, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 // Infinite scroll sentinel component
 const InfiniteScrollSentinel = memo(function InfiniteScrollSentinel({ 
@@ -90,10 +88,8 @@ export function MapPropertyList({
   const listRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [useNarrowLayout, setUseNarrowLayout] = useState(false);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setShowBackToTop(e.currentTarget.scrollTop > 400);
@@ -101,19 +97,6 @@ export function MapPropertyList({
 
   const scrollToTop = useCallback(() => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // ResizeObserver for responsive grid
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setUseNarrowLayout(entry.contentRect.width < 420);
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
   }, []);
 
   // Scroll to property when requested from map popup "Find in list"
@@ -190,76 +173,53 @@ export function MapPropertyList({
   }
 
   return (
-    <TooltipProvider>
-      <div className="h-full flex flex-col relative" ref={containerRef}>
-        {/* Results count header with sort & alert */}
-        <div className="px-4 py-3 border-b bg-muted/30 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <p className="text-sm">
-                <span className="font-medium text-foreground">{properties.length}</span>
-                <span className="text-muted-foreground"> properties</span>
+    <div className="h-full flex flex-col relative" ref={containerRef}>
+      {/* Minimal results header */}
+        <div className="px-4 py-2.5 border-b flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {properties.length} results
               </p>
               {cityName && (
-                <span className="text-sm text-muted-foreground truncate">
-                  in {cityName}
-                </span>
+                <p className="text-xs text-muted-foreground">{cityName}</p>
               )}
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              {/* Sort dropdown */}
-              {onSortChange && (
-                <Popover open={sortOpen} onOpenChange={setSortOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="h-8 gap-1 px-2 text-muted-foreground hover:text-foreground"
+            {onSortChange && (
+              <Popover open={sortOpen} onOpenChange={setSortOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    {getSortLabel()}
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-2 bg-popover border shadow-xl z-50" align="end">
+                  {SORT_OPTIONS.map(option => (
+                    <button
+                      key={option.value}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
+                        sortBy === option.value 
+                          ? "bg-primary/10 text-primary font-medium" 
+                          : "hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        onSortChange(option.value);
+                        setSortOpen(false);
+                      }}
                     >
-                      <ArrowUpDown className="h-3.5 w-3.5" />
-                      <span className="text-xs hidden sm:inline">{getSortLabel()}</span>
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[220px] p-2 bg-background border shadow-xl z-50" align="end">
-                    {SORT_OPTIONS.map(option => (
-                      <button
-                        key={option.value}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2.5 text-sm rounded-lg transition-colors text-left",
-                          sortBy === option.value 
-                            ? "bg-primary/10 text-primary font-medium" 
-                            : "hover:bg-muted"
-                        )}
-                        onClick={() => {
-                          onSortChange(option.value);
-                          setSortOpen(false);
-                        }}
-                      >
-                        {sortBy === option.value && <Check className="h-4 w-4" />}
-                        <span className={sortBy !== option.value ? "ml-6" : ""}>{option.label}</span>
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
-              )}
-
-              {/* Create Alert button */}
-              {onCreateAlert && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={onCreateAlert}
-                      size="icon"
-                      className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm p-0"
-                    >
-                      <Bell className="h-3.5 w-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Create search alert</TooltipContent>
-                </Tooltip>
-              )}
-            </div>
+                      {sortBy === option.value && <Check className="h-4 w-4" />}
+                      <span className={sortBy !== option.value ? "ml-6" : ""}>{option.label}</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
         
@@ -268,8 +228,7 @@ export function MapPropertyList({
           <div 
             ref={listRef} 
             className={cn(
-              "p-3 gap-3",
-              isMobile || useNarrowLayout ? "space-y-3" : "grid grid-cols-2",
+              "p-3 grid gap-3 grid-cols-2",
               isFetching && !isLoading && "opacity-50 pointer-events-none transition-opacity"
             )}
           >
@@ -277,20 +236,12 @@ export function MapPropertyList({
               <div
                 key={property.id}
                 data-property-id={property.id}
-                onMouseEnter={() => onPropertyHover(property.id)}
-                onMouseLeave={() => onPropertyHover(null)}
-                onClick={() => onPropertySelect(property.id)}
-                className={cn(
-                  "transition-all duration-200 rounded-xl cursor-pointer",
-                  hoveredPropertyId === property.id && "ring-2 ring-primary shadow-lg"
-                )}
               >
-                <PropertyCard
+                <MapListCard
                   property={property}
-                  compact
-                  showCompareButton={false}
-                  showShareButton={true}
-                  maxBadges={1}
+                  isHovered={hoveredPropertyId === property.id}
+                  onHover={onPropertyHover}
+                  onSelect={onPropertySelect}
                 />
               </div>
             ))}
@@ -316,6 +267,5 @@ export function MapPropertyList({
           </Button>
         )}
       </div>
-    </TooltipProvider>
   );
 }
