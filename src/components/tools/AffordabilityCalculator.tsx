@@ -51,6 +51,7 @@ import { InsightCard } from './shared/InsightCard';
 import { ToolFeedback } from './shared/ToolFeedback';
 import { SaveResultsPrompt } from './shared/SaveResultsPrompt';
 import { ToolDisclaimer } from './shared/ToolDisclaimer';
+import { ToolPropertySuggestions } from './shared/ToolPropertySuggestions';
 import { formatCurrencyRange } from './shared/ResultRange';
 import { SourceAttribution } from './shared/SourceAttribution';
 import { ExampleValuesHint } from './shared/ExampleValuesHint';
@@ -441,6 +442,13 @@ function AffordabilityCalculatorContent() {
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/listings')}><Building2 className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Browse Properties</h4><p className="text-xs text-muted-foreground mt-1">Find homes in your price range</p></Card>
               <Card className="p-4 cursor-pointer hover:border-primary/50 transition-colors group" onClick={() => navigate('/guides/buying-in-israel')}><BookOpen className="h-5 w-5 text-primary mb-2" /><h4 className="font-medium text-sm group-hover:text-primary transition-colors">Complete Buyer's Guide</h4><p className="text-xs text-muted-foreground mt-1">Everything you need to know</p></Card>
             </div>
+            <ToolPropertySuggestions
+              title="Properties in Your Budget"
+              subtitle={`Showing homes up to ${formatPrice(calculations.maxPropertyPrice)}`}
+              minPrice={0}
+              maxPrice={calculations.maxPropertyPrice}
+              enabled={hasInteracted && calculations.maxPropertyPrice > 0}
+            />
             <ToolFeedback toolName="affordability-calculator" variant="inline" />
             <SourceAttribution toolType="affordability" />
             <ToolDisclaimer variant="affordability" />

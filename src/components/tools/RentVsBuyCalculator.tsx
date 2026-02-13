@@ -45,6 +45,7 @@ import {
   BuyerTypeInfoBanner,
   SourceAttribution,
   ExampleValuesHint,
+  ToolPropertySuggestions,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 import { BookOpen } from 'lucide-react';
@@ -1212,6 +1213,17 @@ export function RentVsBuyCalculator() {
         />
       </div>
       
+      {/* Property Suggestions */}
+      {calculations && (
+        <ToolPropertySuggestions
+          title="Properties at This Price"
+          subtitle={`Homes around ${formatPrice(parseFormattedNumber(propertyPrice))}`}
+          minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
+          maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
+          enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}
+        />
+      )}
+
       {/* Feedback */}
       <div className="text-center">
         <ToolFeedback 
