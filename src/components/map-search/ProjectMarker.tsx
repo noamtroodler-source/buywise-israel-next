@@ -29,12 +29,12 @@ function formatCompactPrice(amount: number, currency: 'ILS' | 'USD', exchangeRat
 }
 
 function createProjectPillHtml(priceLabel: string): string {
-  return `<div class="property-marker-pill project-marker-pill"><span style="font-size:9px;margin-right:2px;">🏗</span>From ${priceLabel}</div>`;
+  return `<div class="property-marker-pill project-marker-pill"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="project-pill-icon"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="9" width="7" height="12" rx="1"/><path d="M14 9V4a1 1 0 0 1 1-1h5"/></svg><span class="project-pill-label">From ${priceLabel}</span></div>`;
 }
 
 function estimatePillWidth(priceLabel: string): number {
   const text = `From ${priceLabel}`;
-  return Math.ceil(text.length * 7.5 + 40); // extra for icon
+  return Math.ceil(text.length * 7 + 38);
 }
 
 function createDotHtml(): string {
