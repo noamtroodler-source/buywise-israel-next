@@ -9,10 +9,12 @@ import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
 import { MapPropertyOverlay } from './MapPropertyOverlay';
+import { MapProjectOverlay } from './MapProjectOverlay';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
 import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
 import type { Property } from '@/types/database';
+import type { Project } from '@/types/projects';
 import type { Polygon } from '@/lib/utils/geometry';
 import { supabase } from '@/integrations/supabase/client';
 import 'leaflet/dist/leaflet.css';
@@ -25,6 +27,7 @@ const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM<
 interface PropertyMapProps {
   onBoundsChange?: (bounds: LatLngBounds) => void;
   properties?: Property[];
+  projects?: Project[];
   hoveredPropertyId?: string | null;
   onMarkerHover?: (id: string | null) => void;
   onMarkerClick?: (id: string) => void;
@@ -57,6 +60,7 @@ function MapEventHandler({
 export function PropertyMap({
   onBoundsChange,
   properties = [],
+  projects = [],
   hoveredPropertyId = null,
   onMarkerHover,
   onMarkerClick,
@@ -154,11 +158,9 @@ export function PropertyMap({
   const handleToggleDraw = useCallback(() => {
     setIsDrawMode((prev) => {
       if (prev) {
-        // Turning off draw mode, clear polygon
         setDrawnPolygon(null);
         onPolygonChange?.(null);
       } else {
-        // Entering draw mode, dismiss active popup
         setActivePropertyId(null);
       }
       return !prev;
@@ -192,7 +194,6 @@ export function PropertyMap({
     });
   }, []);
 
-  // Keyboard shortcuts
   const handleShowHelp = useCallback(() => setShowHelp(true), []);
   const handleClearSelection = useCallback(() => {
     setActivePropertyId(null);
@@ -230,14 +231,17 @@ export function PropertyMap({
 
   useMapKeyboardShortcuts(mapRef, shortcutHandlers);
 
-  // Stabilize activeProperty ref so hover on other markers doesn't re-render the popup
-  const activePropertyRef = useRef<Property | null>(null);
-  if (activePropertyId !== (activePropertyRef.current?.id ?? null)) {
-    activePropertyRef.current = activePropertyId
-      ? properties.find((p) => p.id === activePropertyId) ?? null
-      : null;
-  }
-  const activeProperty = activePropertyRef.current;
+  // Determine active overlay — could be property or project
+  const activeProperty = useMemo(() => {
+    if (!activePropertyId) return null;
+    if (activePropertyId.startsWith('project-')) {
+      const projectId = activePropertyId.replace('project-', '');
+      return projects.find(p => p.id === projectId) ?? null;
+    }
+    return properties.find(p => p.id === activePropertyId) ?? null;
+  }, [activePropertyId, properties, projects]);
+
+  const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
 
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
 
@@ -254,10 +258,10 @@ export function PropertyMap({
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
         <MapEventHandler onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange} />
 
-        {/* Property markers */}
-        {properties.length > 0 && (
+        {(properties.length > 0 || projects.length > 0) && (
           <MarkerClusterLayer
             properties={properties}
+            projects={projects}
             hoveredPropertyId={hoveredPropertyId}
             activePropertyId={activePropertyId}
             onMarkerClick={handleMarkerClick}
@@ -265,15 +269,12 @@ export function PropertyMap({
           />
         )}
 
-        {/* Train stations layer */}
         {activeLayers.has('trains') && <TrainStationLayer bounds={currentBounds} />}
 
-        {/* Neighborhood boundaries layer */}
         {showNeighborhoods && (
           <NeighborhoodBoundariesLayer city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
         )}
 
-        {/* Draw control */}
         {isDrawMode && (
           <DrawControl
             onPolygonDrawn={handlePolygonDrawn}
@@ -282,7 +283,6 @@ export function PropertyMap({
           />
         )}
 
-        {/* Drawn polygon clear chip (when not in draw mode but polygon exists) */}
         {!isDrawMode && drawnPolygon && (
           <DrawControl
             onPolygonDrawn={handlePolygonDrawn}
@@ -290,21 +290,28 @@ export function PropertyMap({
             onClear={handleClearDrawing}
           />
         )}
-
-        {/* Popup rendered outside MapContainer as overlay — see below */}
       </MapContainer>
 
-      {/* Property overlay — rendered OUTSIDE MapContainer to avoid Leaflet reconciliation glitches */}
-      {activeProperty && activeProperty.latitude && activeProperty.longitude && map && (
+      {/* Property overlay */}
+      {activeProperty && !isActiveProject && (activeProperty as Property).latitude && (activeProperty as Property).longitude && map && (
         <MapPropertyOverlay
-          key={activeProperty.id}
-          property={activeProperty}
+          key={(activeProperty as Property).id}
+          property={activeProperty as Property}
           map={map}
           onClose={handlePopupClose}
         />
       )}
 
-      {/* Toolbar */}
+      {/* Project overlay */}
+      {activeProperty && isActiveProject && (activeProperty as Project).latitude && (activeProperty as Project).longitude && map && (
+        <MapProjectOverlay
+          key={(activeProperty as Project).id}
+          project={activeProperty as Project}
+          map={map}
+          onClose={handlePopupClose}
+        />
+      )}
+
       <MapToolbar
         map={map}
         isDrawMode={isDrawMode}
@@ -316,12 +323,10 @@ export function PropertyMap({
 
       <KeyboardShortcutsDialog open={showHelp} onOpenChange={setShowHelp} />
 
-      {/* Search this area button */}
       {!searchAsMove && boundsChanged && !drawnPolygon && (
         <SearchThisAreaButton onClick={handleSearchThisArea} />
       )}
 
-      {/* Neighborhood chips */}
       {showNeighborhoods && (
         <NeighborhoodChips
           city={cityFilter}

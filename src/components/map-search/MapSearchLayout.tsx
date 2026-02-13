@@ -7,8 +7,10 @@ import { MobileMapListToggle } from './MobileMapListToggle';
 import { PropertyFilters as PropertyFiltersComponent } from '@/components/filters/PropertyFilters';
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
+import { useMapProjects } from '@/hooks/useMapProjects';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isPointInPolygon, deserializePolygon, serializePolygon, type Polygon } from '@/lib/utils/geometry';
+import { mergeIntoMapItems, type MapItem } from '@/types/mapItem';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
 import type { MapUrlFilters } from '@/hooks/useMapFilters';
@@ -22,7 +24,6 @@ function toBounds(b: LatLngBounds): MapBounds {
   };
 }
 
-/** Convert URL filter state → PropertyFilters object for the component */
 function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
   return {
     city: u.city ?? undefined,
@@ -44,7 +45,6 @@ function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
   };
 }
 
-/** Convert PropertyFilters object → flat URL params record */
 function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string | number | null> {
   return {
     city: f.city ?? null,
@@ -75,7 +75,6 @@ export default function MapSearchLayout() {
   });
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  // Mobile sheet snap state
   const [mobileSnap, setMobileSnap] = useState<string | number | null>('148px');
   const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
 
@@ -105,13 +104,15 @@ export default function MapSearchLayout() {
     setFilter('status', type);
   }, [setFilter]);
 
+  const handleStatusChange = useCallback((type: 'for_sale' | 'for_rent' | 'projects') => {
+    setFilter('status', type);
+  }, [setFilter]);
 
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
     setFilter('polygon', polygon ? serializePolygon(polygon) : null);
   }, [setFilter]);
 
-  // Debounced map move → URL persistence
   const moveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(moveTimerRef.current), []);
   const handleMapMove = useCallback((lat: number, lng: number, zoom: number) => {
@@ -128,7 +129,7 @@ export default function MapSearchLayout() {
   const initialCenter = useMemo<[number, number] | undefined>(() => {
     if (urlFilters.lat != null && urlFilters.lng != null) return [urlFilters.lat, urlFilters.lng];
     return undefined;
-  }, []); // intentionally run once
+  }, []);
 
   const initialZoom = useMemo(() => urlFilters.zoom ?? undefined, []);
 
@@ -141,10 +142,11 @@ export default function MapSearchLayout() {
     });
   }, [setMultipleFilters]);
 
-  const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
+  const isProjectsOnly = urlFilters.status === 'projects';
+  const listingType = isProjectsOnly ? 'for_sale' : urlFilters.status;
 
-  const mergedFilters: PropertyFilters = useMemo(() => {
-    // City is navigation-only (flyTo) — bounds handle spatial filtering
+  // Property filters (skip when projects-only)
+  const mergedPropertyFilters: PropertyFilters = useMemo(() => {
     const { city, ...filtersWithoutCity } = componentFilters;
     return {
       ...filtersWithoutCity,
@@ -155,21 +157,71 @@ export default function MapSearchLayout() {
 
   const {
     properties: rawProperties,
-    totalCount,
-    isLoading,
-    isFetching,
-    hasNextPage,
-    loadMore,
-  } = usePaginatedProperties(mergedFilters);
+    totalCount: propertyCount,
+    isLoading: propertiesLoading,
+    isFetching: propertiesFetching,
+    hasNextPage: propertiesHasNext,
+    loadMore: propertiesLoadMore,
+  } = usePaginatedProperties(mergedPropertyFilters, { pageSize: isProjectsOnly ? 0 : undefined });
+
+  // Project filters — fetch when status is 'for_sale' or 'projects'
+  const shouldFetchProjects = urlFilters.status === 'for_sale' || urlFilters.status === 'projects';
+
+  const projectFilters: PropertyFilters = useMemo(() => {
+    const { city, ...filtersWithoutCity } = componentFilters;
+    return {
+      min_price: filtersWithoutCity.min_price,
+      max_price: filtersWithoutCity.max_price,
+      bounds: mapBounds ?? undefined,
+      sort_by: filtersWithoutCity.sort_by,
+    };
+  }, [componentFilters, mapBounds]);
+
+  const {
+    projects: rawProjects,
+    totalCount: projectCount,
+    isLoading: projectsLoading,
+    isFetching: projectsFetching,
+    hasNextPage: projectsHasNext,
+    loadMore: projectsLoadMore,
+  } = useMapProjects(projectFilters, { enabled: shouldFetchProjects });
 
   // Client-side polygon filter
   const properties = useMemo(() => {
+    if (isProjectsOnly) return [];
     if (!drawnPolygon) return rawProperties;
     return rawProperties.filter((p) => {
       if (!p.longitude || !p.latitude) return false;
       return isPointInPolygon([p.longitude, p.latitude], drawnPolygon);
     });
-  }, [rawProperties, drawnPolygon]);
+  }, [rawProperties, drawnPolygon, isProjectsOnly]);
+
+  const projects = useMemo(() => {
+    if (!shouldFetchProjects) return [];
+    if (!drawnPolygon) return rawProjects;
+    return rawProjects.filter((p) => {
+      if (!p.longitude || !p.latitude) return false;
+      return isPointInPolygon([p.longitude, p.latitude], drawnPolygon);
+    });
+  }, [rawProjects, drawnPolygon, shouldFetchProjects]);
+
+  // Merged items for the list
+  const items: MapItem[] = useMemo(() => {
+    return mergeIntoMapItems(properties, projects, componentFilters.sort_by);
+  }, [properties, projects, componentFilters.sort_by]);
+
+  const totalCount = drawnPolygon
+    ? items.length
+    : (isProjectsOnly ? projectCount : propertyCount + (shouldFetchProjects ? projectCount : 0));
+
+  const isLoading = isProjectsOnly ? projectsLoading : propertiesLoading;
+  const isFetching = isProjectsOnly ? projectsFetching : (propertiesFetching || projectsFetching);
+  const hasNextPage = isProjectsOnly ? projectsHasNext : (propertiesHasNext || projectsHasNext);
+
+  const loadMore = useCallback(() => {
+    propertiesLoadMore();
+    if (shouldFetchProjects) projectsLoadMore();
+  }, [propertiesLoadMore, projectsLoadMore, shouldFetchProjects]);
 
   const handleSortChange = useCallback((value: SortOption) => {
     setFilter('sort_by', value);
@@ -183,7 +235,6 @@ export default function MapSearchLayout() {
     setHoveredPropertyId(id);
   }, []);
 
-  // Desktop layout
   if (isDesktop) {
     return (
       <div className="h-[calc(100vh-64px)] flex flex-col">
@@ -194,9 +245,9 @@ export default function MapSearchLayout() {
             listingType={urlFilters.status}
             mapMode
             showBuyRentToggle
-            onBuyRentChange={handleBuyRentChange}
+            onBuyRentChange={handleStatusChange as any}
             activeView="map"
-            previewCount={drawnPolygon ? properties.length : totalCount}
+            previewCount={drawnPolygon ? items.length : totalCount}
             isCountLoading={isFetching}
           />
         </div>
@@ -205,6 +256,7 @@ export default function MapSearchLayout() {
           <PropertyMap
             onBoundsChange={handleBoundsChange}
             properties={properties}
+            projects={projects}
             hoveredPropertyId={hoveredPropertyId}
             onMarkerHover={handleMarkerHover}
             onPolygonChange={handlePolygonChange}
@@ -215,8 +267,8 @@ export default function MapSearchLayout() {
             onMapMove={handleMapMove}
           />
           <MapListPanel
-            properties={properties}
-            totalCount={drawnPolygon ? properties.length : totalCount}
+            items={items}
+            totalCount={drawnPolygon ? items.length : totalCount}
             isLoading={isLoading}
             isFetching={isFetching}
             hasNextPage={hasNextPage}
@@ -235,14 +287,13 @@ export default function MapSearchLayout() {
   // Mobile layout
   return (
     <div className="h-[calc(100vh-64px)] relative">
-      {/* Full-screen map */}
       <PropertyMap
         onBoundsChange={handleBoundsChange}
         properties={properties}
+        projects={projects}
         hoveredPropertyId={hoveredPropertyId}
         onMarkerHover={handleMarkerHover}
         onPolygonChange={handlePolygonChange}
-        
         listingStatus={listingType}
         cityFilter={urlFilters.city}
         initialCenter={initialCenter}
@@ -250,23 +301,20 @@ export default function MapSearchLayout() {
         onMapMove={handleMapMove}
       />
 
-      {/* Mobile filter bar overlay */}
       <MobileMapFilterBar
         filters={componentFilters}
         onFiltersChange={handleFiltersChange}
         listingType={listingType}
         onBuyRentChange={handleBuyRentChange}
-        previewCount={drawnPolygon ? properties.length : totalCount}
+        previewCount={drawnPolygon ? items.length : totalCount}
         isCountLoading={isFetching}
       />
 
-      {/* Map/List toggle pill */}
       <MobileMapListToggle activeView={mobileView} onToggle={handleMobileViewToggle} />
 
-      {/* Bottom sheet */}
       <MobileMapSheet
-        properties={properties}
-        totalCount={drawnPolygon ? properties.length : totalCount}
+        items={items}
+        totalCount={drawnPolygon ? items.length : totalCount}
         isLoading={isLoading}
         hasNextPage={hasNextPage}
         loadMore={loadMore}

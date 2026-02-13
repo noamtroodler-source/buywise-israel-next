@@ -4,18 +4,21 @@ import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 import useSupercluster from 'use-supercluster';
 import { Property } from '@/types/database';
+import { Project } from '@/types/projects';
 import { PropertyMarker } from './PropertyMarker';
+import { ProjectMarker } from './ProjectMarker';
 import { useState } from 'react';
 
 interface MarkerClusterLayerProps {
   properties: Property[];
+  projects?: Project[];
   hoveredPropertyId: string | null;
   activePropertyId: string | null;
   onMarkerClick: (id: string) => void;
   onMarkerHover: (id: string | null) => void;
 }
 
-// Major metro areas shown at country zoom — curated, non-overlapping
+// Major metro areas shown at country zoom
 const CITY_WAYPOINTS = [
   { name: 'Haifa', lat: 32.79, lng: 34.99 },
   { name: 'Netanya', lat: 32.33, lng: 34.86 },
@@ -27,7 +30,6 @@ const CITY_WAYPOINTS = [
 ];
 
 function getCityLabelIcon(name: string) {
-  // Estimate width based on character count for centering
   const estimatedWidth = name.length * 8 + 36;
   return L.divIcon({
     html: `<div class="city-waypoint-label">${name}</div>`,
@@ -49,6 +51,7 @@ function getClusterIcon(count: number) {
 
 export function MarkerClusterLayer({
   properties,
+  projects = [],
   hoveredPropertyId,
   activePropertyId,
   onMarkerClick,
@@ -72,16 +75,25 @@ export function MarkerClusterLayer({
   const displayMode: 'dot' | 'pill' = zoom >= 13 ? 'pill' : 'dot';
   const clusterRadius = zoom >= 14 ? 50 : zoom >= 13 ? 70 : 80;
 
-  const points = useMemo(() =>
-    properties
+  const points = useMemo(() => {
+    const propertyPoints = properties
       .filter(p => p.latitude && p.longitude)
       .map(p => ({
         type: 'Feature' as const,
-        properties: { cluster: false, propertyId: p.id, property: p },
+        properties: { cluster: false, propertyId: p.id, property: p, itemType: 'property' as const },
         geometry: { type: 'Point' as const, coordinates: [p.longitude!, p.latitude!] },
-      })),
-    [properties]
-  );
+      }));
+
+    const projectPoints = projects
+      .filter(p => p.latitude && p.longitude)
+      .map(p => ({
+        type: 'Feature' as const,
+        properties: { cluster: false, propertyId: `project-${p.id}`, project: p, itemType: 'project' as const },
+        geometry: { type: 'Point' as const, coordinates: [p.longitude!, p.latitude!] },
+      }));
+
+    return [...propertyPoints, ...projectPoints];
+  }, [properties, projects]);
 
   const { clusters } = useSupercluster({
     points,
@@ -102,7 +114,6 @@ export function MarkerClusterLayer({
     map.flyTo([lat, lng], 13, { duration: 0.8 });
   }, [map]);
 
-  // At country scale (zoom ≤ 9), show city waypoint labels instead of clusters
   if (zoom <= 9) {
     return (
       <>
@@ -139,7 +150,24 @@ export function MarkerClusterLayer({
           );
         }
 
-        const property = (cluster.properties as any).property as Property;
+        const props = cluster.properties as any;
+
+        if (props.itemType === 'project') {
+          const project = props.project as Project;
+          return (
+            <ProjectMarker
+              key={`project-${project.id}`}
+              project={project}
+              isHovered={hoveredPropertyId === `project-${project.id}`}
+              isActive={activePropertyId === `project-${project.id}`}
+              onClick={onMarkerClick}
+              onHover={onMarkerHover}
+              displayMode={displayMode}
+            />
+          );
+        }
+
+        const property = props.property as Property;
         return (
           <PropertyMarker
             key={property.id}
