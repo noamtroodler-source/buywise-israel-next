@@ -1,53 +1,40 @@
 
 
-## Upgrade Map Popup to Match List Cards
+## Fix Map Popup Glitching
 
-Rewrite `MapPropertyPopup.tsx` to mirror the patterns already used in `MapListCard.tsx`, bringing feature parity to the popup.
+### Root Causes Identified
 
-### Changes (single file: `src/components/map-search/MapPropertyPopup.tsx`)
+1. **`hover:scale-[1.01]` on the popup Link** -- This CSS transform causes the entire popup card to physically shift/scale when your mouse enters or leaves the card. Inside a Leaflet popup (which has its own transform-based positioning), this creates a visible "jump" every time you hover in/out.
 
-**1. Functional Heart Button**
-Replace the decorative `<Heart>` icon with the existing `<FavoriteButton>` component, positioned identically to `MapListCard` (absolute top-right, z-10).
+2. **Mouse events leaking between popup and markers** -- When you hover your mouse over the popup card, the mouse also crosses over map markers underneath. Each marker hover fires `onMarkerHover`, which updates `hoveredPropertyId` state in the parent, which re-renders `MarkerClusterLayer`, which can cause the popup to flicker/re-layout.
 
-**2. Image Carousel with Dots**
-- Add `useState` for `imageIndex` and `useCallback` for `prevImage`/`nextImage`.
-- Render `ChevronLeft`/`ChevronRight` arrows on hover (using a local `isHovered` state).
-- Render `<CarouselDots>` at the bottom of the image (capped at 5 dots, same as `MapListCard`).
-- Cycle through `property.images` array; fall back to a single-image array if empty.
+3. **Carousel arrows toggling on `isHovered`** -- The arrows appear/disappear as you move your mouse, causing layout shifts inside the popup. Combined with the scale effect, this creates a cascading glitch loop.
 
-**3. Status Badges**
-- Extract the `getStatusBadge()` function from `MapListCard` into a shared utility or simply copy it into the popup (it's small -- ~20 lines).
-- Render the badge in the top-left of the image area, matching `MapListCard`'s styling (emerald for "New", destructive for "Price Drop", etc.).
+4. **CSS width conflict** -- The global rule sets `.leaflet-popup-content` to `width: 300px !important` while the property-popup override sets it to `280px !important`. The component itself uses `w-[260px]`. This mismatch can cause content reflows.
 
-**4. Price per sqm Subtitle**
-- Compute `pricePerSqm = property.price / property.size_sqm` when `size_sqm` exists.
-- Display it as a secondary line below the price, formatted with `useFormatPrice` and appended with `/sqm` (or the area unit from preferences).
+### Solution (2 files)
 
-**5. Hover Lift Effect**
-- Add `group-hover:shadow-lg group-hover:scale-[1.01]` and `transition-all duration-200` to the outer `<Link>` wrapper for a subtle lift on hover.
+**`src/components/map-search/MapPropertyPopup.tsx`**:
+- Remove `hover:shadow-lg hover:scale-[1.01]` and `transition-all duration-200` from the Link wrapper -- these transform effects inside a Leaflet popup are the primary cause of the visual glitching
+- Replace with a simpler, non-transform hover: just a subtle background tint or no hover effect at all (the card is already clickable and obvious)
+- Keep `isHovered` state but use it only for the carousel arrows -- add `pointer-events: none` on the popup's Leaflet container via CSS so map markers underneath don't receive mouse events while the popup is open
+- Show carousel arrows with opacity transition instead of conditional rendering (mount/unmount causes layout shift) -- always render them but toggle opacity
 
-**6. Agent Avatar Chip**
-- If `property.agent` exists and has a `profile_image`, render a small `<Avatar>` (24x24) in the bottom-right corner of the image area with a white ring border, similar to Zillow's agent branding.
+**`src/index.css`**:
+- Fix the width conflict: set `.property-popup .leaflet-popup-content` to `width: 260px !important` to match the component's actual width
+- Add `pointer-events: auto` on the property popup content so it captures mouse events and prevents them from reaching markers below
+- Remove the global `background: transparent !important` override from `.leaflet-popup-content-wrapper` and instead scope it only to non-property popups, so the property popup background rule doesn't need to fight it
 
 ### Technical Details
 
-```text
-Imports to add:
-- FavoriteButton from '@/components/property/FavoriteButton'
-- CarouselDots from '@/components/shared/CarouselDots'
-- Badge from '@/components/ui/badge'
-- Avatar, AvatarImage, AvatarFallback from '@/components/ui/avatar'
-- ChevronLeft, ChevronRight, Sparkles from 'lucide-react'
-- useState, useCallback, memo from 'react'
+Key changes in `MapPropertyPopup.tsx`:
+- Line 102: Remove `transition-all duration-200 hover:shadow-lg hover:scale-[1.01]` from the Link className
+- Lines 137-154: Always render carousel arrows but use `opacity-0 group-hover:opacity-100 transition-opacity` instead of conditional `isHovered &&` rendering -- this prevents DOM mount/unmount layout shifts
+- The `isHovered` state can be removed entirely since CSS `group-hover` handles arrow visibility
 
-State:
-- imageIndex (number) for carousel position
-- isHovered (boolean) for showing arrows
+Key changes in `src/index.css`:
+- Line 458: Remove `background: transparent !important` from the global `.leaflet-popup-content-wrapper` (it conflicts with the property popup background)
+- Line 463: Change global `.leaflet-popup-content` width from `300px` to `auto`
+- Line 1019: Set `.property-popup .leaflet-popup-content` width to `260px !important`
+- Add a rule to prevent mouse event leakage: `.property-popup { pointer-events: auto; }` and ensure the popup's z-index stays above markers
 
-Logic reused from MapListCard:
-- getStatusBadge() function (identical copy)
-- prevImage / nextImage handlers
-- CarouselDots capped at min(total, 5)
-```
-
-No CSS changes needed -- the existing popup CSS rules already handle the container. No new dependencies required.
