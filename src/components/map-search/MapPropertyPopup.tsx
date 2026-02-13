@@ -47,7 +47,6 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
   const formatArea = useFormatArea();
   const formatPricePerArea = useFormatPricePerArea();
   const [imageIndex, setImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
 
   const images = property.images?.length ? property.images : [null];
   const totalImages = images.length;
@@ -99,10 +98,8 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
     >
       <Link
         to={`/property/${property.id}`}
-        className="block w-[260px] no-underline text-foreground group transition-all duration-200 hover:shadow-lg hover:scale-[1.01]"
+        className="block w-[260px] no-underline text-foreground group"
         onClick={(e) => e.stopPropagation()}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Image */}
         <div className="relative w-full h-[140px] overflow-hidden rounded-t-lg bg-muted">
@@ -133,19 +130,19 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
             </div>
           )}
 
-          {/* Carousel arrows */}
-          {totalImages > 1 && isHovered && (
+          {/* Carousel arrows — always mounted, visibility via CSS to prevent layout shifts */}
+          {totalImages > 1 && (
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-3.5 w-3.5 text-foreground" />

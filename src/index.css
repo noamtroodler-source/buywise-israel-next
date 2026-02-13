@@ -455,12 +455,11 @@
   padding: 0 !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
   overflow: hidden !important;
-  background: transparent !important;
 }
 
 .leaflet-popup-content {
   margin: 0 !important;
-  width: 300px !important;
+  width: auto !important;
 }
 
 /* Hide the default pointer/tip completely */
@@ -1005,6 +1004,11 @@
 }
 
 /* Property popup overrides – Zillow-style card */
+.property-popup {
+  pointer-events: auto !important;
+  z-index: 1000 !important;
+}
+
 .property-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
   border-radius: 12px;
@@ -1012,11 +1016,12 @@
   background: hsl(var(--background)) !important;
   box-shadow: 0 4px 14px rgba(0,0,0,0.18);
   border: 1px solid hsl(var(--border));
+  pointer-events: auto !important;
 }
 
 .property-popup .leaflet-popup-content {
   margin: 0 !important;
-  width: 280px !important;
+  width: 260px !important;
 }
 
 .property-popup .leaflet-popup-tip {
