@@ -1,31 +1,15 @@
 
+## Fix: Transparent Property Popup
 
-# Refined Zoom Strategy for Map Markers
+**Root Cause**: There's a global CSS rule at line 458 in `src/index.css` that sets `.leaflet-popup-content-wrapper` to `background: transparent !important;`. This overrides the property popup's background because `!important` always wins over a non-`!important` rule, regardless of specificity.
 
-Small tweaks to the existing `MarkerClusterLayer` to implement the cleaner zoom thresholds.
+**Fix** (single file change):
 
-## What Changes
+**`src/index.css`** -- Two changes:
 
-| Zoom | Current | New |
-|------|---------|-----|
-| < 10 | Dots + clusters visible | **Nothing rendered** -- clean map |
-| 10-12 | Dots + clusters | Dots (10px, slightly larger) + cluster counts |
-| 13-14 | Price pills + clusters | Price pills + cluster counts (no change) |
-| 15+ | Price pills + clusters | Price pills, **no clustering** (every property shown) |
+1. On the `.property-popup .leaflet-popup-content-wrapper` rule (line 1012), add `!important` to the background so it overrides the global transparent rule:
+   - `background: hsl(var(--background)) !important;`
 
-## Technical Changes
+2. Also fix the `.property-popup .leaflet-popup-content` width override -- the global rule forces `width: 300px !important` (line 463), which may conflict with the popup's `min-width: 260px`. Add `width: auto !important;` to the property popup content rule.
 
-### 1. MarkerClusterLayer.tsx
-- **Early return** when `zoom < 10`: return `null` so nothing renders at country scale
-- **Increase maxZoom** from 16 to 14: this makes supercluster stop clustering at zoom 15+, so every property gets its own pill at street level
-- Keep `displayMode` threshold at zoom 13 (dot vs pill) -- already correct
-
-### 2. PropertyMarker.tsx (dot CSS only)
-- Increase dot size from 8px to 10px for better visibility at zoom 10-11
-- Update `iconSize` and `iconAnchor` accordingly
-
-### 3. index.css
-- Update `.property-marker-dot` width/height from 8px to 10px
-
-Three small, targeted edits -- no new files, no architectural changes.
-
+This is a pure CSS specificity fix -- no component changes needed.
