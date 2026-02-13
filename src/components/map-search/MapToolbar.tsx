@@ -51,7 +51,7 @@ export function MapToolbar({
     'flex items-center justify-center w-8 h-8 text-foreground hover:bg-accent transition-colors cursor-pointer rounded';
 
   return (
-    <div className="absolute bottom-6 right-3 z-[40] flex flex-col gap-2">
+    <div className="absolute bottom-40 lg:bottom-6 right-3 z-[40] flex flex-col gap-2">
       {/* Navigation group */}
       <div className="map-toolbar-group flex flex-col">
         <button onClick={handleZoomIn} className={btnBase} aria-label="Zoom in">
