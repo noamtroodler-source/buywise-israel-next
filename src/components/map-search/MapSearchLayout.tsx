@@ -4,6 +4,7 @@ import { MapListPanel } from './MapListPanel';
 import { PropertyFilters as PropertyFiltersComponent } from '@/components/filters/PropertyFilters';
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
+import { isPointInPolygon, type Polygon } from '@/lib/utils/geometry';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
 import type { MapUrlFilters } from '@/hooks/useMapFilters';
@@ -65,6 +66,7 @@ export default function MapSearchLayout() {
   const { filters: urlFilters, setFilter, setMultipleFilters } = useMapFilters();
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
+  const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
 
   const handleBoundsChange = useCallback((b: LatLngBounds) => {
     setMapBounds(toBounds(b));
@@ -83,6 +85,14 @@ export default function MapSearchLayout() {
     setFilter('status', type);
   }, [setFilter]);
 
+  const handleCityClick = useCallback((city: string) => {
+    setFilter('city', city);
+  }, [setFilter]);
+
+  const handlePolygonChange = useCallback((polygon: Polygon | null) => {
+    setDrawnPolygon(polygon);
+  }, []);
+
   const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
 
   // Merged filters for the query (includes map bounds)
@@ -93,13 +103,22 @@ export default function MapSearchLayout() {
   }), [componentFilters, listingType, mapBounds]);
 
   const {
-    properties,
+    properties: rawProperties,
     totalCount,
     isLoading,
     isFetching,
     hasNextPage,
     loadMore,
   } = usePaginatedProperties(mergedFilters);
+
+  // Client-side polygon filter
+  const properties = useMemo(() => {
+    if (!drawnPolygon) return rawProperties;
+    return rawProperties.filter((p) => {
+      if (!p.longitude || !p.latitude) return false;
+      return isPointInPolygon([p.longitude, p.latitude], drawnPolygon);
+    });
+  }, [rawProperties, drawnPolygon]);
 
   const handleSortChange = useCallback((value: SortOption) => {
     setFilter('sort_by', value);
@@ -124,7 +143,7 @@ export default function MapSearchLayout() {
           showBuyRentToggle
           onBuyRentChange={handleBuyRentChange}
           activeView="map"
-          previewCount={totalCount}
+          previewCount={drawnPolygon ? properties.length : totalCount}
           isCountLoading={isFetching}
         />
       </div>
@@ -135,10 +154,14 @@ export default function MapSearchLayout() {
           properties={properties}
           hoveredPropertyId={hoveredPropertyId}
           onMarkerHover={handleMarkerHover}
+          onPolygonChange={handlePolygonChange}
+          onCityClick={handleCityClick}
+          listingStatus={listingType}
+          cityFilter={urlFilters.city}
         />
         <MapListPanel
           properties={properties}
-          totalCount={totalCount}
+          totalCount={drawnPolygon ? properties.length : totalCount}
           isLoading={isLoading}
           isFetching={isFetching}
           hasNextPage={hasNextPage}
