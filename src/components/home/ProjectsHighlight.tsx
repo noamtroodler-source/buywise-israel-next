@@ -273,79 +273,75 @@ export function ProjectsHighlight() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="hidden lg:grid lg:grid-cols-5 gap-4 items-stretch"
+            className="hidden lg:grid lg:grid-cols-5 lg:grid-rows-2 gap-4"
           >
             {mainProject && (
               <Link
                 to={`/projects/${mainProject.slug}`}
-                className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col"
+                className="lg:col-span-3 lg:row-span-2 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
               >
-                <div className="flex-1 relative">
-                  <ProjectImageCarousel
-                    images={mainProject.images || []}
-                    alt={mainProject.name}
-                    aspectClass="absolute inset-0"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
-                  
-                  <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <ProjectShareButton projectSlug={mainProject.slug} projectName={mainProject.name} />
-                    </div>
-                    <ProjectFavoriteButton projectId={mainProject.id} />
+                <ProjectImageCarousel
+                  images={mainProject.images || []}
+                  alt={mainProject.name}
+                  aspectClass="h-full"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
+                
+                <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ProjectShareButton projectSlug={mainProject.slug} projectName={mainProject.name} />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-8 md:pb-9 pointer-events-none">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
-                      {mainProject.developer && (
-                        <span className="text-xs text-white/80 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3" />
-                          {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-1">{mainProject.name}</h3>
-                    <p className="text-sm text-white/80 mb-2">
-                      {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
-                    </p>
-                    <p className="text-base font-semibold text-white">
-                      From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
-                    </p>
+                  <ProjectFavoriteButton projectId={mainProject.id} />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-8 md:pb-9 pointer-events-none">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
+                    {mainProject.developer && (
+                      <span className="text-xs text-white/80 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
+                      </span>
+                    )}
                   </div>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">{mainProject.name}</h3>
+                  <p className="text-sm text-white/80 mb-2">
+                    {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
+                  </p>
+                  <p className="text-base font-semibold text-white">
+                    From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
+                  </p>
                 </div>
               </Link>
             )}
 
-            <div className="lg:col-span-2 flex flex-col gap-3">
-              {sideProjects.map((project) => (
-                <Link
-                  key={project.id}
-                  to={`/projects/${project.slug}`}
-                  className="group block relative overflow-hidden rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
-                >
-                  <ProjectImageCarousel
-                    images={project.images || []}
-                    alt={project.name}
-                    aspectClass="aspect-[16/7]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent pointer-events-none" />
-                  
-                  <div className="absolute top-2 right-2 flex gap-1.5 z-10">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
-                    </div>
-                    <ProjectFavoriteButton projectId={project.id} />
+            {sideProjects.map((project) => (
+              <Link
+                key={project.id}
+                to={`/projects/${project.slug}`}
+                className="lg:col-span-2 group block relative overflow-hidden rounded-lg bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+              >
+                <ProjectImageCarousel
+                  images={project.images || []}
+                  alt={project.name}
+                  aspectClass="aspect-[16/7]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent pointer-events-none" />
+                
+                <div className="absolute top-2 right-2 flex gap-1.5 z-10">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 pointer-events-none">
-                    <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">New Project</Badge>
-                    <h3 className="text-base font-bold text-white">{project.name}</h3>
-                    <p className="text-xs text-white/80">
-                      {project.city} • From {formatPrice(project.price_from, project.currency || 'ILS')}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+                  <ProjectFavoriteButton projectId={project.id} />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 pointer-events-none">
+                  <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">New Project</Badge>
+                  <h3 className="text-base font-bold text-white">{project.name}</h3>
+                  <p className="text-xs text-white/80">
+                    {project.city} • From {formatPrice(project.price_from, project.currency || 'ILS')}
+                  </p>
+                </div>
+              </Link>
+            ))}
           </motion.div>
         )}
       </div>
