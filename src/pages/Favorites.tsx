@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Calculator, ArrowRight, Bell, BellOff, Building, Bookmark } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Heart, MapPin, Calculator, ArrowRight, Bell, BellOff, Building, Bookmark, GitCompareArrows, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SEOHead } from '@/components/seo/SEOHead';
 import { Layout } from '@/components/layout/Layout';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -33,6 +33,7 @@ export default function Favorites() {
   const { compareCategory, syncCompareWithFavorites } = useCompare();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'buy' | 'rent' | 'projects'>('buy');
+  const [compareNudgeDismissed, setCompareNudgeDismissed] = useState(false);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
@@ -261,6 +262,36 @@ export default function Favorites() {
                   )}
                 </TabsTrigger>
               </TabsList>
+
+              {/* Compare Nudge - shown when 2+ items in active tab */}
+              <AnimatePresence>
+                {!compareNudgeDismissed && (
+                  (activeTab === 'buy' && buyProperties.length >= 2) ||
+                  (activeTab === 'rent' && rentProperties.length >= 2) ||
+                  (activeTab === 'projects' && projectFavorites.length >= 2)
+                ) && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4"
+                  >
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/15">
+                      <GitCompareArrows className="h-5 w-5 text-primary flex-shrink-0" />
+                      <p className="text-sm text-foreground flex-1">
+                        <span className="font-medium">Tip:</span> Check the boxes on your saved properties to compare them side by side.
+                      </p>
+                      <button
+                        onClick={() => setCompareNudgeDismissed(true)}
+                        className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+                        aria-label="Dismiss"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Buy Tab */}
               <TabsContent value="buy" className="mt-6">
