@@ -1,4 +1,4 @@
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useRef } from 'react';
 import { PropertyMap } from './PropertyMap';
 import { MapListPanel } from './MapListPanel';
 import { MobileMapSheet } from './MobileMapSheet';
@@ -8,7 +8,7 @@ import { PropertyFilters as PropertyFiltersComponent } from '@/components/filter
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { isPointInPolygon, type Polygon } from '@/lib/utils/geometry';
+import { isPointInPolygon, deserializePolygon, serializePolygon, type Polygon } from '@/lib/utils/geometry';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
 import type { MapUrlFilters } from '@/hooks/useMapFilters';
@@ -70,7 +70,9 @@ export default function MapSearchLayout() {
   const { filters: urlFilters, setFilter, setMultipleFilters } = useMapFilters();
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
-  const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
+  const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(() => {
+    return urlFilters.polygon ? deserializePolygon(urlFilters.polygon) : null;
+  });
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // Mobile sheet snap state
@@ -109,7 +111,37 @@ export default function MapSearchLayout() {
 
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
-  }, []);
+    setFilter('polygon', polygon ? serializePolygon(polygon) : null);
+  }, [setFilter]);
+
+  // Debounced map move → URL persistence
+  const moveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const handleMapMove = useCallback((lat: number, lng: number, zoom: number) => {
+    clearTimeout(moveTimerRef.current);
+    moveTimerRef.current = setTimeout(() => {
+      setMultipleFilters({
+        lat: Number(lat.toFixed(5)),
+        lng: Number(lng.toFixed(5)),
+        zoom,
+      });
+    }, 300);
+  }, [setMultipleFilters]);
+
+  const initialCenter = useMemo<[number, number] | undefined>(() => {
+    if (urlFilters.lat != null && urlFilters.lng != null) return [urlFilters.lat, urlFilters.lng];
+    return undefined;
+  }, []); // intentionally run once
+
+  const initialZoom = useMemo(() => urlFilters.zoom ?? undefined, []);
+
+  const handleClearFilters = useCallback(() => {
+    setMultipleFilters({
+      city: null, min_price: null, max_price: null, min_rooms: null, max_rooms: null,
+      property_type: null, property_types: null, min_bathrooms: null,
+      min_size: null, max_size: null, min_floor: null, max_floor: null,
+      min_parking: null, max_days_listed: null, features: null,
+    });
+  }, [setMultipleFilters]);
 
   const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
 
@@ -177,6 +209,9 @@ export default function MapSearchLayout() {
             onCityClick={handleCityClick}
             listingStatus={listingType}
             cityFilter={urlFilters.city}
+            initialCenter={initialCenter}
+            initialZoom={initialZoom}
+            onMapMove={handleMapMove}
           />
           <MapListPanel
             properties={properties}
@@ -189,6 +224,8 @@ export default function MapSearchLayout() {
             onSortChange={handleSortChange}
             hoveredPropertyId={hoveredPropertyId}
             onCardHover={handleCardHover}
+            cityFilter={urlFilters.city}
+            onClearFilters={handleClearFilters}
           />
         </div>
       </div>
@@ -208,6 +245,9 @@ export default function MapSearchLayout() {
         onCityClick={handleCityClick}
         listingStatus={listingType}
         cityFilter={urlFilters.city}
+        initialCenter={initialCenter}
+        initialZoom={initialZoom}
+        onMapMove={handleMapMove}
       />
 
       {/* Mobile filter bar overlay */}
@@ -236,6 +276,7 @@ export default function MapSearchLayout() {
         onCardHover={handleCardHover}
         activeSnap={mobileSnap}
         onSnapChange={handleSnapChange}
+        cityFilter={urlFilters.city}
       />
     </div>
   );

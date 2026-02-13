@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Plus, Minus, LocateFixed, PenTool, Layers, Share2 } from 'lucide-react';
+import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, HelpCircle } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
@@ -11,6 +11,7 @@ interface MapToolbarProps {
   onToggleDraw: () => void;
   activeLayers: Set<string>;
   onToggleLayer: (layerId: string) => void;
+  onShowHelp?: () => void;
 }
 
 export function MapToolbar({
@@ -19,6 +20,7 @@ export function MapToolbar({
   onToggleDraw,
   activeLayers,
   onToggleLayer,
+  onShowHelp,
 }: MapToolbarProps) {
   const { getLocation, isLoading } = useGeolocation();
 
@@ -94,6 +96,15 @@ export function MapToolbar({
           </button>
         </LayersMenu>
       </div>
+
+      {/* Help (desktop only) */}
+      {onShowHelp && (
+        <div className="map-toolbar-group flex-col hidden lg:flex">
+          <button onClick={onShowHelp} className={btnBase} aria-label="Keyboard shortcuts">
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

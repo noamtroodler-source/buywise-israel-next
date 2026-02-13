@@ -36,6 +36,10 @@ function getStatusBadge(property: Property) {
     return { label: isRental ? 'Just Available' : 'Just Listed', variant: 'default' as const, icon: null };
   }
 
+  if (daysSinceListed <= 14) {
+    return { label: 'New', variant: 'secondary' as const, icon: null };
+  }
+
   return null;
 }
 
