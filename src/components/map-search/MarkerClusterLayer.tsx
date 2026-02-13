@@ -26,11 +26,13 @@ const CITY_WAYPOINTS = [
 ];
 
 function getCityLabelIcon(name: string) {
+  // Estimate width based on character count for centering
+  const estimatedWidth = name.length * 8 + 36;
   return L.divIcon({
     html: `<div class="city-waypoint-label">${name}</div>`,
     className: 'city-waypoint-container',
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
+    iconSize: [estimatedWidth, 36],
+    iconAnchor: [estimatedWidth / 2, 18],
   });
 }
 
