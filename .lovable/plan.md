@@ -1,40 +1,60 @@
 
 
-## Fix Map Popup Glitching
+## Fix Popup Image Carousel Glitching — Creative Approach
 
-### Root Causes Identified
+### Root Cause
 
-1. **`hover:scale-[1.01]` on the popup Link** -- This CSS transform causes the entire popup card to physically shift/scale when your mouse enters or leaves the card. Inside a Leaflet popup (which has its own transform-based positioning), this creates a visible "jump" every time you hover in/out.
+Leaflet popups internally call `_updateLayout()` to measure and reposition themselves. The sliding strip approach (all images in a horizontal row with `translateX`) creates a content container that's actually `N * 260px` wide. Even with `overflow: hidden`, Leaflet's layout engine can detect size changes and trigger repositioning — that's the "jump."
 
-2. **Mouse events leaking between popup and markers** -- When you hover your mouse over the popup card, the mouse also crosses over map markers underneath. Each marker hover fires `onMarkerHover`, which updates `hoveredPropertyId` state in the parent, which re-renders `MarkerClusterLayer`, which can cause the popup to flicker/re-layout.
+On top of that, each `PropertyThumbnail` component has its own `useState` for error handling, meaning each image independently goes through a load cycle when it first appears.
 
-3. **Carousel arrows toggling on `isHovered`** -- The arrows appear/disappear as you move your mouse, causing layout shifts inside the popup. Combined with the scale effect, this creates a cascading glitch loop.
+### Solution: Stacked Images with Opacity Crossfade
 
-4. **CSS width conflict** -- The global rule sets `.leaflet-popup-content` to `width: 300px !important` while the property-popup override sets it to `280px !important`. The component itself uses `w-[260px]`. This mismatch can cause content reflows.
+Instead of a horizontal sliding strip, **stack all images on top of each other using absolute positioning** and crossfade between them using opacity. This means:
 
-### Solution (2 files)
+- The container is always exactly `260px x 140px` — Leaflet never sees a size change
+- No `translateX` or width manipulation at all
+- Images preload invisibly in the background (they're all mounted, just `opacity: 0`)
+- Switching is a simple opacity toggle — no layout recalculation possible
 
-**`src/components/map-search/MapPropertyPopup.tsx`**:
-- Remove `hover:shadow-lg hover:scale-[1.01]` and `transition-all duration-200` from the Link wrapper -- these transform effects inside a Leaflet popup are the primary cause of the visual glitching
-- Replace with a simpler, non-transform hover: just a subtle background tint or no hover effect at all (the card is already clickable and obvious)
-- Keep `isHovered` state but use it only for the carousel arrows -- add `pointer-events: none` on the popup's Leaflet container via CSS so map markers underneath don't receive mouse events while the popup is open
-- Show carousel arrows with opacity transition instead of conditional rendering (mount/unmount causes layout shift) -- always render them but toggle opacity
+### File Changes
 
-**`src/index.css`**:
-- Fix the width conflict: set `.property-popup .leaflet-popup-content` to `width: 260px !important` to match the component's actual width
-- Add `pointer-events: auto` on the property popup content so it captures mouse events and prevents them from reaching markers below
-- Remove the global `background: transparent !important` override from `.leaflet-popup-content-wrapper` and instead scope it only to non-property popups, so the property popup background rule doesn't need to fight it
+**`src/components/map-search/MapPropertyPopup.tsx`**
 
-### Technical Details
+Replace the sliding strip (lines 104-119) with a stacked approach:
 
-Key changes in `MapPropertyPopup.tsx`:
-- Line 102: Remove `transition-all duration-200 hover:shadow-lg hover:scale-[1.01]` from the Link className
-- Lines 137-154: Always render carousel arrows but use `opacity-0 group-hover:opacity-100 transition-opacity` instead of conditional `isHovered &&` rendering -- this prevents DOM mount/unmount layout shifts
-- The `isHovered` state can be removed entirely since CSS `group-hover` handles arrow visibility
+```text
+Before (sliding strip):
+  <div className="flex h-full transition-transform ..."
+       style={{ transform: `translateX(-${imageIndex * 100}%)` }}>
+    {images.map(...)}
+  </div>
 
-Key changes in `src/index.css`:
-- Line 458: Remove `background: transparent !important` from the global `.leaflet-popup-content-wrapper` (it conflicts with the property popup background)
-- Line 463: Change global `.leaflet-popup-content` width from `300px` to `auto`
-- Line 1019: Set `.property-popup .leaflet-popup-content` width to `260px !important`
-- Add a rule to prevent mouse event leakage: `.property-popup { pointer-events: auto; }` and ensure the popup's z-index stays above markers
+After (stacked with opacity):
+  {images.map((img, i) => (
+    <div
+      key={i}
+      className="absolute inset-0 transition-opacity duration-300 ease-in-out"
+      style={{ opacity: i === imageIndex ? 1 : 0 }}
+    >
+      <PropertyThumbnail ... className="w-full h-full object-cover" />
+    </div>
+  ))}
+```
+
+Key details:
+- Each image is `absolute inset-0` — fills the 260x140 container exactly
+- Only the active image has `opacity: 1`, others have `opacity: 0`
+- `transition-opacity duration-300` gives a smooth crossfade
+- All images are always mounted and loading in the background — no flash on first view
+- The container dimensions never change — Leaflet has nothing to recalculate
+
+**`src/index.css`** — No changes needed. The existing width/pointer-events fixes stay.
+
+### Why This Won't Glitch
+
+1. **Zero layout changes**: Container is always `260 x 140`. Nothing shifts.
+2. **No width tricks**: No `translateX`, no flex row, no `will-change-transform`.
+3. **Preloaded images**: All images mount immediately (hidden via opacity), so they load in the background before the user clicks an arrow.
+4. **Leaflet-safe**: Since the popup content dimensions never change, Leaflet's `_updateLayout()` has no reason to fire.
 
