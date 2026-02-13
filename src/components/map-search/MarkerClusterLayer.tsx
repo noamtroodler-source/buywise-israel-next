@@ -47,6 +47,9 @@ export function MarkerClusterLayer({
     },
   });
 
+  const displayMode: 'dot' | 'pill' = zoom >= 13 ? 'pill' : 'dot';
+  const clusterRadius = zoom >= 13 ? 60 : 80;
+
   const points = useMemo(() =>
     properties
       .filter(p => p.latitude && p.longitude)
@@ -62,11 +65,10 @@ export function MarkerClusterLayer({
     points,
     bounds,
     zoom,
-    options: { radius: 60, maxZoom: 16 },
+    options: { radius: clusterRadius, maxZoom: 16 },
   });
 
   const handleClusterClick = useCallback((clusterId: number, lng: number, lat: number) => {
-    // Zoom into cluster
     try {
       map.flyTo([lat, lng], Math.min(zoom + 2, 18), { duration: 0.5 });
     } catch {
@@ -102,6 +104,7 @@ export function MarkerClusterLayer({
             isActive={activePropertyId === property.id}
             onClick={onMarkerClick}
             onHover={onMarkerHover}
+            displayMode={displayMode}
           />
         );
       })}
