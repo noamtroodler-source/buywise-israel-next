@@ -444,7 +444,7 @@ function AffordabilityCalculatorContent() {
             </div>
             <ToolPropertySuggestions
               title="Properties in Your Budget"
-              subtitle={`Showing homes up to ${formatPrice(calculations.maxPropertyPrice)}`}
+              subtitle="Based on your income, savings, and current rates"
               minPrice={0}
               maxPrice={calculations.maxPropertyPrice}
               enabled={hasInteracted && calculations.maxPropertyPrice > 0}
