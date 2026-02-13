@@ -929,8 +929,6 @@
   background: none !important;
   border: none !important;
   box-shadow: none !important;
-  width: 0 !important;
-  height: 0 !important;
   overflow: visible !important;
 }
 
@@ -950,6 +948,7 @@
 .property-marker-pill {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   padding: 4px 10px;
   border-radius: 9999px;
@@ -962,12 +961,13 @@
   border: 1.5px solid hsl(var(--border));
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
-  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
 }
 
 .property-marker-pill:hover,
 .property-marker-pill.marker-hovered {
-  transform: translate(-50%, -50%) scale(1.1);
+  transform: scale(1.1);
   box-shadow: 0 2px 8px rgba(0,0,0,0.22);
   border-color: hsl(var(--primary));
   z-index: 200;
@@ -977,7 +977,7 @@
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   border-color: hsl(var(--primary));
-  transform: translate(-50%, -50%) scale(1.1);
+  transform: scale(1.1);
   z-index: 201;
 }
 
