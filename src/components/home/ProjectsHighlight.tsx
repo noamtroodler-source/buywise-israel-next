@@ -273,7 +273,7 @@ export function ProjectsHighlight() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="hidden lg:grid lg:grid-cols-5 gap-4"
+            className="hidden lg:grid lg:grid-cols-5 gap-4 items-stretch"
           >
             {mainProject && (
               <Link
@@ -283,7 +283,7 @@ export function ProjectsHighlight() {
                 <ProjectImageCarousel
                   images={mainProject.images || []}
                   alt={mainProject.name}
-                  aspectClass="h-full min-h-[300px]"
+                  aspectClass="absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
                 
@@ -314,7 +314,7 @@ export function ProjectsHighlight() {
               </Link>
             )}
 
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-2 flex flex-col gap-3">
               {sideProjects.map((project) => (
                 <Link
                   key={project.id}
