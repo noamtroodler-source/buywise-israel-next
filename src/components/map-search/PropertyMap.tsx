@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { MapToolbar } from './MapToolbar';
 import { DrawControl } from './DrawControl';
@@ -14,6 +14,7 @@ import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
 import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
 import type { Property } from '@/types/database';
 import type { Polygon } from '@/lib/utils/geometry';
+import { supabase } from '@/integrations/supabase/client';
 import 'leaflet/dist/leaflet.css';
 
 const ISRAEL_CENTER: [number, number] = [31.0, 34.8];
@@ -88,6 +89,25 @@ export function PropertyMap({
     setMap(m);
     mapRef.current = m;
   }, []);
+
+  // Fly to city when cityFilter changes
+  const prevCityRef = useRef<string | null>(cityFilter);
+  useEffect(() => {
+    if (cityFilter === prevCityRef.current) return;
+    prevCityRef.current = cityFilter;
+    if (!cityFilter || !map) return;
+
+    supabase
+      .from('cities')
+      .select('center_lat, center_lng')
+      .eq('name', cityFilter)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.center_lat && data?.center_lng) {
+          map.flyTo([data.center_lat, data.center_lng], 13, { duration: 1.2 });
+        }
+      });
+  }, [cityFilter, map]);
 
   const handleBoundsChange = useCallback(
     (b: LatLngBounds) => {
