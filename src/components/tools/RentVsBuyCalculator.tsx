@@ -1217,7 +1217,7 @@ export function RentVsBuyCalculator() {
       {calculations && (
         <ToolPropertySuggestions
           title="Properties at This Price"
-          subtitle={`Homes around ${formatPrice(parseFormattedNumber(propertyPrice))}`}
+          subtitle="See what's available at the price you're comparing"
           minPrice={Math.round(parseFormattedNumber(propertyPrice) * 0.8)}
           maxPrice={Math.round(parseFormattedNumber(propertyPrice) * 1.2)}
           enabled={propertyPrice !== formatNumber(DEFAULTS.propertyPrice)}

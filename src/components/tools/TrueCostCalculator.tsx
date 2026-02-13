@@ -1002,7 +1002,7 @@ export function TrueCostCalculator() {
       {/* Feedback */}
       <ToolPropertySuggestions
         title="Properties at This Price"
-        subtitle={`Homes around ${formatPrice(calculations.price)}`}
+        subtitle="Real listings matching your total cost estimate"
         minPrice={Math.round(calculations.price * 0.8)}
         maxPrice={Math.round(calculations.price * 1.2)}
         enabled={propertyPrice !== '2750000'}
