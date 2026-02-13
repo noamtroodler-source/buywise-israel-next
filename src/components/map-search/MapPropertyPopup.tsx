@@ -1,9 +1,10 @@
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Popup } from 'react-leaflet';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
-import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
+
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
 import { CarouselDots } from '@/components/shared/CarouselDots';
 import { Badge } from '@/components/ui/badge';
@@ -101,20 +102,19 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
         className="block w-[260px] no-underline text-foreground group"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image carousel – horizontal sliding strip like Zillow */}
+        {/* Image carousel – stacked crossfade, no layout shifts */}
         <div className="relative w-full h-[140px] overflow-hidden rounded-t-lg bg-muted">
           {images.map((img, i) => (
-            <div
+            <img
               key={i}
-              className="absolute inset-0 transition-opacity duration-300 ease-in-out"
+              src={img || FALLBACK_IMAGE}
+              alt={`${property.title} ${i + 1}`}
+              loading="eager"
+              decoding="async"
+              onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
               style={{ opacity: i === imageIndex ? 1 : 0 }}
-            >
-              <PropertyThumbnail
-                src={img}
-                alt={`${property.title} ${i + 1}`}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            />
           ))}
 
           {/* Favorite */}
