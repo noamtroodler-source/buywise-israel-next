@@ -1,98 +1,77 @@
 
 
-# Enhance Project Map Cards with Richer Info
+## Completion Year Range Filter (Two-Tap Pills)
 
-## What We're Adding
+### What Changes
 
-Four improvements to both the map popup overlay and the sidebar project cards:
+Replace the single-year completion filter with a **two-tap range selection**. Users tap one year for "from", tap another for "to", and everything in between highlights. Tapping the same year twice = single year. Works on both desktop popover and mobile filter sheet.
 
-1. **Price range** -- show "From X - Y" instead of just "From X" (when `price_to` exists)
-2. **Developer logo** -- small circular logo next to the project name
-3. **Bedroom range** -- "2-5 bed" derived from project units data
-4. **Construction stage label** -- "Pre-Sale", "Under Construction", etc. appended to the location line
+### How It Works
 
-## Technical Approach
+1. **First tap** -- selects the "from" year (highlighted as primary)
+2. **Second tap** -- selects the "to" year (highlighted as primary, years between get a subtle bg)
+3. **Same year tapped twice** -- clears back to no selection
+4. **Tapping a third time** -- resets and starts fresh with new "from"
+5. If "to" is before "from", they auto-swap
 
-### Data Availability
+### Filter Chip Display
 
-- `price_to` -- already on the `projects` table, already fetched
-- `developer.logo_url` -- already joined via `developer:developer_id(*)`
-- `status` -- already on the project, just needs a human-readable label
-- Bedroom range -- NOT currently available on the project object. The `project_units` table has `bedrooms` per unit, but it's not joined in the map query
+- No selection: "Completion"
+- Single year: "2027"
+- Range: "2027 – 2029"
 
-### Step 1: Add Bedroom Range to Projects (Database)
+### Technical Details
 
-Add two columns to the `projects` table: `min_bedrooms` and `max_bedrooms` (both nullable integers). Then backfill them from existing unit data with a one-time UPDATE + create a trigger so they stay in sync when units change.
+**1. Update `ProjectFiltersType`** (`src/components/filters/ProjectFilters.tsx`)
 
-This avoids joining `project_units` on every map query (which could be expensive with many projects).
-
-```text
-SQL migration:
-- ALTER TABLE projects ADD COLUMN min_bedrooms integer, ADD COLUMN max_bedrooms integer
-- UPDATE projects SET min_bedrooms = ..., max_bedrooms = ... FROM project_units subquery
-- CREATE FUNCTION + TRIGGER to auto-sync on unit INSERT/UPDATE/DELETE
+Replace `completion_year?: number` with:
+```
+completion_year_from?: number;
+completion_year_to?: number;
 ```
 
-### Step 2: Update MapProjectOverlay (popup card)
+**2. Update Desktop Popover** (`src/components/filters/ProjectFilters.tsx`)
 
-Changes to `src/components/map-search/MapProjectOverlay.tsx`:
+- Add a small "From -- To" hint label above the year grid
+- Year pill styling:
+  - **From/To year**: `bg-primary text-primary-foreground`
+  - **In-between years**: `bg-primary/15 text-primary border-primary/30`
+  - **Unselected**: default border style
+- Click logic: first click sets `from`, second click sets `to` (auto-swap if needed), third click resets
+- Filter button label shows range or single year
+- Clear button resets both values
 
-- **Price line**: Change from `From $1.2M` to `From $1.2M - $3.5M` when `price_to` exists
-- **Developer logo**: Add a small 20px circular image next to the project name (inline-flex row). Skip if no `developer?.logo_url`
-- **Stats line**: Change from `89 units` to `2-5 bed . 89 units` using `min_bedrooms`/`max_bedrooms`
-- **Location line**: Append construction status -- `Tel Aviv . Under Construction . Est. 2028`
+**3. Update Mobile Filter Sheet** (`src/components/filters/ProjectMobileFilterSheet.tsx`)
 
-### Step 3: Update MapProjectCard (sidebar card)
+- Same two-tap logic and pill styling as desktop
+- "Any" pill clears both from/to
 
-Same content changes to `src/components/map-search/MapProjectCard.tsx`:
+**4. Update All Query Hooks** (3 files)
 
-- **Price line**: Show full range
-- **Project name row**: Add developer logo (small circle) before the name
-- **Stats line**: Include bedroom range
-- **Location line**: Include construction stage
+In `useProjects.tsx`, `usePaginatedProjects.tsx`, and the `applyFilters` function:
 
-### Step 4: Status Label Helper
+Replace the single-year date filter:
+```ts
+// Old
+if (filters.completion_year) {
+  query = query.gte('completion_date', `${filters.completion_year}-01-01`)
+               .lte('completion_date', `${filters.completion_year}-12-31`);
+}
 
-Create a small shared utility or inline the status label mapping (reusing the pattern already in `ProjectHero.tsx`):
-
-```text
-planning      -> "Planning"
-pre_sale      -> "Pre-Sale"
-foundation    -> "Foundation"
-structure     -> "Structure"  
-finishing     -> "Finishing"
-under_construction -> "Under Construction"
-completed     -> "Completed"
-delivery      -> "Delivery"
+// New
+if (filters.completion_year_from) {
+  query = query.gte('completion_date', `${filters.completion_year_from}-01-01`);
+}
+if (filters.completion_year_to) {
+  query = query.lte('completion_date', `${filters.completion_year_to}-12-31`);
+}
 ```
 
-### Step 5: Update useMapProjects Query
+**5. Update active filter counting** in both desktop and mobile to check `completion_year_from || completion_year_to` instead of `completion_year`.
 
-Update `src/hooks/useMapProjects.tsx` to include the new `min_bedrooms` and `max_bedrooms` columns in the select (they'll come automatically with `*`, but we need to update the TypeScript type).
+### Files Modified
 
-### Step 6: Update Project Type
-
-Add `min_bedrooms` and `max_bedrooms` to the `Project` interface in `src/types/projects.ts`.
-
-## Result
-
-The card layout stays compact with the same number of lines:
-
-```text
-[Image carousel + badge + favorite]
-
-From $1.2M - $3.5M
-[dev logo] The Gardens Tel Aviv
-2-5 bed . 89 units
-Tel Aviv . Under Construction . Est. 2028
-```
-
-No new lines added -- just enriching existing ones.
-
-## Files to Modify
-
-1. **Database migration** -- add `min_bedrooms`/`max_bedrooms` columns + backfill + trigger
-2. `src/types/projects.ts` -- add optional fields
-3. `src/components/map-search/MapProjectOverlay.tsx` -- enrich info section
-4. `src/components/map-search/MapProjectCard.tsx` -- enrich info section
-
+- `src/components/filters/ProjectFilters.tsx` -- type + desktop UI + filter logic
+- `src/components/filters/ProjectMobileFilterSheet.tsx` -- mobile UI
+- `src/hooks/useProjects.tsx` -- query filter
+- `src/hooks/usePaginatedProjects.tsx` -- query filter
