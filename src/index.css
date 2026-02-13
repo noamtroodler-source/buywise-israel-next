@@ -368,54 +368,58 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  background: white;
-  border-radius: 4px;
+  padding: 4px 10px 4px 7px;
+  background: hsl(160 84% 39% / 0.95);
+  border-radius: 20px;
   font-size: 11px;
+  font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid hsl(220 10% 88%);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  border: 1.5px solid hsl(160 84% 30%);
   cursor: pointer;
   transition: all 200ms ease;
+  color: white;
+}
+
+.project-pill-icon {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
+}
+
+.project-pill-label {
+  letter-spacing: 0.01em;
 }
 
 .project-marker-pill:hover,
-.project-marker-active .project-marker-pill {
-  transform: scale(1.03);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border-color: hsl(213 94% 55%);
+.project-marker-pill.marker-hovered {
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+  background: hsl(160 84% 34%);
 }
 
-.project-marker-icon {
-  flex-shrink: 0;
-  color: hsl(213 94% 45%);
-}
-
-.project-marker-name {
-  font-weight: 600;
-  color: hsl(220 10% 20%);
-}
-
-.project-marker-divider {
-  opacity: 0.35;
-  font-size: 7px;
-}
-
-.project-marker-price {
-  font-weight: 500;
-  color: hsl(220 10% 50%);
-  font-size: 10px;
+.project-marker-pill.marker-active {
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+  background: hsl(160 84% 28%);
+  border-color: hsl(160 84% 22%);
 }
 
 /* Dark mode for project markers */
 .dark .project-marker-pill {
-  background: hsl(222 47% 11%);
-  border-color: hsl(217 33% 25%);
-  color: hsl(210 40% 98%);
+  background: hsl(160 60% 30% / 0.95);
+  border-color: hsl(160 50% 22%);
+  color: hsl(160 30% 95%);
 }
 
-.dark .project-marker-name {
-  color: hsl(210 40% 98%);
+.dark .project-marker-pill:hover,
+.dark .project-marker-pill.marker-hovered {
+  background: hsl(160 60% 25%);
+}
+
+.dark .project-marker-pill.marker-active {
+  background: hsl(160 60% 20%);
 }
 
 .dark .project-marker-price {
