@@ -34,7 +34,7 @@ export function useToolPropertySuggestions({
         .gte('price', minPrice)
         .lte('price', maxPrice)
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(8);
 
       if (error) throw error;
       return (data as unknown as Property[]) || [];
