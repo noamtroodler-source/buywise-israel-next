@@ -283,7 +283,7 @@ export function ProjectsHighlight() {
                 <ProjectImageCarousel
                   images={mainProject.images || []}
                   alt={mainProject.name}
-                  aspectClass="aspect-[16/9]"
+                  aspectClass="h-full min-h-[300px]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
                 
