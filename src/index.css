@@ -1029,9 +1029,11 @@
 }
 
 /* Carousel dot active state (toggled via JS ref, not React state) */
-.property-popup .dot-active {
+.property-popup .dot-active,
+.map-overlay-card .dot-active {
   background: white !important;
 }
-.property-popup span:not(.dot-active) {
+.property-popup span:not(.dot-active),
+.map-overlay-card span:not(.dot-active) {
   background: rgba(255, 255, 255, 0.5);
 }

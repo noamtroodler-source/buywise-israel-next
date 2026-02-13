@@ -169,7 +169,7 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
       {/* Card */}
       <Link
         to={`/property/${property.id}`}
-        className="block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+        className="map-overlay-card block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image carousel */}
