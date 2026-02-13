@@ -1,10 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { 
   Bed, Bath, Maximize, Building, Calendar, Car, Sofa, Accessibility, 
   TrendingUp, Home, MapPin, Clock, FileText, PawPrint, Snowflake, 
-  DollarSign, ShieldCheck, CreditCard
+  DollarSign, ShieldCheck, CreditCard, ArrowRight
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Layout } from '@/components/layout/Layout';
 import { useCompare } from '@/contexts/CompareContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -499,11 +501,12 @@ export default function Compare() {
           </AnimatePresence>
         </div>
 
-        {/* AI Summary with Winner Breakdown - top for immediate insight */}
+        {/* AI Summary - top for immediate insight, no CTAs */}
         <CompareAISummary
           properties={properties}
           winnerCounts={winnerCounts}
           isRental={isRental}
+          hideCTAs
         />
 
         {/* Quick Insights */}
@@ -557,6 +560,22 @@ export default function Compare() {
               variant="investor"
             />
           )}
+        </div>
+
+        {/* Bottom CTAs */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button asChild variant="outline" className="flex-1">
+            <Link to="/tools?tool=totalcost">
+              Calculate True Costs
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="flex-1">
+            <Link to="/tools?tool=mortgage">
+              Run Mortgage Numbers
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
         </div>
 
       </div>
