@@ -1,92 +1,98 @@
 
 
-# Integrating New Development Projects into Map Search
+# Enhance Project Map Cards with Richer Info
 
-## Overview
-Show projects (new developments) alongside regular property listings on the map, so buyers exploring the "Buy" view naturally discover new builds in their area. Projects are visually distinct but not overpowering — they feel like a natural part of the same search experience.
+## What We're Adding
 
-## How It Works for Users
+Four improvements to both the map popup overlay and the sidebar project cards:
 
-**On the map:**
-- Project markers appear as price pills showing "From X" (e.g., "From ₪3.2M") with a small building icon prefix to subtly differentiate them from resale listings
-- Same color scheme as regular markers — no jarring contrast
-- Clicking a project marker shows a popup card with project-specific info (name, price range, available units, completion date)
-
-**In the side list:**
-- Project cards mix in with property cards, sorted together by the current sort order
-- A small "New Development" label replaces the property type line (e.g., instead of "Apartment" it says "New Development")
-- Price shows as "From ₪X" range format instead of a fixed price
-- Stats show available units and completion date instead of beds/baths/sqm
-- Links to `/projects/{slug}` instead of `/property/{id}`
-
-**Filtering:**
-- The existing Buy/Rent toggle gets a third option: "Buy | Rent | New" — or alternatively, a checkbox/chip "Include New Projects" that layers them on top of Buy results
-- When "Projects" is the active status (already supported via `?status=projects`), only projects are shown
-- Price filters apply to `price_from` for projects
+1. **Price range** -- show "From X - Y" instead of just "From X" (when `price_to` exists)
+2. **Developer logo** -- small circular logo next to the project name
+3. **Bedroom range** -- "2-5 bed" derived from project units data
+4. **Construction stage label** -- "Pre-Sale", "Under Construction", etc. appended to the location line
 
 ## Technical Approach
 
-### 1. Fetch Projects Alongside Properties
-Create a `usePaginatedProjects` hook (or extend `usePaginatedProperties`) that queries the `projects` table with the same bounds-based spatial filtering. Key mappings:
-- `price_from` / `price_to` for price filters
-- `latitude` / `longitude` for bounds
-- `is_published = true`
+### Data Availability
 
-### 2. Unified Item Type
-Create a discriminated union type:
+- `price_to` -- already on the `projects` table, already fetched
+- `developer.logo_url` -- already joined via `developer:developer_id(*)`
+- `status` -- already on the project, just needs a human-readable label
+- Bedroom range -- NOT currently available on the project object. The `project_units` table has `bedrooms` per unit, but it's not joined in the map query
+
+### Step 1: Add Bedroom Range to Projects (Database)
+
+Add two columns to the `projects` table: `min_bedrooms` and `max_bedrooms` (both nullable integers). Then backfill them from existing unit data with a one-time UPDATE + create a trigger so they stay in sync when units change.
+
+This avoids joining `project_units` on every map query (which could be expensive with many projects).
+
 ```text
-type MapItem = 
-  | { type: 'property'; data: Property }
-  | { type: 'project'; data: Project }
+SQL migration:
+- ALTER TABLE projects ADD COLUMN min_bedrooms integer, ADD COLUMN max_bedrooms integer
+- UPDATE projects SET min_bedrooms = ..., max_bedrooms = ... FROM project_units subquery
+- CREATE FUNCTION + TRIGGER to auto-sync on unit INSERT/UPDATE/DELETE
 ```
-Both marker layers and list panels will render based on `item.type`.
 
-### 3. Map Markers (PropertyMarker + MarkerClusterLayer)
-- Add a `ProjectMarker` component (similar to `PropertyMarker`) that renders "From ₪X" pills with a subtle building icon
-- Feed both property and project GeoJSON points into the same `useSupercluster` instance so they cluster together naturally
-- Projects use the same dot/pill display mode transitions based on zoom
+### Step 2: Update MapProjectOverlay (popup card)
 
-### 4. List Cards
-- Create a `MapProjectCard` component (sibling to `MapListCard`) with:
-  - Same card structure (image carousel, info section)
-  - "New Development" badge (using the existing emerald green badge style)
-  - "From ₪X – ₪Y" price range
-  - "X units available | Est. completion YYYY" stats line
-  - Links to `/projects/{slug}`
-- `MapListPanel` renders either `MapListCard` or `MapProjectCard` based on item type
+Changes to `src/components/map-search/MapProjectOverlay.tsx`:
 
-### 5. Map Popup Overlay
-- Create a `MapProjectOverlay` (or make `MapPropertyOverlay` polymorphic) to show project-specific details when clicking a project marker
+- **Price line**: Change from `From $1.2M` to `From $1.2M - $3.5M` when `price_to` exists
+- **Developer logo**: Add a small 20px circular image next to the project name (inline-flex row). Skip if no `developer?.logo_url`
+- **Stats line**: Change from `89 units` to `2-5 bed . 89 units` using `min_bedrooms`/`max_bedrooms`
+- **Location line**: Append construction status -- `Tel Aviv . Under Construction . Est. 2028`
 
-### 6. Filter Bar Integration
-- Extend the Buy/Rent toggle to support a third "Projects" state, or add a separate "New Projects" chip
-- The `?status=projects` URL param already exists — when active, skip the properties query and only fetch projects
-- When status is `for_sale`, fetch both properties AND projects (projects are always "for sale")
+### Step 3: Update MapProjectCard (sidebar card)
 
-### 7. Sorting
-- Projects map to the same sort keys: `created_at` for newest, `price_from` for price sorts
-- Client-side interleaving of two sorted arrays, or a single merged + re-sorted array
+Same content changes to `src/components/map-search/MapProjectCard.tsx`:
 
-## Files to Create/Modify
+- **Price line**: Show full range
+- **Project name row**: Add developer logo (small circle) before the name
+- **Stats line**: Include bedroom range
+- **Location line**: Include construction stage
 
-| File | Change |
-|------|--------|
-| `src/hooks/usePaginatedProjects.tsx` | New hook for fetching projects with bounds/filters |
-| `src/components/map-search/MapProjectCard.tsx` | New list card for projects |
-| `src/components/map-search/ProjectMarker.tsx` | New marker component for projects |
-| `src/components/map-search/MapSearchLayout.tsx` | Merge project + property data, pass unified items |
-| `src/components/map-search/MapListPanel.tsx` | Render both card types |
-| `src/components/map-search/MarkerClusterLayer.tsx` | Accept and render both marker types |
-| `src/components/map-search/PropertyMap.tsx` | Pass projects through to cluster layer |
-| `src/components/map-search/MapPropertyOverlay.tsx` | Handle project click popups (or new overlay) |
-| `src/components/filters/PropertyFilters.tsx` | Add Projects option to Buy/Rent toggle |
-| `src/components/map-search/MobileMapSheet.tsx` | Render both card types on mobile |
-| `src/components/map-search/MobileCardCarousel.tsx` | Support project cards in mobile carousel |
+### Step 4: Status Label Helper
 
-## Edge Cases to Handle
-- Projects without coordinates (skip markers, still show in list if within city bounds — though all 76 current projects have coords)
-- Price range display when `price_from` is null (show "Contact for pricing")
-- Sorting interleaving (newest first mixes properties and projects by `created_at`)
-- Cluster counts include both types (this happens automatically with supercluster)
-- Favorite button on projects uses `useProjectFavorites` hook (already exists) instead of `FavoriteButton`
+Create a small shared utility or inline the status label mapping (reusing the pattern already in `ProjectHero.tsx`):
+
+```text
+planning      -> "Planning"
+pre_sale      -> "Pre-Sale"
+foundation    -> "Foundation"
+structure     -> "Structure"  
+finishing     -> "Finishing"
+under_construction -> "Under Construction"
+completed     -> "Completed"
+delivery      -> "Delivery"
+```
+
+### Step 5: Update useMapProjects Query
+
+Update `src/hooks/useMapProjects.tsx` to include the new `min_bedrooms` and `max_bedrooms` columns in the select (they'll come automatically with `*`, but we need to update the TypeScript type).
+
+### Step 6: Update Project Type
+
+Add `min_bedrooms` and `max_bedrooms` to the `Project` interface in `src/types/projects.ts`.
+
+## Result
+
+The card layout stays compact with the same number of lines:
+
+```text
+[Image carousel + badge + favorite]
+
+From $1.2M - $3.5M
+[dev logo] The Gardens Tel Aviv
+2-5 bed . 89 units
+Tel Aviv . Under Construction . Est. 2028
+```
+
+No new lines added -- just enriching existing ones.
+
+## Files to Modify
+
+1. **Database migration** -- add `min_bedrooms`/`max_bedrooms` columns + backfill + trigger
+2. `src/types/projects.ts` -- add optional fields
+3. `src/components/map-search/MapProjectOverlay.tsx` -- enrich info section
+4. `src/components/map-search/MapProjectCard.tsx` -- enrich info section
 
