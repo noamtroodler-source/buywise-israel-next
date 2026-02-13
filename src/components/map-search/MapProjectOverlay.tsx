@@ -204,11 +204,10 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
           <span className="text-base font-bold text-foreground leading-tight">
             {priceDisplay}
           </span>
-          <p className="text-sm font-medium text-foreground truncate">
-            {project.developer?.name
-              ? `${project.developer.name} · ${project.name}`
-              : project.name}
-          </p>
+          {project.developer?.name && (
+            <p className="text-xs text-muted-foreground truncate">by {project.developer.name}</p>
+          )}
+          <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
           {stats && (
             <p className="text-sm text-muted-foreground">{stats}</p>
           )}
