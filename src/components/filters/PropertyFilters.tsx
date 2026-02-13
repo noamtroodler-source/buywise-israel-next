@@ -583,8 +583,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     <button 
                       className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
-                        updateFilter('min_price', undefined);
-                        updateFilter('max_price', undefined);
+                        onFiltersChange({ ...filters, min_price: undefined, max_price: undefined });
                       }}
                     >
                       Clear
@@ -638,8 +637,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     <button 
                       className="text-sm text-muted-foreground hover:text-foreground"
                       onClick={() => {
-                        updateFilter('min_rooms', undefined);
-                        updateFilter('min_bathrooms', undefined);
+                        onFiltersChange({ ...filters, min_rooms: undefined, min_bathrooms: undefined });
                       }}
                     >
                       Clear
