@@ -30,7 +30,7 @@ interface MobileMapSheetProps {
   onCardHover?: (id: string | null) => void;
   activeSnap: string | number | null;
   onSnapChange: (snap: string | number | null) => void;
-  cityFilter?: string | null;
+  
 }
 
 export function MobileMapSheet({
@@ -45,7 +45,7 @@ export function MobileMapSheet({
   onCardHover,
   activeSnap,
   onSnapChange,
-  cityFilter,
+  
 }: MobileMapSheetProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -86,9 +86,7 @@ export function MobileMapSheet({
           {/* Header: count + sort */}
           <div className="flex items-center justify-between px-4 pb-2">
             <span className="text-sm font-semibold text-foreground">
-              {cityFilter
-                ? `${totalCount.toLocaleString()} in ${cityFilter}`
-                : `${totalCount.toLocaleString()} results`}
+              {totalCount.toLocaleString()} results
             </span>
             {showList && (
               <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
