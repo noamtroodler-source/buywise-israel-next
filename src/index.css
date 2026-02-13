@@ -928,6 +928,20 @@
 .property-marker-container {
   background: none !important;
   border: none !important;
+  box-shadow: none !important;
+}
+
+.property-marker-container .leaflet-marker-shadow,
+.marker-cluster-container .leaflet-marker-shadow,
+.city-waypoint-container .leaflet-marker-shadow {
+  display: none !important;
+}
+
+/* Strip all default leaflet icon backgrounds from custom markers */
+.leaflet-div-icon {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .property-marker-pill {
