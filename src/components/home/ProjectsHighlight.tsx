@@ -238,7 +238,7 @@ export function ProjectsHighlight() {
                         <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
                         <ProjectFavoriteButton projectId={project.id} />
                       </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 pointer-events-none">
                         <div className="flex items-center gap-2 mb-2">
                           <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
                           {project.developer && (
@@ -293,7 +293,7 @@ export function ProjectsHighlight() {
                   </div>
                   <ProjectFavoriteButton projectId={mainProject.id} />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-6 md:pb-7 pointer-events-none">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
                     {mainProject.developer && (
@@ -334,7 +334,7 @@ export function ProjectsHighlight() {
                     </div>
                     <ProjectFavoriteButton projectId={project.id} />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 pointer-events-none">
                     <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">New Project</Badge>
                     <h3 className="text-base font-bold text-white">{project.name}</h3>
                     <p className="text-xs text-white/80">
