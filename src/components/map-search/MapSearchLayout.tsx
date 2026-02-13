@@ -1,14 +1,53 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { PropertyMap } from './PropertyMap';
 import { MapListPanel } from './MapListPanel';
+import { useMapFilters } from '@/hooks/useMapFilters';
+import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
+import type { PropertyFilters, SortOption, MapBounds } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
 
+function toBounds(b: LatLngBounds): MapBounds {
+  return {
+    north: b.getNorth(),
+    south: b.getSouth(),
+    east: b.getEast(),
+    west: b.getWest(),
+  };
+}
+
 export default function MapSearchLayout() {
-  const [, setBounds] = useState<LatLngBounds | null>(null);
+  const { filters: urlFilters, setFilter } = useMapFilters();
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
 
   const handleBoundsChange = useCallback((b: LatLngBounds) => {
-    setBounds(b);
+    setMapBounds(toBounds(b));
   }, []);
+
+  // Merge URL filters + map bounds into PropertyFilters for the query hook
+  const mergedFilters: PropertyFilters = useMemo(() => ({
+    listing_status: urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale',
+    city: urlFilters.city ?? undefined,
+    min_price: urlFilters.minPrice ?? undefined,
+    max_price: urlFilters.maxPrice ?? undefined,
+    min_rooms: urlFilters.minRooms ?? undefined,
+    max_rooms: urlFilters.maxRooms ?? undefined,
+    property_type: urlFilters.propertyType as any ?? undefined,
+    sort_by: urlFilters.sortBy as SortOption,
+    bounds: mapBounds ?? undefined,
+  }), [urlFilters, mapBounds]);
+
+  const {
+    properties,
+    totalCount,
+    isLoading,
+    isFetching,
+    hasNextPage,
+    loadMore,
+  } = usePaginatedProperties(mergedFilters);
+
+  const handleSortChange = useCallback((value: SortOption) => {
+    setFilter('sort_by', value);
+  }, [setFilter]);
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
@@ -20,7 +59,16 @@ export default function MapSearchLayout() {
       {/* Main content: map + list */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
         <PropertyMap onBoundsChange={handleBoundsChange} />
-        <MapListPanel resultCount={0} />
+        <MapListPanel
+          properties={properties}
+          totalCount={totalCount}
+          isLoading={isLoading}
+          isFetching={isFetching}
+          hasNextPage={hasNextPage}
+          loadMore={loadMore}
+          sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
+          onSortChange={handleSortChange}
+        />
       </div>
     </div>
   );
