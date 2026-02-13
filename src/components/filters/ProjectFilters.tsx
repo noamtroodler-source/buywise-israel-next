@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
  import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -350,9 +351,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
             {bedsAndBathsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[360px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
-          <TooltipProvider>
-            <div className="p-4 space-y-5">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[320px] p-0 bg-background border shadow-xl z-50" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+            <div className="p-4 space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Beds / Baths</h3>
@@ -360,8 +360,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   <button 
                     className="text-sm text-muted-foreground hover:text-foreground"
                     onClick={() => {
-                      updateFilter('min_rooms', undefined);
-                      updateFilter('min_bathrooms', undefined);
+                      onFiltersChange({ ...filters, min_rooms: undefined, min_bathrooms: undefined });
                     }}
                   >
                     Clear
@@ -370,66 +369,44 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               </div>
 
               {/* Bedrooms Section */}
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">Bedrooms</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    className={cn(
-                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
-                      !filters.min_rooms
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('min_rooms', undefined)}
-                  >
-                    Any
-                  </button>
-                  {[2, 3, 4, 5].map(num => (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Bedrooms</Label>
+                <div className="flex gap-2">
+                  {[undefined, 2, 3, 4, 5].map(num => (
                     <button
-                      key={num}
+                      key={num ?? 'any'}
                       className={cn(
-                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                        "flex-1 h-10 rounded-full text-sm font-medium transition-all",
                         filters.min_rooms === num 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "border-border hover:bg-muted"
+                          ? "bg-primary text-primary-foreground" 
+                          : "border border-border hover:bg-muted"
                       )}
                       onClick={() => updateFilter('min_rooms', num)}
                     >
-                      {num}+
+                      {num ?? 'Any'}
+                      {num && '+'}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Bathrooms Section */}
-              <div className="space-y-2.5">
-                <span className="font-medium text-sm">Bathrooms</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    className={cn(
-                      "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
-                      !filters.min_bathrooms
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('min_bathrooms', undefined)}
-                  >
-                    Any
-                  </button>
-                  {[1, 1.5, 2, 3].map(num => (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Bathrooms</Label>
+                <div className="flex gap-2">
+                  {[undefined, 1, 2, 3].map(num => (
                     <button
-                      key={num}
+                      key={num ?? 'any'}
                       className={cn(
-                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
+                        "flex-1 h-10 rounded-full text-sm font-medium transition-all",
                         filters.min_bathrooms === num 
-                          ? "bg-primary text-primary-foreground border-primary" 
-                          : "border-border hover:bg-muted"
+                          ? "bg-primary text-primary-foreground" 
+                          : "border border-border hover:bg-muted"
                       )}
                       onClick={() => updateFilter('min_bathrooms', num)}
                     >
-                      {num}+
+                      {num ?? 'Any'}
+                      {num && '+'}
                     </button>
                   ))}
                 </div>
@@ -448,7 +425,6 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 </Button>
               </div>
             </div>
-          </TooltipProvider>
         </PopoverContent>
       </Popover>
       )}
