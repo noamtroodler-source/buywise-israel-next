@@ -16,8 +16,8 @@ import type { Property } from '@/types/database';
 import type { Polygon } from '@/lib/utils/geometry';
 import 'leaflet/dist/leaflet.css';
 
-const ISRAEL_CENTER: [number, number] = [31.5, 34.8];
-const DEFAULT_ZOOM = 10;
+const ISRAEL_CENTER: [number, number] = [31.2, 34.8];
+const DEFAULT_ZOOM = 8;
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
 
