@@ -49,6 +49,13 @@ function createMarkerHtml(priceLabel: string, indicator: 'hot' | 'drop' | null):
   return `<div class="property-marker-pill">${priceLabel}${indicatorHtml}</div>`;
 }
 
+function estimatePillWidth(priceLabel: string, indicator: 'hot' | 'drop' | null): number {
+  // Approximate width: ~7.5px per character + padding (20px) + gap for indicator
+  const textWidth = priceLabel.length * 7.5;
+  const indicatorWidth = indicator ? 16 : 0;
+  return Math.ceil(textWidth + indicatorWidth + 24);
+}
+
 function createDotHtml(): string {
   return '<div class="property-marker-dot"></div>';
 }
@@ -80,11 +87,13 @@ export const PropertyMarker = memo(function PropertyMarker({
         iconAnchor: [5, 5],
       });
     }
+    const w = estimatePillWidth(priceLabel, indicator);
+    const h = 28;
     return L.divIcon({
       html: createMarkerHtml(priceLabel, indicator),
       className: 'property-marker-container',
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
+      iconSize: [w, h],
+      iconAnchor: [w / 2, h / 2],
     });
   }, [priceLabel, indicator, displayMode]);
 
