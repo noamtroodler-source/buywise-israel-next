@@ -230,9 +230,14 @@ export function PropertyMap({
 
   useMapKeyboardShortcuts(mapRef, shortcutHandlers);
 
-  const activeProperty = activePropertyId
-    ? properties.find((p) => p.id === activePropertyId)
-    : null;
+  // Stabilize activeProperty ref so hover on other markers doesn't re-render the popup
+  const activePropertyRef = useRef<Property | null>(null);
+  if (activePropertyId !== (activePropertyRef.current?.id ?? null)) {
+    activePropertyRef.current = activePropertyId
+      ? properties.find((p) => p.id === activePropertyId) ?? null
+      : null;
+  }
+  const activeProperty = activePropertyRef.current;
 
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
 
