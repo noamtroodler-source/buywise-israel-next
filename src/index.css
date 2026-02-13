@@ -1009,7 +1009,7 @@
   padding: 0;
   border-radius: 12px;
   overflow: hidden;
-  background: hsl(var(--background));
+  background: hsl(var(--background)) !important;
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
   border: 1px solid hsl(var(--border));
 }
@@ -1017,6 +1017,7 @@
 .property-popup .leaflet-popup-content {
   margin: 8px;
   min-width: 260px;
+  width: auto !important;
 }
 
 .property-popup .leaflet-popup-tip {
