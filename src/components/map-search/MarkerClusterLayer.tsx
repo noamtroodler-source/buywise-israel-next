@@ -48,7 +48,7 @@ export function MarkerClusterLayer({
   });
 
   const displayMode: 'dot' | 'pill' = zoom >= 13 ? 'pill' : 'dot';
-  const clusterRadius = zoom >= 13 ? 60 : 80;
+  const clusterRadius = zoom >= 13 ? 60 : zoom <= 9 ? 150 : 80;
 
   const points = useMemo(() =>
     properties
