@@ -1,87 +1,68 @@
 
 
-# Phase 7: Polish + BuyWise Touches
+# Dot-to-Price-Pill Map Marker System
 
-This phase adds URL persistence for bounds/zoom/polygon, wires up keyboard shortcuts, enhances the badge system with a "New" tier, adds loading skeletons that match card layout, improves the empty state with an illustration, and shows city context in the results header.
+Replace the city overlay layer with a clean Redfin/Zillow-style zoom-based marker system: dots at low zoom, price pills at neighborhood zoom.
 
 ## Overview
 
-Most of the foundational work is already done. The badge system in `MapListCard.tsx` already handles "Just Listed", "Just Available", "Price Drop", and "Featured". The keyboard shortcuts hook (`useMapKeyboardShortcuts`) exists but isn't wired up. This phase connects the dots and adds the remaining polish.
+Remove the `CityOverlayLayer` entirely and update `MarkerClusterLayer` + `PropertyMarker` to render differently based on zoom level:
+
+| Zoom | What's shown |
+|------|-------------|
+| < 9 | Nothing (too zoomed out, no properties loaded) |
+| 9-12 | Small blue dots (8px circles) for individual properties; blue cluster circles with counts for dense areas |
+| 13+ | Full price pill markers; cluster circles with counts for dense areas |
 
 ## Changes
 
-### 1. Wire keyboard shortcuts in `PropertyMap.tsx`
-- Import and call `useMapKeyboardShortcuts` with a ref to the map instance
-- Map shortcut handlers to existing callbacks: `handleToggleDraw`, `handleZoomIn/Out`, `handleLocate`, layer toggles (`T` for trains, `H` for heatmap, `S` for saved locations)
-- `Escape` clears drawn polygon and deselects active property
-- `?` shows a small tooltip/dialog listing all shortcuts (simple `KeyboardShortcutsDialog` component)
+### 1. Remove CityOverlayLayer from PropertyMap.tsx
+- Remove the import of `CityOverlayLayer`
+- Remove the `{zoom < 12 && <CityOverlayLayer ... />}` block
+- Remove the `onCityClick` prop (no longer needed)
+- Remove conditional `properties.length > 0` guard so `MarkerClusterLayer` renders at all zoom levels
+- Keep the `zoom` state since it's used elsewhere
 
-### 2. New file: `src/components/map-search/KeyboardShortcutsDialog.tsx`
-- A small Dialog triggered by `?` key or a help button in the toolbar
-- Lists all shortcuts from `KEYBOARD_SHORTCUTS` constant
-- Simple two-column layout: key badge + description
-- Closes on Escape or clicking outside
+### 2. Update MarkerClusterLayer.tsx -- pass zoom to PropertyMarker
+- Add a `displayMode` concept based on zoom: `'dot'` (zoom < 13) or `'pill'` (zoom >= 13)
+- Pass `displayMode` to each `PropertyMarker`
+- Adjust supercluster options: use a larger `radius` (80) at low zoom for tighter clustering, smaller (60) at high zoom
+- At dot mode, individual unclustered properties render as simple 8px blue dots instead of price pills
 
-### 3. Expand badge system in `MapListCard.tsx`
-- Add a "New" badge tier for properties listed within 14 days (after the 3-day "Just Listed" check)
-- Badge priority order: Featured > Price Drop > Just Listed/Just Available (<=3 days) > New (<=14 days)
-- Uses a subtle secondary variant for "New" to distinguish from "Just Listed"
+### 3. Update PropertyMarker.tsx -- support dot mode
+- Accept new prop `displayMode: 'dot' | 'pill'`
+- When `displayMode === 'dot'`:
+  - Render a simple 8px blue circle div instead of the price pill
+  - Still support hover (grow to 10px) and click interactions
+  - No price label, no indicator badges
+- When `displayMode === 'pill'`: existing behavior (unchanged)
+- Update the memoization comparison to include `displayMode`
 
-### 4. URL persistence for bounds, zoom, and polygon in `useMapFilters.ts`
-- Add URL params: `lat`, `lng`, `zoom`, `polygon`
-- `lat`/`lng`/`zoom`: Parsed from URL on mount to set initial map center/zoom; updated on map move
-- `polygon`: Uses existing `serializePolygon`/`deserializePolygon` from `geometry.ts`
-- Expose these in `MapUrlFilters` interface
-- `MapSearchLayout` reads initial bounds/zoom from URL and passes to `PropertyMap` as `initialCenter`/`initialZoom` props
+### 4. Add dot marker CSS to index.css
+- New `.property-marker-dot` class: 8px circle, primary blue background, subtle shadow, centered
+- Hover state: scale up slightly, add a ring
+- Active state: darker blue, larger ring
+- Transition for smooth hover effect
 
-### 5. Pass initial center/zoom to `PropertyMap.tsx`
-- Accept optional `initialCenter` and `initialZoom` props
-- Use them as defaults for `MapContainer` instead of hardcoded `ISRAEL_CENTER`/`DEFAULT_ZOOM`
-- Update URL on bounds change via a new `onMapMove` callback passed from layout
+### 5. Clean up city overlay CSS in index.css
+- Remove all `.city-marker-pill` styles (lines ~513-577) since the component is removed
 
-### 6. Persist polygon to URL in `MapSearchLayout.tsx`
-- When `drawnPolygon` changes, serialize and write to URL via `setFilter('polygon', serialized)`
-- On mount, read `polygon` from URL filters, deserialize, and set as initial `drawnPolygon`
-
-### 7. Enhanced empty state in `MapListPanel.tsx`
-- Replace the current minimal empty state with a more polished illustration
-- Use a Lucide icon composition (Search + MapPin) with a soft background circle
-- Add more helpful copy: "No properties found" + "Try zooming out, removing filters, or searching a different area"
-- Add a "Clear filters" button that resets all filters
-
-### 8. Loading skeletons that match card layout in `MapListPanel.tsx`
-- The existing `CardSkeleton` already matches the card structure (image aspect ratio + text lines)
-- Ensure the skeleton count and grid layout match the actual card grid (already 2-col with 6 skeletons)
-- No changes needed here -- already implemented correctly
-
-### 9. City context in results header
-- In `MapListPanel.tsx`: When a city filter is active, show "Properties in {city}" instead of just "{count} results"
-- In `MobileMapSheet.tsx`: Same change for mobile header
-- Pass `cityFilter` prop to both components from `MapSearchLayout`
-
-### 10. Add `?` help button to `MapToolbar.tsx`
-- Add a small help/keyboard icon button at the bottom of the toolbar
-- Only visible on desktop (hidden on mobile since keyboards aren't relevant)
-- Triggers the `KeyboardShortcutsDialog`
-
-## Technical Details
-
-- **URL param debouncing**: Map move events fire frequently. The `lat`/`lng`/`zoom` URL updates should be debounced (300ms) to avoid excessive URL changes. Use `replace: true` to avoid polluting browser history.
-- **Polygon URL format**: Uses the existing `serializePolygon` which produces `lat,lng;lat,lng;...` format. Max URL length is not a concern for typical drawn polygons (usually < 20 vertices).
-- **Keyboard shortcuts**: The hook already handles ignoring events when input/textarea is focused. The `?` shortcut toggles the help dialog open state.
-- **Badge "New" variant**: Uses `variant="secondary"` from the existing Badge component to differentiate from the more prominent "Just Listed" badge.
-- **No new dependencies required**.
+### 6. Remove CityOverlayLayer.tsx file
+- Delete the file entirely since it's no longer used
 
 ## Files Summary
 
 | File | Action |
 |------|--------|
-| `src/components/map-search/KeyboardShortcutsDialog.tsx` | Create |
-| `src/components/map-search/PropertyMap.tsx` | Modify -- wire keyboard shortcuts, accept initial center/zoom, add onMapMove |
-| `src/components/map-search/MapToolbar.tsx` | Modify -- add help button |
-| `src/components/map-search/MapListCard.tsx` | Modify -- add "New" badge tier |
-| `src/components/map-search/MapListPanel.tsx` | Modify -- city context header, enhanced empty state |
-| `src/components/map-search/MobileMapSheet.tsx` | Modify -- city context header |
-| `src/components/map-search/MapSearchLayout.tsx` | Modify -- URL persistence for bounds/zoom/polygon, pass city to panels |
-| `src/hooks/useMapFilters.ts` | Modify -- add lat/lng/zoom/polygon URL params |
+| `src/components/map-search/CityOverlayLayer.tsx` | Delete |
+| `src/components/map-search/PropertyMap.tsx` | Modify -- remove CityOverlayLayer, always show MarkerClusterLayer |
+| `src/components/map-search/MarkerClusterLayer.tsx` | Modify -- zoom-based display mode, pass to PropertyMarker |
+| `src/components/map-search/PropertyMarker.tsx` | Modify -- support dot rendering mode |
+| `src/index.css` | Modify -- add dot styles, remove city overlay styles |
 
+## Technical Notes
+
+- The `onCityClick` prop on `PropertyMap` can be kept in the interface but becomes a no-op (or removed if nothing upstream depends on it). `MapSearchLayout` passes it, so we'll remove it from both.
+- Supercluster's `maxZoom: 16` stays the same -- this controls when clustering stops entirely.
+- The dot markers are intentionally simple divs (no Leaflet icon recreation on zoom change) -- the `displayMode` prop change triggers a clean icon swap via React's reconciliation.
+- At zoom 9-12, properties are still fetched (bounds-based query), so dots appear immediately. The experience is: zoom in from country view, see dots appear around zoom 9, zoom closer and they merge into clusters or resolve into price pills at zoom 13.
