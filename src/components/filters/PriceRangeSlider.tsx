@@ -132,6 +132,11 @@ export function PriceRangeSlider({
   // Sync local state when props change (but not during drag)
   useEffect(() => {
     if (!localSliderValues) return;
+    // If both props are cleared (undefined), reset slider to full range
+    if (minValue === undefined && maxValue === undefined) {
+      setLocalSliderValues(null);
+      return;
+    }
     // If props match local, clear local state
     if (
       toDisplayValue(minValue) === localSliderValues[0] &&
