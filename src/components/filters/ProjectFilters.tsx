@@ -383,11 +383,11 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   >
                     Any
                   </button>
-                  {[2, 3, 4, 5, 6, 7].map(num => (
+                  {[2, 3, 4, 5].map(num => (
                     <button
                       key={num}
                       className={cn(
-                        "h-9 w-10 rounded-lg border text-sm font-medium transition-all",
+                        "h-9 px-3 rounded-lg border text-sm font-medium transition-all",
                         filters.min_rooms === num 
                           ? "bg-primary text-primary-foreground border-primary" 
                           : "border-border hover:bg-muted"
