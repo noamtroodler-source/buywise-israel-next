@@ -103,20 +103,19 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
       >
         {/* Image carousel – horizontal sliding strip like Zillow */}
         <div className="relative w-full h-[140px] overflow-hidden rounded-t-lg bg-muted">
-          <div
-            className="flex h-full transition-transform duration-300 ease-out will-change-transform"
-            style={{ transform: `translateX(-${imageIndex * 100}%)` }}
-          >
-            {images.map((img, i) => (
-              <div key={i} className="w-full h-full flex-shrink-0">
-                <PropertyThumbnail
-                  src={img}
-                  alt={`${property.title} ${i + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
+          {images.map((img, i) => (
+            <div
+              key={i}
+              className="absolute inset-0 transition-opacity duration-300 ease-in-out"
+              style={{ opacity: i === imageIndex ? 1 : 0 }}
+            >
+              <PropertyThumbnail
+                src={img}
+                alt={`${property.title} ${i + 1}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
 
           {/* Favorite */}
           <div className="absolute top-2 right-2 z-10">
