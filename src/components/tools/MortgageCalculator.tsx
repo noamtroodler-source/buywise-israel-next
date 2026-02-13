@@ -770,7 +770,7 @@ function MortgageCalculatorContent() {
       {/* Feedback */}
       <ToolPropertySuggestions
         title="Homes at This Price Point"
-        subtitle={`Properties around ${formatCurrency(propertyPrice)}`}
+        subtitle="Browse listings that match your mortgage scenario"
         minPrice={Math.round(propertyPrice * 0.8)}
         maxPrice={Math.round(propertyPrice * 1.2)}
         enabled={propertyPrice !== DEFAULTS.propertyPrice}
