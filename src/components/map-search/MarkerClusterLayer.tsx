@@ -17,12 +17,13 @@ interface MarkerClusterLayerProps {
 
 // Major metro areas shown at country zoom — curated, non-overlapping
 const CITY_WAYPOINTS = [
-  { name: 'Tel Aviv', lat: 32.08, lng: 34.78 },
-  { name: 'Jerusalem', lat: 31.77, lng: 35.21 },
   { name: 'Haifa', lat: 32.79, lng: 34.99 },
-  { name: 'Beer Sheva', lat: 31.25, lng: 34.79 },
   { name: 'Netanya', lat: 32.33, lng: 34.86 },
+  { name: 'Tel Aviv', lat: 32.08, lng: 34.78 },
   { name: 'Ashdod', lat: 31.80, lng: 34.65 },
+  { name: 'Jerusalem', lat: 31.77, lng: 35.21 },
+  { name: 'Beer Sheva', lat: 31.25, lng: 34.79 },
+  { name: 'Eilat', lat: 29.56, lng: 34.95 },
 ];
 
 function getCityLabelIcon(name: string) {
