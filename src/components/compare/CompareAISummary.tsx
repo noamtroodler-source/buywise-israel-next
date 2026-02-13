@@ -17,11 +17,12 @@ interface CompareAISummaryProps {
   properties: Property[];
   winnerCounts: WinnerCount[];
   isRental: boolean;
+  hideCTAs?: boolean;
 }
 
 const MAX_RETRIES = 2;
 
-export function CompareAISummary({ properties, winnerCounts, isRental }: CompareAISummaryProps) {
+export function CompareAISummary({ properties, winnerCounts, isRental, hideCTAs }: CompareAISummaryProps) {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -257,20 +258,22 @@ export function CompareAISummary({ properties, winnerCounts, isRental }: Compare
       )}
 
       {/* CTA Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-border/50">
-        <Button asChild variant="outline" className="flex-1">
-          <Link to="/tools?tool=totalcost">
-            Calculate True Costs
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Link>
-        </Button>
-        <Button asChild variant="outline" className="flex-1">
-          <Link to="/tools?tool=mortgage">
-            Run Mortgage Numbers
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Link>
-        </Button>
-      </div>
+      {!hideCTAs && (
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-border/50">
+          <Button asChild variant="outline" className="flex-1">
+            <Link to="/tools?tool=totalcost">
+              Calculate True Costs
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="flex-1">
+            <Link to="/tools?tool=mortgage">
+              Run Mortgage Numbers
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="mt-4 pt-3 border-t border-border/50">
