@@ -1,75 +1,112 @@
 
+# Phase 2: Property Cards + List Panel with Data
 
-# Phase 1: Core Layout Shell + Working Leaflet Map
-
-This phase establishes the foundation -- a full-screen 60/40 split layout with a live interactive Leaflet map on the left and a placeholder list panel on the right. No markers, no filters, no cards yet -- just the rock-solid structural shell that everything else will be built on top of.
+This phase wires up real property data to the list panel and introduces a new Zillow-style vertical image-first card designed specifically for the map view.
 
 ## What Gets Built
 
-1. **MapSearch page** -- Rewired to use `hideFooter` and `hideMobileNav` for a full-screen immersive experience, with dynamic SEO titles based on URL params (`status`, `city`)
-2. **MapSearchLayout** -- The main orchestrator component with a CSS grid 60/40 split (desktop) and full-screen map (mobile)
-3. **PropertyMap** -- The Leaflet map container with CartoDB light tiles, zoom controls, locate-me button, and proper z-index management
-4. **MapListPanel** -- The right-side placeholder panel with a header showing "0 results" and a sort dropdown skeleton, ready for Phase 2 cards
-5. **useMapFilters hook** -- Reads URL search params (`status`, `city`, `bounds`) into a typed `PropertyFilters` object and writes changes back to the URL for shareable links
+1. **MapListCard** -- A new vertical, image-first property card component optimized for the 40% side panel
+2. **MapListPanel upgrade** -- Connects to real data via `usePaginatedProperties`, adds sorting, infinite scroll, loading skeletons, and proper empty/error states
+3. **MapSearchLayout wiring** -- Passes map bounds and URL filters into the data pipeline so the list responds to map movement
 
-## Layout Architecture
+## Card Design (MapListCard)
+
+Each card follows the Zillow vertical layout:
 
 ```text
-+------------------------------------------------------------------+
-|  Header (sticky, z-50)                                            |
-+------------------------------------------------------------------+
-|  Filter Bar placeholder (48px, border-bottom)                     |
-+-------------------------------+----------------------------------+
-|                               |                                  |
-|    Leaflet Map (60%)          |   List Panel (40%)               |
-|                               |   - Results header               |
-|    - CartoDB light tiles      |   - 2-col card grid (empty)      |
-|    - Zoom +/- (bottom-right)  |   - "No results" placeholder     |
-|    - Locate me (bottom-right) |                                  |
-|    - Israel default center    |                                  |
-|                               |                                  |
-+-------------------------------+----------------------------------+
++-------------------------------+
+|  [Image 16:10 aspect ratio]   |
+|  Heart (top-right overlay)    |
+|  Badge (top-left: "Just       |
+|   Listed" / "Price Drop")     |
+|  Carousel dots (bottom)       |
++-------------------------------+
+|  ₪2,500,000                   |
+|  3 bds | 2 ba | 120 sqm      |
+|  Herzliya Pituach, Herzliya   |
+|  Apartment                    |
++-------------------------------+
 ```
 
-On mobile (below `lg` breakpoint), the map fills the full screen and the list panel is hidden (Phase 6 will add the bottom sheet).
+Features:
+- Image carousel on hover (prev/next arrows appear, dots at bottom)
+- FavoriteButton overlay (top-right, reuses existing component)
+- Status badges: "Just Listed" (<=3 days), "Price Drop" with percentage, "Featured" sparkle
+- Price with original price strikethrough when reduced
+- Pipe-separated stats: beds, baths, sqm
+- Neighborhood + city on next line
+- Property type label (subtle, muted)
+- Entire card is a Link to `/property/:id`
+- Hover: subtle `translateY(-2px)` lift with shadow increase
+- Uses existing `useFormatPrice` and `useFormatArea` from PreferencesContext
 
-## Files Created
+## List Panel Upgrades
 
-### 1. `src/pages/MapSearch.tsx` (rewrite)
-- Restore `hideFooter` and `hideMobileNav` on Layout for immersive mode
-- Read `status` and `city` from URL params for dynamic SEO title
-- Lazy-load `MapSearchLayout`
+**Header**:
+- Left: "X results" bold count (from `totalCount`)
+- Right: Sort dropdown (functional) with options: Newest, Price Low-High, Price High-Low, Size, Rooms
 
-### 2. `src/components/map-search/MapSearchLayout.tsx`
-- CSS grid layout: `grid-cols-[3fr_2fr]` on `lg+`, full-width map on mobile
-- Renders the filter bar placeholder (a 48px div with border), PropertyMap, and MapListPanel
-- Full viewport height minus header: `h-[calc(100vh-64px)]`
+**Card Grid**:
+- 2-column CSS grid (`grid-cols-2`) with `gap-4` padding
+- Infinite scroll via intersection observer sentinel at bottom
+- Loading state: 6 skeleton cards (matching card aspect ratio)
+- Fetching indicator: subtle top progress bar
 
-### 3. `src/components/map-search/PropertyMap.tsx`
-- `MapContainer` from react-leaflet, centered on Israel (31.5, 34.8), zoom 8
-- CartoDB Positron light tiles (clean, Zillow-like)
-- Custom zoom controls (+ / - buttons) positioned bottom-right in a frosted-glass card
-- "Locate me" geolocation button below zoom controls
-- Fires `onBoundsChange` callback when the user pans/zooms (for future filter integration)
-- Proper z-index (40 for controls, map pane default)
+**Empty State** (kept from Phase 1):
+- MapPin icon, "No properties yet", instructional text
 
-### 4. `src/components/map-search/MapListPanel.tsx`
-- Scrollable right panel with:
-  - Header row: "X results" (bold) + sort dropdown (ghost button, disabled for now)
-  - Empty state: centered message "Move the map or adjust filters to find properties"
-- Ready to receive cards in Phase 2
+## Data Flow
 
-### 5. `src/hooks/useMapFilters.ts`
-- Reads `status`, `city`, `min_price`, `max_price`, `min_rooms`, `max_rooms`, `property_type`, `sort_by` from URL search params
-- Returns a typed `PropertyFilters` object + setter functions that update the URL
-- Provides `listingType` derived from status param (`for_sale` | `for_rent` | `projects`)
+```text
+URL params ──> useMapFilters() ──> PropertyFilters
+                                        │
+Map bounds (moveend) ──────────────────>│
+                                        ▼
+                              usePaginatedProperties(filters)
+                                        │
+                              ┌─────────┴──────────┐
+                              ▼                    ▼
+                        totalCount            properties[]
+                              │                    │
+                              ▼                    ▼
+                     MapListPanel header    MapListCard grid
+```
+
+- `MapSearchLayout` merges URL filter state from `useMapFilters()` with live map bounds into a `PropertyFilters` object
+- Passes that to `usePaginatedProperties` which handles pagination, count, and `keepPreviousData` for smooth UX
+- The `listing_status` filter comes from the URL `status` param (for_sale, for_rent)
+- Sort changes update the URL via `setFilter('sort_by', value)`
+
+## Files
+
+### New: `src/components/map-search/MapListCard.tsx`
+- Vertical image-first card component
+- Props: `property: Property`
+- Uses `useFormatPrice`, `useFormatArea` from PreferencesContext
+- Uses `FavoriteButton` from existing component
+- Uses `PropertyThumbnail` for fallback image handling
+- Image carousel with hover arrows and dot indicators
+- Link wrapping to `/property/:id`
+
+### Modified: `src/components/map-search/MapListPanel.tsx`
+- Accept `properties`, `totalCount`, `isLoading`, `isFetching`, `hasNextPage`, `loadMore`, `sortBy`, `onSortChange` props
+- Render 2-column grid of MapListCards
+- Intersection observer for infinite scroll
+- Sort dropdown in header (Select component)
+- Skeleton loading state
+- Keep empty state when no results
+
+### Modified: `src/components/map-search/MapSearchLayout.tsx`
+- Import and call `useMapFilters()` to get filters and setFilter
+- Track map bounds in state, merge with URL filters into a `PropertyFilters` object (from `src/types/database`)
+- Pass merged filters to `usePaginatedProperties()`
+- Pass all data props down to MapListPanel
+- Pass sort handler that calls `setFilter('sort_by', value)`
 
 ## Technical Details
 
-- **No new dependencies** -- uses existing `react-leaflet`, `leaflet`, `lucide-react`
-- **Tile provider**: `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png` (CartoDB Positron -- cleaner than OSM default, matches Zillow aesthetic)
-- **Israel center**: `[31.5, 34.8]` zoom 8 shows the full country
-- **Height calc**: `calc(100vh - 64px)` accounts for the 64px (h-16) sticky header
-- **Mobile**: Map fills entire area; list panel hidden with `hidden lg:block`
-- **Filter bar**: Just a styled div placeholder with text "Filters coming in Phase 4" -- keeps the vertical space reserved so the layout doesn't shift later
-
+- No new dependencies -- reuses `usePaginatedProperties`, `useFormatPrice`, `useFormatArea`, `FavoriteButton`, `PropertyThumbnail`
+- `keepPreviousData` in the paginated hook ensures the list doesn't flash empty when bounds change
+- Infinite scroll uses a simple `IntersectionObserver` on a sentinel div
+- Image carousel uses local state with `currentImageIndex`, showing prev/next on hover (same pattern as existing `PropertyCard`)
+- Cards use `memo` for performance since the list can have 24+ items
