@@ -42,16 +42,31 @@ export function ToolPropertySuggestions({
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
   useEffect(() => {
     if (!emblaApi) return;
-    const onSelect = () => {
-      setCanScrollPrev(emblaApi.canScrollPrev());
-      setCanScrollNext(emblaApi.canScrollNext());
-    };
     emblaApi.on('select', onSelect);
+    emblaApi.on('reInit', onSelect);
     onSelect();
-    return () => { emblaApi.off('select', onSelect); };
-  }, [emblaApi]);
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('reInit', onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  // Re-init carousel when properties data changes
+  useEffect(() => {
+    if (emblaApi && properties && properties.length > 0) {
+      // Small delay to let DOM update before reInit
+      const timer = setTimeout(() => emblaApi.reInit(), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [emblaApi, properties]);
 
   if (!enabled) return null;
   if (!isLoading && (!properties || properties.length === 0)) return null;
