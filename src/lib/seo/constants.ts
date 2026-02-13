@@ -34,12 +34,14 @@ export const LISTING_STATUS_LABELS: Record<string, string> = {
 };
 
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
-  planning: 'Planning Stage',
+  planning: 'Planning',
   pre_sale: 'Pre-Sale',
-  foundation: 'Foundation Stage',
-  structure: 'Under Construction',
-  finishing: 'Finishing Stage',
-  delivery: 'Ready for Delivery',
+  foundation: 'Foundation',
+  structure: 'Structure',
+  finishing: 'Finishing',
+  under_construction: 'Under Construction',
+  completed: 'Completed',
+  delivery: 'Delivery',
 };
 
 export const REGION_LABELS: Record<string, string> = {
