@@ -39,7 +39,7 @@ export function useToolPropertySuggestions({
       if (error) throw error;
       return (data as unknown as Property[]) || [];
     },
-    enabled: enabled && minPrice > 0 && maxPrice > minPrice,
+    enabled: enabled && maxPrice > 0 && maxPrice > minPrice,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
