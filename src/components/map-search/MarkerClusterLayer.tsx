@@ -76,8 +76,8 @@ export function MarkerClusterLayer({
     }
   }, [map, zoom]);
 
-  // Hide all markers at country scale
-  if (zoom < 10) return null;
+  // Hide all markers at very low zoom (world scale)
+  if (zoom < 7) return null;
 
   return (
     <>
