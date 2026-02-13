@@ -293,7 +293,7 @@ export function ProjectsHighlight() {
                   </div>
                   <ProjectFavoriteButton projectId={mainProject.id} />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-6 md:pb-7 pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-8 md:pb-9 pointer-events-none">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
                     {mainProject.developer && (
