@@ -6,6 +6,7 @@ import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButto
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { PROJECT_STATUS_LABELS } from '@/lib/seo/constants';
 import type { Map as LeafletMap } from 'leaflet';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
@@ -90,19 +91,33 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
   }, [totalImages, goTo]);
 
   const priceDisplay = project.price_from
-    ? `From ${formatPrice(project.price_from, project.currency)}`
+    ? project.price_to && project.price_to !== project.price_from
+      ? `${formatPrice(project.price_from, project.currency)} – ${formatPrice(project.price_to, project.currency)}`
+      : `From ${formatPrice(project.price_from, project.currency)}`
     : 'Contact for pricing';
+
+  const bedroomRange = project.min_bedrooms != null && project.max_bedrooms != null
+    ? project.min_bedrooms === project.max_bedrooms
+      ? `${project.min_bedrooms} bed`
+      : `${project.min_bedrooms}–${project.max_bedrooms} bed`
+    : null;
+
+  const stats = [
+    bedroomRange,
+    project.available_units > 0 ? `${project.available_units} units` : null,
+  ].filter(Boolean).join(' · ');
 
   const completionYear = project.completion_date
     ? new Date(project.completion_date).getFullYear()
     : null;
 
-  const stats = [
-    project.available_units > 0 ? `${project.available_units} units` : null,
+  const stageLabel = PROJECT_STATUS_LABELS[project.status] || null;
+
+  const locationParts = [
+    ...[project.neighborhood, project.city].filter(Boolean),
+    stageLabel,
     completionYear ? `Est. ${completionYear}` : null,
   ].filter(Boolean).join(' · ');
-
-  const location = [project.neighborhood, project.city].filter(Boolean).join(', ');
 
   if (!pos) return null;
 
@@ -189,11 +204,20 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
           <span className="text-base font-bold text-foreground leading-tight">
             {priceDisplay}
           </span>
-          <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {project.developer?.logo_url && (
+              <img
+                src={project.developer.logo_url}
+                alt={project.developer.name}
+                className="w-5 h-5 rounded-full object-cover shrink-0"
+              />
+            )}
+            <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
+          </div>
           {stats && (
             <p className="text-sm text-muted-foreground">{stats}</p>
           )}
-          <p className="text-sm text-muted-foreground truncate">{location}</p>
+          <p className="text-sm text-muted-foreground truncate">{locationParts}</p>
         </div>
       </Link>
 

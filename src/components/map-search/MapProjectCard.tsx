@@ -8,6 +8,7 @@ import { CarouselDots } from '@/components/shared/CarouselDots';
 import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { PROJECT_STATUS_LABELS } from '@/lib/seo/constants';
 
 interface MapProjectCardProps {
   project: Project;
@@ -42,19 +43,33 @@ export const MapProjectCard = memo(function MapProjectCard({
   }, [totalImages]);
 
   const priceDisplay = project.price_from
-    ? `From ${formatPrice(project.price_from, project.currency)}`
+    ? project.price_to && project.price_to !== project.price_from
+      ? `${formatPrice(project.price_from, project.currency)} – ${formatPrice(project.price_to, project.currency)}`
+      : `From ${formatPrice(project.price_from, project.currency)}`
     : 'Contact for pricing';
+
+  const bedroomRange = project.min_bedrooms != null && project.max_bedrooms != null
+    ? project.min_bedrooms === project.max_bedrooms
+      ? `${project.min_bedrooms} bed`
+      : `${project.min_bedrooms}–${project.max_bedrooms} bed`
+    : null;
+
+  const stats = [
+    bedroomRange,
+    project.available_units > 0 ? `${project.available_units} units` : null,
+  ].filter(Boolean).join(' · ');
 
   const completionYear = project.completion_date
     ? new Date(project.completion_date).getFullYear()
     : null;
 
-  const stats = [
-    project.available_units > 0 ? `${project.available_units} units available` : null,
+  const stageLabel = PROJECT_STATUS_LABELS[project.status] || null;
+
+  const locationParts = [
+    ...[project.neighborhood, project.city].filter(Boolean),
+    stageLabel,
     completionYear ? `Est. ${completionYear}` : null,
   ].filter(Boolean).join(' · ');
-
-  const location = [project.neighborhood, project.city].filter(Boolean).join(', ');
 
   return (
     <Link
@@ -124,13 +139,22 @@ export const MapProjectCard = memo(function MapProjectCard({
           <span className="text-base font-bold text-foreground">{priceDisplay}</span>
         </div>
 
-        <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {project.developer?.logo_url && (
+            <img
+              src={project.developer.logo_url}
+              alt={project.developer.name}
+              className="w-5 h-5 rounded-full object-cover shrink-0"
+            />
+          )}
+          <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
+        </div>
 
         {stats && (
           <p className="text-sm text-muted-foreground">{stats}</p>
         )}
 
-        <p className="text-sm text-foreground truncate">{location}</p>
+        <p className="text-sm text-foreground truncate">{locationParts}</p>
       </div>
     </Link>
   );

@@ -72,6 +72,8 @@ export interface Project {
     languages: string[] | null;
     years_experience: number | null;
   };
+  min_bedrooms: number | null;
+  max_bedrooms: number | null;
 }
 
 export interface ProjectUnit {

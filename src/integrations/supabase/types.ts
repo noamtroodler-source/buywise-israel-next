@@ -3171,6 +3171,8 @@ export type Database = {
           last_renewed_at: string | null
           latitude: number | null
           longitude: number | null
+          max_bedrooms: number | null
+          min_bedrooms: number | null
           name: string
           neighborhood: string | null
           original_price_from: number | null
@@ -3211,6 +3213,8 @@ export type Database = {
           last_renewed_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          max_bedrooms?: number | null
+          min_bedrooms?: number | null
           name: string
           neighborhood?: string | null
           original_price_from?: number | null
@@ -3251,6 +3255,8 @@ export type Database = {
           last_renewed_at?: string | null
           latitude?: number | null
           longitude?: number | null
+          max_bedrooms?: number | null
+          min_bedrooms?: number | null
           name?: string
           neighborhood?: string | null
           original_price_from?: number | null
