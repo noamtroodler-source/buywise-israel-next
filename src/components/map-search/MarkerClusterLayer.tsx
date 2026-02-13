@@ -15,6 +15,25 @@ interface MarkerClusterLayerProps {
   onMarkerHover: (id: string | null) => void;
 }
 
+// Major metro areas shown at country zoom — curated, non-overlapping
+const CITY_WAYPOINTS = [
+  { name: 'Tel Aviv', lat: 32.08, lng: 34.78 },
+  { name: 'Jerusalem', lat: 31.77, lng: 35.21 },
+  { name: 'Haifa', lat: 32.79, lng: 34.99 },
+  { name: 'Beer Sheva', lat: 31.25, lng: 34.79 },
+  { name: 'Netanya', lat: 32.33, lng: 34.86 },
+  { name: 'Ashdod', lat: 31.80, lng: 34.65 },
+];
+
+function getCityLabelIcon(name: string) {
+  return L.divIcon({
+    html: `<div class="city-waypoint-label">${name}</div>`,
+    className: 'city-waypoint-container',
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+}
+
 function getClusterIcon(count: number) {
   const size = count < 10 ? 32 : count < 50 ? 38 : 44;
   return L.divIcon({
@@ -48,7 +67,7 @@ export function MarkerClusterLayer({
   });
 
   const displayMode: 'dot' | 'pill' = zoom >= 13 ? 'pill' : 'dot';
-  const clusterRadius = zoom >= 13 ? 60 : zoom <= 9 ? 150 : 80;
+  const clusterRadius = zoom >= 13 ? 60 : 80;
 
   const points = useMemo(() =>
     properties
@@ -76,8 +95,27 @@ export function MarkerClusterLayer({
     }
   }, [map, zoom]);
 
-  // Hide all markers at very low zoom (world scale)
-  if (zoom < 7) return null;
+  const handleCityClick = useCallback((lat: number, lng: number) => {
+    map.flyTo([lat, lng], 13, { duration: 0.8 });
+  }, [map]);
+
+  // At country scale (zoom ≤ 9), show city waypoint labels instead of clusters
+  if (zoom <= 9) {
+    return (
+      <>
+        {CITY_WAYPOINTS.map(city => (
+          <Marker
+            key={city.name}
+            position={[city.lat, city.lng]}
+            icon={getCityLabelIcon(city.name)}
+            eventHandlers={{
+              click: () => handleCityClick(city.lat, city.lng),
+            }}
+          />
+        ))}
+      </>
+    );
+  }
 
   return (
     <>
