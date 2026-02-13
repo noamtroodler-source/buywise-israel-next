@@ -1,107 +1,58 @@
 
 
-# Phase 3: Price Markers + Map Interactivity
+# Phase 4: Filters and Search Refinement
 
-This phase adds the signature Zillow-style price pill markers to the map, clusters them at low zoom levels, and wires up hover syncing between map markers and list cards.
+This phase replaces the placeholder "Filters coming soon" bar with the existing, fully-featured `PropertyFilters` component already built for the listings page. It also adds a Buy/Rent toggle and wires the filter bar bidirectionally with the URL-based filter state.
 
 ## What Gets Built
 
-1. **PropertyMarker** -- Floating price-pill markers rendered via Leaflet `DivIcon`, with hover scaling, active state, and visual indicators for hot listings and price drops
-2. **MarkerClusterLayer** -- Uses `supercluster` (already installed) to cluster markers at low zoom, showing count badges with smooth transitions
-3. **MapPropertyPopup** -- A compact popup card shown when clicking a marker, with image, price, stats, and a "View" link
-4. **Hover sync** -- Hovering a list card highlights the corresponding marker on the map (and vice versa), without scrolling the list (stagnant list model)
+1. **Filter bar integration** -- The existing `PropertyFilters` component (with its City, Price, Beds/Baths, Type, More Filters popovers) gets mounted in the map search layout with `mapMode={true}`
+2. **Buy/Rent toggle** -- A segmented toggle (Buy | Rent) in the filter bar, updating the URL `status` param
+3. **Bidirectional filter bridge** -- Converts between the URL-param-based `useMapFilters` hook and the object-based `PropertyFilters` interface so changes flow both ways
+4. **Active filter count** -- Badge on the filter bar showing how many filters are active
 
-## Marker Design
+## Architecture
 
-```text
-Individual marker (price pill):
-+-------------------+
-|  ₪2.5M            |   <- rounded-full, white bg, shadow, 12px font
-+-------------------+
+The key challenge is bridging two filter systems:
+- `useMapFilters()` stores filters as URL search params (flat keys like `min_price`, `max_price`)
+- `PropertyFilters` component expects/emits a `PropertyFilters` object (from `src/types/database.ts`)
 
-Hot listing (<=3 days):     Price drop:
-+-------------------+       +-------------------+
-|  ₪2.5M        ●  |       |  ₪2.5M        ▼  |
-+-------------------+       +-------------------+
-  (green dot)                 (red down arrow)
-
-Hovered state: scale(1.1), z-index 200, ring-2 ring-primary
-Active state: bg-primary, text-white
-
-Cluster marker:
-  (  42  )   <- circle, bg-primary/80, white text, size scales with count
-```
-
-## Popup Design (on marker click)
+The solution: build a thin adapter in `MapSearchLayout` that converts between the two representations. When a popover changes a filter, we convert the full `PropertyFilters` object back to URL params via `setMultipleFilters`.
 
 ```text
-+-------------------------------+
-|  [Image 3:2]     ₪2,500,000  |
-|                  3bd 2ba 90m  |
-|                  Herzliya     |
-+-------------------------------+
+URL params <──> useMapFilters() <──> adapter <──> PropertyFilters component
+                                        │
+                                        ▼
+                              usePaginatedProperties(mergedFilters)
 ```
 
-Compact horizontal card, ~280px wide, auto-pans disabled. Clicking anywhere navigates to the property page.
+## Changes
 
-## Hover Sync Flow
-
-```text
-Card hover ──> setHoveredPropertyId(id) ──> PropertyMarker gets .marker-hovered class
-                                              (scale up, ring highlight)
-
-Marker hover ──> setHoveredPropertyId(id) ──> MapListCard gets ring-primary border
-                                              (NO auto-scroll, stagnant list)
-```
-
-## Files
-
-### New: `src/components/map-search/PropertyMarker.tsx`
-- Receives `property: Property`, `isHovered: boolean`, `isActive: boolean`, `onClick`, `onHover` callbacks
-- Creates a Leaflet `DivIcon` with a formatted price string (compact: "2.5M" / "12K")
-- Visual modifiers: green dot for new (<=3 days), red arrow for price drop
-- Memoized with custom comparison to prevent marker flickering during re-renders
-- Uses CSS class toggling (`.marker-hovered`, `.marker-active`) for state changes instead of re-creating the DivIcon
-
-### New: `src/components/map-search/MarkerClusterLayer.tsx`
-- Uses `supercluster` and `use-supercluster` (both already installed) to cluster property points
-- Converts `properties[]` into GeoJSON points with `latitude`/`longitude`
-- At low zoom: renders cluster circles with count; at high zoom: renders individual `PropertyMarker` components
-- Cluster circle size scales with point count (small/medium/large)
-- Clicking a cluster zooms into its bounds via `map.flyToBounds()`
-
-### New: `src/components/map-search/MapPropertyPopup.tsx`
-- Compact horizontal popup card shown when a marker is clicked
-- Props: `property: Property`
-- Contains: thumbnail image (3:2), price, beds/baths/size, location
-- Wrapped in a `Link` to `/property/:id`
-- Rendered as a Leaflet `Popup` with `autoPan={false}` and keyed by property ID for clean remounts
-
-### Modified: `src/components/map-search/PropertyMap.tsx`
-- Accept new props: `properties`, `hoveredPropertyId`, `activePropertyId`, `onMarkerHover`, `onMarkerClick`
-- Render `MarkerClusterLayer` inside the `MapContainer` with the properties array
-- Pass hover/active state down to individual markers
-- Expose map zoom level to `MarkerClusterLayer` via `useMapEvents`
+### Modified: `src/hooks/useMapFilters.ts`
+- Add support for additional filter params that `PropertyFilters` uses: `property_types` (comma-separated), `min_bathrooms`, `min_size`, `max_size`, `features` (comma-separated), `min_parking`, `max_days_listed`, `min_floor`, `max_floor`
+- Return a richer typed object so the adapter layer is minimal
+- Add `setMultipleFilters` to update many params at once (already exists)
 
 ### Modified: `src/components/map-search/MapSearchLayout.tsx`
-- Add `hoveredPropertyId` state (lifted to orchestrator level)
-- Pass `properties` + hover callbacks down to `PropertyMap`
-- Pass `hoveredPropertyId` down to `MapListPanel`
+- Remove the placeholder filter bar div
+- Import and render `PropertyFilters` with `mapMode={true}` and `showBuyRentToggle={true}`
+- Build an adapter that:
+  - Converts `useMapFilters()` output into a `PropertyFilters` object for the component
+  - On `onFiltersChange`, diffs and writes changed keys back to URL via `setMultipleFilters`
+  - Handles `onBuyRentChange` by setting the `status` URL param
+- Pass `previewCount={totalCount}` for the "More Filters" sheet's "Show X results" button
 
-### Modified: `src/components/map-search/MapListPanel.tsx`
-- Accept `hoveredPropertyId` prop, pass it to each `MapListCard`
-
-### Modified: `src/components/map-search/MapListCard.tsx`
-- Accept `isHovered` prop (from map marker hover)
-- Accept `onHover` / `onHoverEnd` callbacks to report hover state up
-- Apply `ring-2 ring-primary` border when `isHovered` is true (from map hover)
+### No new files needed
+The existing `PropertyFilters` component already has full `mapMode` support including:
+- Hiding sort dropdown and create-alert button (moved to list panel in Phase 2)
+- Showing a "Switch to Grid" icon button (links to `/listings`)
+- All filter popovers (City, Price, Beds/Baths, Property Type, More Filters)
+- Mobile filter sheet via `MobileFilterSheet`
 
 ## Technical Details
 
-- **Price formatting**: Compact format for markers -- "2.5M" for millions, "850K" for thousands (ILS), "$320K" for USD. Uses the user's currency preference.
-- **Clustering**: `supercluster` with `radius: 60`, `maxZoom: 16`. Properties without coordinates are excluded from marker rendering but still appear in the list.
-- **Performance**: `PropertyMarker` uses `React.memo` with a custom comparator checking only `property.id`, `isHovered`, and `isActive`. The `DivIcon` HTML is cached and only regenerated when the price or visual state changes.
-- **Z-index**: Hovered markers get z-index 200 (above other markers at default). Active (clicked) markers get z-index 201. Controls stay at z-index 40.
-- **Popup**: Uses `autoPan={false}` to prevent the map from shifting when a popup opens near edges. The popup is keyed by `property.id` so React fully unmounts/remounts on property change.
-- **No auto-scroll**: Following the Zillow stagnant-list model, hovering a marker highlights the list card visually but does NOT scroll the list panel.
-
+- **Filter bridge pattern**: When `PropertyFilters` calls `onFiltersChange(newFilters)`, the adapter diffs against the current URL state and calls `setMultipleFilters` with only the changed keys. This prevents unnecessary URL updates and re-renders.
+- **Comma-separated arrays**: `property_types` and `features` are stored in the URL as comma-separated strings (e.g., `property_types=apartment,penthouse`) and parsed back into arrays.
+- **No new dependencies** -- purely wiring existing components together.
+- **Mobile**: The existing `MobileFilterSheet` is automatically triggered by `PropertyFilters` on mobile viewports, so mobile filters work out of the box.
+- **Filter bar height**: The `PropertyFilters` component renders as a flex row that naturally fits in the 48px slot previously occupied by the placeholder div. The border-bottom styling is applied by the wrapper.
