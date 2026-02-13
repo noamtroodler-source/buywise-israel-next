@@ -415,7 +415,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   >
                     Any
                   </button>
-                  {[1, 1.5, 2, 3, 4].map(num => (
+                  {[1, 1.5, 2, 3].map(num => (
                     <button
                       key={num}
                       className={cn(
