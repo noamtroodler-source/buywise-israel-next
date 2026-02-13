@@ -507,6 +507,35 @@
 }
 
 /* =========================
+   City Waypoint Labels (country zoom)
+   ========================= */
+
+.city-waypoint-container {
+  background: none !important;
+  border: none !important;
+}
+
+.city-waypoint-label {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: hsl(var(--primary));
+  background: hsl(var(--background));
+  padding: 6px 16px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1), 0 0 0 1px hsl(var(--border));
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  transform: translate(-50%, -50%);
+}
+
+.city-waypoint-label:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px hsl(var(--primary) / 0.3);
+}
+
+/* =========================
    Dot Markers (low zoom)
    ========================= */
 
