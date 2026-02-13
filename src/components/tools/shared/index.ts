@@ -17,4 +17,5 @@ export { SourceAttribution } from './SourceAttribution';
 export { ExampleValuesHint } from './ExampleValuesHint';
 export { InlineSignupCard } from './InlineSignupCard';
 export { ToolGuidanceHint, ToolCardHint } from './ToolGuidanceHint';
+export { ToolPropertySuggestions } from './ToolPropertySuggestions';
 export type { ToolSourceConfig } from './SourceAttribution';

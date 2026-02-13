@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions } from './shared';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
@@ -768,6 +768,13 @@ function MortgageCalculatorContent() {
       </div>
 
       {/* Feedback */}
+      <ToolPropertySuggestions
+        title="Homes at This Price Point"
+        subtitle={`Properties around ${formatCurrency(propertyPrice)}`}
+        minPrice={Math.round(propertyPrice * 0.8)}
+        maxPrice={Math.round(propertyPrice * 1.2)}
+        enabled={propertyPrice !== DEFAULTS.propertyPrice}
+      />
       <ToolFeedback toolName="mortgage-calculator" variant="inline" />
     </div>
   );

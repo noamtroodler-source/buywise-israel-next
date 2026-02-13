@@ -38,6 +38,7 @@ import {
   BuyerTypeInfoBanner,
   SourceAttribution,
   ExampleValuesHint,
+  ToolPropertySuggestions,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -999,6 +1000,13 @@ export function TrueCostCalculator() {
       </div>
 
       {/* Feedback */}
+      <ToolPropertySuggestions
+        title="Properties at This Price"
+        subtitle={`Homes around ${formatPrice(calculations.price)}`}
+        minPrice={Math.round(calculations.price * 0.8)}
+        maxPrice={Math.round(calculations.price * 1.2)}
+        enabled={propertyPrice !== '2750000'}
+      />
       <ToolFeedback toolName="True Cost Calculator" variant="inline" />
     </div>
   );
