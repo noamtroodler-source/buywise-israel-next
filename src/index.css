@@ -374,7 +374,7 @@
   font-weight: 700;
   white-space: nowrap;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-  border: 1.5px solid hsl(160 84% 39%);
+  border: 1.5px solid hsl(213 94% 45%);
   cursor: pointer;
   transition: all 200ms ease;
   color: hsl(220 10% 20%);
@@ -387,7 +387,7 @@
 }
 
 .project-marker-pill.marker-active {
-  background: hsl(160 84% 39%);
+  background: hsl(213 94% 45%);
   color: white;
   transform: scale(1.08);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
@@ -400,12 +400,12 @@
 /* Dark mode for project markers */
 .dark .project-marker-pill {
   background: hsl(222 47% 14%);
-  border-color: hsl(160 60% 35%);
+  border-color: hsl(213 80% 50%);
   color: hsl(210 40% 92%);
 }
 
 .dark .project-marker-pill.marker-active {
-  background: hsl(160 60% 30%);
+  background: hsl(213 80% 40%);
   color: white;
 }
 
