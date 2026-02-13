@@ -528,7 +528,7 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: hsl(var(--foreground));
+  color: hsl(var(--primary));
   background: hsl(var(--background));
   padding: 8px 18px;
   border-radius: 9999px;
