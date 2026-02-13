@@ -539,7 +539,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground">Tap a start year, then an end year</p>
+            <p className="text-xs text-muted-foreground">Select the completion year range</p>
             
             <div className="grid grid-cols-3 gap-2">
               {completionYears.map(year => {
