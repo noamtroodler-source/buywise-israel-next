@@ -1,60 +1,92 @@
 
 
-## Fix Popup Image Carousel Glitching — Creative Approach
+# Integrating New Development Projects into Map Search
 
-### Root Cause
+## Overview
+Show projects (new developments) alongside regular property listings on the map, so buyers exploring the "Buy" view naturally discover new builds in their area. Projects are visually distinct but not overpowering — they feel like a natural part of the same search experience.
 
-Leaflet popups internally call `_updateLayout()` to measure and reposition themselves. The sliding strip approach (all images in a horizontal row with `translateX`) creates a content container that's actually `N * 260px` wide. Even with `overflow: hidden`, Leaflet's layout engine can detect size changes and trigger repositioning — that's the "jump."
+## How It Works for Users
 
-On top of that, each `PropertyThumbnail` component has its own `useState` for error handling, meaning each image independently goes through a load cycle when it first appears.
+**On the map:**
+- Project markers appear as price pills showing "From X" (e.g., "From ₪3.2M") with a small building icon prefix to subtly differentiate them from resale listings
+- Same color scheme as regular markers — no jarring contrast
+- Clicking a project marker shows a popup card with project-specific info (name, price range, available units, completion date)
 
-### Solution: Stacked Images with Opacity Crossfade
+**In the side list:**
+- Project cards mix in with property cards, sorted together by the current sort order
+- A small "New Development" label replaces the property type line (e.g., instead of "Apartment" it says "New Development")
+- Price shows as "From ₪X" range format instead of a fixed price
+- Stats show available units and completion date instead of beds/baths/sqm
+- Links to `/projects/{slug}` instead of `/property/{id}`
 
-Instead of a horizontal sliding strip, **stack all images on top of each other using absolute positioning** and crossfade between them using opacity. This means:
+**Filtering:**
+- The existing Buy/Rent toggle gets a third option: "Buy | Rent | New" — or alternatively, a checkbox/chip "Include New Projects" that layers them on top of Buy results
+- When "Projects" is the active status (already supported via `?status=projects`), only projects are shown
+- Price filters apply to `price_from` for projects
 
-- The container is always exactly `260px x 140px` — Leaflet never sees a size change
-- No `translateX` or width manipulation at all
-- Images preload invisibly in the background (they're all mounted, just `opacity: 0`)
-- Switching is a simple opacity toggle — no layout recalculation possible
+## Technical Approach
 
-### File Changes
+### 1. Fetch Projects Alongside Properties
+Create a `usePaginatedProjects` hook (or extend `usePaginatedProperties`) that queries the `projects` table with the same bounds-based spatial filtering. Key mappings:
+- `price_from` / `price_to` for price filters
+- `latitude` / `longitude` for bounds
+- `is_published = true`
 
-**`src/components/map-search/MapPropertyPopup.tsx`**
-
-Replace the sliding strip (lines 104-119) with a stacked approach:
-
+### 2. Unified Item Type
+Create a discriminated union type:
 ```text
-Before (sliding strip):
-  <div className="flex h-full transition-transform ..."
-       style={{ transform: `translateX(-${imageIndex * 100}%)` }}>
-    {images.map(...)}
-  </div>
-
-After (stacked with opacity):
-  {images.map((img, i) => (
-    <div
-      key={i}
-      className="absolute inset-0 transition-opacity duration-300 ease-in-out"
-      style={{ opacity: i === imageIndex ? 1 : 0 }}
-    >
-      <PropertyThumbnail ... className="w-full h-full object-cover" />
-    </div>
-  ))}
+type MapItem = 
+  | { type: 'property'; data: Property }
+  | { type: 'project'; data: Project }
 ```
+Both marker layers and list panels will render based on `item.type`.
 
-Key details:
-- Each image is `absolute inset-0` — fills the 260x140 container exactly
-- Only the active image has `opacity: 1`, others have `opacity: 0`
-- `transition-opacity duration-300` gives a smooth crossfade
-- All images are always mounted and loading in the background — no flash on first view
-- The container dimensions never change — Leaflet has nothing to recalculate
+### 3. Map Markers (PropertyMarker + MarkerClusterLayer)
+- Add a `ProjectMarker` component (similar to `PropertyMarker`) that renders "From ₪X" pills with a subtle building icon
+- Feed both property and project GeoJSON points into the same `useSupercluster` instance so they cluster together naturally
+- Projects use the same dot/pill display mode transitions based on zoom
 
-**`src/index.css`** — No changes needed. The existing width/pointer-events fixes stay.
+### 4. List Cards
+- Create a `MapProjectCard` component (sibling to `MapListCard`) with:
+  - Same card structure (image carousel, info section)
+  - "New Development" badge (using the existing emerald green badge style)
+  - "From ₪X – ₪Y" price range
+  - "X units available | Est. completion YYYY" stats line
+  - Links to `/projects/{slug}`
+- `MapListPanel` renders either `MapListCard` or `MapProjectCard` based on item type
 
-### Why This Won't Glitch
+### 5. Map Popup Overlay
+- Create a `MapProjectOverlay` (or make `MapPropertyOverlay` polymorphic) to show project-specific details when clicking a project marker
 
-1. **Zero layout changes**: Container is always `260 x 140`. Nothing shifts.
-2. **No width tricks**: No `translateX`, no flex row, no `will-change-transform`.
-3. **Preloaded images**: All images mount immediately (hidden via opacity), so they load in the background before the user clicks an arrow.
-4. **Leaflet-safe**: Since the popup content dimensions never change, Leaflet's `_updateLayout()` has no reason to fire.
+### 6. Filter Bar Integration
+- Extend the Buy/Rent toggle to support a third "Projects" state, or add a separate "New Projects" chip
+- The `?status=projects` URL param already exists — when active, skip the properties query and only fetch projects
+- When status is `for_sale`, fetch both properties AND projects (projects are always "for sale")
+
+### 7. Sorting
+- Projects map to the same sort keys: `created_at` for newest, `price_from` for price sorts
+- Client-side interleaving of two sorted arrays, or a single merged + re-sorted array
+
+## Files to Create/Modify
+
+| File | Change |
+|------|--------|
+| `src/hooks/usePaginatedProjects.tsx` | New hook for fetching projects with bounds/filters |
+| `src/components/map-search/MapProjectCard.tsx` | New list card for projects |
+| `src/components/map-search/ProjectMarker.tsx` | New marker component for projects |
+| `src/components/map-search/MapSearchLayout.tsx` | Merge project + property data, pass unified items |
+| `src/components/map-search/MapListPanel.tsx` | Render both card types |
+| `src/components/map-search/MarkerClusterLayer.tsx` | Accept and render both marker types |
+| `src/components/map-search/PropertyMap.tsx` | Pass projects through to cluster layer |
+| `src/components/map-search/MapPropertyOverlay.tsx` | Handle project click popups (or new overlay) |
+| `src/components/filters/PropertyFilters.tsx` | Add Projects option to Buy/Rent toggle |
+| `src/components/map-search/MobileMapSheet.tsx` | Render both card types on mobile |
+| `src/components/map-search/MobileCardCarousel.tsx` | Support project cards in mobile carousel |
+
+## Edge Cases to Handle
+- Projects without coordinates (skip markers, still show in list if within city bounds — though all 76 current projects have coords)
+- Price range display when `price_from` is null (show "Contact for pricing")
+- Sorting interleaving (newest first mixes properties and projects by `created_at`)
+- Cluster counts include both types (this happens automatically with supercluster)
+- Favorite button on projects uses `useProjectFavorites` hook (already exists) instead of `FavoriteButton`
 
