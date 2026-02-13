@@ -1,107 +1,87 @@
 
 
-# Phase 6: Mobile Experience
+# Phase 7: Polish + BuyWise Touches
 
-This phase transforms the map search page from desktop-only (list panel `hidden` below `lg`) into a fully mobile-optimized experience with a swipe-based bottom sheet, compact filter bar, and a Map/List toggle.
+This phase adds URL persistence for bounds/zoom/polygon, wires up keyboard shortcuts, enhances the badge system with a "New" tier, adds loading skeletons that match card layout, improves the empty state with an illustration, and shows city context in the results header.
 
-## What Gets Built
+## Overview
 
-1. **MobileMapSheet** -- A `vaul` Drawer-based bottom sheet overlaying the full-screen map with three snap points: peek (showing horizontal card carousel), half (vertical card list), and full (full-screen list).
+Most of the foundational work is already done. The badge system in `MapListCard.tsx` already handles "Just Listed", "Just Available", "Price Drop", and "Featured". The keyboard shortcuts hook (`useMapKeyboardShortcuts`) exists but isn't wired up. This phase connects the dots and adds the remaining polish.
 
-2. **MobileMapFilterBar** -- A compact 48px sticky bar at the top of the map on mobile with: Buy/Rent chip toggle, city pill, filters button (opens existing `MobileFilterSheet`), and active filter count badge.
+## Changes
 
-3. **Map/List Toggle Pill** -- A floating segmented pill that switches between showing the map with bottom sheet vs. a full-screen scrollable list view.
+### 1. Wire keyboard shortcuts in `PropertyMap.tsx`
+- Import and call `useMapKeyboardShortcuts` with a ref to the map instance
+- Map shortcut handlers to existing callbacks: `handleToggleDraw`, `handleZoomIn/Out`, `handleLocate`, layer toggles (`T` for trains, `H` for heatmap, `S` for saved locations)
+- `Escape` clears drawn polygon and deselects active property
+- `?` shows a small tooltip/dialog listing all shortcuts (simple `KeyboardShortcutsDialog` component)
 
-4. **Mobile Card Carousel** -- Horizontal snap-scrolling row of 280px property preview cards shown in the sheet's peek mode.
+### 2. New file: `src/components/map-search/KeyboardShortcutsDialog.tsx`
+- A small Dialog triggered by `?` key or a help button in the toolbar
+- Lists all shortcuts from `KEYBOARD_SHORTCUTS` constant
+- Simple two-column layout: key badge + description
+- Closes on Escape or clicking outside
 
-5. **Layout Orchestration** -- `MapSearchLayout` detects mobile breakpoint and renders the mobile-specific components instead of the desktop sidebar.
+### 3. Expand badge system in `MapListCard.tsx`
+- Add a "New" badge tier for properties listed within 14 days (after the 3-day "Just Listed" check)
+- Badge priority order: Featured > Price Drop > Just Listed/Just Available (<=3 days) > New (<=14 days)
+- Uses a subtle secondary variant for "New" to distinguish from "Just Listed"
 
-## Architecture
+### 4. URL persistence for bounds, zoom, and polygon in `useMapFilters.ts`
+- Add URL params: `lat`, `lng`, `zoom`, `polygon`
+- `lat`/`lng`/`zoom`: Parsed from URL on mount to set initial map center/zoom; updated on map move
+- `polygon`: Uses existing `serializePolygon`/`deserializePolygon` from `geometry.ts`
+- Expose these in `MapUrlFilters` interface
+- `MapSearchLayout` reads initial bounds/zoom from URL and passes to `PropertyMap` as `initialCenter`/`initialZoom` props
 
-On mobile (below `lg` / 1024px), the layout changes from side-by-side to layered:
+### 5. Pass initial center/zoom to `PropertyMap.tsx`
+- Accept optional `initialCenter` and `initialZoom` props
+- Use them as defaults for `MapContainer` instead of hardcoded `ISRAEL_CENTER`/`DEFAULT_ZOOM`
+- Update URL on bounds change via a new `onMapMove` callback passed from layout
 
-```text
-Desktop (lg+):                    Mobile (<lg):
-+------------------+----------+   +------------------+
-|                  |          |   |  MobileMapFilter  |  <- compact 48px bar
-|     Map          |  List    |   +------------------+
-|                  |  Panel   |   |                  |
-|                  |          |   |      Map          |
-+------------------+----------+   |   (full screen)  |
-                                  |                  |
-                                  +--[bottom sheet]--+
-                                  | peek: card       |
-                                  | carousel         |
-                                  +------------------+
-                                  [Map/List toggle pill]
-```
+### 6. Persist polygon to URL in `MapSearchLayout.tsx`
+- When `drawnPolygon` changes, serialize and write to URL via `setFilter('polygon', serialized)`
+- On mount, read `polygon` from URL filters, deserialize, and set as initial `drawnPolygon`
 
-## New Files
+### 7. Enhanced empty state in `MapListPanel.tsx`
+- Replace the current minimal empty state with a more polished illustration
+- Use a Lucide icon composition (Search + MapPin) with a soft background circle
+- Add more helpful copy: "No properties found" + "Try zooming out, removing filters, or searching a different area"
+- Add a "Clear filters" button that resets all filters
 
-### `src/components/map-search/MobileMapSheet.tsx`
-- Uses `vaul` Drawer component (already installed)
-- Renders as an always-open bottom sheet with `modal={false}` so the map stays interactive behind it
-- Three snap points via vaul's `snapPoints` prop: `["148px", "50%", 1]`
-  - **Peek (148px)**: Shows the horizontal card carousel (`MobileCardCarousel`)
-  - **Half (50%)**: Shows vertical single-column card list with sort dropdown
-  - **Full (1)**: Full-height scrollable list with infinite scroll sentinel
-- Props: `properties`, `totalCount`, `isLoading`, `sortBy`, `onSortChange`, `hasNextPage`, `loadMore`, `hoveredPropertyId`, `onCardHover`
-- The drawer handle area shows result count ("42 results") and sort control
+### 8. Loading skeletons that match card layout in `MapListPanel.tsx`
+- The existing `CardSkeleton` already matches the card structure (image aspect ratio + text lines)
+- Ensure the skeleton count and grid layout match the actual card grid (already 2-col with 6 skeletons)
+- No changes needed here -- already implemented correctly
 
-### `src/components/map-search/MobileCardCarousel.tsx`
-- Horizontal scrollable container with CSS `scroll-snap-type: x mandatory`
-- Each card is 280px wide with `scroll-snap-align: start`
-- Renders a compact version of `MapListCard` optimized for horizontal browsing
-- Shows property image, price, beds/baths/size stats, and location
-- Touching a card navigates to the property detail page
+### 9. City context in results header
+- In `MapListPanel.tsx`: When a city filter is active, show "Properties in {city}" instead of just "{count} results"
+- In `MobileMapSheet.tsx`: Same change for mobile header
+- Pass `cityFilter` prop to both components from `MapSearchLayout`
 
-### `src/components/map-search/MobileMapFilterBar.tsx`
-- Compact 48px bar positioned at the top of the map area on mobile
-- Contains:
-  - Buy/Rent segmented toggle (pill-style, same as desktop but smaller)
-  - City chip (shows selected city or "City" placeholder, taps to open city popover)
-  - Filters button with badge count (opens existing `MobileFilterSheet`)
-- Receives the same filter props as `PropertyFilters` but renders a minimal mobile layout
-- Uses `z-[35]` to sit above the map but below the toolbar
-
-### `src/components/map-search/MobileMapListToggle.tsx`
-- Floating pill at bottom-center of the screen (above the bottom sheet handle)
-- Two segments: Map icon | List icon
-- When "List" is active, the bottom sheet snaps to full height
-- When "Map" is active, the bottom sheet snaps to peek height
-- Uses `z-[45]` to float above the sheet
-
-## Modified Files
-
-### `src/components/map-search/MapSearchLayout.tsx`
-- Import `useIsMobile` hook (or use `useMediaQuery` for `lg` breakpoint)
-- On mobile:
-  - Hide the desktop `PropertyFilters` bar (it's replaced by `MobileMapFilterBar`)
-  - Hide the `MapListPanel` (replaced by `MobileMapSheet`)
-  - Render `MobileMapFilterBar` as an overlay on the map
-  - Render `MobileMapSheet` with properties data
-  - Render `MobileMapListToggle`
-  - The map takes full height instead of the grid layout
-- On desktop: no changes, keeps current behavior
-- Pass Buy/Rent state and filter handlers to `MobileMapFilterBar`
-
-### `src/components/map-search/PropertyMap.tsx`
-- Adjust toolbar positioning: on mobile, the toolbar moves up slightly to avoid overlapping the bottom sheet peek area (add a `className` prop or use media query for `bottom-40` on mobile vs `bottom-6` on desktop)
-
-### `src/components/map-search/MapToolbar.tsx`
-- Add responsive bottom positioning: `bottom-40 lg:bottom-6` so the toolbar sits above the mobile bottom sheet peek area
+### 10. Add `?` help button to `MapToolbar.tsx`
+- Add a small help/keyboard icon button at the bottom of the toolbar
+- Only visible on desktop (hidden on mobile since keyboards aren't relevant)
+- Triggers the `KeyboardShortcutsDialog`
 
 ## Technical Details
 
-- **vaul Drawer configuration**: Using `vaul`'s `Drawer` with `direction="bottom"`, `modal={false}`, and `snapPoints={["148px", "50%", 1]}`. The `activeSnapPoint` state is tracked to determine which view to render (carousel vs. list).
-- **Scroll snap carousel**: Pure CSS solution using `overflow-x: auto`, `scroll-snap-type: x mandatory`, and `scroll-snap-align: start` on each 280px card. No additional library needed.
-- **Filter bar integration**: `MobileMapFilterBar` is a thin wrapper that:
-  - Renders the Buy/Rent toggle inline
-  - Shows the city as a tappable chip (opens a small sheet/popover for city selection)
-  - Has a "Filters" button that calls `setMobileFiltersOpen(true)` to open the existing `MobileFilterSheet`
-- **Breakpoint**: Uses `useMediaQuery('(min-width: 1024px)')` to match Tailwind's `lg` breakpoint, consistent with the `lg:grid-cols-[3fr_2fr]` on the desktop layout.
-- **No new dependencies**: Uses `vaul` (already installed), existing `useIsMobile` / `useMediaQuery` hooks, and CSS scroll-snap.
-- **Map height on mobile**: The map fills `100vh - 64px` (header height). The filter bar and bottom sheet overlay on top of it.
-- **Performance**: The card carousel only renders the first ~10 properties for peek mode. Full list uses the same infinite scroll pattern as `MapListPanel`.
-- **Bottom nav hidden**: The `MapSearch` page already passes `hideMobileNav` to `Layout`, so the bottom navigation won't conflict with the bottom sheet.
+- **URL param debouncing**: Map move events fire frequently. The `lat`/`lng`/`zoom` URL updates should be debounced (300ms) to avoid excessive URL changes. Use `replace: true` to avoid polluting browser history.
+- **Polygon URL format**: Uses the existing `serializePolygon` which produces `lat,lng;lat,lng;...` format. Max URL length is not a concern for typical drawn polygons (usually < 20 vertices).
+- **Keyboard shortcuts**: The hook already handles ignoring events when input/textarea is focused. The `?` shortcut toggles the help dialog open state.
+- **Badge "New" variant**: Uses `variant="secondary"` from the existing Badge component to differentiate from the more prominent "Just Listed" badge.
+- **No new dependencies required**.
+
+## Files Summary
+
+| File | Action |
+|------|--------|
+| `src/components/map-search/KeyboardShortcutsDialog.tsx` | Create |
+| `src/components/map-search/PropertyMap.tsx` | Modify -- wire keyboard shortcuts, accept initial center/zoom, add onMapMove |
+| `src/components/map-search/MapToolbar.tsx` | Modify -- add help button |
+| `src/components/map-search/MapListCard.tsx` | Modify -- add "New" badge tier |
+| `src/components/map-search/MapListPanel.tsx` | Modify -- city context header, enhanced empty state |
+| `src/components/map-search/MobileMapSheet.tsx` | Modify -- city context header |
+| `src/components/map-search/MapSearchLayout.tsx` | Modify -- URL persistence for bounds/zoom/polygon, pass city to panels |
+| `src/hooks/useMapFilters.ts` | Modify -- add lat/lng/zoom/polygon URL params |
 
