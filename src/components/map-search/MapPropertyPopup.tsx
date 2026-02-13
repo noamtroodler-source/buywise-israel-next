@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Popup } from 'react-leaflet';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
@@ -6,7 +6,7 @@ import { Property } from '@/types/database';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
-import { CarouselDots } from '@/components/shared/CarouselDots';
+
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
@@ -47,22 +47,41 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
   const formatPricePerArea = useFormatPricePerArea();
-  const [imageIndex, setImageIndex] = useState(0);
 
   const images = property.images?.length ? property.images : [null];
   const totalImages = images.length;
+  const indexRef = useRef(0);
+  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const dotsRef = useRef<HTMLDivElement | null>(null);
+
+  // Direct DOM manipulation — no React re-render, no Leaflet _updateLayout
+  const goTo = useCallback((next: number) => {
+    const prev = indexRef.current;
+    if (prev === next) return;
+    imgRefs.current[prev]?.style.setProperty('opacity', '0');
+    imgRefs.current[next]?.style.setProperty('opacity', '1');
+    // Update dots
+    if (dotsRef.current) {
+      const dotMax = Math.min(totalImages, 5);
+      const prevDot = dotsRef.current.children[prev % dotMax] as HTMLElement | undefined;
+      const nextDot = dotsRef.current.children[next % dotMax] as HTMLElement | undefined;
+      prevDot?.classList.remove('dot-active');
+      nextDot?.classList.add('dot-active');
+    }
+    indexRef.current = next;
+  }, [totalImages]);
 
   const prevImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageIndex(i => (i - 1 + totalImages) % totalImages);
-  }, [totalImages]);
+    goTo((indexRef.current - 1 + totalImages) % totalImages);
+  }, [totalImages, goTo]);
 
   const nextImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setImageIndex(i => (i + 1) % totalImages);
-  }, [totalImages]);
+    goTo((indexRef.current + 1) % totalImages);
+  }, [totalImages, goTo]);
 
   const badge = getStatusBadge(property);
 
@@ -107,13 +126,14 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
           {images.map((img, i) => (
             <img
               key={i}
+              ref={(el) => { imgRefs.current[i] = el; }}
               src={img || FALLBACK_IMAGE}
               alt={`${property.title} ${i + 1}`}
               loading="eager"
               decoding="async"
               onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
               className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
-              style={{ opacity: i === imageIndex ? 1 : 0 }}
+              style={{ opacity: i === 0 ? 1 : 0 }}
             />
           ))}
 
@@ -160,11 +180,16 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
 
           {/* Dots */}
           {totalImages > 1 && (
-            <div className="absolute bottom-2 left-0 right-0 z-10">
-              <CarouselDots
-                total={Math.min(totalImages, 5)}
-                current={imageIndex % Math.min(totalImages, 5)}
-              />
+            <div className="absolute bottom-2 left-0 right-0 z-10 flex justify-center gap-1" ref={dotsRef}>
+              {Array.from({ length: Math.min(totalImages, 5) }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-colors duration-200",
+                    i === 0 ? "bg-white dot-active" : "bg-white/50"
+                  )}
+                />
+              ))}
             </div>
           )}
 
