@@ -1,7 +1,10 @@
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Home } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 import { PropertyCard } from '@/components/property/PropertyCard';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToolPropertySuggestions } from '@/hooks/useToolPropertySuggestions';
 
@@ -29,6 +32,27 @@ export function ToolPropertySuggestions({
     enabled,
   });
 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+  });
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
+    emblaApi.on('select', onSelect);
+    onSelect();
+    return () => { emblaApi.off('select', onSelect); };
+  }, [emblaApi]);
+
   if (!enabled) return null;
   if (!isLoading && (!properties || properties.length === 0)) return null;
 
@@ -54,39 +78,64 @@ export function ToolPropertySuggestions({
             <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
-        <Link
-          to={`/listings?${searchParams.toString()}`}
-          className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
-        >
-          See all
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={scrollPrev}
+            disabled={!canScrollPrev}
+            className="h-9 w-9"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={scrollNext}
+            disabled={!canScrollNext}
+            className="h-9 w-9"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Link
+            to={`/listings?${searchParams.toString()}`}
+            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+          >
+            See all
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
 
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-40 w-full rounded-lg" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))}
+      {/* Carousel */}
+      <div className="-mx-4 md:mx-0">
+        <div className="overflow-hidden px-4 md:px-0" ref={emblaRef}>
+          <div className="flex -ml-4">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="min-w-0 shrink-0 grow-0 basis-[calc(100%-2rem)] md:basis-1/2 lg:basis-1/4 pl-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-40 w-full rounded-lg" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              properties?.map((property) => (
+                <div key={property.id} className="min-w-0 shrink-0 grow-0 basis-[calc(100%-2rem)] md:basis-1/2 lg:basis-1/4 pl-4">
+                  <PropertyCard
+                    property={property}
+                    compact
+                    showCompareButton={false}
+                    maxBadges={1}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {properties?.map((property) => (
-            <PropertyCard
-              key={property.id}
-              property={property}
-              compact
-              showCompareButton={false}
-              maxBadges={1}
-            />
-          ))}
-        </div>
-      )}
+      </div>
     </motion.div>
   );
 }
