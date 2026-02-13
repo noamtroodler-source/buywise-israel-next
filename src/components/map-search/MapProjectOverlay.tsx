@@ -207,10 +207,11 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
           {project.developer?.name && project.developer?.slug && (
             <Link
               to={`/developers/${project.developer.slug}`}
-              className="text-xs text-muted-foreground truncate block hover:text-primary transition-colors"
+              className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-primary transition-colors group/dev"
               onClick={(e) => e.stopPropagation()}
             >
-              by {project.developer.name}
+              <span className="truncate">by {project.developer.name}</span>
+              <ChevronRight className="h-3 w-3 shrink-0 opacity-0 -ml-1 group-hover/dev:opacity-100 group-hover/dev:ml-0 transition-all" />
             </Link>
           )}
           <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
