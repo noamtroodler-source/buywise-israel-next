@@ -91,7 +91,7 @@ export function MapListPanel({
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="text-sm font-semibold text-foreground">
           {cityFilter
-            ? `Properties in ${cityFilter}`
+            ? `${totalCount.toLocaleString()} properties in ${cityFilter}`
             : `${totalCount.toLocaleString()} results`}
         </span>
         <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>

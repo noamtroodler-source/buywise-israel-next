@@ -87,7 +87,7 @@ export function MobileMapSheet({
           <div className="flex items-center justify-between px-4 pb-2">
             <span className="text-sm font-semibold text-foreground">
               {cityFilter
-                ? `Properties in ${cityFilter}`
+                ? `${totalCount.toLocaleString()} in ${cityFilter}`
                 : `${totalCount.toLocaleString()} results`}
             </span>
             {showList && (
