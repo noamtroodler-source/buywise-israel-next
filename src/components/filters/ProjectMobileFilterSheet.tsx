@@ -248,7 +248,7 @@ export function ProjectMobileFilterSheet({
                 <Calendar className="h-4 w-4 text-primary" />
                 Completion Year
               </h3>
-              <p className="text-xs text-muted-foreground">Tap a start year, then an end year</p>
+              <p className="text-xs text-muted-foreground">Select the completion year range</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   className={cn(
