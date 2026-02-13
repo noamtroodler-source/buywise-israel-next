@@ -499,6 +499,13 @@ export default function Compare() {
           </AnimatePresence>
         </div>
 
+        {/* AI Summary with Winner Breakdown - top for immediate insight */}
+        <CompareAISummary
+          properties={properties}
+          winnerCounts={winnerCounts}
+          isRental={isRental}
+        />
+
         {/* Quick Insights */}
         <CompareQuickInsights
           properties={properties}
@@ -552,12 +559,6 @@ export default function Compare() {
           )}
         </div>
 
-        {/* AI Summary with Winner Breakdown */}
-        <CompareAISummary
-          properties={properties}
-          winnerCounts={winnerCounts}
-          isRental={isRental}
-        />
       </div>
     </Layout>
   );
