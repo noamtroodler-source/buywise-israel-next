@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Linkedin,
   Instagram,
-  Facebook
+  Facebook,
+  ChevronRight
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -193,6 +194,7 @@ export default function AgentDetail() {
                   >
                     <Building2 className="h-4 w-4" />
                     <span>{agent.agency.name}</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </Link>
                 ) : agent.agency_name ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
