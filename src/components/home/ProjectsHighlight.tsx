@@ -61,28 +61,52 @@ function ProjectImageCarousel({
   });
 
   return (
-    <div className={cn(aspectClass, "overflow-hidden relative")} {...touchHandlers}>
-      {!imageLoaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse z-[1]" />
-      )}
-      <img
-        src={currentImage}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        onDragStart={(e) => e.preventDefault()}
-        className={cn(
-          "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-500",
-          imageLoaded ? "opacity-100" : "opacity-0"
+    <>
+      <div className={cn(aspectClass, "overflow-hidden relative")} {...touchHandlers}>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-muted animate-pulse z-[1]" />
         )}
-        onLoad={() => setImageLoaded(true)}
-        onError={() => { setImageError(true); setImageLoaded(true); }}
-      />
+        <img
+          src={currentImage}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
+          className={cn(
+            "w-full h-full object-cover select-none group-hover:scale-105 transition-all duration-500",
+            imageLoaded ? "opacity-100" : "opacity-0"
+          )}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => { setImageError(true); setImageLoaded(true); }}
+        />
 
-      {/* Progress Bar */}
+        {/* Navigation Arrows */}
+        {hasMultiple && (
+          <>
+            <button
+              onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToPrev(); }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-4 w-4 text-foreground" />
+            </button>
+            <button
+              onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToNext(); }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-4 w-4 text-foreground" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Progress Bar - rendered outside the image container, at card bottom */}
       {hasMultiple && (
-        <div className="absolute bottom-2 left-2 right-2 flex gap-0.5 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute bottom-1.5 left-2 right-2 flex gap-0.5 z-20 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
           {images.map((_, index) => (
             <button
               key={index}
@@ -100,29 +124,7 @@ function ProjectImageCarousel({
           ))}
         </div>
       )}
-
-      {/* Navigation Arrows */}
-      {hasMultiple && (
-        <>
-          <button
-            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToPrev(); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-            aria-label="Previous image"
-          >
-            <ChevronLeft className="h-4 w-4 text-foreground" />
-          </button>
-          <button
-            onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToNext(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-background/80 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-md z-10"
-            aria-label="Next image"
-          >
-            <ChevronRight className="h-4 w-4 text-foreground" />
-          </button>
-        </>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -238,7 +240,7 @@ export function ProjectsHighlight() {
                         <ProjectShareButton projectSlug={project.slug} projectName={project.name} />
                         <ProjectFavoriteButton projectId={project.id} />
                       </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4 pb-6 pointer-events-none">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 pb-5 pointer-events-none">
                         <div className="flex items-center gap-2 mb-2">
                           <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
                           {project.developer && (
@@ -293,7 +295,7 @@ export function ProjectsHighlight() {
                   </div>
                   <ProjectFavoriteButton projectId={mainProject.id} />
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 pb-10 md:pb-11 pointer-events-none">
+                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-5 md:pb-6 pointer-events-none">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
                     {mainProject.developer && (
@@ -334,7 +336,7 @@ export function ProjectsHighlight() {
                     </div>
                     <ProjectFavoriteButton projectId={project.id} />
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 pointer-events-none">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 pb-4 pointer-events-none">
                     <Badge className="bg-primary/90 text-primary-foreground mb-1.5 text-xs">New Project</Badge>
                     <h3 className="text-base font-bold text-white">{project.name}</h3>
                     <p className="text-xs text-white/80">
