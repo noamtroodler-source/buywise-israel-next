@@ -1,12 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
-import { Plus, Minus, LocateFixed } from 'lucide-react';
-import { useGeolocation } from '@/hooks/useGeolocation';
-import { cn } from '@/lib/utils';
+import { MapToolbar } from './MapToolbar';
+import { DrawControl } from './DrawControl';
+import { TrainStationLayer } from './TrainStationLayer';
+import { CityOverlayLayer } from './CityOverlayLayer';
+import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
+import { NeighborhoodChips } from './NeighborhoodChips';
+import { SearchThisAreaButton } from './SearchThisAreaButton';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
 import { MapPropertyPopup } from './MapPropertyPopup';
 import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
 import type { Property } from '@/types/database';
+import type { Polygon } from '@/lib/utils/geometry';
 import 'leaflet/dist/leaflet.css';
 
 const ISRAEL_CENTER: [number, number] = [31.5, 34.8];
@@ -20,58 +25,29 @@ interface PropertyMapProps {
   hoveredPropertyId?: string | null;
   onMarkerHover?: (id: string | null) => void;
   onMarkerClick?: (id: string) => void;
+  // Phase 5 props
+  searchAsMove?: boolean;
+  onSearchThisArea?: () => void;
+  onPolygonChange?: (polygon: Polygon | null) => void;
+  onCityClick?: (city: string) => void;
+  listingStatus?: string;
+  cityFilter?: string | null;
 }
 
-function MapEventHandler({ onBoundsChange }: { onBoundsChange?: (b: LatLngBounds) => void }) {
+function MapEventHandler({
+  onBoundsChange,
+  onZoomChange,
+}: {
+  onBoundsChange?: (b: LatLngBounds) => void;
+  onZoomChange?: (zoom: number) => void;
+}) {
   useMapEvents({
     moveend(e) {
       onBoundsChange?.(e.target.getBounds());
+      onZoomChange?.(e.target.getZoom());
     },
   });
   return null;
-}
-
-function MapControls({ map }: { map: LeafletMap | null }) {
-  const { getLocation, isLoading } = useGeolocation();
-
-  const handleZoomIn = useCallback(() => map?.zoomIn(), [map]);
-  const handleZoomOut = useCallback(() => map?.zoomOut(), [map]);
-
-  const handleLocate = useCallback(() => {
-    getLocation();
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          map?.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1.2 });
-        },
-        () => {},
-        { enableHighAccuracy: false, timeout: 10000 }
-      );
-    }
-  }, [map, getLocation]);
-
-  const btnClass =
-    'flex items-center justify-center w-9 h-9 bg-background/90 backdrop-blur-sm text-foreground hover:bg-accent transition-colors cursor-pointer';
-
-  return (
-    <div className="absolute bottom-6 right-3 z-[40] flex flex-col gap-2">
-      <div className="rounded-lg border border-border shadow-md overflow-hidden">
-        <button onClick={handleZoomIn} className={cn(btnClass, 'border-b border-border')} aria-label="Zoom in">
-          <Plus className="h-4 w-4" />
-        </button>
-        <button onClick={handleZoomOut} className={btnClass} aria-label="Zoom out">
-          <Minus className="h-4 w-4" />
-        </button>
-      </div>
-      <button
-        onClick={handleLocate}
-        className={cn(btnClass, 'rounded-lg border border-border shadow-md', isLoading && 'animate-pulse')}
-        aria-label="Find my location"
-      >
-        <LocateFixed className="h-4 w-4" />
-      </button>
-    </div>
-  );
 }
 
 export function PropertyMap({
@@ -80,22 +56,107 @@ export function PropertyMap({
   hoveredPropertyId = null,
   onMarkerHover,
   onMarkerClick,
+  searchAsMove = true,
+  onSearchThisArea,
+  onPolygonChange,
+  onCityClick,
+  listingStatus = 'for_sale',
+  cityFilter = null,
 }: PropertyMapProps) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const [currentBounds, setCurrentBounds] = useState<LatLngBounds | null>(null);
+  const [isDrawMode, setIsDrawMode] = useState(false);
+  const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set());
+  const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
+  const [boundsChanged, setBoundsChanged] = useState(false);
+  const lastQueriedBoundsRef = useRef<string | null>(null);
 
-  const handleMarkerClick = useCallback((id: string) => {
-    setActivePropertyId(prev => prev === id ? null : id);
-    onMarkerClick?.(id);
-  }, [onMarkerClick]);
+  const handleBoundsChange = useCallback(
+    (b: LatLngBounds) => {
+      setCurrentBounds(b);
+      if (searchAsMove) {
+        onBoundsChange?.(b);
+        lastQueriedBoundsRef.current = b.toBBoxString();
+        setBoundsChanged(false);
+      } else {
+        const bboxStr = b.toBBoxString();
+        setBoundsChanged(bboxStr !== lastQueriedBoundsRef.current);
+      }
+    },
+    [searchAsMove, onBoundsChange]
+  );
+
+  const handleZoomChange = useCallback((z: number) => {
+    setZoom(z);
+  }, []);
+
+  const handleSearchThisArea = useCallback(() => {
+    if (currentBounds) {
+      onBoundsChange?.(currentBounds);
+      lastQueriedBoundsRef.current = currentBounds.toBBoxString();
+      setBoundsChanged(false);
+      onSearchThisArea?.();
+    }
+  }, [currentBounds, onBoundsChange, onSearchThisArea]);
+
+  const handleMarkerClick = useCallback(
+    (id: string) => {
+      setActivePropertyId((prev) => (prev === id ? null : id));
+      onMarkerClick?.(id);
+    },
+    [onMarkerClick]
+  );
 
   const handlePopupClose = useCallback(() => {
     setActivePropertyId(null);
   }, []);
 
+  const handleToggleDraw = useCallback(() => {
+    setIsDrawMode((prev) => {
+      if (prev) {
+        // Turning off draw mode, clear polygon
+        setDrawnPolygon(null);
+        onPolygonChange?.(null);
+      }
+      return !prev;
+    });
+  }, [onPolygonChange]);
+
+  const handlePolygonDrawn = useCallback(
+    (polygon: Polygon) => {
+      setDrawnPolygon(polygon);
+      onPolygonChange?.(polygon);
+      setIsDrawMode(false);
+    },
+    [onPolygonChange]
+  );
+
+  const handleClearDrawing = useCallback(() => {
+    setDrawnPolygon(null);
+    setIsDrawMode(false);
+    onPolygonChange?.(null);
+  }, [onPolygonChange]);
+
+  const handleToggleLayer = useCallback((layerId: string) => {
+    setActiveLayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(layerId)) {
+        next.delete(layerId);
+      } else {
+        next.add(layerId);
+      }
+      return next;
+    });
+  }, []);
+
   const activeProperty = activePropertyId
-    ? properties.find(p => p.id === activePropertyId)
+    ? properties.find((p) => p.id === activePropertyId)
     : null;
+
+  const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
 
   return (
     <div className="relative h-full w-full">
@@ -108,7 +169,19 @@ export function PropertyMap({
         ref={setMap}
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
-        <MapEventHandler onBoundsChange={onBoundsChange} />
+        <MapEventHandler onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange} />
+
+        {/* City overlay at low zoom */}
+        {zoom < 12 && (
+          <CityOverlayLayer
+            bounds={currentBounds}
+            listingStatus={listingStatus}
+            map={map}
+            onCityClick={onCityClick}
+          />
+        )}
+
+        {/* Property markers at higher zoom */}
         {properties.length > 0 && (
           <MarkerClusterLayer
             properties={properties}
@@ -118,15 +191,61 @@ export function PropertyMap({
             onMarkerHover={onMarkerHover ?? (() => {})}
           />
         )}
-        {activeProperty && activeProperty.latitude && activeProperty.longitude && (
-          <MapPropertyPopup
-            key={activeProperty.id}
-            property={activeProperty}
-            onClose={handlePopupClose}
+
+        {/* Train stations layer */}
+        {activeLayers.has('trains') && <TrainStationLayer bounds={currentBounds} />}
+
+        {/* Neighborhood boundaries layer */}
+        {showNeighborhoods && (
+          <NeighborhoodBoundariesLayer city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
+        )}
+
+        {/* Draw control */}
+        {isDrawMode && (
+          <DrawControl
+            onPolygonDrawn={handlePolygonDrawn}
+            drawnPolygon={drawnPolygon}
+            onClear={handleClearDrawing}
           />
         )}
+
+        {/* Drawn polygon clear chip (when not in draw mode but polygon exists) */}
+        {!isDrawMode && drawnPolygon && (
+          <DrawControl
+            onPolygonDrawn={handlePolygonDrawn}
+            drawnPolygon={drawnPolygon}
+            onClear={handleClearDrawing}
+          />
+        )}
+
+        {activeProperty && activeProperty.latitude && activeProperty.longitude && (
+          <MapPropertyPopup key={activeProperty.id} property={activeProperty} onClose={handlePopupClose} />
+        )}
       </MapContainer>
-      <MapControls map={map} />
+
+      {/* Toolbar */}
+      <MapToolbar
+        map={map}
+        isDrawMode={isDrawMode}
+        onToggleDraw={handleToggleDraw}
+        activeLayers={activeLayers}
+        onToggleLayer={handleToggleLayer}
+      />
+
+      {/* Search this area button */}
+      {!searchAsMove && boundsChanged && !drawnPolygon && (
+        <SearchThisAreaButton onClick={handleSearchThisArea} />
+      )}
+
+      {/* Neighborhood chips */}
+      {showNeighborhoods && (
+        <NeighborhoodChips
+          city={cityFilter}
+          map={map}
+          selectedNeighborhood={selectedNeighborhood}
+          onSelect={setSelectedNeighborhood}
+        />
+      )}
     </div>
   );
 }
