@@ -139,16 +139,11 @@ export const MapProjectCard = memo(function MapProjectCard({
           <span className="text-base font-bold text-foreground">{priceDisplay}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          {project.developer?.logo_url && (
-            <img
-              src={project.developer.logo_url}
-              alt={project.developer.name}
-              className="w-5 h-5 rounded-full object-cover shrink-0"
-            />
-          )}
-          <p className="text-sm font-medium text-foreground truncate">{project.name}</p>
-        </div>
+        <p className="text-sm font-medium text-foreground truncate">
+          {project.developer?.name
+            ? `${project.developer.name} · ${project.name}`
+            : project.name}
+        </p>
 
         {stats && (
           <p className="text-sm text-muted-foreground">{stats}</p>
