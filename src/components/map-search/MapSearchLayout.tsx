@@ -1,10 +1,12 @@
 import { useCallback, useState, useMemo } from 'react';
 import { PropertyMap } from './PropertyMap';
 import { MapListPanel } from './MapListPanel';
+import { PropertyFilters as PropertyFiltersComponent } from '@/components/filters/PropertyFilters';
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
-import type { PropertyFilters, SortOption, MapBounds } from '@/types/database';
+import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
+import type { MapUrlFilters } from '@/hooks/useMapFilters';
 
 function toBounds(b: LatLngBounds): MapBounds {
   return {
@@ -15,8 +17,52 @@ function toBounds(b: LatLngBounds): MapBounds {
   };
 }
 
+/** Convert URL filter state → PropertyFilters object for the component */
+function urlToPropertyFilters(u: MapUrlFilters): PropertyFilters {
+  return {
+    city: u.city ?? undefined,
+    min_price: u.minPrice ?? undefined,
+    max_price: u.maxPrice ?? undefined,
+    min_rooms: u.minRooms ?? undefined,
+    max_rooms: u.maxRooms ?? undefined,
+    property_type: (u.propertyType as PropertyType) ?? undefined,
+    property_types: (u.propertyTypes as PropertyType[]) ?? undefined,
+    min_bathrooms: u.minBathrooms ?? undefined,
+    min_size: u.minSize ?? undefined,
+    max_size: u.maxSize ?? undefined,
+    min_floor: u.minFloor ?? undefined,
+    max_floor: u.maxFloor ?? undefined,
+    min_parking: u.minParking ?? undefined,
+    max_days_listed: u.maxDaysListed ?? undefined,
+    features: u.features ?? undefined,
+    sort_by: u.sortBy as SortOption,
+  };
+}
+
+/** Convert PropertyFilters object → flat URL params record */
+function propertyFiltersToUrlParams(f: PropertyFilters): Record<string, string | number | null> {
+  return {
+    city: f.city ?? null,
+    min_price: f.min_price ?? null,
+    max_price: f.max_price ?? null,
+    min_rooms: f.min_rooms ?? null,
+    max_rooms: f.max_rooms ?? null,
+    property_type: f.property_type ?? null,
+    property_types: f.property_types?.length ? f.property_types.join(',') : null,
+    min_bathrooms: f.min_bathrooms ?? null,
+    min_size: f.min_size ?? null,
+    max_size: f.max_size ?? null,
+    min_floor: f.min_floor ?? null,
+    max_floor: f.max_floor ?? null,
+    min_parking: f.min_parking ?? null,
+    max_days_listed: f.max_days_listed ?? null,
+    features: f.features?.length ? f.features.join(',') : null,
+    sort_by: f.sort_by ?? null,
+  };
+}
+
 export default function MapSearchLayout() {
-  const { filters: urlFilters, setFilter } = useMapFilters();
+  const { filters: urlFilters, setFilter, setMultipleFilters } = useMapFilters();
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
 
@@ -24,17 +70,27 @@ export default function MapSearchLayout() {
     setMapBounds(toBounds(b));
   }, []);
 
+  // Adapter: URL filters → PropertyFilters object for the component
+  const componentFilters = useMemo(() => urlToPropertyFilters(urlFilters), [urlFilters]);
+
+  // Adapter: PropertyFilters object → URL params when component changes filters
+  const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
+    const params = propertyFiltersToUrlParams(newFilters);
+    setMultipleFilters(params);
+  }, [setMultipleFilters]);
+
+  const handleBuyRentChange = useCallback((type: 'for_sale' | 'for_rent') => {
+    setFilter('status', type);
+  }, [setFilter]);
+
+  const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
+
+  // Merged filters for the query (includes map bounds)
   const mergedFilters: PropertyFilters = useMemo(() => ({
-    listing_status: urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale',
-    city: urlFilters.city ?? undefined,
-    min_price: urlFilters.minPrice ?? undefined,
-    max_price: urlFilters.maxPrice ?? undefined,
-    min_rooms: urlFilters.minRooms ?? undefined,
-    max_rooms: urlFilters.maxRooms ?? undefined,
-    property_type: urlFilters.propertyType as any ?? undefined,
-    sort_by: urlFilters.sortBy as SortOption,
+    ...componentFilters,
+    listing_status: listingType as any,
     bounds: mapBounds ?? undefined,
-  }), [urlFilters, mapBounds]);
+  }), [componentFilters, listingType, mapBounds]);
 
   const {
     properties,
@@ -59,8 +115,18 @@ export default function MapSearchLayout() {
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col">
-      <div className="h-12 shrink-0 border-b border-border bg-background flex items-center px-4">
-        <span className="text-xs text-muted-foreground tracking-wide uppercase">Filters coming soon</span>
+      <div className="shrink-0 border-b border-border bg-background">
+        <PropertyFiltersComponent
+          filters={componentFilters}
+          onFiltersChange={handleFiltersChange}
+          listingType={urlFilters.status}
+          mapMode
+          showBuyRentToggle
+          onBuyRentChange={handleBuyRentChange}
+          activeView="map"
+          previewCount={totalCount}
+          isCountLoading={isFetching}
+        />
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">

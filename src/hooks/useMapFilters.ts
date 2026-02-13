@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 
 export type ListingType = 'for_sale' | 'for_rent' | 'projects';
 
-export interface PropertyFilters {
+export interface MapUrlFilters {
   status: ListingType;
   city: string | null;
   minPrice: number | null;
@@ -11,6 +11,15 @@ export interface PropertyFilters {
   minRooms: number | null;
   maxRooms: number | null;
   propertyType: string | null;
+  propertyTypes: string[] | null;
+  minBathrooms: number | null;
+  minSize: number | null;
+  maxSize: number | null;
+  minFloor: number | null;
+  maxFloor: number | null;
+  minParking: number | null;
+  maxDaysListed: number | null;
+  features: string[] | null;
   sortBy: string;
 }
 
@@ -20,10 +29,15 @@ function toNum(v: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function toArray(v: string | null): string[] | null {
+  if (!v) return null;
+  return v.split(',').filter(Boolean);
+}
+
 export function useMapFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const filters: PropertyFilters = useMemo(() => ({
+  const filters: MapUrlFilters = useMemo(() => ({
     status: (searchParams.get('status') as ListingType) || 'for_sale',
     city: searchParams.get('city'),
     minPrice: toNum(searchParams.get('min_price')),
@@ -31,6 +45,15 @@ export function useMapFilters() {
     minRooms: toNum(searchParams.get('min_rooms')),
     maxRooms: toNum(searchParams.get('max_rooms')),
     propertyType: searchParams.get('property_type'),
+    propertyTypes: toArray(searchParams.get('property_types')),
+    minBathrooms: toNum(searchParams.get('min_bathrooms')),
+    minSize: toNum(searchParams.get('min_size')),
+    maxSize: toNum(searchParams.get('max_size')),
+    minFloor: toNum(searchParams.get('min_floor')),
+    maxFloor: toNum(searchParams.get('max_floor')),
+    minParking: toNum(searchParams.get('min_parking')),
+    maxDaysListed: toNum(searchParams.get('max_days_listed')),
+    features: toArray(searchParams.get('features')),
     sortBy: searchParams.get('sort_by') || 'newest',
   }), [searchParams]);
 
