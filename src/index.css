@@ -511,8 +511,8 @@
    ========================= */
 
 .property-marker-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: hsl(var(--primary));
   box-shadow: 0 0 0 2px hsl(var(--background)), 0 1px 4px rgba(0, 0, 0, 0.2);

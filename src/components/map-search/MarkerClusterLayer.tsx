@@ -65,7 +65,7 @@ export function MarkerClusterLayer({
     points,
     bounds,
     zoom,
-    options: { radius: clusterRadius, maxZoom: 16 },
+    options: { radius: clusterRadius, maxZoom: 14 },
   });
 
   const handleClusterClick = useCallback((clusterId: number, lng: number, lat: number) => {
@@ -75,6 +75,9 @@ export function MarkerClusterLayer({
       map.setView([lat, lng], Math.min(zoom + 2, 18));
     }
   }, [map, zoom]);
+
+  // Hide all markers at country scale
+  if (zoom < 10) return null;
 
   return (
     <>

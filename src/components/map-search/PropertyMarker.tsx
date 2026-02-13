@@ -76,8 +76,8 @@ export const PropertyMarker = memo(function PropertyMarker({
       return L.divIcon({
         html: createDotHtml(),
         className: 'property-marker-container',
-        iconSize: [8, 8],
-        iconAnchor: [4, 4],
+        iconSize: [10, 10],
+        iconAnchor: [5, 5],
       });
     }
     return L.divIcon({
