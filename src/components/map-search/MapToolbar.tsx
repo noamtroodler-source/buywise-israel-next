@@ -3,6 +3,10 @@ import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, Keyboard } from 'luc
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
+import { findNearestCity } from '@/lib/utils/findNearestCity';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Map as LeafletMap } from 'leaflet';
 
 interface MapToolbarProps {
@@ -24,6 +28,15 @@ export function MapToolbar({
 }: MapToolbarProps) {
   const { getLocation, isLoading } = useGeolocation();
 
+  const { data: cities } = useQuery({
+    queryKey: ['cities-coords'],
+    queryFn: async () => {
+      const { data } = await supabase.from('cities').select('name, center_lat, center_lng');
+      return data ?? [];
+    },
+    staleTime: Infinity,
+  });
+
   const handleZoomIn = useCallback(() => map?.zoomIn(), [map]);
   const handleZoomOut = useCallback(() => map?.zoomOut(), [map]);
 
@@ -32,13 +45,27 @@ export function MapToolbar({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          map?.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1.2 });
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          const nearest = cities?.length ? findNearestCity(coords, cities) : null;
+          if (!nearest) {
+            toast.error("We don't cover your area yet", {
+              description: 'Your location is not near any of the cities on our platform.',
+            });
+            return;
+          }
+          map?.flyTo([coords.lat, coords.lng], 14, { duration: 1.2 });
         },
-        () => {},
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            toast.error('Location access denied', { description: 'Please enable location permissions in your browser settings.' });
+          } else {
+            toast.error('Could not get your location', { description: 'Please try again.' });
+          }
+        },
         { enableHighAccuracy: false, timeout: 10000 }
       );
     }
-  }, [map, getLocation]);
+  }, [map, getLocation, cities]);
 
   const handleShare = useCallback(() => {
     const url = window.location.href;
