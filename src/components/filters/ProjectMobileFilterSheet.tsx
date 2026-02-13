@@ -22,12 +22,12 @@ interface ProjectMobileFilterSheetProps {
 }
 
 const PROJECT_STATUSES = [
-  { value: 'planning', label: 'Planning' },
-  { value: 'pre_sale', label: 'Pre-Sale' },
-  { value: 'foundation', label: 'Foundation' },
-  { value: 'structure', label: 'Structure' },
-  { value: 'finishing', label: 'Finishing' },
-  { value: 'delivery', label: 'Delivery' },
+  { value: 'planning', label: 'Planning', desc: 'Permits & approvals in progress' },
+  { value: 'pre_sale', label: 'Pre-Sale', desc: 'Units available before construction' },
+  { value: 'foundation', label: 'Foundation', desc: 'Groundwork & foundation laid' },
+  { value: 'structure', label: 'Structure', desc: 'Building frame going up' },
+  { value: 'finishing', label: 'Finishing', desc: 'Interior work & fit-out' },
+  { value: 'delivery', label: 'Delivery', desc: 'Ready for handover' },
 ];
 
 export function ProjectMobileFilterSheet({
