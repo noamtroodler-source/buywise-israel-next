@@ -1,9 +1,13 @@
 import { useCallback, useState, useMemo } from 'react';
 import { PropertyMap } from './PropertyMap';
 import { MapListPanel } from './MapListPanel';
+import { MobileMapSheet } from './MobileMapSheet';
+import { MobileMapFilterBar } from './MobileMapFilterBar';
+import { MobileMapListToggle } from './MobileMapListToggle';
 import { PropertyFilters as PropertyFiltersComponent } from '@/components/filters/PropertyFilters';
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isPointInPolygon, type Polygon } from '@/lib/utils/geometry';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { LatLngBounds } from 'leaflet';
@@ -67,15 +71,29 @@ export default function MapSearchLayout() {
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
   const [hoveredPropertyId, setHoveredPropertyId] = useState<string | null>(null);
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  // Mobile sheet snap state
+  const [mobileSnap, setMobileSnap] = useState<string | number | null>('148px');
+  const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
+
+  const handleMobileViewToggle = useCallback((view: 'map' | 'list') => {
+    setMobileView(view);
+    setMobileSnap(view === 'list' ? 1 : '148px');
+  }, []);
+
+  const handleSnapChange = useCallback((snap: string | number | null) => {
+    setMobileSnap(snap);
+    if (snap === 1) setMobileView('list');
+    else setMobileView('map');
+  }, []);
 
   const handleBoundsChange = useCallback((b: LatLngBounds) => {
     setMapBounds(toBounds(b));
   }, []);
 
-  // Adapter: URL filters → PropertyFilters object for the component
   const componentFilters = useMemo(() => urlToPropertyFilters(urlFilters), [urlFilters]);
 
-  // Adapter: PropertyFilters object → URL params when component changes filters
   const handleFiltersChange = useCallback((newFilters: PropertyFilters) => {
     const params = propertyFiltersToUrlParams(newFilters);
     setMultipleFilters(params);
@@ -95,7 +113,6 @@ export default function MapSearchLayout() {
 
   const listingType = urlFilters.status !== 'projects' ? urlFilters.status : 'for_sale';
 
-  // Merged filters for the query (includes map bounds)
   const mergedFilters: PropertyFilters = useMemo(() => ({
     ...componentFilters,
     listing_status: listingType as any,
@@ -132,46 +149,94 @@ export default function MapSearchLayout() {
     setHoveredPropertyId(id);
   }, []);
 
-  return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
-      <div className="shrink-0 border-b border-border bg-background">
-        <PropertyFiltersComponent
-          filters={componentFilters}
-          onFiltersChange={handleFiltersChange}
-          listingType={urlFilters.status}
-          mapMode
-          showBuyRentToggle
-          onBuyRentChange={handleBuyRentChange}
-          activeView="map"
-          previewCount={drawnPolygon ? properties.length : totalCount}
-          isCountLoading={isFetching}
-        />
-      </div>
+  // Desktop layout
+  if (isDesktop) {
+    return (
+      <div className="h-[calc(100vh-64px)] flex flex-col">
+        <div className="shrink-0 border-b border-border bg-background">
+          <PropertyFiltersComponent
+            filters={componentFilters}
+            onFiltersChange={handleFiltersChange}
+            listingType={urlFilters.status}
+            mapMode
+            showBuyRentToggle
+            onBuyRentChange={handleBuyRentChange}
+            activeView="map"
+            previewCount={drawnPolygon ? properties.length : totalCount}
+            isCountLoading={isFetching}
+          />
+        </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
-        <PropertyMap
-          onBoundsChange={handleBoundsChange}
-          properties={properties}
-          hoveredPropertyId={hoveredPropertyId}
-          onMarkerHover={handleMarkerHover}
-          onPolygonChange={handlePolygonChange}
-          onCityClick={handleCityClick}
-          listingStatus={listingType}
-          cityFilter={urlFilters.city}
-        />
-        <MapListPanel
-          properties={properties}
-          totalCount={drawnPolygon ? properties.length : totalCount}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          hasNextPage={hasNextPage}
-          loadMore={loadMore}
-          sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
-          onSortChange={handleSortChange}
-          hoveredPropertyId={hoveredPropertyId}
-          onCardHover={handleCardHover}
-        />
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
+          <PropertyMap
+            onBoundsChange={handleBoundsChange}
+            properties={properties}
+            hoveredPropertyId={hoveredPropertyId}
+            onMarkerHover={handleMarkerHover}
+            onPolygonChange={handlePolygonChange}
+            onCityClick={handleCityClick}
+            listingStatus={listingType}
+            cityFilter={urlFilters.city}
+          />
+          <MapListPanel
+            properties={properties}
+            totalCount={drawnPolygon ? properties.length : totalCount}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            hasNextPage={hasNextPage}
+            loadMore={loadMore}
+            sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
+            onSortChange={handleSortChange}
+            hoveredPropertyId={hoveredPropertyId}
+            onCardHover={handleCardHover}
+          />
+        </div>
       </div>
+    );
+  }
+
+  // Mobile layout
+  return (
+    <div className="h-[calc(100vh-64px)] relative">
+      {/* Full-screen map */}
+      <PropertyMap
+        onBoundsChange={handleBoundsChange}
+        properties={properties}
+        hoveredPropertyId={hoveredPropertyId}
+        onMarkerHover={handleMarkerHover}
+        onPolygonChange={handlePolygonChange}
+        onCityClick={handleCityClick}
+        listingStatus={listingType}
+        cityFilter={urlFilters.city}
+      />
+
+      {/* Mobile filter bar overlay */}
+      <MobileMapFilterBar
+        filters={componentFilters}
+        onFiltersChange={handleFiltersChange}
+        listingType={listingType}
+        onBuyRentChange={handleBuyRentChange}
+        previewCount={drawnPolygon ? properties.length : totalCount}
+        isCountLoading={isFetching}
+      />
+
+      {/* Map/List toggle pill */}
+      <MobileMapListToggle activeView={mobileView} onToggle={handleMobileViewToggle} />
+
+      {/* Bottom sheet */}
+      <MobileMapSheet
+        properties={properties}
+        totalCount={drawnPolygon ? properties.length : totalCount}
+        isLoading={isLoading}
+        hasNextPage={hasNextPage}
+        loadMore={loadMore}
+        sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
+        onSortChange={handleSortChange}
+        hoveredPropertyId={hoveredPropertyId}
+        onCardHover={handleCardHover}
+        activeSnap={mobileSnap}
+        onSnapChange={handleSnapChange}
+      />
     </div>
   );
 }
