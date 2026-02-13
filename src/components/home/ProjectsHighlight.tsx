@@ -278,38 +278,40 @@ export function ProjectsHighlight() {
             {mainProject && (
               <Link
                 to={`/projects/${mainProject.slug}`}
-                className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300"
+                className="lg:col-span-3 group relative overflow-hidden rounded-xl bg-card border border-border shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col"
               >
-                <ProjectImageCarousel
-                  images={mainProject.images || []}
-                  alt={mainProject.name}
-                  aspectClass="absolute inset-0"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
-                
-                <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <ProjectShareButton projectSlug={mainProject.slug} projectName={mainProject.name} />
+                <div className="flex-1 relative">
+                  <ProjectImageCarousel
+                    images={mainProject.images || []}
+                    alt={mainProject.name}
+                    aspectClass="absolute inset-0"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent pointer-events-none" />
+                  
+                  <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <ProjectShareButton projectSlug={mainProject.slug} projectName={mainProject.name} />
+                    </div>
+                    <ProjectFavoriteButton projectId={mainProject.id} />
                   </div>
-                  <ProjectFavoriteButton projectId={mainProject.id} />
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-8 md:pb-9 pointer-events-none">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
-                    {mainProject.developer && (
-                      <span className="text-xs text-white/80 flex items-center gap-1">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
-                      </span>
-                    )}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5 pb-8 md:pb-9 pointer-events-none">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge className="bg-primary text-primary-foreground text-xs">New Project</Badge>
+                      {mainProject.developer && (
+                        <span className="text-xs text-white/80 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          {typeof mainProject.developer === 'object' ? mainProject.developer.name : 'Verified'}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-1">{mainProject.name}</h3>
+                    <p className="text-sm text-white/80 mb-2">
+                      {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
+                    </p>
+                    <p className="text-base font-semibold text-white">
+                      From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
+                    </p>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1">{mainProject.name}</h3>
-                  <p className="text-sm text-white/80 mb-2">
-                    {mainProject.neighborhood ? `${mainProject.neighborhood}, ` : ''}{mainProject.city}
-                  </p>
-                  <p className="text-base font-semibold text-white">
-                    From {formatPrice(mainProject.price_from, mainProject.currency || 'ILS')}
-                  </p>
                 </div>
               </Link>
             )}
