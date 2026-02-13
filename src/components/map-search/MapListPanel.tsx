@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { MapListCard } from './MapListCard';
 import { Property, SortOption } from '@/types/database';
 
@@ -27,6 +28,8 @@ interface MapListPanelProps {
   onSortChange: (value: SortOption) => void;
   hoveredPropertyId?: string | null;
   onCardHover?: (id: string | null) => void;
+  cityFilter?: string | null;
+  onClearFilters?: () => void;
 }
 
 function CardSkeleton() {
@@ -54,6 +57,8 @@ export function MapListPanel({
   onSortChange,
   hoveredPropertyId,
   onCardHover,
+  cityFilter,
+  onClearFilters,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +90,9 @@ export function MapListPanel({
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
         <span className="text-sm font-semibold text-foreground">
-          {totalCount.toLocaleString()} results
+          {cityFilter
+            ? `Properties in ${cityFilter}`
+            : `${totalCount.toLocaleString()} results`}
         </span>
         <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
           <SelectTrigger className="w-[150px] h-8 text-xs">
@@ -111,13 +118,19 @@ export function MapListPanel({
           </div>
         ) : showEmpty ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-              <MapPin className="h-5 w-5 text-muted-foreground" />
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Search className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">No properties yet</p>
-            <p className="text-xs text-muted-foreground max-w-[240px]">
-              Move the map or adjust filters to find properties in your desired area.
+            <p className="text-sm font-medium text-foreground mb-1">No properties found</p>
+            <p className="text-xs text-muted-foreground max-w-[260px] mb-4">
+              Try zooming out, removing filters, or searching a different area.
             </p>
+            {onClearFilters && (
+              <Button variant="outline" size="sm" onClick={onClearFilters} className="gap-1.5">
+                <X className="h-3.5 w-3.5" />
+                Clear filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 p-4">

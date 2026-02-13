@@ -21,6 +21,10 @@ export interface MapUrlFilters {
   maxDaysListed: number | null;
   features: string[] | null;
   sortBy: string;
+  lat: number | null;
+  lng: number | null;
+  zoom: number | null;
+  polygon: string | null;
 }
 
 function toNum(v: string | null): number | null {
@@ -55,6 +59,10 @@ export function useMapFilters() {
     maxDaysListed: toNum(searchParams.get('max_days_listed')),
     features: toArray(searchParams.get('features')),
     sortBy: searchParams.get('sort_by') || 'newest',
+    lat: toNum(searchParams.get('lat')),
+    lng: toNum(searchParams.get('lng')),
+    zoom: toNum(searchParams.get('zoom')),
+    polygon: searchParams.get('polygon'),
   }), [searchParams]);
 
   const setFilter = useCallback(
