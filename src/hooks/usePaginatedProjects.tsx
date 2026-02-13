@@ -137,10 +137,11 @@ function applyFilters(query: any, filters?: ProjectFiltersType) {
   if (filters.max_price) {
     query = query.lte('price_from', filters.max_price);
   }
-  if (filters.completion_year) {
-    const startOfYear = `${filters.completion_year}-01-01`;
-    const endOfYear = `${filters.completion_year}-12-31`;
-    query = query.gte('completion_date', startOfYear).lte('completion_date', endOfYear);
+  if (filters.completion_year_from) {
+    query = query.gte('completion_date', `${filters.completion_year_from}-01-01`);
+  }
+  if (filters.completion_year_to) {
+    query = query.lte('completion_date', `${filters.completion_year_to}-12-31`);
   }
   if (filters.developer_id) {
     query = query.eq('developer_id', filters.developer_id);

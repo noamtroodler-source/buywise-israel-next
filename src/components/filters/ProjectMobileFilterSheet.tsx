@@ -72,7 +72,7 @@ export function ProjectMobileFilterSheet({
     filters.status,
     filters.min_price || filters.max_price,
     filters.min_rooms || filters.min_bathrooms,
-    filters.completion_year,
+    filters.completion_year_from || filters.completion_year_to,
     filters.developer_id,
   ].filter(Boolean).length;
 
@@ -248,32 +248,62 @@ export function ProjectMobileFilterSheet({
                 <Calendar className="h-4 w-4 text-primary" />
                 Completion Year
               </h3>
+              <p className="text-xs text-muted-foreground">Tap a start year, then an end year</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                    !filters.completion_year 
+                    !filters.completion_year_from && !filters.completion_year_to
                       ? "bg-primary text-primary-foreground" 
                       : "bg-muted hover:bg-muted/80"
                   )}
-                  onClick={() => updateFilter('completion_year', undefined)}
+                  onClick={() => onFiltersChange({ ...filters, completion_year_from: undefined, completion_year_to: undefined })}
                 >
                   Any
                 </button>
-                {completionYears.map(year => (
-                  <button
-                    key={year}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
-                      filters.completion_year === year 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted hover:bg-muted/80"
-                    )}
-                    onClick={() => updateFilter('completion_year', filters.completion_year === year ? undefined : year)}
-                  >
-                    {year}
-                  </button>
-                ))}
+                {completionYears.map(year => {
+                  const isFrom = filters.completion_year_from === year;
+                  const isTo = filters.completion_year_to === year;
+                  const isEndpoint = isFrom || isTo;
+                  const isBetween = !!(
+                    filters.completion_year_from &&
+                    filters.completion_year_to &&
+                    year > filters.completion_year_from &&
+                    year < filters.completion_year_to
+                  );
+
+                  return (
+                    <button
+                      key={year}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                        isEndpoint
+                          ? "bg-primary text-primary-foreground"
+                          : isBetween
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted hover:bg-muted/80"
+                      )}
+                      onClick={() => {
+                        const { completion_year_from: from, completion_year_to: to } = filters;
+                        if (!from && !to) {
+                          onFiltersChange({ ...filters, completion_year_from: year, completion_year_to: undefined });
+                        } else if (from && !to) {
+                          if (year === from) {
+                            onFiltersChange({ ...filters, completion_year_from: undefined, completion_year_to: undefined });
+                          } else {
+                            const lo = Math.min(from, year);
+                            const hi = Math.max(from, year);
+                            onFiltersChange({ ...filters, completion_year_from: lo, completion_year_to: hi });
+                          }
+                        } else {
+                          onFiltersChange({ ...filters, completion_year_from: year, completion_year_to: undefined });
+                        }
+                      }}
+                    >
+                      {year}
+                    </button>
+                  );
+                })}
               </div>
             </section>
 

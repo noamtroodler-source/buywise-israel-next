@@ -21,7 +21,8 @@ export interface ProjectFiltersType {
   status?: string;
   min_price?: number;
   max_price?: number;
-  completion_year?: number;
+  completion_year_from?: number;
+  completion_year_to?: number;
   min_rooms?: number;
   min_bathrooms?: number;
   developer_id?: string;
@@ -118,7 +119,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.status) count++;
     if (filters.min_price || filters.max_price) count++;
     if (filters.min_rooms || filters.min_bathrooms) count++;
-    if (filters.completion_year) count++;
+    if (filters.completion_year_from || filters.completion_year_to) count++;
     if (filters.developer_id) count++;
     return count;
   }, [filters]);
@@ -151,7 +152,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       filters.status ||
       filters.min_price ||
       filters.max_price ||
-      filters.completion_year ||
+      filters.completion_year_from ||
+      filters.completion_year_to ||
       filters.min_rooms ||
       filters.min_bathrooms ||
       filters.developer_id
@@ -508,45 +510,91 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
         <PopoverTrigger asChild>
           <Button 
             variant="outline" 
-            className={cn(filterButtonBase, (yearOpen || filters.completion_year) && filterButtonActive)}
+            className={cn(filterButtonBase, (yearOpen || filters.completion_year_from || filters.completion_year_to) && filterButtonActive)}
           >
             <Calendar className="h-4 w-4" />
-            <span>{filters.completion_year || 'Completion'}</span>
+            <span>{
+              filters.completion_year_from && filters.completion_year_to && filters.completion_year_from !== filters.completion_year_to
+                ? `${filters.completion_year_from} – ${filters.completion_year_to}`
+                : filters.completion_year_from
+                  ? `${filters.completion_year_from}`
+                  : 'Completion'
+            }</span>
             {yearOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[200px] p-0 bg-background border shadow-xl z-50" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[240px] p-0 bg-background border shadow-xl z-50" align="start">
           <div className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg">Completion</h3>
-              {filters.completion_year && (
+              {(filters.completion_year_from || filters.completion_year_to) && (
                 <button 
                   className="text-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => updateFilter('completion_year', undefined)}
+                  onClick={() => {
+                    onFiltersChange({ ...filters, completion_year_from: undefined, completion_year_to: undefined });
+                  }}
                 >
                   Clear
                 </button>
               )}
             </div>
+
+            <p className="text-xs text-muted-foreground">Tap a start year, then an end year</p>
             
-            <div className="grid grid-cols-2 gap-2">
-              {completionYears.map(year => (
-                <button
-                  key={year}
-                  className={cn(
-                    "h-10 rounded-lg border text-sm font-medium transition-all",
-                    filters.completion_year === year 
-                      ? "bg-primary text-primary-foreground border-primary" 
-                      : "border-border hover:bg-muted"
-                  )}
-                  onClick={() => {
-                    updateFilter('completion_year', filters.completion_year === year ? undefined : year);
-                    setYearOpen(false);
-                  }}
-                >
-                  {year}
-                </button>
-              ))}
+            <div className="grid grid-cols-3 gap-2">
+              {completionYears.map(year => {
+                const isFrom = filters.completion_year_from === year;
+                const isTo = filters.completion_year_to === year;
+                const isEndpoint = isFrom || isTo;
+                const isBetween = !!(
+                  filters.completion_year_from &&
+                  filters.completion_year_to &&
+                  year > filters.completion_year_from &&
+                  year < filters.completion_year_to
+                );
+
+                return (
+                  <button
+                    key={year}
+                    className={cn(
+                      "h-10 rounded-lg border text-sm font-medium transition-all",
+                      isEndpoint
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : isBetween
+                          ? "bg-primary/15 text-primary border-primary/30"
+                          : "border-border hover:bg-muted"
+                    )}
+                    onClick={() => {
+                      const { completion_year_from: from, completion_year_to: to } = filters;
+
+                      // No selection yet → set as "from"
+                      if (!from && !to) {
+                        onFiltersChange({ ...filters, completion_year_from: year, completion_year_to: undefined });
+                        return;
+                      }
+
+                      // Only "from" selected (no "to" yet)
+                      if (from && !to) {
+                        if (year === from) {
+                          // Same year tapped twice → clear
+                          onFiltersChange({ ...filters, completion_year_from: undefined, completion_year_to: undefined });
+                        } else {
+                          // Set range, auto-swap if needed
+                          const lo = Math.min(from, year);
+                          const hi = Math.max(from, year);
+                          onFiltersChange({ ...filters, completion_year_from: lo, completion_year_to: hi });
+                        }
+                        return;
+                      }
+
+                      // Both already set → reset and start fresh
+                      onFiltersChange({ ...filters, completion_year_from: year, completion_year_to: undefined });
+                    }}
+                  >
+                    {year}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </PopoverContent>
