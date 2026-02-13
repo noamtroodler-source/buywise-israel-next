@@ -62,8 +62,6 @@ interface PropertyMapProps {
   commuteFilter?: CommuteFilterValue | null;
   savedLocationsData?: SavedLocation[];
   onCommuteFilterChange?: (value: CommuteFilterValue | null) => void;
-  // Find in list callback
-  onFindInList?: (propertyId: string) => void;
 }
 
 // Map click handler to deselect property when clicking empty map
@@ -253,7 +251,6 @@ export function PropertyMap({
   commuteFilter,
   savedLocationsData,
   onCommuteFilterChange,
-  onFindInList,
 }: PropertyMapProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -376,22 +373,6 @@ export function PropertyMap({
       setShowSearchButton(false);
     }
   }, [searchAsMove]);
-
-  // Popup navigation
-  const visiblePropertyIds = useMemo(() => 
-    properties.filter(p => p.latitude && p.longitude).map(p => p.id),
-    [properties]
-  );
-
-  const handlePopupNavigate = useCallback((direction: 'prev' | 'next') => {
-    if (!selectedPropertyId || visiblePropertyIds.length === 0) return;
-    const idx = visiblePropertyIds.indexOf(selectedPropertyId);
-    if (idx === -1) return;
-    const nextIdx = direction === 'next'
-      ? (idx + 1) % visiblePropertyIds.length
-      : (idx - 1 + visiblePropertyIds.length) % visiblePropertyIds.length;
-    onPropertySelect(visiblePropertyIds[nextIdx]);
-  }, [selectedPropertyId, visiblePropertyIds, onPropertySelect]);
 
   // Show city overlay when zoomed out
   const showCityOverlay = currentZoom < 10;
@@ -523,8 +504,6 @@ export function PropertyMap({
             properties={properties}
             onClose={() => onPropertySelect(null)}
             savedLocations={effectiveSavedLocations}
-            onNavigate={handlePopupNavigate}
-            onFindInList={onFindInList}
           />
         )}
 

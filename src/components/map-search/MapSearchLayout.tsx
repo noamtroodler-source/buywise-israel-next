@@ -1,14 +1,12 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { PropertyMap } from './PropertyMap';
 import { MapPropertyList } from './MapPropertyList';
 import { PropertyFilters } from '@/components/filters/PropertyFilters';
 import { MobileMapSheet } from './MobileMapSheet';
 import { MobileMapFilterBar } from './MobileMapFilterBar';
 import { MapKeyboardShortcuts } from './MapKeyboardShortcuts';
-import { MapOnboardingHints } from './MapOnboardingHints';
 import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { MobileCitySheet } from './MobileCitySheet';
@@ -104,14 +102,8 @@ export default function MapSearchLayout() {
   // Alert dialog state
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   
-  // Scroll-to-property state (for "Find in list" from popup)
+  // Scroll-to-property state (kept for compatibility)
   const [scrollToPropertyId, setScrollToPropertyId] = useState<string | null>(null);
-  
-  const handleFindInList = useCallback((propertyId: string) => {
-    setScrollToPropertyId(propertyId);
-    // Clear after a tick to allow re-triggering
-    setTimeout(() => setScrollToPropertyId(null), 100);
-  }, []);
   
   // Get listing status from URL
   const urlStatus = searchParams.get('status') || 'for_sale';
@@ -498,7 +490,6 @@ export default function MapSearchLayout() {
     commuteFilter,
     savedLocationsData: savedLocations,
     onCommuteFilterChange: setCommuteFilter,
-    onFindInList: handleFindInList,
   };
 
   // Mobile layout
@@ -584,11 +575,11 @@ export default function MapSearchLayout() {
     );
   }
 
-  // Desktop layout with resizable panels
+  // Desktop layout with fixed 60/40 split
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Filter Bar */}
-      <div className="px-4 py-3 border-b bg-background">
+      <div className="px-4 py-2.5 border-b bg-background">
         <PropertyFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
@@ -607,48 +598,16 @@ export default function MapSearchLayout() {
         />
       </div>
       
-      {/* Split View */}
-      <ResizablePanelGroup 
-        direction="horizontal" 
-        className="flex-1"
-        onLayout={(sizes) => {
-          try { localStorage.setItem('bw_map_panel_sizes', JSON.stringify(sizes)); } catch {}
-        }}
-      >
-        <ResizablePanel 
-          defaultSize={(() => {
-            try {
-              const saved = localStorage.getItem('bw_map_panel_sizes');
-              if (saved) return JSON.parse(saved)[0];
-            } catch {}
-            return 55;
-          })()} 
-          minSize={35} 
-          maxSize={75}
-        >
-          <div className="relative h-full">
-            <PropertyMap {...propertyMapProps} />
-            {/* Onboarding Hints */}
-            <MapOnboardingHints 
-              visible={true} 
-              hasSavedLocations={!!savedLocations?.length} 
-            />
-          </div>
-        </ResizablePanel>
+      {/* Fixed 60/40 Split View */}
+      <div className="flex-1 grid grid-cols-[60fr_40fr] min-h-0">
+        {/* Map Panel */}
+        <div className="relative h-full">
+          <PropertyMap {...propertyMapProps} />
+        </div>
         
-        <ResizableHandle withHandle />
-        
-        <ResizablePanel 
-          defaultSize={(() => {
-            try {
-              const saved = localStorage.getItem('bw_map_panel_sizes');
-              if (saved) return JSON.parse(saved)[1];
-            } catch {}
-            return 45;
-          })()} 
-          minSize={25} 
-          maxSize={65}
-        >
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-border z-10" />
           <MapPropertyList
             properties={properties}
             isLoading={isLoading}
@@ -664,8 +623,8 @@ export default function MapSearchLayout() {
             onCreateAlert={() => setShowAlertDialog(true)}
             scrollToPropertyId={scrollToPropertyId}
           />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </div>
+      </div>
 
       {/* Keyboard Shortcuts Modal */}
       <MapKeyboardShortcuts 

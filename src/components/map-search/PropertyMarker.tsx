@@ -106,8 +106,8 @@ function PropertyMarkerInner({
           style="
             position: relative;
             display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: center;
             transition: transform 200ms ease;
           "
         >
@@ -119,50 +119,24 @@ function PropertyMarkerInner({
               background-color: ${markerStyle.bgColor};
               color: ${markerStyle.textColor};
               border: 1px solid ${markerStyle.borderColor};
-              padding: 4px 8px;
-              border-radius: 6px;
-              font-weight: 600;
-              font-size: 11px;
+              padding: 5px 10px;
+              border-radius: 8px;
+              font-weight: 700;
+              font-size: 12px;
               white-space: nowrap;
-              box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+              box-shadow: 0 2px 6px rgba(0,0,0,0.1);
               opacity: ${markerStyle.opacity};
               cursor: pointer;
-              transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+              transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
             "
           >
             ${displayPrice}${suffix}
           </div>
-          <div 
-            class="property-marker-pointer"
-            style="
-              width: 0;
-              height: 0;
-              border-left: 5px solid transparent;
-              border-right: 5px solid transparent;
-              border-top: 5px solid ${markerStyle.borderColor};
-              margin-top: -1px;
-              transition: border-top-color 200ms ease;
-            "
-          ></div>
-          <div 
-            class="property-marker-pointer-inner"
-            style="
-              position: absolute;
-              bottom: 0;
-              width: 0;
-              height: 0;
-              border-left: 4px solid transparent;
-              border-right: 4px solid transparent;
-              border-top: 4px solid ${markerStyle.bgColor};
-              margin-top: -2px;
-              transition: border-top-color 200ms ease;
-            "
-          ></div>
         </div>
       `,
       className: '',
       iconSize: L.point(0, 0),
-      iconAnchor: L.point(0, 32),
+      iconAnchor: L.point(0, 14),
     });
   }, [displayPrice, markerStyle, priceDropInfo, isHot]);
 
