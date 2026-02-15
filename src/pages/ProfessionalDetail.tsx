@@ -84,12 +84,6 @@ export default function ProfessionalDetail() {
                         <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
                           {getCategoryLabel(professional.category)}
                         </Badge>
-                        {professional.works_with_internationals && (
-                          <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary">
-                            <Globe className="h-3 w-3 mr-1" />
-                            International buyers
-                          </Badge>
-                        )}
                       </div>
                     </div>
                   </div>
