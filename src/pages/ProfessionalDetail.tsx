@@ -91,13 +91,13 @@ export default function ProfessionalDetail() {
                           </Badge>
                         )}
                       </div>
-
-                      <ProfessionalHighlights professional={professional} />
                     </div>
                   </div>
 
+                  <ProfessionalHighlights professional={professional} />
+
                   {/* Language & city badges */}
-                  <div className="mt-6 pt-5 border-t border-border space-y-4">
+                  <div className="mt-5 pt-5 border-t border-border space-y-4">
                     {professional.languages?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Languages</p>
