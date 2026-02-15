@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Globe, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { TrustedProfessional } from '@/hooks/useTrustedProfessionals';
 import { PROFESSIONAL_LOGOS } from './professionalLogos';
 
@@ -57,12 +57,11 @@ export function ProfessionalCard({ professional, index = 0 }: ProfessionalCardPr
             )}
 
             <div className="flex flex-wrap gap-1.5 mt-3">
-              {professional.works_with_internationals && (
-                <Badge variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
-                  <Globe className="h-3 w-3 mr-1" />
-                  International buyers
+              {professional.specializations?.slice(0, 2).map((spec) => (
+                <Badge key={spec} variant="outline" className="text-xs bg-primary/5 border-primary/20 text-primary">
+                  {spec}
                 </Badge>
-              )}
+              ))}
               {professional.languages?.slice(0, 3).map((lang) => (
                 <Badge key={lang} variant="outline" className="text-xs">
                   {lang}
