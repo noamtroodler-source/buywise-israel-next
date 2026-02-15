@@ -119,12 +119,12 @@ export function ProfessionalHighlights({ professional }: ProfessionalHighlightsP
 
   return (
     <div className="mt-5 pt-4 border-t border-border/60">
-      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Why this firm</p>
+      <p className="text-[11px] font-medium text-primary/70 uppercase tracking-wider mb-2">Why this firm</p>
       <div className="flex flex-wrap gap-2">
         {highlights.map((h) => (
           <div
             key={h.label}
-            className="inline-flex items-center gap-1.5 rounded-md bg-muted/70 px-2.5 py-1 text-xs text-muted-foreground"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary/5 border border-primary/10 px-2.5 py-1 text-xs font-medium text-primary/80"
           >
             {h.icon}
             {h.label}
