@@ -6,6 +6,7 @@ import { DualNavigation } from '@/components/shared/DualNavigation';
 import { PageLoader } from '@/components/shared/PageLoader';
 import { ProfessionalContactCard } from '@/components/professionals/ProfessionalContactCard';
 import { ProfessionalHighlights } from '@/components/professionals/ProfessionalHighlights';
+import { PROFESSIONAL_LOGOS } from '@/components/professionals/professionalLogos';
 import { useTrustedProfessional, getCategoryLabel } from '@/hooks/useTrustedProfessionals';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,9 +60,9 @@ export default function ProfessionalDetail() {
                 <CardContent className="p-6 md:p-8">
                   <div className="flex items-start gap-5">
                     <div className="shrink-0 h-20 w-20 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                      {professional.logo_url ? (
+                      {(professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]) ? (
                         <img
-                          src={professional.logo_url}
+                          src={professional.logo_url || PROFESSIONAL_LOGOS[professional.slug]}
                           alt={`${professional.name} logo`}
                           className="h-full w-full object-cover rounded-xl"
                         />
