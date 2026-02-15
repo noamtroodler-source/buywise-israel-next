@@ -5,6 +5,7 @@ import { SEOHead } from '@/components/seo/SEOHead';
 import { DualNavigation } from '@/components/shared/DualNavigation';
 import { PageLoader } from '@/components/shared/PageLoader';
 import { ProfessionalContactCard } from '@/components/professionals/ProfessionalContactCard';
+import { ProfessionalHighlights } from '@/components/professionals/ProfessionalHighlights';
 import { useTrustedProfessional, getCategoryLabel } from '@/hooks/useTrustedProfessionals';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,8 @@ export default function ProfessionalDetail() {
                           </Badge>
                         )}
                       </div>
+
+                      <ProfessionalHighlights professional={professional} />
                     </div>
                   </div>
 
