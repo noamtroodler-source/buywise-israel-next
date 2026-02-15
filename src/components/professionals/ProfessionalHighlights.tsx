@@ -118,16 +118,19 @@ export function ProfessionalHighlights({ professional }: ProfessionalHighlightsP
   if (highlights.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 mt-4">
-      {highlights.map((h) => (
-        <div
-          key={h.label}
-          className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 border border-primary/15 px-3 py-1.5 text-xs font-medium text-primary"
-        >
-          {h.icon}
-          {h.label}
-        </div>
-      ))}
+    <div className="mt-5 pt-4 border-t border-border/60">
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">Why this firm</p>
+      <div className="flex flex-wrap gap-2">
+        {highlights.map((h) => (
+          <div
+            key={h.label}
+            className="inline-flex items-center gap-1.5 rounded-md bg-muted/70 px-2.5 py-1 text-xs text-muted-foreground"
+          >
+            {h.icon}
+            {h.label}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
