@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
-import { SlidersHorizontal, MapPin } from 'lucide-react';
+import { SlidersHorizontal, MapPin, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { useCities } from '@/hooks/useCities';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
+import { MapShareMenu } from './MapShareMenu';
 import type { PropertyFilters, SortOption } from '@/types/database';
 
 interface MobileMapFilterBarProps {
@@ -86,10 +87,20 @@ export function MobileMapFilterBar({
           </span>
         )}
 
+        {/* Share button */}
+        <MapShareMenu>
+          <button
+            className="ml-auto flex items-center justify-center w-8 h-8 rounded-full border border-border bg-background text-foreground hover:bg-accent transition-colors shrink-0"
+            aria-label="Share map view"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+          </button>
+        </MapShareMenu>
+
         {/* Filters button */}
         <button
           onClick={() => setFiltersOpen(true)}
-          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-background text-foreground text-xs font-medium hover:bg-accent transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-background text-foreground text-xs font-medium hover:bg-accent transition-colors shrink-0"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
           Filters
