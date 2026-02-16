@@ -2668,6 +2668,30 @@ export type Database = {
         }
         Relationships: []
       }
+      market_insight_cache: {
+        Row: {
+          created_at: string
+          id: string
+          input_hash: string
+          insight_text: string
+          property_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_hash: string
+          insight_text: string
+          property_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_hash?: string
+          insight_text?: string
+          property_id?: string
+        }
+        Relationships: []
+      }
       mortgage_tracks: {
         Row: {
           best_use_case: string | null
