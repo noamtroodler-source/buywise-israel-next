@@ -58,6 +58,8 @@ export function MarkerClusterLayer({
     map.flyTo([lat, lng], 13, { duration: 0.8 });
   }, [map]);
 
+  const compact = zoom <= 12;
+
   if (zoom <= 9) {
     return (
       <>
@@ -83,6 +85,7 @@ export function MarkerClusterLayer({
           <PropertyMarker
             key={property.id}
             property={property}
+            compact={compact}
             isHovered={hoveredPropertyId === property.id}
             isActive={activePropertyId === property.id}
             onClick={onMarkerClick}
@@ -96,6 +99,7 @@ export function MarkerClusterLayer({
           <ProjectMarker
             key={`project-${project.id}`}
             project={project}
+            compact={compact}
             isHovered={hoveredPropertyId === `project-${project.id}`}
             isActive={activePropertyId === `project-${project.id}`}
             onClick={onMarkerClick}
