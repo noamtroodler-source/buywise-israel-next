@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Train, MapPin, Heart, Landmark, Flame, Receipt } from 'lucide-react';
+import { Train, MapPin, Heart, Landmark, Flame } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 
@@ -14,7 +14,6 @@ const LAYERS = [
   { id: 'neighborhoods', label: 'Neighborhoods', icon: MapPin, disabled: false },
   { id: 'saved', label: 'My Places', icon: Heart, disabled: false },
   { id: 'landmarks', label: 'City Landmarks', icon: Landmark, disabled: false },
-  { id: 'sold_transactions', label: 'Recently Sold', icon: Receipt, disabled: false },
   { id: 'heatmap', label: 'Price Heatmap', icon: Flame, disabled: true, badge: 'Soon' },
 ] as const;
 

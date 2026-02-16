@@ -6,7 +6,6 @@ import { TrainStationLayer } from './TrainStationLayer';
 import { SavedPlacesLayer } from './SavedPlacesLayer';
 import { CityAnchorsLayer } from './CityAnchorsLayer';
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
-import { SoldTransactionsLayer } from './SoldTransactionsLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
 import { MarkerClusterLayer } from './MarkerClusterLayer';
@@ -246,7 +245,6 @@ export function PropertyMap({
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
 
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
-  const showSoldTransactions = activeLayers.has('sold_transactions') && zoom >= 13;
 
   return (
     <div className="relative h-full w-full">
@@ -275,7 +273,6 @@ export function PropertyMap({
         {activeLayers.has('trains') && <TrainStationLayer bounds={currentBounds} />}
         {activeLayers.has('saved') && <SavedPlacesLayer bounds={currentBounds} />}
         {activeLayers.has('landmarks') && <CityAnchorsLayer cityFilter={cityFilter} bounds={currentBounds} />}
-        {showSoldTransactions && <SoldTransactionsLayer bounds={currentBounds} />}
 
         {showNeighborhoods && (
           <NeighborhoodBoundariesLayer city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
