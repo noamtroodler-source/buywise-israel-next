@@ -1,102 +1,76 @@
 
+# Map Sharing — Polished Share Button
 
-# Recently Sold Overlay -- Map Layer Implementation
+## What Already Works
+The URL already encodes the full map state (viewport, all filters, drawn polygon, city, sort). Sharing the URL *already* reproduces the exact view. The toolbar has a basic Share button but it lacks feedback and sharing options.
 
-## Overview
-Add a "Recently Sold" toggle to the map layers menu. When enabled (and zoom >= 13), gray semi-transparent pills appear showing real transaction prices from the `sold_transactions` table. Clicking a sold marker shows a small tooltip with details (price, date, rooms, size). Off by default.
+## What This Adds
 
-## Data Flow
+### 1. Replace bare share button with a dropdown menu (like property ShareButton)
+The current share button silently copies or triggers `navigator.share`. Replace it with a dropdown offering:
+- **Copy Link** -- copies URL, shows "Link copied!" toast
+- **WhatsApp** -- sends a descriptive message with the URL via the existing `openWhatsApp` system
+- **Email** -- opens `mailto:` with subject and body containing the URL
 
-```text
-User toggles "Recently Sold" layer ON
-        |
-        v
-PropertyMap detects activeLayers.has('sold_transactions')
-        |
-        v
-SoldTransactionsLayer component mounts
-        |
-        v
-Fetches from sold_transactions table:
-  - WHERE latitude/longitude within current map bounds
-  - WHERE sold_date >= 12 months ago
-  - LIMIT 200
-        |
-        v
-Renders gray pills: "1.2M - Jun '25"
-```
+### 2. Dynamic share text
+Generate a human-readable description from current filters:
+- "Properties for sale in Jerusalem, 2M-4M, 3+ beds"
+- "Rentals in Tel Aviv, up to 8,000/mo"
+- Falls back to "Map search on BuyWise Israel" if no filters active
 
-## Files to Create
+### 3. Mobile share button
+Add a share icon to the `MobileMapFilterBar` so mobile users can share too.
 
-### 1. `src/components/map-search/SoldTransactionMarker.tsx` (new)
-- Similar structure to `PropertyMarker.tsx` but simpler
-- Renders a gray pill with price + short date (e.g., "1.2M - Jun '25")
-- Uses a `.sold-marker-pill` CSS class (gray background, slightly transparent)
-- On click: shows a Leaflet Tooltip with details (rooms, size, address, price/sqm)
-- No hover/active state syncing with sidebar (sold items aren't in the list)
-- Always compact-sized (10px font, small padding) since these are background context
-- Memo'd with id comparison only
-
-### 2. `src/components/map-search/SoldTransactionsLayer.tsx` (new)
-- Follows the same pattern as `TrainStationLayer.tsx`
-- Accepts `bounds: LatLngBounds | null` and `city: string | null` props
-- Uses `useQuery` to fetch sold transactions within the current bounds
-- Query: `supabase.from('sold_transactions').select(...)` filtered by lat/lng bounding box and `sold_date >= now() - 12 months`
-- Limits to 200 results, ordered by `sold_date DESC`
-- Filters visible markers to current bounds (like TrainStationLayer does)
-- Maps over results rendering `SoldTransactionMarker` for each
-
-### 3. `src/hooks/useMapSoldTransactions.ts` (new)
-- Custom hook encapsulating the Supabase query
-- Parameters: `bounds` (MapBounds), `enabled` (boolean)
-- Returns `{ data: SoldTransaction[], isLoading }`
-- Uses bounding box filter on latitude/longitude columns
-- `sold_date >= (current date - 12 months)`
-- `staleTime: 5 * 60 * 1000` (5 min, same as other map queries)
-- Selects only needed columns: id, sold_price, sold_date, rooms, size_sqm, property_type, price_per_sqm, address, latitude, longitude
+### 4. Track shares
+Use the existing `useShareTracking` hook to log map shares (entity_type: 'map_search').
 
 ## Files to Modify
 
-### 4. `src/components/map-search/LayersMenu.tsx`
-- Add new layer entry: `{ id: 'sold', label: 'Recently Sold', icon: Receipt (from lucide-react), disabled: false }`
-- Note: the existing 'saved' layer ID is for "My Places" (hearts). The sold layer will use id `'sold_transactions'` to avoid collision
+**1. `src/components/map-search/MapToolbar.tsx`**
+- Replace the plain share button with a `MapShareMenu` dropdown component
+- Remove inline `handleShare`
 
-### 5. `src/components/map-search/PropertyMap.tsx`
-- Add conditional rendering of `SoldTransactionsLayer` when `activeLayers.has('sold_transactions')` and `zoom >= 13`
-- Pass `bounds={currentBounds}` and `city={cityFilter}` props
-- Import the new component
+**2. `src/components/map-search/MapShareMenu.tsx` (new)**
+- Dropdown with Copy Link, WhatsApp, Email options
+- Accepts no props (reads `window.location.href` directly)
+- Builds descriptive text from current URL search params using a `buildMapShareText()` helper
+- Uses `openWhatsApp`, `navigator.clipboard`, `mailto:` link
+- Tracks via `useShareTracking`
 
-### 6. `src/index.css`
-- Add `.sold-marker-pill` styles:
-  - Background: `#9ca3af` (gray-400) with 85% opacity
-  - White text, 9px font, tight padding (2px 5px)
-  - Rounded, thin border, subtle shadow
-  - Lower z-index than property pills (z-index: 30 vs property pills at 40+)
-  - On hover: opacity goes to 100%, slight scale up
+**3. `src/components/map-search/MobileMapFilterBar.tsx`**
+- Add a share icon button to the filter bar row that triggers the same share dropdown
+
+**4. `src/lib/mapShareText.ts` (new)**
+- Pure function: `buildMapShareText(searchParams: URLSearchParams): string`
+- Reads status, city, price range, rooms from params
+- Returns a one-line summary like "3+ bed properties for sale in Jerusalem, 2M-4M"
 
 ## Technical Details
 
-### Query shape
-```sql
-SELECT id, sold_price, sold_date, rooms, size_sqm, property_type, 
-       price_per_sqm, address, latitude, longitude
-FROM sold_transactions
-WHERE latitude BETWEEN south AND north
-  AND longitude BETWEEN west AND east
-  AND sold_date >= CURRENT_DATE - INTERVAL '12 months'
-ORDER BY sold_date DESC
-LIMIT 200
+### Share text generation logic
+```text
+Input: ?status=for_sale&city=Jerusalem&min_price=2000000&max_price=4000000&min_rooms=3
+Output: "3+ bed properties for sale in Jerusalem, 2M-4M | BuyWise Israel"
+
+Input: ?status=for_rent&city=Tel+Aviv
+Output: "Rentals in Tel Aviv | BuyWise Israel"
+
+Input: (no filters)
+Output: "Property search on BuyWise Israel"
 ```
 
-### Pill format
-Price formatted as compact (e.g., "1.2M") + abbreviated month/year: `"1.2M - Jun '25"`
+### WhatsApp message format
+```text
+Check out this search on BuyWise Israel:
+3+ bed properties for sale in Jerusalem, 2M-4M
+https://buywiseisrael.com/map?status=for_sale&city=Jerusalem&...
+```
 
-### Why zoom >= 13 only
-With 11,294 geocoded records, showing at lower zooms would flood the map. At zoom 13+ the viewport is small enough that the 200-record limit provides good coverage without clutter.
+### Email format
+```text
+Subject: 3+ bed properties for sale in Jerusalem | BuyWise Israel
+Body: I found some interesting properties:\n\n[URL]
+```
 
-### Z-index layering
-Sold pills render behind active property pills (z-index 30 vs property markers at 40+), so they never obscure listing data.
-
-### No RLS changes needed
-The `sold_transactions` table contains public government data. If RLS is enabled, we may need a public read policy -- will check during implementation and add if needed.
-
+### Component structure
+The `MapShareMenu` is a small self-contained dropdown (DropdownMenu from Radix) that wraps a trigger button (passed as children or rendered internally). It reads the URL, builds the text, and handles all three share methods.
