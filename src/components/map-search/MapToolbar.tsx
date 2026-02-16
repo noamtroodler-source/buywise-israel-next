@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, Keyboard } from 'lucide-react';
+import { Plus, Minus, LocateFixed, PenTool, Layers, Share2 } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
@@ -7,8 +7,10 @@ import { findNearestCity } from '@/lib/utils/findNearestCity';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Map as LeafletMap } from 'leaflet';
 
+// ... keep existing code (interface)
 interface MapToolbarProps {
   map: LeafletMap | null;
   isDrawMode: boolean;
@@ -40,6 +42,7 @@ export function MapToolbar({
   const handleZoomIn = useCallback(() => map?.zoomIn(), [map]);
   const handleZoomOut = useCallback(() => map?.zoomOut(), [map]);
 
+  // ... keep existing code (handleLocate, handleShare)
   const handleLocate = useCallback(() => {
     getLocation();
     if (navigator.geolocation) {
@@ -83,45 +86,75 @@ export function MapToolbar({
     <div className="absolute bottom-40 lg:bottom-6 right-3 z-[40] flex flex-col gap-2">
       {/* Navigation group */}
       <div className="map-toolbar-group flex flex-col">
-        <button onClick={handleZoomIn} className={btnBase} aria-label="Zoom in">
-          <Plus className="h-4 w-4" />
-        </button>
-        <button onClick={handleZoomOut} className={btnBase} aria-label="Zoom out">
-          <Minus className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handleLocate}
-          className={cn(btnBase, isLoading && 'animate-pulse')}
-          aria-label="Find my location"
-        >
-          <LocateFixed className="h-4 w-4" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button onClick={handleZoomIn} className={btnBase} aria-label="Zoom in">
+              <Plus className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Zoom in</p></TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button onClick={handleZoomOut} className={btnBase} aria-label="Zoom out">
+              <Minus className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Zoom out</p></TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleLocate}
+              className={cn(btnBase, isLoading && 'animate-pulse')}
+              aria-label="Find my location"
+            >
+              <LocateFixed className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Find my location</p></TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Tools group */}
       <div className="map-toolbar-group flex flex-col">
-        <button
-          onClick={onToggleDraw}
-          className={cn(btnBase, isDrawMode && 'bg-primary text-primary-foreground hover:bg-primary/90')}
-          aria-label="Draw to search"
-        >
-          <PenTool className="h-4 w-4" />
-        </button>
-        <button onClick={handleShare} className={btnBase} aria-label="Share map view">
-          <Share2 className="h-4 w-4" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onToggleDraw}
+              className={cn(btnBase, isDrawMode && 'bg-primary text-primary-foreground hover:bg-primary/90')}
+              aria-label="Draw to search"
+            >
+              <PenTool className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Draw to search</p></TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button onClick={handleShare} className={btnBase} aria-label="Share map view">
+              <Share2 className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Share map view</p></TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Layers group */}
       <div className="map-toolbar-group flex flex-col">
-        <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
-          <button
-            className={cn(btnBase, activeLayers.size > 0 && 'text-primary')}
-            aria-label="Map layers"
-          >
-            <Layers className="h-4 w-4" />
-          </button>
-        </LayersMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
+              <button
+                className={cn(btnBase, activeLayers.size > 0 && 'text-primary')}
+                aria-label="Map layers"
+              >
+                <Layers className="h-4 w-4" />
+              </button>
+            </LayersMenu>
+          </TooltipTrigger>
+          <TooltipContent side="left"><p>Map layers</p></TooltipContent>
+        </Tooltip>
       </div>
 
     </div>
