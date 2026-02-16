@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, Keyboard, Bell } from 'lucide-react';
+import { Plus, Minus, LocateFixed, PenTool, Layers, Share2, Keyboard } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
@@ -16,7 +16,6 @@ interface MapToolbarProps {
   activeLayers: Set<string>;
   onToggleLayer: (layerId: string) => void;
   onShowHelp?: () => void;
-  onCreateAlert?: () => void;
 }
 
 export function MapToolbar({
@@ -26,7 +25,6 @@ export function MapToolbar({
   activeLayers,
   onToggleLayer,
   onShowHelp,
-  onCreateAlert,
 }: MapToolbarProps) {
   const { getLocation, isLoading } = useGeolocation();
 
@@ -109,11 +107,6 @@ export function MapToolbar({
         >
           <PenTool className="h-4 w-4" />
         </button>
-        {onCreateAlert && (
-          <button onClick={onCreateAlert} className={btnBase} aria-label="Create search alert">
-            <Bell className="h-4 w-4" />
-          </button>
-        )}
         <button onClick={handleShare} className={btnBase} aria-label="Share map view">
           <Share2 className="h-4 w-4" />
         </button>

@@ -817,8 +817,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                 </div>
               )}
 
-              {/* Create Alert Button - hidden in mapMode (moved to list panel) */}
-              {!mapMode && onCreateAlert && (
+              {/* Create Alert Button */}
+              {onCreateAlert && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
