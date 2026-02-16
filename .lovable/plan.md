@@ -1,75 +1,72 @@
 
-# Zillow-Style Map Markers: Remove Clustering, Always Show Price Pills
 
-## Summary
-Replace the current clustering approach with a Zillow-style system where every property shows its price pill at all zoom levels (10+). No more numbered cluster circles -- users see actual prices immediately.
+# Declutter Map Markers: Smaller Pills at Low Zoom + Collision Avoidance
 
-## What Changes
+## Problem
+At zoom 10-12, full-size price pills overlap and create a messy, glitchy experience. Since the query already limits to 24 properties per page, the issue isn't quantity -- it's that the pills are too large for the zoom level and stack on identical/nearby coordinates.
 
-### Zoom Behavior (Before vs After)
+## Solution: Two-Tier Pill Sizing + Hover-to-Expand
+
+At zoom 10-12 ("compact mode"), show **smaller, condensed pills** that take less space. On hover, the pill smoothly expands to full size. At zoom 13+, pills stay full-size as they are now.
+
+### Zoom Behavior
 
 ```text
-Zoom Level   | BEFORE                    | AFTER
--------------|---------------------------|---------------------------
-<= 9         | City waypoint labels      | City waypoint labels (same)
-10-12        | Dots + cluster circles    | Price pills (no clusters)
-13-14        | Pills + cluster circles   | Price pills (no clusters)
-15+          | Pills only                | Price pills (same)
+Zoom Level   | Pill Style
+-------------|--------------------------------------
+<= 9         | City waypoints (unchanged)
+10-12        | Compact pills: smaller font (10px), tighter padding, no indicator dots
+13+          | Full pills: current size (12px), with hot/drop indicators
 ```
 
-### Key Decisions
-- **No clustering at any zoom** -- supercluster is still used but with `maxZoom: 0` effectively disabled, or we skip it entirely and render markers directly
-- **Always price pills** -- the `displayMode` concept of "dot" vs "pill" is removed; it's always "pill"
-- **City waypoints at zoom <= 9** stay exactly as they are
-- **Performance**: Since properties are already viewport-filtered by the query, the number of markers on screen is bounded by the data fetch limit. This is manageable for Israel's market density.
+### What Changes
 
-## Files to Modify
+**1. MarkerClusterLayer.tsx**
+- Pass a `compact` boolean prop to PropertyMarker and ProjectMarker based on zoom level
+- `compact = zoom <= 12`
 
-### 1. `src/components/map-search/MarkerClusterLayer.tsx` (major rewrite)
-- Remove `useSupercluster` entirely -- no more clustering
-- Remove `getClusterIcon` function and cluster click handler
-- Remove `displayMode` variable (always 'pill')
-- Keep city waypoints at zoom <= 9
-- For zoom > 9: directly iterate over `properties` and `projects` arrays, rendering `PropertyMarker` and `ProjectMarker` for each, without going through supercluster
-- Remove the `clusterRadius` variable
-- Keep bounds/zoom state for city waypoint threshold only
+**2. PropertyMarker.tsx**
+- Accept `compact` prop
+- When compact: use smaller `createCompactMarkerHtml` (just price, no indicator, smaller font/padding)
+- When compact: use smaller `estimateCompactPillWidth` 
+- The hover CSS will scale compact pills up slightly for readability
+- Add `compact` to memo comparison
 
-### 2. `src/components/map-search/PropertyMarker.tsx`
-- Remove `displayMode` prop entirely
-- Remove all "dot" rendering code (`createDotHtml`, dot-related icon branch, dot CSS class toggling)
-- Always render the price pill
-- Simplify the `memo` comparison (remove `displayMode`)
-- Keep hover/active/indicator logic unchanged
+**3. ProjectMarker.tsx**
+- Accept `compact` prop  
+- When compact: hide the building SVG icon, show only the price in smaller text
+- Smaller pill dimensions
 
-### 3. `src/components/map-search/ProjectMarker.tsx`
-- Same changes as PropertyMarker: remove `displayMode` prop, remove dot code path
-- Always render the project pill with building icon
-- Simplify memo comparison
+**4. src/index.css**
+- Add `.property-marker-pill.compact` styles:
+  - font-size: 10px
+  - padding: 2px 6px
+  - border-width: 1px (thinner)
+  - box-shadow: lighter
+- On hover of `.compact`, scale to 1.15 (slightly more than normal) so they pop out clearly
+- Transition stays smooth (already 150ms)
 
-### 4. `src/index.css`
-- Remove `.property-marker-dot` styles (the dot circle styles)
-- Remove `.marker-cluster-container` and `.marker-cluster-circle` styles
-- Keep all `.property-marker-pill` styles unchanged
+### Technical Details
 
-### 5. `src/components/map-search/PropertyMap.tsx`
-- No changes needed -- it just passes data to `MarkerClusterLayer` which handles the rendering
-
-## Technical Details
-
-### MarkerClusterLayer simplified structure:
+**Compact pill HTML** (PropertyMarker):
 ```text
-if zoom <= 9:
-  render city waypoints (unchanged)
-else:
-  for each property -> <PropertyMarker />
-  for each project -> <ProjectMarker />
+<div class="property-marker-pill compact">$1.2M</div>
 ```
+No indicator span. Just the price.
 
-### Performance consideration
-The properties array is already filtered to the current viewport by the parent query (bounded by DB query limits). Rendering individual markers without clustering is standard practice for datasets under ~500 markers, which matches Israel's typical viewport density.
+**Compact pill HTML** (ProjectMarker):
+```text
+<div class="property-marker-pill project-marker-pill compact">From $1.2M</div>
+```
+No building SVG icon. Just text.
 
-### What gets removed
-- `useSupercluster` hook usage (the dependency stays installed, just unused here)
-- Cluster circle markers and their click-to-zoom behavior
-- Dot display mode at zoom 10-12
-- All cluster-related CSS
+**Size comparison**:
+- Full pill: ~12px font, 4px 10px padding, ~80px wide
+- Compact pill: ~10px font, 2px 6px padding, ~55px wide (30% smaller footprint)
+
+**Files to modify**:
+1. `src/components/map-search/MarkerClusterLayer.tsx` -- pass `compact` prop based on zoom
+2. `src/components/map-search/PropertyMarker.tsx` -- accept and use `compact` prop
+3. `src/components/map-search/ProjectMarker.tsx` -- accept and use `compact` prop
+4. `src/index.css` -- add `.compact` pill styles
+
