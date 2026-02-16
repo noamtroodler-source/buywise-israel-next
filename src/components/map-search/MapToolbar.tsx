@@ -142,19 +142,19 @@ export function MapToolbar({
 
       {/* Layers group */}
       <div className="map-toolbar-group flex flex-col">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
+        <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
                 className={cn(btnBase, activeLayers.size > 0 && 'text-primary')}
                 aria-label="Map layers"
               >
                 <Layers className="h-4 w-4" />
               </button>
-            </LayersMenu>
-          </TooltipTrigger>
-          <TooltipContent side="left"><p>Map layers</p></TooltipContent>
-        </Tooltip>
+            </TooltipTrigger>
+            <TooltipContent side="left"><p>Map layers</p></TooltipContent>
+          </Tooltip>
+        </LayersMenu>
       </div>
 
     </div>
