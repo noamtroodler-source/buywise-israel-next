@@ -3,6 +3,7 @@ import { Plus, Minus, LocateFixed, PenTool, Layers, Share2 } from 'lucide-react'
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { cn } from '@/lib/utils';
 import { LayersMenu } from './LayersMenu';
+import { MapShareMenu } from './MapShareMenu';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,14 +71,6 @@ export function MapToolbar({
     }
   }, [map, getLocation, cities]);
 
-  const handleShare = useCallback(() => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({ title: 'Map View', url });
-    } else {
-      navigator.clipboard.writeText(url);
-    }
-  }, []);
 
   const btnBase =
     'flex items-center justify-center w-8 h-8 text-foreground hover:bg-accent transition-colors cursor-pointer rounded';
@@ -130,14 +123,16 @@ export function MapToolbar({
           </TooltipTrigger>
           <TooltipContent side="left" className="pointer-events-none"><p>Draw to search</p></TooltipContent>
         </Tooltip>
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <button onClick={handleShare} className={btnBase} aria-label="Share map view">
-              <Share2 className="h-4 w-4" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="pointer-events-none"><p>Share map view</p></TooltipContent>
-        </Tooltip>
+        <MapShareMenu>
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <button className={btnBase} aria-label="Share map view">
+                <Share2 className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="pointer-events-none"><p>Share map view</p></TooltipContent>
+          </Tooltip>
+        </MapShareMenu>
       </div>
 
       {/* Layers group */}
