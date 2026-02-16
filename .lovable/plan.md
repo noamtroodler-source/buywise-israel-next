@@ -1,66 +1,75 @@
 
+# Zillow-Style Map Markers: Remove Clustering, Always Show Price Pills
 
-# Add Saved Places & City Anchors as Map Layers
+## Summary
+Replace the current clustering approach with a Zillow-style system where every property shows its price pill at all zoom levels (10+). No more numbered cluster circles -- users see actual prices immediately.
 
-## Overview
-Two new toggle layers in the existing Map Layers popover menu (visible in the screenshot). When toggled on, they render markers on the map — similar to how Train Stations already work.
+## What Changes
 
-## What Gets Added
+### Zoom Behavior (Before vs After)
 
-### 1. "My Places" Layer (user's saved core locations from profile)
-- New toggle in LayersMenu: "My Places" with a `Heart` icon
-- Only available when the user is logged in (otherwise the toggle is disabled with a "Sign in" badge)
-- Renders markers for each saved location using the location's assigned icon (home, briefcase, heart, star, building)
-- Shows a tooltip with the location label and address on hover
-- Uses the existing `useSavedLocations` hook to fetch data
+```text
+Zoom Level   | BEFORE                    | AFTER
+-------------|---------------------------|---------------------------
+<= 9         | City waypoint labels      | City waypoint labels (same)
+10-12        | Dots + cluster circles    | Price pills (no clusters)
+13-14        | Pills + cluster circles   | Price pills (no clusters)
+15+          | Pills only                | Price pills (same)
+```
 
-### 2. "City Landmarks" Layer (3 anchor points per city)
-- New toggle in LayersMenu: "City Landmarks" with a `Landmark` icon
-- Renders markers for the city anchors matching the current `cityFilter`
-- Each marker uses a small colored dot/icon matching its anchor type (orientation, daily life, mobility)
-- Shows a tooltip with the anchor name on hover
-- Uses the existing `useCityAnchors` hook to fetch data
-- Only shows anchors when a city is selected (otherwise disabled with "Select a city" badge)
-
-## Layer Menu Order (updated)
-1. Train Stations
-2. Neighborhoods
-3. My Places (new)
-4. City Landmarks (new)
-5. Price Heatmap (Soon)
-
-## Files to Create
-
-### `src/components/map-search/SavedPlacesLayer.tsx`
-- A react-leaflet layer component (same pattern as `TrainStationLayer`)
-- Uses `useSavedLocations` to get locations
-- Creates `L.divIcon` markers with the appropriate lucide icon for each location
-- Filters to only visible bounds for performance
-- Shows tooltip with label + address
-
-### `src/components/map-search/CityAnchorsLayer.tsx`
-- A react-leaflet layer component (same pattern as `TrainStationLayer`)
-- Accepts `cityFilter` prop
-- Uses `useCityAnchors(cityFilter)` to fetch the 3 anchor points
-- Creates `L.divIcon` markers with a small icon matching the anchor type
-- Shows tooltip with anchor name + description
+### Key Decisions
+- **No clustering at any zoom** -- supercluster is still used but with `maxZoom: 0` effectively disabled, or we skip it entirely and render markers directly
+- **Always price pills** -- the `displayMode` concept of "dot" vs "pill" is removed; it's always "pill"
+- **City waypoints at zoom <= 9** stay exactly as they are
+- **Performance**: Since properties are already viewport-filtered by the query, the number of markers on screen is bounded by the data fetch limit. This is manageable for Israel's market density.
 
 ## Files to Modify
 
-### `src/components/map-search/LayersMenu.tsx`
-- Import `Heart` and `Landmark` from lucide-react
-- Add two new entries to the `LAYERS` array:
-  - `{ id: 'saved', label: 'My Places', icon: Heart }`
-  - `{ id: 'landmarks', label: 'City Landmarks', icon: Landmark }`
-- Reorder to place them before the heatmap
+### 1. `src/components/map-search/MarkerClusterLayer.tsx` (major rewrite)
+- Remove `useSupercluster` entirely -- no more clustering
+- Remove `getClusterIcon` function and cluster click handler
+- Remove `displayMode` variable (always 'pill')
+- Keep city waypoints at zoom <= 9
+- For zoom > 9: directly iterate over `properties` and `projects` arrays, rendering `PropertyMarker` and `ProjectMarker` for each, without going through supercluster
+- Remove the `clusterRadius` variable
+- Keep bounds/zoom state for city waypoint threshold only
 
-### `src/components/map-search/PropertyMap.tsx`
-- Import `SavedPlacesLayer` and `CityAnchorsLayer`
-- Conditionally render `SavedPlacesLayer` when `activeLayers.has('saved')`
-- Conditionally render `CityAnchorsLayer` when `activeLayers.has('landmarks')`, passing `cityFilter`
+### 2. `src/components/map-search/PropertyMarker.tsx`
+- Remove `displayMode` prop entirely
+- Remove all "dot" rendering code (`createDotHtml`, dot-related icon branch, dot CSS class toggling)
+- Always render the price pill
+- Simplify the `memo` comparison (remove `displayMode`)
+- Keep hover/active/indicator logic unchanged
 
-## Visual Style
-- Saved Places markers: small circular badges (like train station markers) with the location's icon, using a warm primary/pink tint to distinguish from property markers
-- City Anchor markers: small circular badges with relevant icons (landmark, shopping-bag, car), using a subtle teal/blue tint
-- Both use the same tooltip pattern as train stations for consistency
+### 3. `src/components/map-search/ProjectMarker.tsx`
+- Same changes as PropertyMarker: remove `displayMode` prop, remove dot code path
+- Always render the project pill with building icon
+- Simplify memo comparison
 
+### 4. `src/index.css`
+- Remove `.property-marker-dot` styles (the dot circle styles)
+- Remove `.marker-cluster-container` and `.marker-cluster-circle` styles
+- Keep all `.property-marker-pill` styles unchanged
+
+### 5. `src/components/map-search/PropertyMap.tsx`
+- No changes needed -- it just passes data to `MarkerClusterLayer` which handles the rendering
+
+## Technical Details
+
+### MarkerClusterLayer simplified structure:
+```text
+if zoom <= 9:
+  render city waypoints (unchanged)
+else:
+  for each property -> <PropertyMarker />
+  for each project -> <ProjectMarker />
+```
+
+### Performance consideration
+The properties array is already filtered to the current viewport by the parent query (bounded by DB query limits). Rendering individual markers without clustering is standard practice for datasets under ~500 markers, which matches Israel's typical viewport density.
+
+### What gets removed
+- `useSupercluster` hook usage (the dependency stays installed, just unused here)
+- Cluster circle markers and their click-to-zoom behavior
+- Dot display mode at zoom 10-12
+- All cluster-related CSS
