@@ -10,7 +10,6 @@ interface ProjectMarkerProps {
   isActive: boolean;
   onClick: (id: string) => void;
   onHover: (id: string | null) => void;
-  displayMode: 'dot' | 'pill';
 }
 
 function formatCompactPrice(amount: number, currency: 'ILS' | 'USD', exchangeRate: number, originalCurrency: string = 'ILS'): string {
@@ -38,17 +37,12 @@ function estimatePillWidth(priceLabel: string): number {
   return Math.ceil(text.length * 7 + 38);
 }
 
-function createDotHtml(): string {
-  return '<div class="property-marker-dot project-marker-dot"></div>';
-}
-
 export const ProjectMarker = memo(function ProjectMarker({
   project,
   isHovered,
   isActive,
   onClick,
   onHover,
-  displayMode,
 }: ProjectMarkerProps) {
   const { currency, exchangeRate } = usePreferences();
   const markerRef = useRef<L.Marker>(null);
@@ -63,14 +57,6 @@ export const ProjectMarker = memo(function ProjectMarker({
   );
 
   const icon = useMemo(() => {
-    if (displayMode === 'dot') {
-      return L.divIcon({
-        html: createDotHtml(),
-        className: 'property-marker-container',
-        iconSize: [10, 10],
-        iconAnchor: [5, 5],
-      });
-    }
     const w = estimatePillWidth(priceLabel);
     const h = 28;
     return L.divIcon({
@@ -79,29 +65,21 @@ export const ProjectMarker = memo(function ProjectMarker({
       iconSize: [w, h],
       iconAnchor: [w / 2, h / 2],
     });
-  }, [priceLabel, displayMode]);
+  }, [priceLabel]);
 
-  // Toggle CSS classes
   useEffect(() => {
     const el = markerRef.current?.getElement();
     if (!el) return;
 
-    if (displayMode === 'dot') {
-      const dot = el.querySelector('.property-marker-dot') as HTMLElement | null;
-      if (!dot) return;
-      dot.classList.toggle('marker-hovered', isHovered);
-      dot.classList.toggle('marker-active', isActive);
-    } else {
-      const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
-      if (!pill) return;
-      pill.classList.toggle('marker-hovered', isHovered);
-      pill.classList.toggle('marker-active', isActive);
-    }
+    const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
+    if (!pill) return;
+    pill.classList.toggle('marker-hovered', isHovered);
+    pill.classList.toggle('marker-active', isActive);
 
     if (isActive) el.style.zIndex = '201';
     else if (isHovered) el.style.zIndex = '200';
     else el.style.zIndex = '';
-  }, [isHovered, isActive, displayMode]);
+  }, [isHovered, isActive]);
 
   const handleClick = useCallback(() => onClick(markerId), [onClick, markerId]);
   const handleMouseOver = useCallback(() => onHover(markerId), [onHover, markerId]);
@@ -125,6 +103,5 @@ export const ProjectMarker = memo(function ProjectMarker({
   prev.project.id === next.project.id &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
-  prev.project.price_from === next.project.price_from &&
-  prev.displayMode === next.displayMode
+  prev.project.price_from === next.project.price_from
 );
