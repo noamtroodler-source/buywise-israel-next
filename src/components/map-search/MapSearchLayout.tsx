@@ -5,6 +5,7 @@ import { MobileMapSheet } from './MobileMapSheet';
 import { MobileMapFilterBar } from './MobileMapFilterBar';
 import { MobileMapListToggle } from './MobileMapListToggle';
 import { PropertyFilters as PropertyFiltersComponent } from '@/components/filters/PropertyFilters';
+import { CreateAlertDialog } from '@/components/filters/CreateAlertDialog';
 import { useMapFilters } from '@/hooks/useMapFilters';
 import { usePaginatedProperties } from '@/hooks/usePaginatedProperties';
 import { useMapProjects } from '@/hooks/useMapProjects';
@@ -74,6 +75,8 @@ export default function MapSearchLayout() {
     return urlFilters.polygon ? deserializePolygon(urlFilters.polygon) : null;
   });
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const handleCreateAlert = useCallback(() => setShowAlertDialog(true), []);
 
   const [mobileSnap, setMobileSnap] = useState<string | number | null>('148px');
   const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
@@ -232,94 +235,112 @@ export default function MapSearchLayout() {
 
   if (isDesktop) {
     return (
-      <div className="h-[calc(100vh-64px)] flex flex-col">
-        <div className="shrink-0 border-b border-border bg-background">
-          <PropertyFiltersComponent
-            filters={componentFilters}
-            onFiltersChange={handleFiltersChange}
-            listingType={urlFilters.status}
-            mapMode
-            showBuyRentToggle
-            onBuyRentChange={handleBuyRentChange as any}
-            activeView="map"
-            previewCount={drawnPolygon ? items.length : totalCount}
-            isCountLoading={isFetching}
-          />
-        </div>
+      <>
+        <div className="h-[calc(100vh-64px)] flex flex-col">
+          <div className="shrink-0 border-b border-border bg-background">
+            <PropertyFiltersComponent
+              filters={componentFilters}
+              onFiltersChange={handleFiltersChange}
+              listingType={urlFilters.status}
+              mapMode
+              showBuyRentToggle
+              onBuyRentChange={handleBuyRentChange as any}
+              activeView="map"
+              previewCount={drawnPolygon ? items.length : totalCount}
+              isCountLoading={isFetching}
+            />
+          </div>
 
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
-          <PropertyMap
-            onBoundsChange={handleBoundsChange}
-            properties={properties}
-            projects={projects}
-            hoveredPropertyId={hoveredPropertyId}
-            onMarkerHover={handleMarkerHover}
-            onPolygonChange={handlePolygonChange}
-            listingStatus={listingType}
-            cityFilter={urlFilters.city}
-            initialCenter={initialCenter}
-            initialZoom={initialZoom}
-            onMapMove={handleMapMove}
-          />
-          <MapListPanel
-            items={items}
-            totalCount={drawnPolygon ? items.length : totalCount}
-            isLoading={isLoading}
-            isFetching={isFetching}
-            hasNextPage={hasNextPage}
-            loadMore={loadMore}
-            sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
-            onSortChange={handleSortChange}
-            hoveredPropertyId={hoveredPropertyId}
-            onCardHover={handleCardHover}
-            onClearFilters={handleClearFilters}
-          />
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] min-h-0">
+            <PropertyMap
+              onBoundsChange={handleBoundsChange}
+              properties={properties}
+              projects={projects}
+              hoveredPropertyId={hoveredPropertyId}
+              onMarkerHover={handleMarkerHover}
+              onPolygonChange={handlePolygonChange}
+              listingStatus={listingType}
+              cityFilter={urlFilters.city}
+              initialCenter={initialCenter}
+              initialZoom={initialZoom}
+              onMapMove={handleMapMove}
+              onCreateAlert={handleCreateAlert}
+            />
+            <MapListPanel
+              items={items}
+              totalCount={drawnPolygon ? items.length : totalCount}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              hasNextPage={hasNextPage}
+              loadMore={loadMore}
+              sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
+              onSortChange={handleSortChange}
+              hoveredPropertyId={hoveredPropertyId}
+              onCardHover={handleCardHover}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
         </div>
-      </div>
+        <CreateAlertDialog
+          open={showAlertDialog}
+          onOpenChange={setShowAlertDialog}
+          filters={componentFilters}
+          listingType={listingType as 'for_sale' | 'for_rent'}
+        />
+      </>
     );
   }
 
   // Mobile layout
   return (
-    <div className="h-[calc(100vh-64px)] relative">
-      <PropertyMap
-        onBoundsChange={handleBoundsChange}
-        properties={properties}
-        projects={projects}
-        hoveredPropertyId={hoveredPropertyId}
-        onMarkerHover={handleMarkerHover}
-        onPolygonChange={handlePolygonChange}
-        listingStatus={listingType}
-        cityFilter={urlFilters.city}
-        initialCenter={initialCenter}
-        initialZoom={initialZoom}
-        onMapMove={handleMapMove}
-      />
+    <>
+      <div className="h-[calc(100vh-64px)] relative">
+        <PropertyMap
+          onBoundsChange={handleBoundsChange}
+          properties={properties}
+          projects={projects}
+          hoveredPropertyId={hoveredPropertyId}
+          onMarkerHover={handleMarkerHover}
+          onPolygonChange={handlePolygonChange}
+          listingStatus={listingType}
+          cityFilter={urlFilters.city}
+          initialCenter={initialCenter}
+          initialZoom={initialZoom}
+          onMapMove={handleMapMove}
+          onCreateAlert={handleCreateAlert}
+        />
 
-      <MobileMapFilterBar
+        <MobileMapFilterBar
+          filters={componentFilters}
+          onFiltersChange={handleFiltersChange}
+          listingType={listingType}
+          onBuyRentChange={handleBuyRentChange}
+          previewCount={drawnPolygon ? items.length : totalCount}
+          isCountLoading={isFetching}
+        />
+
+        <MobileMapListToggle activeView={mobileView} onToggle={handleMobileViewToggle} />
+
+        <MobileMapSheet
+          items={items}
+          totalCount={drawnPolygon ? items.length : totalCount}
+          isLoading={isLoading}
+          hasNextPage={hasNextPage}
+          loadMore={loadMore}
+          sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
+          onSortChange={handleSortChange}
+          hoveredPropertyId={hoveredPropertyId}
+          onCardHover={handleCardHover}
+          activeSnap={mobileSnap}
+          onSnapChange={handleSnapChange}
+        />
+      </div>
+      <CreateAlertDialog
+        open={showAlertDialog}
+        onOpenChange={setShowAlertDialog}
         filters={componentFilters}
-        onFiltersChange={handleFiltersChange}
-        listingType={listingType}
-        onBuyRentChange={handleBuyRentChange}
-        previewCount={drawnPolygon ? items.length : totalCount}
-        isCountLoading={isFetching}
+        listingType={listingType as 'for_sale' | 'for_rent'}
       />
-
-      <MobileMapListToggle activeView={mobileView} onToggle={handleMobileViewToggle} />
-
-      <MobileMapSheet
-        items={items}
-        totalCount={drawnPolygon ? items.length : totalCount}
-        isLoading={isLoading}
-        hasNextPage={hasNextPage}
-        loadMore={loadMore}
-        sortBy={(urlFilters.sortBy as SortOption) || 'newest'}
-        onSortChange={handleSortChange}
-        hoveredPropertyId={hoveredPropertyId}
-        onCardHover={handleCardHover}
-        activeSnap={mobileSnap}
-        onSnapChange={handleSnapChange}
-      />
-    </div>
+    </>
   );
 }

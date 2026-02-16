@@ -39,6 +39,7 @@ interface PropertyMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   onMapMove?: (lat: number, lng: number, zoom: number) => void;
+  onCreateAlert?: () => void;
 }
 
 function MapEventHandler({
@@ -72,6 +73,7 @@ export function PropertyMap({
   initialCenter,
   initialZoom,
   onMapMove,
+  onCreateAlert,
 }: PropertyMapProps) {
   const [map, setMap] = useState<LeafletMap | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -319,6 +321,7 @@ export function PropertyMap({
         activeLayers={activeLayers}
         onToggleLayer={handleToggleLayer}
         onShowHelp={handleShowHelp}
+        onCreateAlert={onCreateAlert}
       />
 
       <KeyboardShortcutsDialog open={showHelp} onOpenChange={setShowHelp} />
