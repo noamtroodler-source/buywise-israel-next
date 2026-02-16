@@ -392,17 +392,6 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               >
                 Rent
               </button>
-              <button
-                className={cn(
-                  "px-3 py-1.5 text-sm font-medium transition-all",
-                  listingType === 'projects' 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={() => onBuyRentChange?.('projects')}
-              >
-                New
-              </button>
             </div>
           )}
 

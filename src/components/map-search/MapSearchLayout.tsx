@@ -104,9 +104,6 @@ export default function MapSearchLayout() {
     setFilter('status', type);
   }, [setFilter]);
 
-  const handleStatusChange = useCallback((type: 'for_sale' | 'for_rent' | 'projects') => {
-    setFilter('status', type);
-  }, [setFilter]);
 
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
@@ -142,8 +139,7 @@ export default function MapSearchLayout() {
     });
   }, [setMultipleFilters]);
 
-  const isProjectsOnly = urlFilters.status === 'projects';
-  const listingType = isProjectsOnly ? 'for_sale' : urlFilters.status;
+  const listingType = urlFilters.status === 'projects' ? 'for_sale' : urlFilters.status;
 
   // Property filters (skip when projects-only)
   const mergedPropertyFilters: PropertyFilters = useMemo(() => {
@@ -162,7 +158,7 @@ export default function MapSearchLayout() {
     isFetching: propertiesFetching,
     hasNextPage: propertiesHasNext,
     loadMore: propertiesLoadMore,
-  } = usePaginatedProperties(mergedPropertyFilters, { pageSize: isProjectsOnly ? 0 : undefined });
+  } = usePaginatedProperties(mergedPropertyFilters);
 
   // Project filters — fetch when status is 'for_sale' or 'projects'
   const shouldFetchProjects = urlFilters.status === 'for_sale' || urlFilters.status === 'projects';
@@ -188,13 +184,12 @@ export default function MapSearchLayout() {
 
   // Client-side polygon filter
   const properties = useMemo(() => {
-    if (isProjectsOnly) return [];
     if (!drawnPolygon) return rawProperties;
     return rawProperties.filter((p) => {
       if (!p.longitude || !p.latitude) return false;
       return isPointInPolygon([p.longitude, p.latitude], drawnPolygon);
     });
-  }, [rawProperties, drawnPolygon, isProjectsOnly]);
+  }, [rawProperties, drawnPolygon]);
 
   const projects = useMemo(() => {
     if (!shouldFetchProjects) return [];
@@ -212,11 +207,11 @@ export default function MapSearchLayout() {
 
   const totalCount = drawnPolygon
     ? items.length
-    : (isProjectsOnly ? projectCount : propertyCount + (shouldFetchProjects ? projectCount : 0));
+    : propertyCount + (shouldFetchProjects ? projectCount : 0);
 
-  const isLoading = isProjectsOnly ? projectsLoading : propertiesLoading;
-  const isFetching = isProjectsOnly ? projectsFetching : (propertiesFetching || projectsFetching);
-  const hasNextPage = isProjectsOnly ? projectsHasNext : (propertiesHasNext || projectsHasNext);
+  const isLoading = propertiesLoading;
+  const isFetching = propertiesFetching || projectsFetching;
+  const hasNextPage = propertiesHasNext || projectsHasNext;
 
   const loadMore = useCallback(() => {
     propertiesLoadMore();
@@ -245,7 +240,7 @@ export default function MapSearchLayout() {
             listingType={urlFilters.status}
             mapMode
             showBuyRentToggle
-            onBuyRentChange={handleStatusChange as any}
+            onBuyRentChange={handleBuyRentChange as any}
             activeView="map"
             previewCount={drawnPolygon ? items.length : totalCount}
             isCountLoading={isFetching}
