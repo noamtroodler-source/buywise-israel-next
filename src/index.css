@@ -535,31 +535,6 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
 }
 
-/* =========================
-   Dot Markers (low zoom)
-   ========================= */
-
-.property-marker-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: hsl(var(--primary));
-  box-shadow: 0 0 0 2px hsl(var(--background)), 0 1px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease;
-}
-
-.property-marker-dot:hover,
-.property-marker-dot.marker-hovered {
-  transform: scale(1.5);
-  box-shadow: 0 0 0 3px hsl(var(--background)), 0 0 0 5px hsl(var(--primary) / 0.3), 0 2px 6px rgba(0, 0, 0, 0.25);
-}
-
-.property-marker-dot.marker-active {
-  transform: scale(1.75);
-  background: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--background)), 0 0 0 6px hsl(var(--primary) / 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
-}
 
 /* =========================
    Neighborhood Chip Bar
@@ -987,7 +962,6 @@
 }
 
 .property-marker-container .leaflet-marker-shadow,
-.marker-cluster-container .leaflet-marker-shadow,
 .city-waypoint-container .leaflet-marker-shadow {
   display: none !important;
 }
@@ -1035,28 +1009,6 @@
   z-index: 201;
 }
 
-.marker-cluster-container {
-  background: none !important;
-  border: none !important;
-}
-
-.marker-cluster-circle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: hsl(var(--primary) / 0.8);
-  color: hsl(var(--primary-foreground));
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.marker-cluster-circle:hover {
-  transform: scale(1.12);
-}
 
 /* Property popup overrides – Zillow-style card */
 .property-popup {

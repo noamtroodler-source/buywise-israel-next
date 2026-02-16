@@ -10,7 +10,6 @@ interface PropertyMarkerProps {
   isActive: boolean;
   onClick: (id: string) => void;
   onHover: (id: string | null) => void;
-  displayMode: 'dot' | 'pill';
 }
 
 function formatCompactPrice(amount: number, currency: 'ILS' | 'USD', exchangeRate: number, originalCurrency: string = 'ILS'): string {
@@ -50,14 +49,9 @@ function createMarkerHtml(priceLabel: string, indicator: 'hot' | 'drop' | null):
 }
 
 function estimatePillWidth(priceLabel: string, indicator: 'hot' | 'drop' | null): number {
-  // Approximate width: ~7.5px per character + padding (20px) + gap for indicator
   const textWidth = priceLabel.length * 7.5;
   const indicatorWidth = indicator ? 16 : 0;
   return Math.ceil(textWidth + indicatorWidth + 24);
-}
-
-function createDotHtml(): string {
-  return '<div class="property-marker-dot"></div>';
 }
 
 export const PropertyMarker = memo(function PropertyMarker({
@@ -66,7 +60,6 @@ export const PropertyMarker = memo(function PropertyMarker({
   isActive,
   onClick,
   onHover,
-  displayMode,
 }: PropertyMarkerProps) {
   const { currency, exchangeRate } = usePreferences();
   const markerRef = useRef<L.Marker>(null);
@@ -79,14 +72,6 @@ export const PropertyMarker = memo(function PropertyMarker({
   const indicator = useMemo(() => getMarkerIndicator(property), [property.original_price, property.price, property.created_at]);
 
   const icon = useMemo(() => {
-    if (displayMode === 'dot') {
-      return L.divIcon({
-        html: createDotHtml(),
-        className: 'property-marker-container',
-        iconSize: [10, 10],
-        iconAnchor: [5, 5],
-      });
-    }
     const w = estimatePillWidth(priceLabel, indicator);
     const h = 28;
     return L.divIcon({
@@ -95,26 +80,17 @@ export const PropertyMarker = memo(function PropertyMarker({
       iconSize: [w, h],
       iconAnchor: [w / 2, h / 2],
     });
-  }, [priceLabel, indicator, displayMode]);
+  }, [priceLabel, indicator]);
 
-  // Toggle CSS classes for hover/active instead of re-creating icon
   useEffect(() => {
     const el = markerRef.current?.getElement();
     if (!el) return;
 
-    if (displayMode === 'dot') {
-      const dot = el.querySelector('.property-marker-dot') as HTMLElement | null;
-      if (!dot) return;
-      dot.classList.toggle('marker-hovered', isHovered);
-      dot.classList.toggle('marker-active', isActive);
-    } else {
-      const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
-      if (!pill) return;
-      pill.classList.toggle('marker-hovered', isHovered);
-      pill.classList.toggle('marker-active', isActive);
-    }
+    const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
+    if (!pill) return;
+    pill.classList.toggle('marker-hovered', isHovered);
+    pill.classList.toggle('marker-active', isActive);
 
-    // Z-index
     if (isActive) {
       el.style.zIndex = '201';
     } else if (isHovered) {
@@ -122,7 +98,7 @@ export const PropertyMarker = memo(function PropertyMarker({
     } else {
       el.style.zIndex = '';
     }
-  }, [isHovered, isActive, displayMode]);
+  }, [isHovered, isActive]);
 
   const handleClick = useCallback(() => onClick(property.id), [onClick, property.id]);
   const handleMouseOver = useCallback(() => onHover(property.id), [onHover, property.id]);
@@ -146,6 +122,5 @@ export const PropertyMarker = memo(function PropertyMarker({
   prev.property.id === next.property.id &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
-  prev.property.price === next.property.price &&
-  prev.displayMode === next.displayMode
+  prev.property.price === next.property.price
 );
