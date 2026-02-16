@@ -654,6 +654,52 @@
   border-radius: 8px;
 }
 
+/* Saved Places markers */
+.saved-place-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 6px;
+  border: 2px solid hsl(340 82% 52%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms;
+}
+
+.saved-place-marker:hover {
+  transform: scale(1.1);
+}
+
+.saved-place-marker svg {
+  color: hsl(340 82% 52%);
+}
+
+/* City Anchor markers */
+.city-anchor-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 6px;
+  border: 2px solid hsl(174 62% 40%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 200ms;
+}
+
+.city-anchor-marker:hover {
+  transform: scale(1.1);
+}
+
+.city-anchor-marker svg {
+  color: hsl(174 62% 40%);
+}
+
 /* =========================
    Anglo Community POI Markers
    ========================= */
@@ -799,6 +845,24 @@
 
 .dark .train-station-marker svg {
   color: hsl(213 94% 55%);
+}
+
+.dark .saved-place-marker {
+  background: hsl(222 47% 11%);
+  border-color: hsl(340 82% 62%);
+}
+
+.dark .saved-place-marker svg {
+  color: hsl(340 82% 62%);
+}
+
+.dark .city-anchor-marker {
+  background: hsl(222 47% 11%);
+  border-color: hsl(174 62% 50%);
+}
+
+.dark .city-anchor-marker svg {
+  color: hsl(174 62% 50%);
 }
 
 .dark .commute-line-tooltip {

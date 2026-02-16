@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
 import { MapToolbar } from './MapToolbar';
 import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
-
+import { SavedPlacesLayer } from './SavedPlacesLayer';
+import { CityAnchorsLayer } from './CityAnchorsLayer';
 import { NeighborhoodBoundariesLayer } from './NeighborhoodBoundariesLayer';
 import { NeighborhoodChips } from './NeighborhoodChips';
 import { SearchThisAreaButton } from './SearchThisAreaButton';
@@ -270,6 +271,8 @@ export function PropertyMap({
         )}
 
         {activeLayers.has('trains') && <TrainStationLayer bounds={currentBounds} />}
+        {activeLayers.has('saved') && <SavedPlacesLayer bounds={currentBounds} />}
+        {activeLayers.has('landmarks') && <CityAnchorsLayer cityFilter={cityFilter} bounds={currentBounds} />}
 
         {showNeighborhoods && (
           <NeighborhoodBoundariesLayer city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
