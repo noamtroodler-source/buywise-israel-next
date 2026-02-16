@@ -41,7 +41,7 @@ export function useMapSoldTransactions(bounds: LatLngBounds | null, enabled: boo
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .order('sold_date', { ascending: false })
-        .limit(500);
+        .limit(200);
 
       if (error) {
         console.error('Error fetching sold transactions for map:', error);
