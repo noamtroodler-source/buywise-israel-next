@@ -6,6 +6,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface ProjectMarkerProps {
   project: Project;
+  compact?: boolean;
   isHovered: boolean;
   isActive: boolean;
   onClick: (id: string) => void;
@@ -39,6 +40,7 @@ function estimatePillWidth(priceLabel: string): number {
 
 export const ProjectMarker = memo(function ProjectMarker({
   project,
+  compact = false,
   isHovered,
   isActive,
   onClick,
@@ -57,6 +59,17 @@ export const ProjectMarker = memo(function ProjectMarker({
   );
 
   const icon = useMemo(() => {
+    if (compact) {
+      const text = `From ${priceLabel}`;
+      const w = Math.ceil(text.length * 6.5 + 16);
+      const h = 22;
+      return L.divIcon({
+        html: `<div class="property-marker-pill project-marker-pill compact"><span style="margin-left:0">From ${priceLabel}</span></div>`,
+        className: 'property-marker-container',
+        iconSize: [w, h],
+        iconAnchor: [w / 2, h / 2],
+      });
+    }
     const w = estimatePillWidth(priceLabel);
     const h = 28;
     return L.divIcon({
@@ -65,7 +78,7 @@ export const ProjectMarker = memo(function ProjectMarker({
       iconSize: [w, h],
       iconAnchor: [w / 2, h / 2],
     });
-  }, [priceLabel]);
+  }, [priceLabel, compact]);
 
   useEffect(() => {
     const el = markerRef.current?.getElement();
@@ -101,6 +114,7 @@ export const ProjectMarker = memo(function ProjectMarker({
   );
 }, (prev, next) =>
   prev.project.id === next.project.id &&
+  prev.compact === next.compact &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
   prev.project.price_from === next.project.price_from

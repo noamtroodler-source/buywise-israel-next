@@ -6,6 +6,7 @@ import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface PropertyMarkerProps {
   property: Property;
+  compact?: boolean;
   isHovered: boolean;
   isActive: boolean;
   onClick: (id: string) => void;
@@ -56,6 +57,7 @@ function estimatePillWidth(priceLabel: string, indicator: 'hot' | 'drop' | null)
 
 export const PropertyMarker = memo(function PropertyMarker({
   property,
+  compact = false,
   isHovered,
   isActive,
   onClick,
@@ -69,9 +71,19 @@ export const PropertyMarker = memo(function PropertyMarker({
     [property.price, property.currency, currency, exchangeRate]
   );
 
-  const indicator = useMemo(() => getMarkerIndicator(property), [property.original_price, property.price, property.created_at]);
+  const indicator = useMemo(() => compact ? null : getMarkerIndicator(property), [compact, property.original_price, property.price, property.created_at]);
 
   const icon = useMemo(() => {
+    if (compact) {
+      const w = Math.ceil(priceLabel.length * 6.5 + 16);
+      const h = 22;
+      return L.divIcon({
+        html: `<div class="property-marker-pill compact">${priceLabel}</div>`,
+        className: 'property-marker-container',
+        iconSize: [w, h],
+        iconAnchor: [w / 2, h / 2],
+      });
+    }
     const w = estimatePillWidth(priceLabel, indicator);
     const h = 28;
     return L.divIcon({
@@ -80,7 +92,7 @@ export const PropertyMarker = memo(function PropertyMarker({
       iconSize: [w, h],
       iconAnchor: [w / 2, h / 2],
     });
-  }, [priceLabel, indicator]);
+  }, [priceLabel, indicator, compact]);
 
   useEffect(() => {
     const el = markerRef.current?.getElement();
@@ -120,6 +132,7 @@ export const PropertyMarker = memo(function PropertyMarker({
   );
 }, (prev, next) =>
   prev.property.id === next.property.id &&
+  prev.compact === next.compact &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
   prev.property.price === next.property.price
