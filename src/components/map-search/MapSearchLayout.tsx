@@ -245,6 +245,7 @@ export default function MapSearchLayout() {
               mapMode
               showBuyRentToggle
               onBuyRentChange={handleBuyRentChange as any}
+              onCreateAlert={handleCreateAlert}
               activeView="map"
               previewCount={drawnPolygon ? items.length : totalCount}
               isCountLoading={isFetching}
@@ -264,7 +265,6 @@ export default function MapSearchLayout() {
               initialCenter={initialCenter}
               initialZoom={initialZoom}
               onMapMove={handleMapMove}
-              onCreateAlert={handleCreateAlert}
             />
             <MapListPanel
               items={items}
@@ -307,7 +307,6 @@ export default function MapSearchLayout() {
           initialCenter={initialCenter}
           initialZoom={initialZoom}
           onMapMove={handleMapMove}
-          onCreateAlert={handleCreateAlert}
         />
 
         <MobileMapFilterBar
