@@ -1,28 +1,44 @@
 
-# Simplify Map Toggle: Remove "New" Button
+
+# Save Search Alert from Map Toolbar
 
 ## What Changes
 
-The map search toggle currently shows **Buy | Rent | New**. We'll simplify it to **Buy | Rent**, since projects are already included in the "Buy" view (they show as blue markers alongside resale properties).
+A bell icon button gets added to the map toolbar (the vertical button stack on the right side of the map). Clicking it opens the existing `CreateAlertDialog`, pre-filled with the current map filters and listing type. This captures the user's current search context so they can get notified when new matches appear.
 
-No data-fetching logic changes needed -- the code already fetches projects when `status === 'for_sale'`.
+## Where It Goes
 
-## Changes
+In the **Tools group** of the `MapToolbar`, between the Draw and Share buttons. The bell icon matches the existing 8x8 button style.
 
-### 1. Desktop Toggle (`src/components/filters/PropertyFilters.tsx`)
-- Remove the third "New" button from the Buy/Rent/New toggle (lines 395-405)
-- The toggle becomes just Buy and Rent
+## How It Works
 
-### 2. Mobile Toggle (`src/components/map-search/MobileMapFilterBar.tsx`)
-- Already only shows Buy and Rent -- no change needed
+1. User sets filters, pans/zooms the map to their area of interest
+2. Clicks the bell icon in the toolbar
+3. The existing `CreateAlertDialog` opens with current filters + listing type pre-filled
+4. User picks frequency (instant/daily/weekly), notification method, and confirms
+5. Alert is saved to the `search_alerts` table
 
-### 3. Cleanup (`src/components/map-search/MapSearchLayout.tsx`)
-- Remove the `handleStatusChange` callback (which accepted `'projects'` as a type) and use `handleBuyRentChange` for the desktop toggle instead
-- Remove `isProjectsOnly` logic since users can no longer select projects-only mode via the toggle
-- Keep the `shouldFetchProjects` logic (projects still load when status is `for_sale`)
+No new components or database changes needed -- this wires existing pieces together.
 
-## What Stays the Same
-- Projects still appear as blue markers on the map when "Buy" is selected
-- Project cards still appear in the list panel interleaved with resale properties
-- All project filtering and sorting continues to work
-- Direct URL access with `?status=projects` still works as a fallback
+## Files to Modify
+
+### 1. `src/components/map-search/MapToolbar.tsx`
+- Add `onCreateAlert` callback prop
+- Add a `Bell` icon button in the Tools group (between Draw and Share)
+- Clicking it calls `onCreateAlert()`
+
+### 2. `src/components/map-search/MapSearchLayout.tsx`
+- Add `showAlertDialog` state
+- Import and render `CreateAlertDialog`, passing current `componentFilters` and `listingType`
+- Pass `onCreateAlert` callback to `MapToolbar` (via `PropertyMap`)
+
+### 3. `src/components/map-search/PropertyMap.tsx`
+- Thread the `onCreateAlert` prop through to `MapToolbar`
+
+## Technical Details
+
+- The `CreateAlertDialog` already handles auth gating (shows "sign in" message if not logged in)
+- Filters are passed as `PropertyFilters` which the dialog already knows how to summarize
+- Listing type maps directly: `urlFilters.status` as `ListingType`
+- No new dependencies, no database changes, no edge functions
+
