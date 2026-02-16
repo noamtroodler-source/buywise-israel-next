@@ -1,77 +1,124 @@
 
+# AI Market Insight for Market Intelligence Section
 
-## Completion Year Range Filter (Two-Tap Pills)
+## What We're Building
 
-### What Changes
+A short, AI-generated "What This Means" paragraph inside the Market Intelligence section that synthesizes all the numbers into a plain-English explanation. It tells buyers **why** a property may be priced above or below market -- considering listing features, property condition, city trends, nearby comps, and listing-specific details an Israeli real estate agent would notice.
 
-Replace the single-year completion filter with a **two-tap range selection**. Users tap one year for "from", tap another for "to", and everything in between highlights. Tapping the same year twice = single year. Works on both desktop popover and mobile filter sheet.
+## Where It Appears
 
-### How It Works
+Between the verdict badge and the value snapshot cards in the Market Intelligence section. Uses the existing `InsightCard` design pattern already used across the platform's calculators (gradient border, icon, "What This Means For You" heading).
 
-1. **First tap** -- selects the "from" year (highlighted as primary)
-2. **Second tap** -- selects the "to" year (highlighted as primary, years between get a subtle bg)
-3. **Same year tapped twice** -- clears back to no selection
-4. **Tapping a third time** -- resets and starts fresh with new "from"
-5. If "to" is before "from", they auto-swap
+## What the AI Considers
 
-### Filter Chip Display
+The prompt will think like an experienced Israeli real estate agent and factor in:
 
-- No selection: "Completion"
-- Single year: "2027"
-- Range: "2027 – 2029"
+**Market data:**
+- Listing price/sqm vs nearby comp average price/sqm (the % deviation)
+- Number and recency of comps (data confidence)
+- City-wide average price/sqm and 12-month YoY trend
+- Whether comps are same-building or further away
 
-### Technical Details
+**Property-specific signals (from the listing):**
+- Property type (apartment, penthouse, garden apt, cottage, etc.)
+- Size and room count vs comp sizes
+- Floor and total floors (ground floor, top floor, high floor premium)
+- Year built (new construction premium vs older buildings)
+- Condition (new, renovated, needs renovation -- huge price factor)
+- Elevator, parking, balcony, storage, accessible
+- Entry date (immediate vs distant -- urgency signal)
+- Original price vs current price (price reduction = motivated seller)
+- Days on market (fresh vs sitting)
+- Description text (the AI can extract context like "sea view," "quiet street," "TAMA 38," "recently renovated kitchen," etc.)
 
-**1. Update `ProjectFiltersType`** (`src/components/filters/ProjectFilters.tsx`)
+**The AI output** will be 2-3 concise, professional-friendly sentences. Warm but factual -- matching Buywise's "trusted guide" tone. No fluff.
 
-Replace `completion_year?: number` with:
+## Technical Implementation
+
+### 1. Edge Function: `generate-market-insight`
+
+- Receives structured data (numbers + listing details)
+- Calls Lovable AI (Gemini Flash) with a focused system prompt
+- Uses tool calling to return structured output: `{ insight: string }`
+- Non-streaming (simple invoke, not chat)
+- Handles 429/402 rate limit errors gracefully
+
+### 2. Cache Table: `market_insight_cache`
+
+Avoids re-generating insights on every page view:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid | PK, default gen_random_uuid() |
+| property_id | uuid | Unique, indexed |
+| insight_text | text | The generated summary |
+| input_hash | text | Hash of inputs to detect stale data |
+| created_at | timestamptz | For TTL (7-day expiry) |
+
+RLS: Public read (anon can SELECT). No client writes -- edge function uses service role.
+
+### 3. React Hook: `useMarketInsight`
+
+- Takes property ID + all market context
+- Calls edge function via `supabase.functions.invoke`
+- Returns `{ insight, isLoading }`
+- Only triggers when verdict data is available (comps loaded)
+
+### 4. Component: `AIMarketInsight`
+
+- Renders using the existing `InsightCard` component
+- Shows skeleton while loading
+- Gracefully hidden if AI call fails (no error state shown)
+- Only renders for sale/sold listings with comps data
+
+### 5. Integration into MarketIntelligence
+
+Updated placement order:
+1. Section header
+2. Verdict badge
+3. **AI Market Insight (new)** -- right after the verdict, before the metric cards
+4. Value snapshot cards
+5. Divider + comps list
+6. City link
+
+### 6. Config Update
+
+Add `[functions.generate-market-insight]` with `verify_jwt = false` to config.toml.
+
+---
+
+## Technical Details
+
+### Data Passed to Edge Function
+
+The MarketIntelligence component already has access to the property object. We'll expand the props to include the full property so the AI can reference condition, floor, features, description, etc. The edge function receives:
+
+```text
+- price, size_sqm, price_per_sqm
+- city, neighborhood, property_type
+- bedrooms, bathrooms, floor, total_floors
+- year_built, condition
+- has_elevator, parking, has_balcony, has_storage, is_accessible
+- entry_date, days_on_market
+- original_price (if price was reduced)
+- description (first 500 chars for context)
+- features array
+- city_avg_price_sqm, city_yoy_change
+- comp_count, avg_comp_deviation_percent
 ```
-completion_year_from?: number;
-completion_year_to?: number;
-```
 
-**2. Update Desktop Popover** (`src/components/filters/ProjectFilters.tsx`)
+### Files to Create
 
-- Add a small "From -- To" hint label above the year grid
-- Year pill styling:
-  - **From/To year**: `bg-primary text-primary-foreground`
-  - **In-between years**: `bg-primary/15 text-primary border-primary/30`
-  - **Unselected**: default border style
-- Click logic: first click sets `from`, second click sets `to` (auto-swap if needed), third click resets
-- Filter button label shows range or single year
-- Clear button resets both values
+| File | Purpose |
+|------|---------|
+| `supabase/functions/generate-market-insight/index.ts` | Edge function with AI prompt |
+| `src/hooks/useMarketInsight.ts` | React hook |
+| `src/components/property/AIMarketInsight.tsx` | UI component |
 
-**3. Update Mobile Filter Sheet** (`src/components/filters/ProjectMobileFilterSheet.tsx`)
+### Files to Modify
 
-- Same two-tap logic and pill styling as desktop
-- "Any" pill clears both from/to
-
-**4. Update All Query Hooks** (3 files)
-
-In `useProjects.tsx`, `usePaginatedProjects.tsx`, and the `applyFilters` function:
-
-Replace the single-year date filter:
-```ts
-// Old
-if (filters.completion_year) {
-  query = query.gte('completion_date', `${filters.completion_year}-01-01`)
-               .lte('completion_date', `${filters.completion_year}-12-31`);
-}
-
-// New
-if (filters.completion_year_from) {
-  query = query.gte('completion_date', `${filters.completion_year_from}-01-01`);
-}
-if (filters.completion_year_to) {
-  query = query.lte('completion_date', `${filters.completion_year_to}-12-31`);
-}
-```
-
-**5. Update active filter counting** in both desktop and mobile to check `completion_year_from || completion_year_to` instead of `completion_year`.
-
-### Files Modified
-
-- `src/components/filters/ProjectFilters.tsx` -- type + desktop UI + filter logic
-- `src/components/filters/ProjectMobileFilterSheet.tsx` -- mobile UI
-- `src/hooks/useProjects.tsx` -- query filter
-- `src/hooks/usePaginatedProjects.tsx` -- query filter
+| File | Change |
+|------|--------|
+| `src/components/property/MarketIntelligence.tsx` | Pass full property, add AIMarketInsight between verdict and snapshot |
+| `src/pages/PropertyDetail.tsx` | Pass full property object to MarketIntelligence |
+| DB migration | Create `market_insight_cache` table |
