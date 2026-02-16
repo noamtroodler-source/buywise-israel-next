@@ -86,23 +86,23 @@ export function MapToolbar({
     <div className="absolute bottom-40 lg:bottom-6 right-3 z-[40] flex flex-col gap-2">
       {/* Navigation group */}
       <div className="map-toolbar-group flex flex-col">
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button onClick={handleZoomIn} className={btnBase} aria-label="Zoom in">
               <Plus className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left"><p>Zoom in</p></TooltipContent>
+          <TooltipContent side="left" className="pointer-events-none"><p>Zoom in</p></TooltipContent>
         </Tooltip>
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button onClick={handleZoomOut} className={btnBase} aria-label="Zoom out">
               <Minus className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left"><p>Zoom out</p></TooltipContent>
+          <TooltipContent side="left" className="pointer-events-none"><p>Zoom out</p></TooltipContent>
         </Tooltip>
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button
               onClick={handleLocate}
@@ -112,13 +112,13 @@ export function MapToolbar({
               <LocateFixed className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left"><p>Find my location</p></TooltipContent>
+          <TooltipContent side="left" className="pointer-events-none"><p>Find my location</p></TooltipContent>
         </Tooltip>
       </div>
 
       {/* Tools group */}
       <div className="map-toolbar-group flex flex-col">
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button
               onClick={onToggleDraw}
@@ -128,32 +128,28 @@ export function MapToolbar({
               <PenTool className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left"><p>Draw to search</p></TooltipContent>
+          <TooltipContent side="left" className="pointer-events-none"><p>Draw to search</p></TooltipContent>
         </Tooltip>
-        <Tooltip>
+        <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
             <button onClick={handleShare} className={btnBase} aria-label="Share map view">
               <Share2 className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="left"><p>Share map view</p></TooltipContent>
+          <TooltipContent side="left" className="pointer-events-none"><p>Share map view</p></TooltipContent>
         </Tooltip>
       </div>
 
       {/* Layers group */}
       <div className="map-toolbar-group flex flex-col">
         <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className={cn(btnBase, activeLayers.size > 0 && 'text-primary')}
-                aria-label="Map layers"
-              >
-                <Layers className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left"><p>Map layers</p></TooltipContent>
-          </Tooltip>
+          <button
+            className={cn(btnBase, activeLayers.size > 0 && 'text-primary')}
+            aria-label="Map layers"
+            title="Map layers"
+          >
+            <Layers className="h-4 w-4" />
+          </button>
         </LayersMenu>
       </div>
 
