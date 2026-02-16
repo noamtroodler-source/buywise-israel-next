@@ -124,14 +124,6 @@ export function MapToolbar({
         </LayersMenu>
       </div>
 
-      {/* Help (desktop only) */}
-      {onShowHelp && (
-        <div className="map-toolbar-group flex-col hidden lg:flex">
-          <button onClick={onShowHelp} className={btnBase} aria-label="Keyboard shortcuts">
-            <Keyboard className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
