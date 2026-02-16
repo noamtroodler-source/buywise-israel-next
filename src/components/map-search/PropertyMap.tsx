@@ -81,7 +81,7 @@ export function PropertyMap({
   const [zoom, setZoom] = useState(initialZoom ?? DEFAULT_ZOOM);
   const [currentBounds, setCurrentBounds] = useState<LatLngBounds | null>(null);
   const [isDrawMode, setIsDrawMode] = useState(false);
-  const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set());
+  const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set(['sold_transactions']));
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
   const [boundsChanged, setBoundsChanged] = useState(false);
@@ -246,7 +246,7 @@ export function PropertyMap({
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
 
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
-  const showSoldTransactions = activeLayers.has('sold_transactions') && zoom >= 13;
+  const showSoldTransactions = activeLayers.has('sold_transactions') && zoom >= 10;
 
   return (
     <div className="relative h-full w-full">
