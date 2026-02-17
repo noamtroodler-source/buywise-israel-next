@@ -36,7 +36,7 @@ export function useVisibilityProducts(entityType?: 'agency' | 'developer') {
         .from('visibility_products')
         .select('*')
         .eq('is_active', true)
-        .order('credit_cost', { ascending: true });
+        .order('sort_order', { ascending: true });
 
       const { data, error } = await query;
       if (error) throw error;
