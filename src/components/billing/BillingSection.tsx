@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { CreditHistoryTable } from './CreditHistoryTable';
 
 export function BillingSection() {
   const { data: sub, isLoading } = useSubscription();
@@ -49,6 +50,7 @@ export function BillingSection() {
   const hasSubscription = sub.status !== 'none';
 
   return (
+    <>
     <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
@@ -137,5 +139,9 @@ export function BillingSection() {
         </div>
       </CardContent>
     </Card>
+
+    {/* Credit History */}
+    <CreditHistoryTable />
+    </>
   );
 }

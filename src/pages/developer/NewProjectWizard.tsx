@@ -14,6 +14,7 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { ProjectSubmittedDialog } from '@/components/developer/ProjectSubmittedDialog';
+import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
 
 const steps = [
   { title: 'Basics', description: 'Name, location, status' },
@@ -172,6 +173,11 @@ function WizardContent() {
                   Save Draft
                 </Button>
               </div>
+            </motion.div>
+
+            {/* Listing Limit Warning */}
+            <motion.div variants={itemVariants}>
+              <ListingLimitBanner entityType="developer" />
             </motion.div>
 
             {/* Progress */}

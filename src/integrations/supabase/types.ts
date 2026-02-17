@@ -5178,6 +5178,16 @@ export type Database = {
         }
         Returns: string
       }
+      spend_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_entity_id: string
+          p_entity_type: string
+          p_reference_id?: string
+        }
+        Returns: string
+      }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {
         Args: { invite_code: string }
