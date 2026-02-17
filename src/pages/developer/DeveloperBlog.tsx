@@ -10,6 +10,7 @@ import {
   useSubmitForReview, 
   useDeleteBlogPost,
 } from '@/hooks/useProfessionalBlog';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useMemo, useState } from 'react';
 
@@ -18,6 +19,7 @@ export default function DeveloperBlog() {
   const { data: posts = [], isLoading: postsLoading } = useMyBlogPosts('developer', developerProfile?.id);
   const submitForReview = useSubmitForReview();
   const deleteBlogPost = useDeleteBlogPost();
+  const { used: quotaUsed, limit: quotaLimit, canSubmit: canSubmitQuota } = useBlogQuotaCheck('developer', developerProfile?.id);
   const [activeTab, setActiveTab] = useState<string>('all');
 
   const filteredPosts = useMemo(() => {
@@ -111,6 +113,9 @@ export default function DeveloperBlog() {
                 onDelete={(postId) => deleteBlogPost.mutate(postId)}
                 isSubmitting={submitForReview.isPending}
                 isDeleting={deleteBlogPost.isPending}
+                quotaUsed={quotaUsed}
+                quotaLimit={quotaLimit}
+                canSubmitQuota={canSubmitQuota}
               />
             </TabsContent>
           </Tabs>

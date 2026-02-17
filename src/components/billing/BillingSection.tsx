@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CreditCard, Zap, ArrowUpRight, ExternalLink, Loader2, Calendar } from 'lucide-react';
+import { CreditCard, Zap, ArrowUpRight, ExternalLink, Loader2, Calendar, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useExpiringCredits } from '@/hooks/useExpiringCredits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -12,6 +13,7 @@ import { CreditHistoryTable } from './CreditHistoryTable';
 
 export function BillingSection() {
   const { data: sub, isLoading } = useSubscription();
+  const { data: expiringCredits } = useExpiringCredits(sub?.entityType, sub?.entityId);
   const [portalLoading, setPortalLoading] = useState(false);
 
   const openBillingPortal = async () => {
@@ -96,7 +98,7 @@ export function BillingSection() {
         </div>
 
         {/* Credit Balance */}
-        <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
+        <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
@@ -104,6 +106,16 @@ export function BillingSection() {
             </div>
             <span className="text-lg font-bold text-foreground">{sub.creditBalance}</span>
           </div>
+          {expiringCredits && expiringCredits.length > 0 && (
+            <div className="space-y-1">
+              {expiringCredits.map((group) => (
+                <p key={group.expiresAt} className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {group.amount} credits expiring {format(new Date(group.expiresAt), 'MMM d, yyyy')}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
