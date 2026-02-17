@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Home, Building, Building2, 
   FileText, MapPin, BarChart3, Settings, ClipboardCheck, Sliders,
   Mail, ToggleLeft, BookOpen, Megaphone, Star, Package, Globe,
-  Wrench, ChevronRight, PenLine, Bug
+  Wrench, ChevronRight, PenLine, Bug, Zap
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,7 @@ export function AdminLayout() {
   const homepageItems = [
     { href: '/admin/featured', label: 'Featured', icon: Star },
     { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+    { href: '/admin/boosts', label: 'Boosts', icon: Zap },
   ];
 
   const reviewItems = [

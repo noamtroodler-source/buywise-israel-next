@@ -53,9 +53,34 @@ export function usePaginatedProperties(
     staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
+  // Fetch boosted property IDs for search priority (page 1 only)
+  const { data: boostedIds = [] } = useQuery({
+    queryKey: ['properties', 'search-boost-ids'],
+    queryFn: async () => {
+      const { data: product } = await supabase
+        .from('visibility_products')
+        .select('id')
+        .eq('slug', 'search_priority')
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!product) return [] as string[];
+
+      const { data: boosts } = await supabase
+        .from('active_boosts')
+        .select('target_id')
+        .eq('product_id', product.id)
+        .eq('target_type', 'property')
+        .eq('is_active', true)
+        .gt('ends_at', new Date().toISOString());
+
+      return (boosts ?? []).map(b => b.target_id);
+    },
+    staleTime: 60_000,
+  });
+
   // Fetch current page of properties
   const { data: pageData, isLoading, isFetching } = useQuery({
-    queryKey: ['properties', 'paginated', filters, page],
+    queryKey: ['properties', 'paginated', filters, page, boostedIds],
     queryFn: async () => {
       const offset = (page - 1) * pageSize;
       
@@ -63,6 +88,11 @@ export function usePaginatedProperties(
         .from('properties')
         .select(`*, agent:agents(*)`)
         .eq('is_published', true);
+
+      // Exclude boosted IDs from organic results (page 1 only to avoid dupes)
+      if (page === 1 && boostedIds.length > 0) {
+        query = query.not('id', 'in', `(${boostedIds.join(',')})`);
+      }
 
       query = applyFilters(query, filters);
       query = applySorting(query, filters);
@@ -72,17 +102,35 @@ export function usePaginatedProperties(
       if (error) throw error;
       return data as Property[];
     },
-    // Critical for map UX:
-    // when bounds (or other filters) change, keep rendering the previous page's results
-    // until the new query resolves, instead of flashing empty/skeleton state.
     placeholderData: keepPreviousData,
-    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Accumulate properties when loading more
-  const properties = page === 1 
+  // Fetch boosted properties (only on page 1)
+  const { data: boostedProperties = [] } = useQuery({
+    queryKey: ['properties', 'search-boosted', boostedIds],
+    queryFn: async () => {
+      if (!boostedIds.length) return [] as Property[];
+      const { data, error } = await supabase
+        .from('properties')
+        .select(`*, agent:agents(*)`)
+        .in('id', boostedIds)
+        .eq('is_published', true);
+      if (error) return [] as Property[];
+      return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+    },
+    enabled: page === 1 && boostedIds.length > 0,
+    staleTime: 60_000,
+  });
+
+  // Prepend boosted properties on page 1, accumulate on subsequent pages
+  const organicProperties = page === 1 
     ? (pageData ?? []) 
     : [...allProperties.slice(0, (page - 1) * pageSize), ...(pageData ?? [])];
+  
+  const properties = page === 1 
+    ? [...boostedProperties, ...organicProperties]
+    : organicProperties;
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const hasNextPage = page < totalPages;

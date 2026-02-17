@@ -3,6 +3,48 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 
 /**
+ * Helper: fetch boosted properties by product slug, excluding already-included IDs.
+ * Returns properties with _isBoosted flag set.
+ */
+async function fetchBoostedProperties(
+  productSlug: string,
+  excludeIds: Set<string>
+): Promise<Property[]> {
+  const { data: product } = await supabase
+    .from('visibility_products')
+    .select('id')
+    .eq('slug', productSlug)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!product) return [];
+
+  const { data: boosts } = await supabase
+    .from('active_boosts')
+    .select('target_id')
+    .eq('product_id', product.id)
+    .eq('target_type', 'property')
+    .eq('is_active', true)
+    .gt('ends_at', new Date().toISOString());
+
+  const boostedIds = (boosts ?? [])
+    .map(b => b.target_id)
+    .filter(id => !excludeIds.has(id));
+
+  if (!boostedIds.length) return [];
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select(`*, agent:agents(*)`)
+    .in('id', boostedIds)
+    .eq('is_published', true);
+
+  if (error) return [];
+
+  return (data ?? []).map(p => ({ ...p, _isBoosted: true })) as Property[];
+}
+
+/**
  * Lightweight hook that only fetches the count of matching properties
  * Used for "Show X results" in filter Apply buttons
  */
@@ -313,6 +355,9 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         .order('position', { ascending: true })
         .limit(8);
 
+      let adminProperties: Property[] = [];
+      const adminIds = new Set<string>();
+
       if (slots && slots.length > 0) {
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
@@ -323,28 +368,32 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
 
         if (error) throw error;
         
-        // Sort by slot position
-        const sortedData = propertyIds
+        adminProperties = propertyIds
           .map(id => data?.find(p => p.id === id))
           .filter(Boolean) as Property[];
-        
-        return sortedData;
+        adminProperties.forEach(p => adminIds.add(p.id));
+      } else {
+        // Fallback to old is_featured system
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`*, agent:agents(*)`)
+          .eq('is_published', true)
+          .eq('is_featured', true)
+          .eq('listing_status', 'for_sale')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (error) throw error;
+        adminProperties = (data ?? []) as Property[];
+        adminProperties.forEach(p => adminIds.add(p.id));
       }
 
-      // Fallback to old is_featured system
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`*, agent:agents(*)`)
-        .eq('is_published', true)
-        .eq('is_featured', true)
-        .eq('listing_status', 'for_sale')
-        .order('created_at', { ascending: false })
-        .limit(8);
-
-      if (error) throw error;
-      return data as Property[];
+      // Merge boosted listings
+      const boostedProperties = await fetchBoostedProperties('homepage_sale_featured', adminIds);
+      const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
+      return merged;
     },
-    enabled: options?.enabled !== false, // Default to true
+    enabled: options?.enabled !== false,
   });
 }
 
@@ -352,7 +401,6 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
   return useQuery({
     queryKey: ['properties', 'featured', 'for_rent'],
     queryFn: async () => {
-      // First try to get from homepage_featured_slots (new system)
       const { data: slots } = await supabase
         .from('homepage_featured_slots')
         .select('entity_id, position')
@@ -361,6 +409,9 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
         .order('position', { ascending: true })
         .limit(8);
 
+      let adminProperties: Property[] = [];
+      const adminIds = new Set<string>();
+
       if (slots && slots.length > 0) {
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
@@ -370,29 +421,31 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
           .eq('is_published', true);
 
         if (error) throw error;
-        
-        // Sort by slot position
-        const sortedData = propertyIds
+        adminProperties = propertyIds
           .map(id => data?.find(p => p.id === id))
           .filter(Boolean) as Property[];
-        
-        return sortedData;
+        adminProperties.forEach(p => adminIds.add(p.id));
+      } else {
+        const { data, error } = await supabase
+          .from('properties')
+          .select(`*, agent:agents(*)`)
+          .eq('is_published', true)
+          .eq('is_featured', true)
+          .eq('listing_status', 'for_rent')
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (error) throw error;
+        adminProperties = (data ?? []) as Property[];
+        adminProperties.forEach(p => adminIds.add(p.id));
       }
 
-      // Fallback to old is_featured system
-      const { data, error } = await supabase
-        .from('properties')
-        .select(`*, agent:agents(*)`)
-        .eq('is_published', true)
-        .eq('is_featured', true)
-        .eq('listing_status', 'for_rent')
-        .order('created_at', { ascending: false })
-        .limit(8);
-
-      if (error) throw error;
-      return data as Property[];
+      // Merge boosted listings
+      const boostedProperties = await fetchBoostedProperties('homepage_rent_featured', adminIds);
+      const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
+      return merged;
     },
-    enabled: options?.enabled !== false, // Default to true
+    enabled: options?.enabled !== false,
   });
 }
 
@@ -420,50 +473,55 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
   return useQuery({
     queryKey: ['properties', 'city-featured', cityName, limit],
     queryFn: async () => {
-      // First try to get featured properties for this city
-      const { data: featuredData, error: featuredError } = await supabase
+      // Fetch city_spotlight boosted properties first
+      const boosted = await fetchBoostedProperties('city_spotlight', new Set());
+      // Filter boosted to this city
+      const cityBoosted = boosted.filter(p => 
+        p.city?.toLowerCase().includes(cityName.toLowerCase())
+      );
+      const boostedIds = new Set(cityBoosted.map(p => p.id));
+      
+      const remaining = limit - cityBoosted.length;
+      if (remaining <= 0) return cityBoosted.slice(0, limit);
+
+      // Get featured properties for this city
+      let query = supabase
         .from('properties')
-        .select(`
-          *,
-          agent:agents(*)
-        `)
+        .select(`*, agent:agents(*)`)
         .eq('is_published', true)
         .ilike('city', `%${cityName}%`)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(remaining);
 
-      if (featuredError) throw featuredError;
-      
-      // If we have enough featured properties, return them
-      if (featuredData && featuredData.length >= limit) {
-        return featuredData as Property[];
+      if (boostedIds.size > 0) {
+        query = query.not('id', 'in', `(${[...boostedIds].join(',')})`);
       }
 
-      // Otherwise, get additional non-featured properties to fill the gap
-      const remaining = limit - (featuredData?.length || 0);
-      const featuredIds = featuredData?.map(p => p.id) || [];
-      
+      const { data: featuredData, error: featuredError } = await query;
+      if (featuredError) throw featuredError;
+
+      const combined = [...cityBoosted, ...(featuredData ?? [])] as Property[];
+      if (combined.length >= limit) return combined.slice(0, limit);
+
+      // Fill remaining with popular properties
+      const excludeIds = combined.map(p => p.id);
       let additionalQuery = supabase
         .from('properties')
-        .select(`
-          *,
-          agent:agents(*)
-        `)
+        .select(`*, agent:agents(*)`)
         .eq('is_published', true)
         .ilike('city', `%${cityName}%`)
         .order('views_count', { ascending: false })
-        .limit(remaining);
+        .limit(limit - combined.length);
       
-      if (featuredIds.length > 0) {
-        additionalQuery = additionalQuery.not('id', 'in', `(${featuredIds.join(',')})`);
+      if (excludeIds.length > 0) {
+        additionalQuery = additionalQuery.not('id', 'in', `(${excludeIds.join(',')})`);
       }
 
       const { data: additionalData, error: additionalError } = await additionalQuery;
-
       if (additionalError) throw additionalError;
 
-      return [...(featuredData || []), ...(additionalData || [])] as Property[];
+      return [...combined, ...(additionalData ?? [])] as Property[];
     },
     enabled: !!cityName,
   });

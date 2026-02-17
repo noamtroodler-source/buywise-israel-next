@@ -101,9 +101,11 @@ export interface Property {
    furniture_items: string[] | null;
    // Featured highlight - agent's choice standout feature
    featured_highlight: string | null;
-  created_at: string;
+   created_at: string;
   updated_at: string;
   agent?: Agent;
+  /** Client-side flag: true when this property was returned via a paid boost */
+  _isBoosted?: boolean;
 }
 
 export interface Favorite {
