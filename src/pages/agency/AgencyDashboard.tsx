@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  FileText, Megaphone, Mail, PenLine
+  FileText, Megaphone, Mail, PenLine, CreditCard
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -156,6 +156,12 @@ export default function AgencyDashboard() {
                   <Link to="/agency/analytics">
                     <Eye className="h-4 w-4 mr-2" />
                     Analytics
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/billing">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Billing
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
