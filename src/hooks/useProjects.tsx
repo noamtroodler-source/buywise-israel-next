@@ -114,6 +114,9 @@ export function useFeaturedProjects() {
         .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
         .order('position', { ascending: true });
 
+      let adminProjects: Project[] = [];
+      const adminIds = new Set<string>();
+
       if (slots && slots.length > 0) {
         const projectIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
@@ -124,7 +127,6 @@ export function useFeaturedProjects() {
 
         if (error) throw error;
         
-        // Sort: hero first, then secondary by position
         const heroSlot = slots.find(s => s.slot_type === 'project_hero');
         const secondarySlots = slots.filter(s => s.slot_type === 'project_secondary')
           .sort((a, b) => a.position - b.position);
@@ -134,24 +136,59 @@ export function useFeaturedProjects() {
           ...secondarySlots.map(s => s.entity_id)
         ].filter(Boolean);
         
-        const sortedData = orderedIds
+        adminProjects = orderedIds
           .map(id => data?.find(p => p.id === id))
           .filter(Boolean) as Project[];
-        
-        return sortedData;
+        adminProjects.forEach(p => adminIds.add(p.id));
+      } else {
+        // Fallback to old is_featured system
+        const { data, error } = await supabase
+          .from('projects')
+          .select(`*, developer:developer_id (*)`)
+          .eq('is_published', true)
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(6);
+
+        if (error) throw error;
+        adminProjects = (data ?? []) as Project[];
+        adminProjects.forEach(p => adminIds.add(p.id));
       }
 
-      // Fallback to old is_featured system
-      const { data, error } = await supabase
-        .from('projects')
-        .select(`*, developer:developer_id (*)`)
-        .eq('is_published', true)
-        .eq('is_featured', true)
-        .order('created_at', { ascending: false })
-        .limit(6);
+      // Merge boosted projects
+      const { data: product } = await supabase
+        .from('visibility_products')
+        .select('id')
+        .eq('slug', 'homepage_project_featured')
+        .eq('is_active', true)
+        .maybeSingle();
 
-      if (error) throw error;
-      return data as Project[];
+      if (product) {
+        const { data: boosts } = await supabase
+          .from('active_boosts')
+          .select('target_id')
+          .eq('product_id', product.id)
+          .eq('target_type', 'project')
+          .eq('is_active', true)
+          .gt('ends_at', new Date().toISOString());
+
+        const boostedIds = (boosts ?? [])
+          .map(b => b.target_id)
+          .filter(id => !adminIds.has(id));
+
+        if (boostedIds.length > 0) {
+          const { data: boostedData } = await supabase
+            .from('projects')
+            .select(`*, developer:developer_id (*)`)
+            .in('id', boostedIds)
+            .eq('is_published', true);
+
+          const boostedProjects = (boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[];
+          adminProjects = [...adminProjects, ...boostedProjects].slice(0, 8);
+        }
+      }
+
+      return adminProjects;
     },
   });
 }

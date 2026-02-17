@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { FavoriteButton } from './FavoriteButton';
+import { PromotedBadge } from '@/components/shared/PromotedBadge';
 import { CompareButton } from './CompareButton';
 import { CompareCheckbox } from './CompareCheckbox';
 import { ShareButton } from './ShareButton';
@@ -268,7 +269,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <div className={cn("absolute top-2 flex gap-1.5 z-10", alwaysShowCompare && compareCategory ? "left-10" : "left-2")}>
                   {(() => {
                     const badges: React.ReactNode[] = [];
-                    
+
+                    // Promoted badge for boosted listings
+                    if ((property as any)._isBoosted) {
+                      badges.push(<PromotedBadge key="promoted" compact />);
+                    }
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
@@ -458,7 +463,11 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <div className={cn("absolute top-3 flex gap-2", alwaysShowCompare && compareCategory ? "left-11" : "left-3")}>
                   {(() => {
                     const badges: React.ReactNode[] = [];
-                    
+
+                    // Promoted badge for boosted listings
+                    if ((property as any)._isBoosted) {
+                      badges.push(<PromotedBadge key="promoted" compact />);
+                    }
                     if (showCategoryBadge && !hideStatusBadge) {
                       badges.push(
                         <Badge key="category" className={cn("text-xs font-medium", getStatusColor(property.listing_status))}>
