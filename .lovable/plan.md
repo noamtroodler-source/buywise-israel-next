@@ -1,178 +1,155 @@
 
 
-# Phase 5: Boost Rendering, Search Priority, and Admin Management
+# Phase 6: Boost Analytics Dashboard for Agents and Developers
 
 ## Overview
-Phases 2-4 built the infrastructure for subscriptions, credits, and boost activation. Phase 5 closes the loop by making active boosts **visible to end users** -- boosted listings appear in priority positions on the homepage, in search results, and in directory pages. It also adds admin tools to manage and override boosts.
+Phases 2-5 built the full monetization pipeline: subscriptions, credits, boost activation, and boost rendering. Phase 6 gives agents and developers visibility into how their boosts are performing -- showing ROI on credits spent, comparing boosted vs organic performance, and helping them decide when to re-boost.
 
 ## What Gets Built
 
-### 1. Homepage Boosted Listings Integration
-Properties and projects with active boosts for homepage slots (e.g., `homepage_sale_featured`, `homepage_rent_featured`, `homepage_project_featured`) should appear in the homepage carousels alongside admin-curated featured slots.
+### 1. Boost Performance Analytics Hook
+A new `useBoostAnalytics` hook that aggregates performance data for an entity's active and past boosts -- views gained during boost periods, inquiries received, saves, and credit spend.
 
-**How it works:**
-- Modify `useFeaturedSaleProperties`, `useFeaturedRentalProperties`, and `useFeaturedProjects` hooks to also query `active_boosts` joined with `visibility_products` for matching slug patterns
-- Boosted listings are merged with admin-featured slots, deduped, and placed at designated positions
-- A subtle "Promoted" badge appears on boosted cards (distinct from admin "Featured" badge)
+### 2. Boost Analytics Tab on Agent Analytics Page
+A new "Boosts" tab on `/agent/analytics` showing:
+- Summary cards: Total credits spent, active boosts count, total boost impressions, average ROI
+- Per-boost performance table: Each boost with its product type, target listing, duration, views/saves/inquiries during the boost window, and credits spent
+- Boost vs organic comparison: A chart showing engagement metrics for boosted periods vs non-boosted periods
+- Boost timeline: Visual timeline of when boosts were active across listings
 
-### 2. Search Results Priority Boost
-Listings with an active `search_priority` boost appear at the top of search/listing results, before organically sorted results.
+### 3. Boost Analytics Tab on Developer Analytics Page
+Same as above but scoped to developer projects on `/developer/analytics`.
 
-**How it works:**
-- Modify `usePaginatedProperties` to first fetch property IDs with active `search_priority` boosts, then prepend them to results
-- A subtle "Promoted" indicator appears on these cards in search results
-- Boosted results are excluded from the organic query to prevent duplicates
+### 4. Quick Boost Stats on Dashboard Cards
+Small inline stats on the agent/developer dashboard property/project cards showing boost performance at a glance (e.g., "Boosted: +42 views" or "No active boost").
 
-### 3. City Spotlight Integration
-Properties with an active `city_spotlight` boost get priority placement on city/area detail pages.
-
-**How it works:**
-- Modify `useCityFeaturedProperties` (or the area detail page query) to prepend boosted listings for that city
-- Works similarly to search priority but scoped to city
-
-### 4. Similar Listings Priority
-Properties with `similar_listings_priority` boost appear first in the "Similar Properties" section on property detail pages.
-
-**How it works:**
-- Modify `useSimilarProperties` to check for active boosts and prepend matching boosted properties
-
-### 5. Directory Featured Placement
-Agencies/developers with `agency_directory_featured` or `developer_directory_featured` boosts appear at the top of their respective directory pages (/professionals, /agencies, /developers).
-
-**How it works:**
-- Modify the directory page queries to check for active boosts and prepend featured entities
-
-### 6. Promoted Badge Component
-A reusable `PromotedBadge` component that appears on boosted listings across the platform -- visually distinct from the admin "Featured" badge. Shows a small "Promoted" label with a subtle styling that complies with transparency norms.
-
-### 7. Admin Boost Management Page
-A new `/admin/boosts` page where admins can:
-- View all active boosts (filterable by product type, entity)
-- See boost expiration dates and slot usage
-- Deactivate/cancel boosts early (with optional credit refund)
-- View boost revenue analytics (total credits spent, popular products)
-- Override slot limits temporarily
+### 5. Re-boost Prompt
+When a boost expires, show a prompt on the listing card suggesting re-boosting based on performance data (e.g., "Your last boost brought 38 extra views. Boost again?").
 
 ---
 
 ## Technical Details
 
-### Hook Modifications for Boost Integration
+### New Hook: `useBoostAnalytics`
 
-**`useFeaturedSaleProperties` / `useFeaturedRentalProperties` (in `useProperties.tsx`):**
 ```text
-After fetching admin-curated slots from homepage_featured_slots:
-1. Query active_boosts WHERE target_type = 'property' 
-   AND product_id matches homepage_sale_featured/homepage_rent_featured product
-   AND is_active = true AND ends_at > now()
-2. Fetch the boosted property details
-3. Merge: admin-curated first, then boosted (deduped), up to max 8
-4. Mark boosted properties with a _isBoosted flag for UI rendering
+src/hooks/useBoostAnalytics.ts
+
+function useBoostAnalytics(entityType: 'agency' | 'developer', entityId: string)
+  -> Returns { 
+    totalCreditsSpent: number,
+    activeBoostCount: number,
+    completedBoostCount: number,
+    boostDetails: BoostAnalyticsItem[],
+    isLoading: boolean
+  }
+
+Each BoostAnalyticsItem:
+  - boostId, productName, productSlug
+  - targetId, targetType, targetName
+  - startsAt, endsAt, isActive
+  - creditCost
+  - viewsDuringBoost, savesDuringBoost, inquiriesDuringBoost
+    (computed by querying property_views/favorites/inquiries 
+     WHERE created_at BETWEEN starts_at AND ends_at)
 ```
 
-**`useFeaturedProjects` (in `useProjects.tsx`):**
+### Agent Analytics Page Modification
+
 ```text
-Same pattern but for homepage_project_featured product slug
+src/pages/agent/AgentAnalytics.tsx
+
+Add a tab bar at the top: "Overview" | "Boosts"
+- "Overview" tab shows the existing analytics content
+- "Boosts" tab shows the new BoostAnalyticsPanel component
 ```
 
-**`usePaginatedProperties` (in `usePaginatedProperties.tsx`):**
+### Developer Analytics Page Modification
+
 ```text
-On page 1 only:
-1. Query active_boosts WHERE product_id matches search_priority product
-   AND target_type = 'property' AND is_active = true AND ends_at > now()
-2. Fetch those properties
-3. Prepend to page 1 results (mark as _isBoosted)
-4. Exclude boosted IDs from the organic query to avoid duplicates
-5. Adjust total count accordingly
+src/pages/developer/DeveloperAnalytics.tsx
+
+Same tab structure: "Overview" | "Boosts"
 ```
 
-### New Hook: `useBoostedListings`
-A utility hook that fetches active boosts for a given product slug and returns the target entity IDs:
-```text
-function useBoostedListings(productSlug: string, targetType: 'property' | 'project')
-  -> Returns { boostedIds: string[], isLoading: boolean }
+### New Component: `BoostAnalyticsPanel`
 
-Internally:
-1. Get product ID from visibility_products by slug
-2. Query active_boosts for that product_id where is_active and not expired
-3. Return target_ids
+```text
+src/components/billing/BoostAnalyticsPanel.tsx
+
+Shared between agent and developer analytics pages.
+Props: entityType, entityId
+
+Content:
+1. Summary row (4 cards):
+   - Total Credits Spent (sum of all boost credit costs)
+   - Active Boosts (count of currently active)
+   - Completed Boosts (count of expired)
+   - Avg Views per Boost (mean views during boost windows)
+
+2. Boost Performance Table:
+   - Columns: Listing, Boost Type, Duration, Status, Views, Saves, Inquiries, Cost
+   - Each row is a past or current boost
+   - Status badge: Active (green), Expired (gray), with time remaining/ago
+
+3. Credits Spend Over Time Chart (Recharts bar chart):
+   - Monthly breakdown of credits spent on boosts
+   - Helps users see spending patterns
+
+4. Empty state when no boosts have been used yet:
+   - Friendly message with CTA to boost a listing
 ```
 
-### PromotedBadge Component
+### Dashboard Card Enhancement
+
 ```text
-src/components/shared/PromotedBadge.tsx
-- Small badge: "Promoted" with a subtle gold/amber styling
-- Tooltip: "This listing is promoted by its agent/developer"
-- Used in PropertyCard and ProjectCard when _isBoosted is true
+src/pages/agent/AgentDashboard.tsx
+src/pages/developer/DeveloperDashboard.tsx
+
+On each property/project card in the dashboard listing:
+- If listing has an active boost: show small "Boosted" badge with remaining days
+- If listing had a recent expired boost (within 7 days): show "Re-boost?" prompt
+- Both use existing useActiveBoosts hook data
 ```
 
-### Admin Boost Management
-```text
-src/pages/admin/AdminBoosts.tsx
-- Table of all active_boosts joined with visibility_products and target entity names
-- Columns: Boost Product, Target Listing, Entity, Started, Expires, Status
-- Actions: Deactivate (sets is_active = false), Extend (update ends_at)
-- Summary cards: Total active boosts, credits spent this month, most popular product
-- Slot usage display per product (e.g., "Homepage Sale: 4/6 slots used")
-```
+### Database Queries (no schema changes needed)
 
-### Database Changes
-- New database view or RPC `get_boosted_property_ids` for efficient querying of boosted properties by product slug (optional optimization)
-- No schema changes needed -- all data is already in `active_boosts` and `visibility_products`
+All analytics data is computed from existing tables:
+- `active_boosts` -- boost periods and credit costs (via joined visibility_products)
+- `property_views` -- views during boost windows
+- `favorites` -- saves during boost windows  
+- `inquiries` -- inquiries during boost windows
+- `credit_transactions` -- total spend tracking
 
 ### File Structure
+
 ```text
-src/
-  hooks/
-    useBoostedListings.ts        -- Shared hook to fetch boosted entity IDs by product slug
-  components/
-    shared/
-      PromotedBadge.tsx          -- "Promoted" badge for boosted listings
-  pages/
-    admin/
-      AdminBoosts.tsx            -- Admin boost management page
+New files:
+  src/hooks/useBoostAnalytics.ts          -- Aggregates boost performance data
+  src/components/billing/BoostAnalyticsPanel.tsx  -- Shared analytics panel component
+
+Modified files:
+  src/pages/agent/AgentAnalytics.tsx       -- Add "Boosts" tab
+  src/pages/developer/DeveloperAnalytics.tsx -- Add "Boosts" tab
+  src/pages/agent/AgentDashboard.tsx       -- Add boost status to property cards
+  src/pages/developer/DeveloperDashboard.tsx -- Add boost status to project cards
 ```
 
-### Modified Files
+### Rendering Flow
+
 ```text
-src/hooks/useProperties.tsx          -- Add boost merging to featured queries
-src/hooks/useProjects.tsx            -- Add boost merging to featured projects query
-src/hooks/usePaginatedProperties.tsx -- Prepend search-priority boosted listings
-src/components/property/PropertyCard.tsx -- Show PromotedBadge when _isBoosted
-src/pages/admin/AdminLayout.tsx      -- Add "Boosts" nav item under Homepage section
-src/App.tsx                          -- Add /admin/boosts route
+Agent clicks "Analytics" -> sees tab bar [Overview | Boosts]
+  -> Clicks "Boosts" tab
+  -> useBoostAnalytics fires with agent's entity data
+  -> Fetches all boosts for entity, joins with visibility_products for names/costs
+  -> For each boost, queries views/saves/inquiries within the boost time window
+  -> Renders summary cards + performance table + spend chart
+  -> Agent sees which boosts drove the most engagement and at what cost
 ```
 
-### Property Type Extension
-```text
-Extend the Property type (or use a wrapper) to include:
-  _isBoosted?: boolean  -- client-side flag, not from DB
-```
-
-### Rendering Flow (Homepage)
-```text
-Homepage loads
-  --> FeaturedShowcase calls useFeaturedSaleProperties
-  --> Hook fetches admin slots from homepage_featured_slots
-  --> Hook fetches boosted IDs from active_boosts (homepage_sale_featured product)
-  --> Merges: admin slots first, then boosted properties, deduped, max 8
-  --> Properties with _isBoosted = true show PromotedBadge
-  --> User sees a natural mix of admin-picked and agent-boosted listings
-```
-
-### Rendering Flow (Search)
-```text
-User searches listings
-  --> usePaginatedProperties fires
-  --> On page 1: fetch search_priority boosted property IDs
-  --> Prepend boosted properties to organic results
-  --> Boosted properties show subtle "Promoted" label
-  --> Subsequent pages show only organic results
-```
-
-## What Is NOT in Phase 5
-- Email digest sponsored slot rendering (requires email sending infrastructure)
-- Automatic boost expiration cleanup (cron job -- can be added later)
-- Boost analytics dashboard for agents/developers (can be Phase 6)
+## What Is NOT in Phase 6
+- Automated boost recommendations (AI-powered "you should boost this listing")
 - A/B testing of boost effectiveness
+- Comparative benchmarks against other agents/developers
+- Email notifications when boosts expire
 
