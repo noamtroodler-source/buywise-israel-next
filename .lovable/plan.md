@@ -1,192 +1,135 @@
 
 
-# Phase 1: Monetization Database Foundation
+# Phase 2: Stripe Integration and Subscription/Credit Purchase Backend
 
 ## Overview
-Build all the database tables needed for Engine 1 (Membership/Access) and Engine 2 (Visibility/Credits), including the promo code system that powers the Founding Program. No UI in this phase -- just the clean, well-structured backend.
+Connect Stripe to BuyWise so agencies and developers can subscribe to membership plans and purchase credit packages. This phase builds the backend functions that create Stripe customers, manage subscriptions with promo codes, handle credit package purchases, and process Stripe webhooks. No subscription UI yet -- this phase delivers the plumbing.
 
 ## What Gets Built
 
-### 8 New Tables
+### 1. Enable Stripe Integration
+Use the Lovable Stripe integration to connect your Stripe account. This provides the secret key needed for all backend operations.
 
-**1. `membership_plans`** -- Tier definitions for both agencies and developers
+### 2. Edge Function: `stripe-checkout` (Subscription Checkout)
+Creates a Stripe Checkout Session for subscribing to a membership plan.
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| entity_type | text | 'agency' or 'developer' |
-| tier | text | 'starter', 'growth', 'pro', 'enterprise' |
-| name | text | Display name |
-| max_listings | int | Active listing cap (null = unlimited) |
-| max_seats | int | Seat cap |
-| max_blogs_per_month | int | Blog quota |
-| price_monthly_ils | numeric | Monthly price in ILS |
-| price_annual_ils | numeric | Annual price in ILS |
-| is_active | boolean | Can new subscribers pick this? |
-| sort_order | int | Display ordering |
+**Flow:**
+1. Authenticated user (agency admin or developer) calls this function with `plan_id`, `billing_cycle`, and optional `promo_code`
+2. Function looks up the `membership_plans` row to get ILS pricing
+3. Creates or retrieves a Stripe Customer (stored on `subscriptions.stripe_customer_id`)
+4. If promo code provided, validates it against `promo_codes` table, creates a Stripe Coupon with the matching discount
+5. Creates a Stripe Checkout Session in `subscription` mode with:
+   - ILS currency
+   - Trial period from promo code (e.g., 60 days for FOUNDING2026)
+   - Coupon applied for discount duration
+   - `success_url` and `cancel_url` back to the dashboard
+6. Returns the Checkout URL to redirect the user
 
-Seeded with the 8 tiers from the spec (4 agency + 4 developer).
+### 3. Edge Function: `stripe-credit-checkout` (Credit Package Purchase)
+Creates a Stripe Checkout Session for one-time credit package purchases.
 
-**2. `subscriptions`** -- One active subscription per agency or developer
+**Flow:**
+1. Authenticated user calls with `package_id`
+2. Function looks up `credit_packages` for pricing
+3. Creates Checkout Session in `payment` mode (one-time)
+4. Returns the Checkout URL
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| entity_type | text | 'agency' or 'developer' |
-| entity_id | uuid | FK to agencies.id or developers.id |
-| plan_id | uuid FK | Which membership_plan |
-| billing_cycle | text | 'monthly' or 'annual' |
-| status | text | 'trialing', 'active', 'past_due', 'canceled' |
-| trial_start | timestamptz | |
-| trial_end | timestamptz | |
-| current_period_start | timestamptz | |
-| current_period_end | timestamptz | |
-| stripe_customer_id | text | Stripe reference |
-| stripe_subscription_id | text | Stripe reference |
-| canceled_at | timestamptz | |
-| created_by | uuid | User who subscribed |
+### 4. Edge Function: `stripe-webhook` (Event Handler)
+Processes Stripe webhook events to sync payment state back to the database.
 
-**3. `promo_codes`** -- Reusable promo system (founding program = first code)
+**Handled events:**
+- `checkout.session.completed` -- Creates the `subscriptions` row (for subscription checkouts) or records credit purchase transaction (for one-time payments)
+- `invoice.paid` -- Updates `current_period_start/end` on the subscription, grants monthly promo credits if applicable
+- `invoice.payment_failed` -- Sets subscription status to `past_due`
+- `customer.subscription.updated` -- Syncs status changes (active, canceled, etc.)
+- `customer.subscription.deleted` -- Marks subscription as canceled
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| code | text UNIQUE | e.g. 'FOUNDING2026' |
-| description | text | Internal note |
-| trial_days | int | Free trial duration |
-| discount_percent | numeric | Post-trial discount |
-| discount_duration_months | int | How long discount lasts |
-| credit_schedule | jsonb | Array of monthly credit grants |
-| credit_type | text | 'unrestricted' or 'engine2_only' |
-| applies_to | text | 'agency', 'developer', or 'all' |
-| max_redemptions | int | null = unlimited |
-| times_redeemed | int | Counter |
-| is_active | boolean | Admin toggle to close enrollment |
-| valid_from | timestamptz | |
-| valid_until | timestamptz | null = open-ended |
+**For promo code credit grants:**
+When `invoice.paid` fires monthly, the webhook checks `subscription_promo_redemptions` and the promo's `credit_schedule` array. If credits are due for this month, it inserts a `credit_transactions` row with `transaction_type = 'promo_grant'` and updates `credit_months_granted`.
 
-**4. `subscription_promo_redemptions`** -- Links subscription to promo used
+### 5. Edge Function: `manage-subscription` (Portal Access)
+Creates a Stripe Billing Portal session so users can:
+- Update payment method
+- View invoices
+- Cancel subscription
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| subscription_id | uuid FK | |
-| promo_code_id | uuid FK | |
-| redeemed_at | timestamptz | |
-| credit_months_granted | int | Tracks progress through schedule |
+Returns the portal URL for redirect.
 
-**5. `credit_packages`** -- Purchasable credit bundles
+### 6. Database Helper Function: `record_credit_purchase`
+A `SECURITY DEFINER` function called by the webhook to safely insert credit transactions with correct `balance_after` calculation. This prevents race conditions by running in a single transaction.
 
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| name | text | 'Starter', 'Growth', 'Pro', 'Dominator' |
-| credits_included | int | What you get |
-| price_ils | numeric | What you pay |
-| bonus_percent | numeric | Display: "10% bonus" |
-| is_active | boolean | |
-| sort_order | int | |
-
-Seeded with the 4 packages from the spec.
-
-**6. `credit_transactions`** -- Append-only ledger (THE source of truth for balances)
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| entity_type | text | 'agency' or 'developer' |
-| entity_id | uuid | |
-| amount | int | Positive = credit in, negative = spend |
-| balance_after | int | Running balance snapshot |
-| transaction_type | text | 'purchase', 'spend', 'promo_grant', 'blog_reward', 'expiry', 'admin_grant' |
-| credit_type | text | 'unrestricted' or 'engine2_only' |
-| reference_id | uuid | FK to boost, package purchase, etc. |
-| description | text | Human-readable note |
-| expires_at | timestamptz | For blog-earned credits (end of month) |
-| created_at | timestamptz | |
-
-Balance is calculated as `SUM(amount) WHERE entity_type = X AND entity_id = Y AND (expires_at IS NULL OR expires_at > now())`.
-
-**7. `visibility_products`** -- The 9 boost products
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| slug | text UNIQUE | e.g. 'homepage_sale_featured' |
-| name | text | Display name |
-| description | text | |
-| credit_cost | int | Credits per activation |
-| duration_days | int | How long it runs |
-| max_slots | int | Inventory cap (null = unlimited) |
-| applies_to | text | 'agency', 'developer', or 'all' |
-| is_active | boolean | |
-
-Seeded with all 9 products from the spec.
-
-**8. `active_boosts`** -- Currently running boosts
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| id | uuid PK | |
-| product_id | uuid FK | Which visibility product |
-| entity_type | text | |
-| entity_id | uuid | Who bought it |
-| target_type | text | 'property', 'project', 'agency', 'developer' |
-| target_id | uuid | What's being boosted |
-| credit_transaction_id | uuid FK | Payment reference |
-| starts_at | timestamptz | |
-| ends_at | timestamptz | |
-| slot_position | int | For ordered slots (e.g. hero vs secondary) |
-| is_active | boolean | |
+### 7. Stripe Product/Price Sync
+On first deployment, the `stripe-checkout` function will create Stripe Products and Prices for each `membership_plan` and `credit_package`, storing the Stripe Price IDs back in the database (new columns: `stripe_price_monthly_id`, `stripe_price_annual_id` on `membership_plans`; `stripe_price_id` on `credit_packages`).
 
 ---
 
-### Database Functions
+## Database Changes
 
-**`get_credit_balance(p_entity_type, p_entity_id)`** -- Returns current usable balance (excluding expired credits).
+### Migration: Add Stripe reference columns
 
-**`get_active_boost_count(p_product_id)`** -- Returns how many slots are currently occupied for inventory management.
+**`membership_plans`** -- Add columns:
+- `stripe_product_id` text (Stripe Product reference)
+- `stripe_price_monthly_id` text (Stripe Price for monthly billing)
+- `stripe_price_annual_id` text (Stripe Price for annual billing)
 
----
+**`credit_packages`** -- Add columns:
+- `stripe_product_id` text
+- `stripe_price_id` text
 
-### RLS Policies
-
-- **membership_plans**: Public SELECT (everyone can see pricing), admin-only INSERT/UPDATE
-- **subscriptions**: Owner can SELECT their own; admins can SELECT/UPDATE all
-- **promo_codes**: Public SELECT on active codes (for validation); admin-only INSERT/UPDATE
-- **subscription_promo_redemptions**: Owner SELECT; system INSERT via service role
-- **credit_packages**: Public SELECT; admin-only INSERT/UPDATE
-- **credit_transactions**: Owner SELECT their own; INSERT via service role only (no client-side credit manipulation)
-- **visibility_products**: Public SELECT; admin-only INSERT/UPDATE
-- **active_boosts**: Public SELECT (needed to display badges/positions); owner INSERT; admin UPDATE
+These columns are populated by the edge functions on first use (lazy sync pattern).
 
 ---
 
-### Seed Data
+## Security
 
-The migration will also seed:
-- 8 membership plans (4 agency tiers + 4 developer tiers) with the exact pricing from the spec
-- 4 credit packages (Starter/Growth/Pro/Dominator)
-- 9 visibility products with costs and durations from the spec
-- 1 promo code: `FOUNDING2026` with 60-day trial, 25% discount for 10 months, unrestricted credit schedule [150,150,50,50,50,50,50,50,50,50,50,50]
+- `stripe-webhook` uses `verify_jwt = false` (Stripe signs requests) and validates the Stripe signature using `STRIPE_WEBHOOK_SECRET`
+- All other functions require authenticated users
+- Credit transactions are only inserted via service role (webhook or security definer functions)
+- Stripe Customer IDs are stored per subscription, preventing cross-entity access
+
+## Secrets Needed
+- `STRIPE_SECRET_KEY` -- Provided via the Lovable Stripe integration
+- `STRIPE_WEBHOOK_SECRET` -- Generated when creating the webhook endpoint in Stripe
 
 ---
 
-## What Is NOT in Phase 1
+## What Is NOT in Phase 2
+- No subscription UI / pricing page (Phase 3)
+- No credit purchase UI (Phase 3)
+- No listing limit enforcement yet (Phase 4)
+- No boost activation flow (Phase 4)
 
-- No Stripe integration (Phase 2)
-- No UI for subscribing or purchasing credits
-- No enforcement of listing limits yet
-- No boost activation logic
-- No blog reward triggers
+---
 
-These all build cleanly on top of the tables created here.
+## Technical Details
 
-## Technical Notes
+### File Structure
+```text
+supabase/functions/
+  stripe-checkout/index.ts        -- Subscription checkout
+  stripe-credit-checkout/index.ts -- Credit package checkout
+  stripe-webhook/index.ts         -- Webhook handler
+  manage-subscription/index.ts    -- Billing portal
+```
 
-- All tables use `uuid` primary keys with `gen_random_uuid()` defaults
-- Entity ownership is determined by joining through `agencies` or `developers` tables to `user_id`
-- The credit ledger is append-only by design -- no UPDATE/DELETE policies for `credit_transactions`
-- `balance_after` on each transaction enables fast balance lookups without scanning the full ledger
-- Validation triggers (not CHECK constraints) will enforce business rules like "cannot spend more than balance"
+### Webhook Registration
+After deployment, you will need to register the webhook URL in Stripe:
+`https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
+
+Events to subscribe to:
+- `checkout.session.completed`
+- `invoice.paid`
+- `invoice.payment_failed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+### ILS Currency Handling
+All Stripe prices are created in ILS (currency code `ils`). Stripe handles ILS in agorot (smallest unit), so prices are multiplied by 100 before sending to Stripe (e.g., 149 ILS = 14900 agorot).
+
+### Promo Code to Stripe Coupon Mapping
+When a promo code is applied during checkout:
+1. Function reads `promo_codes.discount_percent` and `discount_duration_months`
+2. Creates a Stripe Coupon with `percent_off` and `duration = 'repeating'` with `duration_in_months`
+3. Applies to the Checkout Session
+4. Trial days are set via `subscription_data.trial_period_days`
 
