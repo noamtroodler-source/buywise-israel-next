@@ -14,6 +14,7 @@ import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnb
 import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
+import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -391,6 +392,7 @@ export default function DeveloperDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
+                          <ActiveBoostBadge targetType="project" targetId={project.id} />
                           <Badge 
                             variant="secondary"
                             className={`
