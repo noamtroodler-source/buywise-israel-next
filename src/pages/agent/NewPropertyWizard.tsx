@@ -20,6 +20,7 @@ import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
+import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -210,6 +211,11 @@ function WizardContent() {
                   Save Draft
                 </Button>
               </div>
+            </motion.div>
+
+            {/* Listing Limit Warning */}
+            <motion.div variants={itemVariants}>
+              <ListingLimitBanner entityType="agency" />
             </motion.div>
 
             {/* Progress */}

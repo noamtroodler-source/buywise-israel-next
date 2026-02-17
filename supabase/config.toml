@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.update-exchange-rate]
 verify_jwt = false
+
+[functions.activate-boost]
+verify_jwt = false
