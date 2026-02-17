@@ -1,102 +1,101 @@
 
 
-# Phase B: Credit System Fixes
+# Phase C: Overage Soft-Block System
 
 ## Overview
-Three fixes to make the credit economy work correctly:
-1. **Bonus credits** included when purchasing credit packages (currently only base credits are sent to Stripe metadata)
-2. **Blog approval reward** (+10 credits, Engine 2 only, expire end-of-month)
-3. **Blog quota enforcement** (block submission when monthly limit reached)
+Enforce plan limits with clear messaging. When an agency or developer reaches their listing/seat limit, block the action and show exactly what the overage would cost, with an upgrade CTA. Also add usage meters to dashboards.
 
----
+## Changes
 
-## Change 1: Fix Bonus Credit Calculation in Checkout
+### 1. Enhance `useListingLimitCheck` Hook
+**File**: `src/hooks/useListingLimitCheck.ts`
 
-**Problem**: `stripe-credit-checkout` sends `credits: pkg.credits_included` to Stripe metadata, but `credits_included` is only the base amount (e.g., 150). The `bonus_percent` column (e.g., 10%) is never applied, so the webhook grants only base credits.
+Currently returns `{ canCreate, currentCount, maxListings, isLoading, needsSubscription }`. Enhance to also return:
+- `nextTierName` -- the name of the next plan tier (for upgrade messaging)
+- `overageMockPrice` -- a mock per-listing overage price for display (e.g., 150 ILS/listing/month for agencies, 500 ILS/project/month for developers)
+- `usagePercent` -- for usage meter display
 
-**Fix**: In `supabase/functions/stripe-credit-checkout/index.ts`, compute total credits as `credits_included + floor(credits_included * bonus_percent / 100)` and pass that as the metadata `credits` value.
+The mock overage prices are hardcoded constants since they aren't finalized. This makes the warning message clear: "Publishing additional listings would normally cost ~150 ILS/listing/month."
 
-```
-Line 121 change:
-credits: pkg.credits_included.toString()
-  ->
-credits: Math.floor(pkg.credits_included * (1 + (pkg.bonus_percent || 0) / 100)).toString()
-```
+### 2. Create `useSeatLimitCheck` Hook
+**New file**: `src/hooks/useSeatLimitCheck.ts`
 
-Also update the description in the webhook to reflect total credits granted (already uses the metadata credits value, so no webhook change needed).
+Similar pattern to `useListingLimitCheck` but for team seats:
+- Count current agents in the agency
+- Compare against `maxSeats` from subscription
+- Return `{ canInvite, currentSeats, maxSeats, isLoading, needsSubscription, overageMockPrice }`
 
----
+### 3. Upgrade `ListingLimitBanner` with Overage Cost Warning
+**File**: `src/components/billing/ListingLimitBanner.tsx`
 
-## Change 2: Blog Approval Credit Reward (DB Trigger)
+When the user is at their limit, show:
+- Current usage: "20/20 listings used"
+- Overage cost warning: "Publishing additional listings would normally cost ~150 ILS/listing/month"
+- Strong upgrade CTA: "Upgrade to Growth to unlock up to 50 listings"
+- Style as a prominent warning (amber/yellow), not destructive red
 
-**What**: When an admin approves a blog post (sets `verification_status = 'approved'`), automatically grant +10 credits to the author's entity. Credits expire at the end of the current calendar month.
+### 4. Hard-Block Submit Button in Property/Project Wizards
+**Files**:
+- `src/pages/agent/NewPropertyWizard.tsx`
+- `src/pages/developer/NewProjectWizard.tsx`
 
-**How**: A database trigger on `blog_posts` that fires on UPDATE, checks if `verification_status` changed to `'approved'`, resolves the author's entity (agency or developer), and calls `record_credit_purchase` with:
-- `p_amount: 10`
-- `p_transaction_type: 'blog_reward'`
-- `p_credit_type: 'visibility'` (Engine 2 only designation)
-- `p_expires_at: end of current calendar month`
+Import `useListingLimitCheck` directly into the wizard. When `canCreate` is false:
+- Disable the "Submit for Review" button
+- Add tooltip explaining why it's disabled
+- Keep "Save as Draft" enabled (drafts don't count against limits)
 
-This is a database trigger + function -- no application code changes needed for the grant itself.
+Also update `EditPropertyWizard.tsx` and `EditProjectWizard.tsx` to block resubmission if at limit (for draft/rejected properties being resubmitted).
 
-**Migration SQL**:
-- Create function `grant_blog_approval_credits()`
-- Create trigger `on_blog_approval` on `blog_posts` AFTER UPDATE
+### 5. Seat Limit Enforcement on Agency Dashboard
+**File**: `src/pages/agency/AgencyDashboard.tsx`
 
-The function will:
-1. Check `NEW.verification_status = 'approved' AND (OLD.verification_status IS DISTINCT FROM 'approved')`
-2. Look up the author's entity: if `author_type = 'agent'`, find the agent's `agency_id` and use `entity_type = 'agency'`; if `author_type = 'agency'`, use `author_profile_id` directly; if `author_type = 'developer'`, use `entity_type = 'developer'` with `author_profile_id`
-3. Call `record_credit_purchase` with the resolved entity and `expires_at = date_trunc('month', now()) + interval '1 month' - interval '1 second'`
+- Import `useSeatLimitCheck`
+- When at seat limit, disable the "New Code" invite button
+- Show warning: "You've used 5/5 team seats. Additional seats would cost ~100 ILS/seat/month. Upgrade to unlock more."
 
----
+### 6. Usage Meters on Dashboards
+**New component**: `src/components/billing/UsageMeters.tsx`
 
-## Change 3: Blog Quota Enforcement
+A compact card showing:
+- Listings: "12/20 used" with progress bar
+- Seats: "3/5 used" with progress bar
+- Blog posts: "1/4 used this month" with progress bar
 
-**What**: Before an author can submit a blog post for review, check if they've already used their monthly blog quota.
+Color coding:
+- Green: under 60%
+- Amber: 60-90%
+- Red: over 90% or at limit
 
-**Where**: In `src/hooks/useProfessionalBlog.tsx` -- the `useSubmitForReview` mutation.
+Place this component on:
+- `AgencyDashboard.tsx` -- near the subscription status card
+- `DeveloperDashboard.tsx` -- near the subscription status card
 
-**How**:
-1. Create a new hook `useBlogQuotaCheck(authorType, profileId)` that:
-   - Queries `blog_posts` counting posts this calendar month where `author_profile_id = profileId` AND `verification_status IN ('pending_review', 'approved')` (submitted or approved, not drafts)
-   - Queries the user's subscription to get `max_blogs_per_month` from their plan
-   - Returns `{ used, limit, canSubmit, isLoading }`
+### 7. Blog Quota in Usage Meters
+Use the existing `useBlogQuotaCheck` hook (from Phase B) to feed into the usage meters component.
 
-2. Update `useSubmitForReview` to accept the quota check result and throw an error if at limit before calling the Supabase update.
+## Technical Details
 
-3. In the blog editor UI, show a small usage indicator: "2/4 blog posts used this month" and disable the "Submit for Review" button with a tooltip when at limit.
+### Files Created
+- `src/hooks/useSeatLimitCheck.ts`
+- `src/components/billing/UsageMeters.tsx`
 
-**Files modified**:
-- `src/hooks/useProfessionalBlog.tsx` -- add `useBlogQuotaCheck` hook, update `useSubmitForReview`
+### Files Modified
+- `src/hooks/useListingLimitCheck.ts` -- add `nextTierName`, `overageMockPrice`, `usagePercent`
+- `src/components/billing/ListingLimitBanner.tsx` -- add overage cost warning and upgrade messaging
+- `src/pages/agent/NewPropertyWizard.tsx` -- hard-block submit when at limit
+- `src/pages/developer/NewProjectWizard.tsx` -- hard-block submit when at limit
+- `src/pages/agent/EditPropertyWizard.tsx` -- block resubmission when at limit
+- `src/pages/developer/EditProjectWizard.tsx` -- block resubmission when at limit
+- `src/pages/agency/AgencyDashboard.tsx` -- add seat limit check + usage meters
+- `src/pages/developer/DeveloperDashboard.tsx` -- add usage meters
 
-**Files to find and update** (blog editor component -- wherever the submit button lives):
-- Show quota usage indicator near the submit button
-- Disable submit when quota exhausted with upgrade CTA
+### No Database Changes Required
+All data already exists in `membership_plans` (`max_listings`, `max_seats`, `max_blogs_per_month`). Mock overage prices are hardcoded constants.
 
----
+### Mock Overage Prices (Hardcoded Constants)
+These are display-only values for the warning messages. They will be updated when final overage pricing is decided:
+- Agency extra listing: ~150 ILS/month
+- Agency extra seat: ~100 ILS/month
+- Developer extra project: ~500 ILS/month
+- Developer extra seat: ~150 ILS/month
 
-## Change 4: Credit Expiration Display
-
-**What**: Show expiring credits in the dashboard so users know about time-limited credits.
-
-**How**: Add a small query in `useSubscription.ts` (or a new `useCreditDetails` hook) that fetches credit transactions with `expires_at IS NOT NULL AND expires_at > now()` grouped to show "X credits expiring on [date]".
-
-**Where displayed**: Wherever the credit balance is shown (billing area, dashboard).
-
----
-
-## Technical Summary
-
-| Item | Type | File(s) |
-|------|------|---------|
-| Bonus credit calc | Edge function fix | `supabase/functions/stripe-credit-checkout/index.ts` |
-| Blog reward trigger | DB migration | New migration SQL |
-| Blog quota hook | New hook | `src/hooks/useProfessionalBlog.tsx` |
-| Submit button gating | UI update | Blog editor component (to be identified) |
-| Credit expiration display | New hook + UI | `src/hooks/useSubscription.ts` or new hook |
-
-## Execution Order
-1. Fix bonus credit calculation in edge function (quick, critical)
-2. Create blog reward trigger via migration
-3. Add blog quota check hook and wire into submit flow
-4. Add expiring credits display
