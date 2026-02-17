@@ -213,6 +213,7 @@ export function useApproveJoinRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyJoinRequests'] });
       queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      queryClient.invalidateQueries({ queryKey: ['seatCount'] });
       toast.success('Agent added to team');
     },
     onError: (error) => {
@@ -366,6 +367,7 @@ export function useRemoveAgentFromAgency() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      queryClient.invalidateQueries({ queryKey: ['seatCount'] });
       toast.success('Agent removed from agency');
     },
     onError: (error) => {
