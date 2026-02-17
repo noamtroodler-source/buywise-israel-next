@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, Shield } from 'lucide-react';
+import { Sparkles, Shield, Building2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
 import { BillingCycleToggle } from '@/components/billing/BillingCycleToggle';
 import { PromoCodeInput } from '@/components/billing/PromoCodeInput';
+import { FeatureComparisonTable } from '@/components/billing/FeatureComparisonTable';
+import { PricingFAQ } from '@/components/billing/PricingFAQ';
+import { FoundingProgramSection } from '@/components/billing/FoundingProgramSection';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,12 +43,10 @@ export default function Pricing() {
   const { data: subscription } = useSubscription();
   const navigate = useNavigate();
 
-  // Auto-select entity type based on role
   useEffect(() => {
     if (isDeveloper) setEntityTab('developer');
   }, [isDeveloper]);
 
-  // Fetch plans
   const { data: plans = [] } = useQuery({
     queryKey: ['membership-plans'],
     queryFn: async () => {
@@ -59,7 +60,6 @@ export default function Pricing() {
     },
   });
 
-  // Fetch credit packages
   const { data: packages = [] } = useQuery({
     queryKey: ['credit-packages'],
     queryFn: async () => {
@@ -159,9 +159,30 @@ export default function Pricing() {
         </div>
 
         <div className="container py-12 space-y-16">
+          {/* Social Proof */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col items-center gap-3"
+          >
+            <div className="flex -space-x-2">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Join <strong className="text-foreground">150+</strong> agencies already growing with BuyWise
+            </p>
+          </motion.div>
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            {/* Entity Toggle */}
             <div className="inline-flex items-center rounded-xl bg-muted p-1 gap-1">
               <button
                 onClick={() => setEntityTab('agency')}
@@ -213,6 +234,12 @@ export default function Pricing() {
             ))}
           </div>
 
+          {/* Feature Comparison */}
+          <FeatureComparisonTable plans={filteredPlans} />
+
+          {/* Founding Program */}
+          <FoundingProgramSection />
+
           {/* Security note */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4" />
@@ -250,6 +277,9 @@ export default function Pricing() {
               ))}
             </div>
           </div>
+
+          {/* FAQ */}
+          <PricingFAQ />
         </div>
       </div>
     </Layout>
