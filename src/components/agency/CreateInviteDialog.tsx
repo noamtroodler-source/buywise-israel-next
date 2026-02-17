@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useCreateInviteCode } from '@/hooks/useAgencyManagement';
+import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
+import { Users } from 'lucide-react';
 
 interface CreateInviteDialogProps {
   agencyId: string;
@@ -29,6 +31,7 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
   const [expiryDays, setExpiryDays] = useState(30);
   
   const createInvite = useCreateInviteCode();
+  const { currentSeats, maxSeats } = useSeatLimitCheck();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +68,15 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
           </DialogHeader>
           
           <div className="space-y-6 py-6">
+            {/* Seat usage info */}
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 text-sm text-muted-foreground">
+              <Users className="h-4 w-4 flex-shrink-0" />
+              {maxSeats === null 
+                ? <span>Unlimited seats available</span>
+                : <span>{currentSeats}/{maxSeats} seats used · {Math.max(0, maxSeats - currentSeats)} remaining</span>
+              }
+            </div>
+
             {/* Label */}
             <div className="space-y-2">
               <Label htmlFor="label">Label (optional)</Label>

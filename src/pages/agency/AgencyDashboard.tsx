@@ -59,7 +59,7 @@ export default function AgencyDashboard() {
   
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
-  const { canInvite, currentSeats, maxSeats, overageMockPrice: seatOveragePrice } = useSeatLimitCheck();
+  const { canInvite, currentSeats, maxSeats, overageMockPrice: seatOveragePrice, usagePercent: seatUsagePercent } = useSeatLimitCheck();
 
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -289,9 +289,25 @@ export default function AgencyDashboard() {
             <TabsContent value="team" className="space-y-4 mt-4">
               <Card className="rounded-2xl border-primary/10">
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
-                  <CardTitle>Team Members</CardTitle>
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Team Members</CardTitle>
+                    <Badge 
+                      variant={seatUsagePercent >= 100 ? 'destructive' : 'secondary'}
+                      className={seatUsagePercent >= 80 && seatUsagePercent < 100 ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 hover:bg-amber-500/15' : ''}
+                    >
+                      {maxSeats === null ? 'Unlimited seats' : `${currentSeats}/${maxSeats} seats used`}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-4">
+                  {seatUsagePercent >= 100 && (
+                    <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm">
+                      <p className="font-medium text-destructive">You've reached your seat limit ({currentSeats}/{maxSeats}).</p>
+                      <p className="text-muted-foreground mt-1">
+                        <Link to="/pricing" className="text-primary hover:underline font-medium">Upgrade your plan</Link> to add more team members.
+                      </p>
+                    </div>
+                  )}
                   {team.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">
                       <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
@@ -386,18 +402,29 @@ export default function AgencyDashboard() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            className="rounded-xl"
-                            onClick={() => approveRequest.mutate({
-                              requestId: request.id,
-                              agentId: request.agent_id,
-                              agencyId: agency.id,
-                            })}
-                            disabled={approveRequest.isPending}
-                          >
-                            Approve
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button
+                                  size="sm"
+                                  className="rounded-xl"
+                                  onClick={() => approveRequest.mutate({
+                                    requestId: request.id,
+                                    agentId: request.agent_id,
+                                    agencyId: agency.id,
+                                  })}
+                                  disabled={approveRequest.isPending || !canInvite}
+                                >
+                                  Approve
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            {!canInvite && (
+                              <TooltipContent>
+                                Seat limit reached ({currentSeats}/{maxSeats}). Upgrade to approve more agents.
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
                           <Button
                             size="sm"
                             variant="outline"
