@@ -12,6 +12,8 @@ import { StepBasics, StepDetails, StepAmenities, StepUnitTypes, StepPhotos, Step
 import { useDeveloperProject, useDeveloperProjectUnits, useUpdateProjectWithUnits, useSubmitProjectForReview, ProjectUnit } from '@/hooks/useDeveloperProjects';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { WizardProgress } from '@/components/agent/wizard/WizardProgress';
+import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const steps = [
   { title: 'Basics', description: 'Name, location, status' },
@@ -236,6 +238,7 @@ function EditWizardContent({ projectId }: { projectId: string }) {
   const StatusIcon = statusInfo.icon;
   const canResubmit = project.verification_status === 'draft' || project.verification_status === 'changes_requested';
   const isDeveloperVerified = developerProfile?.verification_status === 'approved';
+  const { canCreate: canCreateListing } = useListingLimitCheck('developer');
   const isSaving = updateProjectWithUnits.isPending;
   const isSubmitting = submitForReview.isPending;
 
@@ -373,18 +376,31 @@ function EditWizardContent({ projectId }: { projectId: string }) {
                     </Button>
                     
                     {canResubmit && (
-                      <Button
-                        onClick={handleResubmit}
-                        disabled={isSubmitting || !isDeveloperVerified}
-                        className="rounded-xl h-11 px-6"
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4 mr-2" />
-                        )}
-                        Submit for Review
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                onClick={handleResubmit}
+                                disabled={isSubmitting || !isDeveloperVerified || !canCreateListing}
+                                className="rounded-xl h-11 px-6"
+                              >
+                                {isSubmitting ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Send className="h-4 w-4 mr-2" />
+                                )}
+                                Submit for Review
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {(!isDeveloperVerified || !canCreateListing) && (
+                            <TooltipContent>
+                              {!isDeveloperVerified ? 'Developer verification required' : 'Project limit reached — upgrade your plan'}
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 ) : (

@@ -15,6 +15,8 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { ProjectSubmittedDialog } from '@/components/developer/ProjectSubmittedDialog';
 import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
+import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const steps = [
   { title: 'Basics', description: 'Name, location, status' },
@@ -45,6 +47,7 @@ function WizardContent() {
   const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
 
   const isDeveloperVerified = developerProfile?.verification_status === 'approved';
+  const { canCreate: canCreateListing } = useListingLimitCheck('developer');
 
   // Auto-save functionality with session-unique key (always starts fresh)
   const autoSave = useAutoSave<ProjectWizardData>({
@@ -239,22 +242,34 @@ function WizardContent() {
                         <Save className="h-4 w-4 mr-2" />
                         Save as Draft
                       </Button>
-                      <Button
-                        onClick={handleSubmitForReview}
-                        disabled={isSubmitting || !canGoNext || !isDeveloperVerified}
-                        className="gap-2 rounded-xl h-11 px-6"
-                        title={!isDeveloperVerified ? 'Developer verification required' : undefined}
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Send className="h-4 w-4" />
-                            Submit for Review
-                            <Sparkles className="h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                onClick={handleSubmitForReview}
+                                disabled={isSubmitting || !canGoNext || !isDeveloperVerified || !canCreateListing}
+                                className="gap-2 rounded-xl h-11 px-6"
+                              >
+                                {isSubmitting ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Send className="h-4 w-4" />
+                                    Submit for Review
+                                    <Sparkles className="h-4 w-4" />
+                                  </>
+                                )}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {(!isDeveloperVerified || !canCreateListing) && (
+                            <TooltipContent>
+                              {!isDeveloperVerified ? 'Developer verification required' : 'Project limit reached — upgrade your plan'}
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   ) : (
                     <Button

@@ -12,6 +12,7 @@ import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
 import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
 import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
+import { UsageMeters } from '@/components/billing/UsageMeters';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
@@ -153,6 +154,11 @@ export default function DeveloperDashboard() {
           {/* Subscription Status */}
           <motion.div variants={itemVariants}>
             <SubscriptionStatusCard />
+          </motion.div>
+
+          {/* Usage Meters */}
+          <motion.div variants={itemVariants}>
+            <UsageMeters entityType="developer" authorType="developer" profileId={developerProfile?.id} />
           </motion.div>
 
           {/* Onboarding Progress */}

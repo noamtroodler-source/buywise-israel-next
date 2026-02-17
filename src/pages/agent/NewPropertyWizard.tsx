@@ -21,6 +21,8 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
 import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
+import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const steps = [
   { title: 'Basics', description: 'Property type, price, location' },
@@ -52,6 +54,7 @@ function WizardContent() {
   
   // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
+  const { canCreate: canCreateListing } = useListingLimitCheck('agency');
 
   // Auto-save functionality with session-unique key (always starts fresh)
   const autoSave = useAutoSave<PropertyWizardData>({
@@ -277,22 +280,34 @@ function WizardContent() {
                         <Save className="h-4 w-4 mr-2" />
                         Save as Draft
                       </Button>
-                      <Button
-                        onClick={handleSubmitForReview}
-                        disabled={isSubmitting || !canGoNext || !isAgentVerified}
-                        className="gap-2 rounded-xl h-11 px-6"
-                        title={!isAgentVerified ? 'Agent verification required' : undefined}
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Send className="h-4 w-4" />
-                            Submit for Review
-                            <Sparkles className="h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button
+                                onClick={handleSubmitForReview}
+                                disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing}
+                                className="gap-2 rounded-xl h-11 px-6"
+                              >
+                                {isSubmitting ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Send className="h-4 w-4" />
+                                    Submit for Review
+                                    <Sparkles className="h-4 w-4" />
+                                  </>
+                                )}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {(!isAgentVerified || !canCreateListing) && (
+                            <TooltipContent>
+                              {!isAgentVerified ? 'Agent verification required' : 'Listing limit reached — upgrade your plan'}
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   ) : (
                     <Button

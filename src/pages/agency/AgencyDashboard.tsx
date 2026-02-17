@@ -39,6 +39,9 @@ import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyNotificationBell } from '@/components/agency/AgencyNotificationBell';
 import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformanceInsights';
 import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
+import { UsageMeters } from '@/components/billing/UsageMeters';
+import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -56,6 +59,7 @@ export default function AgencyDashboard() {
   
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
+  const { canInvite, currentSeats, maxSeats, overageMockPrice: seatOveragePrice } = useSeatLimitCheck();
 
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -172,6 +176,9 @@ export default function AgencyDashboard() {
 
           {/* Subscription Status */}
           <SubscriptionStatusCard />
+
+          {/* Usage Meters */}
+          <UsageMeters entityType="agency" authorType="agency" profileId={agency?.id} />
 
           {/* Performance Insights */}
           <AgencyPerformanceInsights />
@@ -405,14 +412,26 @@ export default function AgencyDashboard() {
               <Card className="rounded-2xl border-primary/10">
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
                   <CardTitle>Invite Codes</CardTitle>
-                  <Button 
-                    size="sm" 
-                    className="rounded-xl"
-                    onClick={() => setCreateInviteOpen(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    New Code
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button 
+                          size="sm" 
+                          className="rounded-xl"
+                          onClick={() => setCreateInviteOpen(true)}
+                          disabled={!canInvite}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          New Code
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!canInvite && (
+                      <TooltipContent>
+                        You've used {currentSeats}/{maxSeats} team seats. Upgrade your plan to add more.
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3">
                   {/* Default Invite Code */}
