@@ -1,94 +1,94 @@
 
-# Phase E: Pricing Page Improvements
+
+# Phase F: Billing Dashboard
 
 ## Overview
-Enhance the pricing page with a feature comparison matrix, FAQ section, real-time promo code validation, Founding Program benefits section, social proof banner, and enterprise card redesign.
+Create dedicated billing dashboard pages for agents/agencies and developers that consolidate subscription info, usage meters, credit history, trial countdown, and contextual upgrade prompts into a single focused page.
+
+## What Already Exists
+- `BillingSection` component -- plan info, credit balance, expiring credits, manage billing portal, credit history
+- `UsageMeters` component -- listings, seats, blog post progress bars
+- `SubscriptionStatusCard` component -- compact plan status card
+- `CreditHistoryTable` component -- transaction list
+- `useSubscription` hook -- all subscription data including trial dates
+- `useListingLimitCheck`, `useSeatLimitCheck`, `useBlogQuotaCheck` hooks -- usage data
+- `useExpiringCredits` hook -- credit expiration breakdown
 
 ## Changes
 
-### 1. Feature Comparison Matrix
-**New file**: `src/components/billing/FeatureComparisonTable.tsx`
+### 1. Trial Countdown Banner
+**New file**: `src/components/billing/TrialCountdownBanner.tsx`
 
-A responsive table showing all features across tiers for the selected entity type (agency or developer). Columns = plan tiers (Starter, Growth, Pro, Enterprise). Rows:
-- Active Listings
-- Team Seats
-- Blog Posts / Month
-- Priority Support
-- Dedicated Account Manager
-- Visibility Credits (monthly schedule for Founding)
-- API Access
+A prominent banner shown when subscription status is `trialing`:
+- Shows "X days left in your free trial" with a countdown
+- Progress bar showing trial progress (elapsed vs total)
+- CTA: "Choose a plan before your trial ends"
+- Styled with primary gradient background, dismissible per session
 
-Uses the same `membership_plans` data already fetched in the Pricing page. Renders check marks, numbers, or "Unlimited" per cell. Highlighted column for "Growth" (most popular). On mobile, horizontally scrollable.
+### 2. Upgrade Prompt Card
+**New file**: `src/components/billing/UpgradePromptCard.tsx`
 
-### 2. FAQ Accordion Section
-**New file**: `src/components/billing/PricingFAQ.tsx`
+Contextual upgrade suggestion shown when any usage metric exceeds 80%:
+- Checks listing, seat, and blog usage percentages
+- Shows the highest-usage resource: "You've used 18/20 listings (90%)"
+- Suggests next tier with "Upgrade to [next plan] for more capacity"
+- Link to /pricing
 
-Uses the existing `Accordion` UI component. Hardcoded questions:
-- "Can I cancel anytime?"
-- "How do credits work?"
-- "What happens when I hit my listing limit?"
-- "What's the Founding Program?"
-- "Can I switch plans later?"
-- "What payment methods do you accept?"
+### 3. Billing Dashboard Page (Agency/Agent)
+**New file**: `src/pages/agency/AgencyBilling.tsx`
 
-### 3. Promo Code Real-Time Validation
-**Modified file**: `src/components/billing/PromoCodeInput.tsx`
+Full billing page at `/agency/billing` with layout:
+1. Trial countdown banner (if trialing)
+2. Page header with back navigation
+3. Two-column grid (desktop):
+   - Left: Current plan card (from BillingSection), Usage meters
+   - Right: Credit balance with expiration, Upgrade prompt (if >80% usage)
+4. Full-width: Credit transaction history table
+5. Action buttons: Manage Billing, Buy Credits, Change Plan
 
-Add `onBlur` validation that queries the `promo_codes` table:
-- Lookup by `code`, check `is_active = true`, `valid_from <= now()`, `valid_until IS NULL OR valid_until > now()`
-- On valid: show green checkmark + benefit summary text ("60-day free trial + 25% off for 10 months + monthly credits")
-- On invalid: show red X + "Invalid or expired code"
-- While validating: show spinner
+### 4. Billing Dashboard Page (Developer)
+**New file**: `src/pages/developer/DeveloperBilling.tsx`
 
-Props change: add `validationResult` state to parent (Pricing.tsx) so validated promo data flows to checkout. The component will accept new props: `onValidated(promoData | null)` callback.
+Same layout as agency billing but adapted for developer context:
+- Shows "Projects" instead of "Listings"
+- No seat meters (developers don't have teams)
+- Same credit history, trial banner, upgrade prompts
 
-### 4. Founding Program Benefits Section
-**New file**: `src/components/billing/FoundingProgramSection.tsx`
+### 5. Register Routes
+**Modified file**: `src/App.tsx`
 
-A dedicated section between plans and credits with:
-- Headline: "Founding Program" with Sparkles icon
-- Three benefit cards in a row:
-  1. "60-Day Free Trial" -- try any plan risk-free
-  2. "25% Off for 10 Months" -- after trial ends
-  3. "Monthly Credits" -- 150 credits in months 1-2, then 50/mo for 10 months
-- Small note: "Use code FOUNDING2026 at checkout"
+Add two new routes:
+- `/agency/billing` -- protected, renders `AgencyBilling`
+- `/developer/billing` -- protected with `requiredRole="developer"`, renders `DeveloperBilling`
 
-### 5. Social Proof Banner
-Added inline in `Pricing.tsx` between hero and plan cards:
-- "Join 150+ agencies already growing with BuyWise" (placeholder count)
-- Small row of avatar placeholders or building icons
+### 6. Add Navigation Links
+**Modified files**:
+- `src/pages/agency/AgencyDashboard.tsx` -- add "Billing" link/button in the dashboard header area
+- `src/pages/developer/DeveloperDashboard.tsx` -- add "Billing" link/button
 
-### 6. Enterprise Card Redesign
-**Modified file**: `src/components/billing/PlanCard.tsx`
+## Technical Details
 
-When `isEnterprise = true`, render a distinct design:
-- Gradient border (primary-to-purple)
-- List of enterprise-specific features: "Unlimited everything", "Dedicated account manager", "Custom integrations", "SLA guarantee", "Priority onboarding"
-- "Contact Sales" button styled as primary gradient
+### Files Created
+- `src/components/billing/TrialCountdownBanner.tsx`
+- `src/components/billing/UpgradePromptCard.tsx`
+- `src/pages/agency/AgencyBilling.tsx`
+- `src/pages/developer/DeveloperBilling.tsx`
 
-## Files Created
-- `src/components/billing/FeatureComparisonTable.tsx`
-- `src/components/billing/PricingFAQ.tsx`
-- `src/components/billing/FoundingProgramSection.tsx`
+### Files Modified
+- `src/App.tsx` -- add `/agency/billing` and `/developer/billing` routes with lazy imports
+- `src/pages/agency/AgencyDashboard.tsx` -- add billing navigation link
+- `src/pages/developer/DeveloperDashboard.tsx` -- add billing navigation link
 
-## Files Modified
-- `src/pages/Pricing.tsx` -- add comparison table, FAQ, founding section, social proof; pass validation callback to PromoCodeInput
-- `src/components/billing/PromoCodeInput.tsx` -- add blur validation with DB lookup, show benefit summary or error
-- `src/components/billing/PlanCard.tsx` -- redesign enterprise variant with gradient border and richer feature list
+### No Database Changes
+All data is already available through existing hooks and tables.
 
-## Page Layout (top to bottom)
-1. Hero (existing) with promo code input (now with live validation)
-2. Social proof banner (new)
-3. Entity toggle + billing cycle toggle (existing)
-4. Plan cards (existing, enterprise redesigned)
-5. Feature comparison table (new)
-6. Founding Program benefits section (new)
-7. Security note (existing)
-8. Credit packages (existing)
-9. FAQ accordion (new)
+### Component Composition
+The billing pages will compose existing components rather than duplicating logic:
+- `BillingSection` for plan info + credit balance + actions
+- `UsageMeters` for usage progress bars
+- `CreditHistoryTable` for transaction history
+- `TrialCountdownBanner` (new) for trial status
+- `UpgradePromptCard` (new) for contextual upgrade nudges
 
-## Technical Notes
-- Promo validation queries `promo_codes` table directly via Supabase client (RLS should allow read for active codes; if not, a simple `SELECT` policy will be added)
-- No new database changes needed -- `promo_codes` table already has all required columns
-- Comparison table data is derived from the already-fetched `membership_plans` query
-- All new components are pure presentational except PromoCodeInput which gets a small async validation function
+The trial banner calculates days remaining using `differenceInDays(trialEnd, now())` from the subscription data. The upgrade prompt checks `usagePercent` from the limit-check hooks and shows the suggestion when any metric exceeds 80%.
+
