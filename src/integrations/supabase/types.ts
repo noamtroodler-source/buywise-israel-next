@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_boosts: {
+        Row: {
+          created_at: string
+          credit_transaction_id: string | null
+          ends_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          is_active: boolean
+          product_id: string
+          slot_position: number | null
+          starts_at: string
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credit_transaction_id?: string | null
+          ends_at: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_active?: boolean
+          product_id: string
+          slot_position?: number | null
+          starts_at?: string
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credit_transaction_id?: string | null
+          ends_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          slot_position?: number | null
+          starts_at?: string
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "active_boosts_credit_transaction_id_fkey"
+            columns: ["credit_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "credit_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "active_boosts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "visibility_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -1528,6 +1591,84 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_packages: {
+        Row: {
+          bonus_percent: number
+          created_at: string
+          credits_included: number
+          id: string
+          is_active: boolean
+          name: string
+          price_ils: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bonus_percent?: number
+          created_at?: string
+          credits_included: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price_ils: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bonus_percent?: number
+          created_at?: string
+          credits_included?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_ils?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          credit_type: string
+          description: string | null
+          entity_id: string
+          entity_type: string
+          expires_at: string | null
+          id: string
+          reference_id: string | null
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number
+          created_at?: string
+          credit_type?: string
+          description?: string | null
+          entity_id: string
+          entity_type: string
+          expires_at?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          credit_type?: string
+          description?: string | null
+          entity_id?: string
+          entity_type?: string
+          expires_at?: string | null
+          id?: string
+          reference_id?: string | null
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       developer_notifications: {
         Row: {
           action_url: string | null
@@ -2692,6 +2833,54 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_plans: {
+        Row: {
+          created_at: string
+          entity_type: string
+          id: string
+          is_active: boolean
+          max_blogs_per_month: number
+          max_listings: number | null
+          max_seats: number
+          name: string
+          price_annual_ils: number
+          price_monthly_ils: number
+          sort_order: number
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_type: string
+          id?: string
+          is_active?: boolean
+          max_blogs_per_month?: number
+          max_listings?: number | null
+          max_seats?: number
+          name: string
+          price_annual_ils?: number
+          price_monthly_ils?: number
+          sort_order?: number
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_type?: string
+          id?: string
+          is_active?: boolean
+          max_blogs_per_month?: number
+          max_listings?: number | null
+          max_seats?: number
+          name?: string
+          price_annual_ils?: number
+          price_monthly_ils?: number
+          sort_order?: number
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mortgage_tracks: {
         Row: {
           best_use_case: string | null
@@ -3315,6 +3504,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promo_codes: {
+        Row: {
+          applies_to: string
+          code: string
+          created_at: string
+          credit_schedule: Json | null
+          credit_type: string
+          description: string | null
+          discount_duration_months: number
+          discount_percent: number
+          id: string
+          is_active: boolean
+          max_redemptions: number | null
+          times_redeemed: number
+          trial_days: number
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          applies_to?: string
+          code: string
+          created_at?: string
+          credit_schedule?: Json | null
+          credit_type?: string
+          description?: string | null
+          discount_duration_months?: number
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          times_redeemed?: number
+          trial_days?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          applies_to?: string
+          code?: string
+          created_at?: string
+          credit_schedule?: Json | null
+          credit_type?: string
+          description?: string | null
+          discount_duration_months?: number
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          max_redemptions?: number | null
+          times_redeemed?: number
+          trial_days?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
       }
       properties: {
         Row: {
@@ -4274,6 +4520,113 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_promo_redemptions: {
+        Row: {
+          created_at: string
+          credit_months_granted: number
+          id: string
+          promo_code_id: string
+          redeemed_at: string
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_months_granted?: number
+          id?: string
+          promo_code_id: string
+          redeemed_at?: string
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_months_granted?: number
+          id?: string
+          promo_code_id?: string
+          redeemed_at?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_promo_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_promo_redemptions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string
+          canceled_at: string | null
+          created_at: string
+          created_by: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          canceled_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tool_feedback: {
         Row: {
           comment: string | null
@@ -4627,6 +4980,48 @@ export type Database = {
         }
         Relationships: []
       }
+      visibility_products: {
+        Row: {
+          applies_to: string
+          created_at: string
+          credit_cost: number
+          description: string | null
+          duration_days: number
+          id: string
+          is_active: boolean
+          max_slots: number | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          applies_to?: string
+          created_at?: string
+          credit_cost: number
+          description?: string | null
+          duration_days: number
+          id?: string
+          is_active?: boolean
+          max_slots?: number | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          applies_to?: string
+          created_at?: string
+          credit_cost?: number
+          description?: string | null
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          max_slots?: number | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       agencies_public: {
@@ -4702,12 +5097,20 @@ export type Database = {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
       }
+      get_active_boost_count: {
+        Args: { p_product_id: string }
+        Returns: number
+      }
       get_city_property_counts: {
         Args: { p_listing_status: string }
         Returns: {
           city: string
           count: number
         }[]
+      }
+      get_credit_balance: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: number
       }
       get_nearby_sold_comps: {
         Args: {
