@@ -3,12 +3,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
 
-interface ListingLimitResult {
+// Mock overage prices (display-only, will be updated when finalized)
+const OVERAGE_PRICES = {
+  agency: 150, // ILS per listing per month
+  developer: 500, // ILS per project per month
+};
+
+// Tier upgrade mapping
+const NEXT_TIER: Record<string, string> = {
+  starter: 'Growth',
+  growth: 'Professional',
+  professional: 'Enterprise',
+};
+
+export interface ListingLimitResult {
   canCreate: boolean;
   currentCount: number;
   maxListings: number | null;
   isLoading: boolean;
   needsSubscription: boolean;
+  nextTierName: string | null;
+  overageMockPrice: number;
+  usagePercent: number;
 }
 
 export function useListingLimitCheck(entityType: 'agency' | 'developer'): ListingLimitResult {
@@ -21,7 +37,6 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
       if (!user) return 0;
 
       if (entityType === 'agency') {
-        // Get agent profile, then count non-draft properties
         const { data: agent } = await supabase
           .from('agents')
           .select('id')
@@ -61,6 +76,10 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
   const isLoading = subLoading || countLoading;
   const maxListings = sub?.maxListings ?? null;
   const needsSubscription = !sub || sub.status === 'none';
+  const tier = sub?.tier || '';
+  const nextTierName = NEXT_TIER[tier] || null;
+  const overageMockPrice = OVERAGE_PRICES[entityType];
+  const usagePercent = maxListings ? Math.min(100, Math.round((currentCount / maxListings) * 100)) : 0;
 
   // Enterprise (null maxListings) = unlimited
   // No subscription = cannot create (must subscribe)
@@ -72,5 +91,5 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
     ? true
     : currentCount < maxListings;
 
-  return { canCreate, currentCount, maxListings, isLoading, needsSubscription };
+  return { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageMockPrice, usagePercent };
 }
