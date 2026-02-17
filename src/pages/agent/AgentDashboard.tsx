@@ -13,6 +13,7 @@ import { OnboardingChecklist } from '@/components/agent/OnboardingChecklist';
 import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
+import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
@@ -565,6 +566,7 @@ export default function AgentDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <ActiveBoostBadge targetType="property" targetId={property.id} />
                           <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${
                             (property as any).verification_status === 'approved' 
                               ? 'bg-primary/10 text-primary' 

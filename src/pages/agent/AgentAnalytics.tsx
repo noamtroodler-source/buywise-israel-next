@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, BarChart3, Home } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, BarChart3, Home, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
 import { useAgentAnalytics, DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
+import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
 import {
   Select,
   SelectContent,
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const dateRangeOptions: { value: DateRangeFilter; label: string }[] = [
   { value: '7d', label: 'Last 7 days' },
@@ -35,6 +37,7 @@ const itemVariants = {
 
 export default function AgentAnalytics() {
   const [dateRange, setDateRange] = useState<DateRangeFilter>('30d');
+  const [activeTab, setActiveTab] = useState('overview');
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: analytics, isLoading: analyticsLoading } = useAgentAnalytics(dateRange);
 
@@ -115,137 +118,158 @@ export default function AgentAnalytics() {
                     </div>
                   </div>
                   
-                  {/* Date Range Selector */}
-                  <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeFilter)}>
-                    <SelectTrigger className="w-[160px] bg-background/80 backdrop-blur-sm rounded-xl">
-                      <Calendar className="h-4 w-4 mr-2 text-primary" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dateRangeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {activeTab === 'overview' && (
+                    <Select value={dateRange} onValueChange={(v) => setDateRange(v as DateRangeFilter)}>
+                      <SelectTrigger className="w-[160px] bg-background/80 backdrop-blur-sm rounded-xl">
+                        <Calendar className="h-4 w-4 mr-2 text-primary" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dateRangeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
             </motion.div>
 
-            {/* Summary Stats */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {statsCards.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                          <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon className="h-3.5 w-3.5 text-primary" />
-                          </div>
-                          {stat.label}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-muted-foreground">{stat.sub}</p>
-                      </CardContent>
-                    </Card>
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="rounded-xl bg-muted/50">
+                <TabsTrigger value="overview" className="rounded-lg gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="boosts" className="rounded-lg gap-2">
+                  <Zap className="h-4 w-4" />
+                  Boosts
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-6 mt-6">
+                {/* Summary Stats */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {statsCards.map((stat, index) => {
+                    const Icon = stat.icon;
+                    return (
+                      <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl hover:shadow-lg hover:border-primary/30 transition-all">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Icon className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                              {stat.label}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-3xl font-bold">{stat.value}</p>
+                            <p className="text-xs text-muted-foreground">{stat.sub}</p>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Conversion Funnel */}
+                <motion.div variants={itemVariants}>
+                  <FunnelMetrics
+                    views={analytics?.totalViews || 0}
+                    saves={analytics?.totalSaves || 0}
+                    inquiries={analytics?.totalInquiries || 0}
+                  />
+                </motion.div>
+
+                {/* Charts Row */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <motion.div variants={itemVariants}>
+                    <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
                   </motion.div>
-                );
-              })}
-            </div>
+                  <motion.div variants={itemVariants}>
+                    <PropertyPerformanceChart data={propertyChartData} />
+                  </motion.div>
+                </div>
 
-            {/* Conversion Funnel */}
-            <motion.div variants={itemVariants}>
-              <FunnelMetrics
-                views={analytics?.totalViews || 0}
-                saves={analytics?.totalSaves || 0}
-                inquiries={analytics?.totalInquiries || 0}
-              />
-            </motion.div>
+                {/* Property Performance Table */}
+                <motion.div variants={itemVariants}>
+                  <Card className="rounded-2xl border-primary/20 hover:shadow-lg transition-all">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Home className="h-4 w-4 text-primary" />
+                        </div>
+                        <CardTitle>Detailed Listing Performance</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {properties.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">
+                          No listings yet. Create your first listing to see analytics.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {properties.map((property) => {
+                            const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
+                            const views = propertyStats?.views || 0;
+                            const saves = propertyStats?.saves || 0;
+                            const inquiries = propertyStats?.inquiries || 0;
+                            const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';
+                            
+                            return (
+                              <div key={property.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <img
+                                    src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
+                                    alt={property.title}
+                                    className="h-12 w-12 rounded-xl object-cover flex-shrink-0"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="font-medium line-clamp-1">{property.title}</p>
+                                    <p className="text-sm text-muted-foreground">{property.city}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4 sm:gap-6 text-sm">
+                                  <div className="text-center">
+                                    <p className="font-medium">{views}</p>
+                                    <p className="text-xs text-muted-foreground">views</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-medium">{saves}</p>
+                                    <p className="text-xs text-muted-foreground">saves</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-medium">{inquiries}</p>
+                                    <p className="text-xs text-muted-foreground">inquiries</p>
+                                  </div>
+                                  <div className="text-center hidden sm:block">
+                                    <p className="font-medium">{convRate}%</p>
+                                    <p className="text-xs text-muted-foreground">conv.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
 
-            {/* Charts Row */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <motion.div variants={itemVariants}>
-                <InquiryPieChart data={analytics?.inquiriesByType || { whatsapp: 0, email: 0, form: 0 }} />
-              </motion.div>
-              <motion.div variants={itemVariants}>
-                <PropertyPerformanceChart data={propertyChartData} />
-              </motion.div>
-            </div>
-
-            {/* Property Performance Table */}
-            <motion.div variants={itemVariants}>
-              <Card className="rounded-2xl border-primary/20 hover:shadow-lg transition-all">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Home className="h-4 w-4 text-primary" />
-                    </div>
-                    <CardTitle>Detailed Listing Performance</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {properties.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      No listings yet. Create your first listing to see analytics.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {properties.map((property) => {
-                        const propertyStats = analytics?.propertyAnalytics.find(p => p.propertyId === property.id);
-                        const views = propertyStats?.views || 0;
-                        const saves = propertyStats?.saves || 0;
-                        const inquiries = propertyStats?.inquiries || 0;
-                        const convRate = views > 0 ? ((inquiries / views) * 100).toFixed(1) : '0';
-                        
-                        return (
-                          <div key={property.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <img
-                                src={property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=100'}
-                                alt={property.title}
-                                className="h-12 w-12 rounded-xl object-cover flex-shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <p className="font-medium line-clamp-1">{property.title}</p>
-                                <p className="text-sm text-muted-foreground">{property.city}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4 sm:gap-6 text-sm">
-                              <div className="text-center">
-                                <p className="font-medium">{views}</p>
-                                <p className="text-xs text-muted-foreground">views</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="font-medium">{saves}</p>
-                                <p className="text-xs text-muted-foreground">saves</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="font-medium">{inquiries}</p>
-                                <p className="text-xs text-muted-foreground">inquiries</p>
-                              </div>
-                              <div className="text-center hidden sm:block">
-                                <p className="font-medium">{convRate}%</p>
-                                <p className="text-xs text-muted-foreground">conv.</p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+              <TabsContent value="boosts" className="mt-6">
+                <BoostAnalyticsPanel />
+              </TabsContent>
+            </Tabs>
           </motion.div>
         </div>
       </div>
