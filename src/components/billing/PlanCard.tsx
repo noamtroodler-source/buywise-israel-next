@@ -42,11 +42,15 @@ export function PlanCard({
     <div
       className={cn(
         'relative flex flex-col rounded-2xl border p-6 transition-all',
-        isPopular
-          ? 'border-primary shadow-lg scale-[1.02] bg-card'
-          : 'border-border bg-card hover:border-primary/30',
+        isEnterprise
+          ? 'border-transparent bg-card shadow-lg'
+          : isPopular
+            ? 'border-primary shadow-lg scale-[1.02] bg-card'
+            : 'border-border bg-card hover:border-primary/30',
+        isEnterprise && 'bg-gradient-to-br from-primary/5 via-card to-purple-500/5',
         isCurrentPlan && 'ring-2 ring-primary/30'
       )}
+      style={isEnterprise ? { border: '2px solid transparent', backgroundClip: 'padding-box', outline: '2px solid hsl(var(--primary) / 0.3)' } : undefined}
     >
       {isPopular && (
         <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1">
@@ -98,8 +102,7 @@ export function PlanCard({
         <>
           <Button
             onClick={() => setSalesDialogOpen(true)}
-            variant="default"
-            className="w-full rounded-xl"
+            className="w-full rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground"
           >
             Contact Sales
           </Button>
