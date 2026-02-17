@@ -11,6 +11,7 @@ import {
   useDeleteBlogPost,
   BlogVerificationStatus 
 } from '@/hooks/useProfessionalBlog';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useAgentProfile } from '@/hooks/useAgentProperties';
 import { useMemo, useState } from 'react';
 
@@ -19,6 +20,7 @@ export default function AgentBlog() {
   const { data: posts = [], isLoading: postsLoading } = useMyBlogPosts('agent', agentProfile?.id);
   const submitForReview = useSubmitForReview();
   const deleteBlogPost = useDeleteBlogPost();
+  const { used: quotaUsed, limit: quotaLimit, canSubmit: canSubmitQuota } = useBlogQuotaCheck('agent', agentProfile?.id);
   const [activeTab, setActiveTab] = useState<string>('all');
 
   const filteredPosts = useMemo(() => {
@@ -112,6 +114,9 @@ export default function AgentBlog() {
                 onDelete={(postId) => deleteBlogPost.mutate(postId)}
                 isSubmitting={submitForReview.isPending}
                 isDeleting={deleteBlogPost.isPending}
+                quotaUsed={quotaUsed}
+                quotaLimit={quotaLimit}
+                canSubmitQuota={canSubmitQuota}
               />
             </TabsContent>
           </Tabs>

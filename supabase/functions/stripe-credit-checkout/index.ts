@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
         package_id: pkg.id,
         entity_type,
         entity_id,
-        credits: pkg.credits_included.toString(),
+        credits: Math.floor(pkg.credits_included * (1 + (pkg.bonus_percent || 0) / 100)).toString(),
         type: "credit_purchase",
       },
     });

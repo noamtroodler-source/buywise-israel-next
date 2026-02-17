@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Eye, Pencil, Trash2, Send, Clock, CheckCircle, 
-  AlertCircle, FileText, MoreHorizontal, ExternalLink 
+  AlertCircle, FileText, MoreHorizontal, ExternalLink, Info
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProfessionalBlogPost, BlogVerificationStatus } from '@/hooks/useProfessionalBlog';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -36,6 +37,9 @@ interface BlogArticleTableProps {
   onDelete: (postId: string) => void;
   isSubmitting?: boolean;
   isDeleting?: boolean;
+  quotaUsed?: number;
+  quotaLimit?: number | null;
+  canSubmitQuota?: boolean;
 }
 
 const statusConfig: Record<BlogVerificationStatus, { label: string; icon: typeof FileText; className: string }> = {
@@ -74,6 +78,9 @@ export function BlogArticleTable({
   onDelete,
   isSubmitting,
   isDeleting,
+  quotaUsed,
+  quotaLimit,
+  canSubmitQuota = true,
 }: BlogArticleTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -124,14 +131,25 @@ export function BlogArticleTable({
   }
 
   return (
-    <>
+    <TooltipProvider>
+      {quotaLimit !== null && quotaLimit !== undefined && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-muted/50 border border-border/50">
+          <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground">
+            {quotaUsed ?? 0}/{quotaLimit} blog posts used this month
+          </span>
+          {!canSubmitQuota && (
+            <Badge variant="outline" className="ml-auto text-xs">Limit reached</Badge>
+          )}
+        </div>
+      )}
       <div className="space-y-3">
         {posts.map((post, index) => {
           const status = post.verification_status || 'draft';
           const config = statusConfig[status];
           const StatusIcon = config.icon;
           const canEdit = status === 'draft' || status === 'changes_requested';
-          const canSubmit = status === 'draft' || status === 'changes_requested';
+          const canSubmit = (status === 'draft' || status === 'changes_requested') && canSubmitQuota;
           const canDelete = status === 'draft';
 
           return (
@@ -275,6 +293,6 @@ export function BlogArticleTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </TooltipProvider>
   );
 }
