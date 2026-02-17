@@ -1,155 +1,67 @@
 
-
-# Phase 6: Boost Analytics Dashboard for Agents and Developers
+# Phase A: Enterprise Contact Sales Flow
 
 ## Overview
-Phases 2-5 built the full monetization pipeline: subscriptions, credits, boost activation, and boost rendering. Phase 6 gives agents and developers visibility into how their boosts are performing -- showing ROI on credits spent, comparing boosted vs organic performance, and helping them decide when to re-boost.
+Replace the Enterprise tier's "Subscribe" button with a "Contact Sales" form. Enterprise plans show "Custom" pricing instead of a fixed price. Submissions are stored in the database and visible to admins.
 
-## What Gets Built
+## Changes
 
-### 1. Boost Performance Analytics Hook
-A new `useBoostAnalytics` hook that aggregates performance data for an entity's active and past boosts -- views gained during boost periods, inquiries received, saves, and credit spend.
+### 1. Database: `enterprise_inquiries` Table
+Create a new table to store enterprise sales leads, separate from generic contact submissions.
 
-### 2. Boost Analytics Tab on Agent Analytics Page
-A new "Boosts" tab on `/agent/analytics` showing:
-- Summary cards: Total credits spent, active boosts count, total boost impressions, average ROI
-- Per-boost performance table: Each boost with its product type, target listing, duration, views/saves/inquiries during the boost window, and credits spent
-- Boost vs organic comparison: A chart showing engagement metrics for boosted periods vs non-boosted periods
-- Boost timeline: Visual timeline of when boosts were active across listings
+Columns:
+- `id` (uuid, PK)
+- `user_id` (uuid, nullable -- if they're logged in)
+- `name` (text, required)
+- `email` (text, required)
+- `company_name` (text, required)
+- `entity_type` (text -- 'agency' or 'developer')
+- `message` (text, nullable)
+- `status` (text, default 'new' -- new/contacted/closed)
+- `created_at`, `updated_at` (timestamps)
 
-### 3. Boost Analytics Tab on Developer Analytics Page
-Same as above but scoped to developer projects on `/developer/analytics`.
+RLS: Insert allowed for authenticated and anonymous users. Select/update restricted to admins via `has_role(uid, 'admin')`.
 
-### 4. Quick Boost Stats on Dashboard Cards
-Small inline stats on the agent/developer dashboard property/project cards showing boost performance at a glance (e.g., "Boosted: +42 views" or "No active boost").
+### 2. `EnterpriseSalesDialog` Component
+A new dialog component (`src/components/billing/EnterpriseSalesDialog.tsx`):
+- Triggered by clicking "Contact Sales" on the Enterprise plan card
+- Form fields: Name, Email, Company Name, Entity Type (pre-filled from current tab), Message (optional)
+- Validates with zod, submits to `enterprise_inquiries` table
+- Shows success toast on submission
 
-### 5. Re-boost Prompt
-When a boost expires, show a prompt on the listing card suggesting re-boosting based on performance data (e.g., "Your last boost brought 38 extra views. Boost again?").
+### 3. `PlanCard` Modifications
+- Accept a new `isEnterprise?: boolean` prop
+- When `isEnterprise = true`:
+  - Show "Custom" instead of a price
+  - Show "Contact Sales" button instead of "Subscribe"
+  - Button opens the `EnterpriseSalesDialog` instead of calling `onSubscribe`
 
----
+### 4. `Pricing.tsx` Modifications
+- Pass `isEnterprise={plan.tier === 'enterprise'}` and `entityTab` to PlanCard
+- Enterprise cards open the dialog instead of triggering Stripe checkout
+
+### 5. Admin: Enterprise Inquiries Page
+A new admin page (`src/pages/admin/AdminEnterpriseInquiries.tsx`):
+- Table showing all enterprise inquiries (name, email, company, entity type, status, date)
+- Status update dropdown (new -> contacted -> closed)
+- Search/filter by status
+- Added to admin sidebar under System section
+
+### 6. Route Registration
+- Add lazy import and route for `/admin/enterprise-inquiries` in `App.tsx`
+- Add nav item in `AdminLayout.tsx` under System section
 
 ## Technical Details
 
-### New Hook: `useBoostAnalytics`
+### Files Created
+- `src/components/billing/EnterpriseSalesDialog.tsx`
+- `src/pages/admin/AdminEnterpriseInquiries.tsx`
 
-```text
-src/hooks/useBoostAnalytics.ts
+### Files Modified
+- `src/components/billing/PlanCard.tsx` -- add `isEnterprise` prop, conditional rendering
+- `src/pages/Pricing.tsx` -- pass enterprise flag and entity tab to PlanCard
+- `src/pages/admin/AdminLayout.tsx` -- add Enterprise Inquiries nav item
+- `src/App.tsx` -- add admin route
 
-function useBoostAnalytics(entityType: 'agency' | 'developer', entityId: string)
-  -> Returns { 
-    totalCreditsSpent: number,
-    activeBoostCount: number,
-    completedBoostCount: number,
-    boostDetails: BoostAnalyticsItem[],
-    isLoading: boolean
-  }
-
-Each BoostAnalyticsItem:
-  - boostId, productName, productSlug
-  - targetId, targetType, targetName
-  - startsAt, endsAt, isActive
-  - creditCost
-  - viewsDuringBoost, savesDuringBoost, inquiriesDuringBoost
-    (computed by querying property_views/favorites/inquiries 
-     WHERE created_at BETWEEN starts_at AND ends_at)
-```
-
-### Agent Analytics Page Modification
-
-```text
-src/pages/agent/AgentAnalytics.tsx
-
-Add a tab bar at the top: "Overview" | "Boosts"
-- "Overview" tab shows the existing analytics content
-- "Boosts" tab shows the new BoostAnalyticsPanel component
-```
-
-### Developer Analytics Page Modification
-
-```text
-src/pages/developer/DeveloperAnalytics.tsx
-
-Same tab structure: "Overview" | "Boosts"
-```
-
-### New Component: `BoostAnalyticsPanel`
-
-```text
-src/components/billing/BoostAnalyticsPanel.tsx
-
-Shared between agent and developer analytics pages.
-Props: entityType, entityId
-
-Content:
-1. Summary row (4 cards):
-   - Total Credits Spent (sum of all boost credit costs)
-   - Active Boosts (count of currently active)
-   - Completed Boosts (count of expired)
-   - Avg Views per Boost (mean views during boost windows)
-
-2. Boost Performance Table:
-   - Columns: Listing, Boost Type, Duration, Status, Views, Saves, Inquiries, Cost
-   - Each row is a past or current boost
-   - Status badge: Active (green), Expired (gray), with time remaining/ago
-
-3. Credits Spend Over Time Chart (Recharts bar chart):
-   - Monthly breakdown of credits spent on boosts
-   - Helps users see spending patterns
-
-4. Empty state when no boosts have been used yet:
-   - Friendly message with CTA to boost a listing
-```
-
-### Dashboard Card Enhancement
-
-```text
-src/pages/agent/AgentDashboard.tsx
-src/pages/developer/DeveloperDashboard.tsx
-
-On each property/project card in the dashboard listing:
-- If listing has an active boost: show small "Boosted" badge with remaining days
-- If listing had a recent expired boost (within 7 days): show "Re-boost?" prompt
-- Both use existing useActiveBoosts hook data
-```
-
-### Database Queries (no schema changes needed)
-
-All analytics data is computed from existing tables:
-- `active_boosts` -- boost periods and credit costs (via joined visibility_products)
-- `property_views` -- views during boost windows
-- `favorites` -- saves during boost windows  
-- `inquiries` -- inquiries during boost windows
-- `credit_transactions` -- total spend tracking
-
-### File Structure
-
-```text
-New files:
-  src/hooks/useBoostAnalytics.ts          -- Aggregates boost performance data
-  src/components/billing/BoostAnalyticsPanel.tsx  -- Shared analytics panel component
-
-Modified files:
-  src/pages/agent/AgentAnalytics.tsx       -- Add "Boosts" tab
-  src/pages/developer/DeveloperAnalytics.tsx -- Add "Boosts" tab
-  src/pages/agent/AgentDashboard.tsx       -- Add boost status to property cards
-  src/pages/developer/DeveloperDashboard.tsx -- Add boost status to project cards
-```
-
-### Rendering Flow
-
-```text
-Agent clicks "Analytics" -> sees tab bar [Overview | Boosts]
-  -> Clicks "Boosts" tab
-  -> useBoostAnalytics fires with agent's entity data
-  -> Fetches all boosts for entity, joins with visibility_products for names/costs
-  -> For each boost, queries views/saves/inquiries within the boost time window
-  -> Renders summary cards + performance table + spend chart
-  -> Agent sees which boosts drove the most engagement and at what cost
-```
-
-## What Is NOT in Phase 6
-- Automated boost recommendations (AI-powered "you should boost this listing")
-- A/B testing of boost effectiveness
-- Comparative benchmarks against other agents/developers
-- Email notifications when boosts expire
-
+### Database Migration
+- CREATE TABLE `enterprise_inquiries` with RLS policies
