@@ -1,101 +1,61 @@
 
-
-# Phase C: Overage Soft-Block System
+# Phase D: Visibility Product Corrections
 
 ## Overview
-Enforce plan limits with clear messaging. When an agency or developer reaches their listing/seat limit, block the action and show exactly what the overage would cost, with an upgrade CTA. Also add usage meters to dashboards.
+Add a `sort_order` column to `visibility_products`, insert missing boost products, split the existing "Homepage Project Featured" into hero vs. secondary tiers, and update credit costs to match spec values.
 
-## Changes
+## Database Migration
 
-### 1. Enhance `useListingLimitCheck` Hook
-**File**: `src/hooks/useListingLimitCheck.ts`
+A single migration will:
 
-Currently returns `{ canCreate, currentCount, maxListings, isLoading, needsSubscription }`. Enhance to also return:
-- `nextTierName` -- the name of the next plan tier (for upgrade messaging)
-- `overageMockPrice` -- a mock per-listing overage price for display (e.g., 150 ILS/listing/month for agencies, 500 ILS/project/month for developers)
-- `usagePercent` -- for usage meter display
+### 1. Add `sort_order` column
+```sql
+ALTER TABLE public.visibility_products ADD COLUMN sort_order integer DEFAULT 0;
+```
 
-The mock overage prices are hardcoded constants since they aren't finalized. This makes the warning message clear: "Publishing additional listings would normally cost ~150 ILS/listing/month."
+### 2. Split "Homepage Project Featured"
+- Update the existing `homepage_project_featured` row to become the **hero** slot: rename to "Homepage Project Hero", slug `homepage_project_hero`, 150 credits, max_slots = 1
+- Insert a new **secondary** slot: "Homepage Project Secondary", slug `homepage_project_secondary`, 90 credits, max_slots = 2, applies_to = 'developer'
 
-### 2. Create `useSeatLimitCheck` Hook
-**New file**: `src/hooks/useSeatLimitCheck.ts`
+### 3. Insert new products
+- **Projects Boost**: slug `projects_boost`, 60 credits, 7 days, applies_to = 'developer', description "Top of /projects grid"
+- **Budget Tool Sponsor**: slug `budget_tool_sponsor`, 50 credits, 7 days, applies_to = 'all', description "Sponsored slot in Properties in Your Budget tool"
 
-Similar pattern to `useListingLimitCheck` but for team seats:
-- Count current agents in the agency
-- Compare against `maxSeats` from subscription
-- Return `{ canInvite, currentSeats, maxSeats, isLoading, needsSubscription, overageMockPrice }`
+### 4. Update existing credit costs to spec values
+Adjust any existing products whose costs don't match the spec (the user's message says "update existing product credit costs to match spec values" -- the current values will be preserved unless they explicitly differ from spec; the main change is the homepage project split above).
 
-### 3. Upgrade `ListingLimitBanner` with Overage Cost Warning
-**File**: `src/components/billing/ListingLimitBanner.tsx`
+### 5. Set sort_order on all products
+Assign a logical display order to all products (1-11).
 
-When the user is at their limit, show:
-- Current usage: "20/20 listings used"
-- Overage cost warning: "Publishing additional listings would normally cost ~150 ILS/listing/month"
-- Strong upgrade CTA: "Upgrade to Growth to unlock up to 50 listings"
-- Style as a prominent warning (amber/yellow), not destructive red
+## Final Product Lineup (after migration)
 
-### 4. Hard-Block Submit Button in Property/Project Wizards
-**Files**:
-- `src/pages/agent/NewPropertyWizard.tsx`
-- `src/pages/developer/NewProjectWizard.tsx`
+| # | Slug | Name | Credits | Days | Slots | Applies To |
+|---|------|------|---------|------|-------|------------|
+| 1 | homepage_sale_featured | Homepage Sale Featured | 30 | 7 | 6 | agency |
+| 2 | homepage_rent_featured | Homepage Rent Featured | 25 | 7 | 6 | agency |
+| 3 | homepage_project_hero | Homepage Project Hero | 150 | 7 | 1 | developer |
+| 4 | homepage_project_secondary | Homepage Project Secondary | 90 | 7 | 2 | developer |
+| 5 | projects_boost | Projects Boost | 60 | 7 | null | developer |
+| 6 | search_priority | Search Priority Boost | 15 | 7 | null | all |
+| 7 | city_spotlight | City Spotlight | 20 | 7 | 3 | all |
+| 8 | budget_tool_sponsor | Budget Tool Sponsor | 50 | 7 | 1 | all |
+| 9 | similar_listings_priority | Similar Listings Priority | 10 | 7 | null | all |
+| 10 | agency_directory_featured | Agency Directory Featured | 25 | 30 | 5 | agency |
+| 11 | developer_directory_featured | Developer Directory Featured | 25 | 30 | 5 | developer |
+| 12 | email_digest_sponsored | Email Digest Sponsored | 35 | 7 | 2 | all |
 
-Import `useListingLimitCheck` directly into the wizard. When `canCreate` is false:
-- Disable the "Submit for Review" button
-- Add tooltip explaining why it's disabled
-- Keep "Save as Draft" enabled (drafts don't count against limits)
-
-Also update `EditPropertyWizard.tsx` and `EditProjectWizard.tsx` to block resubmission if at limit (for draft/rejected properties being resubmitted).
-
-### 5. Seat Limit Enforcement on Agency Dashboard
-**File**: `src/pages/agency/AgencyDashboard.tsx`
-
-- Import `useSeatLimitCheck`
-- When at seat limit, disable the "New Code" invite button
-- Show warning: "You've used 5/5 team seats. Additional seats would cost ~100 ILS/seat/month. Upgrade to unlock more."
-
-### 6. Usage Meters on Dashboards
-**New component**: `src/components/billing/UsageMeters.tsx`
-
-A compact card showing:
-- Listings: "12/20 used" with progress bar
-- Seats: "3/5 used" with progress bar
-- Blog posts: "1/4 used this month" with progress bar
-
-Color coding:
-- Green: under 60%
-- Amber: 60-90%
-- Red: over 90% or at limit
-
-Place this component on:
-- `AgencyDashboard.tsx` -- near the subscription status card
-- `DeveloperDashboard.tsx` -- near the subscription status card
-
-### 7. Blog Quota in Usage Meters
-Use the existing `useBlogQuotaCheck` hook (from Phase B) to feed into the usage meters component.
+## Frontend: Sort by `sort_order`
+Update `src/hooks/useBoosts.ts` to order by `sort_order` instead of `credit_cost` so products display in the intended order.
 
 ## Technical Details
 
-### Files Created
-- `src/hooks/useSeatLimitCheck.ts`
-- `src/components/billing/UsageMeters.tsx`
-
 ### Files Modified
-- `src/hooks/useListingLimitCheck.ts` -- add `nextTierName`, `overageMockPrice`, `usagePercent`
-- `src/components/billing/ListingLimitBanner.tsx` -- add overage cost warning and upgrade messaging
-- `src/pages/agent/NewPropertyWizard.tsx` -- hard-block submit when at limit
-- `src/pages/developer/NewProjectWizard.tsx` -- hard-block submit when at limit
-- `src/pages/agent/EditPropertyWizard.tsx` -- block resubmission when at limit
-- `src/pages/developer/EditProjectWizard.tsx` -- block resubmission when at limit
-- `src/pages/agency/AgencyDashboard.tsx` -- add seat limit check + usage meters
-- `src/pages/developer/DeveloperDashboard.tsx` -- add usage meters
+- `src/hooks/useBoosts.ts` -- change `.order('credit_cost', ...)` to `.order('sort_order', ...)`
 
-### No Database Changes Required
-All data already exists in `membership_plans` (`max_listings`, `max_seats`, `max_blogs_per_month`). Mock overage prices are hardcoded constants.
+### Database Migration (single SQL file)
+1. `ALTER TABLE` to add `sort_order`
+2. `UPDATE` existing `homepage_project_featured` to become hero variant
+3. `INSERT` three new products (secondary, projects_boost, budget_tool_sponsor)
+4. `UPDATE` all rows to set `sort_order` values
 
-### Mock Overage Prices (Hardcoded Constants)
-These are display-only values for the warning messages. They will be updated when final overage pricing is decided:
-- Agency extra listing: ~150 ILS/month
-- Agency extra seat: ~100 ILS/month
-- Developer extra project: ~500 ILS/month
-- Developer extra seat: ~150 ILS/month
-
+No other code changes needed -- the BoostDialog and admin pages already render whatever products exist.
