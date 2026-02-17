@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { EnterpriseSalesDialog } from './EnterpriseSalesDialog';
 
 interface PlanCardProps {
   name: string;
@@ -12,6 +14,8 @@ interface PlanCardProps {
   features: string[];
   isCurrentPlan?: boolean;
   isPopular?: boolean;
+  isEnterprise?: boolean;
+  entityType?: 'agency' | 'developer';
   onSubscribe: () => void;
   loading?: boolean;
 }
@@ -25,9 +29,12 @@ export function PlanCard({
   features,
   isCurrentPlan,
   isPopular,
+  isEnterprise,
+  entityType = 'agency',
   onSubscribe,
   loading,
 }: PlanCardProps) {
+  const [salesDialogOpen, setSalesDialogOpen] = useState(false);
   const price = billingCycle === 'annual' ? priceAnnual : priceMonthly;
   const monthlyEquivalent = billingCycle === 'annual' ? Math.round(priceAnnual / 12) : priceMonthly;
 
@@ -59,14 +66,22 @@ export function PlanCard({
       </div>
 
       <div className="mb-6">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-foreground">₪{monthlyEquivalent.toLocaleString()}</span>
-          <span className="text-muted-foreground text-sm">/mo</span>
-        </div>
-        {billingCycle === 'annual' && (
-          <p className="text-xs text-muted-foreground mt-1">
-            ₪{price.toLocaleString()} billed annually
-          </p>
+        {isEnterprise ? (
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-bold text-foreground">Custom</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-foreground">₪{monthlyEquivalent.toLocaleString()}</span>
+              <span className="text-muted-foreground text-sm">/mo</span>
+            </div>
+            {billingCycle === 'annual' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                ₪{price.toLocaleString()} billed annually
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -79,14 +94,31 @@ export function PlanCard({
         ))}
       </ul>
 
-      <Button
-        onClick={onSubscribe}
-        disabled={isCurrentPlan || loading}
-        variant={isPopular ? 'default' : 'outline'}
-        className="w-full rounded-xl"
-      >
-        {isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : 'Subscribe'}
-      </Button>
+      {isEnterprise ? (
+        <>
+          <Button
+            onClick={() => setSalesDialogOpen(true)}
+            variant="default"
+            className="w-full rounded-xl"
+          >
+            Contact Sales
+          </Button>
+          <EnterpriseSalesDialog
+            open={salesDialogOpen}
+            onOpenChange={setSalesDialogOpen}
+            entityType={entityType}
+          />
+        </>
+      ) : (
+        <Button
+          onClick={onSubscribe}
+          disabled={isCurrentPlan || loading}
+          variant={isPopular ? 'default' : 'outline'}
+          className="w-full rounded-xl"
+        >
+          {isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : 'Subscribe'}
+        </Button>
+      )}
     </div>
   );
 }
