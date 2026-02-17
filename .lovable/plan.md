@@ -1,134 +1,178 @@
 
-# Phase 4: Enforcement, Boost Activation, and Credit Spending
+
+# Phase 5: Boost Rendering, Search Priority, and Admin Management
 
 ## Overview
-Phase 3 built the UI for subscribing and buying credits. Phase 4 makes these purchases *matter* by enforcing listing limits, enabling boost activation (spending credits), and showing active boosts.
+Phases 2-4 built the infrastructure for subscriptions, credits, and boost activation. Phase 5 closes the loop by making active boosts **visible to end users** -- boosted listings appear in priority positions on the homepage, in search results, and in directory pages. It also adds admin tools to manage and override boosts.
 
 ## What Gets Built
 
-### 1. Listing Limit Enforcement
-When an agent or developer tries to create a new listing/project, check their subscription's `max_listings` against their current count. If they've hit the limit, show an upgrade prompt instead of allowing creation.
+### 1. Homepage Boosted Listings Integration
+Properties and projects with active boosts for homepage slots (e.g., `homepage_sale_featured`, `homepage_rent_featured`, `homepage_project_featured`) should appear in the homepage carousels alongside admin-curated featured slots.
 
-**Where it applies:**
-- Agent: `useCreateProperty` hook in `src/hooks/useAgentProperties.tsx` -- before inserting, count current non-draft properties vs `maxListings`
-- Developer: `useCreateProject` hook in `src/hooks/useDeveloperProjects.tsx` -- same pattern
-- UI gates in `NewProperty.tsx` and `NewPropertyWizard.tsx` -- show a banner/modal when limit reached
+**How it works:**
+- Modify `useFeaturedSaleProperties`, `useFeaturedRentalProperties`, and `useFeaturedProjects` hooks to also query `active_boosts` joined with `visibility_products` for matching slug patterns
+- Boosted listings are merged with admin-featured slots, deduped, and placed at designated positions
+- A subtle "Promoted" badge appears on boosted cards (distinct from admin "Featured" badge)
 
-**New hook:** `useListingLimitCheck` -- returns `{ canCreate, currentCount, maxListings, isLoading }` by combining the subscription data with a count query.
+### 2. Search Results Priority Boost
+Listings with an active `search_priority` boost appear at the top of search/listing results, before organically sorted results.
 
-### 2. Boost Activation Edge Function
-A new edge function `activate-boost` that:
-- Accepts `{ product_slug, target_type, target_id }` (e.g., "homepage_sale_featured" for a specific property)
-- Validates the user owns the target listing/project
-- Checks credit balance is sufficient (via `get_credit_balance` RPC)
-- Checks slot availability (via `get_active_boost_count`)
-- Deducts credits using `record_credit_purchase` (negative amount)
-- Creates an `active_boosts` row with calculated `starts_at` / `ends_at`
-- Returns the created boost details
+**How it works:**
+- Modify `usePaginatedProperties` to first fetch property IDs with active `search_priority` boosts, then prepend them to results
+- A subtle "Promoted" indicator appears on these cards in search results
+- Boosted results are excluded from the organic query to prevent duplicates
 
-### 3. Boost Activation UI
-A "Boost Listing" dialog/modal accessible from the agent's property card or developer's project card in their dashboards.
+### 3. City Spotlight Integration
+Properties with an active `city_spotlight` boost get priority placement on city/area detail pages.
 
-**Components:**
-- `BoostDialog.tsx` -- modal showing available boost products, credit costs, current balance, and a confirm button
-- `ActiveBoostsDisplay.tsx` -- small badges/indicators on listing cards showing active boosts
-- `BoostHistorySection.tsx` -- table in settings showing past and active boosts
+**How it works:**
+- Modify `useCityFeaturedProperties` (or the area detail page query) to prepend boosted listings for that city
+- Works similarly to search priority but scoped to city
 
-### 4. Credit Transaction History
-A "Credit History" section in the billing/settings area showing:
-- All credit transactions (purchases, spending, expiring)
-- Running balance
-- Filterable by date range
+### 4. Similar Listings Priority
+Properties with `similar_listings_priority` boost appear first in the "Similar Properties" section on property detail pages.
 
-### 5. Blog Post Limit Enforcement
-Similar to listing limits, check `max_blogs_per_month` before allowing a new blog post submission.
+**How it works:**
+- Modify `useSimilarProperties` to check for active boosts and prepend matching boosted properties
+
+### 5. Directory Featured Placement
+Agencies/developers with `agency_directory_featured` or `developer_directory_featured` boosts appear at the top of their respective directory pages (/professionals, /agencies, /developers).
+
+**How it works:**
+- Modify the directory page queries to check for active boosts and prepend featured entities
+
+### 6. Promoted Badge Component
+A reusable `PromotedBadge` component that appears on boosted listings across the platform -- visually distinct from the admin "Featured" badge. Shows a small "Promoted" label with a subtle styling that complies with transparency norms.
+
+### 7. Admin Boost Management Page
+A new `/admin/boosts` page where admins can:
+- View all active boosts (filterable by product type, entity)
+- See boost expiration dates and slot usage
+- Deactivate/cancel boosts early (with optional credit refund)
+- View boost revenue analytics (total credits spent, popular products)
+- Override slot limits temporarily
 
 ---
 
 ## Technical Details
 
-### Listing Limit Check Hook (`useListingLimitCheck`)
+### Hook Modifications for Boost Integration
+
+**`useFeaturedSaleProperties` / `useFeaturedRentalProperties` (in `useProperties.tsx`):**
 ```text
-- Uses useSubscription() for maxListings
-- Queries property/project count for the entity (non-draft only)
-- Returns { canCreate, currentCount, maxListings }
-- If maxListings is null (Enterprise), canCreate is always true
-- If no subscription, maxListings defaults to 0 (must subscribe)
+After fetching admin-curated slots from homepage_featured_slots:
+1. Query active_boosts WHERE target_type = 'property' 
+   AND product_id matches homepage_sale_featured/homepage_rent_featured product
+   AND is_active = true AND ends_at > now()
+2. Fetch the boosted property details
+3. Merge: admin-curated first, then boosted (deduped), up to max 8
+4. Mark boosted properties with a _isBoosted flag for UI rendering
 ```
 
-### activate-boost Edge Function
+**`useFeaturedProjects` (in `useProjects.tsx`):**
 ```text
-Path: supabase/functions/activate-boost/index.ts
-Auth: Bearer token required
-Method: POST
-Body: { product_slug: string, target_type: 'property' | 'project', target_id: string }
+Same pattern but for homepage_project_featured product slug
+```
 
-Steps:
-1. Authenticate user, resolve entity (agency/developer)
-2. Verify ownership of target listing
-3. Fetch visibility_product by slug
-4. Check applies_to matches entity_type
-5. Check credit balance >= credit_cost
-6. Check slot availability if max_slots is set
-7. Call record_credit_purchase with negative amount
-8. Insert active_boosts row
-9. Return boost details
+**`usePaginatedProperties` (in `usePaginatedProperties.tsx`):**
+```text
+On page 1 only:
+1. Query active_boosts WHERE product_id matches search_priority product
+   AND target_type = 'property' AND is_active = true AND ends_at > now()
+2. Fetch those properties
+3. Prepend to page 1 results (mark as _isBoosted)
+4. Exclude boosted IDs from the organic query to avoid duplicates
+5. Adjust total count accordingly
+```
+
+### New Hook: `useBoostedListings`
+A utility hook that fetches active boosts for a given product slug and returns the target entity IDs:
+```text
+function useBoostedListings(productSlug: string, targetType: 'property' | 'project')
+  -> Returns { boostedIds: string[], isLoading: boolean }
+
+Internally:
+1. Get product ID from visibility_products by slug
+2. Query active_boosts for that product_id where is_active and not expired
+3. Return target_ids
+```
+
+### PromotedBadge Component
+```text
+src/components/shared/PromotedBadge.tsx
+- Small badge: "Promoted" with a subtle gold/amber styling
+- Tooltip: "This listing is promoted by its agent/developer"
+- Used in PropertyCard and ProjectCard when _isBoosted is true
+```
+
+### Admin Boost Management
+```text
+src/pages/admin/AdminBoosts.tsx
+- Table of all active_boosts joined with visibility_products and target entity names
+- Columns: Boost Product, Target Listing, Entity, Started, Expires, Status
+- Actions: Deactivate (sets is_active = false), Extend (update ends_at)
+- Summary cards: Total active boosts, credits spent this month, most popular product
+- Slot usage display per product (e.g., "Homepage Sale: 4/6 slots used")
 ```
 
 ### Database Changes
-- New RPC function `spend_credits` (similar to `record_credit_purchase` but validates balance >= amount)
-- RLS policies on `active_boosts` for entity owners to SELECT their own boosts
-- RLS policies on `credit_transactions` for entity owners to SELECT their own transactions
+- New database view or RPC `get_boosted_property_ids` for efficient querying of boosted properties by product slug (optional optimization)
+- No schema changes needed -- all data is already in `active_boosts` and `visibility_products`
 
 ### File Structure
 ```text
 src/
   hooks/
-    useListingLimitCheck.ts     -- Listing limit enforcement hook
-    useBoosts.ts                -- Fetch active boosts, available products
+    useBoostedListings.ts        -- Shared hook to fetch boosted entity IDs by product slug
   components/
-    billing/
-      BoostDialog.tsx           -- Boost activation modal
-      ActiveBoostBadge.tsx      -- Badge showing active boost on listing
-      CreditHistoryTable.tsx    -- Credit transaction history table
-
-supabase/
-  functions/
-    activate-boost/index.ts     -- Boost activation edge function
+    shared/
+      PromotedBadge.tsx          -- "Promoted" badge for boosted listings
+  pages/
+    admin/
+      AdminBoosts.tsx            -- Admin boost management page
 ```
 
-### UI Integration Points
-- Agent property cards: Add "Boost" button + ActiveBoostBadge
-- Developer project cards: Add "Boost" button + ActiveBoostBadge
-- New Property / New Project pages: Show limit warning banner
-- Settings billing tab: Add CreditHistoryTable
-- useCreateProperty / useCreateProject: Add pre-check guard
-
-### Enforcement Flow
+### Modified Files
 ```text
-User clicks "Add New Listing"
-  --> useListingLimitCheck fires
-  --> If canCreate = false:
-      Show modal: "You've reached your plan's limit of X listings.
-                   Upgrade to [next tier] for more."
-      CTA: "Upgrade Plan" (links to /pricing)
-  --> If canCreate = true:
-      Proceed normally to wizard/form
+src/hooks/useProperties.tsx          -- Add boost merging to featured queries
+src/hooks/useProjects.tsx            -- Add boost merging to featured projects query
+src/hooks/usePaginatedProperties.tsx -- Prepend search-priority boosted listings
+src/components/property/PropertyCard.tsx -- Show PromotedBadge when _isBoosted
+src/pages/admin/AdminLayout.tsx      -- Add "Boosts" nav item under Homepage section
+src/App.tsx                          -- Add /admin/boosts route
 ```
 
-### Boost Activation Flow
+### Property Type Extension
 ```text
-User clicks "Boost" on a listing
-  --> BoostDialog opens
-  --> Fetches visibility_products filtered by entity type
-  --> Shows products with credit cost, duration, slot availability
-  --> User selects a boost product and confirms
-  --> Calls supabase.functions.invoke('activate-boost', { ... })
-  --> On success: toast + refresh active boosts
-  --> On failure: show error (insufficient credits / no slots)
+Extend the Property type (or use a wrapper) to include:
+  _isBoosted?: boolean  -- client-side flag, not from DB
 ```
 
-## What Is NOT in Phase 4
-- Homepage/search result rendering of boosted listings (Phase 5 -- query-side integration)
-- Email digest sponsored slot rendering (Phase 5)
-- Admin boost management/override (Phase 5)
+### Rendering Flow (Homepage)
+```text
+Homepage loads
+  --> FeaturedShowcase calls useFeaturedSaleProperties
+  --> Hook fetches admin slots from homepage_featured_slots
+  --> Hook fetches boosted IDs from active_boosts (homepage_sale_featured product)
+  --> Merges: admin slots first, then boosted properties, deduped, max 8
+  --> Properties with _isBoosted = true show PromotedBadge
+  --> User sees a natural mix of admin-picked and agent-boosted listings
+```
+
+### Rendering Flow (Search)
+```text
+User searches listings
+  --> usePaginatedProperties fires
+  --> On page 1: fetch search_priority boosted property IDs
+  --> Prepend boosted properties to organic results
+  --> Boosted properties show subtle "Promoted" label
+  --> Subsequent pages show only organic results
+```
+
+## What Is NOT in Phase 5
+- Email digest sponsored slot rendering (requires email sending infrastructure)
+- Automatic boost expiration cleanup (cron job -- can be added later)
+- Boost analytics dashboard for agents/developers (can be Phase 6)
+- A/B testing of boost effectiveness
+
