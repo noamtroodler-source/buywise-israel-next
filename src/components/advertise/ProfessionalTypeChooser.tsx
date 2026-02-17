@@ -71,7 +71,7 @@ export function ProfessionalTypeChooser() {
             Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
           </p>
           <p className="text-sm text-muted-foreground/80 mt-3">
-            Free during our founding period
+            Free during our founding period · <Link to="/pricing" className="text-primary hover:underline">View plans & pricing</Link>
           </p>
         </motion.div>
 

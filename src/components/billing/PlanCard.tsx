@@ -1,0 +1,92 @@
+import { Check, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+interface PlanCardProps {
+  name: string;
+  tier: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  billingCycle: 'monthly' | 'annual';
+  features: string[];
+  isCurrentPlan?: boolean;
+  isPopular?: boolean;
+  onSubscribe: () => void;
+  loading?: boolean;
+}
+
+export function PlanCard({
+  name,
+  tier,
+  priceMonthly,
+  priceAnnual,
+  billingCycle,
+  features,
+  isCurrentPlan,
+  isPopular,
+  onSubscribe,
+  loading,
+}: PlanCardProps) {
+  const price = billingCycle === 'annual' ? priceAnnual : priceMonthly;
+  const monthlyEquivalent = billingCycle === 'annual' ? Math.round(priceAnnual / 12) : priceMonthly;
+
+  return (
+    <div
+      className={cn(
+        'relative flex flex-col rounded-2xl border p-6 transition-all',
+        isPopular
+          ? 'border-primary shadow-lg scale-[1.02] bg-card'
+          : 'border-border bg-card hover:border-primary/30',
+        isCurrentPlan && 'ring-2 ring-primary/30'
+      )}
+    >
+      {isPopular && (
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1">
+          <Sparkles className="h-3 w-3" />
+          Most Popular
+        </Badge>
+      )}
+      {isCurrentPlan && (
+        <Badge variant="outline" className="absolute -top-3 right-4 border-primary text-primary">
+          Current Plan
+        </Badge>
+      )}
+
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-foreground">{name}</h3>
+        <p className="text-xs text-muted-foreground capitalize">{tier} tier</p>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-foreground">₪{monthlyEquivalent.toLocaleString()}</span>
+          <span className="text-muted-foreground text-sm">/mo</span>
+        </div>
+        {billingCycle === 'annual' && (
+          <p className="text-xs text-muted-foreground mt-1">
+            ₪{price.toLocaleString()} billed annually
+          </p>
+        )}
+      </div>
+
+      <ul className="space-y-2.5 mb-6 flex-1">
+        {features.map((feature, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm">
+            <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <span className="text-muted-foreground">{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      <Button
+        onClick={onSubscribe}
+        disabled={isCurrentPlan || loading}
+        variant={isPopular ? 'default' : 'outline'}
+        className="w-full rounded-xl"
+      >
+        {isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : 'Subscribe'}
+      </Button>
+    </div>
+  );
+}

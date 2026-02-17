@@ -46,6 +46,9 @@ const ForAgents = lazy(() => import("./pages/ForAgents"));
 
 const Advertise = lazy(() => import("./pages/Advertise"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutCancel = lazy(() => import("./pages/CheckoutCancel"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const MapSearch = lazy(() => import("./pages/MapSearch"));
@@ -219,6 +222,9 @@ const App = () => (
                         <Route path="/for-agents" element={<ForAgents />} />
                         
                         <Route path="/advertise" element={<Advertise />} />
+                        <Route path="/pricing" element={<Pricing />} />
+                        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                        <Route path="/checkout/cancel" element={<CheckoutCancel />} />
                         
                         {/* Legal pages */}
                         <Route path="/privacy" element={<PrivacyPolicy />} />

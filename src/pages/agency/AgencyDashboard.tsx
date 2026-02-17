@@ -38,6 +38,7 @@ import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingPr
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyNotificationBell } from '@/components/agency/AgencyNotificationBell';
 import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformanceInsights';
+import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -168,6 +169,9 @@ export default function AgencyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* Subscription Status */}
+          <SubscriptionStatusCard />
 
           {/* Performance Insights */}
           <AgencyPerformanceInsights />

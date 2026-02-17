@@ -60,6 +60,17 @@ export function AdvertiseCTA() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                asChild
+                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
+              >
+                <Link to="/pricing">
+                  View Plans & Pricing
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
 
             <p className="text-sm text-white/60">

@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AddressAutocomplete } from '@/components/agent/wizard/AddressAutocomplete';
 import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
+import { BillingSection } from '@/components/billing/BillingSection';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -679,6 +680,11 @@ export default function DeveloperSettings() {
                     </div>
                   </CardContent>
                 </Card>
+              </motion.div>
+
+              {/* Billing Section */}
+              <motion.div variants={itemVariants}>
+                <BillingSection />
               </motion.div>
 
               {/* Sticky Save Button */}
