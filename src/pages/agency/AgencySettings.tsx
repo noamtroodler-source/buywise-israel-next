@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { BillingSection } from '@/components/billing/BillingSection';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, Save, Upload, Building2, Trash2, X, Mail, Phone, Globe, MapPin, Briefcase, Users, Bell, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
@@ -773,6 +774,11 @@ export default function AgencySettings() {
                     </p>
                   </CardContent>
                 </Card>
+              </motion.div>
+
+              {/* Billing Section */}
+              <motion.div variants={itemVariants}>
+                <BillingSection />
               </motion.div>
 
               {/* Sticky Save Button */}

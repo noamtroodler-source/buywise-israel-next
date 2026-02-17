@@ -11,6 +11,7 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
 import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
+import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 
@@ -148,6 +149,11 @@ export default function DeveloperDashboard() {
           animate="visible"
           className="space-y-8"
         >
+          {/* Subscription Status */}
+          <motion.div variants={itemVariants}>
+            <SubscriptionStatusCard />
+          </motion.div>
+
           {/* Onboarding Progress */}
           <motion.div variants={itemVariants}>
             <DeveloperOnboardingProgress />
