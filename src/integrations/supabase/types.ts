@@ -1601,6 +1601,8 @@ export type Database = {
           name: string
           price_ils: number
           sort_order: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1612,6 +1614,8 @@ export type Database = {
           name: string
           price_ils: number
           sort_order?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1623,6 +1627,8 @@ export type Database = {
           name?: string
           price_ils?: number
           sort_order?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2846,6 +2852,9 @@ export type Database = {
           price_annual_ils: number
           price_monthly_ils: number
           sort_order: number
+          stripe_price_annual_id: string | null
+          stripe_price_monthly_id: string | null
+          stripe_product_id: string | null
           tier: string
           updated_at: string
         }
@@ -2861,6 +2870,9 @@ export type Database = {
           price_annual_ils?: number
           price_monthly_ils?: number
           sort_order?: number
+          stripe_price_annual_id?: string | null
+          stripe_price_monthly_id?: string | null
+          stripe_product_id?: string | null
           tier: string
           updated_at?: string
         }
@@ -2876,6 +2888,9 @@ export type Database = {
           price_annual_ils?: number
           price_monthly_ils?: number
           sort_order?: number
+          stripe_price_annual_id?: string | null
+          stripe_price_monthly_id?: string | null
+          stripe_product_id?: string | null
           tier?: string
           updated_at?: string
         }
@@ -5145,6 +5160,23 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_promo_redemptions: {
+        Args: { p_promo_id: string }
+        Returns: undefined
+      }
+      record_credit_purchase: {
+        Args: {
+          p_amount: number
+          p_credit_type?: string
+          p_description?: string
+          p_entity_id: string
+          p_entity_type: string
+          p_expires_at?: string
+          p_reference_id?: string
+          p_transaction_type: string
+        }
+        Returns: string
       }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {
