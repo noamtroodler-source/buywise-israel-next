@@ -93,6 +93,7 @@ const AgencyAnalytics = lazy(() => import("./pages/agency/AgencyAnalytics"));
 const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
+const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));
@@ -105,6 +106,7 @@ const NewProjectWizard = lazy(() => import("./pages/developer/NewProjectWizard")
 const EditProjectWizard = lazy(() => import("./pages/developer/EditProjectWizard"));
 const DeveloperBlog = lazy(() => import("./pages/developer/DeveloperBlog"));
 const DeveloperBlogWizard = lazy(() => import("./pages/developer/DeveloperBlogWizard"));
+const DeveloperBillingPage = lazy(() => import("./pages/developer/DeveloperBilling"));
 
 // Admin - lazy load (rarely visited by regular users)
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -336,6 +338,11 @@ const App = () => (
                             <AgencyBlogWizard />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/billing" element={
+                          <ProtectedRoute>
+                            <AgencyBilling />
+                          </ProtectedRoute>
+                        } />
                         
                         {/* Developer routes */}
                         <Route path="/developer/register" element={
@@ -391,6 +398,11 @@ const App = () => (
                         <Route path="/developer/settings" element={
                           <ProtectedRoute requiredRole="developer">
                             <DeveloperSettings />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/developer/billing" element={
+                          <ProtectedRoute requiredRole="developer">
+                            <DeveloperBillingPage />
                           </ProtectedRoute>
                         } />
                         
