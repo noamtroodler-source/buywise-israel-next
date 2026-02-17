@@ -68,6 +68,7 @@ export function AdminLayout() {
     { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
+    { href: '/admin/enterprise-inquiries', label: 'Enterprise Leads', icon: Building2 },
     { href: '/admin/errors', label: 'Client Errors', icon: Bug },
   ];
 

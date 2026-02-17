@@ -1944,6 +1944,45 @@ export type Database = {
         }
         Relationships: []
       }
+      enterprise_inquiries: {
+        Row: {
+          company_name: string
+          created_at: string
+          email: string
+          entity_type: string
+          id: string
+          message: string | null
+          name: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          email: string
+          entity_type?: string
+          id?: string
+          message?: string | null
+          name: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          email?: string
+          entity_type?: string
+          id?: string
+          message?: string | null
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       experiment_exposures: {
         Row: {
           component: string | null

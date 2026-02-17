@@ -204,6 +204,8 @@ export default function Pricing() {
                   features={buildFeatures(plan)}
                   isCurrentPlan={subscription?.tier === plan.tier && subscription?.entityType === entityTab}
                   isPopular={plan.tier === 'growth'}
+                  isEnterprise={plan.tier === 'enterprise'}
+                  entityType={entityTab}
                   onSubscribe={() => handleSubscribe(plan.id)}
                   loading={checkoutLoading === plan.id}
                 />
