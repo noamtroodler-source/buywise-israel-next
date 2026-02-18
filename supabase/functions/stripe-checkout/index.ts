@@ -73,7 +73,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ensure Stripe Product + Price exist (lazy sync)
+    // Guard: Enterprise plans have no fixed price
+    const priceIls =
+      billing_cycle === "annual"
+        ? plan.price_annual_ils
+        : plan.price_monthly_ils;
+
+    if (priceIls == null) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Enterprise plans require a custom quote — please contact us",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Ensure Stripe Product + Price exist (lazy sync with race-condition guard)
     let stripePriceId: string;
     const priceColumn =
       billing_cycle === "annual"
@@ -83,39 +102,48 @@ Deno.serve(async (req) => {
     if (plan[priceColumn]) {
       stripePriceId = plan[priceColumn];
     } else {
-      // Create product if needed
-      let stripeProductId = plan.stripe_product_id;
-      if (!stripeProductId) {
-        const product = await stripe.products.create({
-          name: `${plan.name} (${plan.entity_type})`,
-          metadata: { plan_id: plan.id, entity_type: plan.entity_type },
+      // Re-fetch plan to catch concurrent writes before creating anything
+      const { data: freshPlan } = await adminClient
+        .from("membership_plans")
+        .select("*")
+        .eq("id", plan_id)
+        .single();
+
+      if (freshPlan?.[priceColumn]) {
+        // Another request already created it — use the existing price
+        stripePriceId = freshPlan[priceColumn];
+      } else {
+        // Create product if needed (re-check after re-fetch)
+        let stripeProductId =
+          freshPlan?.stripe_product_id || plan.stripe_product_id;
+        if (!stripeProductId) {
+          const product = await stripe.products.create({
+            name: `${plan.name} (${plan.entity_type})`,
+            metadata: { plan_id: plan.id, entity_type: plan.entity_type },
+          });
+          stripeProductId = product.id;
+          await adminClient
+            .from("membership_plans")
+            .update({ stripe_product_id: stripeProductId })
+            .eq("id", plan.id);
+        }
+
+        // Create price
+        const price = await stripe.prices.create({
+          product: stripeProductId,
+          unit_amount: Math.round(priceIls * 100), // ILS to agorot
+          currency: "ils",
+          recurring: {
+            interval: billing_cycle === "annual" ? "year" : "month",
+          },
+          metadata: { plan_id: plan.id, billing_cycle },
         });
-        stripeProductId = product.id;
+        stripePriceId = price.id;
         await adminClient
           .from("membership_plans")
-          .update({ stripe_product_id: stripeProductId })
+          .update({ [priceColumn]: stripePriceId })
           .eq("id", plan.id);
       }
-
-      // Create price
-      const priceIls =
-        billing_cycle === "annual"
-          ? plan.price_annual_ils
-          : plan.price_monthly_ils;
-      const price = await stripe.prices.create({
-        product: stripeProductId,
-        unit_amount: Math.round(priceIls * 100), // ILS to agorot
-        currency: "ils",
-        recurring: {
-          interval: billing_cycle === "annual" ? "year" : "month",
-        },
-        metadata: { plan_id: plan.id, billing_cycle },
-      });
-      stripePriceId = price.id;
-      await adminClient
-        .from("membership_plans")
-        .update({ [priceColumn]: stripePriceId })
-        .eq("id", plan.id);
     }
 
     // Build checkout session params

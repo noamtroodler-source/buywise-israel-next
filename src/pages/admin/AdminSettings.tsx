@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   Save, ExternalLink, RefreshCw, DollarSign, Percent, Calculator, 
   Building, Home, Megaphone, Tag, ChevronDown, Check, Pencil, X,
-  Clock, AlertCircle
+  Clock, AlertCircle, Zap, CheckCircle2
 } from 'lucide-react';
 import { CalculatorConstant } from '@/hooks/useCalculatorConstants';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,34 @@ export function AdminSettings() {
     general: true,
     fees: true,
   });
+  const [syncResult, setSyncResult] = useState<null | {
+    synced: number;
+    created_products: number;
+    created_prices: number;
+    skipped: number;
+  }>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+
+  const handleSyncStripePlans = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('sync-stripe-plans', {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (error) throw error;
+      setSyncResult(data);
+      toast.success(
+        `Stripe sync complete — ${data.synced} plan(s) synced, ${data.created_prices} price(s) created`
+      );
+    } catch (err: any) {
+      toast.error('Stripe sync failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const { data: constants, isLoading } = useQuery({
     queryKey: ['admin-calculator-constants'],
@@ -491,6 +519,70 @@ export function AdminSettings() {
           </Collapsible>
         ))}
       </div>
+
+      {/* Stripe Sync Section */}
+      <Card className="border-dashed">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Zap className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Stripe Products & Prices</CardTitle>
+              <CardDescription>
+                Pre-sync all membership plans to Stripe. Idempotent — safe to run multiple times.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Creates Stripe Products and monthly/annual Prices for all active non-Enterprise membership plans.
+            Once synced, the first checkout for each plan hits the fast path with no lazy creation.
+          </p>
+
+          {syncResult && (
+            <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                Sync complete
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                <div className="rounded-md bg-background border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{syncResult.synced}</p>
+                  <p className="text-xs text-muted-foreground">Plans synced</p>
+                </div>
+                <div className="rounded-md bg-background border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{syncResult.created_products}</p>
+                  <p className="text-xs text-muted-foreground">Products created</p>
+                </div>
+                <div className="rounded-md bg-background border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{syncResult.created_prices}</p>
+                  <p className="text-xs text-muted-foreground">Prices created</p>
+                </div>
+                <div className="rounded-md bg-background border p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{syncResult.skipped}</p>
+                  <p className="text-xs text-muted-foreground">Already synced</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Button onClick={handleSyncStripePlans} disabled={isSyncing}>
+            {isSyncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Syncing…
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4 mr-2" />
+                Sync Stripe Prices
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
