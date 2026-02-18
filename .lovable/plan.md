@@ -1,121 +1,105 @@
 
-# Seat Management — Complete Build Plan
+# Blog Quota Hard-Block — Complete Implementation Plan
 
-## What Currently Exists
+## Current State Analysis
 
-The seat system has partial implementation:
+The blog quota system is **partially implemented** with a critical inconsistency:
 
-- `useSeatLimitCheck` — reads current count vs. plan limit, exposes `isOverLimit`, `canInvite`, `currentSeats`, `maxSeats`
-- `UsageMeters` — shows a seat progress bar with overage cost estimate when over limit
-- `AgencyDashboard` — Team tab shows seat count badge and a soft warning when at 100%
-- `RemoveAgentDialog` — removes an agent (sets `agency_id = null`)
-- Agent status dropdown — can set each agent to `active`, `suspended`, or `pending`
-- Join request approve/reject flow — exists but has **no overage consent** before approving
+**What exists:**
+- `useBlogQuotaCheck` hook — correctly returns `canSubmit: false` when `used >= limit`
+- `useSubmitForReview` in `useProfessionalBlog.tsx` — has a server-side quota check that throws an error when quota is exceeded (lines 255-258)
+- `BlogArticleTable` — receives `canSubmitQuota` prop and hides the Submit button when `false` — this IS a hard-block on existing posts
+- `UsageMeters` — shows the blog meter but with no overage cost (correct — blog posts don't have overage pricing, they're hard-capped)
 
-### What's Missing
+**The 3 gaps that let quota be bypassed:**
 
-1. **No seat-level role system** — all agents are equal; there's no way to designate a team lead, manager, or limit what a specific seat-holder can do
-2. **No overage consent on join request approval** — when approving a request that pushes the count over the seat limit, admin clicks "Approve" with zero warning or acceptance of the ₪100/seat overage charge
-3. **No overage consent on invite code creation path** — creating an invite code when at-limit has no consent gate either (the code is created and someone joins without the admin accepting the charge at that moment)
-4. **No "suspend seat" vs "remove seat" distinction** — suspending makes the agent inactive but the seat is still consumed; there's no UI that makes this distinction clear
-5. **No seat activity visibility** — no way to see when an agent last was active, how many listings they have, or identify "dead seats" occupying quota
-6. **No seat management panel** — the Team tab is purely a list; there's no consolidated view of seat usage, cost, and agent activity that would help an admin make decisions about who to remove
+1. **"Write Article" buttons are not quota-aware** — On the list pages (`AgentBlog`, `DeveloperBlog`, `AgencyDashboard`) the "Write Article" button links freely to `/*/blog/new` even when `canSubmit` is `false`. A user at quota can still enter the wizard, write their full article, reach the final step, and only then get a server-side error. This is a terrible UX surprise.
+
+2. **The wizard "Submit for Review" button has no quota check** — `AgentBlogWizard.tsx`, `DeveloperBlogWizard.tsx`, and `AgencyBlogWizard.tsx` all call `handleSubmit` with no front-end quota gate. The only protection is the server-side throw inside `useSubmitForReview`, which surfaces as a caught error with no clear UI feedback.
+
+3. **No quota banner in the wizard itself** — If a user somehow reaches the wizard while at quota (e.g. navigated directly), there is no warning until they click Submit.
+
+**Blog posts do NOT get overages** — unlike listings and seats, blog posts are hard-capped at the plan limit per month. No ₪X/post overage model. The `UsageMeters` blog row correctly shows no overage rate. This is a true hard-block.
 
 ---
 
 ## What We're Building
 
-### Feature 1 — Agent Role Column (DB + UI)
+### Fix 1 — Quota-Aware "Write Article" Button (3 pages)
 
-Add an `agency_role` column to the `agents` table with values: `member` (default), `manager`.
+On the list pages and dashboards, the "Write Article" button must check `canSubmitQuota`:
+- If `canSubmit === false`: button is **disabled** with a tooltip: "Monthly blog limit reached (X/X). Resets on the 1st."
+- If loading: button shows normal (optimistic)
 
-- `manager` = can create/edit listings on behalf of other agents; future-proofed for more permissions
-- `member` = standard seat holder
+**Pages to modify:**
+- `src/pages/agent/AgentBlog.tsx` — the primary "Write Article" button
+- `src/pages/developer/DeveloperBlog.tsx` — same
+- `src/pages/agency/AgencyDashboard.tsx` — two blog CTAs (header quick-action + Articles card header)
+- `src/pages/agent/AgentDashboard.tsx` — "Add Blog" button
+- `src/pages/developer/DeveloperDashboard.tsx` — "Add Blog" button
 
-This is a **light addition** — no RLS impact, no permission enforcement in this phase. It's structural groundwork and visible in the UI so admins can label who is a team lead.
+### Fix 2 — Quota Gate in the Blog Wizards (3 wizards)
 
-**DB change:** `ALTER TABLE public.agents ADD COLUMN agency_role text NOT NULL DEFAULT 'member';`
+In `AgentBlogWizard`, `DeveloperBlogWizard`, and `AgencyBlogWizard`, at the final step (when `isLastStep` is true), the Submit button must:
+- Be **disabled** when `canSubmit === false` (quota exceeded)
+- Show a clear inline banner above the navigation row explaining why
 
-### Feature 2 — Seat Overage Consent on Join Request Approval
+Each wizard already has access to the profile ID needed for the check:
+- Agent wizard: uses `agentProfile` from `useAgentProfile()`
+- Developer wizard: uses `developerProfile` from `useDeveloperProfile()`
+- Agency wizard: uses `agency` from `useMyAgency()`
 
-Currently the "Approve" button in `AgencyDashboard` calls `approveRequest.mutate(...)` directly with no warning when `isOverLimit` is true.
+We pass those IDs into `useBlogQuotaCheck()` inside the wizard.
 
-**Fix:** When `isOverLimit` is true, clicking "Approve" first opens a small `SeatOverageConsentDialog` that:
-- Shows current seat count and max
-- Shows the ₪100/seat monthly overage charge from the live DB rate
-- Has a checkbox to accept
-- Only then calls `approveRequest.mutate(...)`
+### Fix 3 — BlogQuotaBlock Banner Component (new)
 
-This mirrors exactly how `OverageConsentBanner` works for listings.
+A small new component: `src/components/blog/BlogQuotaBanner.tsx`
 
-**Files touched:**
-- New: `src/components/agency/SeatOverageConsentDialog.tsx`
-- Edit: `src/pages/agency/AgencyDashboard.tsx` — wrap the Approve button with consent dialog when `isOverLimit`
+Used in two contexts:
+1. **List pages** — shown above the article table when `canSubmit === false`, replacing the current tiny "Limit reached" badge
+2. **Wizards** — shown above the navigation buttons on the final step when at quota
 
-### Feature 3 — Seat Activity Panel (New Component)
-
-Replace the plain agent list in the Team tab with a richer `SeatManagementPanel` that shows per-agent:
-
-- Avatar + name + email
-- `agency_role` badge (Manager / Member) — click to toggle
-- Active listing count (query `properties` by `agent_id`)
-- Last active date (from `agents.last_active_at`)
-- Status dropdown (existing `active` / `suspended` / `pending`)
-- "Dead seat" indicator: amber badge if agent has 0 listings and was last active > 30 days ago — helps admin spot seats to reclaim
-- Remove button (existing `RemoveAgentDialog`)
-
-This is a new component `src/components/agency/SeatManagementPanel.tsx` that replaces the inline list in `AgencyDashboard`.
-
-**Data needed:** listing counts per agent. The hook `useAgencyStats` already fetches agent IDs; we'll extend `useAgencyTeam` to also return listing counts per agent via a joined query.
-
-### Feature 4 — Seat Summary Header Card
-
-At the top of the Team tab, before the agent list, add a `SeatSummaryCard` showing:
-
+Content:
 ```
-[ 3 / 5 seats used ]  [ ₪100/extra seat/month ]  [ Upgrade Plan → ]
-[████████░░] 60%
+⛔ Monthly blog limit reached — X of X posts used
+Your quota resets on [1st of next month]. Upgrade your plan to publish more articles this month.
+[Upgrade Plan →]  (links to /pricing)
 ```
 
-- Green when under limit, amber at 80%+, red when over
-- If over limit: "You are X seats over. Est. monthly overage: ₪Y"
-- Upgrade CTA links to `/pricing`
+Design: red-tinted card matching the `OverageConsentBanner` style, but without a checkbox (no overage acceptance needed — it's a true block).
 
-This replaces the current badge-only display in the `CardHeader`.
+### Fix 4 — UsageMeters Blog Row Enhancement
 
-**File:** New `src/components/agency/SeatSummaryCard.tsx`
+Currently the blog meter row shows `X/Y this month` with no reset date hint and no "limit reached" visual state. When `used >= limit`:
+- Progress bar turns red (already handled by `getColor()` since `isOver` uses `current > max`, but at exactly `max` it's `percent === 100` which returns `bg-destructive` via the `>= 100` check — actually already correct)
+- Add a line: "Limit reached — resets [Month 1]"
 
-### Feature 5 — Invite Code Seat Awareness
-
-When `isOverLimit` is already true and admin opens `CreateInviteDialog`, the dialog shows a persistent amber warning:
-
-> "You are currently over your seat limit. Any agent who joins via this code will add to your overage charges at ₪100/seat/month."
-
-This is informational only — no consent checkbox needed (they already accepted by creating the code). But it's honest about the financial implication.
-
-**File touched:** `src/components/agency/CreateInviteDialog.tsx` — add `isOverLimit` conditional banner
+This is a minor enhancement to `UsageMeters` — one extra line when `blog.used >= blog.limit`.
 
 ---
 
-## Files Summary
+## Files to Modify/Create
 
 | File | Type | Change |
 |---|---|---|
-| DB migration | New | Add `agency_role` column to `agents` table |
-| `src/components/agency/SeatOverageConsentDialog.tsx` | New | Consent dialog before approving a join request over seat limit |
-| `src/components/agency/SeatManagementPanel.tsx` | New | Rich per-agent card with role, listing count, last active, dead seat badge |
-| `src/components/agency/SeatSummaryCard.tsx` | New | Seat usage summary header for the Team tab |
-| `src/hooks/useAgencyManagement.tsx` | Edit | Extend `useAgencyTeam` query to include listing count per agent; add `useUpdateAgentRole` mutation |
-| `src/pages/agency/AgencyDashboard.tsx` | Edit | Replace inline agent list with `SeatManagementPanel`; add `SeatSummaryCard`; wire overage consent dialog to Approve button |
-| `src/components/agency/CreateInviteDialog.tsx` | Edit | Add over-limit warning banner when `isOverLimit` is true |
+| `src/components/blog/BlogQuotaBanner.tsx` | New | Reusable hard-block banner with reset date and upgrade CTA |
+| `src/pages/agent/AgentBlog.tsx` | Edit | Disable "Write Article" button + show `BlogQuotaBanner` when at quota |
+| `src/pages/developer/DeveloperBlog.tsx` | Edit | Same |
+| `src/pages/agency/AgencyDashboard.tsx` | Edit | Disable 2 blog CTAs + show `BlogQuotaBanner` in Articles card |
+| `src/pages/agent/AgentDashboard.tsx` | Edit | Disable "Add Blog" button when at quota |
+| `src/pages/developer/DeveloperDashboard.tsx` | Edit | Same |
+| `src/pages/agent/AgentBlogWizard.tsx` | Edit | Add `useBlogQuotaCheck`, disable Submit on final step, show banner |
+| `src/pages/developer/DeveloperBlogWizard.tsx` | Edit | Same |
+| `src/pages/agency/AgencyBlogWizard.tsx` | Edit | Same |
+| `src/components/billing/UsageMeters.tsx` | Edit | Add "Limit reached — resets [date]" line when blog at quota |
 
 ---
 
 ## Technical Notes
 
-- The `agency_role` column uses a plain `text` type (not enum) to avoid migration complexity, with the application enforcing valid values (`'member'` | `'manager'`). No RLS changes needed.
-- `SeatOverageConsentDialog` fetches the live seat overage rate from `overage_rates` table using `useOverageRate('agency', 'seat')` — same pattern as `OverageConsentBanner`.
-- Listing counts per agent are computed in the extended `useAgencyTeam` query using a single Supabase call: select agents + properties count via `properties!agent_id(count)` using the PostgREST embed syntax.
-- `last_active_at` already exists on the `agents` table — no DB change needed for the dead seat indicator.
-- The "dead seat" threshold (0 listings + last active > 30 days) is computed client-side in the component — no DB function needed.
-- No changes to RLS policies — all reads are already scoped to the admin's agency via existing policies.
+- `useBlogQuotaCheck` takes `authorType` and `profileId` — wizards already have the profile data loaded, so the hook can be called there without an extra fetch
+- The reset date is always the 1st of the following month — computed client-side: `new Date(year, month + 1, 1)` formatted as "March 1"
+- `isEditMode` wizards (editing an existing draft) are NOT blocked — quota only applies to new submissions; `canSubmit` from the hook correctly excludes the current post being re-submitted (the server-side check uses `.neq('id', postId)`)
+- Dashboard "Add Blog" buttons for agents and developers fire before the profile is loaded — we use `isLoading` from the quota check to keep them enabled while loading (optimistic), disabling only when definitively `canSubmit === false && !isLoading`
+- No database changes required — the quota check already reads from `blog_posts` and `subscriptions`
+- No new secrets or edge functions needed
