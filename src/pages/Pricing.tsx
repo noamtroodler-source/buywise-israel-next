@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, Building2 } from 'lucide-react';
+import { Sparkles, Shield, Building2, Lock, RefreshCcw } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
@@ -20,6 +20,20 @@ import { cn } from '@/lib/utils';
 
 type EntityTab = 'agency' | 'developer';
 
+interface PromoResult {
+  valid: boolean;
+  summary?: string;
+  promoId?: string;
+  trialDays?: number;
+}
+
+const PLAN_DESCRIPTIONS: Record<string, string> = {
+  starter: 'Perfect for solo agents getting started',
+  growth: 'For growing teams ready to scale',
+  pro: 'For established agencies at full capacity',
+  enterprise: 'Custom solutions for large organizations',
+};
+
 function buildFeatures(plan: any): string[] {
   const features: string[] = [];
   if (plan.max_listings === null) features.push('Unlimited listings');
@@ -37,6 +51,7 @@ export default function Pricing() {
   const [entityTab, setEntityTab] = useState<EntityTab>('agency');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [promoCode, setPromoCode] = useState('');
+  const [promoResult, setPromoResult] = useState<PromoResult | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const { user } = useAuth();
   const { isDeveloper } = useUserRole();
@@ -152,7 +167,7 @@ export default function Pricing() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <PromoCodeInput value={promoCode} onChange={setPromoCode} />
+                <PromoCodeInput value={promoCode} onChange={setPromoCode} onValidated={setPromoResult} />
               </div>
             </motion.div>
           </div>
@@ -219,6 +234,7 @@ export default function Pricing() {
                 <PlanCard
                   name={plan.name}
                   tier={plan.tier}
+                  description={PLAN_DESCRIPTIONS[plan.tier]}
                   priceMonthly={plan.price_monthly_ils}
                   priceAnnual={plan.price_annual_ils}
                   billingCycle={billingCycle}
@@ -229,9 +245,26 @@ export default function Pricing() {
                   entityType={entityTab}
                   onSubscribe={() => handleSubscribe(plan.id)}
                   loading={checkoutLoading === plan.id}
+                  promoResult={promoResult}
                 />
               </motion.div>
             ))}
+          </div>
+
+          {/* Trust Signals */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <RefreshCcw className="h-4 w-4 text-primary" />
+              <span>30-day satisfaction guarantee</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-primary" />
+              <span>SSL-encrypted checkout via Stripe</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-primary" />
+              <span>Cancel anytime, no lock-in</span>
+            </div>
           </div>
 
           {/* Feature Comparison */}

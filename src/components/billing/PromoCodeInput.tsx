@@ -7,6 +7,7 @@ interface PromoValidation {
   valid: boolean;
   summary?: string;
   promoId?: string;
+  trialDays?: number;
 }
 
 interface PromoCodeInputProps {
@@ -64,6 +65,7 @@ export function PromoCodeInput({ value, onChange, onValidated }: PromoCodeInputP
         valid: true,
         summary: parts.join(' + ') || data.description || 'Promo applied',
         promoId: data.id,
+        trialDays: data.trial_days ?? 0,
       };
       setResult(r);
       onValidated?.(r);

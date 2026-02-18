@@ -1,13 +1,21 @@
 import { useState } from 'react';
-import { Check, Sparkles } from 'lucide-react';
+import { Check, Sparkles, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { EnterpriseSalesDialog } from './EnterpriseSalesDialog';
 
+interface PromoResult {
+  valid: boolean;
+  summary?: string;
+  promoId?: string;
+  trialDays?: number;
+}
+
 interface PlanCardProps {
   name: string;
   tier: string;
+  description?: string;
   priceMonthly: number;
   priceAnnual: number;
   billingCycle: 'monthly' | 'annual';
@@ -18,11 +26,13 @@ interface PlanCardProps {
   entityType?: 'agency' | 'developer';
   onSubscribe: () => void;
   loading?: boolean;
+  promoResult?: PromoResult | null;
 }
 
 export function PlanCard({
   name,
   tier,
+  description,
   priceMonthly,
   priceAnnual,
   billingCycle,
@@ -33,10 +43,25 @@ export function PlanCard({
   entityType = 'agency',
   onSubscribe,
   loading,
+  promoResult,
 }: PlanCardProps) {
   const [salesDialogOpen, setSalesDialogOpen] = useState(false);
   const price = billingCycle === 'annual' ? (priceAnnual ?? 0) : (priceMonthly ?? 0);
   const monthlyEquivalent = billingCycle === 'annual' ? Math.round((priceAnnual ?? 0) / 12) : (priceMonthly ?? 0);
+  const annualSaving = billingCycle === 'annual' && !isEnterprise
+    ? Math.round((priceMonthly ?? 0) * 12 - (priceAnnual ?? 0))
+    : 0;
+
+  const hasTrialPromo = promoResult?.valid && (promoResult.trialDays ?? 0) > 0;
+  const trialDays = promoResult?.trialDays ?? 0;
+
+  const ctaLabel = isCurrentPlan
+    ? 'Current Plan'
+    : loading
+      ? 'Loading...'
+      : hasTrialPromo
+        ? `Start ${trialDays}-Day Free Trial`
+        : 'Subscribe';
 
   return (
     <div
@@ -66,7 +91,11 @@ export function PlanCard({
 
       <div className="mb-4">
         <h3 className="text-lg font-semibold text-foreground">{name}</h3>
-        <p className="text-xs text-muted-foreground capitalize">{tier} tier</p>
+        {description ? (
+          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        ) : (
+          <p className="text-xs text-muted-foreground capitalize">{tier} tier</p>
+        )}
       </div>
 
       <div className="mb-6">
@@ -84,6 +113,17 @@ export function PlanCard({
               <p className="text-xs text-muted-foreground mt-1">
                 ₪{price.toLocaleString()} billed annually
               </p>
+            )}
+            {annualSaving > 0 && (
+              <p className="text-xs text-primary font-medium mt-0.5">
+                Save ₪{annualSaving.toLocaleString()} vs. monthly
+              </p>
+            )}
+            {hasTrialPromo && (
+              <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <Gift className="h-3 w-3 text-primary" />
+                <span className="text-xs text-primary font-medium">{trialDays}-day free trial included</span>
+              </div>
             )}
           </>
         )}
@@ -119,7 +159,7 @@ export function PlanCard({
           variant={isPopular ? 'default' : 'outline'}
           className="w-full rounded-xl"
         >
-          {isCurrentPlan ? 'Current Plan' : loading ? 'Loading...' : 'Subscribe'}
+          {ctaLabel}
         </Button>
       )}
     </div>
