@@ -14,7 +14,7 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { ProjectSubmittedDialog } from '@/components/developer/ProjectSubmittedDialog';
-import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
+import { OverageConsentBanner } from '@/components/billing/OverageConsentBanner';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -45,9 +45,10 @@ function WizardContent() {
   const createProject = useCreateProject();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
+  const [overageAccepted, setOverageAccepted] = useState(false);
 
   const isDeveloperVerified = developerProfile?.verification_status === 'approved';
-  const { canCreate: canCreateListing } = useListingLimitCheck('developer');
+  const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('developer');
 
   // Auto-save functionality with session-unique key (always starts fresh)
   const autoSave = useAutoSave<ProjectWizardData>({
@@ -178,9 +179,9 @@ function WizardContent() {
               </div>
             </motion.div>
 
-            {/* Listing Limit Warning */}
+            {/* Listing Limit / Overage Consent */}
             <motion.div variants={itemVariants}>
-              <ListingLimitBanner entityType="developer" />
+              <OverageConsentBanner entityType="developer" onConsentChange={setOverageAccepted} />
             </motion.div>
 
             {/* Progress */}
@@ -243,33 +244,33 @@ function WizardContent() {
                         Save as Draft
                       </Button>
                       <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span>
-                              <Button
-                                onClick={handleSubmitForReview}
-                                disabled={isSubmitting || !canGoNext || !isDeveloperVerified || !canCreateListing}
-                                className="gap-2 rounded-xl h-11 px-6"
-                              >
-                                {isSubmitting ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Send className="h-4 w-4" />
-                                    Submit for Review
-                                    <Sparkles className="h-4 w-4" />
-                                  </>
-                                )}
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          {(!isDeveloperVerified || !canCreateListing) && (
-                            <TooltipContent>
-                              {!isDeveloperVerified ? 'Developer verification required' : 'Project limit reached — upgrade your plan'}
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <span>
+                               <Button
+                                 onClick={handleSubmitForReview}
+                                 disabled={isSubmitting || !canGoNext || !isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
+                                 className="gap-2 rounded-xl h-11 px-6"
+                               >
+                                 {isSubmitting ? (
+                                   <Loader2 className="h-4 w-4 animate-spin" />
+                                 ) : (
+                                   <>
+                                     <Send className="h-4 w-4" />
+                                     Submit for Review
+                                     <Sparkles className="h-4 w-4" />
+                                   </>
+                                 )}
+                               </Button>
+                             </span>
+                           </TooltipTrigger>
+                           {(!isDeveloperVerified || !canCreateListing || (isOverLimit && !overageAccepted)) && (
+                             <TooltipContent>
+                               {!isDeveloperVerified ? 'Developer verification required' : !canCreateListing ? 'Subscription required' : 'Accept overage charge to continue'}
+                             </TooltipContent>
+                           )}
+                         </Tooltip>
+                       </TooltipProvider>
                     </div>
                   ) : (
                     <Button
