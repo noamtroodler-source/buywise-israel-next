@@ -22,14 +22,12 @@ const FEATURES = [
   {
     label: 'Team Seats',
     getValue: (p: Plan) =>
-      p.max_seats === null || p.max_seats >= 999 ? 'Unlimited' : String(p.max_seats),
+      p.max_seats === null ? 'Unlimited' : String(p.max_seats),
   },
   {
     label: 'Blog Posts / Month',
     getValue: (p: Plan) =>
-      p.max_blogs_per_month === null || p.max_blogs_per_month >= 999
-        ? 'Unlimited'
-        : String(p.max_blogs_per_month),
+      p.max_blogs_per_month === null ? 'Unlimited' : String(p.max_blogs_per_month),
   },
   {
     label: 'Priority Support',

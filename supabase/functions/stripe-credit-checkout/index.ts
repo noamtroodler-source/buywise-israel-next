@@ -74,8 +74,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Lazy sync Stripe product/price
+    // Lazy sync Stripe product/price — always create a new price if unit_amount mismatches
     let stripePriceId = pkg.stripe_price_id;
+    if (stripePriceId) {
+      // Verify the cached price still matches current price_ils
+      try {
+        const existingPrice = await stripe.prices.retrieve(stripePriceId);
+        const expectedAmount = Math.round(pkg.price_ils * 100);
+        if (existingPrice.unit_amount !== expectedAmount) {
+          // Price changed — deactivate old, create new
+          await stripe.prices.update(stripePriceId, { active: false });
+          stripePriceId = null;
+          await adminClient.from('credit_packages').update({ stripe_price_id: null }).eq('id', pkg.id);
+        }
+      } catch {
+        stripePriceId = null;
+      }
+    }
+
     if (!stripePriceId) {
       let stripeProductId = pkg.stripe_product_id;
       if (!stripeProductId) {
