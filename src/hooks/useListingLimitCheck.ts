@@ -2,12 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
-
-// Mock overage prices (display-only, will be updated when finalized)
-const OVERAGE_PRICES = {
-  agency: 150, // ILS per listing per month
-  developer: 500, // ILS per project per month
-};
+import { useOverageRate } from './useOverageRecords';
 
 // Tier upgrade mapping
 const NEXT_TIER: Record<string, string> = {
@@ -24,7 +19,7 @@ export interface ListingLimitResult {
   isLoading: boolean;
   needsSubscription: boolean;
   nextTierName: string | null;
-  overageMockPrice: number;
+  overageRate: number | null;
   usagePercent: number;
 }
 
@@ -74,12 +69,14 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
     enabled: !!user,
   });
 
-  const isLoading = subLoading || countLoading;
+  const resourceType = entityType === 'developer' ? 'project' : 'listing';
+  const { data: overageRate = null, isLoading: rateLoading } = useOverageRate(entityType, resourceType);
+
+  const isLoading = subLoading || countLoading || rateLoading;
   const maxListings = sub?.maxListings ?? null;
   const needsSubscription = !sub || sub.status === 'none';
   const tier = sub?.tier || '';
   const nextTierName = NEXT_TIER[tier] || null;
-  const overageMockPrice = OVERAGE_PRICES[entityType];
   const usagePercent = maxListings ? Math.min(100, Math.round((currentCount / maxListings) * 100)) : 0;
 
   // Over limit = has a finite limit and is at or beyond it
@@ -92,5 +89,5 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
     ? false
     : true; // Always allowed with subscription (overage charges apply when over limit)
 
-  return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageMockPrice, usagePercent };
+  return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate, usagePercent };
 }

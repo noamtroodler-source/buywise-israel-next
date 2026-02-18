@@ -31,7 +31,7 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
   const [expiryDays, setExpiryDays] = useState(30);
   
   const createInvite = useCreateInviteCode();
-  const { currentSeats, maxSeats, isOverLimit, overageMockPrice } = useSeatLimitCheck();
+  const { currentSeats, maxSeats, isOverLimit, overageRate } = useSeatLimitCheck();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +73,7 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
               <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm">
                 <Users className="h-4 w-4 flex-shrink-0 text-destructive mt-0.5" />
                 <span className="text-destructive">
-                  You are currently over your seat limit. Any agent who joins via this code will add to your overage charges at ₪{overageMockPrice}/seat/month.
+                  You are currently over your seat limit. Any agent who joins via this code will add to your overage charges at ₪{overageRate ?? '—'}/seat/month.
                 </span>
               </div>
             ) : (
