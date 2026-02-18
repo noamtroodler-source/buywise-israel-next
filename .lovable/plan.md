@@ -1,118 +1,199 @@
 
-# Phase E: Billing Dashboard — Gap Analysis & Implementation Plan
+# Agency-Only Listing Model: Full Implementation Plan
 
-## What Already Exists
+## What This Changes (Summary)
 
-The billing pages (`/agency/billing`, `/developer/billing`) already include:
-- `BillingSection` — current plan, credit balance with expiring credit warnings, action buttons (Change Plan, Buy Credits, Manage Billing portal)
-- `CreditHistoryTable` — last 50 credit transactions from the DB ledger
-- `UsageMeters` — listings/seats/blogs progress bars
-- `TrialCountdownBanner` — animated countdown with progress
-- `UpgradePromptCard` — appears when usage ≥ 80%
-- `BoostAnalyticsPanel` — boost ROI chart and performance table (exists but not wired into the billing pages)
+| Actor | Before | After |
+|---|---|---|
+| Agency admin | View-only listings page, no wizard | Full wizard to create/edit/manage all listings + assign each listing to an agent |
+| Agent (with agency) | Create, edit, submit, delete own listings | Read-only view of assigned listings, see stats, manage leads |
+| Agent (solo, no agency) | Create own listings | No listing creation — must join an agency |
 
-## What's Missing (Phase E Gaps)
+---
 
-### Gap 1 — Stripe Invoice History
-There is no invoice/payment history component. Users cannot see past payments. A new edge function `list-invoices` is needed to call `stripe.invoices.list({ customer })` and return a lightweight list. The UI component renders this as a table with: date, description (plan name), amount, status badge, and a "Download PDF" icon link.
+## Technical Understanding of Current State
 
-### Gap 2 — Boost Analytics Not Surfaced on Billing Pages
-`BoostAnalyticsPanel` and `useBoostAnalytics` exist and are fully implemented, but the billing page layout only shows Usage Meters and UpgradePromptCard in the right column. The Boost analytics tab should be surfaced here so professionals can see their credit ROI directly on the billing page.
+- **Property creation**: `NewPropertyWizard` (`/agent/properties/new`) uses `useCreateProperty` which auto-fetches the caller's `agents` record by `user_id` and uses that `agent_id`
+- **Editing**: `EditPropertyWizard` (`/agent/properties/:id/edit`) also under agent routes
+- **Agency listings page**: `AgencyListings.tsx` is currently read-only — just a filterable table with a "View" link, and the "Add Listing" button redirects to `/agent/properties/new` (the agent wizard)
+- **Data model**: Properties already have `agent_id` pointing to the assigned agent — this field is already correct for our new model. No schema change needed.
+- **`useCreateProperty`** fetches the `agents` record by `user_id` — but agency admins may not have an agent record themselves. We need a new hook `useCreatePropertyForAgency` that accepts an explicit `agent_id` to assign to.
 
-### Gap 3 — Billing Page Layout is a Static Two-Column Grid
-The current layout has no tabs — it just stacks all cards. A tabbed layout (Overview / Invoices / Boost Analytics) would make the page scannable and prevent the right column from becoming very long.
+---
 
-### Gap 4 — No "Billing Cycle" Indicator in BillingSection
-`BillingSection` shows the plan name and next billing date, but not whether the user is on monthly or annual billing. Displaying this lets users know their current commitment.
+## Phases
 
-### Gap 5 — CreditHistoryTable has No Pagination / Filter
-Currently shows the last 50 transactions with no way to filter by type (purchases only, spends only) or load more. A simple type filter and "Load more" button improves usability.
+### Phase 1 — New "Agency New Property Wizard" page
+**File created**: `src/pages/agency/AgencyNewPropertyWizard.tsx`  
+**File created**: `src/pages/agency/AgencyEditPropertyWizard.tsx`
 
-## Files to Create
+The agency wizard is a thin wrapper around the existing `PropertyWizardProvider` and all existing step components (StepBasics, StepDetails, StepFeatures, StepPhotos, StepDescription, StepReview) — we reuse all of them since the form fields are identical.
 
-| File | Purpose |
-|---|---|
-| `supabase/functions/list-invoices/index.ts` | New edge function: fetches Stripe invoices for the entity's stripe_customer_id |
-| `src/components/billing/InvoiceHistoryTable.tsx` | New component: renders invoice list fetched from the edge function |
+**What's new — Agent Assignment step**: Inserted as Step 1 (index 0), before Basics. This step shows a searchable dropdown of the agency's team members. The wizard now has 7 steps instead of 6:
+- Step 0: Assign Agent
+- Step 1: Basics
+- Step 2: Details
+- Step 3: Features
+- Step 4: Photos
+- Step 5: Description
+- Step 6: Review
 
-## Files to Modify
+The `PropertyWizardContext` already has all the data fields. We extend it (or pass props) to carry `assignedAgentId`. On submit, we call a new `useCreatePropertyForAgency` hook that takes an explicit `agent_id`.
 
-| File | Change |
-|---|---|
-| `src/pages/agency/AgencyBilling.tsx` | Wrap content in a 3-tab layout (Overview / Invoices / Boost Analytics) |
-| `src/pages/developer/DeveloperBilling.tsx` | Same tabbed layout |
-| `src/components/billing/BillingSection.tsx` | Add billing cycle pill; tighten existing layout |
-| `src/components/billing/CreditHistoryTable.tsx` | Add type filter dropdown + "Load more" (offset-based) |
+**StepAssignAgent component** (`src/components/agency/wizard/StepAssignAgent.tsx`): Renders a card grid of team members with avatar, name, and listing count — user clicks to select. Search input for large teams. Validates that at least one agent is selected before proceeding.
 
-## Implementation Details
+### Phase 2 — New data hook for agency property creation
 
-### Edge Function: `list-invoices`
-
-Authenticates the caller, looks up `stripe_customer_id` from the `subscriptions` table (same pattern as `manage-subscription`), then calls:
+**File modified**: `src/hooks/useAgentProperties.tsx`  
+Add `useCreatePropertyForAgency` mutation:
 
 ```typescript
-stripe.invoices.list({ customer: customerId, limit: 20 })
-```
-
-Returns a minimal array per invoice:
-```typescript
-{
-  id: string,
-  number: string,
-  created: number,          // Unix timestamp
-  amount_paid: number,      // in agorot (×0.01 to get ₪)
-  currency: string,
-  status: string,           // 'paid' | 'open' | 'void' | 'uncollectible'
-  description: string,      // subscription line item description
-  invoice_pdf: string | null
+export function useCreatePropertyForAgency() {
+  // Same as useCreateProperty but:
+  // - Accepts explicit agent_id instead of looking up by current user
+  // - Accepts agency entity type for listing limit check
+  // - The caller MUST be an authenticated agency admin
 }
 ```
 
-No new DB table needed — data comes from Stripe directly.
+Also add `useUpdatePropertyForAgency` — same as `useUpdateProperty` but navigates back to `/agency/listings` instead of `/agent/properties`.
 
-### Component: `InvoiceHistoryTable`
+### Phase 3 — Upgrade AgencyListings to full management
 
-Calls the edge function via `supabase.functions.invoke('list-invoices', { body: { entity_type, entity_id } })`. Renders:
+**File modified**: `src/pages/agency/AgencyListings.tsx`
 
-- A table row per invoice with: date, description, amount in ₪, a `Badge` for status, and a download icon linking to `invoice_pdf`
-- Loading skeleton (3 rows)
-- "No invoices yet" empty state when on Free plan or no Stripe customer exists
-- Only shown when `hasSubscription` is true (Free plan users see a friendly "Subscribe to see invoice history")
+Current state: Read-only table, "Add Listing" links to `/agent/properties/new`
 
-### Tabbed Layout on Billing Pages
+Changes:
+- "Add Listing" button → links to `/agency/properties/new`
+- Each row gets action buttons: **Edit** (→ `/agency/properties/:id/edit`), **Submit for Review** (if draft), **View** (if approved)
+- Add dropdown menu per row: Mark as Sold, Mark as Rented, Duplicate, Delete — all the same actions currently in `AgentProperties.tsx`
+- Reuse `useDeleteProperty`, `useSubmitForReview`, `useUpdatePropertyStatus` hooks — they operate on the property ID and don't care who calls them
 
-Using the existing `Tabs` component from `@radix-ui/react-tabs` (already installed via shadcn):
+### Phase 4 — Refactor AgentProperties to read-only "Assigned Listings"
 
+**File modified**: `src/pages/agent/AgentProperties.tsx`
+
+Remove:
+- `Plus` / "Add New Listing" button and link to `/agent/properties/new`
+- Edit button (link to `/agent/properties/:id/edit`)
+- Delete button
+- Submit for Review button
+- Duplicate action
+- Mark as Sold/Rented actions
+- Bulk selection bar (bulk delete, bulk renew)
+- All mutation hook imports that become unused
+
+Keep:
+- Listing cards showing title, address, price, status badge
+- View button (→ `/properties/:id`) for approved listings
+- Stats display (views count, status)
+- Tab filtering by status
+- Renewal badge warning (visual only, not actionable by agent)
+
+New header text: "My Assigned Listings" instead of "My Properties"
+
+Add a small info banner at the top: "Listings are created and managed by your agency. Contact your agency admin to make changes."
+
+### Phase 5 — Refactor AgentDashboard quick actions
+
+**File modified**: `src/pages/agent/AgentDashboard.tsx`
+
+Remove:
+- "Add New Property" quick action card (href `/agent/properties/new`)
+- "Add Property" button in the top-right header area
+
+Keep:
+- "Manage Properties" quick action → `/agent/properties` (now read-only view)
+- Analytics, Blog, other actions
+
+Update status counts section — agents still see their live/pending/draft counts for their assigned listings.
+
+Update the "Recent Properties" list at the bottom — keep it, but remove the "Edit" button from each item row.
+
+### Phase 6 — Routing changes in App.tsx
+
+**File modified**: `src/App.tsx`
+
+Add new lazy imports:
+```typescript
+const AgencyNewPropertyWizard = lazy(() => import("./pages/agency/AgencyNewPropertyWizard"));
+const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPropertyWizard"));
 ```
-Tab 1: Overview     → existing two-column layout (BillingSection + UsageMeters + UpgradePromptCard)
-Tab 2: Invoices     → full-width InvoiceHistoryTable
-Tab 3: Boost ROI    → full-width BoostAnalyticsPanel (already built, just needs wiring)
+
+Add new routes (within existing `<ProtectedRoute>` that checks for agency admin):
+```
+/agency/properties/new     → AgencyNewPropertyWizard
+/agency/properties/:id/edit → AgencyEditPropertyWizard
 ```
 
-The tab header sits between the page header and the content area, replacing the existing `grid gap-6 lg:grid-cols-2` wrapper.
-
-### BillingSection — Billing Cycle Pill
-
-Inside the "Current Plan" block, alongside the status badge, add a secondary pill showing billing cycle:
-
-```tsx
-{sub.billingCycle && (
-  <Badge variant="outline" className="text-xs">
-    {sub.billingCycle === 'annual' ? 'Annual billing' : 'Monthly billing'}
-  </Badge>
-)}
+Keep old agent routes but redirect them:
+```
+/agent/properties/new → redirect to an "Access Denied / Contact Agency" page
+/agent/properties/:id/edit → redirect with message "Editing is managed by your agency"
 ```
 
-### CreditHistoryTable — Filter + Load More
+We do NOT delete the old routes immediately — we redirect them so any existing bookmarks or emails work gracefully.
 
-Add a `useState` for `typeFilter: 'all' | 'purchase' | 'spend' | 'bonus' | 'subscription_grant'` and a `limit` state starting at 20, incrementing by 20 on "Load more". The Supabase query conditionally adds `.eq('transaction_type', typeFilter)` when filter is not `'all'`.
+### Phase 7 — "No Access" experience for agents trying to create
 
-## No Schema Changes
-All new data comes from Stripe (invoices) or already exists in `credit_transactions`. No migrations needed.
+**File modified**: `src/pages/agent/NewProperty.tsx` (if it exists) / route redirect
 
-## Execution Order
-1. Create `list-invoices` edge function
-2. Create `InvoiceHistoryTable` component
-3. Update `AgencyBilling` and `DeveloperBilling` to use tabbed layout
-4. Update `BillingSection` to show billing cycle
-5. Update `CreditHistoryTable` with filter + load more
+When an agent lands on `/agent/properties/new`, show a clean page:
+- Icon + heading: "Listings are managed by your agency"
+- Body: "Your agency admin creates and manages all property listings. Once a listing is assigned to you, it will appear in your Assigned Listings."
+- CTA button: "View My Listings" → `/agent/properties`
+- Secondary link: "Contact your agency" → `/agency/:slug` (if we know their agency)
+
+This is a simple redirect/page — not a full wizard.
+
+---
+
+## Files Created
+
+| File | Purpose |
+|---|---|
+| `src/pages/agency/AgencyNewPropertyWizard.tsx` | Agency property creation wizard with agent assignment step |
+| `src/pages/agency/AgencyEditPropertyWizard.tsx` | Agency property editing wizard |
+| `src/components/agency/wizard/StepAssignAgent.tsx` | Step 0: pick which team member to assign listing to |
+
+## Files Modified
+
+| File | Change |
+|---|---|
+| `src/pages/agency/AgencyListings.tsx` | Add Edit/Submit/Delete/Manage actions per row; update "Add Listing" link |
+| `src/pages/agent/AgentProperties.tsx` | Strip write actions; rename to "Assigned Listings"; add agency info banner |
+| `src/pages/agent/AgentDashboard.tsx` | Remove "Add Property" button and quick action; remove "Edit" from recent properties list |
+| `src/hooks/useAgentProperties.tsx` | Add `useCreatePropertyForAgency` and `useUpdatePropertyForAgency` mutations |
+| `src/App.tsx` | Add agency wizard routes; redirect old agent creation routes |
+
+---
+
+## No Database Changes Required
+
+The `properties` table already has `agent_id` — we simply populate it from the agency admin's picker instead of auto-assigning it to the current user. All existing RLS and data stays intact.
+
+---
+
+## Edge Cases Handled
+
+| Scenario | Handling |
+|---|---|
+| Agency has 0 team members | StepAssignAgent shows "No team members yet — invite agents first" with a link to the agency dashboard team tab |
+| Agency admin tries to submit without selecting agent | "Assign Agent" step blocks `canGoNext` until an agent is selected |
+| Existing agent-created properties | They remain visible in AgencyListings, agency can edit/manage them normally |
+| Agent goes to `/agent/properties/new` | Redirect to a clean "managed by agency" page — no 404 |
+| Agent with no agency | `AgentProperties` shows their old listings if any exist (backward compatible); new listing creation is blocked with the same "managed by agency" message |
+
+---
+
+## Implementation Order
+
+1. Create `StepAssignAgent` component
+2. Create `AgencyNewPropertyWizard` page
+3. Add `useCreatePropertyForAgency` hook
+4. Create `AgencyEditPropertyWizard` page
+5. Upgrade `AgencyListings` with management actions
+6. Refactor `AgentProperties` to read-only
+7. Update `AgentDashboard` to remove create actions
+8. Update `App.tsx` routing
