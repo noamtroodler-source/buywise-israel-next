@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Zap, Loader2, Clock, TrendingUp } from 'lucide-react';
+import { Zap, Loader2, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
+import { differenceInDays, format } from 'date-fns';
+import { useExpiringCredits } from '@/hooks/useExpiringCredits';
 import { useVisibilityProducts, useActivateBoost, useActiveBoosts, useSlotAvailability } from '@/hooks/useBoosts';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Link } from 'react-router-dom';
@@ -23,6 +25,7 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
   const { data: activeBoosts = [] } = useActiveBoosts(targetType, targetId);
   const activateBoost = useActivateBoost();
   const { data: slotMap = {} } = useSlotAvailability(products);
+  const { data: expiringGroups = [] } = useExpiringCredits(sub?.entityType, sub?.entityId);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const creditBalance = sub?.creditBalance ?? 0;
@@ -60,12 +63,27 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
         </DialogHeader>
 
         {/* Credit balance */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Your Credits</span>
+        <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Your Credits</span>
+            </div>
+            <span className="font-bold text-foreground">{creditBalance}</span>
           </div>
-          <span className="font-bold text-foreground">{creditBalance}</span>
+          {(() => {
+            const nearestExpiry = expiringGroups[0];
+            if (!nearestExpiry) return null;
+            const daysLeft = differenceInDays(new Date(nearestExpiry.expiresAt), new Date());
+            if (daysLeft > 30) return null;
+            const isUrgent = daysLeft <= 7;
+            return (
+              <div className={`flex items-center gap-1 mt-1.5 ${isUrgent ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                {isUrgent ? <AlertTriangle className="h-3 w-3 flex-shrink-0" /> : <Clock className="h-3 w-3 flex-shrink-0" />}
+                <span className="text-xs">{nearestExpiry.amount} expiring {format(new Date(nearestExpiry.expiresAt), 'MMM d')}</span>
+              </div>
+            );
+          })()}
         </div>
 
         {creditBalance === 0 && (
