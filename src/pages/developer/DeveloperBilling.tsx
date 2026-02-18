@@ -8,6 +8,7 @@ import { UsageMeters } from '@/components/billing/UsageMeters';
 import { TrialCountdownBanner } from '@/components/billing/TrialCountdownBanner';
 import { UpgradePromptCard } from '@/components/billing/UpgradePromptCard';
 import { InvoiceHistoryTable } from '@/components/billing/InvoiceHistoryTable';
+import { OverageChargesTable } from '@/components/billing/OverageChargesTable';
 import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
@@ -64,7 +65,8 @@ export default function DeveloperBilling() {
           </TabsContent>
 
           {/* Invoices tab */}
-          <TabsContent value="invoices" className="mt-6">
+          <TabsContent value="invoices" className="mt-6 space-y-6">
+            <OverageChargesTable entityId={developerProfile?.id} />
             <InvoiceHistoryTable />
           </TabsContent>
 

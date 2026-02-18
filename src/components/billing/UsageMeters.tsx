@@ -5,10 +5,11 @@ import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useOverageRate } from '@/hooks/useOverageRecords';
 
-function getColor(percent: number) {
-  if (percent >= 90) return 'bg-destructive';
-  if (percent >= 60) return 'bg-amber-500';
+function getColor(percent: number, isOver: boolean) {
+  if (isOver || percent >= 100) return 'bg-destructive';
+  if (percent >= 80) return 'bg-amber-500';
   return 'bg-primary';
 }
 
@@ -17,21 +18,40 @@ interface MeterRowProps {
   current: number;
   max: number | null;
   suffix?: string;
+  overageRate?: number | null;
+  entityType?: 'agency' | 'developer';
+  resourceType?: 'listing' | 'seat' | 'project';
 }
 
-function MeterRow({ label, current, max, suffix }: MeterRowProps) {
+function MeterRow({ label, current, max, suffix, overageRate }: MeterRowProps) {
   if (max === null) return null; // unlimited = don't show meter
+
+  const isOver = current > max;
+  const overageUnits = isOver ? current - max : 0;
   const percent = Math.min(100, Math.round((current / max) * 100));
+  const displayPercent = isOver ? 100 : percent;
 
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium text-foreground">
-          {current}/{max} {suffix || 'used'}
+        <span className={`font-medium ${isOver ? 'text-destructive' : 'text-foreground'}`}>
+          {isOver
+            ? `${max}/${max} (+${overageUnits} over)`
+            : `${current}/${max}`}
+          {suffix && !isOver ? ` ${suffix}` : ''}
         </span>
       </div>
-      <Progress value={percent} className="h-2" indicatorClassName={getColor(percent)} />
+      <Progress
+        value={displayPercent}
+        className="h-2"
+        indicatorClassName={getColor(percent, isOver)}
+      />
+      {isOver && overageRate != null && overageRate > 0 && (
+        <p className="text-xs text-destructive font-medium">
+          Overage: {overageUnits} × ₪{overageRate} = ₪{(overageUnits * overageRate).toLocaleString()} est. this month
+        </p>
+      )}
     </div>
   );
 }
@@ -47,6 +67,9 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
   const seat = useSeatLimitCheck();
   const blog = useBlogQuotaCheck(authorType, profileId);
   const { data: sub } = useSubscription();
+  const resourceType = entityType === 'developer' ? 'project' : 'listing';
+  const { data: listingRate } = useOverageRate(entityType, resourceType);
+  const { data: seatRate } = useOverageRate('agency', 'seat');
 
   // Don't show if no subscription
   if (!sub || sub.status === 'none') return null;
@@ -66,12 +89,14 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
           label={entityType === 'developer' ? 'Projects' : 'Listings'}
           current={listing.currentCount}
           max={listing.maxListings}
+          overageRate={listingRate}
         />
         {showSeats && (
           <MeterRow
             label="Team Seats"
             current={seat.currentSeats}
             max={seat.maxSeats}
+            overageRate={seatRate}
           />
         )}
         {blog.limit !== null && (

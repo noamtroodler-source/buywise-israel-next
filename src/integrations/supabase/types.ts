@@ -2995,6 +2995,98 @@ export type Database = {
         }
         Relationships: []
       }
+      overage_rates: {
+        Row: {
+          created_at: string
+          effective_from: string
+          entity_type: string
+          id: string
+          rate_ils: number
+          resource_type: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          entity_type: string
+          id?: string
+          rate_ils: number
+          resource_type: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          entity_type?: string
+          id?: string
+          rate_ils?: number
+          resource_type?: string
+        }
+        Relationships: []
+      }
+      overage_records: {
+        Row: {
+          actual_count: number
+          billing_period_end: string
+          billing_period_start: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          notes: string | null
+          overage_units: number | null
+          plan_limit: number
+          rate_ils_per_unit: number
+          resource_type: string
+          status: string
+          subscription_id: string | null
+          total_amount_ils: number | null
+          updated_at: string
+        }
+        Insert: {
+          actual_count: number
+          billing_period_end: string
+          billing_period_start: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          notes?: string | null
+          overage_units?: number | null
+          plan_limit: number
+          rate_ils_per_unit: number
+          resource_type: string
+          status?: string
+          subscription_id?: string | null
+          total_amount_ils?: number | null
+          updated_at?: string
+        }
+        Update: {
+          actual_count?: number
+          billing_period_end?: string
+          billing_period_start?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+          overage_units?: number | null
+          plan_limit?: number
+          rate_ils_per_unit?: number
+          resource_type?: string
+          status?: string
+          subscription_id?: string | null
+          total_amount_ils?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overage_records_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_engagement: {
         Row: {
           active_time_ms: number | null

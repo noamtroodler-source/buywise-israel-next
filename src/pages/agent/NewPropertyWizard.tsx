@@ -20,7 +20,7 @@ import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
-import { ListingLimitBanner } from '@/components/billing/ListingLimitBanner';
+import { OverageConsentBanner } from '@/components/billing/OverageConsentBanner';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -51,10 +51,11 @@ function WizardContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
+  const [overageAccepted, setOverageAccepted] = useState(false);
   
   // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
-  const { canCreate: canCreateListing } = useListingLimitCheck('agency');
+  const { canCreate: canCreateListing, isOverLimit } = useListingLimitCheck('agency');
 
   // Auto-save functionality with session-unique key (always starts fresh)
   const autoSave = useAutoSave<PropertyWizardData>({
@@ -216,9 +217,9 @@ function WizardContent() {
               </div>
             </motion.div>
 
-            {/* Listing Limit Warning */}
+            {/* Listing Limit / Overage Consent */}
             <motion.div variants={itemVariants}>
-              <ListingLimitBanner entityType="agency" />
+              <OverageConsentBanner entityType="agency" onConsentChange={setOverageAccepted} />
             </motion.div>
 
             {/* Progress */}
@@ -280,34 +281,34 @@ function WizardContent() {
                         <Save className="h-4 w-4 mr-2" />
                         Save as Draft
                       </Button>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span>
-                              <Button
-                                onClick={handleSubmitForReview}
-                                disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing}
-                                className="gap-2 rounded-xl h-11 px-6"
-                              >
-                                {isSubmitting ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Send className="h-4 w-4" />
-                                    Submit for Review
-                                    <Sparkles className="h-4 w-4" />
-                                  </>
-                                )}
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          {(!isAgentVerified || !canCreateListing) && (
-                            <TooltipContent>
-                              {!isAgentVerified ? 'Agent verification required' : 'Listing limit reached — upgrade your plan'}
-                            </TooltipContent>
-                          )}
-                        </Tooltip>
-                      </TooltipProvider>
+                       <TooltipProvider>
+                         <Tooltip>
+                           <TooltipTrigger asChild>
+                             <span>
+                               <Button
+                                 onClick={handleSubmitForReview}
+                                 disabled={isSubmitting || !canGoNext || !isAgentVerified || !canCreateListing || (isOverLimit && !overageAccepted)}
+                                 className="gap-2 rounded-xl h-11 px-6"
+                               >
+                                 {isSubmitting ? (
+                                   <Loader2 className="h-4 w-4 animate-spin" />
+                                 ) : (
+                                   <>
+                                     <Send className="h-4 w-4" />
+                                     Submit for Review
+                                     <Sparkles className="h-4 w-4" />
+                                   </>
+                                 )}
+                               </Button>
+                             </span>
+                           </TooltipTrigger>
+                           {(!isAgentVerified || !canCreateListing || (isOverLimit && !overageAccepted)) && (
+                             <TooltipContent>
+                               {!isAgentVerified ? 'Agent verification required' : !canCreateListing ? 'Subscription required' : 'Accept overage charge to continue'}
+                             </TooltipContent>
+                           )}
+                         </Tooltip>
+                       </TooltipProvider>
                     </div>
                   ) : (
                     <Button

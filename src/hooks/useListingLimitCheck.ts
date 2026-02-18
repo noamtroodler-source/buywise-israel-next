@@ -18,6 +18,7 @@ const NEXT_TIER: Record<string, string> = {
 
 export interface ListingLimitResult {
   canCreate: boolean;
+  isOverLimit: boolean;
   currentCount: number;
   maxListings: number | null;
   isLoading: boolean;
@@ -81,15 +82,15 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
   const overageMockPrice = OVERAGE_PRICES[entityType];
   const usagePercent = maxListings ? Math.min(100, Math.round((currentCount / maxListings) * 100)) : 0;
 
-  // Enterprise (null maxListings) = unlimited
-  // No subscription = cannot create (must subscribe)
+  // Over limit = has a finite limit and is at or beyond it
+  const isOverLimit = !isLoading && !needsSubscription && maxListings !== null && currentCount >= maxListings;
+
+  // Overages are allowed — canCreate is only false if no subscription at all
   const canCreate = isLoading
     ? true // Optimistic while loading
     : needsSubscription
     ? false
-    : maxListings === null
-    ? true
-    : currentCount < maxListings;
+    : true; // Always allowed with subscription (overage charges apply when over limit)
 
-  return { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageMockPrice, usagePercent };
+  return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageMockPrice, usagePercent };
 }

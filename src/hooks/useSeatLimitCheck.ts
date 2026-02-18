@@ -7,6 +7,7 @@ const OVERAGE_PRICE_AGENCY_SEAT = 100; // ILS per seat per month
 
 export interface SeatLimitResult {
   canInvite: boolean;
+  isOverLimit: boolean;
   currentSeats: number;
   maxSeats: number | null;
   isLoading: boolean;
@@ -48,13 +49,15 @@ export function useSeatLimitCheck(): SeatLimitResult {
   const needsSubscription = !sub || sub.status === 'none';
   const usagePercent = maxSeats ? Math.min(100, Math.round((currentSeats / maxSeats) * 100)) : 0;
 
+  // Over limit = has a subscription, has a finite limit, and is at or beyond it
+  const isOverLimit = !isLoading && !needsSubscription && maxSeats !== null && currentSeats >= maxSeats;
+
+  // Overages are allowed — canInvite is only false if no subscription at all
   const canInvite = isLoading
     ? true
     : needsSubscription
     ? false
-    : maxSeats === null
-    ? true
-    : currentSeats < maxSeats;
+    : true; // Always allowed with subscription (overage charges apply)
 
-  return { canInvite, currentSeats, maxSeats, isLoading, needsSubscription, overageMockPrice: OVERAGE_PRICE_AGENCY_SEAT, usagePercent };
+  return { canInvite, isOverLimit, currentSeats, maxSeats, isLoading, needsSubscription, overageMockPrice: OVERAGE_PRICE_AGENCY_SEAT, usagePercent };
 }
