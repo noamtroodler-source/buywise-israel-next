@@ -1,117 +1,118 @@
 
-# Phase D: Pricing UX Improvements
+# Phase E: Billing Dashboard — Gap Analysis & Implementation Plan
 
-## Assessment: What Already Exists
+## What Already Exists
 
-Significant groundwork is already done:
-- Feature comparison table (`FeatureComparisonTable.tsx`) — functional but sparse (6 rows)
-- FAQ section (`PricingFAQ.tsx`) — 6 questions, already in place
-- Founding Program section (`FoundingProgramSection.tsx`) — exists
-- Promo code validation on blur (`PromoCodeInput.tsx`) — validates against DB and shows benefit summary inline
+The billing pages (`/agency/billing`, `/developer/billing`) already include:
+- `BillingSection` — current plan, credit balance with expiring credit warnings, action buttons (Change Plan, Buy Credits, Manage Billing portal)
+- `CreditHistoryTable` — last 50 credit transactions from the DB ledger
+- `UsageMeters` — listings/seats/blogs progress bars
+- `TrialCountdownBanner` — animated countdown with progress
+- `UpgradePromptCard` — appears when usage ≥ 80%
+- `BoostAnalyticsPanel` — boost ROI chart and performance table (exists but not wired into the billing pages)
 
-Phase D work focuses on the **remaining UX gaps** that separate a generic pricing page from a conversion-optimized one.
+## What's Missing (Phase E Gaps)
 
----
+### Gap 1 — Stripe Invoice History
+There is no invoice/payment history component. Users cannot see past payments. A new edge function `list-invoices` is needed to call `stripe.invoices.list({ customer })` and return a lightweight list. The UI component renders this as a table with: date, description (plan name), amount, status badge, and a "Download PDF" icon link.
 
-## Gaps to Close
+### Gap 2 — Boost Analytics Not Surfaced on Billing Pages
+`BoostAnalyticsPanel` and `useBoostAnalytics` exist and are fully implemented, but the billing page layout only shows Usage Meters and UpgradePromptCard in the right column. The Boost analytics tab should be surfaced here so professionals can see their credit ROI directly on the billing page.
 
-### Gap 1 — Promo validation state not wired to plan cards
-`PromoCodeInput` validates and calls `onValidated` but `Pricing.tsx` doesn't pass `onValidated`, so the validation result is lost. When a user enters `FOUNDING2026`, the plan cards should show a banner like "60-day free trial included" and the CTA should update to "Start Free Trial".
+### Gap 3 — Billing Page Layout is a Static Two-Column Grid
+The current layout has no tabs — it just stacks all cards. A tabbed layout (Overview / Invoices / Boost Analytics) would make the page scannable and prevent the right column from becoming very long.
 
-**Fix**: Wire `onValidated` in `Pricing.tsx`, store the result in state, pass it down to `PlanCard` as a `promoResult` prop. Plan cards update their CTA label and show a highlighted "Trial included" badge when a valid promo with trial days is active.
+### Gap 4 — No "Billing Cycle" Indicator in BillingSection
+`BillingSection` shows the plan name and next billing date, but not whether the user is on monthly or annual billing. Displaying this lets users know their current commitment.
 
-### Gap 2 — Annual savings in absolute ₪ not shown
-The toggle shows "Save 20%" but doesn't tell users how much they save in actual currency. Zillow/Realtor.com always show the exact saving ("Save ₪4,320/yr").
+### Gap 5 — CreditHistoryTable has No Pagination / Filter
+Currently shows the last 50 transactions with no way to filter by type (purchases only, spends only) or load more. A simple type filter and "Load more" button improves usability.
 
-**Fix**: In `Pricing.tsx` and `PlanCard.tsx`, calculate the absolute annual saving per plan and display it under the price when billing cycle is `annual`.
+## Files to Create
 
-### Gap 3 — Feature comparison table is too sparse
-Only 6 rows. Missing: Visibility Boosts, Promo Code Access, Analytics Dashboard, Listing Analytics, Blog Publishing, Support tier. Enterprise should show the custom pricing description.
-
-**Fix**: Expand `FeatureComparisonTable.tsx` with ~5 additional feature rows, and add a special "Enterprise" styling for the Enterprise column header with a "Custom" price indicator.
-
-### Gap 4 — No per-plan tagline / value proposition
-Currently each plan card just shows a name and tier. There is no sentence explaining who the plan is for. Example: "Starter: Perfect for solo agents just getting started."
-
-**Fix**: Add a `description` prop to `PlanCard` (driven by a static map in `Pricing.tsx`), displayed in small muted text under the tier label.
-
-### Gap 5 — No trust signals below the CTA buttons
-No money-back guarantee or security reassurance text on the plan cards or the pricing page header.
-
-**Fix**: Add a "30-day satisfaction guarantee" note and a Stripe / SSL trust badge row to the pricing page between the plan cards and the feature comparison table.
-
-### Gap 6 — No "Save ₪X" savings callout in BillingCycleToggle when annual plans exist
-The toggle says "Save 20%" generically. When annual is selected and a plan is being viewed, the savings callout should be more prominent.
-
-**Fix**: In `BillingCycleToggle.tsx`, update the "Annual" button pill to say "Save 20% · Billed yearly" with a slightly bigger badge.
-
----
+| File | Purpose |
+|---|---|
+| `supabase/functions/list-invoices/index.ts` | New edge function: fetches Stripe invoices for the entity's stripe_customer_id |
+| `src/components/billing/InvoiceHistoryTable.tsx` | New component: renders invoice list fetched from the edge function |
 
 ## Files to Modify
 
 | File | Change |
 |---|---|
-| `src/pages/Pricing.tsx` | Wire `onValidated` from PromoCodeInput; store promo result; pass it to PlanCard; add per-plan descriptions map; add trust badge row |
-| `src/components/billing/PlanCard.tsx` | Add `description` prop; add `promoResult` prop; update CTA label to "Start Free Trial" when trial promo; show "Trial included" badge; show annual saving in ₪ |
-| `src/components/billing/FeatureComparisonTable.tsx` | Add 5+ feature rows: Boost Access, Blog Publishing, Analytics Dashboard, Listing Analytics, Support Level, API Access |
-| `src/components/billing/BillingCycleToggle.tsx` | Improve annual pill to "Save 20% · Billed yearly" |
-
----
+| `src/pages/agency/AgencyBilling.tsx` | Wrap content in a 3-tab layout (Overview / Invoices / Boost Analytics) |
+| `src/pages/developer/DeveloperBilling.tsx` | Same tabbed layout |
+| `src/components/billing/BillingSection.tsx` | Add billing cycle pill; tighten existing layout |
+| `src/components/billing/CreditHistoryTable.tsx` | Add type filter dropdown + "Load more" (offset-based) |
 
 ## Implementation Details
 
-### Promo wiring in `Pricing.tsx`
+### Edge Function: `list-invoices`
+
+Authenticates the caller, looks up `stripe_customer_id` from the `subscriptions` table (same pattern as `manage-subscription`), then calls:
 
 ```typescript
-const [promoResult, setPromoResult] = useState<PromoValidation | null>(null);
-
-<PromoCodeInput
-  value={promoCode}
-  onChange={setPromoCode}
-  onValidated={setPromoResult}
-/>
+stripe.invoices.list({ customer: customerId, limit: 20 })
 ```
 
-Then pass `promoResult` to each `PlanCard`.
-
-### PlanCard CTA update
-
-When `promoResult?.valid && promoResult.trialDays > 0`:
-- CTA button label: "Start Free Trial"
-- Show a small badge under the price: "60-day free trial included"
-- Keep the `onSubscribe` handler (promo code is passed in the checkout body)
-
-### Per-plan descriptions (static map)
-
+Returns a minimal array per invoice:
 ```typescript
-const PLAN_DESCRIPTIONS: Record<string, string> = {
-  starter: 'Perfect for solo agents getting started',
-  growth: 'For growing teams ready to scale',
-  pro: 'For established agencies at full capacity',
-  enterprise: 'Custom solutions for large organizations',
-};
+{
+  id: string,
+  number: string,
+  created: number,          // Unix timestamp
+  amount_paid: number,      // in agorot (×0.01 to get ₪)
+  currency: string,
+  status: string,           // 'paid' | 'open' | 'void' | 'uncollectible'
+  description: string,      // subscription line item description
+  invoice_pdf: string | null
+}
 ```
 
-### Feature comparison additions
+No new DB table needed — data comes from Stripe directly.
 
-New rows (all boolean or string values):
-- **Visibility Boosts** — all plans: true
-- **Blog Publishing** — Starter: 3/mo, Growth: 4/mo, Pro: 6/mo, Enterprise: Unlimited
-- **Analytics Dashboard** — Starter: false, Growth: true, Pro: true, Enterprise: true
-- **Listing Analytics** — Starter: Basic, Growth: Full, Pro: Full, Enterprise: Full
-- **Support Level** — Starter: Email, Growth: Email, Pro: Priority, Enterprise: Dedicated
+### Component: `InvoiceHistoryTable`
 
-### Annual savings display in PlanCard
+Calls the edge function via `supabase.functions.invoke('list-invoices', { body: { entity_type, entity_id } })`. Renders:
 
-```typescript
-const annualSaving = billingCycle === 'annual' && !isEnterprise
-  ? Math.round((priceMonthly ?? 0) * 12 - (priceAnnual ?? 0))
-  : 0;
+- A table row per invoice with: date, description, amount in ₪, a `Badge` for status, and a download icon linking to `invoice_pdf`
+- Loading skeleton (3 rows)
+- "No invoices yet" empty state when on Free plan or no Stripe customer exists
+- Only shown when `hasSubscription` is true (Free plan users see a friendly "Subscribe to see invoice history")
+
+### Tabbed Layout on Billing Pages
+
+Using the existing `Tabs` component from `@radix-ui/react-tabs` (already installed via shadcn):
+
+```
+Tab 1: Overview     → existing two-column layout (BillingSection + UsageMeters + UpgradePromptCard)
+Tab 2: Invoices     → full-width InvoiceHistoryTable
+Tab 3: Boost ROI    → full-width BoostAnalyticsPanel (already built, just needs wiring)
 ```
 
-Show below the annual billed line: `Save ₪{annualSaving.toLocaleString()} vs. monthly`
+The tab header sits between the page header and the content area, replacing the existing `grid gap-6 lg:grid-cols-2` wrapper.
 
----
+### BillingSection — Billing Cycle Pill
 
-## No Backend Changes
-All changes are purely frontend/UI. No database migrations, no edge functions.
+Inside the "Current Plan" block, alongside the status badge, add a secondary pill showing billing cycle:
+
+```tsx
+{sub.billingCycle && (
+  <Badge variant="outline" className="text-xs">
+    {sub.billingCycle === 'annual' ? 'Annual billing' : 'Monthly billing'}
+  </Badge>
+)}
+```
+
+### CreditHistoryTable — Filter + Load More
+
+Add a `useState` for `typeFilter: 'all' | 'purchase' | 'spend' | 'bonus' | 'subscription_grant'` and a `limit` state starting at 20, incrementing by 20 on "Load more". The Supabase query conditionally adds `.eq('transaction_type', typeFilter)` when filter is not `'all'`.
+
+## No Schema Changes
+All new data comes from Stripe (invoices) or already exists in `credit_transactions`. No migrations needed.
+
+## Execution Order
+1. Create `list-invoices` edge function
+2. Create `InvoiceHistoryTable` component
+3. Update `AgencyBilling` and `DeveloperBilling` to use tabbed layout
+4. Update `BillingSection` to show billing cycle
+5. Update `CreditHistoryTable` with filter + load more
