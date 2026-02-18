@@ -555,6 +555,7 @@ export type Database = {
         Row: {
           agency_id: string | null
           agency_name: string | null
+          agency_role: string
           approved_at: string | null
           approved_by: string | null
           avatar_url: string | null
@@ -588,6 +589,7 @@ export type Database = {
         Insert: {
           agency_id?: string | null
           agency_name?: string | null
+          agency_role?: string
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null
@@ -621,6 +623,7 @@ export type Database = {
         Update: {
           agency_id?: string | null
           agency_name?: string | null
+          agency_role?: string
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null

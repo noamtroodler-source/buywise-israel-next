@@ -11,20 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { 
   useMyAgency, 
   useAgencyTeam, 
   useAgencyJoinRequests,
   useAgencyStats,
   useApproveJoinRequest,
   useRejectJoinRequest,
-  useUpdateAgentStatus,
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
 import { useAgencyAnnouncements } from '@/hooks/useAgencyAnnouncements';
@@ -32,7 +24,6 @@ import { useMyBlogPosts, useSubmitForReview, useDeleteBlogPost } from '@/hooks/u
 import { BlogArticleTable } from '@/components/blog/BlogArticleTable';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { RemoveAgentDialog } from '@/components/agency/RemoveAgentDialog';
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
 import { AgencyOnboardingProgress } from '@/components/agency/AgencyOnboardingProgress';
 import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
@@ -42,6 +33,9 @@ import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusC
 import { UsageMeters } from '@/components/billing/UsageMeters';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { SeatSummaryCard } from '@/components/agency/SeatSummaryCard';
+import { SeatManagementPanel } from '@/components/agency/SeatManagementPanel';
+import { SeatOverageConsentDialog } from '@/components/agency/SeatOverageConsentDialog';
 
 export default function AgencyDashboard() {
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
@@ -55,11 +49,12 @@ export default function AgencyDashboard() {
   const deleteBlogPost = useDeleteBlogPost();
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
-  const updateAgentStatus = useUpdateAgentStatus();
   
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [createInviteOpen, setCreateInviteOpen] = useState(false);
-  const { canInvite, currentSeats, maxSeats, overageMockPrice: seatOveragePrice, usagePercent: seatUsagePercent } = useSeatLimitCheck();
+  const [consentDialogOpen, setConsentDialogOpen] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState<{ requestId: string; agentId: string } | null>(null);
+  const { canInvite, currentSeats, maxSeats, isOverLimit, usagePercent: seatUsagePercent } = useSeatLimitCheck();
 
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -287,84 +282,13 @@ export default function AgencyDashboard() {
             </TabsList>
 
             <TabsContent value="team" className="space-y-4 mt-4">
+              <SeatSummaryCard />
               <Card className="rounded-2xl border-primary/10">
-                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CardTitle>Team Members</CardTitle>
-                    <Badge 
-                      variant={seatUsagePercent >= 100 ? 'destructive' : 'secondary'}
-                      className={seatUsagePercent >= 80 && seatUsagePercent < 100 ? 'bg-amber-500/15 text-amber-700 border-amber-500/30 hover:bg-amber-500/15' : ''}
-                    >
-                      {maxSeats === null ? 'Unlimited seats' : `${currentSeats}/${maxSeats} seats used`}
-                    </Badge>
-                  </div>
+                <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl">
+                  <CardTitle>Team Members</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  {seatUsagePercent >= 100 && (
-                    <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm">
-                      <p className="font-medium text-destructive">You've reached your seat limit ({currentSeats}/{maxSeats}).</p>
-                      <p className="text-muted-foreground mt-1">
-                        <Link to="/pricing" className="text-primary hover:underline font-medium">Upgrade your plan</Link> to add more team members.
-                      </p>
-                    </div>
-                  )}
-                  {team.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                        <Users className="h-8 w-8 text-muted-foreground/50" />
-                      </div>
-                      <p className="font-medium text-foreground mb-1">No team members yet</p>
-                      <p className="text-sm">Share your invite code to add agents to your agency</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {team.map((agent, index) => (
-                        <motion.div
-                          key={agent.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
-                                {agent.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="font-medium">{agent.name}</p>
-                              <p className="text-sm text-muted-foreground">{agent.email}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={agent.status}
-                              onValueChange={(value: 'active' | 'suspended' | 'pending') => 
-                                updateAgentStatus.mutate({ agentId: agent.id, status: value })
-                              }
-                            >
-                              <SelectTrigger className="w-[120px] h-8 rounded-lg text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="suspended">Suspended</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {agent.is_verified && (
-                              <Badge variant="outline" className="border-primary/30 text-primary">Verified</Badge>
-                            )}
-                            <RemoveAgentDialog 
-                              agentId={agent.id} 
-                              agentName={agent.name}
-                            />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
+                  <SeatManagementPanel agents={team} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -408,11 +332,18 @@ export default function AgencyDashboard() {
                                 <Button
                                   size="sm"
                                   className="rounded-xl"
-                                  onClick={() => approveRequest.mutate({
-                                    requestId: request.id,
-                                    agentId: request.agent_id,
-                                    agencyId: agency.id,
-                                  })}
+                                  onClick={() => {
+                                    if (isOverLimit) {
+                                      setPendingApproval({ requestId: request.id, agentId: request.agent_id });
+                                      setConsentDialogOpen(true);
+                                    } else {
+                                      approveRequest.mutate({
+                                        requestId: request.id,
+                                        agentId: request.agent_id,
+                                        agencyId: agency.id,
+                                      });
+                                    }
+                                  }}
                                   disabled={approveRequest.isPending || !canInvite}
                                 >
                                   Approve
@@ -621,6 +552,27 @@ export default function AgencyDashboard() {
         open={createInviteOpen}
         onOpenChange={setCreateInviteOpen}
       />
+
+      {/* Seat Overage Consent Dialog */}
+      {maxSeats !== null && (
+        <SeatOverageConsentDialog
+          open={consentDialogOpen}
+          onOpenChange={setConsentDialogOpen}
+          currentSeats={currentSeats}
+          maxSeats={maxSeats}
+          isLoading={approveRequest.isPending}
+          onConfirm={() => {
+            if (pendingApproval) {
+              approveRequest.mutate({
+                requestId: pendingApproval.requestId,
+                agentId: pendingApproval.agentId,
+                agencyId: agency.id,
+              });
+              setPendingApproval(null);
+            }
+          }}
+        />
+      )}
     </Layout>
   );
 }
