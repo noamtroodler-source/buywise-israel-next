@@ -1,131 +1,94 @@
 
-# Slot Inventory Enforcement — Complete Fix
+# Founding Program — Full Benefit Surfacing Plan
 
-## The Three Gaps
+## The Gaps
 
-### Gap 1 — No database-level hard cap (critical)
-The edge function checks slots with `get_active_boost_count` then inserts — but these two operations are **not atomic**. Two concurrent purchases (e.g., both agency A and agency B buy the last slot simultaneously) could both pass the count check, then both insert, pushing active boosts to `max_slots + 1`. There is no DB constraint, trigger, or unique index to prevent this. The `active_boosts` table has zero constraints beyond the primary key.
+### Gap 1 — `FoundingProgramSection` is incomplete
+The section on `/pricing` has 3 cards but omits the **case study opportunity** entirely, and the "Monthly Credits" card is a single vague sentence. The DB `credit_schedule` is `[150, 150, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]` — which means months 1–2 get 150 credits, months 3–12 get 50 credits. This is genuinely compelling (₪2,000–₪3,000 of free visibility value) and needs to be made specific and visual.
 
-**Fix:** Add a `BEFORE INSERT` trigger on `active_boosts` that re-checks the count inside the same transaction, with a row-level advisory lock on the product ID. This makes the slot cap atomic and race-condition proof.
+### Gap 2 — Pricing page banner is a single pill line
+The top-of-page banner (`inline-flex items-center gap-2 px-4 py-2 rounded-full`) compresses the entire offer into one line: "Use code FOUNDING2026 for 60-day free trial + 25% off for 10 months". The credit schedule and case study opportunity are invisible. A user who reads this banner and moves on misses the most compelling part of the offer.
 
-### Gap 2 — `BoostDialog` (listing-row shortcut) has no slot awareness
-The `BoostDialog` component used from listing/project rows fetches `useVisibilityProducts` and `useActiveBoosts` but **never calls `useSlotAvailability`**. A sold-out product (e.g., Homepage Sale with all 6 slots taken) appears as a normal selectable card with no visual distinction. Users can select it and attempt to activate — only getting the error after clicking "Activate" and hitting the edge function.
+### Gap 3 — No post-redemption Founding Member experience
+Once someone has redeemed FOUNDING2026 and is on a trial, none of the billing UI surfaces:
+- That they are a **Founding Member** (special status)
+- Their **credit grant timeline** (when credits arrive, how many)
+- The **case study opportunity** (a unique benefit that has zero UI)
 
-**Fix:** Integrate `useSlotAvailability` into `BoostDialog`. Show a "Sold Out" badge on full products and make them unselectable, matching the `BoostMarketplace` behavior.
-
-### Gap 3 — No "duplicate entity" prevention
-An agency can currently activate the same listing-level product for the same listing twice (paying credits both times), which creates two rows in `active_boosts` for the same `(entity_id, product_id, target_id)`. The edge function doesn't check for an existing active boost on that specific combination before inserting.
-
-**Fix:** Add a partial unique index on `active_boosts(entity_id, product_id, target_id)` where `is_active = true` and `ends_at > now()` — enforced at DB level. Also add a pre-check in the edge function to return a clear error ("You already have this boost active for this listing") before attempting to deduct credits.
-
----
-
-## What's Already Working (Do Not Touch)
-
-- `BoostMarketplace` correctly shows slot availability bars, "Sold Out" badges, and disables CTA on full products ✅
-- `useSlotAvailability` hook is correctly implemented — queries `get_active_boost_count` per product ✅
-- Edge function slot count check (lines 134–142) works in the non-concurrent case ✅
-- `get_active_boost_count` DB function correctly counts `is_active = true AND ends_at > now()` ✅
+The `TrialCountdownBanner` only shows "X days left in your free trial" with a progress bar. The `BillingSection` shows nothing about founding member status. A user who's already in has no visibility into what's coming.
 
 ---
 
-## Implementation
+## What the DB Tells Us
 
-### Fix 1 — DB: Atomic slot enforcement trigger + duplicate prevention index
+The FOUNDING2026 promo code in the database has:
+- `trial_days: 60`
+- `discount_percent: 25`, `discount_duration_months: 10`
+- `credit_schedule: [150, 150, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]`
 
-Two schema changes via migration:
+Month 1–2: 150 credits each = 300 credits free
+Month 3–12: 50 credits each = 500 credits free
+Total free credits over 12 months: **800 credits** (worth ~₪16,000 at ₪20/credit)
 
-**A. Partial unique index** — prevents double-booking the same listing:
-```sql
-CREATE UNIQUE INDEX uq_active_boosts_entity_product_target
-ON public.active_boosts (entity_id, product_id, target_id)
-WHERE is_active = true;
-```
+This is a powerful offer that the current UI completely undersells.
 
-**B. Slot cap trigger** — re-checks count atomically inside the transaction:
-```sql
-CREATE OR REPLACE FUNCTION public.enforce_boost_slot_cap()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE
-  v_max_slots int;
-  v_current_count int;
-BEGIN
-  -- Lock on product to serialize concurrent inserts
-  PERFORM pg_advisory_xact_lock(hashtext('boost_slot_' || NEW.product_id::text));
+---
 
-  SELECT max_slots INTO v_max_slots
-  FROM public.visibility_products
-  WHERE id = NEW.product_id;
+## What We're Building
 
-  IF v_max_slots IS NOT NULL THEN
-    SELECT COUNT(*) INTO v_current_count
-    FROM public.active_boosts
-    WHERE product_id = NEW.product_id
-      AND is_active = true
-      AND ends_at > now();
+### Fix 1 — Expand `FoundingProgramSection` with 4 benefit cards + credit timeline
 
-    IF v_current_count >= v_max_slots THEN
-      RAISE EXCEPTION 'SLOT_FULL: No slots available for this boost product (max: %)', v_max_slots;
-    END IF;
-  END IF;
+Replace the current 3-card grid with 4 benefit cards (adding "Case Study Feature"), then add a visual credit timeline row below.
 
-  RETURN NEW;
-END;
-$$;
+**4 benefit cards:**
+1. **60-Day Free Trial** — "Try any plan completely risk-free. No charge for 60 days, cancel anytime."
+2. **25% Off for 10 Months** — "After your trial, save 25% on your plan for the next 10 months."
+3. **Priority Credits** — "Receive 150 visibility credits/month for your first 2 months, then 50/month for 10 months. ~₪16,000 in free platform value."
+4. **Case Study Feature** — "Get featured on our blog and social channels as a launch partner — free exposure to our buyer and investor audience."
 
-CREATE TRIGGER trg_enforce_boost_slot_cap
-  BEFORE INSERT ON public.active_boosts
-  FOR EACH ROW EXECUTE FUNCTION public.enforce_boost_slot_cap();
-```
+**Credit timeline visualization** — a horizontal timeline showing month labels (Trial M1, Trial M2, Month 1–10) with credit amounts below each, styled with the primary color. This makes the `credit_schedule` array tangible and real.
 
-This means even if the edge function's own slot check somehow misses a race, the DB will reject the insert with a clear error.
+**File:** `src/components/billing/FoundingProgramSection.tsx`
 
-### Fix 2 — `activate-boost` edge function: add duplicate-active-boost check
+---
 
-Before the slot cap check (line 134), add a check for an existing active boost on the same `(entity_id, product_id, target_id)`:
+### Fix 2 — Upgrade the Pricing page hero banner from a pill to a feature callout
 
-```typescript
-// Check for existing active boost on same target
-const { data: existing } = await admin
-  .from("active_boosts")
-  .select("id, ends_at")
-  .eq("entity_id", entityId)
-  .eq("product_id", product.id)
-  .eq("target_id", target_id)
-  .eq("is_active", true)
-  .gt("ends_at", new Date().toISOString())
-  .maybeSingle();
+Replace the single `inline-flex` pill banner in `src/pages/Pricing.tsx` with a slightly wider card banner (max-w-2xl, rounded-2xl) that shows:
+- "Founding Program — Limited Time" heading with Sparkles icon
+- 3 quick bullets: trial / discount / credits
+- The code in a copyable mono chip
+- A "Learn more ↓" anchor link to `#founding` (the `FoundingProgramSection` below)
 
-if (existing) {
-  return new Response(JSON.stringify({
-    error: "This boost is already active for this listing.",
-    ends_at: existing.ends_at,
-  }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-}
-```
+The `FoundingProgramSection` gets an `id="founding"` added so the scroll link works.
 
-Also improve the error parsing when the DB trigger fires (the `SLOT_FULL:` prefix in the trigger message makes it parseable):
+**File:** `src/pages/Pricing.tsx`
 
-```typescript
-if (boostErr) {
-  const isSoldOut = boostErr.message?.includes('SLOT_FULL');
-  return new Response(JSON.stringify({
-    error: isSoldOut ? "No boost slots available. All slots are taken." : "Failed to create boost",
-  }), { status: isSoldOut ? 409 : 500, ... });
-}
-```
+---
 
-### Fix 3 — `BoostDialog.tsx`: add slot awareness
+### Fix 3 — `FoundingMemberBanner`: post-redemption awareness in billing hubs
 
-The `BoostDialog` currently shows all products with no slot data. Changes:
+Create a new component `src/components/billing/FoundingMemberBanner.tsx`.
 
-1. Import `useSlotAvailability` from `useBoosts`.
-2. Call `useSlotAvailability(products)` to get the `slotMap`.
-3. For each product card, check `slotMap[product.id]?.isFull`:
-   - If full: show "Sold Out" badge (amber/secondary variant), disable selection (`cursor-not-allowed`), add visual opacity.
-   - Otherwise: existing behavior unchanged.
+It reads `useSubscription()` data. It renders when:
+- `sub.status === 'trialing'` AND the subscription was created with the FOUNDING2026 promo
 
-This makes `BoostDialog` slot-aware, matching `BoostMarketplace`.
+To detect FOUNDING2026 redemption without adding a DB query: query `subscription_promo_redemptions` joined to `promo_codes` for `code = 'FOUNDING2026'` where `subscription_id = sub.id`. If found, the user is a Founding Member.
+
+The banner shows:
+- **Gold/amber gradient** to differentiate it from the plain `TrialCountdownBanner` (which stays for its progress bar function)
+- "You're a Founding Member" heading with a Star/Award icon
+- 3 inline chips: "60-day trial", "25% off for 10 months", "Up to 800 free credits"
+- A credit schedule summary: "150 credits/mo for months 1–2, then 50 credits/mo for 10 months"
+- "Case Study Opportunity" — "As a Founding Member you'll be invited to share your growth story with our audience."
+- A dismissible state (localStorage key `founding_banner_dismissed_{sub.id}`)
+
+The banner is added to `AgencyBilling.tsx` and `DeveloperBilling.tsx` above `TrialCountdownBanner`.
+
+**Files:**
+- `src/components/billing/FoundingMemberBanner.tsx` (new)
+- `src/pages/agency/AgencyBilling.tsx` (add import + component)
+- `src/pages/developer/DeveloperBilling.tsx` (add import + component)
 
 ---
 
@@ -133,17 +96,20 @@ This makes `BoostDialog` slot-aware, matching `BoostMarketplace`.
 
 | File | Type | Change |
 |---|---|---|
-| DB migration | New | Partial unique index `uq_active_boosts_entity_product_target`; `enforce_boost_slot_cap()` function + `trg_enforce_boost_slot_cap` trigger |
-| `supabase/functions/activate-boost/index.ts` | Edit | Add duplicate-active-boost pre-check; improve DB trigger error parsing |
-| `src/components/billing/BoostDialog.tsx` | Edit | Import and call `useSlotAvailability`; render "Sold Out" badge and disable selection for full products |
+| `src/components/billing/FoundingProgramSection.tsx` | Edit | 4-card layout with Case Study card; credit timeline visualization; `id="founding"` for anchor linking |
+| `src/pages/Pricing.tsx` | Edit | Replace pill banner with feature callout card; add anchor link to `#founding` |
+| `src/components/billing/FoundingMemberBanner.tsx` | New | Post-redemption Founding Member banner with credit schedule and case study callout |
+| `src/pages/agency/AgencyBilling.tsx` | Edit | Add `FoundingMemberBanner` above `TrialCountdownBanner` |
+| `src/pages/developer/DeveloperBilling.tsx` | Edit | Add `FoundingMemberBanner` above `TrialCountdownBanner` |
 
 ---
 
 ## Technical Notes
 
-- **Advisory lock key format:** `hashtext('boost_slot_' || product_id::text)` — scoped to the product ID so concurrent purchases of *different* products don't block each other; only concurrent purchases of the *same* product serialize.
-- **Trigger vs. application check:** The trigger is the safety net. The edge function's pre-checks (duplicate boost, slot count) remain as the first line of defense for good UX (clean error messages before credit deduction is attempted). The trigger fires after the `spend_credits` deduction — if the trigger rejects the insert, the transaction rolls back, so credits are never lost. This is safe because `spend_credits` and `active_boosts` insert happen in separate Supabase calls (not a DB transaction). To prevent credit loss on trigger rejection, the edge function's own slot check must remain — the trigger is the **backstop**, not the primary gate.
-- **The `slot_position` column** already exists in `active_boosts` but is never set. It can be populated by the trigger (`NEW.slot_position := v_current_count + 1`) for future admin slot assignment features — added as a bonus in the trigger.
-- **`BoostMarketplace`** already handles slot display correctly — no changes needed there.
-- **No changes to `useSlotAvailability` hook** — it's already correct.
-- **Actual DB slot counts** differ from the original spec: Homepage Sale/Rent = 6 (not 8), City Spotlight = 3, Email Digest = 2, Directory = 5 each. The enforcement works against whatever is in `max_slots` — no need to change these values now.
+- **No DB migration needed.** The promo code is already seeded. The `subscription_promo_redemptions` table already tracks which subscriptions used FOUNDING2026.
+- **Founding Member detection:** `FoundingMemberBanner` queries `subscription_promo_redemptions` joined to `promo_codes` filtered by `code = 'FOUNDING2026'` and `subscription_id = sub.id`. This is a single lightweight query; result is cached via `useQuery` with a 10-minute stale time. If the user has no redemption row, the banner is invisible.
+- **Dismissal:** Uses `localStorage` keyed to `sub.id` — so dismissing on one device persists per-device, and each new subscription gets a fresh banner. No DB write needed.
+- **Credit timeline in `FoundingProgramSection`** is hardcoded from the known `credit_schedule` array — it does not need to query the DB since the schedule is fixed for the Founding Program.
+- **The existing `TrialCountdownBanner`** is NOT removed — it provides the progress bar. The `FoundingMemberBanner` stacks above it and explains the full benefit set.
+- **The "Case Study Opportunity"** is presented as informational text only — no form or workflow is built. A follow-up task can add a "Register Interest" button that sends an email to the admin.
+- **`FoundingProgramSection` changes are public-facing** (visible to all `/pricing` visitors, logged in or not). The `FoundingMemberBanner` is only shown to authenticated users who have redeemed the code.
