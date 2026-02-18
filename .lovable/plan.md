@@ -1,105 +1,116 @@
 
-# Blog Quota Hard-Block — Complete Implementation Plan
+# Annual Billing Confirmation Flow — Complete Plan
 
-## Current State Analysis
+## Problem Statement
 
-The blog quota system is **partially implemented** with a critical inconsistency:
+The toggle to switch between Monthly and Annual billing has no friction or clarity around what "Annual" means in practice. A user can switch to Annual and click Subscribe without ever reading that they are committing to a 12-month payment billed as a lump sum. There is also no post-purchase summary confirming which cycle they selected.
 
-**What exists:**
-- `useBlogQuotaCheck` hook — correctly returns `canSubmit: false` when `used >= limit`
-- `useSubmitForReview` in `useProfessionalBlog.tsx` — has a server-side quota check that throws an error when quota is exceeded (lines 255-258)
-- `BlogArticleTable` — receives `canSubmitQuota` prop and hides the Submit button when `false` — this IS a hard-block on existing posts
-- `UsageMeters` — shows the blog meter but with no overage cost (correct — blog posts don't have overage pricing, they're hard-capped)
-
-**The 3 gaps that let quota be bypassed:**
-
-1. **"Write Article" buttons are not quota-aware** — On the list pages (`AgentBlog`, `DeveloperBlog`, `AgencyDashboard`) the "Write Article" button links freely to `/*/blog/new` even when `canSubmit` is `false`. A user at quota can still enter the wizard, write their full article, reach the final step, and only then get a server-side error. This is a terrible UX surprise.
-
-2. **The wizard "Submit for Review" button has no quota check** — `AgentBlogWizard.tsx`, `DeveloperBlogWizard.tsx`, and `AgencyBlogWizard.tsx` all call `handleSubmit` with no front-end quota gate. The only protection is the server-side throw inside `useSubmitForReview`, which surfaces as a caught error with no clear UI feedback.
-
-3. **No quota banner in the wizard itself** — If a user somehow reaches the wizard while at quota (e.g. navigated directly), there is no warning until they click Submit.
-
-**Blog posts do NOT get overages** — unlike listings and seats, blog posts are hard-capped at the plan limit per month. No ₪X/post overage model. The `UsageMeters` blog row correctly shows no overage rate. This is a true hard-block.
+There are 5 specific gaps, described below in order of user journey.
 
 ---
 
-## What We're Building
+## Gap 1 — The Toggle Gives No Context When Annual Is Active
 
-### Fix 1 — Quota-Aware "Write Article" Button (3 pages)
+**Current state:** The `BillingCycleToggle` has a `text-[10px]` chip reading "Save 20% · Billed yearly" that is always visible — even when Monthly is selected — making it feel decorative rather than informative. When Annual is selected, the chip simply moves with it; there is no secondary explanation.
 
-On the list pages and dashboards, the "Write Article" button must check `canSubmitQuota`:
-- If `canSubmit === false`: button is **disabled** with a tooltip: "Monthly blog limit reached (X/X). Resets on the 1st."
-- If loading: button shows normal (optimistic)
+**Fix:** Add a contextual callout banner directly below the toggle (between the toggle row and the plan cards). It renders only when `billingCycle === 'annual'` and reads:
 
-**Pages to modify:**
-- `src/pages/agent/AgentBlog.tsx` — the primary "Write Article" button
-- `src/pages/developer/DeveloperBlog.tsx` — same
-- `src/pages/agency/AgencyDashboard.tsx` — two blog CTAs (header quick-action + Articles card header)
-- `src/pages/agent/AgentDashboard.tsx` — "Add Blog" button
-- `src/pages/developer/DeveloperDashboard.tsx` — "Add Blog" button
+> Annual plans are billed as a single payment for the full year. You save 20% vs. paying month-to-month, and the plan renews automatically after 12 months.
 
-### Fix 2 — Quota Gate in the Blog Wizards (3 wizards)
+This is an amber-tinted informational strip — not an error or warning — using `Info` icon and the same `Alert` component used across the billing UI. It disappears when switching back to Monthly.
 
-In `AgentBlogWizard`, `DeveloperBlogWizard`, and `AgencyBlogWizard`, at the final step (when `isLastStep` is true), the Submit button must:
-- Be **disabled** when `canSubmit === false` (quota exceeded)
-- Show a clear inline banner above the navigation row explaining why
-
-Each wizard already has access to the profile ID needed for the check:
-- Agent wizard: uses `agentProfile` from `useAgentProfile()`
-- Developer wizard: uses `developerProfile` from `useDeveloperProfile()`
-- Agency wizard: uses `agency` from `useMyAgency()`
-
-We pass those IDs into `useBlogQuotaCheck()` inside the wizard.
-
-### Fix 3 — BlogQuotaBlock Banner Component (new)
-
-A small new component: `src/components/blog/BlogQuotaBanner.tsx`
-
-Used in two contexts:
-1. **List pages** — shown above the article table when `canSubmit === false`, replacing the current tiny "Limit reached" badge
-2. **Wizards** — shown above the navigation buttons on the final step when at quota
-
-Content:
-```
-⛔ Monthly blog limit reached — X of X posts used
-Your quota resets on [1st of next month]. Upgrade your plan to publish more articles this month.
-[Upgrade Plan →]  (links to /pricing)
-```
-
-Design: red-tinted card matching the `OverageConsentBanner` style, but without a checkbox (no overage acceptance needed — it's a true block).
-
-### Fix 4 — UsageMeters Blog Row Enhancement
-
-Currently the blog meter row shows `X/Y this month` with no reset date hint and no "limit reached" visual state. When `used >= limit`:
-- Progress bar turns red (already handled by `getColor()` since `isOver` uses `current > max`, but at exactly `max` it's `percent === 100` which returns `bg-destructive` via the `>= 100` check — actually already correct)
-- Add a line: "Limit reached — resets [Month 1]"
-
-This is a minor enhancement to `UsageMeters` — one extra line when `blog.used >= blog.limit`.
+**File:** `src/pages/Pricing.tsx` — add the conditional banner between the Controls section and the Plan Cards grid.
 
 ---
 
-## Files to Modify/Create
+## Gap 2 — No Confirmation Step Before Sending Annual Users to Checkout
+
+**Current state:** Clicking "Subscribe" when Annual is selected immediately fires `handleSubscribe`, which opens the Stripe checkout session in a new tab. There is no moment where the user sees "you're about to pay ₪X for 12 months" before leaving the site.
+
+**Fix:** Intercept the Subscribe action with a lightweight confirmation dialog: `AnnualBillingConfirmDialog`.
+
+Triggered only when `billingCycle === 'annual'` and the plan is not Enterprise. When Monthly, clicking Subscribe proceeds as before with no interruption.
+
+**Dialog contents:**
+- Header: "Confirm Annual Billing"
+- Entity badge (Agency / Developer) matching the style used in `EnterpriseSalesDialog`
+- Plan name + tier
+- Summary row: `₪[monthlyEquivalent]/mo equivalent · ₪[totalAnnual] billed today`
+- Savings callout: `You save ₪[annualSaving] compared to monthly billing`
+- Commitment note: `This is a 12-month commitment. Your plan renews automatically on [date 12 months from today]. Cancel anytime from your billing portal before renewal.`
+- Two buttons: `Confirm & Continue →` (calls `handleSubscribe`) and `Go Back`
+
+**Files:**
+- New: `src/components/billing/AnnualBillingConfirmDialog.tsx`
+- Edit: `src/components/billing/PlanCard.tsx` — when `billingCycle === 'annual'`, clicking Subscribe sets `confirmDialogOpen = true` instead of calling `onSubscribe` directly. The dialog then calls `onSubscribe` on confirm.
+- Edit: `src/pages/Pricing.tsx` — no change needed; `onSubscribe` is passed down as-is.
+
+---
+
+## Gap 3 — Subscribe Button Label Does Not Reflect the Commitment
+
+**Current state:** The CTA on `PlanCard` always reads "Subscribe" regardless of billing cycle.
+
+**Fix:** When `billingCycle === 'annual'`, update the CTA label to `Subscribe — Annual Plan` (or simply `Get Annual Plan`). This makes the commitment legible before the user even clicks.
+
+**File:** `src/components/billing/PlanCard.tsx` — extend the `ctaLabel` logic.
+
+---
+
+## Gap 4 — Toggle Chip Is Too Small and Structurally Passive
+
+**Current state:** The "Save 20% · Billed yearly" chip inside the toggle button is `text-[10px]`, which is below comfortable reading size. It also appears inline inside the button, making it easy to miss.
+
+**Fix:** Redesign the Annual button label layout:
+- Main label: `Annual` (same size as Monthly)
+- Below it, a small `text-[11px]` secondary line: `Save 20%` in `text-primary` weight, visible only on the Annual button
+- Remove the chip element entirely — the savings message becomes part of the button text hierarchy
+
+This makes the toggle scannable at a glance and looks cleaner than the current inline chip.
+
+**File:** `src/components/billing/BillingCycleToggle.tsx`
+
+---
+
+## Gap 5 — CheckoutSuccess Has No Billing Cycle Summary
+
+**Current state:** After completing checkout (whether monthly or annual), the user lands on a generic "Subscription Active!" page. There is no mention of what they just committed to.
+
+**Fix:** Pass the billing cycle through the success URL as a query param in `handleSubscribe`:
+
+```
+success_url: `${window.location.origin}/checkout/success?cycle=annual`
+```
+
+Then update `CheckoutSuccess.tsx` to detect the `cycle` param and render an additional line when annual:
+
+> You're on an annual plan — your next renewal is in 12 months.
+
+This closes the loop and removes any post-purchase doubt.
+
+**Files:**
+- Edit: `src/pages/Pricing.tsx` — append `?cycle=${billingCycle}` to the `success_url` in `handleSubscribe`
+- Edit: `src/pages/CheckoutSuccess.tsx` — read `cycle` param, conditionally render the renewal note
+
+---
+
+## Files Summary
 
 | File | Type | Change |
 |---|---|---|
-| `src/components/blog/BlogQuotaBanner.tsx` | New | Reusable hard-block banner with reset date and upgrade CTA |
-| `src/pages/agent/AgentBlog.tsx` | Edit | Disable "Write Article" button + show `BlogQuotaBanner` when at quota |
-| `src/pages/developer/DeveloperBlog.tsx` | Edit | Same |
-| `src/pages/agency/AgencyDashboard.tsx` | Edit | Disable 2 blog CTAs + show `BlogQuotaBanner` in Articles card |
-| `src/pages/agent/AgentDashboard.tsx` | Edit | Disable "Add Blog" button when at quota |
-| `src/pages/developer/DeveloperDashboard.tsx` | Edit | Same |
-| `src/pages/agent/AgentBlogWizard.tsx` | Edit | Add `useBlogQuotaCheck`, disable Submit on final step, show banner |
-| `src/pages/developer/DeveloperBlogWizard.tsx` | Edit | Same |
-| `src/pages/agency/AgencyBlogWizard.tsx` | Edit | Same |
-| `src/components/billing/UsageMeters.tsx` | Edit | Add "Limit reached — resets [date]" line when blog at quota |
+| `src/components/billing/AnnualBillingConfirmDialog.tsx` | New | Lightweight confirmation dialog showing annual total, savings, and 12-month commitment note |
+| `src/components/billing/BillingCycleToggle.tsx` | Edit | Redesign Annual button: replace `text-[10px]` chip with cleaner two-line layout |
+| `src/components/billing/PlanCard.tsx` | Edit | Wire Subscribe to open confirm dialog when annual; update CTA label to reflect commitment |
+| `src/pages/Pricing.tsx` | Edit | Add contextual annual callout banner below the toggle; append `cycle` param to success URL |
+| `src/pages/CheckoutSuccess.tsx` | Edit | Read `cycle` param; render 12-month renewal note when annual |
 
 ---
 
 ## Technical Notes
 
-- `useBlogQuotaCheck` takes `authorType` and `profileId` — wizards already have the profile data loaded, so the hook can be called there without an extra fetch
-- The reset date is always the 1st of the following month — computed client-side: `new Date(year, month + 1, 1)` formatted as "March 1"
-- `isEditMode` wizards (editing an existing draft) are NOT blocked — quota only applies to new submissions; `canSubmit` from the hook correctly excludes the current post being re-submitted (the server-side check uses `.neq('id', postId)`)
-- Dashboard "Add Blog" buttons for agents and developers fire before the profile is loaded — we use `isLoading` from the quota check to keep them enabled while loading (optimistic), disabling only when definitively `canSubmit === false && !isLoading`
-- No database changes required — the quota check already reads from `blog_posts` and `subscriptions`
-- No new secrets or edge functions needed
+- `AnnualBillingConfirmDialog` is self-contained — it receives `planName`, `priceMonthly`, `priceAnnual`, `entityType`, `onConfirm`, and `onCancel` as props. No new hooks or DB queries needed.
+- The renewal date shown in the dialog is computed client-side: `addYears(new Date(), 1)` from `date-fns` — already installed.
+- The dialog uses the same `Dialog`, `Button`, `Badge` primitives used throughout billing components — no new dependencies.
+- Monthly flow is completely untouched — all 5 changes are conditional on `billingCycle === 'annual'`. Monthly users see zero difference.
+- The success URL `cycle` param is optional — if somehow missing, `CheckoutSuccess` falls back to the current generic message.
+- No DB changes, no edge function changes, no new secrets required.
