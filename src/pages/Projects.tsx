@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 
 import { ProjectFavoriteButton } from '@/components/project/ProjectFavoriteButton';
+import { PromotedBadge } from '@/components/shared/PromotedBadge';
 import { ProjectShareButton } from '@/components/project/ProjectShareButton';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
@@ -273,6 +274,7 @@ export default function Projects() {
                             
                             {/* Badges - Top Left */}
                             <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+                              {project._isBoosted && <PromotedBadge />}
                               {isPriceReduced(project) && getPriceDropPercent(project) >= 2 && (
                                 <Badge className="bg-green-600 text-white text-xs font-medium gap-1">
                                   <TrendingDown className="h-3 w-3" />
