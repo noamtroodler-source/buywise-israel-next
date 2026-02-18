@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, Building2, Lock, RefreshCcw, ArrowRight, Users, Info } from 'lucide-react';
+import { Sparkles, Shield, Building2, Lock, RefreshCcw, ArrowRight, Users, Info, CheckCircle, Copy } from 'lucide-react';
+
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
@@ -48,6 +49,52 @@ function buildFeatures(plan: any): string[] {
   if (plan.tier === 'pro' || plan.tier === 'enterprise') features.push('Priority support');
   if (plan.tier === 'enterprise') features.push('Dedicated account manager');
   return features;
+}
+
+function FoundingBannerCard() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText('FOUNDING2026');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 text-left">
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Sparkles className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground text-sm mb-1">Founding Program — Limited Time</p>
+          <ul className="space-y-0.5 mb-3">
+            <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" /> 60-day free trial on any plan
+            </li>
+            <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" /> 25% off for 10 months after trial
+            </li>
+            <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CheckCircle className="h-3 w-3 text-primary flex-shrink-0" /> Up to 800 free visibility credits (~₪16,000 value)
+            </li>
+          </ul>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-mono font-semibold text-primary hover:bg-primary/20 transition-colors"
+            >
+              FOUNDING2026
+              {copied ? <CheckCircle className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </button>
+            <a href="#founding" className="text-xs text-primary hover:underline">
+              See full benefit details ↓
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Pricing() {
@@ -165,11 +212,7 @@ export default function Pricing() {
               </p>
 
               {/* Founding Banner */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm mb-8">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-foreground font-medium">Founding Program:</span>
-                <span className="text-muted-foreground">Use code <strong className="text-primary">FOUNDING2026</strong> for 60-day free trial + 25% off for 10 months</span>
-              </div>
+              <FoundingBannerCard />
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <PromoCodeInput value={promoCode} onChange={setPromoCode} onValidated={setPromoResult} />

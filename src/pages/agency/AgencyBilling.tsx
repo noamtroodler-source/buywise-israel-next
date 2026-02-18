@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BillingSection } from '@/components/billing/BillingSection';
 import { UsageMeters } from '@/components/billing/UsageMeters';
 import { TrialCountdownBanner } from '@/components/billing/TrialCountdownBanner';
+import { FoundingMemberBanner } from '@/components/billing/FoundingMemberBanner';
 import { UpgradePromptCard } from '@/components/billing/UpgradePromptCard';
 import { InvoiceHistoryTable } from '@/components/billing/InvoiceHistoryTable';
 import { OverageChargesTable } from '@/components/billing/OverageChargesTable';
@@ -19,6 +20,9 @@ export default function AgencyBilling() {
   return (
     <Layout>
       <div className="container py-8 space-y-6 max-w-5xl">
+        {/* Founding Member Banner (above trial banner) */}
+        <FoundingMemberBanner />
+
         {/* Trial Banner */}
         <TrialCountdownBanner />
 
