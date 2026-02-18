@@ -1,82 +1,117 @@
 
-# Phase C: Enterprise & Sales Flow
+# Phase D: Pricing UX Improvements
 
 ## Assessment: What Already Exists
 
-The core infrastructure is in place from previous phases:
-- `enterprise_inquiries` table with correct schema and RLS policies (INSERT for all, SELECT/UPDATE for admins only)
-- `EnterpriseSalesDialog` form with name, email, company, message fields
-- `PlanCard` shows "Contact Sales" for enterprise tier and opens the dialog
-- Admin page at `/admin/enterprise-inquiries` with status management (new/contacted/closed)
-- Route and sidebar nav entry already wired up
+Significant groundwork is already done:
+- Feature comparison table (`FeatureComparisonTable.tsx`) — functional but sparse (6 rows)
+- FAQ section (`PricingFAQ.tsx`) — 6 questions, already in place
+- Founding Program section (`FoundingProgramSection.tsx`) — exists
+- Promo code validation on blur (`PromoCodeInput.tsx`) — validates against DB and shows benefit summary inline
 
-Phase C work is therefore focused on **closing the remaining gaps** rather than building from scratch.
+Phase D work focuses on the **remaining UX gaps** that separate a generic pricing page from a conversion-optimized one.
+
+---
 
 ## Gaps to Close
 
-### Gap 1 — Message & Admin Notes in the Admin Table
-The admin table shows name, email, company, type, status, date — but NOT the prospect's message. Admins have to guess what the lead actually asked. Also, there's no way for admins to record internal notes (e.g. "Called on Feb 20, interested in 10 seats").
+### Gap 1 — Promo validation state not wired to plan cards
+`PromoCodeInput` validates and calls `onValidated` but `Pricing.tsx` doesn't pass `onValidated`, so the validation result is lost. When a user enters `FOUNDING2026`, the plan cards should show a banner like "60-day free trial included" and the CTA should update to "Start Free Trial".
 
-**Fix**: Add an expandable row in the admin table that shows the message, plus an "Add Note" inline field that saves to a new `admin_notes` column on the table.
+**Fix**: Wire `onValidated` in `Pricing.tsx`, store the result in state, pass it down to `PlanCard` as a `promoResult` prop. Plan cards update their CTA label and show a highlighted "Trial included" badge when a valid promo with trial days is active.
 
-### Gap 2 — Phone Number Field in the Inquiry Form
-Sales teams universally want a phone number to follow up. The current form only captures email.
+### Gap 2 — Annual savings in absolute ₪ not shown
+The toggle shows "Save 20%" but doesn't tell users how much they save in actual currency. Zillow/Realtor.com always show the exact saving ("Save ₪4,320/yr").
 
-**Fix**: Add an optional phone number field to `EnterpriseSalesDialog` and store it in a new `phone` column on `enterprise_inquiries`.
+**Fix**: In `Pricing.tsx` and `PlanCard.tsx`, calculate the absolute annual saving per plan and display it under the price when billing cycle is `annual`.
 
-### Gap 3 — Admin Email Notification on New Inquiry
-When a prospect submits an enterprise inquiry, nothing notifies the admin team. A lead could sit unseen for days.
+### Gap 3 — Feature comparison table is too sparse
+Only 6 rows. Missing: Visibility Boosts, Promo Code Access, Analytics Dashboard, Listing Analytics, Blog Publishing, Support tier. Enterprise should show the custom pricing description.
 
-**Fix**: Create a database trigger + edge function that fires on INSERT to `enterprise_inquiries` and sends an email notification via Resend to a configured admin email address.
+**Fix**: Expand `FeatureComparisonTable.tsx` with ~5 additional feature rows, and add a special "Enterprise" styling for the Enterprise column header with a "Custom" price indicator.
 
-### Gap 4 — Admin Badge Counter for New Inquiries
-The sidebar shows badge counts for pending listings, agents, etc. Enterprise inquiries with status "new" should also show a count badge so admins notice them immediately.
+### Gap 4 — No per-plan tagline / value proposition
+Currently each plan card just shows a name and tier. There is no sentence explaining who the plan is for. Example: "Starter: Perfect for solo agents just getting started."
 
-**Fix**: Add a query to count `enterprise_inquiries` where `status = 'new'` and display it as a badge on the "Enterprise Leads" nav item in `AdminLayout`.
+**Fix**: Add a `description` prop to `PlanCard` (driven by a static map in `Pricing.tsx`), displayed in small muted text under the tier label.
+
+### Gap 5 — No trust signals below the CTA buttons
+No money-back guarantee or security reassurance text on the plan cards or the pricing page header.
+
+**Fix**: Add a "30-day satisfaction guarantee" note and a Stripe / SSL trust badge row to the pricing page between the plan cards and the feature comparison table.
+
+### Gap 6 — No "Save ₪X" savings callout in BillingCycleToggle when annual plans exist
+The toggle says "Save 20%" generically. When annual is selected and a plan is being viewed, the savings callout should be more prominent.
+
+**Fix**: In `BillingCycleToggle.tsx`, update the "Annual" button pill to say "Save 20% · Billed yearly" with a slightly bigger badge.
+
+---
+
+## Files to Modify
+
+| File | Change |
+|---|---|
+| `src/pages/Pricing.tsx` | Wire `onValidated` from PromoCodeInput; store promo result; pass it to PlanCard; add per-plan descriptions map; add trust badge row |
+| `src/components/billing/PlanCard.tsx` | Add `description` prop; add `promoResult` prop; update CTA label to "Start Free Trial" when trial promo; show "Trial included" badge; show annual saving in ₪ |
+| `src/components/billing/FeatureComparisonTable.tsx` | Add 5+ feature rows: Boost Access, Blog Publishing, Analytics Dashboard, Listing Analytics, Support Level, API Access |
+| `src/components/billing/BillingCycleToggle.tsx` | Improve annual pill to "Save 20% · Billed yearly" |
+
+---
 
 ## Implementation Details
 
-### Database Migration
-One migration adds two nullable columns to `enterprise_inquiries`:
-- `phone text` — prospect's phone number (optional)
-- `admin_notes text` — internal admin follow-up notes
+### Promo wiring in `Pricing.tsx`
 
-### Files to Modify
+```typescript
+const [promoResult, setPromoResult] = useState<PromoValidation | null>(null);
 
-**`src/components/billing/EnterpriseSalesDialog.tsx`**
-- Add optional `phone` field (validated as phone-like string, max 30 chars)
-- Submit phone to the database
+<PromoCodeInput
+  value={promoCode}
+  onChange={setPromoCode}
+  onValidated={setPromoResult}
+/>
+```
 
-**`src/pages/admin/AdminEnterpriseInquiries.tsx`**
-- Add expandable row: clicking a row expands to show full message and admin notes textarea
-- Admin notes auto-save on blur (debounced UPDATE mutation)
-- Add "Message" column indicator (paperclip icon if message exists)
+Then pass `promoResult` to each `PlanCard`.
 
-**`src/pages/admin/AdminLayout.tsx`**
-- Add a `useQuery` for new enterprise inquiry count
-- Show badge on "Enterprise Leads" nav item when count > 0
+### PlanCard CTA update
 
-**`supabase/functions/enterprise-inquiry-notify/index.ts`** (new edge function)
-- Triggered by the DB insert (via calling it from the dialog after successful insert, not a DB webhook since those aren't available)
-- Sends email to admin via Resend with inquiry details
-- Uses existing `RESEND_API_KEY` secret
+When `promoResult?.valid && promoResult.trialDays > 0`:
+- CTA button label: "Start Free Trial"
+- Show a small badge under the price: "60-day free trial included"
+- Keep the `onSubscribe` handler (promo code is passed in the checkout body)
 
-**Alternative to DB trigger for notification**: Since we cannot create DB webhook triggers directly, the notification email will be sent from the client-side after a successful form submission by calling the edge function. This is the same pattern used elsewhere in the app.
+### Per-plan descriptions (static map)
 
-### Query Invalidation
-When admin notes are saved, invalidate `['enterprise-inquiries']` to keep data fresh.
+```typescript
+const PLAN_DESCRIPTIONS: Record<string, string> = {
+  starter: 'Perfect for solo agents getting started',
+  growth: 'For growing teams ready to scale',
+  pro: 'For established agencies at full capacity',
+  enterprise: 'Custom solutions for large organizations',
+};
+```
 
-## Files Summary
+### Feature comparison additions
 
-| File | Action |
-|---|---|
-| `supabase/migrations/...` | Add `phone`, `admin_notes` columns to `enterprise_inquiries` |
-| `src/components/billing/EnterpriseSalesDialog.tsx` | Add phone field, call notify edge function on success |
-| `src/pages/admin/AdminEnterpriseInquiries.tsx` | Expandable rows with message + admin notes |
-| `src/pages/admin/AdminLayout.tsx` | Badge count for new enterprise inquiries |
-| `supabase/functions/enterprise-inquiry-notify/index.ts` | New edge function to send admin email via Resend |
+New rows (all boolean or string values):
+- **Visibility Boosts** — all plans: true
+- **Blog Publishing** — Starter: 3/mo, Growth: 4/mo, Pro: 6/mo, Enterprise: Unlimited
+- **Analytics Dashboard** — Starter: false, Growth: true, Pro: true, Enterprise: true
+- **Listing Analytics** — Starter: Basic, Growth: Full, Pro: Full, Enterprise: Full
+- **Support Level** — Starter: Email, Growth: Email, Pro: Priority, Enterprise: Dedicated
 
-## No Schema Risks
-- All new columns are nullable, so existing rows and code are unaffected
-- RLS policies already correct (admins can UPDATE, so admin_notes saves will work)
-- Resend secret already configured
+### Annual savings display in PlanCard
+
+```typescript
+const annualSaving = billingCycle === 'annual' && !isEnterprise
+  ? Math.round((priceMonthly ?? 0) * 12 - (priceAnnual ?? 0))
+  : 0;
+```
+
+Show below the annual billed line: `Save ₪{annualSaving.toLocaleString()} vs. monthly`
+
+---
+
+## No Backend Changes
+All changes are purely frontend/UI. No database migrations, no edge functions.
