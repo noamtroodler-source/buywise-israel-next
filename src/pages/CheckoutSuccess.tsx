@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight, CalendarClock } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import confetti from 'canvas-confetti';
@@ -9,6 +9,7 @@ import confetti from 'canvas-confetti';
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
   const isCredits = searchParams.get('type') === 'credits';
+  const isAnnual = searchParams.get('cycle') === 'annual';
 
   useEffect(() => {
     // Fire confetti
@@ -36,11 +37,19 @@ export default function CheckoutSuccess() {
           <h1 className="text-3xl font-bold text-foreground mb-3">
             {isCredits ? 'Credits Purchased!' : 'Subscription Active!'}
           </h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-4">
             {isCredits
               ? 'Your credits have been added to your account and are ready to use.'
               : 'Welcome aboard! Your subscription is now active and you can start using all the features of your plan.'}
           </p>
+          {isAnnual && !isCredits && (
+            <div className="flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 mb-6 text-left">
+              <CalendarClock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                You're on an <span className="font-medium text-foreground">annual plan</span> — your next renewal is in 12 months.
+              </p>
+            </div>
+          )}
           <Button asChild className="rounded-xl">
             <Link to="/">
               Go to Dashboard

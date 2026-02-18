@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { EnterpriseSalesDialog } from './EnterpriseSalesDialog';
+import { AnnualBillingConfirmDialog } from './AnnualBillingConfirmDialog';
 
 interface PromoResult {
   valid: boolean;
@@ -46,6 +47,7 @@ export function PlanCard({
   promoResult,
 }: PlanCardProps) {
   const [salesDialogOpen, setSalesDialogOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const price = billingCycle === 'annual' ? (priceAnnual ?? 0) : (priceMonthly ?? 0);
   const monthlyEquivalent = billingCycle === 'annual' ? Math.round((priceAnnual ?? 0) / 12) : (priceMonthly ?? 0);
   const annualSaving = billingCycle === 'annual' && !isEnterprise
@@ -61,7 +63,17 @@ export function PlanCard({
       ? 'Loading...'
       : hasTrialPromo
         ? `Start ${trialDays}-Day Free Trial`
-        : 'Subscribe';
+        : billingCycle === 'annual'
+          ? 'Get Annual Plan'
+          : 'Subscribe';
+
+  const handleSubscribeClick = () => {
+    if (billingCycle === 'annual') {
+      setConfirmDialogOpen(true);
+    } else {
+      onSubscribe();
+    }
+  };
 
   return (
     <div
@@ -153,14 +165,28 @@ export function PlanCard({
           />
         </>
       ) : (
-        <Button
-          onClick={onSubscribe}
-          disabled={isCurrentPlan || loading}
-          variant={isPopular ? 'default' : 'outline'}
-          className="w-full rounded-xl"
-        >
-          {ctaLabel}
-        </Button>
+        <>
+          <Button
+            onClick={handleSubscribeClick}
+            disabled={isCurrentPlan || loading}
+            variant={isPopular ? 'default' : 'outline'}
+            className="w-full rounded-xl"
+          >
+            {ctaLabel}
+          </Button>
+          {!isEnterprise && (
+            <AnnualBillingConfirmDialog
+              open={confirmDialogOpen}
+              onOpenChange={setConfirmDialogOpen}
+              planName={name}
+              tier={tier}
+              priceMonthly={priceMonthly}
+              priceAnnual={priceAnnual}
+              entityType={entityType}
+              onConfirm={onSubscribe}
+            />
+          )}
+        </>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, Building2, Lock, RefreshCcw, ArrowRight, Users } from 'lucide-react';
+import { Sparkles, Shield, Building2, Lock, RefreshCcw, ArrowRight, Users, Info } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
@@ -11,6 +11,7 @@ import { FeatureComparisonTable } from '@/components/billing/FeatureComparisonTa
 import { PricingFAQ } from '@/components/billing/PricingFAQ';
 import { FoundingProgramSection } from '@/components/billing/FoundingProgramSection';
 import { EnterpriseSalesDialog } from '@/components/billing/EnterpriseSalesDialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -106,7 +107,7 @@ export default function Pricing() {
           plan_id: planId,
           billing_cycle: billingCycle,
           promo_code: promoCode || undefined,
-          success_url: `${window.location.origin}/checkout/success`,
+          success_url: `${window.location.origin}/checkout/success?cycle=${billingCycle}`,
           cancel_url: `${window.location.origin}/checkout/cancel`,
         },
       });
@@ -225,6 +226,16 @@ export default function Pricing() {
 
             <BillingCycleToggle cycle={billingCycle} onChange={setBillingCycle} />
           </div>
+
+          {/* Annual billing context banner */}
+          {billingCycle === 'annual' && (
+            <Alert className="max-w-2xl mx-auto border-warning/30 bg-warning/5 [&>svg]:text-warning">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-warning-foreground">
+                Annual plans are billed as a single payment for the full year. You save 20% vs. paying month-to-month, and the plan renews automatically after 12 months.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Plan Cards */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
