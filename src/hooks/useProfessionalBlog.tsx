@@ -213,8 +213,52 @@ export function useSubmitForReview() {
   return useMutation({
     mutationFn: async (postId: string) => {
       if (!user) throw new Error('Not authenticated');
-      
-      const { data: post, error } = await supabase
+
+      // Fetch the post to get author info for quota check
+      const { data: post, error: fetchErr } = await supabase
+        .from('blog_posts')
+        .select('author_profile_id, author_type, submitted_at, verification_status')
+        .eq('id', postId)
+        .eq('author_id', user.id)
+        .single();
+
+      if (fetchErr || !post) throw new Error('Post not found');
+
+      // Check monthly blog quota against the subscription plan
+      if (post.author_profile_id) {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        // Count submitted/approved posts this month (excluding this post if re-submitting)
+        const { count } = await supabase
+          .from('blog_posts')
+          .select('id', { count: 'exact', head: true })
+          .eq('author_profile_id', post.author_profile_id)
+          .in('verification_status', ['pending_review', 'approved'])
+          .gte('submitted_at', startOfMonth)
+          .neq('id', postId);
+
+        const usedCount = count ?? 0;
+
+        // Fetch plan limit
+        // Fetch plan limit via subscription
+        const entityType = post.author_type === 'developer' ? 'developer' : 'agency';
+        const { data: subRow } = await supabase
+          .from('subscriptions')
+          .select('membership_plans(max_blogs_per_month)')
+          .eq('entity_type', entityType)
+          .in('status', ['active', 'trialing'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const maxBlogs = (subRow as any)?.membership_plans?.max_blogs_per_month ?? null;
+        if (maxBlogs !== null && usedCount >= maxBlogs) {
+          throw new Error(`Blog quota reached: you've used ${usedCount}/${maxBlogs} posts this month. Upgrade your plan for more.`);
+        }
+      }
+
+      const { data: updated, error } = await supabase
         .from('blog_posts')
         .update({
           verification_status: 'pending_review',
@@ -226,16 +270,17 @@ export function useSubmitForReview() {
         .single();
       
       if (error) throw error;
-      return post;
+      return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-blog-posts'] });
       queryClient.invalidateQueries({ queryKey: ['blog-post-edit'] });
+      queryClient.invalidateQueries({ queryKey: ['blog-quota-used'] });
       toast.success('Article submitted for review');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to submit for review:', error);
-      toast.error('Failed to submit for review');
+      toast.error(error?.message || 'Failed to submit for review');
     },
   });
 }
