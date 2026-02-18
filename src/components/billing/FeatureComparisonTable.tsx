@@ -30,16 +30,43 @@ const FEATURES = [
       p.max_blogs_per_month === null ? 'Unlimited' : String(p.max_blogs_per_month),
   },
   {
+    label: 'Visibility Boosts',
+    getValue: (_p: Plan) => true,
+  },
+  {
+    label: 'Analytics Dashboard',
+    getValue: (p: Plan) => p.tier !== 'starter',
+  },
+  {
+    label: 'Listing Analytics',
+    getValue: (p: Plan) => {
+      if (p.tier === 'starter') return 'Basic';
+      return 'Full';
+    },
+  },
+  {
+    label: 'Support Level',
+    getValue: (p: Plan) => {
+      if (p.tier === 'enterprise') return 'Dedicated';
+      if (p.tier === 'pro') return 'Priority';
+      return 'Email';
+    },
+  },
+  {
     label: 'Priority Support',
-    getValue: (p: Plan) => (p.tier === 'pro' || p.tier === 'enterprise' ? true : false),
+    getValue: (p: Plan) => p.tier === 'pro' || p.tier === 'enterprise',
   },
   {
     label: 'Dedicated Account Manager',
-    getValue: (p: Plan) => (p.tier === 'enterprise' ? true : false),
+    getValue: (p: Plan) => p.tier === 'enterprise',
   },
   {
     label: 'API Access',
-    getValue: (p: Plan) => (p.tier === 'pro' || p.tier === 'enterprise' ? true : false),
+    getValue: (p: Plan) => p.tier === 'pro' || p.tier === 'enterprise',
+  },
+  {
+    label: 'Promo Code Access',
+    getValue: (p: Plan) => p.tier !== 'starter',
   },
 ];
 
@@ -52,7 +79,7 @@ function CellValue({ value }: { value: string | boolean }) {
     );
   }
   return (
-    <span className={cn('text-sm font-medium', value === 'Unlimited' ? 'text-primary' : 'text-foreground')}>
+    <span className={cn('text-sm font-medium', value === 'Unlimited' || value === 'Full' || value === 'Dedicated' || value === 'Priority' ? 'text-primary' : 'text-foreground')}>
       {value}
     </span>
   );
@@ -80,10 +107,15 @@ export function FeatureComparisonTable({ plans }: FeatureComparisonTableProps) {
                   key={plan.tier}
                   className={cn(
                     'py-3 px-4 text-sm font-semibold text-center',
-                    plan.tier === 'growth' ? 'bg-primary/5 text-primary' : 'text-foreground'
+                    plan.tier === 'growth' ? 'bg-primary/5 text-primary' :
+                    plan.tier === 'enterprise' ? 'text-foreground' :
+                    'text-foreground'
                   )}
                 >
-                  {plan.name}
+                  <div>{plan.name}</div>
+                  {plan.tier === 'enterprise' && (
+                    <div className="text-xs font-normal text-muted-foreground mt-0.5">Custom pricing</div>
+                  )}
                 </th>
               ))}
             </tr>

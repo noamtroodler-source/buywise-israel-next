@@ -32,7 +32,7 @@ export function BillingCycleToggle({ cycle, onChange }: BillingCycleToggleProps)
       >
         Annual
         <span className="ml-1.5 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
-          Save 20%
+          Save 20% · Billed yearly
         </span>
       </button>
     </div>
