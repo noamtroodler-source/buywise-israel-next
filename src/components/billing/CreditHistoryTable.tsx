@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, History, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Loader2, History, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface CreditTransaction {
@@ -117,6 +117,12 @@ export function CreditHistoryTable() {
                       <p className="text-sm font-medium text-foreground">{txnTypeLabel(txn.transaction_type)}</p>
                       {txn.description && (
                         <p className="text-xs text-muted-foreground truncate max-w-[200px]">{txn.description}</p>
+                      )}
+                      {txn.amount > 0 && txn.expires_at && new Date(txn.expires_at) > new Date() && (
+                        <div className="flex items-center gap-1 mt-0.5 text-amber-600 dark:text-amber-400">
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="text-xs">Expires {format(new Date(txn.expires_at), 'MMM d')}</span>
+                        </div>
                       )}
                     </div>
                   </div>

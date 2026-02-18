@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, CheckCircle, Clock, Coins, ExternalLink } from 'lucide-react';
+import { Zap, CheckCircle, Clock, Coins, ExternalLink, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, format } from 'date-fns';
+import { useExpiringCredits } from '@/hooks/useExpiringCredits';
 import { useVisibilityProducts, useActiveBoosts, useSlotAvailability, useActivateBoost, VisibilityProduct } from '@/hooks/useBoosts';
 import { useSubscription } from '@/hooks/useSubscription';
 import { BoostProductCard, ENTITY_LEVEL_SLUGS } from './BoostProductCard';
@@ -45,6 +46,9 @@ export function BoostMarketplace({ entityType, entityId, entityName }: BoostMark
 
   const { data: sub } = useSubscription();
   const creditBalance = sub?.creditBalance ?? 0;
+  const { data: expiringGroups = [] } = useExpiringCredits(sub?.entityType, sub?.entityId);
+  const nearestExpiry = expiringGroups[0];
+  const expiryDaysLeft = nearestExpiry ? differenceInDays(new Date(nearestExpiry.expiresAt), new Date()) : null;
 
   const { data: products = [], isLoading: productsLoading } = useVisibilityProducts(entityType);
   const { data: activeBoosts = [], isLoading: boostsLoading } = useActiveBoosts();
@@ -104,6 +108,17 @@ export function BoostMarketplace({ entityType, entityId, entityName }: BoostMark
           <div>
             <p className="font-semibold text-foreground">{creditBalance} credits available</p>
             <p className="text-xs text-muted-foreground">≈ ₪{(creditBalance * 20).toLocaleString()} in visibility value</p>
+            {nearestExpiry && expiryDaysLeft !== null && expiryDaysLeft <= 30 && (
+              <div className={`flex items-center gap-1 mt-0.5 ${expiryDaysLeft <= 7 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                {expiryDaysLeft <= 7
+                  ? <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                  : <Clock className="h-3 w-3 flex-shrink-0" />
+                }
+                <span className="text-xs">
+                  {nearestExpiry.amount} credits expire in {expiryDaysLeft} day{expiryDaysLeft !== 1 ? 's' : ''} ({format(new Date(nearestExpiry.expiresAt), 'MMM d')})
+                </span>
+              </div>
+            )}
           </div>
         </div>
         <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">

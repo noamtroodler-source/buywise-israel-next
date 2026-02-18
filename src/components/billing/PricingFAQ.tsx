@@ -12,7 +12,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How do credits work?',
-    a: 'Credits power visibility boosts — homepage features, city-level priority, search ranking, and more. You can purchase credit packages separately or earn them through the Founding Program. Credits never expire unless otherwise noted.',
+    a: 'Credits power visibility boosts — homepage features, city-level priority, search ranking, and more. Credits from monthly plan grants expire at the end of the month they\'re issued. Purchased credit packages also expire at end of the month of purchase. Spend them before month-end to get full value — your balance is always visible in your billing hub.',
   },
   {
     q: 'What happens when I hit my listing limit?',
