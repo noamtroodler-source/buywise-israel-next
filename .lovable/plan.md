@@ -1,76 +1,136 @@
 
+# Phase A: Data Correction
 
-# Phase G: Seat Management
+All changes in this phase are **data updates only** — no schema changes, no code changes. Every fix is a SQL UPDATE/INSERT run against existing tables.
 
-## Overview
-Wire seat limits into the invite and approval flows, show "X/Y seats used" on the team tab, block actions when at limit with upgrade prompts, and keep seat counts in sync on add/remove.
+---
 
-## What Already Exists
-- `useSeatLimitCheck` hook -- returns `canInvite`, `currentSeats`, `maxSeats`, `usagePercent`
-- "New Code" button already disabled when `!canInvite` (line 428 of AgencyDashboard)
-- Tooltip showing "You've used X/Y team seats" on the disabled button
-- `UpgradePromptCard` already checks seat usage at 80%
-- `useRemoveAgentFromAgency` and `useApproveJoinRequest` mutations exist but don't invalidate `seatCount`
+## What's Being Fixed
 
-## Changes Needed
+### 1. Membership Plan Prices
 
-### 1. Show "X/Y seats used" badge on team tab header
-**File**: `src/pages/agency/AgencyDashboard.tsx`
+**Agency plans** (annual = monthly × 12 × 0.8):
 
-In the Team tab's `CardHeader` (line 291-293), add a seat usage badge next to "Team Members":
-- Show `currentSeats/maxSeats seats used` as a small badge
-- Color-code: default for normal, amber for >80%, destructive for 100%
-- If `maxSeats` is null (unlimited), show "Unlimited seats"
+| Plan | Monthly (now → spec) | Annual (now → spec) |
+|---|---|---|
+| Agency Starter | ₪149 → ₪750 | ₪1,430 → ₪7,200 |
+| Agency Growth | ₪349 → ₪1,950 | ₪3,350 → ₪18,720 |
+| Agency Pro | ₪749 → ₪4,200 | ₪7,190 → ₪40,320 |
+| Agency Enterprise | ₪1,499 → NULL (custom) | ₪14,390 → NULL (custom) |
 
-### 2. Block approve flow when at seat limit
-**File**: `src/pages/agency/AgencyDashboard.tsx`
+**Developer plans**:
 
-The "Approve" button for join requests (line 389-399) currently has no seat check. Changes:
-- Disable the Approve button when `!canInvite`
-- Add tooltip explaining the limit
-- Show an inline upgrade prompt banner above join requests when at limit
+| Plan | Monthly (now → spec) | Annual (now → spec) |
+|---|---|---|
+| Dev Starter | ₪199 → ₪1,500 | ₪1,910 → ₪14,400 |
+| Dev Growth | ₪499 → ₪3,900 | ₪4,790 → ₪37,440 |
+| Dev Pro | ₪999 → ₪7,900 | ₪9,590 → ₪75,840 |
+| Dev Enterprise | ₪1,999 → NULL (custom) | ₪19,190 → NULL (custom) |
 
-### 3. Invalidate seat count on add/remove
-**File**: `src/hooks/useAgencyManagement.tsx`
+---
 
-Add `queryClient.invalidateQueries({ queryKey: ['seatCount'] })` to:
-- `useApproveJoinRequest` onSuccess (line ~178)
-- `useRemoveAgentFromAgency` onSuccess (line ~232)
+### 2. Listing Limits
 
-This ensures the seat counter updates immediately when agents are added or removed.
+| Plan | Current → Spec |
+|---|---|
+| Agency Starter | 15 → 20 |
+| Agency Pro | 150 → 100 |
+| Dev Starter | 3 → 2 |
+| Dev Growth | 10 → 5 |
+| Dev Pro | 30 → 15 |
 
-### 4. Seat limit banner on team tab
-**File**: `src/pages/agency/AgencyDashboard.tsx`
+(Agency Growth=50✅, Agency Enterprise=NULL✅, Dev Enterprise=NULL already correct)
 
-When `usagePercent >= 100`, show a warning card at the top of the team tab content:
-- "You've reached your seat limit (X/Y). Upgrade to add more team members."
-- Link to /pricing
+---
 
-### 5. Seat info in CreateInviteDialog
-**File**: `src/components/agency/CreateInviteDialog.tsx`
+### 3. Seat Limits
 
-Add a small info note at the top of the dialog showing current seat usage so admins know how many seats remain before creating a code.
+| Plan | Current → Spec |
+|---|---|
+| Agency Starter | 2 → 1 |
+| Dev Starter | 1 → 2 |
+| Dev Growth | 3 → 5 |
+| Dev Pro | 5 → 10 |
 
-## Technical Details
+(Agency Growth=5✅, Agency Pro=15✅, Agency Enterprise=999→NULL for unlimited)
 
-### Files Modified
-- `src/pages/agency/AgencyDashboard.tsx` -- seat badge on team header, approve button seat gate, at-limit banner
-- `src/hooks/useAgencyManagement.tsx` -- add `seatCount` invalidation to approve and remove mutations
-- `src/components/agency/CreateInviteDialog.tsx` -- show seat usage info
+---
 
-### No New Files
-All changes are additions to existing components.
+### 4. Blog Limits
 
-### No Database Changes
-Seat counting already queries the `agents` table filtered by `agency_id`. The `maxSeats` comes from the subscription/plan data via `useSubscription`. No schema changes needed.
+| Plan | Current → Spec |
+|---|---|
+| Agency Growth | 5 → 4 |
+| Agency Pro | 15 → 6 |
+| Agency Enterprise | 999 → NULL (unlimited) |
+| Dev Starter | 1 → 3 |
+| Dev Growth | 3 → 6 |
+| Dev Pro | 10 → 8 |
+| Dev Enterprise | 999 → NULL (unlimited) |
 
-### Query Invalidation Flow
+(Agency Starter=2✅ already correct)
 
-```text
-Agent Approved/Removed
-  -> invalidate 'agencyTeam'     (existing)
-  -> invalidate 'seatCount'      (new)
-  -> useSeatLimitCheck re-fetches
-  -> canInvite / usagePercent updates
-  -> UI reflects new state
-```
+---
+
+### 5. Credit Packages
+
+| Package | Credits (now → spec) | Bonus (unchanged) | Price (now → spec) |
+|---|---|---|---|
+| Starter | 50 → 50 ✅ | 0% | ₪99 → ₪1,000 |
+| Growth | 150 → 150 ✅ | +10% | ₪249 → ₪3,000 |
+| Pro | 500 → 400 | +20% | ₪699 → ₪8,000 |
+| Dominator | 1500 → 1000 | +30% | ₪1,799 → ₪20,000 |
+
+---
+
+### 6. Visibility Products — Credit Costs
+
+Current DB already has many products correct. The deltas vs. spec:
+
+| Product | Current → Spec |
+|---|---|
+| Homepage Sale Featured | 30 → 70 credits/week |
+| Homepage Rent Featured | 25 → 50 credits/week |
+| City Spotlight | 20 → 25 credits/week |
+| Agency Directory Featured | 25 → 90 credits/30d |
+| Developer Directory Featured | 25 → 120 credits/30d |
+| Email Digest Sponsored | 35 → 80 credits/send |
+
+Already correct (no change needed):
+- Homepage Project Hero: 150 ✅
+- Homepage Project Secondary: 90 ✅
+- Projects Boost: 60 ✅
+- Budget Tool Sponsor: 50 ✅
+- Search Priority Boost: 15 ✅
+- Similar Listings Priority: 10 ✅
+
+---
+
+## Technical Approach
+
+All of this is **pure data** — no schema migrations needed. I'll use the **Supabase data tool** (INSERT/UPDATE) to run the corrections directly:
+
+1. One batch UPDATE for all 8 membership plans (prices + limits)
+2. One batch UPDATE for all 4 credit packages
+3. Targeted UPDATEs for the 6 visibility products with wrong credit costs
+
+**Enterprise plans**: `price_monthly_ils` and `price_annual_ils` will be set to `NULL` (or `0`). The `PlanCard` component already has `isEnterprise` logic that shows "Contact Sales" — but after checking the current code, the card still reads the price to display. I'll set prices to `0` and update the `PlanCard` to treat `isEnterprise` as the source of truth for showing "Contact Sales" (price display suppressed when enterprise).
+
+**Impact on existing subscriptions**: These are plan definition changes, not subscription changes. Any agency/developer already subscribed keeps their existing subscription record intact — only the plan card display and future checkouts will reflect the new prices.
+
+---
+
+## Files to Modify (Code)
+
+One small code change is needed alongside the data fix:
+
+**`src/components/billing/PlanCard.tsx`** — When `isEnterprise`, suppress the price display entirely and ensure the CTA is always "Contact Sales" (not tied to the price value). This was partially done in Phase E but needs to be confirmed clean for `price = 0` or `price = NULL`.
+
+---
+
+## Execution Order
+
+1. Run data UPDATE SQL for membership plans
+2. Run data UPDATE SQL for credit packages  
+3. Run data UPDATE SQL for visibility products
+4. Minor code tweak to PlanCard for NULL enterprise pricing
