@@ -85,6 +85,11 @@ serve(async (req) => {
       if (!proj || proj.developer_id !== entityId) {
         return new Response(JSON.stringify({ error: "You don't own this project" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+    } else if (target_type === "agency" || target_type === "developer") {
+      // Entity-level boost: target must be the entity itself
+      if (target_id !== entityId || target_type !== entityType) {
+        return new Response(JSON.stringify({ error: "You can only boost your own entity" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     } else {
       return new Response(JSON.stringify({ error: "Invalid target_type" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

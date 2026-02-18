@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, BarChart2, Receipt } from 'lucide-react';
+import { ArrowLeft, CreditCard, BarChart2, Receipt, Zap } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { UpgradePromptCard } from '@/components/billing/UpgradePromptCard';
 import { InvoiceHistoryTable } from '@/components/billing/InvoiceHistoryTable';
 import { OverageChargesTable } from '@/components/billing/OverageChargesTable';
 import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
+import { BoostMarketplace } from '@/components/billing/BoostMarketplace';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
 export default function DeveloperBilling() {
@@ -49,6 +50,10 @@ export default function DeveloperBilling() {
               <BarChart2 className="h-3.5 w-3.5" />
               Boost ROI
             </TabsTrigger>
+            <TabsTrigger value="marketplace" className="rounded-lg gap-1.5">
+              <Zap className="h-3.5 w-3.5" />
+              Marketplace
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview tab */}
@@ -73,6 +78,15 @@ export default function DeveloperBilling() {
           {/* Boost ROI tab */}
           <TabsContent value="boost" className="mt-6">
             <BoostAnalyticsPanel />
+          </TabsContent>
+
+          {/* Marketplace tab */}
+          <TabsContent value="marketplace" className="mt-6">
+            <BoostMarketplace
+              entityType="developer"
+              entityId={developerProfile?.id}
+              entityName={developerProfile?.name ?? 'Your Company'}
+            />
           </TabsContent>
         </Tabs>
       </div>

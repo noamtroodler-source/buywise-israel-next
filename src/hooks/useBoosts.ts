@@ -28,6 +28,13 @@ export interface ActiveBoost {
   created_at: string;
 }
 
+export interface SlotAvailability {
+  maxSlots: number;
+  usedSlots: number;
+  availableSlots: number;
+  isFull: boolean;
+}
+
 export function useVisibilityProducts(entityType?: 'agency' | 'developer') {
   return useQuery({
     queryKey: ['visibilityProducts', entityType],
@@ -80,13 +87,50 @@ export function useActiveBoosts(targetType?: string, targetId?: string) {
   });
 }
 
+export function useSlotAvailability(products: VisibilityProduct[]) {
+  const slottedProducts = products.filter(p => p.max_slots !== null);
+
+  return useQuery({
+    queryKey: ['slotAvailability', slottedProducts.map(p => p.id)],
+    queryFn: async (): Promise<Record<string, SlotAvailability>> => {
+      if (slottedProducts.length === 0) return {};
+
+      const results = await Promise.all(
+        slottedProducts.map(async (product) => {
+          const { data: usedCount } = await supabase.rpc('get_active_boost_count', {
+            p_product_id: product.id,
+          });
+          const used = (usedCount as number) || 0;
+          const max = product.max_slots!;
+          return {
+            id: product.id,
+            availability: {
+              maxSlots: max,
+              usedSlots: used,
+              availableSlots: Math.max(0, max - used),
+              isFull: used >= max,
+            },
+          };
+        })
+      );
+
+      return results.reduce((acc, { id, availability }) => {
+        acc[id] = availability;
+        return acc;
+      }, {} as Record<string, SlotAvailability>);
+    },
+    enabled: slottedProducts.length > 0,
+    staleTime: 30 * 1000, // 30 seconds — slot counts change frequently
+  });
+}
+
 export function useActivateBoost() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: {
       product_slug: string;
-      target_type: 'property' | 'project';
+      target_type: 'property' | 'project' | 'agency' | 'developer';
       target_id: string;
     }) => {
       const { data, error } = await supabase.functions.invoke('activate-boost', {
@@ -100,6 +144,7 @@ export function useActivateBoost() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activeBoosts'] });
       queryClient.invalidateQueries({ queryKey: ['subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['slotAvailability'] });
       toast.success('Boost activated! Your listing is now promoted.');
     },
     onError: (error: Error) => {

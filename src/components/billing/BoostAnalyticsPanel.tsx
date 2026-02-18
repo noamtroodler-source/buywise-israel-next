@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Zap, TrendingUp, CheckCircle, Eye, Heart, MessageSquare, Coins, Rocket } from 'lucide-react';
 import { useBoostAnalytics } from '@/hooks/useBoostAnalytics';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow, format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -11,6 +12,8 @@ import { motion } from 'framer-motion';
 
 export function BoostAnalyticsPanel() {
   const { data: analytics, isLoading } = useBoostAnalytics();
+  const { data: sub } = useSubscription();
+  const marketplacePath = sub?.entityType === 'developer' ? '/developer/boost' : '/agency/boost';
 
   if (isLoading) {
     return (
@@ -46,9 +49,9 @@ export function BoostAnalyticsPanel() {
             Boost your listings to get more visibility. Boosted listings appear in priority positions on the homepage and search results.
           </p>
           <Button asChild className="rounded-xl">
-            <Link to="/agent/properties">
+            <Link to={marketplacePath}>
               <Zap className="h-4 w-4 mr-2" />
-              Boost a Listing
+              Browse Boost Marketplace
             </Link>
           </Button>
         </CardContent>

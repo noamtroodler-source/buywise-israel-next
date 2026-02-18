@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail, PenLine, CreditCard } from 'lucide-react';
+import { Building, Plus, Eye, BarChart3, Loader2, FileText, Clock, CheckCircle, AlertCircle, Settings, FolderKanban, ShieldCheck, ShieldAlert, ArrowLeft, MessageSquare, Home, Mail, PenLine, CreditCard, Zap } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -122,6 +122,12 @@ export default function DeveloperDashboard() {
                 <Link to="/developer/billing">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Billing
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="rounded-xl">
+                <Link to="/developer/boost">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Boost
                 </Link>
               </Button>
               <Button variant="outline" asChild className="rounded-xl">
