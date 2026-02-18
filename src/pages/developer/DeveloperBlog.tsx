@@ -13,6 +13,8 @@ import {
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useMemo, useState } from 'react';
+import { BlogQuotaBanner } from '@/components/blog/BlogQuotaBanner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function DeveloperBlog() {
   const { data: developerProfile, isLoading: profileLoading } = useDeveloperProfile();
@@ -78,14 +80,39 @@ export default function DeveloperBlog() {
                   <p className="text-muted-foreground">Share market insights and project updates</p>
                 </div>
               </div>
-              <Button asChild>
-                <Link to="/developer/blog/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Write Article
-                </Link>
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button asChild={canSubmitQuota} disabled={!canSubmitQuota}>
+                        {canSubmitQuota ? (
+                          <Link to="/developer/blog/new">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Write Article
+                          </Link>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Write Article
+                          </>
+                        )}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canSubmitQuota && (
+                    <TooltipContent>
+                      Monthly blog limit reached ({quotaUsed}/{quotaLimit}). Resets on the 1st.
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
+
+          {/* Quota banner */}
+          {!canSubmitQuota && quotaLimit !== null && (
+            <BlogQuotaBanner used={quotaUsed} limit={quotaLimit} />
+          )}
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>

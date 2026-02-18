@@ -16,6 +16,8 @@ import { UsageMeters } from '@/components/billing/UsageMeters';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -34,6 +36,7 @@ export default function DeveloperDashboard() {
   const { data: developerProfile, isLoading: profileLoading } = useDeveloperProfile();
   const { data: projects = [], isLoading: projectsLoading } = useDeveloperProjects();
   const { trackDashboardView } = useAdvertiserTracking();
+  const { canSubmit: canSubmitBlog, isLoading: blogQuotaLoading } = useBlogQuotaCheck('developer', developerProfile?.id);
 
   const isLoading = profileLoading || projectsLoading;
 
@@ -139,12 +142,30 @@ export default function DeveloperDashboard() {
                   Add Project
                 </Link>
               </Button>
-              <Button asChild className="rounded-xl shadow-md">
-                <Link to="/developer/blog/new">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Blog
-                </Link>
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button asChild={!blogQuotaLoading && canSubmitBlog} disabled={!blogQuotaLoading && !canSubmitBlog} className="rounded-xl shadow-md">
+                        {(!blogQuotaLoading && canSubmitBlog) ? (
+                          <Link to="/developer/blog/new">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Blog
+                          </Link>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Blog
+                          </>
+                        )}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!blogQuotaLoading && !canSubmitBlog && (
+                    <TooltipContent>Monthly blog limit reached. Resets on the 1st.</TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </motion.div>
         </div>

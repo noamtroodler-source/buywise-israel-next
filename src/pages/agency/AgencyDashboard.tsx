@@ -21,7 +21,9 @@ import {
 } from '@/hooks/useAgencyManagement';
 import { useAgencyAnnouncements } from '@/hooks/useAgencyAnnouncements';
 import { useMyBlogPosts, useSubmitForReview, useDeleteBlogPost } from '@/hooks/useProfessionalBlog';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { BlogArticleTable } from '@/components/blog/BlogArticleTable';
+import { BlogQuotaBanner } from '@/components/blog/BlogQuotaBanner';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CreateInviteDialog } from '@/components/agency/CreateInviteDialog';
@@ -45,6 +47,7 @@ export default function AgencyDashboard() {
   const { data: stats } = useAgencyStats(agency?.id);
   const { data: announcements = [] } = useAgencyAnnouncements(agency?.id);
   const { data: blogPosts = [], isLoading: postsLoading } = useMyBlogPosts('agency', agency?.id);
+  const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog } = useBlogQuotaCheck('agency', agency?.id);
   const submitForReview = useSubmitForReview();
   const deleteBlogPost = useDeleteBlogPost();
   const approveRequest = useApproveJoinRequest();
@@ -141,12 +144,28 @@ export default function AgencyDashboard() {
                     Listings
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-                  <Link to="/agency/blog/new">
-                    <PenLine className="h-4 w-4 mr-2" />
-                    Blog
-                  </Link>
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button variant="outline" asChild={canSubmitBlog} disabled={!canSubmitBlog} className="rounded-xl border-primary/20 hover:bg-primary/5">
+                        {canSubmitBlog ? (
+                          <Link to="/agency/blog/new">
+                            <PenLine className="h-4 w-4 mr-2" />
+                            Blog
+                          </Link>
+                        ) : (
+                          <>
+                            <PenLine className="h-4 w-4 mr-2" />
+                            Blog
+                          </>
+                        )}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canSubmitBlog && (
+                    <TooltipContent>Monthly blog limit reached. Resets on the 1st.</TooltipContent>
+                  )}
+                </Tooltip>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/analytics">
                     <Eye className="h-4 w-4 mr-2" />
@@ -519,15 +538,34 @@ export default function AgencyDashboard() {
             </TabsContent>
 
             <TabsContent value="blog" className="space-y-4 mt-4">
+              {!canSubmitBlog && blogQuotaLimit !== null && (
+                <BlogQuotaBanner used={blogQuotaUsed} limit={blogQuotaLimit} />
+              )}
               <Card className="rounded-2xl border-primary/10">
                 <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent rounded-t-2xl flex flex-row items-center justify-between">
                   <CardTitle>Agency Articles</CardTitle>
-                  <Button asChild className="rounded-xl">
-                    <Link to="/agency/blog/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Write Article
-                    </Link>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button asChild={canSubmitBlog} disabled={!canSubmitBlog} className="rounded-xl">
+                          {canSubmitBlog ? (
+                            <Link to="/agency/blog/new">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Write Article
+                            </Link>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Write Article
+                            </>
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!canSubmitBlog && (
+                      <TooltipContent>Monthly blog limit reached ({blogQuotaUsed}/{blogQuotaLimit}). Resets on the 1st.</TooltipContent>
+                    )}
+                  </Tooltip>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <BlogArticleTable 
@@ -538,6 +576,9 @@ export default function AgencyDashboard() {
                     onDelete={(postId) => deleteBlogPost.mutate(postId)}
                     isSubmitting={submitForReview.isPending}
                     isDeleting={deleteBlogPost.isPending}
+                    quotaUsed={blogQuotaUsed}
+                    quotaLimit={blogQuotaLimit}
+                    canSubmitQuota={canSubmitBlog}
                   />
                 </CardContent>
               </Card>
