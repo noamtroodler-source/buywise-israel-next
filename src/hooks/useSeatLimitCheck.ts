@@ -2,8 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
-
-const OVERAGE_PRICE_AGENCY_SEAT = 100; // ILS per seat per month
+import { useOverageRate } from './useOverageRecords';
 
 export interface SeatLimitResult {
   canInvite: boolean;
@@ -12,7 +11,7 @@ export interface SeatLimitResult {
   maxSeats: number | null;
   isLoading: boolean;
   needsSubscription: boolean;
-  overageMockPrice: number;
+  overageRate: number | null;
   usagePercent: number;
 }
 
@@ -44,7 +43,9 @@ export function useSeatLimitCheck(): SeatLimitResult {
     enabled: !!user,
   });
 
-  const isLoading = subLoading || countLoading;
+  const { data: overageRate = null, isLoading: rateLoading } = useOverageRate('agency', 'seat');
+
+  const isLoading = subLoading || countLoading || rateLoading;
   const maxSeats = sub?.maxSeats ?? null;
   const needsSubscription = !sub || sub.status === 'none';
   const usagePercent = maxSeats ? Math.min(100, Math.round((currentSeats / maxSeats) * 100)) : 0;
@@ -59,5 +60,5 @@ export function useSeatLimitCheck(): SeatLimitResult {
     ? false
     : true; // Always allowed with subscription (overage charges apply)
 
-  return { canInvite, isOverLimit, currentSeats, maxSeats, isLoading, needsSubscription, overageMockPrice: OVERAGE_PRICE_AGENCY_SEAT, usagePercent };
+  return { canInvite, isOverLimit, currentSeats, maxSeats, isLoading, needsSubscription, overageRate, usagePercent };
 }

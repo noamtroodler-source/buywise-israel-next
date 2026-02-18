@@ -6,12 +6,12 @@ import { Progress } from '@/components/ui/progress';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 
 export function SeatSummaryCard() {
-  const { currentSeats, maxSeats, isOverLimit, overageMockPrice, usagePercent, isLoading, needsSubscription } = useSeatLimitCheck();
+  const { currentSeats, maxSeats, isOverLimit, overageRate, usagePercent, isLoading, needsSubscription } = useSeatLimitCheck();
 
   if (isLoading || needsSubscription) return null;
 
   const overSeats = maxSeats !== null ? Math.max(0, currentSeats - maxSeats) : 0;
-  const estOverage = overSeats * overageMockPrice;
+  const estOverage = overSeats * (overageRate ?? 0);
 
   const progressColor =
     isOverLimit ? 'bg-destructive' :
@@ -41,7 +41,7 @@ export function SeatSummaryCard() {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>₪{overageMockPrice}/extra seat/mo</span>
+            <span>₪{overageRate ?? '—'}/extra seat/mo</span>
             <Button variant="ghost" size="sm" asChild className="h-7 rounded-lg text-xs gap-1 text-primary hover:text-primary">
               <Link to="/pricing">
                 Upgrade plan

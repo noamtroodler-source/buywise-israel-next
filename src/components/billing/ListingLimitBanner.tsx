@@ -9,7 +9,7 @@ interface ListingLimitBannerProps {
 }
 
 export function ListingLimitBanner({ entityType }: ListingLimitBannerProps) {
-  const { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageMockPrice } = useListingLimitCheck(entityType);
+  const { canCreate, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate } = useListingLimitCheck(entityType);
 
   if (isLoading || canCreate) return null;
 
@@ -27,9 +27,11 @@ export function ListingLimitBanner({ entityType }: ListingLimitBannerProps) {
         ) : (
           <>
             <p>You've used {currentCount}/{maxListings} {listingLabel} on your current plan.</p>
-            <p className="text-sm">
-              Publishing additional {listingLabel} would cost ~{overageMockPrice} ₪/{entityType === 'developer' ? 'project' : 'listing'}/month.
-            </p>
+            {overageRate !== null && (
+              <p className="text-sm">
+                Publishing additional {listingLabel} would cost ~₪{overageRate}/{entityType === 'developer' ? 'project' : 'listing'}/month.
+              </p>
+            )}
           </>
         )}
         <div className="mt-2">
