@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Eye, Pencil, Trash2, Send, Clock, CheckCircle, 
-  AlertCircle, FileText, MoreHorizontal, ExternalLink, Info
+  AlertCircle, FileText, MoreHorizontal, ExternalLink, Info, Coins
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -178,6 +178,13 @@ export function BlogArticleTable({
                       <h3 className="font-medium text-foreground truncate mb-1">
                         {post.title}
                       </h3>
+
+                      {status === 'approved' && (
+                        <div className="flex items-center gap-1 mb-1">
+                          <Coins className="h-3 w-3 text-amber-500" />
+                          <span className="text-xs text-amber-600 font-medium">+10 credits earned</span>
+                        </div>
+                      )}
                       
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>

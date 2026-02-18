@@ -5,7 +5,7 @@ import { useMyAgency } from './useAgencyManagement';
 export interface AgencyNotification {
   id: string;
   agency_id: string;
-  type: 'lead' | 'join_request' | 'team' | 'system';
+  type: 'lead' | 'join_request' | 'team' | 'system' | 'blog_reward';
   title: string;
   message: string | null;
   is_read: boolean;

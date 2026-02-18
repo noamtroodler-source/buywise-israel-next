@@ -1,4 +1,4 @@
-import { Bell, Users, FileText, Building2, AlertCircle, Loader2, Check } from 'lucide-react';
+import { Bell, Users, FileText, Building2, AlertCircle, Loader2, Check, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,6 +19,7 @@ const notificationIcons: Record<string, React.ElementType> = {
   join_request: Users,
   team: Building2,
   system: AlertCircle,
+  blog_reward: Coins,
 };
 
 const notificationColors: Record<string, string> = {
@@ -26,6 +27,7 @@ const notificationColors: Record<string, string> = {
   join_request: 'text-primary',
   team: 'text-primary',
   system: 'text-primary',
+  blog_reward: 'text-amber-500',
 };
 
 export function AgencyNotificationBell() {
