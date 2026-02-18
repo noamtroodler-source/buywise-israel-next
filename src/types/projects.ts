@@ -74,6 +74,8 @@ export interface Project {
   };
   min_bedrooms: number | null;
   max_bedrooms: number | null;
+  /** Client-side only — set after boost query merge, never persisted to DB */
+  _isBoosted?: boolean;
 }
 
 export interface ProjectUnit {

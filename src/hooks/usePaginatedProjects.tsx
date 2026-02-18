@@ -4,6 +4,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/projects';
 import { ProjectFiltersType } from '@/components/filters/ProjectFilters';
 
+async function fetchBoostedProjectIds(): Promise<string[]> {
+  const { data: product } = await supabase
+    .from('visibility_products')
+    .select('id')
+    .eq('slug', 'projects_boost')
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!product) return [];
+
+  const { data: boosts } = await supabase
+    .from('active_boosts')
+    .select('target_id')
+    .eq('product_id', product.id)
+    .eq('target_type', 'project')
+    .eq('is_active', true)
+    .gt('ends_at', new Date().toISOString());
+
+  return (boosts ?? []).map(b => b.target_id);
+}
+
 const DEFAULT_PAGE_SIZE = 24;
 
 interface UsePaginatedProjectsOptions {
@@ -53,9 +74,16 @@ export function usePaginatedProjects(
     staleTime: 5 * 60 * 1000, // 5 minutes - projects don't change frequently
   });
 
+  // Fetch boosted project IDs (page-1 only, cached 5 min)
+  const { data: boostedIds = [] } = useQuery({
+    queryKey: ['projects', 'boosted-ids'],
+    queryFn: fetchBoostedProjectIds,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch current page
   const { data: pageData, isLoading, isFetching } = useQuery({
-    queryKey: ['projects', 'paginated', filters, page],
+    queryKey: ['projects', 'paginated', filters, page, boostedIds],
     queryFn: async () => {
       const offset = (page - 1) * pageSize;
 
@@ -64,15 +92,33 @@ export function usePaginatedProjects(
         .select(`*, developer:developer_id (*)`)
         .eq('is_published', true);
 
+      // On page 1, exclude boosted projects from organic results to avoid duplicates
+      if (page === 1 && boostedIds.length > 0) {
+        query = query.not('id', 'in', `(${boostedIds.join(',')})`);
+      }
+
       query = applyFilters(query, filters);
       query = applySorting(query, filters);
       query = query.range(offset, offset + pageSize - 1);
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // On page 1, fetch boosted projects and prepend them
+      if (page === 1 && boostedIds.length > 0) {
+        const { data: boostedData } = await supabase
+          .from('projects')
+          .select(`*, developer:developer_id (*)`)
+          .in('id', boostedIds)
+          .eq('is_published', true);
+
+        const boostedProjects = (boostedData ?? []).map(p => ({ ...p, _isBoosted: true })) as Project[];
+        return [...boostedProjects, ...(data as Project[])];
+      }
+
       return data as Project[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - projects don't change frequently
+    staleTime: 5 * 60 * 1000,
   });
 
   // Accumulate projects for infinite scroll
