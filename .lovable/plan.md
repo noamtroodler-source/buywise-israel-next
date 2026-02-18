@@ -1,136 +1,82 @@
 
-# Phase A: Data Correction
+# Phase C: Enterprise & Sales Flow
 
-All changes in this phase are **data updates only** — no schema changes, no code changes. Every fix is a SQL UPDATE/INSERT run against existing tables.
+## Assessment: What Already Exists
 
----
+The core infrastructure is in place from previous phases:
+- `enterprise_inquiries` table with correct schema and RLS policies (INSERT for all, SELECT/UPDATE for admins only)
+- `EnterpriseSalesDialog` form with name, email, company, message fields
+- `PlanCard` shows "Contact Sales" for enterprise tier and opens the dialog
+- Admin page at `/admin/enterprise-inquiries` with status management (new/contacted/closed)
+- Route and sidebar nav entry already wired up
 
-## What's Being Fixed
+Phase C work is therefore focused on **closing the remaining gaps** rather than building from scratch.
 
-### 1. Membership Plan Prices
+## Gaps to Close
 
-**Agency plans** (annual = monthly × 12 × 0.8):
+### Gap 1 — Message & Admin Notes in the Admin Table
+The admin table shows name, email, company, type, status, date — but NOT the prospect's message. Admins have to guess what the lead actually asked. Also, there's no way for admins to record internal notes (e.g. "Called on Feb 20, interested in 10 seats").
 
-| Plan | Monthly (now → spec) | Annual (now → spec) |
-|---|---|---|
-| Agency Starter | ₪149 → ₪750 | ₪1,430 → ₪7,200 |
-| Agency Growth | ₪349 → ₪1,950 | ₪3,350 → ₪18,720 |
-| Agency Pro | ₪749 → ₪4,200 | ₪7,190 → ₪40,320 |
-| Agency Enterprise | ₪1,499 → NULL (custom) | ₪14,390 → NULL (custom) |
+**Fix**: Add an expandable row in the admin table that shows the message, plus an "Add Note" inline field that saves to a new `admin_notes` column on the table.
 
-**Developer plans**:
+### Gap 2 — Phone Number Field in the Inquiry Form
+Sales teams universally want a phone number to follow up. The current form only captures email.
 
-| Plan | Monthly (now → spec) | Annual (now → spec) |
-|---|---|---|
-| Dev Starter | ₪199 → ₪1,500 | ₪1,910 → ₪14,400 |
-| Dev Growth | ₪499 → ₪3,900 | ₪4,790 → ₪37,440 |
-| Dev Pro | ₪999 → ₪7,900 | ₪9,590 → ₪75,840 |
-| Dev Enterprise | ₪1,999 → NULL (custom) | ₪19,190 → NULL (custom) |
+**Fix**: Add an optional phone number field to `EnterpriseSalesDialog` and store it in a new `phone` column on `enterprise_inquiries`.
 
----
+### Gap 3 — Admin Email Notification on New Inquiry
+When a prospect submits an enterprise inquiry, nothing notifies the admin team. A lead could sit unseen for days.
 
-### 2. Listing Limits
+**Fix**: Create a database trigger + edge function that fires on INSERT to `enterprise_inquiries` and sends an email notification via Resend to a configured admin email address.
 
-| Plan | Current → Spec |
+### Gap 4 — Admin Badge Counter for New Inquiries
+The sidebar shows badge counts for pending listings, agents, etc. Enterprise inquiries with status "new" should also show a count badge so admins notice them immediately.
+
+**Fix**: Add a query to count `enterprise_inquiries` where `status = 'new'` and display it as a badge on the "Enterprise Leads" nav item in `AdminLayout`.
+
+## Implementation Details
+
+### Database Migration
+One migration adds two nullable columns to `enterprise_inquiries`:
+- `phone text` — prospect's phone number (optional)
+- `admin_notes text` — internal admin follow-up notes
+
+### Files to Modify
+
+**`src/components/billing/EnterpriseSalesDialog.tsx`**
+- Add optional `phone` field (validated as phone-like string, max 30 chars)
+- Submit phone to the database
+
+**`src/pages/admin/AdminEnterpriseInquiries.tsx`**
+- Add expandable row: clicking a row expands to show full message and admin notes textarea
+- Admin notes auto-save on blur (debounced UPDATE mutation)
+- Add "Message" column indicator (paperclip icon if message exists)
+
+**`src/pages/admin/AdminLayout.tsx`**
+- Add a `useQuery` for new enterprise inquiry count
+- Show badge on "Enterprise Leads" nav item when count > 0
+
+**`supabase/functions/enterprise-inquiry-notify/index.ts`** (new edge function)
+- Triggered by the DB insert (via calling it from the dialog after successful insert, not a DB webhook since those aren't available)
+- Sends email to admin via Resend with inquiry details
+- Uses existing `RESEND_API_KEY` secret
+
+**Alternative to DB trigger for notification**: Since we cannot create DB webhook triggers directly, the notification email will be sent from the client-side after a successful form submission by calling the edge function. This is the same pattern used elsewhere in the app.
+
+### Query Invalidation
+When admin notes are saved, invalidate `['enterprise-inquiries']` to keep data fresh.
+
+## Files Summary
+
+| File | Action |
 |---|---|
-| Agency Starter | 15 → 20 |
-| Agency Pro | 150 → 100 |
-| Dev Starter | 3 → 2 |
-| Dev Growth | 10 → 5 |
-| Dev Pro | 30 → 15 |
+| `supabase/migrations/...` | Add `phone`, `admin_notes` columns to `enterprise_inquiries` |
+| `src/components/billing/EnterpriseSalesDialog.tsx` | Add phone field, call notify edge function on success |
+| `src/pages/admin/AdminEnterpriseInquiries.tsx` | Expandable rows with message + admin notes |
+| `src/pages/admin/AdminLayout.tsx` | Badge count for new enterprise inquiries |
+| `supabase/functions/enterprise-inquiry-notify/index.ts` | New edge function to send admin email via Resend |
 
-(Agency Growth=50✅, Agency Enterprise=NULL✅, Dev Enterprise=NULL already correct)
-
----
-
-### 3. Seat Limits
-
-| Plan | Current → Spec |
-|---|---|
-| Agency Starter | 2 → 1 |
-| Dev Starter | 1 → 2 |
-| Dev Growth | 3 → 5 |
-| Dev Pro | 5 → 10 |
-
-(Agency Growth=5✅, Agency Pro=15✅, Agency Enterprise=999→NULL for unlimited)
-
----
-
-### 4. Blog Limits
-
-| Plan | Current → Spec |
-|---|---|
-| Agency Growth | 5 → 4 |
-| Agency Pro | 15 → 6 |
-| Agency Enterprise | 999 → NULL (unlimited) |
-| Dev Starter | 1 → 3 |
-| Dev Growth | 3 → 6 |
-| Dev Pro | 10 → 8 |
-| Dev Enterprise | 999 → NULL (unlimited) |
-
-(Agency Starter=2✅ already correct)
-
----
-
-### 5. Credit Packages
-
-| Package | Credits (now → spec) | Bonus (unchanged) | Price (now → spec) |
-|---|---|---|---|
-| Starter | 50 → 50 ✅ | 0% | ₪99 → ₪1,000 |
-| Growth | 150 → 150 ✅ | +10% | ₪249 → ₪3,000 |
-| Pro | 500 → 400 | +20% | ₪699 → ₪8,000 |
-| Dominator | 1500 → 1000 | +30% | ₪1,799 → ₪20,000 |
-
----
-
-### 6. Visibility Products — Credit Costs
-
-Current DB already has many products correct. The deltas vs. spec:
-
-| Product | Current → Spec |
-|---|---|
-| Homepage Sale Featured | 30 → 70 credits/week |
-| Homepage Rent Featured | 25 → 50 credits/week |
-| City Spotlight | 20 → 25 credits/week |
-| Agency Directory Featured | 25 → 90 credits/30d |
-| Developer Directory Featured | 25 → 120 credits/30d |
-| Email Digest Sponsored | 35 → 80 credits/send |
-
-Already correct (no change needed):
-- Homepage Project Hero: 150 ✅
-- Homepage Project Secondary: 90 ✅
-- Projects Boost: 60 ✅
-- Budget Tool Sponsor: 50 ✅
-- Search Priority Boost: 15 ✅
-- Similar Listings Priority: 10 ✅
-
----
-
-## Technical Approach
-
-All of this is **pure data** — no schema migrations needed. I'll use the **Supabase data tool** (INSERT/UPDATE) to run the corrections directly:
-
-1. One batch UPDATE for all 8 membership plans (prices + limits)
-2. One batch UPDATE for all 4 credit packages
-3. Targeted UPDATEs for the 6 visibility products with wrong credit costs
-
-**Enterprise plans**: `price_monthly_ils` and `price_annual_ils` will be set to `NULL` (or `0`). The `PlanCard` component already has `isEnterprise` logic that shows "Contact Sales" — but after checking the current code, the card still reads the price to display. I'll set prices to `0` and update the `PlanCard` to treat `isEnterprise` as the source of truth for showing "Contact Sales" (price display suppressed when enterprise).
-
-**Impact on existing subscriptions**: These are plan definition changes, not subscription changes. Any agency/developer already subscribed keeps their existing subscription record intact — only the plan card display and future checkouts will reflect the new prices.
-
----
-
-## Files to Modify (Code)
-
-One small code change is needed alongside the data fix:
-
-**`src/components/billing/PlanCard.tsx`** — When `isEnterprise`, suppress the price display entirely and ensure the CTA is always "Contact Sales" (not tied to the price value). This was partially done in Phase E but needs to be confirmed clean for `price = 0` or `price = NULL`.
-
----
-
-## Execution Order
-
-1. Run data UPDATE SQL for membership plans
-2. Run data UPDATE SQL for credit packages  
-3. Run data UPDATE SQL for visibility products
-4. Minor code tweak to PlanCard for NULL enterprise pricing
+## No Schema Risks
+- All new columns are nullable, so existing rows and code are unaffected
+- RLS policies already correct (admins can UPDATE, so admin_notes saves will work)
+- Resend secret already configured
