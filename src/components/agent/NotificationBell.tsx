@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, Check, CheckCheck, MessageSquare, Home, AlertCircle, Building2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, MessageSquare, Home, AlertCircle, Building2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -24,6 +24,7 @@ const notificationIcons = {
   listing: Home,
   system: AlertCircle,
   agency: Building2,
+  blog_reward: Coins,
 };
 
 const notificationColors = {
@@ -31,6 +32,7 @@ const notificationColors = {
   listing: 'text-green-500 bg-green-50',
   system: 'text-amber-500 bg-amber-50',
   agency: 'text-purple-500 bg-purple-50',
+  blog_reward: 'text-amber-500 bg-amber-50',
 };
 
 export function NotificationBell() {

@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, MessageSquare, FileCheck, AlertCircle, Info, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, MessageSquare, FileCheck, AlertCircle, Info, ExternalLink, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,6 +19,7 @@ const typeConfig: Record<DeveloperNotification['type'], { icon: typeof Bell; col
   project_rejected: { icon: AlertCircle, color: 'text-red-500' },
   changes_requested: { icon: AlertCircle, color: 'text-amber-500' },
   system: { icon: Info, color: 'text-muted-foreground' },
+  blog_reward: { icon: Coins, color: 'text-amber-500' },
 };
 
 export function DeveloperNotificationBell() {

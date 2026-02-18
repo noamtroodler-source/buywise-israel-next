@@ -5,7 +5,7 @@ import { useAuth } from './useAuth';
 export interface AgentNotification {
   id: string;
   agent_id: string;
-  type: 'lead' | 'listing' | 'system' | 'agency';
+  type: 'lead' | 'listing' | 'system' | 'agency' | 'blog_reward';
   title: string;
   message: string | null;
   is_read: boolean;

@@ -234,23 +234,52 @@ async function sendBlogNotification(payload: {
   message?: string;
 }) {
   try {
-    // Get author's email based on type
-    let email: string | null = null;
-    
-    if (payload.authorType === 'agent') {
-      const { data } = await supabase.from('agents').select('email').eq('id', payload.authorProfileId).maybeSingle();
-      email = data?.email || null;
-    } else if (payload.authorType === 'agency') {
-      const { data } = await supabase.from('agencies').select('email').eq('id', payload.authorProfileId).maybeSingle();
-      email = data?.email || null;
-    } else if (payload.authorType === 'developer') {
-      const { data } = await supabase.from('developers').select('email').eq('id', payload.authorProfileId).maybeSingle();
-      email = data?.email || null;
-    }
+    const buildTitle = () => {
+      if (payload.type === 'blog_approved') return 'Article Approved — +10 Credits Earned 🎉';
+      if (payload.type === 'blog_changes_requested') return 'Changes Requested on Your Article';
+      if (payload.type === 'blog_rejected') return 'Article Not Approved';
+      return 'Blog Update';
+    };
 
-    if (email) {
-      // For now, we'll create an in-app notification. Email integration can be added later.
-      console.log(`Blog notification: ${payload.type} for ${email} - ${payload.postTitle}`);
+    const buildMessage = () => {
+      if (payload.type === 'blog_approved')
+        return `'${payload.postTitle}' is now live. 10 visibility credits have been added to your balance.`;
+      if (payload.type === 'blog_changes_requested')
+        return payload.message ? `Feedback: ${payload.message}` : `Please review the feedback on '${payload.postTitle}'.`;
+      if (payload.type === 'blog_rejected')
+        return payload.message ? `Reason: ${payload.message}` : `'${payload.postTitle}' was not approved.`;
+      return payload.message || null;
+    };
+
+    const title = buildTitle();
+    const message = buildMessage();
+    const notifType = 'blog_reward';
+
+    if (payload.authorType === 'agent') {
+      // Look up agent_id from agents table (author_profile_id IS the agent id)
+      await supabase.from('agent_notifications').insert({
+        agent_id: payload.authorProfileId,
+        type: notifType,
+        title,
+        message,
+        action_url: '/agent/billing',
+      });
+    } else if (payload.authorType === 'agency') {
+      await supabase.from('agency_notifications').insert({
+        agency_id: payload.authorProfileId,
+        type: notifType,
+        title,
+        message,
+        action_url: '/agency/billing',
+      });
+    } else if (payload.authorType === 'developer') {
+      await supabase.from('developer_notifications').insert({
+        developer_id: payload.authorProfileId,
+        type: notifType,
+        title,
+        message,
+        action_url: '/developer/billing',
+      });
     }
   } catch (error) {
     console.error('Failed to send blog notification:', error);

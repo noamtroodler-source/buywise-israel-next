@@ -5,7 +5,7 @@ import { useDeveloperProfile } from './useDeveloperProfile';
 export interface DeveloperNotification {
   id: string;
   developer_id: string;
-  type: 'inquiry' | 'project_approved' | 'project_rejected' | 'changes_requested' | 'system';
+  type: 'inquiry' | 'project_approved' | 'project_rejected' | 'changes_requested' | 'system' | 'blog_reward';
   title: string;
   message: string | null;
   is_read: boolean;
