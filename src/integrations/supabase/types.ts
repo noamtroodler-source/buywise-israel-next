@@ -1946,6 +1946,7 @@ export type Database = {
       }
       enterprise_inquiries: {
         Row: {
+          admin_notes: string | null
           company_name: string
           created_at: string
           email: string
@@ -1953,11 +1954,13 @@ export type Database = {
           id: string
           message: string | null
           name: string
+          phone: string | null
           status: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           company_name: string
           created_at?: string
           email: string
@@ -1965,11 +1968,13 @@ export type Database = {
           id?: string
           message?: string | null
           name: string
+          phone?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           company_name?: string
           created_at?: string
           email?: string
@@ -1977,6 +1982,7 @@ export type Database = {
           id?: string
           message?: string | null
           name?: string
+          phone?: string | null
           status?: string
           updated_at?: string
           user_id?: string | null

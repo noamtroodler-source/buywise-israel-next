@@ -4,8 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Building2, Search } from 'lucide-react';
+import { Building2, Search, ChevronDown, ChevronRight, Paperclip, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -20,6 +21,8 @@ const statusColors: Record<string, string> = {
 export default function AdminEnterpriseInquiries() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
 
   const { data: inquiries = [], isLoading } = useQuery({
@@ -53,12 +56,34 @@ export default function AdminEnterpriseInquiries() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const saveNotes = useMutation({
+    mutationFn: async ({ id, admin_notes }: { id: string; admin_notes: string }) => {
+      const { error } = await supabase
+        .from('enterprise_inquiries' as any)
+        .update({ admin_notes } as any)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enterprise-inquiries'] });
+      toast.success('Notes saved');
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const filtered = inquiries.filter((i: any) =>
     !search ||
     i.name?.toLowerCase().includes(search.toLowerCase()) ||
     i.email?.toLowerCase().includes(search.toLowerCase()) ||
     i.company_name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleNotesBlur = (inq: any) => {
+    const draft = notesDraft[inq.id];
+    if (draft !== undefined && draft !== (inq.admin_notes ?? '')) {
+      saveNotes.mutate({ id: inq.id, admin_notes: draft });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -98,6 +123,7 @@ export default function AdminEnterpriseInquiries() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8"></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Company</TableHead>
@@ -108,39 +134,95 @@ export default function AdminEnterpriseInquiries() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No inquiries found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No inquiries found</TableCell></TableRow>
             ) : (
               filtered.map((inq: any) => (
-                <TableRow key={inq.id}>
-                  <TableCell className="font-medium">{inq.name}</TableCell>
-                  <TableCell>{inq.email}</TableCell>
-                  <TableCell>{inq.company_name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">{inq.entity_type}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={inq.status}
-                      onValueChange={(val) => updateStatus.mutate({ id: inq.id, status: val })}
-                    >
-                      <SelectTrigger className="w-[120px] h-8">
-                        <Badge className={statusColors[inq.status] || ''} variant="secondary">
-                          {inq.status}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="contacted">Contacted</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {format(new Date(inq.created_at), 'MMM d, yyyy')}
-                  </TableCell>
-                </TableRow>
+                <>
+                  <TableRow
+                    key={inq.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setExpandedId(expandedId === inq.id ? null : inq.id)}
+                  >
+                    <TableCell className="pr-0">
+                      {expandedId === inq.id
+                        ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-1.5">
+                        {inq.name}
+                        {inq.message && <Paperclip className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                        {inq.phone && <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                      </div>
+                    </TableCell>
+                    <TableCell>{inq.email}</TableCell>
+                    <TableCell>{inq.company_name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{inq.entity_type}</Badge>
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Select
+                        value={inq.status}
+                        onValueChange={(val) => updateStatus.mutate({ id: inq.id, status: val })}
+                      >
+                        <SelectTrigger className="w-[120px] h-8">
+                          <Badge className={statusColors[inq.status] || ''} variant="secondary">
+                            {inq.status}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {format(new Date(inq.created_at), 'MMM d, yyyy')}
+                    </TableCell>
+                  </TableRow>
+                  {expandedId === inq.id && (
+                    <TableRow key={`${inq.id}-expanded`} className="bg-muted/30">
+                      <TableCell colSpan={7} className="py-4 px-6">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {/* Contact details */}
+                          <div className="space-y-2">
+                            {inq.phone && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
+                                <p className="text-sm">{inq.phone}</p>
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Prospect's Message</p>
+                              {inq.message ? (
+                                <p className="text-sm whitespace-pre-wrap border-l-2 border-primary/30 pl-3">{inq.message}</p>
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic">No message provided</p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Admin notes */}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Admin Notes</p>
+                            <Textarea
+                              placeholder="Add internal notes (auto-saves on blur)..."
+                              rows={4}
+                              className="text-sm resize-none"
+                              value={notesDraft[inq.id] ?? (inq.admin_notes ?? '')}
+                              onChange={(e) => setNotesDraft(prev => ({ ...prev, [inq.id]: e.target.value }))}
+                              onBlur={() => handleNotesBlur(inq)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
               ))
             )}
           </TableBody>

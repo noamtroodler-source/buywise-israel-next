@@ -15,12 +15,27 @@ import { AdminNavSection, AdminNavItem } from '@/components/admin/AdminNavSectio
 import { usePlatformStats } from '@/hooks/useAdminAnalytics';
 import { AlertsBadge } from '@/components/admin/AdminAlertsPanel';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export function AdminLayout() {
   const location = useLocation();
   const { data: pendingCount } = usePendingReviewCount();
   const { data: pendingBlogCount } = usePendingBlogCount();
   const { data: stats } = usePlatformStats();
+
+  const { data: newEnterpriseCount = 0 } = useQuery({
+    queryKey: ['enterprise-inquiries-new-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('enterprise_inquiries' as any)
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new');
+      if (error) throw error;
+      return count ?? 0;
+    },
+    refetchInterval: 60_000,
+  });
 
   // Calculate totals for section badges
   const totalReviewPending = 
@@ -68,7 +83,7 @@ export function AdminLayout() {
     { href: '/admin/feature-flags', label: 'Feature Flags', icon: ToggleLeft },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/contact', label: 'Contact Forms', icon: Mail },
-    { href: '/admin/enterprise-inquiries', label: 'Enterprise Leads', icon: Building2 },
+    { href: '/admin/enterprise-inquiries', label: 'Enterprise Leads', icon: Building2, badge: newEnterpriseCount },
     { href: '/admin/errors', label: 'Client Errors', icon: Bug },
   ];
 
