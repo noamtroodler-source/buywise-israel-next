@@ -16,6 +16,7 @@ const formSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
   email: z.string().trim().email('Invalid email').max(255),
   company_name: z.string().trim().min(1, 'Company name is required').max(200),
+  phone: z.string().trim().max(30).optional(),
   message: z.string().trim().max(1000).optional(),
 });
 
@@ -37,6 +38,7 @@ export function EnterpriseSalesDialog({ open, onOpenChange, entityType }: Enterp
       name: '',
       email: user?.email || '',
       company_name: '',
+      phone: '',
       message: '',
     },
   });
@@ -49,10 +51,24 @@ export function EnterpriseSalesDialog({ open, onOpenChange, entityType }: Enterp
         email: values.email,
         company_name: values.company_name,
         entity_type: entityType,
+        phone: values.phone || null,
         message: values.message || null,
         user_id: user?.id || null,
       } as any);
       if (error) throw error;
+
+      // Fire-and-forget admin notification email
+      supabase.functions.invoke('enterprise-inquiry-notify', {
+        body: {
+          name: values.name,
+          email: values.email,
+          company_name: values.company_name,
+          entity_type: entityType,
+          phone: values.phone || null,
+          message: values.message || null,
+        },
+      }).catch(() => {/* silent – notification failure must not block the user */});
+
       toast.success('Your inquiry has been submitted! Our team will reach out soon.');
       reset();
       onOpenChange(false);
@@ -97,6 +113,12 @@ export function EnterpriseSalesDialog({ open, onOpenChange, entityType }: Enterp
             <Label htmlFor="company_name">Company Name</Label>
             <Input id="company_name" placeholder="Acme Real Estate" {...register('company_name')} />
             {errors.company_name && <p className="text-xs text-destructive">{errors.company_name.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone (optional)</Label>
+            <Input id="phone" type="tel" placeholder="+1 555 000 0000" {...register('phone')} />
+            {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="space-y-2">
