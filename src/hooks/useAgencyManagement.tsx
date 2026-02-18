@@ -77,12 +77,34 @@ export function useAgencyTeam(agencyId: string | undefined) {
 
       const { data, error } = await supabase
         .from('agents')
-        .select('id, name, email, phone, avatar_url, is_verified, status, created_at')
+        .select('id, name, email, phone, avatar_url, is_verified, status, created_at, last_active_at, agency_role')
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as AgencyAgent[];
+
+      // Fetch listing counts per agent
+      const agentIds = (data ?? []).map((a) => a.id);
+      let listingCounts: Record<string, number> = {};
+
+      if (agentIds.length > 0) {
+        const { data: props } = await supabase
+          .from('properties')
+          .select('agent_id')
+          .in('agent_id', agentIds)
+          .eq('is_published', true);
+
+        for (const p of props ?? []) {
+          if (p.agent_id) listingCounts[p.agent_id] = (listingCounts[p.agent_id] ?? 0) + 1;
+        }
+      }
+
+      return (data ?? []).map((a) => ({
+        ...a,
+        listing_count: listingCounts[a.id] ?? 0,
+        agency_role: (a as any).agency_role ?? 'member',
+        last_active_at: (a as any).last_active_at ?? null,
+      })) as AgencyAgent[];
     },
     enabled: !!agencyId,
   });
@@ -372,6 +394,28 @@ export function useRemoveAgentFromAgency() {
     },
     onError: (error) => {
       toast.error('Failed to remove agent: ' + error.message);
+    },
+  });
+}
+
+export function useUpdateAgentRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ agentId, role }: { agentId: string; role: 'member' | 'manager' }) => {
+      const { error } = await supabase
+        .from('agents')
+        .update({ agency_role: role } as any)
+        .eq('id', agentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyTeam'] });
+      toast.success('Role updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update role: ' + error.message);
     },
   });
 }

@@ -31,7 +31,7 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
   const [expiryDays, setExpiryDays] = useState(30);
   
   const createInvite = useCreateInviteCode();
-  const { currentSeats, maxSeats } = useSeatLimitCheck();
+  const { currentSeats, maxSeats, isOverLimit, overageMockPrice } = useSeatLimitCheck();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,13 +69,22 @@ export function CreateInviteDialog({ agencyId, open, onOpenChange }: CreateInvit
           
           <div className="space-y-6 py-6">
             {/* Seat usage info */}
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 text-sm text-muted-foreground">
-              <Users className="h-4 w-4 flex-shrink-0" />
-              {maxSeats === null 
-                ? <span>Unlimited seats available</span>
-                : <span>{currentSeats}/{maxSeats} seats used · {Math.max(0, maxSeats - currentSeats)} remaining</span>
-              }
-            </div>
+            {isOverLimit ? (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm">
+                <Users className="h-4 w-4 flex-shrink-0 text-destructive mt-0.5" />
+                <span className="text-destructive">
+                  You are currently over your seat limit. Any agent who joins via this code will add to your overage charges at ₪{overageMockPrice}/seat/month.
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted/50 text-sm text-muted-foreground">
+                <Users className="h-4 w-4 flex-shrink-0" />
+                {maxSeats === null 
+                  ? <span>Unlimited seats available</span>
+                  : <span>{currentSeats}/{maxSeats} seats used · {Math.max(0, maxSeats - currentSeats)} remaining</span>
+                }
+              </div>
+            )}
 
             {/* Label */}
             <div className="space-y-2">
