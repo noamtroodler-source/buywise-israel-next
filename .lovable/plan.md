@@ -1,77 +1,85 @@
 
-# Blog Credit Reward Visibility — Full Fix Plan
+# Credit Expiry Warning — Full Surfacing Plan
 
-## Confirmed Diagnosis
+## Confirmed Gaps
 
-The credit reward actually **does fire** at the database level — the `grant_blog_approval_credits` trigger correctly inserts a `blog_reward` +10 credit transaction when a post is approved. The `CreditHistoryTable` also has a "Blog Rewards" filter that will show it — so the money lands, but silently.
+### Gap 1 — `BoostMarketplace` header bar has no expiry info
+The "X credits available" bar at the top of the Marketplace tab shows the balance and an ILS equivalent — but nothing about expiry. A user spending credits from the marketplace has no idea some or all of those credits expire tonight.
 
-The three-layer failure:
+### Gap 2 — `BoostDialog` credit display has no expiry info
+The compact credit balance row in the BoostDialog (used from listing and project row buttons) shows the number only. Same blind spot as the Marketplace.
 
-### Layer 1 — `sendBlogNotification` is a console.log stub
-`src/hooks/useBlogReview.tsx` has a `sendBlogNotification` function that:
-- Fetches the author's email
-- Then just does `console.log(...)` — the comment literally says "For now, we'll create an in-app notification"
-- **No row is ever inserted** into `agency_notifications`, `agent_notifications`, or `developer_notifications`
+### Gap 3 — `PricingFAQ` is factually incorrect
+The FAQ says: *"Credits never expire unless otherwise noted."* The actual behavior is the opposite — credits from monthly subscription grants expire at end-of-month (confirmed in the DB trigger `grant_blog_approval_credits` which sets `expires_at` to end of current month). This needs to be corrected.
 
-### Layer 2 — `BlogArticleTable` approved row has no credit callout
-When a post transitions to `approved`, the card shows a green "Published" badge — but nothing says "+10 credits earned". A user returning to their blog list after approval has no way to know credits landed without digging into the credit history table.
+### Gap 4 — `CreditHistoryTable` rows with an `expires_at` don't highlight it
+Positive transactions that have an `expires_at` set just show the date/amount with no visual cue that this is time-sensitive. A user reading their history can't quickly see which credits are about to expire.
 
-### Layer 3 — Notification bells have no `blog_approved` type
-The `AgencyNotificationBell` icon map only handles `lead`, `join_request`, `team`, `system`. Even if a `blog_approved` notification row were inserted, it would fall back to `AlertCircle` with no special styling.
-
----
-
-## What We're Building
-
-### Fix 1 — Wire `sendBlogNotification` to actually insert rows
-
-Replace the `console.log` stub with real DB inserts into the appropriate notification table based on `authorType`:
-
-- `author_type = 'agent'` → insert into `agent_notifications` (keyed to `agent_id`, looked up from `agents` table via `author_profile_id`)
-- `author_type = 'agency'` → insert into `agency_notifications` (keyed to `agency_id = author_profile_id`)
-- `author_type = 'developer'` → insert into `developer_notifications` (keyed to `developer_id = author_profile_id`)
-
-The notification for `blog_approved` will read:
-- **title**: "Article Approved — +10 Credits Earned 🎉"
-- **message**: `"'${postTitle}' is now live. 10 visibility credits have been added to your balance."`
-- **type**: `'blog_reward'` (new type value, consistent with the `blog_reward` transaction type already used in `CreditHistoryTable`)
-- **action_url**: `/agency/billing` or `/developer/billing` (links to credit history)
-
-This inserts during the admin `useApproveBlogPost` mutation — no schema change needed, just inserting into existing notification tables.
-
-### Fix 2 — Add `blog_reward` type to notification bell icon maps
-
-Update `AgencyNotificationBell` and the equivalent agent/developer notification bell components to handle the `blog_reward` type with a `Coins` icon (already imported in other files) and an amber color class (`text-amber-500`) to visually distinguish credit events from operational alerts.
-
-### Fix 3 — Surface "+10 credits" on the approved card in `BlogArticleTable`
-
-On post cards where `verification_status === 'approved'`, add a small inline chip below the title reading:
-- `✦ +10 credits earned` in amber styling (matching the credit reward theme from `CreditHistoryTable`)
-
-This is persistent and visible every time the user views their blog list, not just on the day of approval. It acknowledges the incentive was delivered.
+### Gap 5 — No global "credits expiring soon" prompt outside billing
+A user on any non-billing page with credits expiring in ≤ 7 days has zero visibility. The `BillingSection` (billing hub only) already shows this correctly — but only there.
 
 ---
 
-## Files to Change
+## What's Already Working (Do Not Touch)
+- `BillingSection.tsx` — `useExpiringCredits` is integrated, urgency logic for ≤ 7 days is implemented, amber `AlertTriangle` icon for urgent. ✅
+- `useExpiringCredits` hook — correctly queries `credit_transactions` for positive amounts with `expires_at > now()`, groups by date. ✅
+
+---
+
+## Implementation
+
+### Fix 1 — `BoostMarketplace`: add expiry line below the credit header bar
+
+In the credit header bar section (`src/components/billing/BoostMarketplace.tsx`), after the "X credits available" line, add:
+- Import `useExpiringCredits` and `differenceInDays` from `date-fns`
+- Call `useExpiringCredits(sub?.entityType, sub?.entityId)` to get the first (most-urgent) expiry group
+- If any credits expire within 30 days, show a single-line amber warning below the ILS equivalent: `"⚠ {amount} credits expire in {N} days (end of month)"` or `"⚠ All credits expire {date}"` for the urgent case (≤ 7 days: amber text, AlertTriangle icon; >7 days: muted clock icon)
+- Only show the nearest-expiry group (the array is already sorted ascending so `[0]` is the most urgent)
+
+### Fix 2 — `BoostDialog`: add expiry micro-line to the credit balance row
+
+In `src/components/billing/BoostDialog.tsx`, the credit balance row is a simple flexbox. Extend it to show expiry info:
+- Import `useExpiringCredits` and `differenceInDays`
+- Call hook with `sub?.entityType, sub?.entityId`
+- If expiring credits exist, show a secondary line below the balance number in amber/muted text: `"{N} expiring {date}"`
+- This is small and non-intrusive, just enough to prompt awareness before they spend
+
+### Fix 3 — `PricingFAQ`: fix the factually wrong credit expiry copy
+
+Update the "How do credits work?" FAQ answer from:
+> "Credits never expire unless otherwise noted."
+
+To:
+> "Credits from monthly plan grants expire at the end of the month they're issued. Purchased credit packages also expire at end of the month of purchase. Spend them before month-end to get full value — your balance is always visible in your billing hub."
+
+This is accurate, sets expectations, and points users to the billing hub.
+
+### Fix 4 — `CreditHistoryTable`: highlight expiry on credit-in rows
+
+For positive transactions (`amount > 0`) that have an `expires_at` set, add a small amber chip below the transaction label showing the expiry date. Only show for credits that haven't expired yet (`expires_at > now()`). This makes the history table actionable rather than purely historical.
+
+The chip reads: `"Expires {MMM d}"` — amber color, Clock icon, `text-xs`.
+
+---
+
+## Files Summary
 
 | File | Type | Change |
 |---|---|---|
-| `src/hooks/useBlogReview.tsx` | Edit | Replace `sendBlogNotification` stub with real DB inserts into `agent_notifications` / `agency_notifications` / `developer_notifications` for `blog_approved` type with credit message |
-| `src/components/agency/AgencyNotificationBell.tsx` | Edit | Add `blog_reward` type to icon map (`Coins`) and color map (`text-amber-500`) |
-| `src/hooks/useAgentNotifications.tsx` | Edit | Add `'blog_reward'` to the `AgentNotification` type union (TypeScript type only) |
-| `src/hooks/useAgencyNotifications.tsx` | Edit | Add `'blog_reward'` to the `AgencyNotification` type union (TypeScript type only) |
-| `src/hooks/useDeveloperNotifications.tsx` | Edit | Add `'blog_reward'` to the `DeveloperNotification` type union (TypeScript type only) |
-| `src/components/blog/BlogArticleTable.tsx` | Edit | Add amber "+10 credits earned" chip to approved post cards |
+| `src/components/billing/BoostMarketplace.tsx` | Edit | Import `useExpiringCredits`, render amber expiry line below "credits available" in the header bar |
+| `src/components/billing/BoostDialog.tsx` | Edit | Import `useExpiringCredits`, render expiry micro-text below credit balance number |
+| `src/components/billing/PricingFAQ.tsx` | Edit | Fix factually wrong "credits never expire" copy to accurately describe end-of-month expiry |
+| `src/components/billing/CreditHistoryTable.tsx` | Edit | Add amber "Expires {date}" chip on credit-in rows that have a future `expires_at` |
 
-**No DB migration needed** — existing notification tables already accept arbitrary `type` string values. The credit itself already lands via the DB trigger.
+**No DB migration needed.** No new hooks needed — `useExpiringCredits` already exists and is correct.
 
 ---
 
 ## Technical Notes
 
-- **Credit transaction already fires correctly.** The `grant_blog_approval_credits` trigger is confirmed in the DB functions list and was verified against live data (5 approved posts exist). The fix is purely about surfacing what already happens.
-- **`sendBlogNotification` is called from `useApproveBlogPost` only** (the admin approval mutation). It also exists in `useRequestBlogChanges` and `useRejectBlogPost` — those currently also do nothing. This plan only wires the `blog_approved` path since that's the credit reward trigger. The other two can be wired in the same pass for completeness (they would send "Changes Requested" and "Rejected" notifications with action links back to the draft).
-- **Agent routing**: agents belong to agencies. The `grant_blog_approval_credits` trigger credits the *agency's* balance when `author_type = 'agent'`. The notification for an agent should go to `agent_notifications` (the agent sees it in their bell), and the credit landing in the agency balance is the correct behavior already in the DB.
-- **The `BlogArticleTable` chip is unconditional** — it shows on every approved post regardless of when it was approved, because the credit always lands. It's a permanent indicator of the reward, not a transient toast.
-- **No changes to `CreditHistoryTable`** — it already handles `blog_reward` filter correctly.
-- **No changes to `grant_blog_approval_credits` DB trigger** — it is already correct.
+- **`useExpiringCredits` already returns groups sorted ascending by `expiresAt`** — so `data?.[0]` is always the most urgent group. This is what to show in Marketplace and Dialog headers (most actionable info first).
+- **The Marketplace and Dialog header only show the nearest group** to keep the UI tight. The full breakdown is already in `BillingSection` (billing hub).
+- **`BillingSection` already has the complete multi-group expiry display** — it shows one line per expiry group with daysLeft calculation and urgency coloring. No changes needed there.
+- **Days calculation:** `differenceInDays(new Date(group.expiresAt), new Date())` — same formula already used in `BillingSection`.
+- **Urgency threshold:** ≤ 7 days = amber + AlertTriangle. > 7 days = muted foreground + Clock. This mirrors the existing `BillingSection` logic.
+- **CreditHistoryTable expiry chip:** Only render when `txn.amount > 0` AND `txn.expires_at` is non-null AND `new Date(txn.expires_at) > new Date()` — i.e., credits still live. Expired credit rows don't need the chip (they already failed to help).
