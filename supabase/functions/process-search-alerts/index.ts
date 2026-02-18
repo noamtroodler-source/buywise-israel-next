@@ -45,12 +45,118 @@ interface Profile {
   notify_search_alerts: boolean;
 }
 
+interface Sponsor {
+  name: string;
+  logo_url: string | null;
+  slug: string;
+  description: string | null;
+  entity_type: "agency" | "developer";
+}
+
 const brandFooter = `
   <p style="color: #999; font-size: 12px; margin-top: 40px; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
     Questions? Just reply — we read every email.<br>
     <span style="color: #666; font-style: italic;">— Your friends at BuyWise Israel</span>
   </p>
 `;
+
+function generateSponsorBlockHtml(sponsors: Sponsor[], baseUrl: string): string {
+  if (sponsors.length === 0) return "";
+
+  const cards = sponsors.map((sponsor) => {
+    const profilePath = sponsor.entity_type === "agency"
+      ? `agency/${sponsor.slug}`
+      : `developer/${sponsor.slug}`;
+    const profileUrl = `${baseUrl}/${profilePath}`;
+    const ctaLabel = sponsor.entity_type === "agency"
+      ? "View Agency Profile →"
+      : "View Developer Profile →";
+
+    const initials = sponsor.name
+      .split(" ")
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+
+    const logoHtml = sponsor.logo_url
+      ? `<img src="${sponsor.logo_url}" alt="${sponsor.name}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">`
+      : `<div style="width: 48px; height: 48px; border-radius: 8px; background-color: #d97706; color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; flex-shrink: 0; text-align: center; line-height: 48px;">${initials}</div>`;
+
+    const blurb = sponsor.description
+      ? sponsor.description.slice(0, 120) + (sponsor.description.length > 120 ? "…" : "")
+      : "Looking for expert guidance? We're here to help you every step of the way.";
+
+    return `
+      <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+        <div style="display: flex; gap: 14px; align-items: flex-start;">
+          ${logoHtml}
+          <div style="flex: 1; min-width: 0;">
+            <p style="font-size: 15px; font-weight: 600; color: #1a1a1a; margin: 0 0 4px 0;">${sponsor.name}</p>
+            <p style="font-size: 13px; color: #555; margin: 0 0 12px 0; line-height: 1.4;">${blurb}</p>
+            <a href="${profileUrl}" style="display: inline-block; background-color: #d97706; color: white; text-decoration: none; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;">
+              ${ctaLabel}
+            </a>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div style="margin: 32px 0;">
+      <p style="color: #92400e; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin: 0 0 8px 0;">✦ Featured Partner</p>
+      ${cards}
+    </div>
+  `;
+}
+
+async function fetchActiveSponsors(supabase: ReturnType<typeof createClient>): Promise<Sponsor[]> {
+  // Step 1: Get the email_digest_sponsored product ID
+  const { data: product } = await supabase
+    .from("visibility_products")
+    .select("id")
+    .eq("slug", "email_digest_sponsored")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!product?.id) return [];
+
+  // Step 2: Fetch active boosts for this product (up to 2 slots)
+  const { data: boosts } = await supabase
+    .from("active_boosts")
+    .select("entity_type, target_id")
+    .eq("product_id", product.id)
+    .eq("is_active", true)
+    .gt("ends_at", new Date().toISOString())
+    .order("created_at", { ascending: true })
+    .limit(2);
+
+  if (!boosts || boosts.length === 0) return [];
+
+  // Step 3: Resolve entity details in parallel
+  const sponsorPromises = boosts.map(async (boost) => {
+    const table = boost.entity_type === "agency" ? "agencies" : "developers";
+    const { data: entity } = await supabase
+      .from(table)
+      .select("name, logo_url, slug, description")
+      .eq("id", boost.target_id)
+      .maybeSingle();
+
+    if (!entity) return null;
+
+    return {
+      name: entity.name,
+      logo_url: entity.logo_url ?? null,
+      slug: entity.slug,
+      description: entity.description ?? null,
+      entity_type: boost.entity_type as "agency" | "developer",
+    } satisfies Sponsor;
+  });
+
+  const resolved = await Promise.all(sponsorPromises);
+  return resolved.filter((s): s is Sponsor => s !== null);
+}
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -82,6 +188,11 @@ const handler = async (req: Request): Promise<Response> => {
       default:
         cutoffTime = new Date(now.getTime() - 5 * 60 * 1000);
     }
+
+    // Fetch active sponsors ONCE before the loop — O(1) queries regardless of email volume
+    const activeSponsors = await fetchActiveSponsors(supabase);
+    const baseUrl = "https://buywiseisrael.com";
+    const sponsorBlock = generateSponsorBlockHtml(activeSponsors, baseUrl);
 
     // Fetch active search alerts for this frequency
     const { data: alerts, error: alertError } = await supabase
@@ -192,7 +303,6 @@ const handler = async (req: Request): Promise<Response> => {
       // Build email content
       const alertName = alert.name || "Your Search";
       const firstName = profile.full_name?.split(' ')[0] || 'there';
-      const baseUrl = Deno.env.get("SUPABASE_URL")?.replace(".supabase.co", ".lovable.app") || "";
 
       const propertyCards = matchingProperties.map((p: Property) => {
         const formattedPrice = new Intl.NumberFormat("en-IL", {
@@ -257,6 +367,8 @@ const handler = async (req: Request): Promise<Response> => {
                   <a href="${baseUrl}/settings" style="color: #666;">Manage your alerts</a>
                 </p>
                 
+                ${sponsorBlock}
+                
                 ${brandFooter}
               </div>
             </body>
@@ -295,6 +407,7 @@ const handler = async (req: Request): Promise<Response> => {
         message: `Search alerts processed for frequency: ${frequency}`,
         processed: processedAlertIds.length,
         emailsSent,
+        sponsorsInjected: activeSponsors.length,
         errors: errors.length > 0 ? errors : undefined,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
