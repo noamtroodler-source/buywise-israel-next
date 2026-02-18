@@ -2884,12 +2884,12 @@ export type Database = {
           entity_type: string
           id: string
           is_active: boolean
-          max_blogs_per_month: number
+          max_blogs_per_month: number | null
           max_listings: number | null
-          max_seats: number
+          max_seats: number | null
           name: string
-          price_annual_ils: number
-          price_monthly_ils: number
+          price_annual_ils: number | null
+          price_monthly_ils: number | null
           sort_order: number
           stripe_price_annual_id: string | null
           stripe_price_monthly_id: string | null
@@ -2902,12 +2902,12 @@ export type Database = {
           entity_type: string
           id?: string
           is_active?: boolean
-          max_blogs_per_month?: number
+          max_blogs_per_month?: number | null
           max_listings?: number | null
-          max_seats?: number
+          max_seats?: number | null
           name: string
-          price_annual_ils?: number
-          price_monthly_ils?: number
+          price_annual_ils?: number | null
+          price_monthly_ils?: number | null
           sort_order?: number
           stripe_price_annual_id?: string | null
           stripe_price_monthly_id?: string | null
@@ -2920,12 +2920,12 @@ export type Database = {
           entity_type?: string
           id?: string
           is_active?: boolean
-          max_blogs_per_month?: number
+          max_blogs_per_month?: number | null
           max_listings?: number | null
-          max_seats?: number
+          max_seats?: number | null
           name?: string
-          price_annual_ils?: number
-          price_monthly_ils?: number
+          price_annual_ils?: number | null
+          price_monthly_ils?: number | null
           sort_order?: number
           stripe_price_annual_id?: string | null
           stripe_price_monthly_id?: string | null

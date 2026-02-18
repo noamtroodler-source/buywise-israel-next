@@ -35,8 +35,8 @@ export function PlanCard({
   loading,
 }: PlanCardProps) {
   const [salesDialogOpen, setSalesDialogOpen] = useState(false);
-  const price = billingCycle === 'annual' ? priceAnnual : priceMonthly;
-  const monthlyEquivalent = billingCycle === 'annual' ? Math.round(priceAnnual / 12) : priceMonthly;
+  const price = billingCycle === 'annual' ? (priceAnnual ?? 0) : (priceMonthly ?? 0);
+  const monthlyEquivalent = billingCycle === 'annual' ? Math.round((priceAnnual ?? 0) / 12) : (priceMonthly ?? 0);
 
   return (
     <div

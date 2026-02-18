@@ -24,9 +24,9 @@ function buildFeatures(plan: any): string[] {
   const features: string[] = [];
   if (plan.max_listings === null) features.push('Unlimited listings');
   else features.push(`Up to ${plan.max_listings} listings`);
-  if (plan.max_seats === null || plan.max_seats >= 999) features.push('Unlimited team seats');
-  else features.push(`${plan.max_seats} team seats`);
-  if (plan.max_blogs_per_month === null || plan.max_blogs_per_month >= 999) features.push('Unlimited blog posts/mo');
+  if (plan.max_seats === null || plan.max_seats === undefined) features.push('Unlimited team seats');
+  else features.push(`${plan.max_seats} team seat${plan.max_seats === 1 ? '' : 's'}`);
+  if (plan.max_blogs_per_month === null || plan.max_blogs_per_month === undefined) features.push('Unlimited blog posts/mo');
   else features.push(`${plan.max_blogs_per_month} blog posts/mo`);
   if (plan.tier === 'pro' || plan.tier === 'enterprise') features.push('Priority support');
   if (plan.tier === 'enterprise') features.push('Dedicated account manager');
