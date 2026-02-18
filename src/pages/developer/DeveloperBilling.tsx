@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { ArrowLeft, CreditCard, BarChart2, Receipt } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BillingSection } from '@/components/billing/BillingSection';
 import { UsageMeters } from '@/components/billing/UsageMeters';
 import { TrialCountdownBanner } from '@/components/billing/TrialCountdownBanner';
 import { UpgradePromptCard } from '@/components/billing/UpgradePromptCard';
+import { InvoiceHistoryTable } from '@/components/billing/InvoiceHistoryTable';
+import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
 import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 
 export default function DeveloperBilling() {
@@ -30,19 +33,46 @@ export default function DeveloperBilling() {
           </div>
         </div>
 
-        {/* Two-column layout */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left column */}
-          <div className="space-y-6">
-            <BillingSection />
-          </div>
+        {/* Tabbed layout */}
+        <Tabs defaultValue="overview">
+          <TabsList className="rounded-xl">
+            <TabsTrigger value="overview" className="rounded-lg gap-1.5">
+              <CreditCard className="h-3.5 w-3.5" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="rounded-lg gap-1.5">
+              <Receipt className="h-3.5 w-3.5" />
+              Invoices
+            </TabsTrigger>
+            <TabsTrigger value="boost" className="rounded-lg gap-1.5">
+              <BarChart2 className="h-3.5 w-3.5" />
+              Boost ROI
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Right column */}
-          <div className="space-y-6">
-            <UsageMeters entityType="developer" authorType="developer" profileId={developerProfile?.id} />
-            <UpgradePromptCard entityType="developer" />
-          </div>
-        </div>
+          {/* Overview tab */}
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-6">
+                <BillingSection />
+              </div>
+              <div className="space-y-6">
+                <UsageMeters entityType="developer" authorType="developer" profileId={developerProfile?.id} />
+                <UpgradePromptCard entityType="developer" />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Invoices tab */}
+          <TabsContent value="invoices" className="mt-6">
+            <InvoiceHistoryTable />
+          </TabsContent>
+
+          {/* Boost ROI tab */}
+          <TabsContent value="boost" className="mt-6">
+            <BoostAnalyticsPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

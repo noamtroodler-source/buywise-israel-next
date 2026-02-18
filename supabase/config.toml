@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.activate-boost]
 verify_jwt = false
+
+[functions.list-invoices]
+verify_jwt = false
