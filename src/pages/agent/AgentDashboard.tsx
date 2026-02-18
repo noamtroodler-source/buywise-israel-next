@@ -138,9 +138,8 @@ export default function AgentDashboard() {
   ];
 
   const quickActions = [
-    { title: 'Manage Properties', desc: 'View, edit, or delete your listings', icon: Home, href: '/agent/properties' },
+    { title: 'My Listings', desc: 'View your assigned listings', icon: Home, href: '/agent/properties' },
     { title: 'Analytics', desc: 'View engagement and inquiries', icon: BarChart3, href: '/agent/leads', badge: leadStats?.new },
-    { title: 'Add New Property', desc: 'Create a new property listing', icon: Plus, href: '/agent/properties/new' },
     { title: 'Write Blog', desc: 'Share your market insights', icon: PenLine, href: '/agent/blog' },
   ];
 
@@ -185,12 +184,6 @@ export default function AgentDashboard() {
                   <Link to="/agent/analytics">
                     <BarChart3 className="h-4 w-4 sm:mr-2" />
                     <span className="hidden sm:inline">Analytics</span>
-                  </Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link to="/agent/properties/new">
-                    <Plus className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Add Property</span>
                   </Link>
                 </Button>
                 <Button size="sm" asChild>
@@ -577,9 +570,11 @@ export default function AgentDashboard() {
                              (property as any).verification_status === 'changes_requested' ? 'Changes Needed' :
                              'Draft'}
                           </span>
-                          <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 hover:text-primary">
-                            <Link to={`/agent/properties/${property.id}/edit`}>Edit</Link>
-                          </Button>
+                          {(property as any).verification_status === 'approved' && (
+                            <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 hover:text-primary">
+                              <Link to={`/properties/${property.id}`} target="_blank">View</Link>
+                            </Button>
+                          )}
                         </div>
                       </motion.div>
                     ))}

@@ -1,33 +1,33 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { 
-  ArrowLeft, Loader2, Home, Plus, Search, Filter,
-  Eye, MessageSquare, Clock, CheckCircle2, XCircle, Building2
+import {
+  ArrowLeft, Loader2, Home, Plus, Search,
+  Eye, Clock, CheckCircle2, Building2,
+  Edit, Trash2, Send, MoreHorizontal, Copy, Key,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useMyAgency, useAgencyTeam } from '@/hooks/useAgencyManagement';
 import { useAgencyListingsManagement } from '@/hooks/useAgencyListings';
+import { useDeleteProperty, useSubmitForReview } from '@/hooks/useAgentProperties';
+import { useUpdatePropertyStatus, useDuplicateProperty } from '@/hooks/useAgentProfile';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 
@@ -40,9 +40,14 @@ const statusConfig = {
 };
 
 export default function AgencyListings() {
+  const navigate = useNavigate();
   const { data: agency, isLoading: agencyLoading } = useMyAgency();
   const { data: team = [] } = useAgencyTeam(agency?.id);
   const { data: listings = [], isLoading: listingsLoading } = useAgencyListingsManagement(agency?.id);
+  const deleteProperty = useDeleteProperty();
+  const submitForReview = useSubmitForReview();
+  const updateStatus = useUpdatePropertyStatus();
+  const duplicateProperty = useDuplicateProperty();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -66,36 +71,29 @@ export default function AgencyListings() {
         <div className="container py-16 text-center">
           <h1 className="text-2xl font-bold mb-2">No Agency Found</h1>
           <p className="text-muted-foreground mb-6">You need to have an agency to view listings.</p>
-          <Button asChild>
-            <Link to="/agency/register">Register Agency</Link>
-          </Button>
+          <Button asChild><Link to="/agency/register">Register Agency</Link></Button>
         </div>
       </Layout>
     );
   }
 
-  // Get unique cities from listings
   const cities = [...new Set(listings.map(l => l.city).filter(Boolean))];
 
-  // Filter listings
   const filteredListings = listings.filter(listing => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         listing.title?.toLowerCase().includes(query) ||
         listing.address?.toLowerCase().includes(query) ||
         listing.city?.toLowerCase().includes(query);
       if (!matchesSearch) return false;
     }
-
     if (statusFilter !== 'all' && listing.verification_status !== statusFilter) return false;
     if (agentFilter !== 'all' && listing.agent_id !== agentFilter) return false;
     if (cityFilter !== 'all' && listing.city !== cityFilter) return false;
-
     return true;
   });
 
-  // Stats
   const stats = {
     total: listings.length,
     active: listings.filter(l => l.verification_status === 'approved').length,
@@ -103,31 +101,33 @@ export default function AgencyListings() {
     totalViews: listings.reduce((sum, l) => sum + (l.views_count || 0), 0),
   };
 
-  const getAgentName = (agentId: string) => {
+  const getAgentName = (agentId: string | null) => {
+    if (!agentId) return '—';
     const agent = team.find(a => a.id === agentId);
     return agent?.name || 'Unknown';
   };
 
-  const getDaysOnMarket = (createdAt: string) => {
-    const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
-    return days;
+  const getDaysOnMarket = (createdAt: string) =>
+    Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+
+  const handleDuplicate = (propertyId: string) => {
+    duplicateProperty.mutate(propertyId, {
+      onSuccess: (result) => {
+        navigate(`/agency/properties/${result.newPropertyId}/edit`);
+      },
+    });
   };
 
   return (
     <Layout>
       <div className="container py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" asChild className="rounded-xl">
-                <Link to="/agency">
-                  <ArrowLeft className="h-4 w-4" />
-                </Link>
+                <Link to="/agency"><ArrowLeft className="h-4 w-4" /></Link>
               </Button>
               <div>
                 <h1 className="text-2xl font-bold">Agency Listings</h1>
@@ -135,7 +135,7 @@ export default function AgencyListings() {
               </div>
             </div>
             <Button asChild className="rounded-xl">
-              <Link to="/agent/properties/new">
+              <Link to="/agency/properties/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Listing
               </Link>
@@ -150,22 +150,11 @@ export default function AgencyListings() {
               { label: 'Pending Review', value: stats.pending, icon: Clock, highlight: stats.pending > 0 },
               { label: 'Total Views', value: stats.totalViews, icon: Eye },
             ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className={cn(
-                  "rounded-2xl border-primary/10",
-                  stat.highlight && "bg-primary/5 border-primary/20"
-                )}>
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                <Card className={cn('rounded-2xl border-primary/10', stat.highlight && 'bg-primary/5 border-primary/20')}>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "p-2 rounded-xl",
-                        stat.highlight ? "bg-primary/20" : "bg-primary/10"
-                      )}>
+                      <div className={cn('p-2 rounded-xl', stat.highlight ? 'bg-primary/20' : 'bg-primary/10')}>
                         <stat.icon className="h-4 w-4 text-primary" />
                       </div>
                       <div>
@@ -193,9 +182,7 @@ export default function AgencyListings() {
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px] rounded-xl">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="approved">Active</SelectItem>
@@ -205,28 +192,20 @@ export default function AgencyListings() {
                   </SelectContent>
                 </Select>
                 <Select value={agentFilter} onValueChange={setAgentFilter}>
-                  <SelectTrigger className="w-[160px] rounded-xl">
-                    <SelectValue placeholder="Agent" />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-[160px] rounded-xl"><SelectValue placeholder="Agent" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Agents</SelectItem>
                     {team.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </SelectItem>
+                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <Select value={cityFilter} onValueChange={setCityFilter}>
-                  <SelectTrigger className="w-[140px] rounded-xl">
-                    <SelectValue placeholder="City" />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-[140px] rounded-xl"><SelectValue placeholder="City" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Cities</SelectItem>
                     {cities.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -248,10 +227,17 @@ export default function AgencyListings() {
                   <Home className="h-12 w-12 mx-auto mb-4 opacity-30" />
                   <p className="font-medium">No listings found</p>
                   <p className="text-sm">
-                    {listings.length === 0 
-                      ? "Your team hasn't added any listings yet"
+                    {listings.length === 0
+                      ? "Add your first listing to get started"
                       : "Try adjusting your filters"}
                   </p>
+                  {listings.length === 0 && (
+                    <Button asChild className="mt-4 rounded-xl">
+                      <Link to="/agency/properties/new">
+                        <Plus className="h-4 w-4 mr-2" />Add Listing
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -264,24 +250,22 @@ export default function AgencyListings() {
                         <TableHead className="text-right">Price</TableHead>
                         <TableHead className="text-center">Views</TableHead>
                         <TableHead className="text-center">Days</TableHead>
-                        <TableHead></TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredListings.map((listing) => {
                         const status = statusConfig[listing.verification_status as keyof typeof statusConfig] || statusConfig.draft;
-                        
+                        const isDraft = listing.verification_status === 'draft';
+                        const isApproved = listing.verification_status === 'approved';
+
                         return (
                           <TableRow key={listing.id} className="hover:bg-muted/30">
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="h-12 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                                   {listing.images?.[0] ? (
-                                    <img 
-                                      src={listing.images[0]} 
-                                      alt={listing.title}
-                                      className="h-full w-full object-cover"
-                                    />
+                                    <img src={listing.images[0]} alt={listing.title} className="h-full w-full object-cover" />
                                   ) : (
                                     <div className="h-full w-full flex items-center justify-center">
                                       <Home className="h-4 w-4 text-muted-foreground" />
@@ -298,7 +282,7 @@ export default function AgencyListings() {
                               <span className="text-sm">{getAgentName(listing.agent_id)}</span>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={cn("text-xs", status.color)}>
+                              <Badge variant="outline" className={cn('text-xs', status.color)}>
                                 {status.label}
                               </Badge>
                             </TableCell>
@@ -306,26 +290,99 @@ export default function AgencyListings() {
                               {formatPrice(listing.price, listing.currency)}
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">
-                                {listing.views_count || 0}
-                              </span>
+                              <span className="text-sm text-muted-foreground">{listing.views_count || 0}</span>
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className="text-sm text-muted-foreground">
-                                {getDaysOnMarket(listing.created_at)}
-                              </span>
+                              <span className="text-sm text-muted-foreground">{getDaysOnMarket(listing.created_at)}</span>
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                asChild
-                                className="rounded-lg"
-                              >
-                                <Link to={`/property/${listing.id}`}>
-                                  View
-                                </Link>
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                {/* Edit button */}
+                                <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                                  <Link to={`/agency/properties/${listing.id}/edit`}>
+                                    <Edit className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+
+                                {/* Submit for review */}
+                                {isDraft && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-lg"
+                                    onClick={() => submitForReview.mutate(listing.id)}
+                                    disabled={submitForReview.isPending}
+                                    title="Submit for Review"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                  </Button>
+                                )}
+
+                                {/* View live */}
+                                {isApproved && (
+                                  <Button variant="ghost" size="sm" asChild className="rounded-lg">
+                                    <Link to={`/property/${listing.id}`} target="_blank">
+                                      <Eye className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                )}
+
+                                {/* More actions dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="rounded-lg">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleDuplicate(listing.id)}>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Duplicate
+                                    </DropdownMenuItem>
+                                    {isApproved && listing.listing_status === 'for_sale' && (
+                                      <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'sold' })}>
+                                        <Home className="h-4 w-4 mr-2" />
+                                        Mark as Sold
+                                      </DropdownMenuItem>
+                                    )}
+                                    {isApproved && listing.listing_status === 'for_rent' && (
+                                      <DropdownMenuItem onClick={() => updateStatus.mutate({ id: listing.id, listing_status: 'rented' })}>
+                                        <Key className="h-4 w-4 mr-2" />
+                                        Mark as Rented
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem
+                                          className="text-destructive focus:text-destructive"
+                                          onSelect={(e) => e.preventDefault()}
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to delete "{listing.title}"? This cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => deleteProperty.mutate(listing.id)}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
