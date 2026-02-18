@@ -69,25 +69,32 @@ export function BillingSection() {
       <CardContent className="space-y-6">
         {/* Current Plan */}
         <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <p className="text-sm text-muted-foreground">Current Plan</p>
               <p className="text-lg font-semibold text-foreground">{sub.planName}</p>
             </div>
-            <Badge
-              variant="secondary"
-              className={
-                sub.status === 'past_due'
-                  ? 'bg-destructive/10 text-destructive'
-                  : sub.status === 'trialing'
-                  ? 'bg-primary/10 text-primary'
-                  : sub.status === 'active'
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground'
-              }
-            >
-              {sub.status === 'none' ? 'No Plan' : sub.status}
-            </Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge
+                variant="secondary"
+                className={
+                  sub.status === 'past_due'
+                    ? 'bg-destructive/10 text-destructive'
+                    : sub.status === 'trialing'
+                    ? 'bg-primary/10 text-primary'
+                    : sub.status === 'active'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }
+              >
+                {sub.status === 'none' ? 'No Plan' : sub.status}
+              </Badge>
+              {sub.billingCycle && (
+                <Badge variant="outline" className="text-xs">
+                  {sub.billingCycle === 'annual' ? 'Annual billing' : 'Monthly billing'}
+                </Badge>
+              )}
+            </div>
           </div>
 
           {hasSubscription && sub.currentPeriodEnd && (
