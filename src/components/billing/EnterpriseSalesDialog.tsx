@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { Building2, Send } from 'lucide-react';
+import { Building2, Send, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const formSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100),
@@ -87,14 +89,36 @@ export function EnterpriseSalesDialog({ open, onOpenChange, entityType }: Enterp
             <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
               <Building2 className="h-4 w-4 text-primary" />
             </div>
-            <div>
-              <DialogTitle>Contact Enterprise Sales</DialogTitle>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <DialogTitle>Contact Enterprise Sales</DialogTitle>
+                <Badge variant="secondary" className="text-xs">
+                  {entityType === 'agency' ? 'Agency Plan' : 'Developer Plan'}
+                </Badge>
+              </div>
               <DialogDescription>
                 Tell us about your needs and we'll create a custom plan.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
+
+        {/* Login nudge for unauthenticated users */}
+        {!user && (
+          <div className="flex items-start gap-2 rounded-lg bg-muted/60 border border-border px-3 py-2 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <span>
+              Already have an account?{' '}
+              <Link
+                to="/auth?redirect=/pricing"
+                className="text-primary underline underline-offset-2 hover:text-primary/80 font-medium"
+                onClick={() => onOpenChange(false)}
+              >
+                Sign in to auto-fill your details.
+              </Link>
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
           <div className="space-y-2">
@@ -117,13 +141,8 @@ export function EnterpriseSalesDialog({ open, onOpenChange, entityType }: Enterp
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone (optional)</Label>
-            <Input id="phone" type="tel" placeholder="+1 555 000 0000" {...register('phone')} />
+            <Input id="phone" type="tel" placeholder="+972 50 000 0000" {...register('phone')} />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="entity_type">Type</Label>
-            <Input id="entity_type" value={entityType === 'agency' ? 'Agency' : 'Developer'} disabled className="bg-muted" />
           </div>
 
           <div className="space-y-2">

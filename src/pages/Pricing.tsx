@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, Building2, Lock, RefreshCcw } from 'lucide-react';
+import { Sparkles, Shield, Building2, Lock, RefreshCcw, ArrowRight, Users } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
 import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
@@ -10,6 +10,8 @@ import { PromoCodeInput } from '@/components/billing/PromoCodeInput';
 import { FeatureComparisonTable } from '@/components/billing/FeatureComparisonTable';
 import { PricingFAQ } from '@/components/billing/PricingFAQ';
 import { FoundingProgramSection } from '@/components/billing/FoundingProgramSection';
+import { EnterpriseSalesDialog } from '@/components/billing/EnterpriseSalesDialog';
+import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +55,8 @@ export default function Pricing() {
   const [promoCode, setPromoCode] = useState('');
   const [promoResult, setPromoResult] = useState<PromoResult | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [ctaDialogOpen, setCtaDialogOpen] = useState(false);
+  const [ctaEntityType, setCtaEntityType] = useState<EntityTab>('agency');
   const { user } = useAuth();
   const { isDeveloper } = useUserRole();
   const { data: subscription } = useSubscription();
@@ -270,8 +274,54 @@ export default function Pricing() {
           {/* Feature Comparison */}
           <FeatureComparisonTable plans={filteredPlans} />
 
+          {/* Enterprise CTA Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/[0.03] to-background p-8 text-center"
+          >
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              Need More Than What's Listed?
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto mb-8">
+              Our enterprise plans are fully custom — more listings, dedicated support, white-label options, and volume pricing. Let's talk.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                size="lg"
+                onClick={() => { setCtaEntityType('agency'); setCtaDialogOpen(true); }}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <Building2 className="h-4 w-4" />
+                Contact Agency Sales
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => { setCtaEntityType('developer'); setCtaDialogOpen(true); }}
+                className="gap-2 w-full sm:w-auto"
+              >
+                <Building2 className="h-4 w-4" />
+                Contact Developer Sales
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
+
           {/* Founding Program */}
           <FoundingProgramSection />
+
+          {/* Enterprise Sales Dialog (CTA section) */}
+          <EnterpriseSalesDialog
+            open={ctaDialogOpen}
+            onOpenChange={setCtaDialogOpen}
+            entityType={ctaEntityType}
+          />
 
           {/* Security note */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
