@@ -1,88 +1,228 @@
 
-# Fix: Pre-Sync All Stripe Products & Prices
+# Overage Billing System — Engine 1
 
-## The Problem
+## What This Solves
 
-All 8 membership plans have no Stripe IDs yet. The current lazy-sync in `stripe-checkout` works, but has two real risks:
+Right now, when a subscriber exceeds their plan's listing or seat limit, the UI shows a soft-block ("Listing Limit Reached") and a hard-block on the submit button. That's it. There is no:
+- Record of how many units are over the limit
+- Per-month overage charge
+- Admin visibility into which accounts owe overage fees
+- Any linkage between overage and the invoice system
 
-1. **Race condition**: Two users subscribing to the same plan at the same time, before the first write-back completes, will create duplicate Stripe products. Stripe charges you per product created, and your catalog becomes messy.
-2. **Enterprise crash**: Plans with `price_monthly_ils = null` will cause `Math.round(null * 100) = 0` → Stripe rejects a zero-amount price → 500 error for any Enterprise checkout.
-3. **No visibility**: Right now you cannot see which plans are synced until someone actually tries to subscribe.
+The pricing model explicitly states overages are *allowed* (not blocked), at a per-unit monthly cost. This plan fully implements that.
 
-## The Fix (2 parts)
+---
 
-### Part 1 — Admin sync edge function (`sync-stripe-plans`)
+## Pricing Model Recap (overage rates)
 
-A new edge function callable from a one-time admin trigger (or a button in the admin panel) that:
+| Type | Rate |
+|---|---|
+| Extra listing (agency) | ₪150 / listing / month |
+| Extra project (developer) | ₪500 / project / month |
+| Extra seat (agency) | ₪100 / seat / month |
 
-- Loops through all 6 non-Enterprise active plans (those with a price)
-- For each plan:
-  - Checks if `stripe_product_id` already exists → skips creation if so
-  - Creates the Stripe **Product** if not yet created
-  - Checks if `stripe_price_monthly_id` already exists → skips if so
-  - Creates the Stripe **monthly Price** (recurring, ILS)
-  - Checks if `stripe_price_annual_id` already exists → skips if so
-  - Creates the Stripe **annual Price** (recurring, ILS, yearly)
-  - Writes all three IDs back to `membership_plans` in a single update
-- Returns a summary of what was created vs. skipped (so you can see the result)
-- Is **fully idempotent** — safe to re-run multiple times without creating duplicates
+These rates will live in the database so admin can change them without a code deploy.
 
-### Part 2 — Harden `stripe-checkout` against race conditions
+---
 
-Add an upsert guard in the lazy-sync path: before creating a new Stripe product, re-fetch the plan from DB inside a short retry loop to see if another request already created it. This prevents the (unlikely but possible) simultaneous first-checkout race condition.
+## Current State Summary
 
-Also add a clear error for Enterprise plans: if `price_monthly_ils` or `price_annual_ils` is null, return a 400 with message `"Enterprise plans require a custom quote — please contact us"` instead of crashing.
+- `useListingLimitCheck` → returns `canCreate: false` when over limit, blocks submit button
+- `ListingLimitBanner` → shows warning text with the mock overage price (display-only)
+- `useSeatLimitCheck` → same pattern for seats
+- `membership_plans` table → has `max_listings`, `max_seats`, `max_blogs_per_month`
+- `subscriptions` table → has `entity_type`, `entity_id`, billing cycle info
+- No `overage_records` table exists
+- No overage tracking logic exists
+- The `InvoiceHistoryTable` currently lists Stripe invoices only — this will be adapted to show internal overage ledger records since PayPlus (not Stripe) will be the payment provider
 
-### Part 3 — Admin UI button to trigger the sync
+---
 
-Add a "Sync Stripe Prices" button to the admin panel (wherever the admin billing/plans section lives) that:
-- Calls `sync-stripe-plans`
-- Shows a loading spinner
-- Shows a toast with the result: e.g. "6 plans synced — 12 prices created"
-- After sync, you can see the Stripe IDs directly in your Stripe dashboard
+## What We're Building
 
-## Technical Details
+### Layer 1: Database
 
-### New edge function: `supabase/functions/sync-stripe-plans/index.ts`
-
+**New table: `overage_rates`** (admin-configurable)
 ```
-POST /functions/v1/sync-stripe-plans
-Authorization: Bearer <admin-token>
-
-Response:
-{
-  "synced": 6,
-  "created_products": 6,
-  "created_prices": 12,
-  "skipped": 0,
-  "plans": [
-    { "name": "Agency Starter", "product_id": "prod_xxx", "monthly": "price_xxx", "annual": "price_xxx" },
-    ...
-  ]
-}
+id, entity_type, resource_type ('listing' | 'seat' | 'project'), rate_ils, effective_from, created_at
 ```
+Seeded with the three rates from the pricing model. Admin can insert new rows to change rates going forward without touching code.
 
-The function:
-- Requires admin auth (checks `user_roles` for `admin` role)
-- Queries all `membership_plans` where `is_active = true` and `price_monthly_ils IS NOT NULL`
-- For each plan runs the idempotent create-or-skip logic
-- Updates the DB row and returns the summary
+**New table: `overage_records`**
+```
+id, subscription_id, entity_type, entity_id, billing_period_start, billing_period_end,
+resource_type, plan_limit, actual_count, overage_units, rate_ils_per_unit,
+total_amount_ils, status ('pending' | 'invoiced' | 'waived'), notes,
+created_at, updated_at
+```
+This is the single source of truth for all overage charges. One row per resource per billing period.
 
-### Files changed
+**New DB function: `calculate_overage_for_period`**
+A stored function that, given a subscription, computes overage for a given month. Called by the snapshot job.
+
+**New DB function: `snapshot_monthly_overages`**
+A stored function that scans all active subscriptions, reads current counts, compares to plan limits, and writes/upserts rows into `overage_records`. Designed to be called monthly (or manually by admin).
+
+---
+
+### Layer 2: Logic Change — Allow Overages
+
+Currently `useListingLimitCheck` sets `canCreate: false` when over limit, which hard-blocks the submit button. This needs to change:
+
+- If the subscriber is **over limit**, `canCreate` becomes `true` (allowed with overage charge)
+- A new flag `isOverLimit: boolean` is added so the UI can show the correct warning
+- Same change for `useSeatLimitCheck` → `canInvite: true` with `isOverLimit`
+
+The submit button **unlocks**. Instead, the `ListingLimitBanner` changes from a hard-block message to an **overage acceptance banner** that clearly states:
+
+> "You're over your plan limit. This listing will be charged at ₪150/month as an overage. This will appear on your next statement."
+
+With a checkbox the user must tick to confirm they accept the charge before the submit button activates.
+
+---
+
+### Layer 3: Overage Snapshot Hook (Backend Function)
+
+New edge function: **`snapshot-overages`**
+
+- Reads all `active` or `trialing` subscriptions
+- For each: fetches current listing count, seat count, and project count
+- Compares to plan limits
+- Upserts into `overage_records` for the current billing period
+- Called manually by admin OR automatically on a schedule
+
+This is intentionally decoupled from payment (since PayPlus isn't integrated yet). It creates the record; billing happens separately.
+
+---
+
+### Layer 4: Admin UI — Overage Dashboard
+
+New page section inside the existing **Admin → Settings** or a new **Admin → Billing** tab.
+
+Displays:
+- Table of all `overage_records` with status `pending`
+- Columns: Account name, entity type, billing period, resource, over by, rate, total due
+- Action buttons: "Mark as Invoiced", "Waive" (with notes field)
+- Summary card: Total pending overage revenue across all accounts
+- "Run Snapshot" button that calls the `snapshot-overages` edge function
+
+---
+
+### Layer 5: Billing Hub — Overage Transparency for Subscribers
+
+On the `/agency/billing` and `/developer/billing` pages, inside the existing **Invoices** tab:
+
+- New section **"Overage Charges"** (above invoice history)
+- Shows a table of their own `overage_records` rows for the last 3 months
+- Columns: Period, Resource, Units over, Rate, Estimated amount, Status
+- If status is `pending`, shown with amber badge ("Pending — will appear on next statement")
+- If status is `invoiced`, shown with green badge ("Invoiced")
+
+---
+
+### Layer 6: Usage Meters Enhancement
+
+The existing `UsageMeters` component in the billing hub currently hides at 100%. It needs to show **overage** visually:
+
+- Progress bar becomes red and shows `22/20 (+2 over)` when over limit
+- Adds a line below: "Overage: 2 × ₪150 = ₪300 estimated this month"
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|---|---|
+| `supabase/functions/snapshot-overages/index.ts` | Edge function to compute and write overage records |
+| `src/hooks/useOverageRecords.ts` | Hook to fetch subscriber's own overage records |
+| `src/components/billing/OverageChargesTable.tsx` | Subscriber-facing overage history |
+| `src/components/billing/OverageConsentBanner.tsx` | Replaces `ListingLimitBanner` when over limit |
+| `src/pages/admin/AdminOverages.tsx` | Admin dashboard for all pending overages |
+
+---
+
+## Files to Modify
 
 | File | Change |
 |---|---|
-| `supabase/functions/sync-stripe-plans/index.ts` | New — one-shot admin sync function |
-| `supabase/functions/stripe-checkout/index.ts` | Harden: add Enterprise guard + re-fetch before creating product |
-| `supabase/config.toml` | Add `[functions.sync-stripe-plans] verify_jwt = false` |
-| `src/pages/admin/...` (admin panel) | Add "Sync Stripe Prices" button that calls the function |
+| `src/hooks/useListingLimitCheck.ts` | Add `isOverLimit`, set `canCreate: true` when over limit (overage allowed) |
+| `src/hooks/useSeatLimitCheck.ts` | Add `isOverLimit`, same logic |
+| `src/components/billing/ListingLimitBanner.tsx` | Replace hard-block UI with consent-required overage banner |
+| `src/components/billing/UsageMeters.tsx` | Show overage count + estimated charge when over limit |
+| `src/pages/agency/AgencyBilling.tsx` | Add `OverageChargesTable` to Invoices tab |
+| `src/pages/developer/DeveloperBilling.tsx` | Same |
+| `src/pages/agent/NewPropertyWizard.tsx` | Pass consent state from banner to submit button |
+| `src/pages/agent/EditPropertyWizard.tsx` | Same |
+| `src/pages/developer/NewProjectWizard.tsx` | Same |
+| `src/pages/developer/EditProjectWizard.tsx` | Same |
 
-### What happens after you run this
+---
 
-1. All 6 plans get `stripe_product_id`, `stripe_price_monthly_id`, and `stripe_price_annual_id` populated in the DB
-2. Every subsequent checkout call hits the fast path (`plan[priceColumn]` is already set) — no more lazy creation
-3. No more race condition risk
-4. Enterprise plans return a clean error message instead of crashing
+## Technical Notes
 
-### No database migrations needed
-This is purely a data-population operation. No schema changes.
+- Overage rates are stored in DB (`overage_rates` table), not hardcoded — admin controls them
+- Snapshot function is idempotent (upserts, not inserts) — safe to run multiple times per month
+- The consent checkbox on the banner stores acceptance in React state only (no DB record needed at this stage — it resets per session, which is intentional)
+- PayPlus integration is a future step; `overage_records` with `status = 'pending'` serves as the queue for future billing runs
+- No RLS bypass needed for subscriber-facing overage reads — rows are filtered by `entity_id` which matches the subscriber's own entity
+- Admin view uses service role via edge function
+
+---
+
+## Migration SQL Summary
+
+```sql
+-- overage_rates table
+CREATE TABLE public.overage_rates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type text NOT NULL,
+  resource_type text NOT NULL,
+  rate_ils numeric NOT NULL,
+  effective_from date NOT NULL DEFAULT CURRENT_DATE,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Seed initial rates
+INSERT INTO public.overage_rates (entity_type, resource_type, rate_ils) VALUES
+  ('agency',    'listing', 150),
+  ('agency',    'seat',    100),
+  ('developer', 'project', 500);
+
+-- overage_records table
+CREATE TABLE public.overage_records (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  subscription_id uuid REFERENCES public.subscriptions(id),
+  entity_type text NOT NULL,
+  entity_id uuid NOT NULL,
+  billing_period_start date NOT NULL,
+  billing_period_end date NOT NULL,
+  resource_type text NOT NULL,
+  plan_limit integer NOT NULL,
+  actual_count integer NOT NULL,
+  overage_units integer GENERATED ALWAYS AS (GREATEST(0, actual_count - plan_limit)) STORED,
+  rate_ils_per_unit numeric NOT NULL,
+  total_amount_ils numeric GENERATED ALWAYS AS (GREATEST(0, actual_count - plan_limit) * rate_ils_per_unit) STORED,
+  status text NOT NULL DEFAULT 'pending',
+  notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (entity_id, entity_type, resource_type, billing_period_start)
+);
+
+-- RLS
+ALTER TABLE public.overage_rates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.overage_records ENABLE ROW LEVEL SECURITY;
+
+-- overage_rates: readable by all authenticated users (needed for display)
+CREATE POLICY "overage_rates_read" ON public.overage_rates FOR SELECT TO authenticated USING (true);
+
+-- overage_records: subscribers can only see their own
+CREATE POLICY "overage_records_own_read" ON public.overage_records FOR SELECT TO authenticated
+  USING (
+    entity_id IN (
+      SELECT id FROM public.agencies WHERE admin_user_id = auth.uid()
+      UNION
+      SELECT id FROM public.developers WHERE user_id = auth.uid()
+    )
+  );
+```
