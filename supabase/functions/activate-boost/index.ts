@@ -131,11 +131,29 @@ serve(async (req) => {
     }
     logStep("Balance sufficient", { currentBalance, cost: product.credit_cost });
 
+    // Check for existing active boost on same target (prevents double-booking)
+    const { data: existingBoost } = await admin
+      .from("active_boosts")
+      .select("id, ends_at")
+      .eq("entity_id", entityId)
+      .eq("product_id", product.id)
+      .eq("target_id", target_id)
+      .eq("is_active", true)
+      .gt("ends_at", new Date().toISOString())
+      .maybeSingle();
+
+    if (existingBoost) {
+      return new Response(JSON.stringify({
+        error: "This boost is already active for this listing.",
+        ends_at: existingBoost.ends_at,
+      }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Check slot availability
     if (product.max_slots) {
       const { data: activeCount } = await admin.rpc("get_active_boost_count", { p_product_id: product.id });
       if ((activeCount as number) >= product.max_slots) {
-        return new Response(JSON.stringify({ error: "No boost slots available. Try again later." }), {
+        return new Response(JSON.stringify({ error: "No boost slots available. All slots are taken." }), {
           status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -179,8 +197,15 @@ serve(async (req) => {
 
     if (boostErr) {
       logStep("Boost creation failed", { error: boostErr.message });
-      return new Response(JSON.stringify({ error: "Failed to create boost" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const isSoldOut = boostErr.message?.includes('SLOT_FULL');
+      const isDuplicate = boostErr.message?.includes('uq_active_boosts_entity_product_target');
+      const errorMsg = isSoldOut
+        ? "No boost slots available. All slots are taken."
+        : isDuplicate
+        ? "This boost is already active for this listing."
+        : "Failed to create boost";
+      return new Response(JSON.stringify({ error: errorMsg }), {
+        status: isSoldOut || isDuplicate ? 409 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

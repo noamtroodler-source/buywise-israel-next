@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Zap, Loader2, Clock, TrendingUp } from 'lucide-react';
-import { useVisibilityProducts, useActivateBoost, useActiveBoosts } from '@/hooks/useBoosts';
+import { useVisibilityProducts, useActivateBoost, useActiveBoosts, useSlotAvailability } from '@/hooks/useBoosts';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Link } from 'react-router-dom';
 
@@ -22,6 +22,7 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
   const { data: products = [], isLoading: productsLoading } = useVisibilityProducts(entityType);
   const { data: activeBoosts = [] } = useActiveBoosts(targetType, targetId);
   const activateBoost = useActivateBoost();
+  const { data: slotMap = {} } = useSlotAvailability(products);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const creditBalance = sub?.creditBalance ?? 0;
@@ -87,30 +88,37 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
           ) : (
             products.map((product) => {
               const isActive = activeSlugs.has(product.slug);
+              const isSoldOut = slotMap[product.id]?.isFull ?? false;
               const cantAfford = creditBalance < product.credit_cost;
               const isSelected = selectedSlug === product.slug;
+              const isDisabled = isActive || isSoldOut || cantAfford;
 
               return (
                 <Card
                   key={product.id}
-                  className={`p-3 cursor-pointer transition-all rounded-xl border ${
+                  className={`p-3 transition-all rounded-xl border ${
                     isActive
                       ? 'border-primary/40 bg-primary/5 opacity-60 cursor-default'
+                      : isSoldOut
+                      ? 'opacity-50 cursor-not-allowed border-border'
                       : isSelected
-                      ? 'border-primary ring-1 ring-primary/20 bg-primary/5'
+                      ? 'border-primary ring-1 ring-primary/20 bg-primary/5 cursor-pointer'
                       : cantAfford
                       ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:border-primary/30'
+                      : 'hover:border-primary/30 cursor-pointer'
                   }`}
                   onClick={() => {
-                    if (!isActive && !cantAfford) setSelectedSlug(isSelected ? null : product.slug);
+                    if (!isDisabled) setSelectedSlug(isSelected ? null : product.slug);
                   }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-medium text-foreground">{product.name}</p>
                         {isActive && <Badge variant="secondary" className="text-xs">Active</Badge>}
+                        {isSoldOut && !isActive && (
+                          <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600 dark:text-amber-400">Sold Out</Badge>
+                        )}
                       </div>
                       {product.description && (
                         <p className="text-xs text-muted-foreground mt-0.5">{product.description}</p>
@@ -118,6 +126,11 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-3 w-3 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">{product.duration_days} days</span>
+                        {slotMap[product.id] && !isSoldOut && (
+                          <span className="text-xs text-muted-foreground">
+                            · {slotMap[product.id].availableSlots}/{slotMap[product.id].maxSlots} slots left
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
