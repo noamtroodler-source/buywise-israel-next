@@ -100,12 +100,19 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
           />
         )}
         {blog.limit !== null && (
-          <MeterRow
-            label="Blog Posts"
-            current={blog.used}
-            max={blog.limit}
-            suffix="this month"
-          />
+          <div className="space-y-1.5">
+            <MeterRow
+              label="Blog Posts"
+              current={blog.used}
+              max={blog.limit}
+              suffix="this month"
+            />
+            {blog.used >= blog.limit && (
+              <p className="text-xs text-destructive font-medium">
+                Limit reached — resets {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+              </p>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

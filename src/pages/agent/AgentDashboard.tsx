@@ -14,12 +14,15 @@ import { STALE_THRESHOLD_DAYS } from '@/hooks/useAgentProfile';
 import { differenceInDays, parseISO, format, isToday, isYesterday } from 'date-fns';
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
 import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function AgentDashboard() {
   const { data: agentProfile, isLoading: profileLoading } = useAgentProfile();
   const { data: properties = [], isLoading: propertiesLoading } = useAgentProperties();
   const { data: leadStats } = useLeadStats();
   const { trackDashboardView, trackAnalyticsView } = useAdvertiserTracking();
+  const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog, isLoading: blogQuotaLoading } = useBlogQuotaCheck('agent', agentProfile?.id);
 
   // Track dashboard view on mount
   useEffect(() => {
@@ -186,12 +189,30 @@ export default function AgentDashboard() {
                     <span className="hidden sm:inline">Analytics</span>
                   </Link>
                 </Button>
-                <Button size="sm" asChild>
-                  <Link to="/agent/blog/new">
-                    <Plus className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Add Blog</span>
-                  </Link>
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button size="sm" asChild={!blogQuotaLoading && canSubmitBlog} disabled={!blogQuotaLoading && !canSubmitBlog}>
+                          {(!blogQuotaLoading && canSubmitBlog) ? (
+                            <Link to="/agent/blog/new">
+                              <Plus className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Add Blog</span>
+                            </Link>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Add Blog</span>
+                            </>
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!blogQuotaLoading && !canSubmitBlog && (
+                      <TooltipContent>Monthly blog limit reached. Resets on the 1st.</TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

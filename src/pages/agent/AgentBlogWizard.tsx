@@ -18,6 +18,8 @@ import {
   generateSlug 
 } from '@/hooks/useProfessionalBlog';
 import { useAgentProfile } from '@/hooks/useAgentProperties';
+import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
+import { BlogQuotaBanner } from '@/components/blog/BlogQuotaBanner';
 import { toast } from 'sonner';
 
 const STEPS = [
@@ -30,6 +32,7 @@ const STEPS = [
 function WizardContent({ isEditMode, postId }: { isEditMode: boolean; postId?: string }) {
   const navigate = useNavigate();
   const { data: agentProfile } = useAgentProfile();
+  const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog } = useBlogQuotaCheck('agent', agentProfile?.id);
   const { data, currentStep, goNext, goBack, canGoNext, isLastStep, updateData } = useBlogWizard();
   
   const createPost = useCreateBlogPost();
@@ -215,6 +218,11 @@ function WizardContent({ isEditMode, postId }: { isEditMode: boolean; postId?: s
           <CurrentStepComponent />
         </div>
 
+        {/* Quota block banner on final step */}
+        {isLastStep && !isEditMode && !canSubmitBlog && blogQuotaLimit !== null && (
+          <BlogQuotaBanner used={blogQuotaUsed} limit={blogQuotaLimit} />
+        )}
+
         {/* Navigation */}
         <div className="flex justify-between">
           <Button
@@ -226,7 +234,7 @@ function WizardContent({ isEditMode, postId }: { isEditMode: boolean; postId?: s
           </Button>
           
           {isLastStep ? (
-            <Button onClick={handleSubmit} disabled={isSaving}>
+            <Button onClick={handleSubmit} disabled={isSaving || (!isEditMode && !canSubmitBlog)}>
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
