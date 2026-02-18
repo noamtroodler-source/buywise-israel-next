@@ -209,6 +209,78 @@ export function useUpdateProperty() {
   });
 }
 
+export function useCreatePropertyForAgency() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (propertyData: CreatePropertyData & { assignedAgentId: string; submitForReview?: boolean }) => {
+      if (!user) throw new Error('You must be logged in');
+
+      const { assignedAgentId, submitForReview, ...data } = propertyData;
+
+      const verificationStatus: VerificationStatus = submitForReview ? 'pending_review' : 'draft';
+      const submittedAt = submitForReview ? new Date().toISOString() : null;
+
+      const { data: created, error } = await supabase
+        .from('properties')
+        .insert({
+          ...data,
+          agent_id: assignedAgentId,
+          property_type: data.property_type as any,
+          verification_status: verificationStatus,
+          submitted_at: submittedAt,
+          is_published: false,
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data: created, submitForReview };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['pendingReviewCount'] });
+
+      if (result.submitForReview) {
+        toast.success('Listing submitted for review!');
+      } else {
+        toast.success('Draft saved successfully');
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to create property: ' + error.message);
+    },
+  });
+}
+
+export function useUpdatePropertyForAgency() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...propertyData }: Partial<Property> & { id: string }) => {
+      const { data, error } = await supabase
+        .from('properties')
+        .update(propertyData as any)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success('Property updated successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to update property: ' + error.message);
+    },
+  });
+}
+
 export function useDeleteProperty() {
   const queryClient = useQueryClient();
 

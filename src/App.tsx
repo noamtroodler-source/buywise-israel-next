@@ -92,6 +92,8 @@ const AgencyDashboard = lazy(() => import("./pages/agency/AgencyDashboard"));
 const AgencyAnalytics = lazy(() => import("./pages/agency/AgencyAnalytics"));
 const AgencySettings = lazy(() => import("./pages/agency/AgencySettings"));
 const AgencyListingsPage = lazy(() => import("./pages/agency/AgencyListings"));
+const AgencyNewPropertyWizard = lazy(() => import("./pages/agency/AgencyNewPropertyWizard"));
+const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPropertyWizard"));
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
 
@@ -278,12 +280,12 @@ const App = () => (
                         } />
                         <Route path="/agent/properties/new" element={
                           <ProtectedRoute requiredRole="agent">
-                            <NewPropertyWizard />
+                            <Navigate to="/agent/properties" replace />
                           </ProtectedRoute>
                         } />
                         <Route path="/agent/properties/:id/edit" element={
                           <ProtectedRoute requiredRole="agent">
-                            <EditPropertyWizard />
+                            <Navigate to="/agent/properties" replace />
                           </ProtectedRoute>
                         } />
                         <Route path="/agent/blog" element={
@@ -326,6 +328,16 @@ const App = () => (
                         <Route path="/agency/listings" element={
                           <ProtectedRoute>
                             <AgencyListingsPage />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/properties/new" element={
+                          <ProtectedRoute>
+                            <AgencyNewPropertyWizard />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/properties/:id/edit" element={
+                          <ProtectedRoute>
+                            <AgencyEditPropertyWizard />
                           </ProtectedRoute>
                         } />
                         <Route path="/agency/blog/new" element={
