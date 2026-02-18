@@ -24,15 +24,15 @@ export function BillingCycleToggle({ cycle, onChange }: BillingCycleToggleProps)
         type="button"
         onClick={() => onChange('annual')}
         className={cn(
-          'px-4 py-2 rounded-lg text-sm font-medium transition-all relative',
+          'px-4 py-2 rounded-lg text-sm font-medium transition-all flex flex-col items-center leading-tight',
           cycle === 'annual'
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
         )}
       >
-        Annual
-        <span className="ml-1.5 inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">
-          Save 20% · Billed yearly
+        <span>Annual</span>
+        <span className={cn('text-[11px] font-semibold', cycle === 'annual' ? 'text-primary' : 'text-primary/60')}>
+          Save 20%
         </span>
       </button>
     </div>
