@@ -70,9 +70,6 @@ export function ProfessionalTypeChooser() {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Whether you're an individual agent, running an agency, or a property developer—we have the right solution for you.
           </p>
-          <p className="text-sm text-muted-foreground/80 mt-3">
-            Free during our founding period · <Link to="/pricing" className="text-primary hover:underline">View plans & pricing</Link>
-          </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">

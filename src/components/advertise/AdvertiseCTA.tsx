@@ -27,18 +27,6 @@ export function AdvertiseCTA() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
-              {/* Pricing CTA — promoted to first and most prominent */}
-              <Button
-                size="lg"
-                variant="secondary"
-                asChild
-                className="bg-white text-primary hover:bg-white/90 font-semibold"
-              >
-                <Link to="/pricing">
-                  View Plans &amp; Pricing
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
               <Button
                 size="lg"
                 variant="secondary"

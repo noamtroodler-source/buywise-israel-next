@@ -5,15 +5,10 @@ import { Shield, Building2, Lock, RefreshCcw, ArrowRight, Users, Info } from 'lu
 
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/billing/PlanCard';
-import { CreditPackageCard } from '@/components/billing/CreditPackageCard';
 import { BillingCycleToggle } from '@/components/billing/BillingCycleToggle';
 import { PromoCodeInput } from '@/components/billing/PromoCodeInput';
-import { FeatureComparisonTable } from '@/components/billing/FeatureComparisonTable';
 import { PricingFAQ } from '@/components/billing/PricingFAQ';
-import { FoundingProgramSection } from '@/components/billing/FoundingProgramSection';
 import { EnterpriseSalesDialog } from '@/components/billing/EnterpriseSalesDialog';
-import { FoundingProgramModal } from '@/components/billing/FoundingProgramModal';
-import { FoundingPromoRibbon } from '@/components/billing/FoundingPromoRibbon';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -66,6 +61,13 @@ export default function Pricing() {
   const { data: subscription } = useSubscription();
   const navigate = useNavigate();
 
+  // Redirect unauthenticated visitors to the public advertise page
+  useEffect(() => {
+    if (user === null) {
+      navigate('/advertise#pricing', { replace: true });
+    }
+  }, [user, navigate]);
+
   useEffect(() => {
     if (isDeveloper) setEntityTab('developer');
   }, [isDeveloper]);
@@ -75,19 +77,6 @@ export default function Pricing() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('membership_plans')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: packages = [] } = useQuery({
-    queryKey: ['credit-packages'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('credit_packages')
         .select('*')
         .eq('is_active', true)
         .order('sort_order');
@@ -123,56 +112,22 @@ export default function Pricing() {
     }
   };
 
-  const handleBuyCredits = async (packageId: string) => {
-    if (!user) {
-      navigate('/auth?tab=signup&redirect=/pricing');
-      return;
-    }
-    if (!subscription || subscription.status === 'none') {
-      toast.error('You need an active subscription to buy credits');
-      return;
-    }
-    setCheckoutLoading(packageId);
-    try {
-      const { data, error } = await supabase.functions.invoke('stripe-credit-checkout', {
-        body: {
-          package_id: packageId,
-          entity_type: subscription.entityType,
-          entity_id: subscription.entityId,
-          success_url: `${window.location.origin}/checkout/success?type=credits`,
-          cancel_url: `${window.location.origin}/checkout/cancel`,
-        },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, '_blank');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to start checkout');
-    } finally {
-      setCheckoutLoading(null);
-    }
-  };
+  // Don't render the page content while redirect is pending
+  if (!user) return null;
 
   return (
     <Layout>
       <div className="min-h-screen">
-        {/* Sticky Promo Ribbon */}
-        <FoundingPromoRibbon
-          onSeeDetails={() => document.getElementById('founding')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        />
-
-        {/* First-Visit Modal */}
-        <FoundingProgramModal onActivate={(code) => setPromoCode(code)} />
-
-        {/* Hero */}
+        {/* Header */}
         <div className="relative bg-gradient-to-b from-primary/5 via-primary/[0.02] to-background overflow-hidden">
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2" />
           <div className="container relative py-16 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Plans & Pricing
+                Manage Your Plan
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
-                Choose the right plan for your business. All plans include a founding program offer.
+                Upgrade, downgrade, or apply a promo code. Changes take effect immediately or at your next renewal.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -183,28 +138,6 @@ export default function Pricing() {
         </div>
 
         <div className="container py-12 space-y-16">
-          {/* Social Proof */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <div className="flex -space-x-2">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-8 w-8 rounded-full bg-muted border-2 border-background flex items-center justify-center"
-                >
-                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Join <strong className="text-foreground">150+</strong> agencies already growing with BuyWise
-            </p>
-          </motion.div>
-
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <div className="inline-flex items-center rounded-xl bg-muted p-1 gap-1">
@@ -286,9 +219,6 @@ export default function Pricing() {
             </div>
           </div>
 
-          {/* Feature Comparison */}
-          <FeatureComparisonTable plans={filteredPlans} />
-
           {/* Enterprise CTA Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -328,10 +258,7 @@ export default function Pricing() {
             </div>
           </motion.div>
 
-          {/* Founding Program */}
-          <FoundingProgramSection />
-
-          {/* Enterprise Sales Dialog (CTA section) */}
+          {/* Enterprise Sales Dialog */}
           <EnterpriseSalesDialog
             open={ctaDialogOpen}
             onOpenChange={setCtaDialogOpen}
@@ -341,39 +268,7 @@ export default function Pricing() {
           {/* Security note */}
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-4 w-4" />
-            <span>Secure payments powered by Stripe · All prices in ILS (₪)</span>
-          </div>
-
-          {/* Credit Packages */}
-          <div id="credits" className="scroll-mt-20">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Credit Packages
-              </h2>
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                Credits power visibility boosts — homepage features, city-level priority, and more. Buy once, use anytime.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto">
-              {packages.map((pkg: any, i: number) => (
-                <motion.div
-                  key={pkg.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                >
-                  <CreditPackageCard
-                    name={pkg.name}
-                    credits={pkg.credits_included}
-                    price={pkg.price_ils}
-                    bonusPercent={pkg.bonus_percent}
-                    onBuy={() => handleBuyCredits(pkg.id)}
-                    loading={checkoutLoading === pkg.id}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            <span>Secure payments · All prices in ILS (₪)</span>
           </div>
 
           {/* FAQ */}
