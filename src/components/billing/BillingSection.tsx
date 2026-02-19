@@ -147,7 +147,7 @@ export function BillingSection() {
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild className="rounded-xl">
-            <Link to="/pricing#credits">
+            <Link to={sub.entityType === 'agency' ? '/agency/credits' : '/developer/credits'}>
               <Zap className="h-4 w-4 mr-1.5" />
               Buy Credits
             </Link>

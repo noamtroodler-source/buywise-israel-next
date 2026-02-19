@@ -97,6 +97,7 @@ const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPro
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
 const AgencyBoost = lazy(() => import("./pages/agency/AgencyBoost"));
+const AgencyCredits = lazy(() => import("./pages/agency/AgencyCredits"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));
@@ -111,6 +112,7 @@ const DeveloperBlog = lazy(() => import("./pages/developer/DeveloperBlog"));
 const DeveloperBlogWizard = lazy(() => import("./pages/developer/DeveloperBlogWizard"));
 const DeveloperBillingPage = lazy(() => import("./pages/developer/DeveloperBilling"));
 const DeveloperBoost = lazy(() => import("./pages/developer/DeveloperBoost"));
+const DeveloperCredits = lazy(() => import("./pages/developer/DeveloperCredits"));
 
 // Admin - lazy load (rarely visited by regular users)
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -363,6 +365,11 @@ const App = () => (
                             <AgencyBoost />
                           </ProtectedRoute>
                         } />
+                        <Route path="/agency/credits" element={
+                          <ProtectedRoute>
+                            <AgencyCredits />
+                          </ProtectedRoute>
+                        } />
                         
                         {/* Developer routes */}
                         <Route path="/developer/register" element={
@@ -428,6 +435,11 @@ const App = () => (
                         <Route path="/developer/boost" element={
                           <ProtectedRoute requiredRole="developer">
                             <DeveloperBoost />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/developer/credits" element={
+                          <ProtectedRoute requiredRole="developer">
+                            <DeveloperCredits />
                           </ProtectedRoute>
                         } />
                         

@@ -95,7 +95,7 @@ export function BoostMarketplace({ entityType, entityId, entityName }: BoostMark
     );
   };
 
-  const billingPath = entityType === 'agency' ? '/agency/billing' : '/developer/billing';
+  const creditsPath = entityType === 'agency' ? '/agency/credits' : '/developer/credits';
 
   return (
     <div className="space-y-6">
@@ -122,7 +122,7 @@ export function BoostMarketplace({ entityType, entityId, entityName }: BoostMark
           </div>
         </div>
         <Button variant="outline" size="sm" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-          <Link to={billingPath}>
+          <Link to={creditsPath}>
             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
             Buy Credits
           </Link>
@@ -246,9 +246,9 @@ export function BoostMarketplace({ entityType, entityId, entityName }: BoostMark
               })}
               <div className="pt-2 text-center">
                 <Button variant="ghost" size="sm" asChild className="rounded-xl text-muted-foreground">
-                  <Link to={billingPath + '?tab=boost'}>
-                    View full ROI analytics →
-                  </Link>
+                   <Link to={(entityType === 'agency' ? '/agency/billing' : '/developer/billing') + '?tab=boost'}>
+                     View full ROI analytics →
+                   </Link>
                 </Button>
               </div>
             </div>
