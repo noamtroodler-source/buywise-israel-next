@@ -14,7 +14,7 @@ const steps = [
     number: "02",
     title: "Get Verified",
     description:
-      "Our team reviews your application to ensure quality. Verified professionals get priority placement.",
+      "Our team reviews your application to ensure quality. Verified professionals get priority placement. Pick a plan before or after approval — no credit card required until you're ready.",
   },
   {
     icon: FileText,

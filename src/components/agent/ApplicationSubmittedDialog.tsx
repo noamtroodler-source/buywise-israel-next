@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Clock, Mail } from 'lucide-react';
+import { CheckCircle2, Clock, Mail, LayoutList } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -109,6 +109,29 @@ export function ApplicationSubmittedDialog({ open, onClose }: ApplicationSubmitt
               <p className="text-sm text-muted-foreground">
                 You'll receive an email once your application is approved.
               </p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-start gap-3 p-3 bg-primary/[0.04] rounded-xl border border-primary/15"
+          >
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <LayoutList className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-sm">While you wait — explore pricing</p>
+              <p className="text-sm text-muted-foreground">
+                Plans start from just ₪299/mo. Pick yours before you're approved and hit the ground running on day one.
+              </p>
+              <button
+                onClick={() => window.open('/pricing', '_blank')}
+                className="mt-1.5 text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
+              >
+                Explore Plans →
+              </button>
             </div>
           </motion.div>
         </div>
