@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
 import { differenceInDays, format } from 'date-fns';
 
+
 export function SubscriptionStatusCard() {
   const { data: sub, isLoading } = useSubscription();
 
@@ -74,7 +75,7 @@ export function SubscriptionStatusCard() {
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild className="rounded-xl text-xs">
-              <Link to="/pricing#credits">
+              <Link to={sub.entityType === 'agency' ? '/agency/credits' : '/developer/credits'}>
                 <Zap className="h-3.5 w-3.5 mr-1" />
                 Buy Credits
               </Link>

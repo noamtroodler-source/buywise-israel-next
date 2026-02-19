@@ -90,7 +90,7 @@ export function BoostDialog({ open, onOpenChange, targetType, targetId, targetNa
           <div className="text-center p-4 rounded-xl bg-destructive/5 border border-destructive/20">
             <p className="text-sm text-muted-foreground mb-2">No credits available</p>
             <Button size="sm" asChild className="rounded-xl">
-              <Link to="/pricing#credits">Buy Credits</Link>
+              <Link to={sub?.entityType === 'agency' ? '/agency/credits' : '/developer/credits'}>Buy Credits</Link>
             </Button>
           </div>
         )}
