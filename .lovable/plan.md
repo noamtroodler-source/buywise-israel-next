@@ -1,72 +1,63 @@
 
-# Overage Price Display — Replace Hardcoded Constants with Live DB Rates
+# Invoice History Tab — Honest Empty State + Auth Fix
 
-## The Problem
+## What's Actually Happening
 
-Five UI surfaces show overage prices using hardcoded constants from two hooks rather than querying the live `overage_rates` table. The DB already has the real numbers seeded and `useOverageRate` already exists to query them — it just isn't wired into the two limit-check hooks.
+The Invoices tab is not broken due to a code bug — the plumbing is architecturally correct. The emptiness has three compounding reasons:
 
-### Confirmed DB rates (live in `overage_rates` table)
-| Entity | Resource | Rate |
-|---|---|---|
-| Agency | Listing | ₪150/listing/month |
-| Agency | Seat | ₪100/seat/month |
-| Developer | Project | ₪500/project/month |
+### Reason 1 — Zero subscribers in the database
+The `subscriptions` table has no rows at all. `useSubscription` therefore always returns `status: 'none'` for every user, which means `hasSubscription` is false, and the query to fetch invoices is never even triggered. The user sees "Subscribe to a paid plan to see your invoice history" immediately.
 
-These match the hardcoded constants exactly today, but the constants are labeled "Mock" and are a maintenance liability. More importantly, they're not surfaced as authoritative data — if admin ever updates a rate in the DB, the UI won't reflect it.
+### Reason 2 — Stripe hasn't processed any payments yet
+Even if the `hasSubscription` gate passes, `list-invoices` looks up `stripe_customer_id` from the `subscriptions` row. That column is only populated by the `stripe-webhook` handler when a real `checkout.session.completed` event fires. No checkouts → no `stripe_customer_id` → `list-invoices` returns `[]`.
 
-### Affected surfaces (all consuming hardcoded values)
-
-| Surface | Hook | Field | Issue |
-|---|---|---|---|
-| `ListingLimitBanner.tsx` | `useListingLimitCheck` | `overageMockPrice` | Hardcoded `OVERAGE_PRICES` constant |
-| `SeatSummaryCard.tsx` | `useSeatLimitCheck` | `overageMockPrice` | Hardcoded `OVERAGE_PRICE_AGENCY_SEAT = 100` |
-| `CreateInviteDialog.tsx` | `useSeatLimitCheck` | `overageMockPrice` | Same hardcoded constant |
-| `UsageMeters.tsx` | calls `useOverageRate` directly | `listingRate`, `seatRate` | ✅ Already uses live DB |
-| `SeatOverageConsentDialog.tsx` | calls `useOverageRate` directly | `liveRate` | ✅ Already uses live DB |
-
-The `UsageMeters` and `SeatOverageConsentDialog` already do this correctly. We need to bring the two hooks and three remaining components into line.
+### Reason 3 — `list-invoices` uses a deprecated auth method
+The edge function calls `supabase.auth.getClaims(token)` — this method does not exist in the current SDK version and will throw at runtime. Every other edge function in the project uses `supabase.auth.getUser(token)`. This would silently return a 401 if anyone did trigger the query.
 
 ## What We're Building
 
-### Fix 1 — `useListingLimitCheck`: query live rate instead of using constant
+### Fix 1 — Patch the `list-invoices` auth call (critical, one-line)
 
-Remove the `OVERAGE_PRICES` constant. Import `useOverageRate` and call it with `(entityType, resourceType)`. Return the live rate (or `null` while loading) as `overageRate` instead of `overageMockPrice`.
+Replace `supabase.auth.getClaims(token)` with `supabase.auth.getUser(token)` and update the null-check accordingly. This makes the function actually work when it does get called.
 
-The interface field is renamed from `overageMockPrice: number` to `overageRate: number | null` to make the type honest — it can be `null` while the DB query is in flight.
+### Fix 2 — Smarter empty states in `InvoiceHistoryTable`
 
-`isLoading` gets extended to include the rate query's loading state so the hook remains consistent.
+The current component has two empty states:
+- "Subscribe to a paid plan" (when `!hasSubscription`)
+- "No invoices yet" (when subscribed but no invoices returned)
 
-### Fix 2 — `useSeatLimitCheck`: query live rate instead of using constant
+Both are dead ends. Replace them with action-oriented states:
 
-Remove `OVERAGE_PRICE_AGENCY_SEAT = 100`. Import and call `useOverageRate('agency', 'seat')`. Return live rate as `overageRate: number | null`.
+**State A — No subscription** (same as now but better CTA):
+Keep the icon and text, but improve the primary CTA to link to `/pricing` with a "View Pricing" button.
 
-Same `isLoading` extension and field rename.
+**State B — Subscribed but no invoices yet** (new content):
+This is the real gap. When a user has an active subscription but Stripe hasn't generated an invoice yet (e.g., they're in a trial, or the first billing cycle hasn't closed), show:
+- "Your first invoice will appear here after your first billing cycle." 
+- A "Manage Billing" button that opens the Stripe billing portal via the existing `manage-subscription` function — so they can download receipts or manage payment methods directly from Stripe while the invoice list is populating.
 
-### Fix 3 — Update consumers to use the new field name and type
+**State C — Has invoices** (no change, already renders correctly):
+The existing invoice row rendering is correct — amount in ILS, status badge, PDF download. No changes needed.
 
-Three components consume the renamed field:
+### Fix 3 — Show "Manage Billing" shortcut in the subscribed-but-empty state
 
-1. **`ListingLimitBanner.tsx`**: Change `overageMockPrice` → `overageRate`. Add null guard — if `overageRate` is null (loading), don't render the price line. When available, render `₪{overageRate}`.
+When `hasSubscription` is true but `data.length === 0`, add a "Manage Billing →" button that calls `manage-subscription` and opens the Stripe customer portal in a new tab. This gives subscribed users a direct path to their Stripe dashboard where historical receipts always live, regardless of what our `list-invoices` function returns.
 
-2. **`SeatSummaryCard.tsx`**: Change `overageMockPrice` → `overageRate`. Guard against null in the estimated overage calculation (`estOverage = overSeats * (overageRate ?? 0)`). The rate chip becomes `₪{overageRate ?? '—'}/extra seat/mo`.
+This button already exists in `BillingSection.tsx` — we replicate the same `openBillingPortal` pattern inline in `InvoiceHistoryTable` for this one specific empty state.
 
-3. **`CreateInviteDialog.tsx`**: Change `overageMockPrice` → `overageRate`. Guard against null in the overage warning text — show `₪{overageRate ?? '—'}/seat/month`.
+## Files to Change
 
-## Files Summary
+| File | Change |
+|---|---|
+| `supabase/functions/list-invoices/index.ts` | Replace `getClaims()` with `getUser()` — one-line fix so the function actually works at runtime |
+| `src/components/billing/InvoiceHistoryTable.tsx` | Replace both empty states with action-oriented content; add Manage Billing button for subscribed-but-empty state |
 
-| File | Type | Change |
-|---|---|---|
-| `src/hooks/useListingLimitCheck.ts` | Edit | Remove `OVERAGE_PRICES` constant; call `useOverageRate`; rename `overageMockPrice` → `overageRate: number \| null`; extend `isLoading` |
-| `src/hooks/useSeatLimitCheck.ts` | Edit | Remove `OVERAGE_PRICE_AGENCY_SEAT`; call `useOverageRate`; rename `overageMockPrice` → `overageRate: number \| null`; extend `isLoading` |
-| `src/components/billing/ListingLimitBanner.tsx` | Edit | Use `overageRate`; null-guard the price display line |
-| `src/components/agency/SeatSummaryCard.tsx` | Edit | Use `overageRate`; null-guard `estOverage` and the rate chip |
-| `src/components/agency/CreateInviteDialog.tsx` | Edit | Use `overageRate`; null-guard the warning text |
-
-**No DB migration needed.** The `overage_rates` table and `useOverageRate` hook already exist and are correct. This is a pure hook-wiring change.
+No DB migration needed. No schema changes. No new hooks.
 
 ## Technical Notes
 
-- `useOverageRate` uses `staleTime` default (0) — calling it from two hooks doesn't double-fetch because React Query deduplicates by the `['overageRate', entityType, resourceType]` query key.
-- `SeatOverageConsentDialog` and `UsageMeters` already use `useOverageRate` directly and are NOT changed — they are already correct.
-- The field rename from `overageMockPrice` to `overageRate` is the only breaking change — all three consumers are updated in the same pass, so there are no dangling references.
-- `null` while loading is the safe default: the price line either hides or shows `—` until the DB responds. This is better than showing a stale hardcoded number.
+- **`getClaims` → `getUser` migration**: The old call was `supabase.auth.getClaims(token)` checking `data?.claims`. The replacement is `supabase.auth.getUser(token)` checking `data?.user`. The rest of the function logic is identical.
+- **`manage-subscription` function**: Already deployed and working. Takes `{ entity_type, entity_id }` in the body, returns `{ url }` pointing to the Stripe customer portal. Called with `supabase.functions.invoke('manage-subscription', { body: {...} })`.
+- **Invoice amounts**: Already correctly displayed as `₪{(inv.amount_paid / 100).toLocaleString()}` — Stripe stores amounts in agorot (cents), so dividing by 100 gives ILS. No change needed.
+- **The Invoices tab will naturally populate** once real Stripe checkouts complete and the webhook writes `stripe_customer_id` to the subscriptions row. The fixes here ensure it works correctly when that happens.
+- **No change to `OverageChargesTable`** — it already returns `null` when empty, which is correct (it's a bonus row, not a core feature of the tab).
