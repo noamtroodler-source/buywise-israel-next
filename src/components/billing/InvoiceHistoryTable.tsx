@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -5,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Download, Receipt } from 'lucide-react';
+import { FileText, Download, Receipt, ExternalLink, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface Invoice {
   id: string;
@@ -62,6 +64,7 @@ function InvoiceRowSkeleton() {
 export function InvoiceHistoryTable() {
   const { data: sub } = useSubscription();
   const hasSubscription = sub && sub.status !== 'none';
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['invoices', sub?.entityType, sub?.entityId],
@@ -75,6 +78,24 @@ export function InvoiceHistoryTable() {
     },
     enabled: !!sub?.entityId && !!hasSubscription,
   });
+
+  const openBillingPortal = async () => {
+    if (!sub?.entityId) return;
+    setPortalLoading(true);
+    try {
+      const { data: portalData, error } = await supabase.functions.invoke('manage-subscription', {
+        body: { entity_type: sub.entityType, entity_id: sub.entityId },
+      });
+      if (error) throw error;
+      if (portalData?.url) {
+        window.open(portalData.url, '_blank');
+      }
+    } catch (err: any) {
+      toast.error('Could not open billing portal. Please try again.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   return (
     <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
@@ -91,13 +112,18 @@ export function InvoiceHistoryTable() {
       </CardHeader>
       <CardContent>
         {!hasSubscription ? (
-          <div className="text-center py-8 space-y-2">
-            <FileText className="h-8 w-8 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">
-              Subscribe to a paid plan to see your invoice history.
-            </p>
-            <Button variant="outline" size="sm" asChild className="rounded-xl mt-2">
-              <Link to="/pricing">View Plans</Link>
+          <div className="text-center py-8 space-y-3">
+            <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">No active subscription</p>
+              <p className="text-xs text-muted-foreground">
+                Subscribe to a paid plan to see your invoice history.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild className="rounded-xl">
+              <Link to="/pricing">View Pricing</Link>
             </Button>
           </div>
         ) : isLoading ? (
@@ -105,7 +131,27 @@ export function InvoiceHistoryTable() {
             {[1, 2, 3].map((i) => <InvoiceRowSkeleton key={i} />)}
           </div>
         ) : !data || data.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">No invoices yet</p>
+          <div className="text-center py-8 space-y-3">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <CreditCard className="h-5 w-5 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">No invoices yet</p>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                Your first invoice will appear here after your first billing cycle.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl gap-1.5"
+              onClick={openBillingPortal}
+              disabled={portalLoading}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {portalLoading ? 'Opening…' : 'Manage Billing'}
+            </Button>
+          </div>
         ) : (
           <div className="space-y-2">
             {data.map((inv) => (
