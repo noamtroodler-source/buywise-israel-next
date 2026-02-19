@@ -1,97 +1,81 @@
 
-# Founding Program — Prominent First-Visit Experience
+# Tier-Specific Plan Card CTAs
 
-## The Problem
+## What's Changing
 
-The current Founding Program promotion has two weak touchpoints:
-1. A small `FoundingBannerCard` inside the hero section — easily skimmed past because it sits between the headline and the promo code input, competing with other content
-2. `FoundingProgramSection` at the very bottom of a long page — only reached by scrollers
+The `ctaLabel` in `PlanCard.tsx` currently resolves to the generic string `'Subscribe'` (monthly) or `'Get Annual Plan'` (annual) for all non-trial, non-current plans. A single targeted change in one file replaces those generic fallbacks with tier-aware, action-oriented labels.
 
-First-time visitors price-shopping on `/pricing` have a high chance of missing the promo entirely, or only noticing it after already forming a negative price impression.
+## CTA Label Map
 
-## What We're Building
+The `tier` prop is already passed into `PlanCard` from `Pricing.tsx` (values: `'starter'`, `'growth'`, `'pro'`, `'enterprise'`). The enterprise card has its own fixed "Contact Sales" button so it is unaffected.
 
-Two complementary surfaces that together ensure the offer is impossible to miss for first-time visitors, without annoying returning visitors:
+| Tier | Monthly label | Annual label |
+|---|---|---|
+| `starter` | Start with Starter | Get Starter Annual |
+| `growth` | Scale with Growth | Get Growth Annual |
+| `pro` | Go Pro | Go Pro Annual |
+| Enterprise | Contact Sales *(unchanged)* | — |
 
-### 1. First-Visit Modal (appears once, auto-dismissed)
-A full Radix `Dialog` that pops up 1.2 seconds after the page loads — only on the very first visit (persisted via `localStorage` key `founding_modal_seen`). This mirrors the exact UX pattern already used by `CookieConsentBanner`.
+The trial promo override (`Start {N}-Day Free Trial`) and `Current Plan` state keep their priority — they only apply when the user has an active promo or is already subscribed, so the new tier labels only surface in the normal purchase flow.
 
-**Modal content:**
-- Large Sparkles icon in a primary-tinted circle
-- `"Founding Program — Limited Time"` headline
-- 4 benefit rows with icons (60-day trial, 25% discount, 800 credits, case study)
-- Prominent `FOUNDING2026` code chip with one-click copy
-- Two CTAs: `"Activate Now" → scrolls to #founding` and `"View Plans" → closes modal`
-- X close button — dismissing also sets the localStorage key so it won't reappear
+## Priority Order (unchanged logic, new fallback labels)
 
-**On mobile:** uses a bottom sheet `Vaul` drawer instead of a center dialog, matching the pattern already used elsewhere in the app.
+```
+isCurrentPlan    → "Current Plan"
+loading          → "Loading..."
+hasTrialPromo    → "Start {N}-Day Free Trial"
+billingCycle=annual → tier-specific annual label   ← NEW
+default (monthly)   → tier-specific monthly label  ← NEW
+```
 
-### 2. Sticky Promo Ribbon (replaces the flat FoundingBannerCard)
-The existing `FoundingBannerCard` inline card (which sits inside the hero and gets lost) is replaced with a sticky bar at the very top of the page — above the `<Header>` but inside the page context, not in `Layout`. 
+## Implementation
 
-The ribbon is:
-- Full-width, `bg-primary text-primary-foreground`, 48px tall
-- Contains: `✦ Founding Program · 60-day free trial + 25% off + ₪16,000 in credits — Code: FOUNDING2026 [Copy] · [See details ↓]`  
-- Sticky: `position: sticky; top: 0; z-index: 40` — stays visible as user scrolls through the plan cards
-- Has an X button that dismisses it for the session (sessionStorage so it comes back on next fresh visit)
-- Nudges the promo code input to auto-populate `FOUNDING2026` when the user clicks "Activate Now"
+**One file to edit: `src/components/billing/PlanCard.tsx`**
 
-The old `FoundingBannerCard` component inside `Pricing.tsx` is removed.
+Replace the `ctaLabel` constant (currently lines 60–68):
 
-## Files to Change
+```typescript
+// Current (generic):
+const ctaLabel = isCurrentPlan
+  ? 'Current Plan'
+  : loading
+    ? 'Loading...'
+    : hasTrialPromo
+      ? `Start ${trialDays}-Day Free Trial`
+      : billingCycle === 'annual'
+        ? 'Get Annual Plan'
+        : 'Subscribe';
+
+// New (tier-aware):
+const MONTHLY_CTA: Record<string, string> = {
+  starter: 'Start with Starter',
+  growth: 'Scale with Growth',
+  pro: 'Go Pro',
+};
+
+const ANNUAL_CTA: Record<string, string> = {
+  starter: 'Get Starter Annual',
+  growth: 'Get Growth Annual',
+  pro: 'Go Pro Annual',
+};
+
+const ctaLabel = isCurrentPlan
+  ? 'Current Plan'
+  : loading
+    ? 'Loading...'
+    : hasTrialPromo
+      ? `Start ${trialDays}-Day Free Trial`
+      : billingCycle === 'annual'
+        ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
+        : (MONTHLY_CTA[tier] ?? 'Subscribe');
+```
+
+The `?? 'Subscribe'` / `?? 'Get Annual Plan'` fallbacks ensure any future tier added to the DB without a matching entry gracefully degrades to the original text — no breakage.
+
+## Files Summary
 
 | File | Type | Change |
 |---|---|---|
-| `src/components/billing/FoundingProgramModal.tsx` | **New** | First-visit modal + mobile drawer with full benefit breakdown and code copy |
-| `src/components/billing/FoundingPromoRibbon.tsx` | **New** | Sticky top ribbon with code, copy button, and session-dismiss |
-| `src/pages/Pricing.tsx` | **Edit** | Remove `FoundingBannerCard`, add `<FoundingPromoRibbon>` above the hero, add `<FoundingProgramModal>`, wire auto-populate to promo code input |
+| `src/components/billing/PlanCard.tsx` | Edit | Add `MONTHLY_CTA` and `ANNUAL_CTA` maps; replace generic fallback strings with tier-keyed lookups |
 
-## Technical Details
-
-**localStorage key**: `founding_modal_seen` — set to `"1"` on first dismiss/CTA click. Checked on mount; if present, modal never shows.
-
-**sessionStorage key**: `founding_ribbon_dismissed` — set to `"1"` when X is clicked on the ribbon. Resets every browser session so the ribbon returns on the next fresh visit (intentional — the offer is time-limited and the ribbon is lightweight).
-
-**Auto-populate promo code**: The `FoundingProgramModal` receives `onActivate: (code: string) => void` prop. When user clicks "Activate Now", it calls `onActivate('FOUNDING2026')`, which sets `promoCode` state in `Pricing.tsx`, closes the modal, and scrolls to `#founding`. The promo code input then shows as pre-filled with the founding code and the user just needs to click a plan.
-
-**Timing**: Modal opens after 1,200ms (same as CookieConsentBanner's 1,500ms but slightly faster since it's the primary CTA on this page). The ribbon is visible immediately on render.
-
-**No conflict with CookieConsentBanner**: The modal is z-index 50, same as the dialog system. The cookie banner is z-index 50 at the bottom. They don't overlap visually.
-
-**Mobile**: The modal uses a conditional — on screens `< 640px`, renders `<Drawer>` from Vaul instead of `<Dialog>`, sliding up from the bottom. This is the same pattern used in `BoostDialog.tsx`.
-
-## Visual Design
-
-```text
-┌─────────────────────────────────────────────────────┐
-│ ✦ Founding Program · 60-day trial · Code: FOUNDING2026 [Copy]  [See details ↓]  ✕ │  ← Sticky ribbon (primary bg)
-├─────────────────────────────────────────────────────┤
-│                    <Header />                        │
-│                    <Hero>                            │
-│                      Plans & Pricing                 │
-│                      [Promo code: FOUNDING2026 ✓]   │ ← auto-filled
-│                    </Hero>                           │
-│                    ...plan cards...                  │
-└─────────────────────────────────────────────────────┘
-
-Modal (first visit, 1.2s delay):
-┌─────────────────────────────────────────┐
-│  ✕                                      │
-│       ✦  Founding Program               │
-│       Limited Time — Early Access       │
-│                                         │
-│  ✓ 60-day free trial, any plan          │
-│  ✓ 25% off for 10 months                │
-│  ✓ 800 visibility credits (~₪16,000)    │
-│  ✓ Featured case study on launch        │
-│                                         │
-│  Your promo code:                       │
-│  ┌─────────────────────┐               │
-│  │  FOUNDING2026  [⎘]  │               │
-│  └─────────────────────┘               │
-│                                         │
-│  [Activate Now →]  [View Plans]         │
-└─────────────────────────────────────────┘
-```
-
-No DB changes. No new hooks. No new routes.
+No route changes. No new components. No DB changes. No other files touched.
