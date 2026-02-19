@@ -27,11 +27,23 @@ export function AdvertiseCTA() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-4 mb-8">
+              {/* Pricing CTA — promoted to first and most prominent */}
               <Button
                 size="lg"
                 variant="secondary"
                 asChild
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-white text-primary hover:bg-white/90 font-semibold"
+              >
+                <Link to="/pricing">
+                  View Plans &amp; Pricing
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                asChild
+                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
               >
                 <Link to="/auth?tab=signup&role=agent">
                   Register as Agent
@@ -42,7 +54,7 @@ export function AdvertiseCTA() {
                 size="lg"
                 variant="secondary"
                 asChild
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
               >
                 <Link to="/auth?tab=signup&role=agency">
                   Register Agency
@@ -53,21 +65,10 @@ export function AdvertiseCTA() {
                 size="lg"
                 variant="secondary"
                 asChild
-                className="bg-white text-primary hover:bg-white/90"
+                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
               >
                 <Link to="/auth?tab=signup&role=developer">
                   Register Developer
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                asChild
-                className="bg-white/20 text-white hover:bg-white/30 border border-white/30"
-              >
-                <Link to="/pricing">
-                  View Plans & Pricing
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>

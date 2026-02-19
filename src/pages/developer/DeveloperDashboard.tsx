@@ -12,6 +12,7 @@ import { useDeveloperProjects } from '@/hooks/useDeveloperProjects';
 import { DeveloperNotificationBell } from '@/components/developer/DeveloperNotificationBell';
 import { DeveloperOnboardingProgress } from '@/components/developer/DeveloperOnboardingProgress';
 import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
+import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { UsageMeters } from '@/components/billing/UsageMeters';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
@@ -184,6 +185,11 @@ export default function DeveloperDashboard() {
           animate="visible"
           className="space-y-8"
         >
+          {/* No Plan Activation Banner */}
+          <motion.div variants={itemVariants}>
+            <NoPlanBanner />
+          </motion.div>
+
           {/* Subscription Status */}
           <motion.div variants={itemVariants}>
             <SubscriptionStatusCard />

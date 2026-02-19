@@ -32,6 +32,7 @@ import { AgencyAnnouncements } from '@/components/agency/AgencyAnnouncements';
 import { AgencyNotificationBell } from '@/components/agency/AgencyNotificationBell';
 import { AgencyPerformanceInsights } from '@/components/agency/AgencyPerformanceInsights';
 import { SubscriptionStatusCard } from '@/components/billing/SubscriptionStatusCard';
+import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { UsageMeters } from '@/components/billing/UsageMeters';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -199,6 +200,9 @@ export default function AgencyDashboard() {
               </div>
             </div>
           </div>
+
+          {/* No Plan Activation Banner */}
+          <NoPlanBanner />
 
           {/* Subscription Status */}
           <SubscriptionStatusCard />
