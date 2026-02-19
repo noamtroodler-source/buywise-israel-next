@@ -9,6 +9,7 @@ import {
   AdvertiseFAQ,
   AdvertiseCTA,
 } from "@/components/advertise";
+import { AdvertisePricingSection } from "@/components/advertise/AdvertisePricingSection";
 
 export default function Advertise() {
   return (
@@ -18,6 +19,7 @@ export default function Advertise() {
       <AdvertiseValuePillars />
       <AdvertiseHowItWorks />
       <ProfessionalTypeChooser />
+      <AdvertisePricingSection />
       <AdvertiseTestimonials />
       <AdvertiseFAQ />
       <AdvertiseCTA />

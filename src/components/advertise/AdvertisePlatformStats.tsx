@@ -27,20 +27,6 @@ const stats = [
 export function AdvertisePlatformStats() {
   return (
     <section className="border-y border-border bg-card">
-      {/* Transparent pricing nudge */}
-      <div className="border-b border-border/50 bg-primary/[0.03] py-2.5">
-        <div className="container flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <span>Transparent pricing, no surprises.</span>
-          <a
-            href="/pricing"
-            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-          >
-            View Plans &amp; Pricing
-            <span aria-hidden>→</span>
-          </a>
-        </div>
-      </div>
-
       <div className="py-10">
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
