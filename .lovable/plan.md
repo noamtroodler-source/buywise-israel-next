@@ -1,63 +1,129 @@
 
-# Invoice History Tab — Honest Empty State + Auth Fix
+# Boost ROI Analytics — Wire Real Data
 
-## What's Actually Happening
+## Root Cause Analysis
 
-The Invoices tab is not broken due to a code bug — the plumbing is architecturally correct. The emptiness has three compounding reasons:
+The `BoostAnalyticsPanel` renders correctly but the underlying `useBoostAnalytics` hook has **three data bugs** that cause all metric counts to show 0 even when boosts exist. The panel structure and UI are fine — only the hook needs fixing.
 
-### Reason 1 — Zero subscribers in the database
-The `subscriptions` table has no rows at all. `useSubscription` therefore always returns `status: 'none'` for every user, which means `hasSubscription` is false, and the query to fetch invoices is never even triggered. The user sees "Subscribe to a paid plan to see your invoice history" immediately.
+### Bug 1 — `project_views` wrong timestamp column (critical)
 
-### Reason 2 — Stripe hasn't processed any payments yet
-Even if the `hasSubscription` gate passes, `list-invoices` looks up `stripe_customer_id` from the `subscriptions` row. That column is only populated by the `stripe-webhook` handler when a real `checkout.session.completed` event fires. No checkouts → no `stripe_customer_id` → `list-invoices` returns `[]`.
+The hook queries `project_views` using `.gte('viewed_at', ...)` but the `project_views` table has **no `viewed_at` column** — it uses `created_at`. This means every project boost's view count silently returns 0. Property boosts are fine (`property_views` correctly has `viewed_at`).
 
-### Reason 3 — `list-invoices` uses a deprecated auth method
-The edge function calls `supabase.auth.getClaims(token)` — this method does not exist in the current SDK version and will throw at runtime. Every other edge function in the project uses `supabase.auth.getUser(token)`. This would silently return a 401 if anyone did trigger the query.
+**Fix:** Change `viewed_at` → `created_at` in the `project_views` count query.
 
-## What We're Building
+### Bug 2 — Entity-level boosts fall through without metrics (silent gap)
 
-### Fix 1 — Patch the `list-invoices` auth call (critical, one-line)
+Four products (`agency_directory_featured`, `developer_directory_featured`, `email_digest_sponsored`, `budget_tool_sponsor`) use `target_type = 'agency'` or `target_type = 'developer'` — not `'property'` or `'project'`. The hook's if/else only handles `'property'` and `'project'`, so entity-level boosts always show 0 views, 0 saves, 0 inquiries.
 
-Replace `supabase.auth.getClaims(token)` with `supabase.auth.getUser(token)` and update the null-check accordingly. This makes the function actually work when it does get called.
+Entity-level boosts don't have per-listing metrics (no view table to query), but they can show **inquiries generated during the boost window** — using `property_inquiries` (for agency) or `project_inquiries` (for developer) filtered by entity ownership and date range.
 
-### Fix 2 — Smarter empty states in `InvoiceHistoryTable`
+**Fix:** Add a third branch for entity-level boosts that counts total entity inquiries during the boost window (as a proxy for "leads while boosted"). Views and saves stay 0 for entity-level since the product boosts the entity profile/directory slot, not a specific listing.
 
-The current component has two empty states:
-- "Subscribe to a paid plan" (when `!hasSubscription`)
-- "No invoices yet" (when subscribed but no invoices returned)
+### Bug 3 — `totalCreditsSpent` counts `credit_cost` per boost, but entity-level boosts aren't deducted per-listing
 
-Both are dead ends. Replace them with action-oriented states:
+This is actually correct — `credit_cost` from `visibility_products` is the right denominator. No change needed here.
 
-**State A — No subscription** (same as now but better CTA):
-Keep the icon and text, but improve the primary CTA to link to `/pricing` with a "View Pricing" button.
+### Bug 4 — `avgViewsPerBoost` denominator includes entity-level boosts (which have 0 views)
 
-**State B — Subscribed but no invoices yet** (new content):
-This is the real gap. When a user has an active subscription but Stripe hasn't generated an invoice yet (e.g., they're in a trial, or the first billing cycle hasn't closed), show:
-- "Your first invoice will appear here after your first billing cycle." 
-- A "Manage Billing" button that opens the Stripe billing portal via the existing `manage-subscription` function — so they can download receipts or manage payment methods directly from Stripe while the invoice list is populating.
+Because entity-level boosts always have `viewsDuringBoost = 0`, including them in the average dilutes the metric for listing-level boosts. The average should be computed only over boosts that *can* have views (i.e., `target_type === 'property'` or `target_type === 'project'`).
 
-**State C — Has invoices** (no change, already renders correctly):
-The existing invoice row rendering is correct — amount in ILS, status badge, PDF download. No changes needed.
+**Fix:** Filter to only listing-level boosts when computing `avgViewsPerBoost`.
 
-### Fix 3 — Show "Manage Billing" shortcut in the subscribed-but-empty state
+---
 
-When `hasSubscription` is true but `data.length === 0`, add a "Manage Billing →" button that calls `manage-subscription` and opens the Stripe customer portal in a new tab. This gives subscribed users a direct path to their Stripe dashboard where historical receipts always live, regardless of what our `list-invoices` function returns.
+## What's Already Working (Do Not Change)
 
-This button already exists in `BillingSection.tsx` — we replicate the same `openBillingPortal` pattern inline in `InvoiceHistoryTable` for this one specific empty state.
+- `BoostAnalyticsPanel.tsx` — UI, layout, skeleton states, empty state, chart, and table all render correctly. ✅
+- `active_boosts` RLS — entity owners can SELECT their own boosts. ✅  
+- `visibility_products` join — `*, visibility_products(name, slug, credit_cost)` works correctly. ✅
+- `property_views` query — uses `viewed_at` which is the correct column. ✅
+- `favorites` / `project_favorites` queries — both use `created_at`, correct. ✅
+- `monthlySpend` chart logic — correct. ✅
+- `activeBoostCount` / `completedBoostCount` — correct. ✅
 
-## Files to Change
+---
 
-| File | Change |
-|---|---|
-| `supabase/functions/list-invoices/index.ts` | Replace `getClaims()` with `getUser()` — one-line fix so the function actually works at runtime |
-| `src/components/billing/InvoiceHistoryTable.tsx` | Replace both empty states with action-oriented content; add Manage Billing button for subscribed-but-empty state |
+## Implementation
 
-No DB migration needed. No schema changes. No new hooks.
+### One file to change: `src/hooks/useBoostAnalytics.ts`
+
+**Change A — Fix `project_views` column (line ~136)**
+
+```typescript
+// BEFORE (bug):
+supabase.from('project_views')
+  .select('id', { count: 'exact', head: true })
+  .eq('project_id', boost.target_id)
+  .gte('viewed_at', boost.starts_at)   // ← wrong column
+  .lte('viewed_at', boost.ends_at)
+
+// AFTER:
+supabase.from('project_views')
+  .select('id', { count: 'exact', head: true })
+  .eq('project_id', boost.target_id)
+  .gte('created_at', boost.starts_at)  // ← correct column
+  .lte('created_at', boost.ends_at)
+```
+
+**Change B — Add entity-level boost branch (after the project block)**
+
+For boosts where `target_type` is `'agency'` or `'developer'`, count inquiries that came in during the boost window as a proxy ROI signal:
+
+```typescript
+} else if (boost.target_type === 'agency') {
+  // Count property inquiries for this agency during boost window
+  const { count } = await supabase
+    .from('property_inquiries')
+    .select('id', { count: 'exact', head: true })
+    .eq('agency_id', entityId)
+    .gte('created_at', boost.starts_at)
+    .lte('created_at', boost.ends_at);
+  inquiriesDuringBoost = count || 0;
+} else if (boost.target_type === 'developer') {
+  // Count project inquiries for this developer during boost window
+  const { count } = await supabase
+    .from('project_inquiries')
+    .select('id', { count: 'exact', head: true })
+    .eq('developer_id', entityId)
+    .gte('created_at', boost.starts_at)
+    .lte('created_at', boost.ends_at);
+  inquiriesDuringBoost = count || 0;
+}
+```
+
+**Change C — Fix `avgViewsPerBoost` denominator**
+
+```typescript
+// BEFORE:
+const avgViewsPerBoost = boostDetails.length > 0
+  ? Math.round(totalViews / boostDetails.length)
+  : 0;
+
+// AFTER — only count listing-level boosts in denominator:
+const listingBoosts = boostDetails.filter(
+  b => b.targetType === 'property' || b.targetType === 'project'
+);
+const avgViewsPerBoost = listingBoosts.length > 0
+  ? Math.round(totalViews / listingBoosts.length)
+  : 0;
+```
+
+---
+
+## Files Summary
+
+| File | Type | Change |
+|---|---|---|
+| `src/hooks/useBoostAnalytics.ts` | Edit | Fix `project_views` column (`viewed_at` → `created_at`); add entity-level boost branch for agency/developer inquiries; fix `avgViewsPerBoost` denominator |
+
+No DB migration needed. No schema changes. No new hooks. No UI changes.
+
+---
 
 ## Technical Notes
 
-- **`getClaims` → `getUser` migration**: The old call was `supabase.auth.getClaims(token)` checking `data?.claims`. The replacement is `supabase.auth.getUser(token)` checking `data?.user`. The rest of the function logic is identical.
-- **`manage-subscription` function**: Already deployed and working. Takes `{ entity_type, entity_id }` in the body, returns `{ url }` pointing to the Stripe customer portal. Called with `supabase.functions.invoke('manage-subscription', { body: {...} })`.
-- **Invoice amounts**: Already correctly displayed as `₪{(inv.amount_paid / 100).toLocaleString()}` — Stripe stores amounts in agorot (cents), so dividing by 100 gives ILS. No change needed.
-- **The Invoices tab will naturally populate** once real Stripe checkouts complete and the webhook writes `stripe_customer_id` to the subscriptions row. The fixes here ensure it works correctly when that happens.
-- **No change to `OverageChargesTable`** — it already returns `null` when empty, which is correct (it's a bonus row, not a core feature of the tab).
+- **No test data in `active_boosts`** right now — the panel will still show the "No boosts yet" empty state until a real boost is activated. The fixes ensure data is accurate *when* boosts exist.
+- **Entity-level inquiry counts** are the best available proxy for directory/email boost ROI. There's no per-impression tracking for directory slots or email digest placements, so "inquiries during boost window" is the same heuristic used in `AgencyPerformanceInsights`.
+- **`property_inquiries.agency_id`** is populated by the `set_inquiry_agency_id` trigger on insert — confirmed in the DB triggers. Safe to filter by it.
+- **`project_inquiries.developer_id`** is a direct FK — confirmed in the table schema. Safe to filter by it.
+- The hook already passes `entityId` into scope — no additional parameters needed for the new entity-level branch.
