@@ -1,6 +1,9 @@
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BarChart3 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { BarChart3, Zap } from 'lucide-react';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { useSeatLimitCheck } from '@/hooks/useSeatLimitCheck';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
@@ -75,6 +78,7 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
   if (!sub || sub.status === 'none') return null;
 
   const showSeats = entityType === 'agency' && seat.maxSeats !== null;
+  const creditsPath = entityType === 'agency' ? '/agency/credits' : '/developer/credits';
 
   return (
     <Card className="rounded-2xl border-primary/10">
@@ -114,6 +118,20 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
             )}
           </div>
         )}
+
+        <Separator />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-muted-foreground">Credits</span>
+            <span className={`font-semibold ${sub.creditBalance === 0 ? 'text-destructive' : 'text-foreground'}`}>
+              {sub.creditBalance}
+            </span>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to={creditsPath}>Buy More Credits →</Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
