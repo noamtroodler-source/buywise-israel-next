@@ -2,7 +2,6 @@ import { Layout } from "@/components/layout/Layout";
 import {
   AdvertiseHero,
   AdvertisePlatformStats,
-  ProfessionalTypeChooser,
   AdvertiseValuePillars,
   AdvertiseHowItWorks,
   AdvertiseTestimonials,
@@ -18,7 +17,6 @@ export default function Advertise() {
       <AdvertisePlatformStats />
       <AdvertiseValuePillars />
       <AdvertiseHowItWorks />
-      <ProfessionalTypeChooser />
       <AdvertisePricingSection />
       <AdvertiseTestimonials />
       <AdvertiseFAQ />
