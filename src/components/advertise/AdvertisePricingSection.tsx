@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Users, Zap } from "lucide-react";
+import { Check, Star, Building2, ArrowRight, Shield, RefreshCcw, Lock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -325,44 +325,6 @@ export function AdvertisePricingSection() {
           </div>
         </motion.div>
 
-        {/* Enterprise CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.4, delay: 0.25 }}
-          className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/[0.02] to-background p-8 text-center max-w-3xl mx-auto"
-        >
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
-          </div>
-          <h3 className="text-xl font-bold text-foreground mb-2">
-            Need a Custom Solution?
-          </h3>
-          <p className="text-muted-foreground mb-6 text-sm max-w-lg mx-auto">
-            Large portfolio, volume listings, white-label options, or a dedicated account manager? Our enterprise plans are fully custom-quoted.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => { setEntityTab("agency"); setEnterpriseDialogOpen(true); }}
-              className="gap-2 w-full sm:w-auto"
-            >
-              <Building2 className="h-4 w-4" />
-              Agency Enterprise
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => { setEntityTab("developer"); setEnterpriseDialogOpen(true); }}
-              className="gap-2 w-full sm:w-auto"
-            >
-              <Building2 className="h-4 w-4" />
-              Developer Enterprise
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </motion.div>
       </div>
 
       <EnterpriseSalesDialog
