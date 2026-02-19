@@ -1,129 +1,149 @@
 
-# Boost ROI Analytics — Wire Real Data
+# Dedicated Credit Wallet Pages — `/agency/credits` & `/developer/credits`
 
-## Root Cause Analysis
+## What We're Building
 
-The `BoostAnalyticsPanel` renders correctly but the underlying `useBoostAnalytics` hook has **three data bugs** that cause all metric counts to show 0 even when boosts exist. The panel structure and UI are fine — only the hook needs fixing.
+Two new pages that consolidate everything credit-related into one place. Right now, credit information is scattered across Billing (balance + history), Boost Marketplace (spend), and AgencyBoost/DeveloperBoost (dedicated boost page). The credit wallet becomes the single destination for:
 
-### Bug 1 — `project_views` wrong timestamp column (critical)
+- **Credit balance** with expiry warnings
+- **Transaction history** (existing `CreditHistoryTable`, already complete)
+- **Buy credits** shortcut (links to `/pricing#credits`)
+- **Expiry timeline** — visual breakdown of which credits expire when
+- **Boost Marketplace** embedded inline — spend credits without leaving the page
 
-The hook queries `project_views` using `.gte('viewed_at', ...)` but the `project_views` table has **no `viewed_at` column** — it uses `created_at`. This means every project boost's view count silently returns 0. Property boosts are fine (`property_views` correctly has `viewed_at`).
-
-**Fix:** Change `viewed_at` → `created_at` in the `project_views` count query.
-
-### Bug 2 — Entity-level boosts fall through without metrics (silent gap)
-
-Four products (`agency_directory_featured`, `developer_directory_featured`, `email_digest_sponsored`, `budget_tool_sponsor`) use `target_type = 'agency'` or `target_type = 'developer'` — not `'property'` or `'project'`. The hook's if/else only handles `'property'` and `'project'`, so entity-level boosts always show 0 views, 0 saves, 0 inquiries.
-
-Entity-level boosts don't have per-listing metrics (no view table to query), but they can show **inquiries generated during the boost window** — using `property_inquiries` (for agency) or `project_inquiries` (for developer) filtered by entity ownership and date range.
-
-**Fix:** Add a third branch for entity-level boosts that counts total entity inquiries during the boost window (as a proxy for "leads while boosted"). Views and saves stay 0 for entity-level since the product boosts the entity profile/directory slot, not a specific listing.
-
-### Bug 3 — `totalCreditsSpent` counts `credit_cost` per boost, but entity-level boosts aren't deducted per-listing
-
-This is actually correct — `credit_cost` from `visibility_products` is the right denominator. No change needed here.
-
-### Bug 4 — `avgViewsPerBoost` denominator includes entity-level boosts (which have 0 views)
-
-Because entity-level boosts always have `viewsDuringBoost = 0`, including them in the average dilutes the metric for listing-level boosts. The average should be computed only over boosts that *can* have views (i.e., `target_type === 'property'` or `target_type === 'project'`).
-
-**Fix:** Filter to only listing-level boosts when computing `avgViewsPerBoost`.
+The `/agency/boost` and `/developer/boost` pages already exist and can remain (they're linked from dashboards), but the new credits page gives them a richer home alongside balance and history.
 
 ---
 
-## What's Already Working (Do Not Change)
+## Page Layout
 
-- `BoostAnalyticsPanel.tsx` — UI, layout, skeleton states, empty state, chart, and table all render correctly. ✅
-- `active_boosts` RLS — entity owners can SELECT their own boosts. ✅  
-- `visibility_products` join — `*, visibility_products(name, slug, credit_cost)` works correctly. ✅
-- `property_views` query — uses `viewed_at` which is the correct column. ✅
-- `favorites` / `project_favorites` queries — both use `created_at`, correct. ✅
-- `monthlySpend` chart logic — correct. ✅
-- `activeBoostCount` / `completedBoostCount` — correct. ✅
+```text
+/agency/credits (or /developer/credits)
+┌─────────────────────────────────────────────────────────┐
+│  ← Agency Dashboard    [Coins icon] Credit Wallet        │
+├────────────────────────────┬────────────────────────────┤
+│  BALANCE HERO CARD         │  EXPIRY TIMELINE CARD       │
+│  ┌──────────────────────┐  │  ┌──────────────────────┐  │
+│  │  🔢 142 credits      │  │  │ Expiry schedule      │  │
+│  │  ≈ ₪2,840 value      │  │  │ • 50 expire Mar 31  │  │
+│  │  [Buy Credits ↗]     │  │  │ • 92 expire Apr 30  │  │
+│  └──────────────────────┘  │  └──────────────────────┘  │
+├────────────────────────────┴────────────────────────────┤
+│  TABS: [Transaction History]  [Spend Credits]            │
+│                                                          │
+│  Tab 1 → <CreditHistoryTable />  (already built)         │
+│  Tab 2 → <BoostMarketplace />    (already built)         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Implementation
+## Implementation Plan
 
-### One file to change: `src/hooks/useBoostAnalytics.ts`
+### Step 1 — Create shared `CreditWallet` component
 
-**Change A — Fix `project_views` column (line ~136)**
+One component, used by both agency and developer pages: `src/components/billing/CreditWallet.tsx`
 
-```typescript
-// BEFORE (bug):
-supabase.from('project_views')
-  .select('id', { count: 'exact', head: true })
-  .eq('project_id', boost.target_id)
-  .gte('viewed_at', boost.starts_at)   // ← wrong column
-  .lte('viewed_at', boost.ends_at)
+**Props**: `entityType: 'agency' | 'developer'`, `entityId: string | undefined`, `entityName: string`
 
-// AFTER:
-supabase.from('project_views')
-  .select('id', { count: 'exact', head: true })
-  .eq('project_id', boost.target_id)
-  .gte('created_at', boost.starts_at)  // ← correct column
-  .lte('created_at', boost.ends_at)
+**Sections**:
+
+**A. Balance Hero Card**
+- Uses `useSubscription()` for `creditBalance`
+- Uses `useExpiringCredits()` for nearest expiry warning
+- Large credit balance number + "≈ ₪X value" (creditBalance × 20)
+- Amber warning if any credits expire within 30 days
+- "Buy Credits" button linking to `/pricing#credits`
+- "Boost Marketplace" tab scrolls down to the Marketplace section
+
+**B. Expiry Timeline Card**
+- Uses `useExpiringCredits(entityType, entityId)` — already returns grouped sorted data
+- Renders a list of expiry groups: `• {amount} credits — expires {format(date, 'MMMM d, yyyy')} ({daysLeft} days)`
+- Color-coded: red ≤7 days, amber ≤30 days, muted otherwise
+- If no expiring credits: "All credits are non-expiring or you have no balance" in a muted state
+- Empty state if balance = 0
+
+**C. Tabbed Lower Section**
+
+Tab 1 — **Transaction History**: renders `<CreditHistoryTable />` (zero changes to that component)
+
+Tab 2 — **Spend Credits**: renders `<BoostMarketplace entityType={entityType} entityId={entityId} entityName={entityName} />` (zero changes to that component)
+
+---
+
+### Step 2 — Create `AgencyCredits` page
+
+`src/pages/agency/AgencyCredits.tsx`
+
+```
+← Back to Agency Dashboard  |  [Coins] Credit Wallet
 ```
 
-**Change B — Add entity-level boost branch (after the project block)**
+Uses `useMyAgency()` for entityId/name. Renders `<CreditWallet>`. Pattern matches `AgencyBoost.tsx` exactly.
 
-For boosts where `target_type` is `'agency'` or `'developer'`, count inquiries that came in during the boost window as a proxy ROI signal:
+---
 
-```typescript
-} else if (boost.target_type === 'agency') {
-  // Count property inquiries for this agency during boost window
-  const { count } = await supabase
-    .from('property_inquiries')
-    .select('id', { count: 'exact', head: true })
-    .eq('agency_id', entityId)
-    .gte('created_at', boost.starts_at)
-    .lte('created_at', boost.ends_at);
-  inquiriesDuringBoost = count || 0;
-} else if (boost.target_type === 'developer') {
-  // Count project inquiries for this developer during boost window
-  const { count } = await supabase
-    .from('project_inquiries')
-    .select('id', { count: 'exact', head: true })
-    .eq('developer_id', entityId)
-    .gte('created_at', boost.starts_at)
-    .lte('created_at', boost.ends_at);
-  inquiriesDuringBoost = count || 0;
-}
-```
+### Step 3 — Create `DeveloperCredits` page
 
-**Change C — Fix `avgViewsPerBoost` denominator**
+`src/pages/developer/DeveloperCredits.tsx`
+
+Uses `useDeveloperProfile()` for entityId/name. Renders `<CreditWallet>`. Pattern matches `DeveloperBoost.tsx` exactly.
+
+---
+
+### Step 4 — Register routes in `App.tsx`
+
+Add two lazy-loaded routes following the existing pattern:
 
 ```typescript
-// BEFORE:
-const avgViewsPerBoost = boostDetails.length > 0
-  ? Math.round(totalViews / boostDetails.length)
-  : 0;
+const AgencyCredits = lazy(() => import("./pages/agency/AgencyCredits"));
+const DeveloperCredits = lazy(() => import("./pages/developer/DeveloperCredits"));
 
-// AFTER — only count listing-level boosts in denominator:
-const listingBoosts = boostDetails.filter(
-  b => b.targetType === 'property' || b.targetType === 'project'
-);
-const avgViewsPerBoost = listingBoosts.length > 0
-  ? Math.round(totalViews / listingBoosts.length)
-  : 0;
+// In routes:
+<Route path="/agency/credits" element={
+  <ProtectedRoute><AgencyCredits /></ProtectedRoute>
+} />
+<Route path="/developer/credits" element={
+  <ProtectedRoute requiredRole="developer"><DeveloperCredits /></ProtectedRoute>
+} />
 ```
+
+---
+
+### Step 5 — Update entry points to link to the new page
+
+Update "Buy Credits" links in **four existing components** to point to `/agency/credits` or `/developer/credits` instead of the generic `/pricing#credits`:
+
+| Component | Current link | New behavior |
+|---|---|---|
+| `BoostMarketplace.tsx` | `billingPath` (billing page) | Change "Buy Credits" → `/agency/credits` or `/developer/credits` |
+| `SubscriptionStatusCard.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
+| `BillingSection.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
+| `BoostDialog.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
+
+Since `SubscriptionStatusCard`, `BillingSection`, and `BoostDialog` all use `useSubscription()` internally, they can derive the entity type and build the path: `/${sub.entityType === 'agency' ? 'agency' : 'developer'}/credits`.
 
 ---
 
 ## Files Summary
 
-| File | Type | Change |
+| File | Type | Description |
 |---|---|---|
-| `src/hooks/useBoostAnalytics.ts` | Edit | Fix `project_views` column (`viewed_at` → `created_at`); add entity-level boost branch for agency/developer inquiries; fix `avgViewsPerBoost` denominator |
-
-No DB migration needed. No schema changes. No new hooks. No UI changes.
+| `src/components/billing/CreditWallet.tsx` | **New** | Shared wallet component — balance hero, expiry timeline, tabbed history + marketplace |
+| `src/pages/agency/AgencyCredits.tsx` | **New** | Agency credits page wrapper |
+| `src/pages/developer/DeveloperCredits.tsx` | **New** | Developer credits page wrapper |
+| `src/App.tsx` | **Edit** | Add lazy imports + two new routes |
+| `src/components/billing/BoostMarketplace.tsx` | **Edit** | "Buy Credits" → link to `/agency/credits` or `/developer/credits` |
+| `src/components/billing/SubscriptionStatusCard.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
+| `src/components/billing/BillingSection.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
+| `src/components/billing/BoostDialog.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
 
 ---
 
 ## Technical Notes
 
-- **No test data in `active_boosts`** right now — the panel will still show the "No boosts yet" empty state until a real boost is activated. The fixes ensure data is accurate *when* boosts exist.
-- **Entity-level inquiry counts** are the best available proxy for directory/email boost ROI. There's no per-impression tracking for directory slots or email digest placements, so "inquiries during boost window" is the same heuristic used in `AgencyPerformanceInsights`.
-- **`property_inquiries.agency_id`** is populated by the `set_inquiry_agency_id` trigger on insert — confirmed in the DB triggers. Safe to filter by it.
-- **`project_inquiries.developer_id`** is a direct FK — confirmed in the table schema. Safe to filter by it.
-- The hook already passes `entityId` into scope — no additional parameters needed for the new entity-level branch.
+- **Zero new hooks needed**: `useSubscription`, `useExpiringCredits`, `CreditHistoryTable`, and `BoostMarketplace` already exist and cover all data needs.
+- **No DB changes**: purely a UI routing + composition change.
+- **`useExpiringCredits`** already returns sorted groups with `{ expiresAt, amount }` — the expiry timeline is a straightforward `.map()` over that data.
+- **Tab state**: the page uses a `defaultValue="history"` tab, with a `?tab=spend` query param supported via `useSearchParams` so the "Boost Marketplace" tab inside Billing can deep-link directly to the spend tab of the credits page.
+- **"Buy Credits" links**: these currently point to `/pricing#credits` (the public pricing page). The new credits page is a better destination for authenticated professionals — it shows balance context and lets them buy without leaving the authenticated dashboard. The `/pricing#credits` external link can remain as a secondary path.
