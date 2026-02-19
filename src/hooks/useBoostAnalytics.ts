@@ -132,8 +132,8 @@ export function useBoostAnalytics() {
                 .from('project_views')
                 .select('id', { count: 'exact', head: true })
                 .eq('project_id', boost.target_id)
-                .gte('viewed_at', boost.starts_at)
-                .lte('viewed_at', boost.ends_at),
+                .gte('created_at', boost.starts_at)
+                .lte('created_at', boost.ends_at),
               supabase
                 .from('project_favorites')
                 .select('id', { count: 'exact', head: true })
@@ -150,6 +150,24 @@ export function useBoostAnalytics() {
             viewsDuringBoost = viewsRes.count || 0;
             savesDuringBoost = savesRes.count || 0;
             inquiriesDuringBoost = inquiriesRes.count || 0;
+          } else if (boost.target_type === 'agency') {
+            // Count property inquiries for this agency during boost window
+            const { count } = await supabase
+              .from('property_inquiries')
+              .select('id', { count: 'exact', head: true })
+              .eq('agency_id', entityId)
+              .gte('created_at', boost.starts_at)
+              .lte('created_at', boost.ends_at);
+            inquiriesDuringBoost = count || 0;
+          } else if (boost.target_type === 'developer') {
+            // Count project inquiries for this developer during boost window
+            const { count } = await supabase
+              .from('project_inquiries')
+              .select('id', { count: 'exact', head: true })
+              .eq('developer_id', entityId)
+              .gte('created_at', boost.starts_at)
+              .lte('created_at', boost.ends_at);
+            inquiriesDuringBoost = count || 0;
           }
 
           return {
@@ -173,7 +191,10 @@ export function useBoostAnalytics() {
       // Calculate totals
       const totalCreditsSpent = boostDetails.reduce((sum, b) => sum + b.creditCost, 0);
       const totalViews = boostDetails.reduce((sum, b) => sum + b.viewsDuringBoost, 0);
-      const avgViewsPerBoost = boostDetails.length > 0 ? Math.round(totalViews / boostDetails.length) : 0;
+      const listingBoosts = boostDetails.filter(
+        b => b.targetType === 'property' || b.targetType === 'project'
+      );
+      const avgViewsPerBoost = listingBoosts.length > 0 ? Math.round(totalViews / listingBoosts.length) : 0;
 
       // Monthly spend breakdown
       const monthlyMap: Record<string, number> = {};
