@@ -57,6 +57,18 @@ export function PlanCard({
   const hasTrialPromo = promoResult?.valid && (promoResult.trialDays ?? 0) > 0;
   const trialDays = promoResult?.trialDays ?? 0;
 
+  const MONTHLY_CTA: Record<string, string> = {
+    starter: 'Start with Starter',
+    growth: 'Scale with Growth',
+    pro: 'Go Pro',
+  };
+
+  const ANNUAL_CTA: Record<string, string> = {
+    starter: 'Get Starter Annual',
+    growth: 'Get Growth Annual',
+    pro: 'Go Pro Annual',
+  };
+
   const ctaLabel = isCurrentPlan
     ? 'Current Plan'
     : loading
@@ -64,8 +76,8 @@ export function PlanCard({
       : hasTrialPromo
         ? `Start ${trialDays}-Day Free Trial`
         : billingCycle === 'annual'
-          ? 'Get Annual Plan'
-          : 'Subscribe';
+          ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
+          : (MONTHLY_CTA[tier] ?? 'Subscribe');
 
   const handleSubscribeClick = () => {
     if (billingCycle === 'annual') {
