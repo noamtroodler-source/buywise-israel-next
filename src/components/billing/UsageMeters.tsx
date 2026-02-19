@@ -103,21 +103,35 @@ export function UsageMeters({ entityType, authorType, profileId }: UsageMetersPr
             overageRate={seatRate}
           />
         )}
-        {blog.limit !== null && (
-          <div className="space-y-1.5">
-            <MeterRow
-              label="Blog Posts"
-              current={blog.used}
-              max={blog.limit}
-              suffix="this month"
-            />
-            {blog.used >= blog.limit && (
-              <p className="text-xs text-destructive font-medium">
-                Limit reached — resets {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
-              </p>
-            )}
-          </div>
-        )}
+        {blog.limit !== null && (() => {
+          const now = new Date();
+          const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const daysUntilReset = Math.ceil((resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const resetLabel = resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+          return (
+            <div className="space-y-1.5">
+              <MeterRow
+                label="Blog Posts"
+                current={blog.used}
+                max={blog.limit}
+              />
+              <div className="flex items-center justify-between">
+                {blog.used >= blog.limit ? (
+                  <p className="text-xs text-destructive font-medium">
+                    Limit reached — resets {resetLabel}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {blog.limit - blog.used} remaining this month
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         <Separator />
         <div className="flex items-center justify-between">
