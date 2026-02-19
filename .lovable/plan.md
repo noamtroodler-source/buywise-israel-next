@@ -1,81 +1,60 @@
 
-# Tier-Specific Plan Card CTAs
+# Buy More Credits Shortcut on Usage Meters
 
 ## What's Changing
 
-The `ctaLabel` in `PlanCard.tsx` currently resolves to the generic string `'Subscribe'` (monthly) or `'Get Annual Plan'` (annual) for all non-trial, non-current plans. A single targeted change in one file replaces those generic fallbacks with tier-aware, action-oriented labels.
+The `UsageMeters` card currently shows plan usage (listings, seats, blog posts) with no credit context and no way to buy more credits without navigating away. The user has to find the Billing page, then click "Buy Credits", which is three clicks minimum.
 
-## CTA Label Map
+The fix adds a **credit balance row with a "Buy More" button** directly at the bottom of the `UsageMeters` card — one click from the billing overview.
 
-The `tier` prop is already passed into `PlanCard` from `Pricing.tsx` (values: `'starter'`, `'growth'`, `'pro'`, `'enterprise'`). The enterprise card has its own fixed "Contact Sales" button so it is unaffected.
+## Design
 
-| Tier | Monthly label | Annual label |
-|---|---|---|
-| `starter` | Start with Starter | Get Starter Annual |
-| `growth` | Scale with Growth | Get Growth Annual |
-| `pro` | Go Pro | Go Pro Annual |
-| Enterprise | Contact Sales *(unchanged)* | — |
-
-The trial promo override (`Start {N}-Day Free Trial`) and `Current Plan` state keep their priority — they only apply when the user has an active promo or is already subscribed, so the new tier labels only surface in the normal purchase flow.
-
-## Priority Order (unchanged logic, new fallback labels)
-
-```
-isCurrentPlan    → "Current Plan"
-loading          → "Loading..."
-hasTrialPromo    → "Start {N}-Day Free Trial"
-billingCycle=annual → tier-specific annual label   ← NEW
-default (monthly)   → tier-specific monthly label  ← NEW
+```text
+┌──────────────────────────────────────────────────────┐
+│  📊 Plan Usage                                        │
+│                                                      │
+│  Listings     ████████░░  12/20                      │
+│  Team Seats   ████░░░░░░   3/5                       │
+│  Blog Posts   ██████████  10/10  ← limit reached     │
+│                                                      │
+│  ─────────────────────────────────────────────────  │
+│  ⚡ Credits   142              [Buy More Credits →]  │
+└──────────────────────────────────────────────────────┘
 ```
 
-## Implementation
+The credit row is:
+- Separated by a subtle `<Separator />` from the plan-limit meters (they're different resource types)
+- Left side: `⚡ Credits` label + current balance number in `font-semibold`
+- Right side: a compact `size="sm"` outline `Button` that links to `/{entityType}/credits` — the dedicated credit wallet page built in the previous session
+- Only renders if the user has a subscription (`sub` is already gated earlier in the component)
+- If the balance is zero, the credits number turns `text-destructive` to add urgency
 
-**One file to edit: `src/components/billing/PlanCard.tsx`**
+## Implementation — One File
 
-Replace the `ctaLabel` constant (currently lines 60–68):
+**`src/components/billing/UsageMeters.tsx`**
 
+Changes:
+1. Add imports: `Link` from `react-router-dom`, `Separator` from `@/components/ui/separator`, `Zap` and `ShoppingCart` from `lucide-react`, `Button` from `@/components/ui/button`
+2. Pass `entityType` down to the card footer (already available as a prop)
+3. After the existing `MeterRow` entries in `CardContent`, add a `<Separator />` and the credit row
+
+The `creditBalance` value comes from `useSubscription()` which is already called (`const { data: sub } = useSubscription()`). `sub.creditBalance` is available — zero extra hooks, zero extra API calls.
+
+The link target:
 ```typescript
-// Current (generic):
-const ctaLabel = isCurrentPlan
-  ? 'Current Plan'
-  : loading
-    ? 'Loading...'
-    : hasTrialPromo
-      ? `Start ${trialDays}-Day Free Trial`
-      : billingCycle === 'annual'
-        ? 'Get Annual Plan'
-        : 'Subscribe';
-
-// New (tier-aware):
-const MONTHLY_CTA: Record<string, string> = {
-  starter: 'Start with Starter',
-  growth: 'Scale with Growth',
-  pro: 'Go Pro',
-};
-
-const ANNUAL_CTA: Record<string, string> = {
-  starter: 'Get Starter Annual',
-  growth: 'Get Growth Annual',
-  pro: 'Go Pro Annual',
-};
-
-const ctaLabel = isCurrentPlan
-  ? 'Current Plan'
-  : loading
-    ? 'Loading...'
-    : hasTrialPromo
-      ? `Start ${trialDays}-Day Free Trial`
-      : billingCycle === 'annual'
-        ? (ANNUAL_CTA[tier] ?? 'Get Annual Plan')
-        : (MONTHLY_CTA[tier] ?? 'Subscribe');
+const creditsPath = entityType === 'agency' ? '/agency/credits' : '/developer/credits';
 ```
 
-The `?? 'Subscribe'` / `?? 'Get Annual Plan'` fallbacks ensure any future tier added to the DB without a matching entry gracefully degrades to the original text — no breakage.
+This matches the exact pattern already used in `BillingSection.tsx`, `BoostDialog.tsx`, and `SubscriptionStatusCard.tsx`.
+
+## Priority Ordering
+
+The credit row only shows when `sub` is truthy (the existing `if (!sub || sub.status === 'none') return null` guard already handles this). No additional condition needed.
 
 ## Files Summary
 
 | File | Type | Change |
 |---|---|---|
-| `src/components/billing/PlanCard.tsx` | Edit | Add `MONTHLY_CTA` and `ANNUAL_CTA` maps; replace generic fallback strings with tier-keyed lookups |
+| `src/components/billing/UsageMeters.tsx` | Edit | Add separator + credit balance row with "Buy More Credits" button at bottom of card |
 
-No route changes. No new components. No DB changes. No other files touched.
+No new components. No route changes. No DB changes. One file, ~12 lines added.
