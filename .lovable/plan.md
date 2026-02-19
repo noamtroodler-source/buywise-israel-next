@@ -1,149 +1,97 @@
 
-# Dedicated Credit Wallet Pages — `/agency/credits` & `/developer/credits`
+# Founding Program — Prominent First-Visit Experience
+
+## The Problem
+
+The current Founding Program promotion has two weak touchpoints:
+1. A small `FoundingBannerCard` inside the hero section — easily skimmed past because it sits between the headline and the promo code input, competing with other content
+2. `FoundingProgramSection` at the very bottom of a long page — only reached by scrollers
+
+First-time visitors price-shopping on `/pricing` have a high chance of missing the promo entirely, or only noticing it after already forming a negative price impression.
 
 ## What We're Building
 
-Two new pages that consolidate everything credit-related into one place. Right now, credit information is scattered across Billing (balance + history), Boost Marketplace (spend), and AgencyBoost/DeveloperBoost (dedicated boost page). The credit wallet becomes the single destination for:
+Two complementary surfaces that together ensure the offer is impossible to miss for first-time visitors, without annoying returning visitors:
 
-- **Credit balance** with expiry warnings
-- **Transaction history** (existing `CreditHistoryTable`, already complete)
-- **Buy credits** shortcut (links to `/pricing#credits`)
-- **Expiry timeline** — visual breakdown of which credits expire when
-- **Boost Marketplace** embedded inline — spend credits without leaving the page
+### 1. First-Visit Modal (appears once, auto-dismissed)
+A full Radix `Dialog` that pops up 1.2 seconds after the page loads — only on the very first visit (persisted via `localStorage` key `founding_modal_seen`). This mirrors the exact UX pattern already used by `CookieConsentBanner`.
 
-The `/agency/boost` and `/developer/boost` pages already exist and can remain (they're linked from dashboards), but the new credits page gives them a richer home alongside balance and history.
+**Modal content:**
+- Large Sparkles icon in a primary-tinted circle
+- `"Founding Program — Limited Time"` headline
+- 4 benefit rows with icons (60-day trial, 25% discount, 800 credits, case study)
+- Prominent `FOUNDING2026` code chip with one-click copy
+- Two CTAs: `"Activate Now" → scrolls to #founding` and `"View Plans" → closes modal`
+- X close button — dismissing also sets the localStorage key so it won't reappear
 
----
+**On mobile:** uses a bottom sheet `Vaul` drawer instead of a center dialog, matching the pattern already used elsewhere in the app.
 
-## Page Layout
+### 2. Sticky Promo Ribbon (replaces the flat FoundingBannerCard)
+The existing `FoundingBannerCard` inline card (which sits inside the hero and gets lost) is replaced with a sticky bar at the very top of the page — above the `<Header>` but inside the page context, not in `Layout`. 
+
+The ribbon is:
+- Full-width, `bg-primary text-primary-foreground`, 48px tall
+- Contains: `✦ Founding Program · 60-day free trial + 25% off + ₪16,000 in credits — Code: FOUNDING2026 [Copy] · [See details ↓]`  
+- Sticky: `position: sticky; top: 0; z-index: 40` — stays visible as user scrolls through the plan cards
+- Has an X button that dismisses it for the session (sessionStorage so it comes back on next fresh visit)
+- Nudges the promo code input to auto-populate `FOUNDING2026` when the user clicks "Activate Now"
+
+The old `FoundingBannerCard` component inside `Pricing.tsx` is removed.
+
+## Files to Change
+
+| File | Type | Change |
+|---|---|---|
+| `src/components/billing/FoundingProgramModal.tsx` | **New** | First-visit modal + mobile drawer with full benefit breakdown and code copy |
+| `src/components/billing/FoundingPromoRibbon.tsx` | **New** | Sticky top ribbon with code, copy button, and session-dismiss |
+| `src/pages/Pricing.tsx` | **Edit** | Remove `FoundingBannerCard`, add `<FoundingPromoRibbon>` above the hero, add `<FoundingProgramModal>`, wire auto-populate to promo code input |
+
+## Technical Details
+
+**localStorage key**: `founding_modal_seen` — set to `"1"` on first dismiss/CTA click. Checked on mount; if present, modal never shows.
+
+**sessionStorage key**: `founding_ribbon_dismissed` — set to `"1"` when X is clicked on the ribbon. Resets every browser session so the ribbon returns on the next fresh visit (intentional — the offer is time-limited and the ribbon is lightweight).
+
+**Auto-populate promo code**: The `FoundingProgramModal` receives `onActivate: (code: string) => void` prop. When user clicks "Activate Now", it calls `onActivate('FOUNDING2026')`, which sets `promoCode` state in `Pricing.tsx`, closes the modal, and scrolls to `#founding`. The promo code input then shows as pre-filled with the founding code and the user just needs to click a plan.
+
+**Timing**: Modal opens after 1,200ms (same as CookieConsentBanner's 1,500ms but slightly faster since it's the primary CTA on this page). The ribbon is visible immediately on render.
+
+**No conflict with CookieConsentBanner**: The modal is z-index 50, same as the dialog system. The cookie banner is z-index 50 at the bottom. They don't overlap visually.
+
+**Mobile**: The modal uses a conditional — on screens `< 640px`, renders `<Drawer>` from Vaul instead of `<Dialog>`, sliding up from the bottom. This is the same pattern used in `BoostDialog.tsx`.
+
+## Visual Design
 
 ```text
-/agency/credits (or /developer/credits)
-┌─────────────────────────────────────────────────────────┐
-│  ← Agency Dashboard    [Coins icon] Credit Wallet        │
-├────────────────────────────┬────────────────────────────┤
-│  BALANCE HERO CARD         │  EXPIRY TIMELINE CARD       │
-│  ┌──────────────────────┐  │  ┌──────────────────────┐  │
-│  │  🔢 142 credits      │  │  │ Expiry schedule      │  │
-│  │  ≈ ₪2,840 value      │  │  │ • 50 expire Mar 31  │  │
-│  │  [Buy Credits ↗]     │  │  │ • 92 expire Apr 30  │  │
-│  └──────────────────────┘  │  └──────────────────────┘  │
-├────────────────────────────┴────────────────────────────┤
-│  TABS: [Transaction History]  [Spend Credits]            │
-│                                                          │
-│  Tab 1 → <CreditHistoryTable />  (already built)         │
-│  Tab 2 → <BoostMarketplace />    (already built)         │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ ✦ Founding Program · 60-day trial · Code: FOUNDING2026 [Copy]  [See details ↓]  ✕ │  ← Sticky ribbon (primary bg)
+├─────────────────────────────────────────────────────┤
+│                    <Header />                        │
+│                    <Hero>                            │
+│                      Plans & Pricing                 │
+│                      [Promo code: FOUNDING2026 ✓]   │ ← auto-filled
+│                    </Hero>                           │
+│                    ...plan cards...                  │
+└─────────────────────────────────────────────────────┘
+
+Modal (first visit, 1.2s delay):
+┌─────────────────────────────────────────┐
+│  ✕                                      │
+│       ✦  Founding Program               │
+│       Limited Time — Early Access       │
+│                                         │
+│  ✓ 60-day free trial, any plan          │
+│  ✓ 25% off for 10 months                │
+│  ✓ 800 visibility credits (~₪16,000)    │
+│  ✓ Featured case study on launch        │
+│                                         │
+│  Your promo code:                       │
+│  ┌─────────────────────┐               │
+│  │  FOUNDING2026  [⎘]  │               │
+│  └─────────────────────┘               │
+│                                         │
+│  [Activate Now →]  [View Plans]         │
+└─────────────────────────────────────────┘
 ```
 
----
-
-## Implementation Plan
-
-### Step 1 — Create shared `CreditWallet` component
-
-One component, used by both agency and developer pages: `src/components/billing/CreditWallet.tsx`
-
-**Props**: `entityType: 'agency' | 'developer'`, `entityId: string | undefined`, `entityName: string`
-
-**Sections**:
-
-**A. Balance Hero Card**
-- Uses `useSubscription()` for `creditBalance`
-- Uses `useExpiringCredits()` for nearest expiry warning
-- Large credit balance number + "≈ ₪X value" (creditBalance × 20)
-- Amber warning if any credits expire within 30 days
-- "Buy Credits" button linking to `/pricing#credits`
-- "Boost Marketplace" tab scrolls down to the Marketplace section
-
-**B. Expiry Timeline Card**
-- Uses `useExpiringCredits(entityType, entityId)` — already returns grouped sorted data
-- Renders a list of expiry groups: `• {amount} credits — expires {format(date, 'MMMM d, yyyy')} ({daysLeft} days)`
-- Color-coded: red ≤7 days, amber ≤30 days, muted otherwise
-- If no expiring credits: "All credits are non-expiring or you have no balance" in a muted state
-- Empty state if balance = 0
-
-**C. Tabbed Lower Section**
-
-Tab 1 — **Transaction History**: renders `<CreditHistoryTable />` (zero changes to that component)
-
-Tab 2 — **Spend Credits**: renders `<BoostMarketplace entityType={entityType} entityId={entityId} entityName={entityName} />` (zero changes to that component)
-
----
-
-### Step 2 — Create `AgencyCredits` page
-
-`src/pages/agency/AgencyCredits.tsx`
-
-```
-← Back to Agency Dashboard  |  [Coins] Credit Wallet
-```
-
-Uses `useMyAgency()` for entityId/name. Renders `<CreditWallet>`. Pattern matches `AgencyBoost.tsx` exactly.
-
----
-
-### Step 3 — Create `DeveloperCredits` page
-
-`src/pages/developer/DeveloperCredits.tsx`
-
-Uses `useDeveloperProfile()` for entityId/name. Renders `<CreditWallet>`. Pattern matches `DeveloperBoost.tsx` exactly.
-
----
-
-### Step 4 — Register routes in `App.tsx`
-
-Add two lazy-loaded routes following the existing pattern:
-
-```typescript
-const AgencyCredits = lazy(() => import("./pages/agency/AgencyCredits"));
-const DeveloperCredits = lazy(() => import("./pages/developer/DeveloperCredits"));
-
-// In routes:
-<Route path="/agency/credits" element={
-  <ProtectedRoute><AgencyCredits /></ProtectedRoute>
-} />
-<Route path="/developer/credits" element={
-  <ProtectedRoute requiredRole="developer"><DeveloperCredits /></ProtectedRoute>
-} />
-```
-
----
-
-### Step 5 — Update entry points to link to the new page
-
-Update "Buy Credits" links in **four existing components** to point to `/agency/credits` or `/developer/credits` instead of the generic `/pricing#credits`:
-
-| Component | Current link | New behavior |
-|---|---|---|
-| `BoostMarketplace.tsx` | `billingPath` (billing page) | Change "Buy Credits" → `/agency/credits` or `/developer/credits` |
-| `SubscriptionStatusCard.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
-| `BillingSection.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
-| `BoostDialog.tsx` | `/pricing#credits` | Update to use entity-aware credits path |
-
-Since `SubscriptionStatusCard`, `BillingSection`, and `BoostDialog` all use `useSubscription()` internally, they can derive the entity type and build the path: `/${sub.entityType === 'agency' ? 'agency' : 'developer'}/credits`.
-
----
-
-## Files Summary
-
-| File | Type | Description |
-|---|---|---|
-| `src/components/billing/CreditWallet.tsx` | **New** | Shared wallet component — balance hero, expiry timeline, tabbed history + marketplace |
-| `src/pages/agency/AgencyCredits.tsx` | **New** | Agency credits page wrapper |
-| `src/pages/developer/DeveloperCredits.tsx` | **New** | Developer credits page wrapper |
-| `src/App.tsx` | **Edit** | Add lazy imports + two new routes |
-| `src/components/billing/BoostMarketplace.tsx` | **Edit** | "Buy Credits" → link to `/agency/credits` or `/developer/credits` |
-| `src/components/billing/SubscriptionStatusCard.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
-| `src/components/billing/BillingSection.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
-| `src/components/billing/BoostDialog.tsx` | **Edit** | "Buy Credits" → entity-aware credits path |
-
----
-
-## Technical Notes
-
-- **Zero new hooks needed**: `useSubscription`, `useExpiringCredits`, `CreditHistoryTable`, and `BoostMarketplace` already exist and cover all data needs.
-- **No DB changes**: purely a UI routing + composition change.
-- **`useExpiringCredits`** already returns sorted groups with `{ expiresAt, amount }` — the expiry timeline is a straightforward `.map()` over that data.
-- **Tab state**: the page uses a `defaultValue="history"` tab, with a `?tab=spend` query param supported via `useSearchParams` so the "Boost Marketplace" tab inside Billing can deep-link directly to the spend tab of the credits page.
-- **"Buy Credits" links**: these currently point to `/pricing#credits` (the public pricing page). The new credits page is a better destination for authenticated professionals — it shows balance context and lets them buy without leaving the authenticated dashboard. The `/pricing#credits` external link can remain as a secondary path.
+No DB changes. No new hooks. No new routes.
