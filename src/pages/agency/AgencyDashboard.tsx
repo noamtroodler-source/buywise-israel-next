@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Building2, Users, Home, Eye, Plus, Copy, Check, Loader2, 
   UserPlus, Settings, ExternalLink, ArrowLeft, BadgeCheck, Clock, Hash,
-  FileText, Megaphone, Mail, PenLine, CreditCard, Zap
+  FileText, Megaphone, Mail, PenLine, CreditCard, Star
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   useAgencyInvites,
 } from '@/hooks/useAgencyManagement';
 import { useAgencyAnnouncements } from '@/hooks/useAgencyAnnouncements';
+import { useFeaturedListings } from '@/hooks/useFeaturedListings';
 import { useMyBlogPosts, useSubmitForReview, useDeleteBlogPost } from '@/hooks/useProfessionalBlog';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { BlogArticleTable } from '@/components/blog/BlogArticleTable';
@@ -47,6 +48,7 @@ export default function AgencyDashboard() {
   const { data: invites = [] } = useAgencyInvites(agency?.id);
   const { data: stats } = useAgencyStats(agency?.id);
   const { data: announcements = [] } = useAgencyAnnouncements(agency?.id);
+  const { data: featuredListings = [] } = useFeaturedListings(agency?.id);
   const { data: blogPosts = [], isLoading: postsLoading } = useMyBlogPosts('agency', agency?.id);
   const { used: blogQuotaUsed, limit: blogQuotaLimit, canSubmit: canSubmitBlog } = useBlogQuotaCheck('agency', agency?.id);
   const submitForReview = useSubmitForReview();
@@ -180,6 +182,12 @@ export default function AgencyDashboard() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                  <Link to="/agency/featured">
+                    <Star className="h-4 w-4 mr-2" />
+                    Featured
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/settings">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings
@@ -236,41 +244,36 @@ export default function AgencyDashboard() {
           {/* Onboarding Progress */}
           <AgencyOnboardingProgress agency={agency} teamCount={team.length} listingsCount={stats?.activeListings} />
 
-          {/* Homepage Listing Opportunities */}
+          {/* Featured Listings Summary */}
           <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Home className="h-5 w-5 text-primary" />
-                Homepage Listing Opportunities
+                <Star className="h-5 w-5 text-primary" />
+                Featured Listings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                BuyWise Israel features a small number of resale and rental listings on the homepage, rotating weekly.
+                Feature your listings across BuyWise Israel for ₪299/month each. Featured listings get priority placement and a "Featured" badge.
               </p>
-              <p className="text-sm text-muted-foreground">
-                All homepage placements are curated and reviewed based on quality and relevance for international buyers.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Availability, fit, and pricing vary by listing.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                To inquire about homepage exposure for a specific property, contact:
-              </p>
-              
-              <div className="pt-2 border-t border-border/50">
-                <a 
-                  href="mailto:hello@buywiseisrael.com" 
-                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                >
-                  <Mail className="h-4 w-4" />
-                  hello@buywiseisrael.com
-                </a>
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-2xl font-bold">{featuredListings.length}</p>
+                  <p className="text-xs text-muted-foreground">Active</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    ₪{(featuredListings.filter(fl => !fl.is_free_credit).length * 299).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Monthly</p>
+                </div>
               </div>
-              
-              <p className="text-xs text-muted-foreground/70 pt-1">
-                Homepage exposure does not include guaranteed placement, ranking, or performance metrics.
-              </p>
+              <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
+                <Link to="/agency/featured">
+                  <Star className="h-4 w-4 mr-2" />
+                  Manage Featured Listings
+                </Link>
+              </Button>
             </CardContent>
           </Card>
 
