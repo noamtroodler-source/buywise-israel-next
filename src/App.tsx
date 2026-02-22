@@ -96,8 +96,6 @@ const AgencyNewPropertyWizard = lazy(() => import("./pages/agency/AgencyNewPrope
 const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPropertyWizard"));
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
-const AgencyBoost = lazy(() => import("./pages/agency/AgencyBoost"));
-const AgencyCredits = lazy(() => import("./pages/agency/AgencyCredits"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));
@@ -111,8 +109,6 @@ const EditProjectWizard = lazy(() => import("./pages/developer/EditProjectWizard
 const DeveloperBlog = lazy(() => import("./pages/developer/DeveloperBlog"));
 const DeveloperBlogWizard = lazy(() => import("./pages/developer/DeveloperBlogWizard"));
 const DeveloperBillingPage = lazy(() => import("./pages/developer/DeveloperBilling"));
-const DeveloperBoost = lazy(() => import("./pages/developer/DeveloperBoost"));
-const DeveloperCredits = lazy(() => import("./pages/developer/DeveloperCredits"));
 
 // Admin - lazy load (rarely visited by regular users)
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -141,9 +137,7 @@ const HeroImageGenerator = lazy(() => import("./pages/admin/HeroImageGenerator")
 const HeroPreview = lazy(() => import("./pages/admin/HeroPreview"));
 const ImportNeighborhoods = lazy(() => import("./pages/admin/ImportNeighborhoods"));
 const AdminClientErrors = lazy(() => import("./pages/admin/AdminClientErrors"));
-const AdminBoosts = lazy(() => import("./pages/admin/AdminBoosts"));
 const AdminEnterpriseInquiries = lazy(() => import("./pages/admin/AdminEnterpriseInquiries"));
-const AdminOverages = lazy(() => import("./pages/admin/AdminOverages"));
 // Global query client config for optimal caching
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -360,16 +354,6 @@ const App = () => (
                             <AgencyBilling />
                           </ProtectedRoute>
                         } />
-                        <Route path="/agency/boost" element={
-                          <ProtectedRoute>
-                            <AgencyBoost />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/agency/credits" element={
-                          <ProtectedRoute>
-                            <AgencyCredits />
-                          </ProtectedRoute>
-                        } />
                         
                         {/* Developer routes */}
                         <Route path="/developer/register" element={
@@ -432,16 +416,6 @@ const App = () => (
                             <DeveloperBillingPage />
                           </ProtectedRoute>
                         } />
-                        <Route path="/developer/boost" element={
-                          <ProtectedRoute requiredRole="developer">
-                            <DeveloperBoost />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/developer/credits" element={
-                          <ProtectedRoute requiredRole="developer">
-                            <DeveloperCredits />
-                          </ProtectedRoute>
-                        } />
                         
                         {/* Admin routes */}
                         <Route path="/admin/hero-images" element={<HeroImageGenerator />} />
@@ -474,9 +448,7 @@ const App = () => (
                           <Route path="sold-transactions" element={<AdminSoldTransactions />} />
                           <Route path="import-neighborhoods" element={<ImportNeighborhoods />} />
                           <Route path="errors" element={<AdminClientErrors />} />
-                          <Route path="boosts" element={<AdminBoosts />} />
                           <Route path="enterprise-inquiries" element={<AdminEnterpriseInquiries />} />
-                          <Route path="overages" element={<AdminOverages />} />
                         </Route>
                         
                         <Route path="*" element={<NotFound />} />

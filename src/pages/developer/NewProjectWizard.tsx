@@ -14,7 +14,6 @@ import { useDeveloperProfile } from '@/hooks/useDeveloperProfile';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { ProjectSubmittedDialog } from '@/components/developer/ProjectSubmittedDialog';
-import { OverageConsentBanner } from '@/components/billing/OverageConsentBanner';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 

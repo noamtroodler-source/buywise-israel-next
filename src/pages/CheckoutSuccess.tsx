@@ -8,11 +8,9 @@ import confetti from 'canvas-confetti';
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
-  const isCredits = searchParams.get('type') === 'credits';
   const isAnnual = searchParams.get('cycle') === 'annual';
 
   useEffect(() => {
-    // Fire confetti
     const duration = 2000;
     const end = Date.now() + duration;
     const frame = () => {
@@ -35,14 +33,12 @@ export default function CheckoutSuccess() {
             <CheckCircle className="h-10 w-10 text-primary" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-3">
-            {isCredits ? 'Credits Purchased!' : 'Subscription Active!'}
+            Subscription Active!
           </h1>
           <p className="text-muted-foreground mb-4">
-            {isCredits
-              ? 'Your credits have been added to your account and are ready to use.'
-              : 'Welcome aboard! Your subscription is now active and you can start using all the features of your plan.'}
+            Welcome aboard! Your subscription is now active and you can start using all the features of your plan.
           </p>
-          {isAnnual && !isCredits && (
+          {isAnnual && (
             <div className="flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/20 px-4 py-3 mb-6 text-left">
               <CalendarClock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <p className="text-sm text-muted-foreground">

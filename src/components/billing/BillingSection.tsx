@@ -1,20 +1,16 @@
 import { Link } from 'react-router-dom';
-import { CreditCard, Zap, ArrowUpRight, ExternalLink, Loader2, Calendar, Clock, AlertTriangle } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { CreditCard, ArrowUpRight, ExternalLink, Loader2, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useExpiringCredits } from '@/hooks/useExpiringCredits';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { CreditHistoryTable } from './CreditHistoryTable';
 
 export function BillingSection() {
   const { data: sub, isLoading } = useSubscription();
-  const { data: expiringCredits } = useExpiringCredits(sub?.entityType, sub?.entityId);
   const [portalLoading, setPortalLoading] = useState(false);
 
   const openBillingPortal = async () => {
@@ -53,7 +49,6 @@ export function BillingSection() {
   const hasSubscription = sub.status !== 'none';
 
   return (
-    <>
     <Card className="rounded-2xl border-border hover:shadow-lg hover:border-primary/30 transition-all">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
@@ -62,7 +57,7 @@ export function BillingSection() {
           </div>
           <div>
             <CardTitle>Billing & Subscription</CardTitle>
-            <CardDescription>Manage your plan and credits</CardDescription>
+            <CardDescription>Manage your plan</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -105,51 +100,12 @@ export function BillingSection() {
           )}
         </div>
 
-        {/* Credit Balance */}
-        <div className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">Credit Balance</span>
-            </div>
-            <span className="text-lg font-bold text-foreground">{sub.creditBalance}</span>
-          </div>
-          {expiringCredits && expiringCredits.length > 0 && (
-            <div className="space-y-1 pt-1 border-t border-border/40">
-              {expiringCredits.map((group) => {
-                const daysLeft = differenceInDays(new Date(group.expiresAt), new Date());
-                const isUrgent = daysLeft <= 7;
-                return (
-                  <p
-                    key={group.expiresAt}
-                    className={`text-xs flex items-center gap-1.5 ${isUrgent ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}
-                  >
-                    {isUrgent ? (
-                      <AlertTriangle className="h-3 w-3 shrink-0" />
-                    ) : (
-                      <Clock className="h-3 w-3 shrink-0" />
-                    )}
-                    {group.amount} credits expiring {daysLeft <= 0 ? 'today' : `in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
-                    {` (${format(new Date(group.expiresAt), 'MMM d')})`}
-                  </p>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild className="rounded-xl">
             <Link to="/pricing">
               <ArrowUpRight className="h-4 w-4 mr-1.5" />
               {hasSubscription ? 'Change Plan' : 'View Plans'}
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild className="rounded-xl">
-            <Link to={sub.entityType === 'agency' ? '/agency/credits' : '/developer/credits'}>
-              <Zap className="h-4 w-4 mr-1.5" />
-              Buy Credits
             </Link>
           </Button>
           {hasSubscription && (
@@ -171,9 +127,5 @@ export function BillingSection() {
         </div>
       </CardContent>
     </Card>
-
-    {/* Credit History */}
-    <CreditHistoryTable />
-    </>
   );
 }

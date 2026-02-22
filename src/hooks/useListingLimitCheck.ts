@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from './useSubscription';
 import { useAuth } from './useAuth';
-import { useOverageRate } from './useOverageRecords';
+
 
 // Tier upgrade mapping
 const NEXT_TIER: Record<string, string> = {
@@ -19,7 +19,7 @@ export interface ListingLimitResult {
   isLoading: boolean;
   needsSubscription: boolean;
   nextTierName: string | null;
-  overageRate: number | null;
+  overageRate?: number | null;
   usagePercent: number;
 }
 
@@ -69,10 +69,8 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
     enabled: !!user,
   });
 
-  const resourceType = entityType === 'developer' ? 'project' : 'listing';
-  const { data: overageRate = null, isLoading: rateLoading } = useOverageRate(entityType, resourceType);
 
-  const isLoading = subLoading || countLoading || rateLoading;
+  const isLoading = subLoading || countLoading;
   const maxListings = sub?.maxListings ?? null;
   const needsSubscription = !sub || sub.status === 'none';
   const tier = sub?.tier || '';
@@ -89,5 +87,5 @@ export function useListingLimitCheck(entityType: 'agency' | 'developer'): Listin
     ? false
     : true; // Always allowed with subscription (overage charges apply when over limit)
 
-  return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate, usagePercent };
+  return { canCreate, isOverLimit, currentCount, maxListings, isLoading, needsSubscription, nextTierName, overageRate: null, usagePercent };
 }

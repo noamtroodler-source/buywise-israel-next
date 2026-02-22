@@ -14,7 +14,6 @@ export interface SubscriptionData {
   trialEnd: string | null;
   trialStart: string | null;
   canceledAt: string | null;
-  creditBalance: number;
   maxListings: number | null;
   maxSeats: number | null;
   maxBlogsPerMonth: number | null;
@@ -64,13 +63,6 @@ export function useSubscription() {
         .limit(1)
         .maybeSingle();
 
-      // Fetch credit balance
-      const { data: balanceData } = await supabase.rpc('get_credit_balance', {
-        p_entity_type: entity.entityType,
-        p_entity_id: entity.entityId,
-      });
-
-      const creditBalance = (balanceData as number) || 0;
 
       if (!sub) {
         return {
@@ -85,7 +77,6 @@ export function useSubscription() {
           trialEnd: null,
           trialStart: null,
           canceledAt: null,
-          creditBalance,
           maxListings: null,
           maxSeats: null,
           maxBlogsPerMonth: null,
@@ -106,7 +97,6 @@ export function useSubscription() {
         trialEnd: sub.trial_end,
         trialStart: sub.trial_start,
         canceledAt: sub.canceled_at,
-        creditBalance,
         maxListings: plan?.max_listings || null,
         maxSeats: plan?.max_seats || null,
         maxBlogsPerMonth: plan?.max_blogs_per_month || null,

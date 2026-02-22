@@ -180,12 +180,6 @@ export default function AgencyDashboard() {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
-                  <Link to="/agency/boost">
-                    <Zap className="h-4 w-4 mr-2" />
-                    Boost
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild className="rounded-xl border-primary/20 hover:bg-primary/5">
                   <Link to="/agency/settings">
                     <Settings className="h-4 w-4 mr-2" />
                     Settings

@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, BarChart3, Home, Zap } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MessageSquare, TrendingUp, Loader2, Calendar, BarChart3, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAgentProperties } from '@/hooks/useAgentProperties';
 import { useAgentAnalytics, DateRangeFilter } from '@/hooks/useAgentAnalytics';
 import { InquiryPieChart, PropertyPerformanceChart, FunnelMetrics } from '@/components/agent/analytics';
-import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
 import {
   Select,
   SelectContent,
@@ -144,10 +143,6 @@ export default function AgentAnalytics() {
                   <BarChart3 className="h-4 w-4" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="boosts" className="rounded-lg gap-2">
-                  <Zap className="h-4 w-4" />
-                  Boosts
-                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6 mt-6">
@@ -266,9 +261,6 @@ export default function AgentAnalytics() {
                 </motion.div>
               </TabsContent>
 
-              <TabsContent value="boosts" className="mt-6">
-                <BoostAnalyticsPanel />
-              </TabsContent>
             </Tabs>
           </motion.div>
         </div>

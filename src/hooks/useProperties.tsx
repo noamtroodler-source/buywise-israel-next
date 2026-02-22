@@ -3,40 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
 
 /**
- * Helper: fetch boosted properties by product slug, excluding already-included IDs.
+ * Helper: fetch featured property IDs from the featured_listings table.
  * Returns properties with _isBoosted flag set.
  */
-async function fetchBoostedProperties(
-  productSlug: string,
+async function fetchFeaturedProperties(
   excludeIds: Set<string>
 ): Promise<Property[]> {
-  const { data: product } = await supabase
-    .from('visibility_products')
-    .select('id')
-    .eq('slug', productSlug)
-    .eq('is_active', true)
-    .maybeSingle();
+  const { data: featured } = await supabase
+    .from('featured_listings')
+    .select('property_id')
+    .eq('is_active', true);
 
-  if (!product) return [];
-
-  const { data: boosts } = await supabase
-    .from('active_boosts')
-    .select('target_id')
-    .eq('product_id', product.id)
-    .eq('target_type', 'property')
-    .eq('is_active', true)
-    .gt('ends_at', new Date().toISOString());
-
-  const boostedIds = (boosts ?? [])
-    .map(b => b.target_id)
+  const featuredIds = (featured ?? [])
+    .map(f => f.property_id)
     .filter(id => !excludeIds.has(id));
 
-  if (!boostedIds.length) return [];
+  if (!featuredIds.length) return [];
 
   const { data, error } = await supabase
     .from('properties')
     .select(`*, agent:agents(*)`)
-    .in('id', boostedIds)
+    .in('id', featuredIds)
     .eq('is_published', true);
 
   if (error) return [];
@@ -388,8 +375,8 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         adminProperties.forEach(p => adminIds.add(p.id));
       }
 
-      // Merge boosted listings
-      const boostedProperties = await fetchBoostedProperties('homepage_sale_featured', adminIds);
+      // Merge featured listings
+      const boostedProperties = await fetchFeaturedProperties(adminIds);
       const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
       return merged;
     },
@@ -440,8 +427,8 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
         adminProperties.forEach(p => adminIds.add(p.id));
       }
 
-      // Merge boosted listings
-      const boostedProperties = await fetchBoostedProperties('homepage_rent_featured', adminIds);
+      // Merge featured listings
+      const boostedProperties = await fetchFeaturedProperties(adminIds);
       const merged = [...adminProperties, ...boostedProperties].slice(0, 8);
       return merged;
     },
@@ -473,8 +460,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
   return useQuery({
     queryKey: ['properties', 'city-featured', cityName, limit],
     queryFn: async () => {
-      // Fetch city_spotlight boosted properties first
-      const boosted = await fetchBoostedProperties('city_spotlight', new Set());
+      const boosted = await fetchFeaturedProperties(new Set());
       // Filter boosted to this city
       const cityBoosted = boosted.filter(p => 
         p.city?.toLowerCase().includes(cityName.toLowerCase())

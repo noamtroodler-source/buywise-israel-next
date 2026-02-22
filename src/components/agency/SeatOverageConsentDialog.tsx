@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useOverageRate } from '@/hooks/useOverageRecords';
+
 
 interface SeatOverageConsentDialogProps {
   open: boolean;
@@ -31,8 +31,7 @@ export function SeatOverageConsentDialog({
   isLoading,
 }: SeatOverageConsentDialogProps) {
   const [accepted, setAccepted] = useState(false);
-  const { data: liveRate } = useOverageRate('agency', 'seat');
-  const rate = liveRate ?? 100;
+  const rate = 100;
 
   const handleConfirm = () => {
     onConfirm();

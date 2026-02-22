@@ -155,41 +155,14 @@ export function useFeaturedProjects() {
         adminProjects.forEach(p => adminIds.add(p.id));
       }
 
-      // Merge boosted projects — query hero and secondary products separately
-      const now = new Date().toISOString();
-      const [{ data: heroProduct }, { data: secondaryProduct }] = await Promise.all([
-        supabase.from('visibility_products').select('id').eq('slug', 'homepage_project_hero').eq('is_active', true).maybeSingle(),
-        supabase.from('visibility_products').select('id').eq('slug', 'homepage_project_secondary').eq('is_active', true).maybeSingle(),
-      ]);
+      // Merge featured projects from featured_listings
+      const { data: featuredListings } = await supabase
+        .from('featured_listings')
+        .select('property_id')
+        .eq('is_active', true);
 
-      const [heroBoosts, secondaryBoosts] = await Promise.all([
-        heroProduct
-          ? supabase.from('active_boosts').select('target_id').eq('product_id', heroProduct.id).eq('target_type', 'project').eq('is_active', true).gt('ends_at', now)
-          : Promise.resolve({ data: [] }),
-        secondaryProduct
-          ? supabase.from('active_boosts').select('target_id').eq('product_id', secondaryProduct.id).eq('target_type', 'project').eq('is_active', true).gt('ends_at', now)
-          : Promise.resolve({ data: [] }),
-      ]);
-
-      const boostedHeroIds = ((heroBoosts.data ?? []).map(b => b.target_id)).filter(id => !adminIds.has(id));
-      const boostedSecondaryIds = ((secondaryBoosts.data ?? []).map(b => b.target_id)).filter(id => !adminIds.has(id));
-      const allBoostedIds = [...new Set([...boostedHeroIds, ...boostedSecondaryIds])];
-
-      if (allBoostedIds.length > 0) {
-        const { data: boostedData } = await supabase
-          .from('projects')
-          .select(`*, developer:developer_id (*)`)
-          .in('id', allBoostedIds)
-          .eq('is_published', true);
-
-        const boostedMap = new Map((boostedData ?? []).map(p => [p.id, { ...p, _isBoosted: true }]));
-
-        // hero-boosted projects fill slot 0, secondary fill slots 1-2, after admin slots
-        const heroProjects = boostedHeroIds.map(id => boostedMap.get(id)).filter(Boolean) as Project[];
-        const secondaryProjects = boostedSecondaryIds.map(id => boostedMap.get(id)).filter(Boolean) as Project[];
-
-        adminProjects = [...adminProjects, ...heroProjects, ...secondaryProjects].slice(0, 8);
-      }
+      // featured_listings is for properties, not projects — skip merging for now
+      // Projects use admin homepage_featured_slots only
 
       return adminProjects;
     },
