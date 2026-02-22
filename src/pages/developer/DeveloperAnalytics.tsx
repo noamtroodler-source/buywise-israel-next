@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDeveloperAnalytics, DateRangeFilter } from '@/hooks/useDeveloperAnalytics';
 import { ProjectEngagementTable, HourlyActivityChart, InquirySourcesChart } from '@/components/developer/analytics';
-import { BoostAnalyticsPanel } from '@/components/billing/BoostAnalyticsPanel';
 import {
   Select,
   SelectContent,

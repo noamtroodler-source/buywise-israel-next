@@ -20,7 +20,6 @@ import { useCreateProperty, useAgentProfile } from '@/hooks/useAgentProperties';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { SaveStatusIndicator } from '@/components/shared/SaveStatusIndicator';
 import { PropertySubmittedDialog } from '@/components/agent/PropertySubmittedDialog';
-import { OverageConsentBanner } from '@/components/billing/OverageConsentBanner';
 import { useListingLimitCheck } from '@/hooks/useListingLimitCheck';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -51,7 +50,7 @@ function WizardContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [submittedTitle, setSubmittedTitle] = useState('');
-  const [overageAccepted, setOverageAccepted] = useState(false);
+  const [overageAccepted, setOverageAccepted] = useState(true);
   
   // Check if agent is verified (status is 'active')
   const isAgentVerified = agentProfile?.status === 'active';
@@ -217,10 +216,6 @@ function WizardContent() {
               </div>
             </motion.div>
 
-            {/* Listing Limit / Overage Consent */}
-            <motion.div variants={itemVariants}>
-              <OverageConsentBanner entityType="agency" onConsentChange={setOverageAccepted} />
-            </motion.div>
 
             {/* Progress */}
             <motion.div variants={itemVariants}>

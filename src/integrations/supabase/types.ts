@@ -14,69 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      active_boosts: {
-        Row: {
-          created_at: string
-          credit_transaction_id: string | null
-          ends_at: string
-          entity_id: string
-          entity_type: string
-          id: string
-          is_active: boolean
-          product_id: string
-          slot_position: number | null
-          starts_at: string
-          target_id: string
-          target_type: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          credit_transaction_id?: string | null
-          ends_at: string
-          entity_id: string
-          entity_type: string
-          id?: string
-          is_active?: boolean
-          product_id: string
-          slot_position?: number | null
-          starts_at?: string
-          target_id: string
-          target_type: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          credit_transaction_id?: string | null
-          ends_at?: string
-          entity_id?: string
-          entity_type?: string
-          id?: string
-          is_active?: boolean
-          product_id?: string
-          slot_position?: number | null
-          starts_at?: string
-          target_id?: string
-          target_type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "active_boosts_credit_transaction_id_fkey"
-            columns: ["credit_transaction_id"]
-            isOneToOne: false
-            referencedRelation: "credit_transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "active_boosts_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "visibility_products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       admin_audit_log: {
         Row: {
           action: string
@@ -1594,90 +1531,6 @@ export type Database = {
         }
         Relationships: []
       }
-      credit_packages: {
-        Row: {
-          bonus_percent: number
-          created_at: string
-          credits_included: number
-          id: string
-          is_active: boolean
-          name: string
-          price_ils: number
-          sort_order: number
-          stripe_price_id: string | null
-          stripe_product_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          bonus_percent?: number
-          created_at?: string
-          credits_included: number
-          id?: string
-          is_active?: boolean
-          name: string
-          price_ils: number
-          sort_order?: number
-          stripe_price_id?: string | null
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          bonus_percent?: number
-          created_at?: string
-          credits_included?: number
-          id?: string
-          is_active?: boolean
-          name?: string
-          price_ils?: number
-          sort_order?: number
-          stripe_price_id?: string | null
-          stripe_product_id?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      credit_transactions: {
-        Row: {
-          amount: number
-          balance_after: number
-          created_at: string
-          credit_type: string
-          description: string | null
-          entity_id: string
-          entity_type: string
-          expires_at: string | null
-          id: string
-          reference_id: string | null
-          transaction_type: string
-        }
-        Insert: {
-          amount: number
-          balance_after?: number
-          created_at?: string
-          credit_type?: string
-          description?: string | null
-          entity_id: string
-          entity_type: string
-          expires_at?: string | null
-          id?: string
-          reference_id?: string | null
-          transaction_type: string
-        }
-        Update: {
-          amount?: number
-          balance_after?: number
-          created_at?: string
-          credit_type?: string
-          description?: string | null
-          entity_id?: string
-          entity_type?: string
-          expires_at?: string | null
-          id?: string
-          reference_id?: string | null
-          transaction_type?: string
-        }
-        Relationships: []
-      }
       developer_notifications: {
         Row: {
           action_url: string | null
@@ -2104,6 +1957,159 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      featured_listings: {
+        Row: {
+          agency_id: string
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_free_credit: boolean
+          property_id: string
+          started_at: string
+        }
+        Insert: {
+          agency_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_free_credit?: boolean
+          property_id: string
+          started_at?: string
+        }
+        Update: {
+          agency_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_free_credit?: boolean
+          property_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_listings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "featured_listings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "featured_listings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founding_featured_credits: {
+        Row: {
+          credits_granted: number
+          credits_used: number
+          expires_at: string
+          founding_partner_id: string
+          granted_at: string
+          id: string
+          month_number: number
+        }
+        Insert: {
+          credits_granted?: number
+          credits_used?: number
+          expires_at: string
+          founding_partner_id: string
+          granted_at?: string
+          id?: string
+          month_number: number
+        }
+        Update: {
+          credits_granted?: number
+          credits_used?: number
+          expires_at?: string
+          founding_partner_id?: string
+          granted_at?: string
+          id?: string
+          month_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_featured_credits_founding_partner_id_fkey"
+            columns: ["founding_partner_id"]
+            isOneToOne: false
+            referencedRelation: "founding_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founding_partners: {
+        Row: {
+          agency_id: string
+          created_at: string
+          discount_locked: boolean
+          discount_percent: number
+          exclusivity_ends_at: string | null
+          free_credits_duration_months: number
+          free_credits_per_month: number
+          id: string
+          is_active: boolean
+          notes: string | null
+          option: string
+          started_at: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          discount_locked?: boolean
+          discount_percent?: number
+          exclusivity_ends_at?: string | null
+          free_credits_duration_months: number
+          free_credits_per_month?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          option: string
+          started_at?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          discount_locked?: boolean
+          discount_percent?: number
+          exclusivity_ends_at?: string | null
+          free_credits_duration_months?: number
+          free_credits_per_month?: number
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          option?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_partners_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "founding_partners_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       funnel_exit_feedback: {
         Row: {
@@ -2995,33 +3001,6 @@ export type Database = {
           risk_level?: string | null
           track_type?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      overage_rates: {
-        Row: {
-          created_at: string
-          effective_from: string
-          entity_type: string
-          id: string
-          rate_ils: number
-          resource_type: string
-        }
-        Insert: {
-          created_at?: string
-          effective_from?: string
-          entity_type: string
-          id?: string
-          rate_ils: number
-          resource_type: string
-        }
-        Update: {
-          created_at?: string
-          effective_from?: string
-          entity_type?: string
-          id?: string
-          rate_ils?: number
-          resource_type?: string
         }
         Relationships: []
       }
@@ -5135,51 +5114,6 @@ export type Database = {
         }
         Relationships: []
       }
-      visibility_products: {
-        Row: {
-          applies_to: string
-          created_at: string
-          credit_cost: number
-          description: string | null
-          duration_days: number
-          id: string
-          is_active: boolean
-          max_slots: number | null
-          name: string
-          slug: string
-          sort_order: number | null
-          updated_at: string
-        }
-        Insert: {
-          applies_to?: string
-          created_at?: string
-          credit_cost: number
-          description?: string | null
-          duration_days: number
-          id?: string
-          is_active?: boolean
-          max_slots?: number | null
-          name: string
-          slug: string
-          sort_order?: number | null
-          updated_at?: string
-        }
-        Update: {
-          applies_to?: string
-          created_at?: string
-          credit_cost?: number
-          description?: string | null
-          duration_days?: number
-          id?: string
-          is_active?: boolean
-          max_slots?: number | null
-          name?: string
-          slug?: string
-          sort_order?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       agencies_public: {
@@ -5255,20 +5189,12 @@ export type Database = {
         Args: { _agent_user_id: string; _profile_id: string }
         Returns: boolean
       }
-      get_active_boost_count: {
-        Args: { p_product_id: string }
-        Returns: number
-      }
       get_city_property_counts: {
         Args: { p_listing_status: string }
         Returns: {
           city: string
           count: number
         }[]
-      }
-      get_credit_balance: {
-        Args: { p_entity_id: string; p_entity_type: string }
-        Returns: number
       }
       get_nearby_sold_comps: {
         Args: {
@@ -5307,29 +5233,6 @@ export type Database = {
       increment_promo_redemptions: {
         Args: { p_promo_id: string }
         Returns: undefined
-      }
-      record_credit_purchase: {
-        Args: {
-          p_amount: number
-          p_credit_type?: string
-          p_description?: string
-          p_entity_id: string
-          p_entity_type: string
-          p_expires_at?: string
-          p_reference_id?: string
-          p_transaction_type: string
-        }
-        Returns: string
-      }
-      spend_credits: {
-        Args: {
-          p_amount: number
-          p_description?: string
-          p_entity_id: string
-          p_entity_type: string
-          p_reference_id?: string
-        }
-        Returns: string
       }
       use_agency_invite_code: { Args: { invite_code: string }; Returns: string }
       validate_agency_invite_code: {

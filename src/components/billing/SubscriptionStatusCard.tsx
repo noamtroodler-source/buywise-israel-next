@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom';
-import { CreditCard, Zap, ArrowUpRight, Calendar } from 'lucide-react';
+import { CreditCard, ArrowUpRight, Calendar } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from '@/hooks/useSubscription';
 import { differenceInDays, format } from 'date-fns';
-
 
 export function SubscriptionStatusCard() {
   const { data: sub, isLoading } = useSubscription();
@@ -59,10 +58,6 @@ export function SubscriptionStatusCard() {
                     Renews {format(new Date(sub.currentPeriodEnd), 'MMM d, yyyy')}
                   </span>
                 )}
-                <span className="flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  {sub.creditBalance} credits
-                </span>
               </div>
             </div>
           </div>
@@ -72,12 +67,6 @@ export function SubscriptionStatusCard() {
               <Link to="/pricing">
                 <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
                 {hasSubscription ? 'Upgrade' : 'View Plans'}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild className="rounded-xl text-xs">
-              <Link to={sub.entityType === 'agency' ? '/agency/credits' : '/developer/credits'}>
-                <Zap className="h-3.5 w-3.5 mr-1" />
-                Buy Credits
               </Link>
             </Button>
           </div>

@@ -16,7 +16,6 @@ import { NoPlanBanner } from '@/components/billing/NoPlanBanner';
 import { UsageMeters } from '@/components/billing/UsageMeters';
 
 import { useAdvertiserTracking } from '@/hooks/useAdvertiserTracking';
-import { ActiveBoostBadge } from '@/components/billing/ActiveBoostBadge';
 import { useBlogQuotaCheck } from '@/hooks/useBlogQuota';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -123,12 +122,6 @@ export default function DeveloperDashboard() {
                 <Link to="/developer/billing">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Billing
-                </Link>
-              </Button>
-              <Button variant="outline" asChild className="rounded-xl">
-                <Link to="/developer/boost">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Boost
                 </Link>
               </Button>
               <Button variant="outline" asChild className="rounded-xl">
@@ -437,7 +430,6 @@ export default function DeveloperDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <ActiveBoostBadge targetType="project" targetId={project.id} />
                           <Badge 
                             variant="secondary"
                             className={`

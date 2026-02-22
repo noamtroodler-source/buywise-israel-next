@@ -53,27 +53,16 @@ export function usePaginatedProperties(
     staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
   });
 
-  // Fetch boosted property IDs for search priority (page 1 only)
+  // Fetch featured property IDs for search priority (page 1 only)
   const { data: boostedIds = [] } = useQuery({
-    queryKey: ['properties', 'search-boost-ids'],
+    queryKey: ['properties', 'featured-ids'],
     queryFn: async () => {
-      const { data: product } = await supabase
-        .from('visibility_products')
-        .select('id')
-        .eq('slug', 'search_priority')
-        .eq('is_active', true)
-        .maybeSingle();
-      if (!product) return [] as string[];
+      const { data: featured } = await supabase
+        .from('featured_listings')
+        .select('property_id')
+        .eq('is_active', true);
 
-      const { data: boosts } = await supabase
-        .from('active_boosts')
-        .select('target_id')
-        .eq('product_id', product.id)
-        .eq('target_type', 'property')
-        .eq('is_active', true)
-        .gt('ends_at', new Date().toISOString());
-
-      return (boosts ?? []).map(b => b.target_id);
+      return (featured ?? []).map(f => f.property_id);
     },
     staleTime: 60_000,
   });

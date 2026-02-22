@@ -4,25 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Project } from '@/types/projects';
 import { ProjectFiltersType } from '@/components/filters/ProjectFilters';
 
-async function fetchBoostedProjectIds(): Promise<string[]> {
-  const { data: product } = await supabase
-    .from('visibility_products')
-    .select('id')
-    .eq('slug', 'projects_boost')
-    .eq('is_active', true)
-    .maybeSingle();
-
-  if (!product) return [];
-
-  const { data: boosts } = await supabase
-    .from('active_boosts')
-    .select('target_id')
-    .eq('product_id', product.id)
-    .eq('target_type', 'project')
-    .eq('is_active', true)
-    .gt('ends_at', new Date().toISOString());
-
-  return (boosts ?? []).map(b => b.target_id);
+async function fetchFeaturedProjectIds(): Promise<string[]> {
+  // Projects don't use featured_listings (that's for properties)
+  // Return empty for now — projects use admin-curated homepage_featured_slots
+  return [];
 }
 
 const DEFAULT_PAGE_SIZE = 24;
@@ -76,8 +61,8 @@ export function usePaginatedProjects(
 
   // Fetch boosted project IDs (page-1 only, cached 5 min)
   const { data: boostedIds = [] } = useQuery({
-    queryKey: ['projects', 'boosted-ids'],
-    queryFn: fetchBoostedProjectIds,
+    queryKey: ['projects', 'featured-ids'],
+    queryFn: fetchFeaturedProjectIds,
     staleTime: 5 * 60 * 1000,
   });
 
