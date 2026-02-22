@@ -178,10 +178,8 @@ function WizardContent() {
               </div>
             </motion.div>
 
-            {/* Listing Limit / Overage Consent */}
-            <motion.div variants={itemVariants}>
-              <OverageConsentBanner entityType="developer" onConsentChange={setOverageAccepted} />
-            </motion.div>
+
+
 
             {/* Progress */}
             <motion.div variants={itemVariants}>

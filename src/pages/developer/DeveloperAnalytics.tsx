@@ -3,7 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Eye, Heart, MousePointerClick, MessageSquare, Mail, Calendar, BarChart3, Zap } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, MousePointerClick, MessageSquare, Mail, Calendar, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDeveloperAnalytics, DateRangeFilter } from '@/hooks/useDeveloperAnalytics';
@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const dateRangeOptions: { value: DateRangeFilter; label: string }[] = [
   { value: '7d', label: 'Last 7 days' },
@@ -26,7 +25,7 @@ const dateRangeOptions: { value: DateRangeFilter; label: string }[] = [
 
 export default function DeveloperAnalytics() {
   const [dateRange, setDateRange] = useState<DateRangeFilter>('30d');
-  const [activeTab, setActiveTab] = useState('overview');
+  
   const { data: analytics, isLoading } = useDeveloperAnalytics(dateRange);
 
   return (
@@ -61,8 +60,7 @@ export default function DeveloperAnalytics() {
                 </div>
               </div>
 
-              {activeTab === 'overview' && (
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-xl bg-muted/50 flex items-center justify-center">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                   </div>
@@ -79,24 +77,13 @@ export default function DeveloperAnalytics() {
                     </SelectContent>
                   </Select>
                 </div>
-              )}
             </div>
           </motion.div>
 
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="rounded-xl bg-muted/50">
-              <TabsTrigger value="overview" className="rounded-lg gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="boosts" className="rounded-lg gap-2">
-                <Zap className="h-4 w-4" />
-                Boosts
-              </TabsTrigger>
-            </TabsList>
+          {/* Content */}
+          <div className="space-y-8 mt-6">
 
-            <TabsContent value="overview" className="space-y-8 mt-6">
+            <div className="space-y-8">
               {/* Stats Grid - 5 cards */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -225,12 +212,9 @@ export default function DeveloperAnalytics() {
                   <ProjectEngagementTable data={analytics?.projectEngagement || []} />
                 )}
               </motion.div>
-            </TabsContent>
+            </div>
 
-            <TabsContent value="boosts" className="mt-6">
-              <BoostAnalyticsPanel />
-            </TabsContent>
-          </Tabs>
+          </div>
         </div>
       </div>
     </Layout>
