@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CreditCard, Receipt } from 'lucide-react';
+import { ArrowLeft, CreditCard, Receipt, Star } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,9 +10,15 @@ import { FoundingMemberBanner } from '@/components/billing/FoundingMemberBanner'
 import { UpgradePromptCard } from '@/components/billing/UpgradePromptCard';
 import { InvoiceHistoryTable } from '@/components/billing/InvoiceHistoryTable';
 import { useMyAgency } from '@/hooks/useAgencyManagement';
+import { useFeaturedListings } from '@/hooks/useFeaturedListings';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button as UiButton } from '@/components/ui/button';
 
 export default function AgencyBilling() {
   const { data: agency } = useMyAgency();
+  const { data: featuredListings = [] } = useFeaturedListings(agency?.id);
+  const paidCount = featuredListings.filter(fl => !fl.is_free_credit).length;
+  const monthlyCost = paidCount * 299;
 
   return (
     <Layout>
@@ -52,6 +58,29 @@ export default function AgencyBilling() {
               <div className="space-y-6">
                 <UsageMeters entityType="agency" authorType="agency" profileId={agency?.id} />
                 <UpgradePromptCard entityType="agency" />
+
+                {/* Featured Listings Summary */}
+                <Card className="rounded-2xl border-primary/10 bg-gradient-to-br from-primary/5 to-transparent">
+                  <CardContent className="p-5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-primary" />
+                      <span className="font-medium text-sm">Featured Listings</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="text-xl font-bold">{featuredListings.length}</p>
+                        <p className="text-xs text-muted-foreground">Active</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-bold">₪{monthlyCost.toLocaleString()}/mo</p>
+                        <p className="text-xs text-muted-foreground">Monthly cost</p>
+                      </div>
+                    </div>
+                    <UiButton variant="outline" size="sm" asChild className="rounded-xl border-primary/20">
+                      <Link to="/agency/featured">Manage Featured</Link>
+                    </UiButton>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>

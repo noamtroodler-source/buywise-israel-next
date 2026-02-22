@@ -96,6 +96,7 @@ const AgencyNewPropertyWizard = lazy(() => import("./pages/agency/AgencyNewPrope
 const AgencyEditPropertyWizard = lazy(() => import("./pages/agency/AgencyEditPropertyWizard"));
 const AgencyBlogWizard = lazy(() => import("./pages/agency/AgencyBlogWizard"));
 const AgencyBilling = lazy(() => import("./pages/agency/AgencyBilling"));
+const AgencyFeatured = lazy(() => import("./pages/agency/AgencyFeatured"));
 
 // Developer dashboard - lazy load
 const DeveloperRegister = lazy(() => import("./pages/developer/DeveloperRegister"));
@@ -352,6 +353,11 @@ const App = () => (
                         <Route path="/agency/billing" element={
                           <ProtectedRoute>
                             <AgencyBilling />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/agency/featured" element={
+                          <ProtectedRoute>
+                            <AgencyFeatured />
                           </ProtectedRoute>
                         } />
                         
