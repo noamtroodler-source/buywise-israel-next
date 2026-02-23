@@ -15,6 +15,7 @@ import { History, Search, Bell, MapPin, RotateCcw, BookOpen, Home, Compass, Calc
 import { ListingsGrid } from '@/components/listings/ListingsGrid';
 import { BackToTopButton } from '@/components/shared/BackToTopButton';
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { PullToRefresh } from '@/components/shared/PullToRefresh';
 import { MobileListingsSkeletonGrid } from '@/components/shared/MobilePropertySkeleton';
 import { EnhancedEmptyState } from '@/components/shared/EnhancedEmptyState';
@@ -392,6 +393,8 @@ export default function Listings() {
           </EnhancedEmptyState>
         )}
       </div>
+
+      <ListingDisclaimer variant="search" className="py-6" />
 
       {/* Back to Top Button */}
       <BackToTopButton />
