@@ -266,12 +266,12 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
             </div>
           )}
 
-          {agent?.avatar_url && (
+          {(agent?.agency?.logo_url || agent?.avatar_url) && (
             <div className="absolute bottom-2 right-2 z-10">
               <Avatar className="h-6 w-6 ring-2 ring-background">
-                <AvatarImage src={agent.avatar_url} alt={agent.name} />
+                <AvatarImage src={agent.agency?.logo_url ?? agent.avatar_url!} alt={agent.agency?.name ?? agent.name} />
                 <AvatarFallback className="text-[10px]">
-                  {agent.name?.charAt(0)}
+                  {(agent.agency?.name ?? agent.name)?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
             </div>

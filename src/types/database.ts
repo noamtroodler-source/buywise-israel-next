@@ -45,6 +45,8 @@ export interface Agent {
   bio: string | null;
   license_number: string | null;
   agency_name: string | null;
+  agency_id: string | null;
+  agency?: { id: string; name: string; logo_url: string | null } | null;
   years_experience: number;
   languages: string[];
   specializations: string[] | null;

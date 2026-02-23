@@ -75,7 +75,7 @@ export function usePaginatedProperties(
       
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*)`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true);
 
       // Exclude boosted IDs from organic results (page 1 only to avoid dupes)
@@ -102,7 +102,7 @@ export function usePaginatedProperties(
       if (!boostedIds.length) return [] as Property[];
       const { data, error } = await supabase
         .from('properties')
-        .select(`*, agent:agents(*)`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .in('id', boostedIds)
         .eq('is_published', true);
       if (error) return [] as Property[];

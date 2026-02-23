@@ -22,7 +22,7 @@ async function fetchFeaturedProperties(
 
   const { data, error } = await supabase
     .from('properties')
-    .select(`*, agent:agents(*)`)
+    .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
     .in('id', featuredIds)
     .eq('is_published', true);
 
@@ -148,7 +148,7 @@ export function useProperties(filters?: PropertyFilters) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*)
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .order('created_at', { ascending: false });
@@ -290,7 +290,7 @@ export function useFeaturedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*)
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .eq('is_featured', true)
@@ -311,7 +311,7 @@ export function useProperty(id: string) {
         .from('properties')
         .select(`
           *,
-          agent:agents(*)
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('id', id)
         .maybeSingle();
@@ -349,7 +349,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*)`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
           .in('id', propertyIds)
           .eq('is_published', true);
 
@@ -363,7 +363,7 @@ export function useFeaturedSaleProperties(options?: FeaturedPropertiesOptions) {
         // Fallback to old is_featured system
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*)`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
           .eq('is_published', true)
           .eq('is_featured', true)
           .eq('listing_status', 'for_sale')
@@ -403,7 +403,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
         const propertyIds = slots.map(s => s.entity_id);
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*)`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
           .in('id', propertyIds)
           .eq('is_published', true);
 
@@ -415,7 +415,7 @@ export function useFeaturedRentalProperties(options?: FeaturedPropertiesOptions)
       } else {
         const { data, error } = await supabase
           .from('properties')
-          .select(`*, agent:agents(*)`)
+          .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
           .eq('is_published', true)
           .eq('is_featured', true)
           .eq('listing_status', 'for_rent')
@@ -444,7 +444,7 @@ export function useRecommendedProperties() {
         .from('properties')
         .select(`
           *,
-          agent:agents(*)
+          agent:agents(*, agency:agencies(id, name, logo_url))
         `)
         .eq('is_published', true)
         .order('views_count', { ascending: false })
@@ -473,7 +473,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
       // Get featured properties for this city
       let query = supabase
         .from('properties')
-        .select(`*, agent:agents(*)`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
         .ilike('city', `%${cityName}%`)
         .eq('is_featured', true)
@@ -494,7 +494,7 @@ export function useCityFeaturedProperties(cityName: string, limit: number = 8) {
       const excludeIds = combined.map(p => p.id);
       let additionalQuery = supabase
         .from('properties')
-        .select(`*, agent:agents(*)`)
+        .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true)
         .ilike('city', `%${cityName}%`)
         .order('views_count', { ascending: false })
