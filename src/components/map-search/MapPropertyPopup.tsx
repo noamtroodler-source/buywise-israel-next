@@ -1,4 +1,5 @@
 import { memo, useCallback, useRef } from 'react';
+import { useTouchSwipe } from '@/hooks/useTouchSwipe';
 import { Link } from 'react-router-dom';
 import { Popup } from 'react-leaflet';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
@@ -83,6 +84,12 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
     goTo((indexRef.current + 1) % totalImages);
   }, [totalImages, goTo]);
 
+  const touchHandlers = useTouchSwipe({
+    onSwipeLeft: () => goTo((indexRef.current + 1) % totalImages),
+    onSwipeRight: () => goTo((indexRef.current - 1 + totalImages) % totalImages),
+    threshold: 30,
+  });
+
   const badge = getStatusBadge(property);
 
   const stats = [
@@ -122,7 +129,7 @@ export const MapPropertyPopup = memo(function MapPropertyPopup({ property, onClo
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image carousel – stacked crossfade, no layout shifts */}
-        <div className="relative w-full h-[140px] overflow-hidden rounded-t-lg bg-muted">
+        <div className="relative w-full h-[140px] overflow-hidden rounded-t-lg bg-muted" {...touchHandlers}>
           {images.map((img, i) => (
             <img
               key={i}
