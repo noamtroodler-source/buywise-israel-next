@@ -43,6 +43,15 @@ export function usePaginatedProperties(
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
 
+      // Commute filter: resolve qualifying cities first
+      if (filters?.commute_destination && filters?.max_commute_minutes) {
+        const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
+        const { data: cc } = await supabase.from('cities').select('name').not(column, 'is', null).lte(column, filters.max_commute_minutes);
+        const cityNames = (cc ?? []).map(c => c.name);
+        if (cityNames.length === 0) return 0;
+        query = query.in('city', cityNames);
+      }
+
       query = applyFilters(query, filters);
 
       const { count, error } = await query;
@@ -50,7 +59,7 @@ export function usePaginatedProperties(
       return count ?? 0;
     },
     placeholderData: keepPreviousData,
-    staleTime: 5 * 60 * 1000, // 5 minutes - properties don't change frequently
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch featured property IDs for search priority (page 1 only)
@@ -77,6 +86,15 @@ export function usePaginatedProperties(
         .from('properties')
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true);
+
+      // Commute filter: resolve qualifying cities first
+      if (filters?.commute_destination && filters?.max_commute_minutes) {
+        const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
+        const { data: cc } = await supabase.from('cities').select('name').not(column, 'is', null).lte(column, filters.max_commute_minutes);
+        const cityNames = (cc ?? []).map(c => c.name);
+        if (cityNames.length === 0) return [] as Property[];
+        query = query.in('city', cityNames);
+      }
 
       // Exclude boosted IDs from organic results (page 1 only to avoid dupes)
       if (page === 1 && boostedIds.length > 0) {
