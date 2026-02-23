@@ -62,6 +62,15 @@ export function MapListPanel({
   onClearFilters,
 }: MapListPanelProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  useEffect(() => {
+    if (!hoveredPropertyId) return;
+    const el = cardRefs.current.get(hoveredPropertyId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [hoveredPropertyId]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -134,24 +143,38 @@ export function MapListPanel({
                 const project = item.data as Project;
                 const itemId = `project-${project.id}`;
                 return (
-                  <MapProjectCard
+                  <div
                     key={itemId}
-                    project={project}
-                    isHovered={hoveredPropertyId === itemId}
-                    onHover={() => onCardHover?.(itemId)}
-                    onHoverEnd={() => onCardHover?.(null)}
-                  />
+                    ref={(el) => {
+                      if (el) cardRefs.current.set(itemId, el);
+                      else cardRefs.current.delete(itemId);
+                    }}
+                  >
+                    <MapProjectCard
+                      project={project}
+                      isHovered={hoveredPropertyId === itemId}
+                      onHover={() => onCardHover?.(itemId)}
+                      onHoverEnd={() => onCardHover?.(null)}
+                    />
+                  </div>
                 );
               }
               const property = item.data as Property;
               return (
-                <MapListCard
+                <div
                   key={property.id}
-                  property={property}
-                  isHovered={hoveredPropertyId === property.id}
-                  onHover={() => onCardHover?.(property.id)}
-                  onHoverEnd={() => onCardHover?.(null)}
-                />
+                  ref={(el) => {
+                    if (el) cardRefs.current.set(property.id, el);
+                    else cardRefs.current.delete(property.id);
+                  }}
+                >
+                  <MapListCard
+                    property={property}
+                    isHovered={hoveredPropertyId === property.id}
+                    onHover={() => onCardHover?.(property.id)}
+                    onHoverEnd={() => onCardHover?.(null)}
+                  />
+                </div>
               );
             })}
             {hasNextPage && <div ref={sentinelRef} className="col-span-2 h-1" />}
