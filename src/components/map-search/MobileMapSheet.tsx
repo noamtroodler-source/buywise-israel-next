@@ -3,6 +3,7 @@ import { Drawer as DrawerPrimitive } from 'vaul';
 import { MapPin } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { MobileCardCarousel } from './MobileCardCarousel';
 import { MapListCard } from './MapListCard';
 import { MapProjectCard } from './MapProjectCard';
@@ -25,6 +26,7 @@ interface MobileMapSheetProps {
   items: MapItem[];
   totalCount: number;
   isLoading: boolean;
+  isFetching?: boolean;
   hasNextPage: boolean;
   loadMore: () => void;
   sortBy: SortOption;
@@ -39,6 +41,7 @@ export function MobileMapSheet({
   items,
   totalCount,
   isLoading,
+  isFetching = false,
   hasNextPage,
   loadMore,
   sortBy,
@@ -81,6 +84,10 @@ export function MobileMapSheet({
           <div className="flex justify-center pt-2 pb-1">
             <div className="h-1.5 w-10 rounded-full bg-muted" />
           </div>
+
+          {isFetching && !isLoading && (
+            <Progress className="h-0.5 rounded-none" indicatorClassName="bg-primary" />
+          )}
 
           <div className="flex items-center justify-between px-4 pb-2">
             <span className="text-sm font-semibold text-foreground">

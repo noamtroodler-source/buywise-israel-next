@@ -108,7 +108,6 @@ export default function MapSearchLayout() {
     setFilter('status', type);
   }, [setFilter]);
 
-
   const handlePolygonChange = useCallback((polygon: Polygon | null) => {
     setDrawnPolygon(polygon);
     setFilter('polygon', polygon ? serializePolygon(polygon) : null);
@@ -145,7 +144,6 @@ export default function MapSearchLayout() {
 
   const listingType = urlFilters.status === 'projects' ? 'for_sale' : urlFilters.status;
 
-  // Property filters (skip when projects-only)
   const mergedPropertyFilters: PropertyFilters = useMemo(() => {
     const { city, ...filtersWithoutCity } = componentFilters;
     return {
@@ -164,7 +162,6 @@ export default function MapSearchLayout() {
     loadMore: propertiesLoadMore,
   } = usePaginatedProperties(mergedPropertyFilters);
 
-  // Project filters — fetch when status is 'for_sale' or 'projects'
   const shouldFetchProjects = urlFilters.status === 'for_sale' || urlFilters.status === 'projects';
 
   const projectFilters: PropertyFilters = useMemo(() => {
@@ -186,7 +183,6 @@ export default function MapSearchLayout() {
     loadMore: projectsLoadMore,
   } = useMapProjects(projectFilters, { enabled: shouldFetchProjects });
 
-  // Client-side polygon filter
   const properties = useMemo(() => {
     if (!drawnPolygon) return rawProperties;
     return rawProperties.filter((p) => {
@@ -204,7 +200,6 @@ export default function MapSearchLayout() {
     });
   }, [rawProjects, drawnPolygon, shouldFetchProjects]);
 
-  // Merged items for the list
   const items: MapItem[] = useMemo(() => {
     return mergeIntoMapItems(properties, projects, componentFilters.sort_by);
   }, [properties, projects, componentFilters.sort_by]);
@@ -261,6 +256,8 @@ export default function MapSearchLayout() {
               hoveredPropertyId={hoveredPropertyId}
               onMarkerHover={handleMarkerHover}
               onPolygonChange={handlePolygonChange}
+              isFetching={isFetching}
+              isLoading={isLoading}
               listingStatus={listingType}
               cityFilter={urlFilters.city}
               initialCenter={initialCenter}
@@ -303,6 +300,8 @@ export default function MapSearchLayout() {
           hoveredPropertyId={hoveredPropertyId}
           onMarkerHover={handleMarkerHover}
           onPolygonChange={handlePolygonChange}
+          isFetching={isFetching}
+          isLoading={isLoading}
           listingStatus={listingType}
           cityFilter={urlFilters.city}
           initialCenter={initialCenter}
@@ -325,6 +324,7 @@ export default function MapSearchLayout() {
           items={items}
           totalCount={drawnPolygon ? items.length : totalCount}
           isLoading={isLoading}
+          isFetching={isFetching}
           hasNextPage={hasNextPage}
           loadMore={loadMore}
           sortBy={(urlFilters.sortBy as SortOption) || 'newest'}

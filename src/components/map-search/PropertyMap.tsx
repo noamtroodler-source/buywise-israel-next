@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { GoogleMap } from '@react-google-maps/api';
 import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 import { MapToolbar } from './MapToolbar';
+import { MapLoadingIndicator } from './MapLoadingIndicator';
 import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
 import { SavedPlacesLayer } from './SavedPlacesLayer';
@@ -42,6 +43,8 @@ interface PropertyMapProps {
   searchAsMove?: boolean;
   onSearchThisArea?: () => void;
   onPolygonChange?: (polygon: Polygon | null) => void;
+  isFetching?: boolean;
+  isLoading?: boolean;
   listingStatus?: string;
   cityFilter?: string | null;
   initialCenter?: [number, number];
@@ -59,6 +62,8 @@ export function PropertyMap({
   searchAsMove = true,
   onSearchThisArea,
   onPolygonChange,
+  isFetching = false,
+  isLoading = false,
   listingStatus = 'for_sale',
   cityFilter = null,
   initialCenter,
@@ -335,6 +340,8 @@ export function PropertyMap({
       />
 
       <KeyboardShortcutsDialog open={showHelp} onOpenChange={setShowHelp} />
+
+      <MapLoadingIndicator visible={isFetching && !isLoading} />
 
       {!searchAsMove && boundsChanged && !drawnPolygon && (
         <SearchThisAreaButton onClick={handleSearchThisArea} />
