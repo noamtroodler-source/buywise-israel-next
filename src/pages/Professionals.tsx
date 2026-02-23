@@ -126,10 +126,10 @@ export default function Professionals() {
                   <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      BuyWise Israel is not a referral service and has no commercial relationship, partnership, or financial arrangement with any professional listed here. Inclusion in this directory does not constitute an endorsement, recommendation, or guarantee of qualifications, services, or outcomes.
+                      Professionals featured here are selected by BuyWise Israel based on their experience working with international buyers. We may have commercial relationships with listed professionals. While we believe in the quality of the professionals we feature, we cannot guarantee specific outcomes, results, or suitability for your individual situation.
                     </p>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      We do not verify credentials, monitor performance, or assume any responsibility for engagements between you and a listed professional. Any decision to hire or work with a professional is entirely your own. Always conduct independent due diligence before entering into any agreement.
+                      BuyWise Israel is not liable for any services rendered, advice given, or results achieved by any listed professional. The decision to engage with any professional is yours alone, and we encourage you to evaluate your options and confirm that any advisor is the right fit for your needs.
                     </p>
                   </div>
                 </div>
