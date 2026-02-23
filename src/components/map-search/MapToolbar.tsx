@@ -9,11 +9,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Map as LeafletMap } from 'leaflet';
 
-// ... keep existing code (interface)
 interface MapToolbarProps {
-  map: LeafletMap | null;
+  map: google.maps.Map | null;
   isDrawMode: boolean;
   onToggleDraw: () => void;
   activeLayers: Set<string>;
@@ -40,10 +38,13 @@ export function MapToolbar({
     staleTime: Infinity,
   });
 
-  const handleZoomIn = useCallback(() => map?.zoomIn(), [map]);
-  const handleZoomOut = useCallback(() => map?.zoomOut(), [map]);
+  const handleZoomIn = useCallback(() => {
+    if (map) map.setZoom((map.getZoom() ?? 7) + 1);
+  }, [map]);
+  const handleZoomOut = useCallback(() => {
+    if (map) map.setZoom((map.getZoom() ?? 7) - 1);
+  }, [map]);
 
-  // ... keep existing code (handleLocate, handleShare)
   const handleLocate = useCallback(() => {
     getLocation();
     if (navigator.geolocation) {
@@ -57,7 +58,8 @@ export function MapToolbar({
             });
             return;
           }
-          map?.flyTo([coords.lat, coords.lng], 14, { duration: 1.2 });
+          map?.panTo({ lat: coords.lat, lng: coords.lng });
+          map?.setZoom(14);
         },
         (err) => {
           if (err.code === err.PERMISSION_DENIED) {
@@ -71,13 +73,11 @@ export function MapToolbar({
     }
   }, [map, getLocation, cities]);
 
-
   const btnBase =
     'flex items-center justify-center w-8 h-8 text-foreground hover:bg-accent transition-colors cursor-pointer rounded';
 
   return (
     <div className="absolute bottom-40 lg:bottom-6 right-3 z-[40] flex flex-col gap-2">
-      {/* Navigation group */}
       <div className="map-toolbar-group flex flex-col">
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
@@ -109,7 +109,6 @@ export function MapToolbar({
         </Tooltip>
       </div>
 
-      {/* Tools group */}
       <div className="map-toolbar-group flex flex-col">
         <Tooltip delayDuration={300}>
           <TooltipTrigger asChild>
@@ -135,7 +134,6 @@ export function MapToolbar({
         </MapShareMenu>
       </div>
 
-      {/* Layers group */}
       <div className="map-toolbar-group flex flex-col">
         <LayersMenu activeLayers={activeLayers} onToggleLayer={onToggleLayer}>
           <button
@@ -147,7 +145,6 @@ export function MapToolbar({
           </button>
         </LayersMenu>
       </div>
-
     </div>
   );
 }

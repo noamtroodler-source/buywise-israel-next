@@ -1,10 +1,11 @@
-import { memo, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { memo, useMemo, useCallback } from 'react';
+import { GoogleOverlayView } from '@/components/maps/GoogleOverlayView';
 import { Project } from '@/types/projects';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { Building2 } from 'lucide-react';
 
 interface ProjectMarkerProps {
+  map: google.maps.Map;
   project: Project;
   compact?: boolean;
   isHovered: boolean;
@@ -28,17 +29,8 @@ function formatCompactPrice(amount: number, currency: 'ILS' | 'USD', exchangeRat
   return `${symbol}${Math.round(value)}`;
 }
 
-function createProjectPillHtml(priceLabel: string): string {
-  const buildingSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="hsl(213,94%,45%)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>`;
-  return `<div class="property-marker-pill project-marker-pill">${buildingSvg}<span style="margin-left:3px">From ${priceLabel}</span></div>`;
-}
-
-function estimatePillWidth(priceLabel: string): number {
-  const text = `From ${priceLabel}`;
-  return Math.ceil(text.length * 7 + 38);
-}
-
 export const ProjectMarker = memo(function ProjectMarker({
+  map,
   project,
   compact = false,
   isHovered,
@@ -47,8 +39,6 @@ export const ProjectMarker = memo(function ProjectMarker({
   onHover,
 }: ProjectMarkerProps) {
   const { currency, exchangeRate } = usePreferences();
-  const markerRef = useRef<L.Marker>(null);
-
   const markerId = `project-${project.id}`;
 
   const priceLabel = useMemo(
@@ -58,64 +48,37 @@ export const ProjectMarker = memo(function ProjectMarker({
     [project.price_from, project.currency, currency, exchangeRate]
   );
 
-  const icon = useMemo(() => {
-    if (compact) {
-      const text = `From ${priceLabel}`;
-      const w = Math.ceil(text.length * 6.5 + 16);
-      const h = 22;
-      return L.divIcon({
-        html: `<div class="property-marker-pill project-marker-pill compact"><span style="margin-left:0">From ${priceLabel}</span></div>`,
-        className: 'property-marker-container',
-        iconSize: [w, h],
-        iconAnchor: [w / 2, h / 2],
-      });
-    }
-    const w = estimatePillWidth(priceLabel);
-    const h = 28;
-    return L.divIcon({
-      html: createProjectPillHtml(priceLabel),
-      className: 'property-marker-container',
-      iconSize: [w, h],
-      iconAnchor: [w / 2, h / 2],
-    });
-  }, [priceLabel, compact]);
-
-  useEffect(() => {
-    const el = markerRef.current?.getElement();
-    if (!el) return;
-
-    const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
-    if (!pill) return;
-    pill.classList.toggle('marker-hovered', isHovered);
-    pill.classList.toggle('marker-active', isActive);
-
-    if (isActive) el.style.zIndex = '201';
-    else if (isHovered) el.style.zIndex = '200';
-    else el.style.zIndex = '';
-  }, [isHovered, isActive]);
-
   const handleClick = useCallback(() => onClick(markerId), [onClick, markerId]);
   const handleMouseOver = useCallback(() => onHover(markerId), [onHover, markerId]);
   const handleMouseOut = useCallback(() => onHover(null), [onHover]);
 
   if (!project.latitude || !project.longitude) return null;
 
+  const zIndex = isActive ? 201 : isHovered ? 200 : 1;
+
+  const pillClass = `property-marker-pill project-marker-pill${compact ? ' compact' : ''}${isHovered ? ' marker-hovered' : ''}${isActive ? ' marker-active' : ''}`;
+
   return (
-    <Marker
-      ref={markerRef}
-      position={[project.latitude, project.longitude]}
-      icon={icon}
-      eventHandlers={{
-        click: handleClick,
-        mouseover: handleMouseOver,
-        mouseout: handleMouseOut,
-      }}
-    />
+    <GoogleOverlayView
+      map={map}
+      lat={project.latitude}
+      lng={project.longitude}
+      zIndex={zIndex}
+      onClick={handleClick}
+      onMouseOver={handleMouseOver}
+      onMouseOut={handleMouseOut}
+    >
+      <div className={pillClass}>
+        {!compact && <Building2 size={11} style={{ flexShrink: 0, color: 'hsl(213,94%,45%)' }} strokeWidth={2.5} />}
+        <span style={{ marginLeft: compact ? 0 : 3 }}>From {priceLabel}</span>
+      </div>
+    </GoogleOverlayView>
   );
 }, (prev, next) =>
   prev.project.id === next.project.id &&
   prev.compact === next.compact &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
-  prev.project.price_from === next.project.price_from
+  prev.project.price_from === next.project.price_from &&
+  prev.map === next.map
 );

@@ -1,10 +1,9 @@
-import { useMemo } from 'react';
-import { Polygon, Tooltip } from 'react-leaflet';
+import { useMemo, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { LatLngExpression } from 'leaflet';
 
 interface NeighborhoodBoundariesLayerProps {
+  map: google.maps.Map;
   city: string | null;
   highlightedNeighborhood?: string | null;
 }
@@ -14,7 +13,9 @@ interface NeighborhoodData {
   boundary_coords: [number, number][]; // [lat, lng]
 }
 
-export function NeighborhoodBoundariesLayer({ city, highlightedNeighborhood }: NeighborhoodBoundariesLayerProps) {
+export function NeighborhoodBoundariesLayer({ map, city, highlightedNeighborhood }: NeighborhoodBoundariesLayerProps) {
+  const polygonsRef = useRef<google.maps.Polygon[]>([]);
+
   const { data: neighborhoods = [] } = useQuery({
     queryKey: ['neighborhood-boundaries', city],
     queryFn: async (): Promise<NeighborhoodData[]> => {
@@ -26,7 +27,6 @@ export function NeighborhoodBoundariesLayer({ city, highlightedNeighborhood }: N
         .single();
 
       if (error || !data?.neighborhoods) return [];
-
       const raw = data.neighborhoods as any[];
       if (!Array.isArray(raw)) return [];
 
@@ -41,31 +41,29 @@ export function NeighborhoodBoundariesLayer({ city, highlightedNeighborhood }: N
     staleTime: 10 * 60 * 1000,
   });
 
-  const polygons = useMemo(() => {
-    return neighborhoods.map((n) => ({
-      name: n.name,
-      positions: n.boundary_coords as LatLngExpression[],
-      isHighlighted: n.name === highlightedNeighborhood,
-    }));
-  }, [neighborhoods, highlightedNeighborhood]);
+  useEffect(() => {
+    // Clear old polygons
+    polygonsRef.current.forEach(p => p.setMap(null));
+    polygonsRef.current = [];
 
-  return (
-    <>
-      {polygons.map((p) => (
-        <Polygon
-          key={p.name}
-          positions={p.positions}
-          pathOptions={{
-            color: p.isHighlighted ? 'hsl(213, 94%, 45%)' : 'hsl(213, 94%, 60%)',
-            fillOpacity: p.isHighlighted ? 0.25 : 0.1,
-            weight: p.isHighlighted ? 3 : 1.5,
-          }}
-        >
-          <Tooltip sticky direction="center" className="text-xs font-medium">
-            {p.name}
-          </Tooltip>
-        </Polygon>
-      ))}
-    </>
-  );
+    neighborhoods.forEach((n) => {
+      const isHighlighted = n.name === highlightedNeighborhood;
+      const polygon = new google.maps.Polygon({
+        paths: n.boundary_coords.map(([lat, lng]) => ({ lat, lng })),
+        strokeColor: isHighlighted ? 'hsl(213, 94%, 45%)' : 'hsl(213, 94%, 60%)',
+        strokeWeight: isHighlighted ? 3 : 1.5,
+        fillColor: 'hsl(213, 94%, 60%)',
+        fillOpacity: isHighlighted ? 0.25 : 0.1,
+        map,
+      });
+      polygonsRef.current.push(polygon);
+    });
+
+    return () => {
+      polygonsRef.current.forEach(p => p.setMap(null));
+      polygonsRef.current = [];
+    };
+  }, [map, neighborhoods, highlightedNeighborhood]);
+
+  return null;
 }

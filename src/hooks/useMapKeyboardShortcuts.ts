@@ -1,5 +1,4 @@
-import { useEffect, useCallback, RefObject } from 'react';
-import L from 'leaflet';
+import { useEffect, useCallback, RefObject, MutableRefObject } from 'react';
 
 interface KeyboardShortcutHandlers {
   onZoomIn: () => void;
@@ -30,7 +29,7 @@ interface KeyboardShortcutHandlers {
  * - ? : Show help
  */
 export function useMapKeyboardShortcuts(
-  mapRef: RefObject<L.Map | null>,
+  mapRef: RefObject<google.maps.Map | null> | MutableRefObject<google.maps.Map | null>,
   handlers: KeyboardShortcutHandlers
 ) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {

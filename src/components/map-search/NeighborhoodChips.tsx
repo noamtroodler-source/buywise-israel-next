@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Map as LeafletMap } from 'leaflet';
 
 interface NeighborhoodChipsProps {
   city: string | null;
-  map: LeafletMap | null;
+  map: google.maps.Map | null;
   selectedNeighborhood: string | null;
   onSelect: (name: string | null) => void;
 }
@@ -42,7 +41,8 @@ export function NeighborhoodChips({ city, map, selectedNeighborhood, onSelect }:
       onSelect(null);
     } else {
       onSelect(n.name);
-      map?.flyTo(n.center, 15, { duration: 0.8 });
+      map?.panTo({ lat: n.center[0], lng: n.center[1] });
+      map?.setZoom(15);
     }
   };
 

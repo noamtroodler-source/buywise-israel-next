@@ -1,83 +1,94 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useMap } from 'react-leaflet';
 import { X } from 'lucide-react';
-import { latLngsToPolygon, type Polygon } from '@/lib/utils/geometry';
-import '@geoman-io/leaflet-geoman-free';
-import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
-import type L from 'leaflet';
+import type { Polygon } from '@/lib/utils/geometry';
 
 interface DrawControlProps {
+  map: google.maps.Map;
+  isDrawing: boolean;
   onPolygonDrawn: (polygon: Polygon) => void;
   drawnPolygon: Polygon | null;
   onClear: () => void;
 }
 
-export function DrawControl({ onPolygonDrawn, drawnPolygon, onClear }: DrawControlProps) {
-  const map = useMap();
-  const drawnLayerRef = useRef<L.Layer | null>(null);
+export function DrawControl({ map, isDrawing, onPolygonDrawn, drawnPolygon, onClear }: DrawControlProps) {
+  const drawingManagerRef = useRef<google.maps.drawing.DrawingManager | null>(null);
+  const drawnPolygonRef = useRef<google.maps.Polygon | null>(null);
 
-  // Enable draw mode
+  // Show existing drawn polygon on map
   useEffect(() => {
-    if (!map) return;
+    if (drawnPolygon && !isDrawing) {
+      const polygon = new google.maps.Polygon({
+        paths: drawnPolygon.map(([lng, lat]) => ({ lat, lng })),
+        strokeColor: 'hsl(213, 94%, 45%)',
+        strokeWeight: 2,
+        fillColor: 'hsl(213, 94%, 45%)',
+        fillOpacity: 0.15,
+        editable: false,
+        map,
+      });
+      drawnPolygonRef.current = polygon;
+      return () => {
+        polygon.setMap(null);
+      };
+    }
+  }, [drawnPolygon, isDrawing, map]);
 
-    // Add crosshair class
-    map.getContainer().classList.add('draw-mode-active');
+  // Drawing manager
+  useEffect(() => {
+    if (!isDrawing) {
+      drawingManagerRef.current?.setMap(null);
+      drawingManagerRef.current = null;
+      return;
+    }
 
-    // Hide default Geoman toolbar
-    map.pm.addControls({ drawControls: false, editControls: false, optionsControls: false, customControls: false });
-    
-    // Enable polygon draw
-    map.pm.enableDraw('Polygon', {
-      snappable: false,
-      templineStyle: { color: 'hsl(213, 94%, 45%)', weight: 2 },
-      hintlineStyle: { color: 'hsl(213, 94%, 45%)', dashArray: '5,5' },
-      pathOptions: { color: 'hsl(213, 94%, 45%)', fillOpacity: 0.15 },
+    map.getDiv().style.cursor = 'crosshair';
+
+    const dm = new google.maps.drawing.DrawingManager({
+      drawingMode: google.maps.drawing.OverlayType.POLYGON,
+      drawingControl: false,
+      polygonOptions: {
+        strokeColor: 'hsl(213, 94%, 45%)',
+        strokeWeight: 2,
+        fillColor: 'hsl(213, 94%, 45%)',
+        fillOpacity: 0.15,
+        editable: false,
+      },
     });
 
-    const handleCreate = (e: any) => {
-      // Remove previous drawn layer
-      if (drawnLayerRef.current) {
-        map.removeLayer(drawnLayerRef.current);
+    dm.setMap(map);
+    drawingManagerRef.current = dm;
+
+    const listener = google.maps.event.addListener(dm, 'polygoncomplete', (polygon: google.maps.Polygon) => {
+      const path = polygon.getPath();
+      const coords: Polygon = [];
+      for (let i = 0; i < path.getLength(); i++) {
+        const p = path.getAt(i);
+        coords.push([p.lng(), p.lat()]);
       }
-      drawnLayerRef.current = e.layer;
+      polygon.setMap(null);
+      onPolygonDrawn(coords);
+    });
 
-      const latLngs = e.layer.getLatLngs()[0] as L.LatLng[];
-      const polygon = latLngsToPolygon(latLngs);
-      onPolygonDrawn(polygon);
-
-      // Disable draw after creating
-      map.pm.disableDraw();
-    };
-
-    map.on('pm:create', handleCreate);
-
-    // Escape key handler
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClear();
-      }
+      if (e.key === 'Escape') onClear();
     };
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      map.getContainer().classList.remove('draw-mode-active');
-      map.pm.disableDraw();
-      map.off('pm:create', handleCreate);
+      map.getDiv().style.cursor = '';
+      dm.setMap(null);
+      google.maps.event.removeListener(listener);
       document.removeEventListener('keydown', handleKeyDown);
-      if (drawnLayerRef.current) {
-        map.removeLayer(drawnLayerRef.current);
-        drawnLayerRef.current = null;
-      }
     };
-  }, [map, onPolygonDrawn, onClear]);
+  }, [isDrawing, map, onPolygonDrawn, onClear]);
 
   const handleClear = useCallback(() => {
-    if (drawnLayerRef.current && map) {
-      map.removeLayer(drawnLayerRef.current);
-      drawnLayerRef.current = null;
+    if (drawnPolygonRef.current) {
+      drawnPolygonRef.current.setMap(null);
+      drawnPolygonRef.current = null;
     }
     onClear();
-  }, [map, onClear]);
+  }, [onClear]);
 
   if (!drawnPolygon) return null;
 

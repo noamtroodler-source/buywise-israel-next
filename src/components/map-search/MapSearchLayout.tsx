@@ -13,15 +13,16 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isPointInPolygon, deserializePolygon, serializePolygon, type Polygon } from '@/lib/utils/geometry';
 import { mergeIntoMapItems, type MapItem } from '@/types/mapItem';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
-import type { LatLngBounds } from 'leaflet';
 import type { MapUrlFilters } from '@/hooks/useMapFilters';
 
-function toBounds(b: LatLngBounds): MapBounds {
+function toBounds(b: google.maps.LatLngBounds): MapBounds {
+  const ne = b.getNorthEast();
+  const sw = b.getSouthWest();
   return {
-    north: b.getNorth(),
-    south: b.getSouth(),
-    east: b.getEast(),
-    west: b.getWest(),
+    north: ne.lat(),
+    south: sw.lat(),
+    east: ne.lng(),
+    west: sw.lng(),
   };
 }
 
@@ -92,7 +93,7 @@ export default function MapSearchLayout() {
     else setMobileView('map');
   }, []);
 
-  const handleBoundsChange = useCallback((b: LatLngBounds) => {
+  const handleBoundsChange = useCallback((b: google.maps.LatLngBounds) => {
     setMapBounds(toBounds(b));
   }, []);
 
