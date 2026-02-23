@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search, Layers, Sparkles, Car, Check } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search, Layers, Sparkles, Car, Check, HardHat, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -449,6 +449,80 @@ export function ProjectMobileFilterSheet({
                     {num === undefined ? 'Any' : `${num}+`}
                   </button>
                 ))}
+              </div>
+            </section>
+
+            {/* Construction Stage Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <HardHat className="h-4 w-4 text-primary" />
+                Construction Stage
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: undefined, label: 'Any' },
+                  { value: 'planning', label: 'Planning' },
+                  { value: 'under_construction', label: 'Under Construction' },
+                  { value: 'completed', label: 'Delivered' },
+                ].map(option => (
+                  <button
+                    key={option.label}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      filters.construction_stage === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => updateFilter('construction_stage', option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {/* Property Types Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Home className="h-4 w-4 text-primary" />
+                Property Types
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: '3-Room Apartment', label: '3-Room Apt' },
+                  { value: '4-Room Apartment', label: '4-Room Apt' },
+                  { value: '5-Room Apartment', label: '5-Room Apt' },
+                  { value: 'Garden Apartment', label: 'Garden Apt' },
+                  { value: 'Penthouse', label: 'Penthouse' },
+                ].map((type) => {
+                  const isSelected = filters.property_types?.includes(type.value);
+                  return (
+                    <button
+                      key={type.value}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left",
+                        isSelected
+                          ? "bg-primary/10 text-primary border border-primary/30"
+                          : "bg-muted/50 hover:bg-muted border border-transparent"
+                      )}
+                      onClick={() => {
+                        const current = filters.property_types || [];
+                        const updated = isSelected
+                          ? current.filter(t => t !== type.value)
+                          : [...current, type.value];
+                        updateFilter('property_types', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                        isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                      )}>
+                        {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                      </div>
+                      {type.label}
+                    </button>
+                  );
+                })}
               </div>
             </section>
           </div>
