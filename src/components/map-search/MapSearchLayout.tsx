@@ -15,7 +15,7 @@ import { mergeIntoMapItems, type MapItem } from '@/types/mapItem';
 import type { PropertyFilters, SortOption, MapBounds, PropertyType } from '@/types/database';
 import type { MapUrlFilters } from '@/hooks/useMapFilters';
 
-function toBounds(b: google.maps.LatLngBounds): MapBounds {
+function toBounds(b: any): MapBounds {
   const ne = b.getNorthEast();
   const sw = b.getSouthWest();
   return {
@@ -93,7 +93,7 @@ export default function MapSearchLayout() {
     else setMobileView('map');
   }, []);
 
-  const handleBoundsChange = useCallback((b: google.maps.LatLngBounds) => {
+  const handleBoundsChange = useCallback((b: any) => {
     setMapBounds(toBounds(b));
   }, []);
 

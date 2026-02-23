@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { SEOHead } from '@/components/seo/SEOHead';
+import { GoogleMapsProvider } from '@/components/maps/GoogleMapsProvider';
 
 const MapSearchLayout = lazy(() => import('@/components/map-search/MapSearchLayout'));
 
@@ -21,15 +22,17 @@ export default function MapSearch() {
   const city = searchParams.get('city');
 
   return (
-    <Layout hideFooter hideMobileNav>
-      <SEOHead
-        title={buildTitle(status, city)}
-        description="Search properties on an interactive map across Israel."
-        canonicalUrl="https://buywiseisrael.com/map"
-      />
-      <Suspense fallback={<div className="h-[calc(100vh-64px)] bg-muted animate-pulse" />}>
-        <MapSearchLayout />
-      </Suspense>
-    </Layout>
+    <GoogleMapsProvider>
+      <Layout hideFooter hideMobileNav>
+        <SEOHead
+          title={buildTitle(status, city)}
+          description="Search properties on an interactive map across Israel."
+          canonicalUrl="https://buywiseisrael.com/map"
+        />
+        <Suspense fallback={<div className="h-[calc(100vh-64px)] bg-muted animate-pulse" />}>
+          <MapSearchLayout />
+        </Suspense>
+      </Layout>
+    </GoogleMapsProvider>
   );
 }
