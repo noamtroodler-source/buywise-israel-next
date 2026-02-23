@@ -49,6 +49,8 @@ const AMENITIES = [
   { value: 'parking', label: 'Parking' },
   { value: 'ac', label: 'A/C' },
   { value: 'accessible', label: 'Accessible' },
+  { value: 'sukkah_balcony', label: 'Sukkah Balcony' },
+  { value: 'shabbat_elevator', label: 'Shabbos Elevator' },
 ];
 
 const DAYS_ON_MARKET_OPTIONS = [
