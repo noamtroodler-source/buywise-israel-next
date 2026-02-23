@@ -39,6 +39,7 @@ import {
   SourceAttribution,
   ExampleValuesHint,
   ToolPropertySuggestions,
+  ToolGuidanceHint,
   type BuyerCategory as SharedBuyerCategory,
 } from './shared';
 
@@ -939,6 +940,12 @@ export function TrueCostCalculator() {
       {trueCostInsights.length > 0 && (
         <InsightCard insights={trueCostInsights} />
       )}
+
+      {/* Life Insurance Hint for Non-Israelis */}
+      <ToolGuidanceHint
+        variant="expert-tip"
+        message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
+      />
 
       {/* Calculated for Israel Badge */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">

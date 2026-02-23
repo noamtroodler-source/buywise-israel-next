@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSaveCalculatorResult } from '@/hooks/useSavedCalculatorResults';
 import { Link } from 'react-router-dom';
-import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions } from './shared';
+import { ToolLayout, ToolDisclaimer, ToolFeedback, InsightCard, ResultRange, formatCurrencyRange, SourceAttribution, ExampleValuesHint, ToolPropertySuggestions, ToolGuidanceHint } from './shared';
 import { useFormatPrice, useCurrencySymbol } from '@/contexts/PreferencesContext';
 import { toast } from 'sonner';
 import { MORTGAGE_RATE_RANGES } from '@/lib/utils/formatRange';
@@ -707,6 +707,12 @@ function MortgageCalculatorContent() {
       {insights.length > 0 && (
         <InsightCard insights={insights} />
       )}
+
+      {/* Life Insurance Hint for Non-Israelis */}
+      <ToolGuidanceHint
+        variant="expert-tip"
+        message="Non-Israeli residents are typically required to hold a life insurance policy as a condition of mortgage approval in Israel."
+      />
 
       {/* Calculated for Israel Badge */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border">
