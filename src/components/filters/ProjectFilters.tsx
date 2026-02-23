@@ -33,7 +33,7 @@ export interface ProjectFiltersType {
   min_size?: number;
   max_size?: number;
   min_parking?: number;
-  construction_stage?: string;
+  construction_stage?: string[];
   property_types?: string[];
 }
 
@@ -146,7 +146,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.amenities && filters.amenities.length > 0) count++;
     if (filters.min_size || filters.max_size) count++;
     if (filters.min_parking) count++;
-    if (filters.construction_stage) count++;
+    if (filters.construction_stage && filters.construction_stage.length > 0) count++;
     if (filters.property_types && filters.property_types.length > 0) count++;
     return count;
   }, [filters]);
@@ -188,7 +188,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       filters.min_size ||
       filters.max_size ||
       filters.min_parking ||
-      filters.construction_stage ||
+      (filters.construction_stage && filters.construction_stage.length > 0) ||
       (filters.property_types && filters.property_types.length > 0)
     );
   }, [filters]);
@@ -199,7 +199,7 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.amenities && filters.amenities.length > 0) count++;
     if (filters.min_size || filters.max_size) count++;
     if (filters.min_parking) count++;
-    if (filters.construction_stage) count++;
+    if (filters.construction_stage && filters.construction_stage.length > 0) count++;
     if (filters.property_types && filters.property_types.length > 0) count++;
     return count;
   }, [filters]);
@@ -837,27 +837,31 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: undefined, label: 'Any' },
-                  { value: 'planning', label: 'Planning' },
-                  { value: 'pre_sale', label: 'Pre-Sale' },
-                  { value: 'foundation', label: 'Foundation' },
-                  { value: 'structure', label: 'Structure' },
-                  { value: 'finishing', label: 'Finishing' },
-                  { value: 'delivery', label: 'Delivery' },
-                ].map(option => (
-                  <button
-                    key={option.label}
-                    className={cn(
-                      "h-10 rounded-full text-sm font-medium transition-all",
-                      filters.construction_stage === option.value
-                        ? "bg-primary text-primary-foreground"
-                        : "border border-border hover:bg-muted"
-                    )}
-                    onClick={() => updateFilter('construction_stage', option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                  'planning', 'pre_sale', 'foundation', 'structure', 'finishing', 'delivery',
+                ].map(stage => {
+                  const label = PROJECT_STATUSES.find(s => s.value === stage)?.label ?? stage;
+                  const isSelected = filters.construction_stage?.includes(stage);
+                  return (
+                    <button
+                      key={stage}
+                      className={cn(
+                        "h-10 rounded-full text-sm font-medium transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        const current = filters.construction_stage || [];
+                        const updated = isSelected
+                          ? current.filter(s => s !== stage)
+                          : [...current, stage];
+                        updateFilter('construction_stage', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
