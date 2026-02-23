@@ -112,26 +112,15 @@ export default function Professionals() {
           </section>
         )}
 
-        {/* Trust Disclaimer */}
-        <section className="py-12">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="max-w-3xl mx-auto"
-            >
-              <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-primary/5 rounded-xl p-6 md:p-8 border border-primary/15">
-                <div className="flex items-start gap-3">
-                  <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Professionals are selected by BuyWise Israel based on their experience with international buyers. We may receive compensation from listed professionals. We cannot guarantee specific outcomes — the decision to engage is yours alone.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+        {/* Disclaimer - inline subtle text */}
+        <div className="container py-8">
+          <div className="flex items-start justify-center gap-2 text-xs text-muted-foreground/70 max-w-2xl mx-auto px-4">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <p>
+              Professionals are selected by BuyWise Israel based on their experience with international buyers. We may receive compensation from listed professionals. We cannot guarantee specific outcomes — the decision to engage is yours alone.
+            </p>
           </div>
-        </section>
+        </div>
 
         {/* CTA */}
         <section className="pb-16">
