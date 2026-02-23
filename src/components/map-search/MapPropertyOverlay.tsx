@@ -1,4 +1,4 @@
-import { memo, useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
@@ -9,6 +9,11 @@ import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts
 import { cn } from '@/lib/utils';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
+
+const CARD_WIDTH = 260;
+const CARD_HEIGHT = 210;
+const TIP_HEIGHT = 10;
+const EDGE_PADDING = 12;
 
 interface MapPropertyOverlayProps {
   property: Property;
@@ -53,6 +58,17 @@ function latLngToPixel(map: google.maps.Map, lat: number, lng: number): { x: num
   return { x: x * (mapDiv.offsetWidth / ((topRight.x - bottomLeft.x) * scale)), y: y * (mapDiv.offsetHeight / ((bottomLeft.y - topRight.y) * scale)) };
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+interface Placement {
+  left: number;
+  top: number;
+  arrowLeft: number;
+  flipped: boolean;
+}
+
 export const MapPropertyOverlay = memo(function MapPropertyOverlay({
   property,
   map,
@@ -65,26 +81,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
-  const updatePosition = useCallback(() => {
-    if (!property.latitude || !property.longitude) return;
-    const mapDiv = map.getDiv();
-    const overlay = new google.maps.OverlayView();
-    overlay.setMap(map);
-    overlay.draw = function () {};
-    overlay.onAdd = function () {
-      const projection = this.getProjection();
-      if (!projection) return;
-      const point = projection.fromLatLngToContainerPixel(
-        new google.maps.LatLng(property.latitude!, property.longitude!)
-      );
-      if (point) {
-        setPos({ x: point.x, y: point.y });
-      }
-      overlay.setMap(null);
-    };
-  }, [map, property.latitude, property.longitude]);
-
-  // Use a simpler approach: compute position from bounds/projection
   const computePos = useCallback(() => {
     if (!property.latitude || !property.longitude) return;
     const p = latLngToPixel(map, property.latitude, property.longitude);
@@ -102,6 +98,26 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
       google.maps.event.removeListener(zoomListener);
     };
   }, [map, computePos]);
+
+  // Compute placement with edge detection
+  const placement = useMemo<Placement | null>(() => {
+    if (!pos) return null;
+    const mapDiv = map.getDiv();
+    const containerW = mapDiv.offsetWidth;
+
+    // Vertical: default above, flip below if not enough room
+    const flipped = pos.y - CARD_HEIGHT - EDGE_PADDING < 0;
+    const top = flipped
+      ? pos.y + TIP_HEIGHT
+      : pos.y - CARD_HEIGHT - TIP_HEIGHT;
+
+    // Horizontal: center, then clamp
+    const idealLeft = pos.x - CARD_WIDTH / 2;
+    const left = clamp(idealLeft, EDGE_PADDING, containerW - CARD_WIDTH - EDGE_PADDING);
+    const arrowLeft = clamp(pos.x - left, 12, CARD_WIDTH - 12);
+
+    return { left, top, arrowLeft, flipped };
+  }, [pos, map]);
 
   // Close on click outside
   useEffect(() => {
@@ -178,132 +194,147 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
 
   const agent = property.agent;
 
-  if (!pos) return null;
+  if (!placement) return null;
 
-  const CARD_WIDTH = 260;
-  const TIP_HEIGHT = 10;
+  const arrow = (
+    <div
+      className="absolute"
+      style={{
+        left: placement.arrowLeft - 6,
+        ...(placement.flipped
+          ? { top: -5 }
+          : { bottom: -5 }),
+      }}
+    >
+      <div
+        className={cn(
+          "w-3 h-3 border-border",
+          placement.flipped
+            ? "rotate-[225deg] border-l border-t"
+            : "rotate-45 border-r border-b"
+        )}
+        style={{ background: 'hsl(var(--background))' }}
+      />
+    </div>
+  );
 
   return (
     <div
       ref={overlayRef}
       className="absolute z-[1000] pointer-events-auto"
       style={{
-        left: pos.x - CARD_WIDTH / 2,
-        top: pos.y,
-        transform: `translateY(calc(-100% - ${TIP_HEIGHT}px))`,
+        left: placement.left,
+        top: placement.top,
         willChange: 'left, top',
       }}
     >
-      <Link
-        to={`/property/${property.id}`}
-        className="map-overlay-card block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="relative w-full h-[140px] overflow-hidden bg-muted">
-          {images.map((img, i) => (
-            <img
-              key={i}
-              ref={(el) => { imgRefs.current[i] = el; }}
-              src={img || FALLBACK_IMAGE}
-              alt={`${property.title} ${i + 1}`}
-              loading="eager"
-              decoding="async"
-              onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
-              style={{ opacity: i === 0 ? 1 : 0 }}
-            />
-          ))}
+      <div className="relative">
+        {placement.flipped && arrow}
+        <Link
+          to={`/property/${property.id}`}
+          className="map-overlay-card block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative w-full h-[140px] overflow-hidden bg-muted">
+            {images.map((img, i) => (
+              <img
+                key={i}
+                ref={(el) => { imgRefs.current[i] = el; }}
+                src={img || FALLBACK_IMAGE}
+                alt={`${property.title} ${i + 1}`}
+                loading="eager"
+                decoding="async"
+                onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ease-in-out"
+                style={{ opacity: i === 0 ? 1 : 0 }}
+              />
+            ))}
 
-          <div className="absolute top-2 right-2 z-10">
-            <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
-          </div>
-
-          {badge && (
-            <div className="absolute top-2 left-2 z-10">
-              <Badge
-                variant={badge.variant}
-                className={cn(
-                  "text-xs gap-1 backdrop-blur-sm",
-                  badge.label === 'New' && "bg-emerald-500/90 text-white border-emerald-500/90"
-                )}
-              >
-                {badge.icon && <badge.icon className="h-3 w-3" />}
-                {badge.label}
-              </Badge>
+            <div className="absolute top-2 right-2 z-10">
+              <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
             </div>
-          )}
 
-          {totalImages > 1 && (
-            <>
-              <button
-                onClick={prevImage}
-                className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                aria-label="Next image"
-              >
-                <ChevronRight className="h-3.5 w-3.5 text-foreground" />
-              </button>
-            </>
-          )}
-
-          {totalImages > 1 && (
-            <div className="absolute bottom-2 left-0 right-0 z-10 flex justify-center gap-1" ref={dotsRef}>
-              {Array.from({ length: Math.min(totalImages, 5) }).map((_, i) => (
-                <span
-                  key={i}
+            {badge && (
+              <div className="absolute top-2 left-2 z-10">
+                <Badge
+                  variant={badge.variant}
                   className={cn(
-                    "w-1.5 h-1.5 rounded-full transition-colors duration-200",
-                    i === 0 ? "bg-white dot-active" : "bg-white/50"
+                    "text-xs gap-1 backdrop-blur-sm",
+                    badge.label === 'New' && "bg-emerald-500/90 text-white border-emerald-500/90"
                   )}
-                />
-              ))}
-            </div>
-          )}
+                >
+                  {badge.icon && <badge.icon className="h-3 w-3" />}
+                  {badge.label}
+                </Badge>
+              </div>
+            )}
 
-          {(agent?.agency?.logo_url || agent?.avatar_url) && (
-            <div className="absolute bottom-2 right-2 z-10">
-              <Avatar className="h-6 w-6 ring-2 ring-background">
-                <AvatarImage src={agent.agency?.logo_url ?? agent.avatar_url!} alt={agent.agency?.name ?? agent.name} />
-                <AvatarFallback className="text-[10px]">
-                  {(agent.agency?.name ?? agent.name)?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          )}
-        </div>
+            {totalImages > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 text-foreground" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-3.5 w-3.5 text-foreground" />
+                </button>
+              </>
+            )}
 
-        <div className="p-2.5 space-y-0.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-base font-bold text-foreground leading-tight">
-              {formatPrice(property.price, property.currency)}
-            </span>
-            {pricePerArea && (
-              <span className="text-xs text-muted-foreground">
-                {pricePerArea}
-              </span>
+            {totalImages > 1 && (
+              <div className="absolute bottom-2 left-0 right-0 z-10 flex justify-center gap-1" ref={dotsRef}>
+                {Array.from({ length: Math.min(totalImages, 5) }).map((_, i) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-colors duration-200",
+                      i === 0 ? "bg-white dot-active" : "bg-white/50"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+
+            {(agent?.agency?.logo_url || agent?.avatar_url) && (
+              <div className="absolute bottom-2 right-2 z-10">
+                <Avatar className="h-6 w-6 ring-2 ring-background">
+                  <AvatarImage src={agent.agency?.logo_url ?? agent.avatar_url!} alt={agent.agency?.name ?? agent.name} />
+                  <AvatarFallback className="text-[10px]">
+                    {(agent.agency?.name ?? agent.name)?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
             )}
           </div>
-          {stats && (
-            <p className="text-sm text-muted-foreground">
-              {stats}
-              {listingLabel ? ` — ${listingLabel}` : ''}
-            </p>
-          )}
-          <p className="text-sm text-muted-foreground truncate">{location}</p>
-        </div>
-      </Link>
 
-      <div className="flex justify-center">
-        <div
-          className="w-3 h-3 rotate-45 -mt-1.5 border-r border-b border-border"
-          style={{ background: 'hsl(var(--background))' }}
-        />
+          <div className="p-2.5 space-y-0.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-base font-bold text-foreground leading-tight">
+                {formatPrice(property.price, property.currency)}
+              </span>
+              {pricePerArea && (
+                <span className="text-xs text-muted-foreground">
+                  {pricePerArea}
+                </span>
+              )}
+            </div>
+            {stats && (
+              <p className="text-sm text-muted-foreground">
+                {stats}
+                {listingLabel ? ` — ${listingLabel}` : ''}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground truncate">{location}</p>
+          </div>
+        </Link>
+        {!placement.flipped && arrow}
       </div>
     </div>
   );
