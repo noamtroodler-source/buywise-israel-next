@@ -1,4 +1,5 @@
 import { memo, useCallback, useRef, useState, useEffect, useMemo } from 'react';
+import { useTouchSwipe } from '@/hooks/useTouchSwipe';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Property } from '@/types/database';
@@ -169,6 +170,12 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
     goTo((indexRef.current + 1) % totalImages);
   }, [totalImages, goTo]);
 
+  const touchHandlers = useTouchSwipe({
+    onSwipeLeft: () => goTo((indexRef.current + 1) % totalImages),
+    onSwipeRight: () => goTo((indexRef.current - 1 + totalImages) % totalImages),
+    threshold: 30,
+  });
+
   const badge = getStatusBadge(property);
 
   const stats = [
@@ -235,7 +242,7 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
           className="map-overlay-card block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="relative w-full h-[140px] overflow-hidden bg-muted">
+          <div className="relative w-full h-[140px] overflow-hidden bg-muted" {...touchHandlers}>
             {images.map((img, i) => (
               <img
                 key={i}
