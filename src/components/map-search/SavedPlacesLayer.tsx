@@ -1,60 +1,62 @@
-import { useMemo } from 'react';
-import { Marker, Tooltip } from 'react-leaflet';
-import L from 'leaflet';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { Home, Briefcase, Heart, Star, Building2 } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useSavedLocations } from '@/hooks/useSavedLocations';
-import type { LatLngBounds } from 'leaflet';
-import type { LocationIcon } from '@/types/savedLocation';
-import type { LucideIcon } from 'lucide-react';
 
 interface SavedPlacesLayerProps {
-  bounds: LatLngBounds | null;
+  map: google.maps.Map;
+  bounds: google.maps.LatLngBounds | null;
 }
 
-const ICON_MAP: Record<LocationIcon, LucideIcon> = {
-  home: Home,
-  briefcase: Briefcase,
-  heart: Heart,
-  star: Star,
-  building: Building2,
+const ICON_COLORS: Record<string, string> = {
+  home: '#a855f7',
+  briefcase: '#f59e0b',
+  heart: '#ef4444',
+  star: '#eab308',
+  building: '#6b7280',
 };
 
-function createSavedPlaceIcon(iconType: LocationIcon) {
-  const IconComponent = ICON_MAP[iconType] || Building2;
-  return L.divIcon({
-    className: '',
-    html: `<div class="saved-place-marker">${renderToStaticMarkup(<IconComponent size={14} />)}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-}
-
-export function SavedPlacesLayer({ bounds }: SavedPlacesLayerProps) {
+export function SavedPlacesLayer({ map, bounds }: SavedPlacesLayerProps) {
   const { data: locations = [] } = useSavedLocations();
+  const [selected, setSelected] = useState<typeof locations[0] | null>(null);
 
   const visibleLocations = useMemo(() => {
     if (!bounds) return locations;
     return locations.filter((loc) =>
-      bounds.contains([loc.latitude, loc.longitude])
+      bounds.contains(new google.maps.LatLng(loc.latitude, loc.longitude))
     );
   }, [bounds, locations]);
+
+  const handleClose = useCallback(() => setSelected(null), []);
 
   return (
     <>
       {visibleLocations.map((loc) => (
         <Marker
           key={loc.id}
-          position={[loc.latitude, loc.longitude]}
-          icon={createSavedPlaceIcon(loc.icon)}
-          interactive
-        >
-          <Tooltip direction="top" offset={[0, -16]} className="saved-place-popup">
-            <div className="text-sm font-medium">{loc.label}</div>
-            <div className="text-xs text-muted-foreground">{loc.address}</div>
-          </Tooltip>
-        </Marker>
+          position={{ lat: loc.latitude, lng: loc.longitude }}
+          onClick={() => setSelected(loc)}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: ICON_COLORS[loc.icon] || '#6b7280',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          }}
+          title={loc.label}
+        />
       ))}
+      {selected && (
+        <InfoWindow
+          position={{ lat: selected.latitude, lng: selected.longitude }}
+          onCloseClick={handleClose}
+        >
+          <div className="p-1">
+            <div className="text-sm font-medium">{selected.label}</div>
+            <div className="text-xs text-gray-500">{selected.address}</div>
+          </div>
+        </InfoWindow>
+      )}
     </>
   );
 }

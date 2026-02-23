@@ -1,64 +1,67 @@
-import { useMemo } from 'react';
-import { Marker, Tooltip } from 'react-leaflet';
-import L from 'leaflet';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { Compass, ShoppingBag, Car } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { Marker, InfoWindow } from '@react-google-maps/api';
 import { useCityAnchors } from '@/hooks/useCityAnchors';
-import type { LatLngBounds } from 'leaflet';
-import type { LucideIcon } from 'lucide-react';
 
 interface CityAnchorsLayerProps {
+  map: google.maps.Map;
   cityFilter: string | null;
-  bounds: LatLngBounds | null;
+  bounds: google.maps.LatLngBounds | null;
 }
 
-const ANCHOR_ICONS: Record<string, LucideIcon> = {
-  orientation: Compass,
-  daily_life: ShoppingBag,
-  mobility: Car,
+const ANCHOR_COLORS: Record<string, string> = {
+  orientation: '#0ea5e9',
+  daily_life: '#10b981',
+  mobility: '#3b82f6',
 };
 
-function createAnchorIcon(anchorType: string) {
-  const IconComponent = ANCHOR_ICONS[anchorType] || Compass;
-  return L.divIcon({
-    className: '',
-    html: `<div class="city-anchor-marker">${renderToStaticMarkup(<IconComponent size={14} />)}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-}
-
-export function CityAnchorsLayer({ cityFilter, bounds }: CityAnchorsLayerProps) {
+export function CityAnchorsLayer({ map, cityFilter, bounds }: CityAnchorsLayerProps) {
   const { data: anchors = [] } = useCityAnchors(cityFilter ?? undefined);
+  const [selected, setSelected] = useState<typeof anchors[0] | null>(null);
 
   const visibleAnchors = useMemo(() => {
     const withCoords = anchors.filter((a) => a.latitude && a.longitude);
     if (!bounds) return withCoords;
     return withCoords.filter((a) =>
-      bounds.contains([a.latitude!, a.longitude!])
+      bounds.contains(new google.maps.LatLng(a.latitude!, a.longitude!))
     );
   }, [bounds, anchors]);
+
+  const handleClose = useCallback(() => setSelected(null), []);
 
   return (
     <>
       {visibleAnchors.map((anchor) => (
         <Marker
           key={anchor.id}
-          position={[anchor.latitude!, anchor.longitude!]}
-          icon={createAnchorIcon(anchor.anchor_type)}
-          interactive
-        >
-          <Tooltip direction="top" offset={[0, -16]} className="city-anchor-popup">
-            <div className="text-sm font-medium">{anchor.name}</div>
-            {anchor.name_he && (
-              <div className="text-xs text-muted-foreground">{anchor.name_he}</div>
-            )}
-            {anchor.description && (
-              <div className="text-xs text-muted-foreground mt-0.5">{anchor.description}</div>
-            )}
-          </Tooltip>
-        </Marker>
+          position={{ lat: anchor.latitude!, lng: anchor.longitude! }}
+          onClick={() => setSelected(anchor)}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: ANCHOR_COLORS[anchor.anchor_type] || '#6b7280',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+          }}
+          title={anchor.name}
+        />
       ))}
+      {selected && (
+        <InfoWindow
+          position={{ lat: selected.latitude!, lng: selected.longitude! }}
+          onCloseClick={handleClose}
+        >
+          <div className="p-1">
+            <div className="text-sm font-medium">{selected.name}</div>
+            {selected.name_he && (
+              <div className="text-xs text-gray-500">{selected.name_he}</div>
+            )}
+            {selected.description && (
+              <div className="text-xs text-gray-500 mt-0.5">{selected.description}</div>
+            )}
+          </div>
+        </InfoWindow>
+      )}
     </>
   );
 }

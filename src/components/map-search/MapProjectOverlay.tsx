@@ -7,14 +7,28 @@ import { Badge } from '@/components/ui/badge';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
 import { PROJECT_STATUS_LABELS } from '@/lib/seo/constants';
-import type { Map as LeafletMap } from 'leaflet';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
 
 interface MapProjectOverlayProps {
   project: Project;
-  map: LeafletMap;
+  map: google.maps.Map;
   onClose: () => void;
+}
+
+function latLngToPixel(map: google.maps.Map, lat: number, lng: number): { x: number; y: number } | null {
+  const projection = map.getProjection();
+  if (!projection) return null;
+  const bounds = map.getBounds();
+  if (!bounds) return null;
+  const topRight = projection.fromLatLngToPoint(bounds.getNorthEast())!;
+  const bottomLeft = projection.fromLatLngToPoint(bounds.getSouthWest())!;
+  const scale = Math.pow(2, map.getZoom()!);
+  const worldPoint = projection.fromLatLngToPoint(new google.maps.LatLng(lat, lng))!;
+  const mapDiv = map.getDiv();
+  const x = (worldPoint.x - bottomLeft.x) * scale;
+  const y = (worldPoint.y - topRight.y) * scale;
+  return { x: x * (mapDiv.offsetWidth / ((topRight.x - bottomLeft.x) * scale)), y: y * (mapDiv.offsetHeight / ((bottomLeft.y - topRight.y) * scale)) };
 }
 
 export const MapProjectOverlay = memo(function MapProjectOverlay({
@@ -26,21 +40,23 @@ export const MapProjectOverlay = memo(function MapProjectOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
-  const updatePosition = useCallback(() => {
+  const computePos = useCallback(() => {
     if (!project.latitude || !project.longitude) return;
-    const point = map.latLngToContainerPoint([project.latitude, project.longitude]);
-    setPos({ x: point.x, y: point.y });
+    const p = latLngToPixel(map, project.latitude, project.longitude);
+    if (p) setPos(p);
   }, [map, project.latitude, project.longitude]);
 
   useEffect(() => {
-    updatePosition();
-    map.on('move', updatePosition);
-    map.on('zoom', updatePosition);
+    computePos();
+    const listener = map.addListener('idle', computePos);
+    const moveListener = map.addListener('center_changed', computePos);
+    const zoomListener = map.addListener('zoom_changed', computePos);
     return () => {
-      map.off('move', updatePosition);
-      map.off('zoom', updatePosition);
+      google.maps.event.removeListener(listener);
+      google.maps.event.removeListener(moveListener);
+      google.maps.event.removeListener(zoomListener);
     };
-  }, [map, updatePosition]);
+  }, [map, computePos]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

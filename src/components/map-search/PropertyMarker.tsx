@@ -1,10 +1,10 @@
-import { memo, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { memo, useMemo, useCallback } from 'react';
+import { GoogleOverlayView } from '@/components/maps/GoogleOverlayView';
 import { Property } from '@/types/database';
 import { usePreferences } from '@/contexts/PreferencesContext';
 
 interface PropertyMarkerProps {
+  map: google.maps.Map;
   property: Property;
   compact?: boolean;
   isHovered: boolean;
@@ -38,24 +38,8 @@ function getMarkerIndicator(property: Property): 'hot' | 'drop' | null {
   return null;
 }
 
-function createMarkerHtml(priceLabel: string, indicator: 'hot' | 'drop' | null): string {
-  let indicatorHtml = '';
-  if (indicator === 'hot') {
-    indicatorHtml = '<span style="width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0;"></span>';
-  } else if (indicator === 'drop') {
-    indicatorHtml = '<span style="font-size:10px;color:#ef4444;flex-shrink:0;">▼</span>';
-  }
-
-  return `<div class="property-marker-pill">${priceLabel}${indicatorHtml}</div>`;
-}
-
-function estimatePillWidth(priceLabel: string, indicator: 'hot' | 'drop' | null): number {
-  const textWidth = priceLabel.length * 7.5;
-  const indicatorWidth = indicator ? 16 : 0;
-  return Math.ceil(textWidth + indicatorWidth + 24);
-}
-
 export const PropertyMarker = memo(function PropertyMarker({
+  map,
   property,
   compact = false,
   isHovered,
@@ -64,7 +48,6 @@ export const PropertyMarker = memo(function PropertyMarker({
   onHover,
 }: PropertyMarkerProps) {
   const { currency, exchangeRate } = usePreferences();
-  const markerRef = useRef<L.Marker>(null);
 
   const priceLabel = useMemo(
     () => formatCompactPrice(property.price, currency, exchangeRate, property.currency),
@@ -73,67 +56,42 @@ export const PropertyMarker = memo(function PropertyMarker({
 
   const indicator = useMemo(() => compact ? null : getMarkerIndicator(property), [compact, property.original_price, property.price, property.created_at]);
 
-  const icon = useMemo(() => {
-    if (compact) {
-      const w = Math.ceil(priceLabel.length * 6.5 + 16);
-      const h = 22;
-      return L.divIcon({
-        html: `<div class="property-marker-pill compact">${priceLabel}</div>`,
-        className: 'property-marker-container',
-        iconSize: [w, h],
-        iconAnchor: [w / 2, h / 2],
-      });
-    }
-    const w = estimatePillWidth(priceLabel, indicator);
-    const h = 28;
-    return L.divIcon({
-      html: createMarkerHtml(priceLabel, indicator),
-      className: 'property-marker-container',
-      iconSize: [w, h],
-      iconAnchor: [w / 2, h / 2],
-    });
-  }, [priceLabel, indicator, compact]);
-
-  useEffect(() => {
-    const el = markerRef.current?.getElement();
-    if (!el) return;
-
-    const pill = el.querySelector('.property-marker-pill') as HTMLElement | null;
-    if (!pill) return;
-    pill.classList.toggle('marker-hovered', isHovered);
-    pill.classList.toggle('marker-active', isActive);
-
-    if (isActive) {
-      el.style.zIndex = '201';
-    } else if (isHovered) {
-      el.style.zIndex = '200';
-    } else {
-      el.style.zIndex = '';
-    }
-  }, [isHovered, isActive]);
-
   const handleClick = useCallback(() => onClick(property.id), [onClick, property.id]);
   const handleMouseOver = useCallback(() => onHover(property.id), [onHover, property.id]);
   const handleMouseOut = useCallback(() => onHover(null), [onHover]);
 
   if (!property.latitude || !property.longitude) return null;
 
+  const zIndex = isActive ? 201 : isHovered ? 200 : 1;
+
+  const pillClass = `property-marker-pill${compact ? ' compact' : ''}${isHovered ? ' marker-hovered' : ''}${isActive ? ' marker-active' : ''}`;
+
   return (
-    <Marker
-      ref={markerRef}
-      position={[property.latitude, property.longitude]}
-      icon={icon}
-      eventHandlers={{
-        click: handleClick,
-        mouseover: handleMouseOver,
-        mouseout: handleMouseOut,
-      }}
-    />
+    <GoogleOverlayView
+      map={map}
+      lat={property.latitude}
+      lng={property.longitude}
+      zIndex={zIndex}
+      onClick={handleClick}
+      onMouseOver={handleMouseOver}
+      onMouseOut={handleMouseOut}
+    >
+      <div className={pillClass}>
+        {priceLabel}
+        {indicator === 'hot' && (
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+        )}
+        {indicator === 'drop' && (
+          <span style={{ fontSize: 10, color: '#ef4444', flexShrink: 0 }}>▼</span>
+        )}
+      </div>
+    </GoogleOverlayView>
   );
 }, (prev, next) =>
   prev.property.id === next.property.id &&
   prev.compact === next.compact &&
   prev.isHovered === next.isHovered &&
   prev.isActive === next.isActive &&
-  prev.property.price === next.property.price
+  prev.property.price === next.property.price &&
+  prev.map === next.map
 );

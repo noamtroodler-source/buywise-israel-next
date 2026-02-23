@@ -1,13 +1,12 @@
-import { useMemo, useCallback, useState } from 'react';
-import { useMap, useMapEvents } from 'react-leaflet';
-import { Marker } from 'react-leaflet';
-import L from 'leaflet';
+import { useMemo, useCallback, useState, useEffect } from 'react';
+import { GoogleOverlayView } from '@/components/maps/GoogleOverlayView';
 import { Property } from '@/types/database';
 import { Project } from '@/types/projects';
 import { PropertyMarker } from './PropertyMarker';
 import { ProjectMarker } from './ProjectMarker';
 
 interface MarkerClusterLayerProps {
+  map: google.maps.Map;
   properties: Property[];
   projects?: Project[];
   hoveredPropertyId: string | null;
@@ -16,7 +15,6 @@ interface MarkerClusterLayerProps {
   onMarkerHover: (id: string | null) => void;
 }
 
-// Major metro areas shown at country zoom
 const CITY_WAYPOINTS = [
   { name: 'Haifa', lat: 32.79, lng: 34.99 },
   { name: 'Netanya', lat: 32.33, lng: 34.86 },
@@ -27,17 +25,8 @@ const CITY_WAYPOINTS = [
   { name: 'Eilat', lat: 29.56, lng: 34.95 },
 ];
 
-function getCityLabelIcon(name: string) {
-  const estimatedWidth = name.length * 8 + 36;
-  return L.divIcon({
-    html: `<div class="city-waypoint-label">${name}</div>`,
-    className: 'city-waypoint-container',
-    iconSize: [estimatedWidth, 36],
-    iconAnchor: [estimatedWidth / 2, 18],
-  });
-}
-
 export function MarkerClusterLayer({
+  map,
   properties,
   projects = [],
   hoveredPropertyId,
@@ -45,17 +34,18 @@ export function MarkerClusterLayer({
   onMarkerClick,
   onMarkerHover,
 }: MarkerClusterLayerProps) {
-  const map = useMap();
-  const [zoom, setZoom] = useState(map.getZoom());
+  const [zoom, setZoom] = useState(map.getZoom() ?? 7);
 
-  useMapEvents({
-    moveend() {
-      setZoom(map.getZoom());
-    },
-  });
+  useEffect(() => {
+    const listener = map.addListener('idle', () => {
+      setZoom(map.getZoom() ?? 7);
+    });
+    return () => google.maps.event.removeListener(listener);
+  }, [map]);
 
   const handleCityClick = useCallback((lat: number, lng: number) => {
-    map.flyTo([lat, lng], 13, { duration: 0.8 });
+    map.panTo({ lat, lng });
+    map.setZoom(13);
   }, [map]);
 
   const compact = zoom <= 12;
@@ -64,14 +54,15 @@ export function MarkerClusterLayer({
     return (
       <>
         {CITY_WAYPOINTS.map(city => (
-          <Marker
+          <GoogleOverlayView
             key={city.name}
-            position={[city.lat, city.lng]}
-            icon={getCityLabelIcon(city.name)}
-            eventHandlers={{
-              click: () => handleCityClick(city.lat, city.lng),
-            }}
-          />
+            map={map}
+            lat={city.lat}
+            lng={city.lng}
+            onClick={() => handleCityClick(city.lat, city.lng)}
+          >
+            <div className="city-waypoint-label">{city.name}</div>
+          </GoogleOverlayView>
         ))}
       </>
     );
@@ -84,6 +75,7 @@ export function MarkerClusterLayer({
         return (
           <PropertyMarker
             key={property.id}
+            map={map}
             property={property}
             compact={compact}
             isHovered={hoveredPropertyId === property.id}
@@ -98,6 +90,7 @@ export function MarkerClusterLayer({
         return (
           <ProjectMarker
             key={`project-${project.id}`}
+            map={map}
             project={project}
             compact={compact}
             isHovered={hoveredPropertyId === `project-${project.id}`}

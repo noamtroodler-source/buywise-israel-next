@@ -7,13 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useFormatPrice, useFormatArea, useFormatPricePerArea } from '@/contexts/PreferencesContext';
 import { cn } from '@/lib/utils';
-import type { Map as LeafletMap } from 'leaflet';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&auto=format&fit=crop&q=60';
 
 interface MapPropertyOverlayProps {
   property: Property;
-  map: LeafletMap;
+  map: google.maps.Map;
   onClose: () => void;
 }
 
@@ -26,21 +25,32 @@ function getStatusBadge(property: Property) {
   if (property.is_featured) {
     return { label: 'Featured', variant: 'default' as const, icon: Sparkles };
   }
-
   if (property.original_price && property.original_price > property.price) {
     const dropPct = Math.round(((property.original_price - property.price) / property.original_price) * 100);
     return { label: `Price Drop ${dropPct}%`, variant: 'destructive' as const, icon: null };
   }
-
   if (daysSinceListed <= 3) {
     return { label: isRental ? 'Just Available' : 'Just Listed', variant: 'default' as const, icon: null };
   }
-
   if (daysSinceListed <= 14) {
     return { label: 'New', variant: 'outline' as const, icon: null };
   }
-
   return null;
+}
+
+function latLngToPixel(map: google.maps.Map, lat: number, lng: number): { x: number; y: number } | null {
+  const projection = map.getProjection();
+  if (!projection) return null;
+  const bounds = map.getBounds();
+  if (!bounds) return null;
+  const topRight = projection.fromLatLngToPoint(bounds.getNorthEast())!;
+  const bottomLeft = projection.fromLatLngToPoint(bounds.getSouthWest())!;
+  const scale = Math.pow(2, map.getZoom()!);
+  const worldPoint = projection.fromLatLngToPoint(new google.maps.LatLng(lat, lng))!;
+  const mapDiv = map.getDiv();
+  const x = (worldPoint.x - bottomLeft.x) * scale;
+  const y = (worldPoint.y - topRight.y) * scale;
+  return { x: x * (mapDiv.offsetWidth / ((topRight.x - bottomLeft.x) * scale)), y: y * (mapDiv.offsetHeight / ((bottomLeft.y - topRight.y) * scale)) };
 }
 
 export const MapPropertyOverlay = memo(function MapPropertyOverlay({
@@ -55,23 +65,43 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
-  // Calculate pixel position from lat/lng
   const updatePosition = useCallback(() => {
     if (!property.latitude || !property.longitude) return;
-    const point = map.latLngToContainerPoint([property.latitude, property.longitude]);
-    setPos({ x: point.x, y: point.y });
+    const mapDiv = map.getDiv();
+    const overlay = new google.maps.OverlayView();
+    overlay.setMap(map);
+    overlay.draw = function () {};
+    overlay.onAdd = function () {
+      const projection = this.getProjection();
+      if (!projection) return;
+      const point = projection.fromLatLngToContainerPixel(
+        new google.maps.LatLng(property.latitude!, property.longitude!)
+      );
+      if (point) {
+        setPos({ x: point.x, y: point.y });
+      }
+      overlay.setMap(null);
+    };
   }, [map, property.latitude, property.longitude]);
 
-  // Update on mount and map move/zoom
+  // Use a simpler approach: compute position from bounds/projection
+  const computePos = useCallback(() => {
+    if (!property.latitude || !property.longitude) return;
+    const p = latLngToPixel(map, property.latitude, property.longitude);
+    if (p) setPos(p);
+  }, [map, property.latitude, property.longitude]);
+
   useEffect(() => {
-    updatePosition();
-    map.on('move', updatePosition);
-    map.on('zoom', updatePosition);
+    computePos();
+    const listener = map.addListener('idle', computePos);
+    const moveListener = map.addListener('center_changed', computePos);
+    const zoomListener = map.addListener('zoom_changed', computePos);
     return () => {
-      map.off('move', updatePosition);
-      map.off('zoom', updatePosition);
+      google.maps.event.removeListener(listener);
+      google.maps.event.removeListener(moveListener);
+      google.maps.event.removeListener(zoomListener);
     };
-  }, [map, updatePosition]);
+  }, [map, computePos]);
 
   // Close on click outside
   useEffect(() => {
@@ -80,7 +110,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
         onClose();
       }
     }
-    // Delay to avoid immediate close from the click that opened it
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClick);
     }, 100);
@@ -90,7 +119,7 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
     };
   }, [onClose]);
 
-  // Image carousel — DOM-only, no re-renders
+  // Image carousel
   const images = property.images?.length ? property.images : [null];
   const totalImages = images.length;
   const indexRef = useRef(0);
@@ -151,7 +180,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
 
   if (!pos) return null;
 
-  // Position the card above the marker, centered horizontally
   const CARD_WIDTH = 260;
   const TIP_HEIGHT = 10;
 
@@ -166,13 +194,11 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
         willChange: 'left, top',
       }}
     >
-      {/* Card */}
       <Link
         to={`/property/${property.id}`}
         className="map-overlay-card block w-[260px] no-underline text-foreground group rounded-xl overflow-hidden bg-background border border-border shadow-[0_4px_14px_rgba(0,0,0,0.18)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Image carousel */}
         <div className="relative w-full h-[140px] overflow-hidden bg-muted">
           {images.map((img, i) => (
             <img
@@ -188,12 +214,10 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
             />
           ))}
 
-          {/* Favorite */}
           <div className="absolute top-2 right-2 z-10">
             <FavoriteButton propertyId={property.id} propertyPrice={property.price} />
           </div>
 
-          {/* Badge */}
           {badge && (
             <div className="absolute top-2 left-2 z-10">
               <Badge
@@ -209,7 +233,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
             </div>
           )}
 
-          {/* Carousel arrows */}
           {totalImages > 1 && (
             <>
               <button
@@ -229,7 +252,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
             </>
           )}
 
-          {/* Dots */}
           {totalImages > 1 && (
             <div className="absolute bottom-2 left-0 right-0 z-10 flex justify-center gap-1" ref={dotsRef}>
               {Array.from({ length: Math.min(totalImages, 5) }).map((_, i) => (
@@ -244,7 +266,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
             </div>
           )}
 
-          {/* Agent avatar */}
           {agent?.avatar_url && (
             <div className="absolute bottom-2 right-2 z-10">
               <Avatar className="h-6 w-6 ring-2 ring-background">
@@ -257,7 +278,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
           )}
         </div>
 
-        {/* Details */}
         <div className="p-2.5 space-y-0.5">
           <div className="flex items-baseline gap-1.5">
             <span className="text-base font-bold text-foreground leading-tight">
@@ -279,7 +299,6 @@ export const MapPropertyOverlay = memo(function MapPropertyOverlay({
         </div>
       </Link>
 
-      {/* Tip/arrow pointing down to marker */}
       <div className="flex justify-center">
         <div
           className="w-3 h-3 rotate-45 -mt-1.5 border-r border-b border-border"

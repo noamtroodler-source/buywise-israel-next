@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import { GoogleMap } from '@react-google-maps/api';
+import { useGoogleMaps } from '@/components/maps/GoogleMapsProvider';
 import { MapToolbar } from './MapToolbar';
 import { DrawControl } from './DrawControl';
 import { TrainStationLayer } from './TrainStationLayer';
@@ -13,20 +14,26 @@ import { MapPropertyOverlay } from './MapPropertyOverlay';
 import { MapProjectOverlay } from './MapProjectOverlay';
 import { KeyboardShortcutsDialog } from './KeyboardShortcutsDialog';
 import { useMapKeyboardShortcuts } from '@/hooks/useMapKeyboardShortcuts';
-import type { LatLngBounds, Map as LeafletMap } from 'leaflet';
 import type { Property } from '@/types/database';
 import type { Project } from '@/types/projects';
 import type { Polygon } from '@/lib/utils/geometry';
 import { supabase } from '@/integrations/supabase/client';
-import 'leaflet/dist/leaflet.css';
 
-const ISRAEL_CENTER: [number, number] = [31.2, 34.8];
+const ISRAEL_CENTER = { lat: 31.2, lng: 34.8 };
 const DEFAULT_ZOOM = 7;
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+const MAP_STYLES = [
+  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'simplified' }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#c9e4f5' }] },
+  { featureType: 'landscape', elementType: 'geometry.fill', stylers: [{ color: '#f0f0f0' }] },
+];
+
+const containerStyle = { width: '100%', height: '100%' };
 
 interface PropertyMapProps {
-  onBoundsChange?: (bounds: LatLngBounds) => void;
+  onBoundsChange?: (bounds: google.maps.LatLngBounds) => void;
   properties?: Property[];
   projects?: Project[];
   hoveredPropertyId?: string | null;
@@ -40,22 +47,6 @@ interface PropertyMapProps {
   initialCenter?: [number, number];
   initialZoom?: number;
   onMapMove?: (lat: number, lng: number, zoom: number) => void;
-}
-
-function MapEventHandler({
-  onBoundsChange,
-  onZoomChange,
-}: {
-  onBoundsChange?: (b: LatLngBounds) => void;
-  onZoomChange?: (zoom: number) => void;
-}) {
-  useMapEvents({
-    moveend(e) {
-      onBoundsChange?.(e.target.getBounds());
-      onZoomChange?.(e.target.getZoom());
-    },
-  });
-  return null;
 }
 
 export function PropertyMap({
@@ -74,11 +65,12 @@ export function PropertyMap({
   initialZoom,
   onMapMove,
 }: PropertyMapProps) {
-  const [map, setMap] = useState<LeafletMap | null>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
+  const { isLoaded } = useGoogleMaps();
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(initialZoom ?? DEFAULT_ZOOM);
-  const [currentBounds, setCurrentBounds] = useState<LatLngBounds | null>(null);
+  const [currentBounds, setCurrentBounds] = useState<google.maps.LatLngBounds | null>(null);
   const [isDrawMode, setIsDrawMode] = useState(false);
   const [activeLayers, setActiveLayers] = useState<Set<string>>(new Set());
   const [drawnPolygon, setDrawnPolygon] = useState<Polygon | null>(null);
@@ -87,12 +79,21 @@ export function PropertyMap({
   const lastQueriedBoundsRef = useRef<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
 
-  const center: [number, number] = initialCenter ?? ISRAEL_CENTER;
+  const center = useMemo(() => {
+    if (initialCenter) return { lat: initialCenter[0], lng: initialCenter[1] };
+    return ISRAEL_CENTER;
+  }, []);
+
   const startZoom = initialZoom ?? DEFAULT_ZOOM;
 
-  const setMapRef = useCallback((m: LeafletMap | null) => {
+  const onLoad = useCallback((m: google.maps.Map) => {
     setMap(m);
     mapRef.current = m;
+  }, []);
+
+  const onUnmount = useCallback(() => {
+    setMap(null);
+    mapRef.current = null;
   }, []);
 
   // Fly to city when cityFilter changes
@@ -109,36 +110,43 @@ export function PropertyMap({
       .maybeSingle()
       .then(({ data }) => {
         if (data?.center_lat && data?.center_lng) {
-          map.flyTo([data.center_lat, data.center_lng], 13, { duration: 1.2 });
+          map.panTo({ lat: data.center_lat, lng: data.center_lng });
+          map.setZoom(13);
         }
       });
   }, [cityFilter, map]);
 
-  const handleBoundsChange = useCallback(
-    (b: LatLngBounds) => {
-      setCurrentBounds(b);
-      const c = b.getCenter();
-      onMapMove?.(c.lat, c.lng, map?.getZoom() ?? zoom);
-      if (searchAsMove) {
-        onBoundsChange?.(b);
-        lastQueriedBoundsRef.current = b.toBBoxString();
-        setBoundsChanged(false);
-      } else {
-        const bboxStr = b.toBBoxString();
-        setBoundsChanged(bboxStr !== lastQueriedBoundsRef.current);
-      }
-    },
-    [searchAsMove, onBoundsChange, onMapMove, map, zoom]
-  );
+  const boundsToString = (b: google.maps.LatLngBounds) => {
+    const ne = b.getNorthEast();
+    const sw = b.getSouthWest();
+    return `${sw.lat()},${sw.lng()},${ne.lat()},${ne.lng()}`;
+  };
 
-  const handleZoomChange = useCallback((z: number) => {
+  const handleIdle = useCallback(() => {
+    if (!map) return;
+    const b = map.getBounds();
+    if (!b) return;
+    const z = map.getZoom() ?? zoom;
     setZoom(z);
-  }, []);
+    setCurrentBounds(b);
+
+    const c = b.getCenter();
+    onMapMove?.(c.lat(), c.lng(), z);
+
+    if (searchAsMove) {
+      onBoundsChange?.(b);
+      lastQueriedBoundsRef.current = boundsToString(b);
+      setBoundsChanged(false);
+    } else {
+      const bboxStr = boundsToString(b);
+      setBoundsChanged(bboxStr !== lastQueriedBoundsRef.current);
+    }
+  }, [map, searchAsMove, onBoundsChange, onMapMove, zoom]);
 
   const handleSearchThisArea = useCallback(() => {
     if (currentBounds) {
       onBoundsChange?.(currentBounds);
-      lastQueriedBoundsRef.current = currentBounds.toBBoxString();
+      lastQueriedBoundsRef.current = boundsToString(currentBounds);
       setBoundsChanged(false);
       onSearchThisArea?.();
     }
@@ -186,11 +194,8 @@ export function PropertyMap({
   const handleToggleLayer = useCallback((layerId: string) => {
     setActiveLayers((prev) => {
       const next = new Set(prev);
-      if (next.has(layerId)) {
-        next.delete(layerId);
-      } else {
-        next.add(layerId);
-      }
+      if (next.has(layerId)) next.delete(layerId);
+      else next.add(layerId);
       return next;
     });
   }, []);
@@ -206,12 +211,13 @@ export function PropertyMap({
   }, [isDrawMode, onPolygonChange]);
 
   const handleResetView = useCallback(() => {
-    map?.flyTo(ISRAEL_CENTER, DEFAULT_ZOOM, { duration: 1.2 });
+    map?.panTo(ISRAEL_CENTER);
+    map?.setZoom(DEFAULT_ZOOM);
   }, [map]);
 
   const shortcutHandlers = useMemo(() => ({
-    onZoomIn: () => map?.zoomIn(),
-    onZoomOut: () => map?.zoomOut(),
+    onZoomIn: () => { if (map) map.setZoom((map.getZoom() ?? zoom) + 1); },
+    onZoomOut: () => { if (map) map.setZoom((map.getZoom() ?? zoom) - 1); },
     onResetView: handleResetView,
     onToggleDraw: handleToggleDraw,
     onClearSelection: handleClearSelection,
@@ -221,18 +227,20 @@ export function PropertyMap({
     onLocate: () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => map?.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1.2 }),
+          (pos) => {
+            map?.panTo({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            map?.setZoom(14);
+          },
           () => {},
           { enableHighAccuracy: false, timeout: 10000 }
         );
       }
     },
     onShowHelp: handleShowHelp,
-  }), [map, handleResetView, handleToggleDraw, handleClearSelection, handleToggleLayer, handleShowHelp]);
+  }), [map, zoom, handleResetView, handleToggleDraw, handleClearSelection, handleToggleLayer, handleShowHelp]);
 
   useMapKeyboardShortcuts(mapRef, shortcutHandlers);
 
-  // Determine active overlay — could be property or project
   const activeProperty = useMemo(() => {
     if (!activePropertyId) return null;
     if (activePropertyId.startsWith('project-')) {
@@ -243,24 +251,34 @@ export function PropertyMap({
   }, [activePropertyId, properties, projects]);
 
   const isActiveProject = activePropertyId?.startsWith('project-') ?? false;
-
   const showNeighborhoods = activeLayers.has('neighborhoods') && zoom >= 13;
+
+  if (!isLoaded) {
+    return <div className="h-full w-full bg-muted animate-pulse" />;
+  }
 
   return (
     <div className="relative h-full w-full">
-      <MapContainer
+      <GoogleMap
+        mapContainerStyle={containerStyle}
         center={center}
         zoom={startZoom}
-        className="h-full w-full z-0"
-        zoomControl={false}
-        attributionControl={false}
-        ref={setMapRef}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        onIdle={handleIdle}
+        options={{
+          styles: MAP_STYLES,
+          disableDefaultUI: true,
+          zoomControl: false,
+          gestureHandling: 'greedy',
+          clickableIcons: false,
+          minZoom: 7,
+          maxZoom: 19,
+        }}
       >
-        <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
-        <MapEventHandler onBoundsChange={handleBoundsChange} onZoomChange={handleZoomChange} />
-
-        {(properties.length > 0 || projects.length > 0) && (
+        {map && (properties.length > 0 || projects.length > 0) && (
           <MarkerClusterLayer
+            map={map}
             properties={properties}
             projects={projects}
             hoveredPropertyId={hoveredPropertyId}
@@ -270,32 +288,25 @@ export function PropertyMap({
           />
         )}
 
-        {activeLayers.has('trains') && <TrainStationLayer bounds={currentBounds} />}
-        {activeLayers.has('saved') && <SavedPlacesLayer bounds={currentBounds} />}
-        {activeLayers.has('landmarks') && <CityAnchorsLayer cityFilter={cityFilter} bounds={currentBounds} />}
+        {map && activeLayers.has('trains') && <TrainStationLayer map={map} bounds={currentBounds} />}
+        {map && activeLayers.has('saved') && <SavedPlacesLayer map={map} bounds={currentBounds} />}
+        {map && activeLayers.has('landmarks') && <CityAnchorsLayer map={map} cityFilter={cityFilter} bounds={currentBounds} />}
 
-        {showNeighborhoods && (
-          <NeighborhoodBoundariesLayer city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
+        {map && showNeighborhoods && (
+          <NeighborhoodBoundariesLayer map={map} city={cityFilter} highlightedNeighborhood={selectedNeighborhood} />
         )}
 
-        {isDrawMode && (
+        {map && (isDrawMode || drawnPolygon) && (
           <DrawControl
+            map={map}
+            isDrawing={isDrawMode}
             onPolygonDrawn={handlePolygonDrawn}
             drawnPolygon={drawnPolygon}
             onClear={handleClearDrawing}
           />
         )}
+      </GoogleMap>
 
-        {!isDrawMode && drawnPolygon && (
-          <DrawControl
-            onPolygonDrawn={handlePolygonDrawn}
-            drawnPolygon={drawnPolygon}
-            onClear={handleClearDrawing}
-          />
-        )}
-      </MapContainer>
-
-      {/* Property overlay */}
       {activeProperty && !isActiveProject && (activeProperty as Property).latitude && (activeProperty as Property).longitude && map && (
         <MapPropertyOverlay
           key={(activeProperty as Property).id}
@@ -305,7 +316,6 @@ export function PropertyMap({
         />
       )}
 
-      {/* Project overlay */}
       {activeProperty && isActiveProject && (activeProperty as Project).latitude && (activeProperty as Project).longitude && map && (
         <MapProjectOverlay
           key={(activeProperty as Project).id}
