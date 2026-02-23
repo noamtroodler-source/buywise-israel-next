@@ -1,54 +1,122 @@
 
 
-# Phase 4: Featured Listings Manager
+# Migrate Main Search Map from Leaflet to Google Maps
 
-## What We're Building
+## Overview
 
-A new management screen where agency admins can see all their published listings and toggle "Featured" on/off for each one. Each featured listing costs 299/month. The screen shows a summary (active count, monthly total) and handles founding partner free credits.
+Replace the Leaflet/CARTO-based main search map with Google Maps, which is already loaded via `GoogleMapsProvider`. This will eliminate slow tile fading, provide faster/more reliable rendering, and unify the map stack across the app.
 
-## New Files
+## Scope of Changes
 
-### 1. `src/hooks/useFeaturedListings.ts`
-- **`useFeaturedListings(agencyId)`** -- queries `featured_listings` filtered by agency, returns active featured listings with joined property data (title, address, images)
-- **`useFoundingPartnerStatus(agencyId)`** -- queries `founding_partners` and `founding_featured_credits` to check if agency is a founding partner and how many free credits remain this month
-- **`useToggleFeaturedListing()`** -- mutation that:
-  - **Feature ON**: inserts into `featured_listings` (sets `is_free_credit = true` if founding credit available, also increments `credits_used` on the founding credit row)
-  - **Feature OFF**: updates `is_active = false` and sets `cancelled_at = now()`
+### What stays the same
+- All filter logic, URL persistence, data fetching hooks, list panels, mobile sheets
+- The overlay cards (`MapPropertyOverlay`, `MapProjectOverlay`) -- just swap `map.latLngToContainerPoint` for Google's equivalent
+- `SearchThisAreaButton`, `KeyboardShortcutsDialog` -- no map dependency
+- `useMapKeyboardShortcuts` -- only the ref type changes
 
-### 2. `src/components/billing/FeaturedListingsManager.tsx`
-- Summary card at top: "X Featured Listings -- Total: X299/mo" (excludes free-credit ones from cost)
-- For founding partners: shows "Y free credits remaining this month"
-- Table/list of all agency's published properties (from `useAgencyListingsManagement`)
-- Each row shows: thumbnail, title, city, current status
-- Toggle switch per row: "Featured -- 299/mo" or "Free Credit" if founding partner has credits
-- Active featured listings show "Featured since [date]" and a cancel button
-- Confirmation dialog before toggling on (to confirm billing) or off
+### What changes
 
-### 3. `src/pages/agency/AgencyFeatured.tsx`
-- Simple page wrapper with Layout, back button, heading
-- Renders `FeaturedListingsManager` with the agency ID from `useMyAgency`
+**Core map component** (`PropertyMap.tsx`) -- full rewrite:
+- Replace `MapContainer`/`TileLayer` from react-leaflet with `GoogleMap` from `@react-google-maps/api`
+- Replace `useMapEvents` with Google Maps `onIdle`/`onBoundsChanged` events
+- Replace `LatLngBounds` (Leaflet) with `google.maps.LatLngBounds`
+- Store a `google.maps.Map` ref instead of `LeafletMap`
 
-## Modified Files
+**Marker layers** (`MarkerClusterLayer.tsx`, `PropertyMarker.tsx`, `ProjectMarker.tsx`):
+- Replace Leaflet `Marker` + `L.divIcon` with Google Maps `OverlayView` custom class
+- The price-pill HTML stays identical -- just rendered via a Google `OverlayView` instead of `L.divIcon`
+- City waypoint labels also become `OverlayView` instances
 
-### `src/App.tsx`
-- Add route: `/agency/featured` pointing to `AgencyFeatured`
+**Overlay cards** (`MapPropertyOverlay.tsx`, `MapProjectOverlay.tsx`):
+- Replace `map.latLngToContainerPoint()` with Google's `fromLatLngToPoint()` / projection API
+- Replace `map.on('move')` with Google `idle`/`center_changed` listeners
 
-### `src/pages/agency/AgencyDashboard.tsx`
-- Add a "Featured Listings" button in the header nav buttons (next to Billing, Analytics, etc.)
-- Replace the existing "Homepage Listing Opportunities" card (lines 240-275) with a "Featured Listings" summary card showing active count and a link to `/agency/featured`
+**Toggle layers** (`TrainStationLayer.tsx`, `SavedPlacesLayer.tsx`, `CityAnchorsLayer.tsx`):
+- Replace Leaflet `Marker`/`Tooltip` with Google `Marker` + `InfoWindow` or custom `OverlayView`
 
-### `src/pages/agency/AgencyBilling.tsx`
-- Add a "Featured Listings" tab (or summary section in Overview) showing active featured count + monthly cost with link to manage
+**Neighborhood boundaries** (`NeighborhoodBoundariesLayer.tsx`):
+- Replace Leaflet `Polygon` with `google.maps.Polygon` via `@react-google-maps/api`
 
-## Rotation Logic (Display Surfaces)
+**Draw control** (`DrawControl.tsx`):
+- Replace `leaflet-geoman` with Google Maps Drawing Manager
+- The drawing library needs to be added to the `GoogleMapsProvider` libraries array: `['places', 'drawing']`
 
-The existing `useProperties.tsx` and `usePaginatedProperties.tsx` already query `featured_listings WHERE is_active = true` and set `_isBoosted = true`. The `PromotedBadge` component already renders on those. No changes needed for display -- the rotation is inherently session-based since featured properties are fetched fresh on each page load and placed at the top.
+**Toolbar** (`MapToolbar.tsx`):
+- Change `LeafletMap` type to `google.maps.Map`
+- Use `map.setZoom()` instead of `map.zoomIn()`/`map.zoomOut()`
+
+**Neighborhood chips** (`NeighborhoodChips.tsx`):
+- Replace `map.flyTo` with `map.panTo` + smooth animation
+
+**Layout connector** (`MapSearchLayout.tsx`):
+- Replace `LatLngBounds` import/type with `google.maps.LatLngBounds`
+- Update `toBounds()` helper
+
+**Keyboard shortcuts** (`useMapKeyboardShortcuts.ts`):
+- Change `L.Map` ref type to `google.maps.Map`
+
+### Helper: Google Maps OverlayView wrapper
+
+Create a reusable `GoogleOverlayView` React component that wraps `google.maps.OverlayView` to render arbitrary React children at a lat/lng position. This replaces all uses of Leaflet's `divIcon` and handles the price pills, train icons, saved place icons, city anchors, and city waypoint labels.
 
 ## Technical Details
 
-- All queries use the existing Supabase typed client
-- RLS is already configured: agency admins can CRUD their own rows, public can read active ones
-- The partial unique index `(agency_id, property_id) WHERE is_active = true` prevents duplicate active features
-- Founding credit tracking: when toggling on with a free credit, we update `founding_featured_credits.credits_used` via a separate update call
-- No new DB migrations needed -- tables and policies already exist
+### New/Modified Files
+
+| File | Action |
+|------|--------|
+| `src/components/maps/GoogleMapsProvider.tsx` | Add `'drawing'` to libraries array |
+| `src/components/maps/GoogleOverlayView.tsx` | **New** -- reusable OverlayView wrapper |
+| `src/components/map-search/PropertyMap.tsx` | Rewrite: Leaflet to Google Maps |
+| `src/components/map-search/MarkerClusterLayer.tsx` | Rewrite: use GoogleOverlayView |
+| `src/components/map-search/PropertyMarker.tsx` | Rewrite: use GoogleOverlayView |
+| `src/components/map-search/ProjectMarker.tsx` | Rewrite: use GoogleOverlayView |
+| `src/components/map-search/MapPropertyOverlay.tsx` | Update positioning to use Google projection |
+| `src/components/map-search/MapProjectOverlay.tsx` | Update positioning to use Google projection |
+| `src/components/map-search/TrainStationLayer.tsx` | Rewrite: Google Marker |
+| `src/components/map-search/SavedPlacesLayer.tsx` | Rewrite: Google Marker |
+| `src/components/map-search/CityAnchorsLayer.tsx` | Rewrite: Google Marker |
+| `src/components/map-search/NeighborhoodBoundariesLayer.tsx` | Rewrite: Google Polygon |
+| `src/components/map-search/DrawControl.tsx` | Rewrite: Google Drawing Manager |
+| `src/components/map-search/MapToolbar.tsx` | Update types from LeafletMap to google.maps.Map |
+| `src/components/map-search/NeighborhoodChips.tsx` | Update map type and flyTo |
+| `src/components/map-search/MapSearchLayout.tsx` | Replace Leaflet bounds type |
+| `src/hooks/useMapKeyboardShortcuts.ts` | Update ref type |
+
+### Google Maps Styling
+
+Apply a clean, light style matching the current CARTO aesthetic -- hide POI labels, simplify transit labels, use muted colors. The style array from `GoogleMiniMap.tsx` will be extended.
+
+### Bounds Change Flow
+
+```text
+Google Maps onIdle event
+  --> get map.getBounds()
+  --> convert to { north, south, east, west }
+  --> pass to onBoundsChange (same as today)
+```
+
+### Drawing Flow
+
+```text
+Google Drawing Manager (polygon mode)
+  --> onPolygonComplete callback
+  --> extract path coordinates
+  --> convert to Polygon type (same format)
+  --> pass to onPolygonChange (same as today)
+```
+
+## Implementation Order
+
+1. Add `'drawing'` library to `GoogleMapsProvider`
+2. Create `GoogleOverlayView` wrapper component
+3. Rewrite `PropertyMap.tsx` (core map)
+4. Rewrite marker components (`MarkerClusterLayer`, `PropertyMarker`, `ProjectMarker`)
+5. Update overlay cards (`MapPropertyOverlay`, `MapProjectOverlay`)
+6. Rewrite layer components (Train, Saved, Anchors, Neighborhoods)
+7. Rewrite `DrawControl` with Google Drawing Manager
+8. Update `MapToolbar`, `NeighborhoodChips`, `MapSearchLayout`
+9. Update `useMapKeyboardShortcuts` type
+
+All changes will be done in a single pass since they are interdependent.
 
