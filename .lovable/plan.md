@@ -1,75 +1,65 @@
 
 
-# Commute Time Filter (Phase 1)
+# Add Saved Locations as Commute Destinations
 
 ## Overview
-Add a "Commute to" filter that lets users filter properties by max drive time to Tel Aviv or Jerusalem, using the commute data already stored in the `cities` table. Zero API cost, zero new dependencies.
+Add user's saved locations (e.g., "Parents House") as selectable commute destinations alongside Tel Aviv and Jerusalem in the commute filter. Since saved locations are arbitrary coordinates (not cities with pre-computed commute times), we'll use straight-line distance as a proxy for drive time.
 
 ## How It Works
-1. User selects a destination (Tel Aviv or Jerusalem) and a max commute time (15/30/45/60 min)
-2. The app queries the `cities` table to find all cities within that commute time
-3. Properties are filtered client-side to only show listings in qualifying cities
-4. A commute badge appears on property cards showing the drive time
+1. If a user is logged in and has saved locations, those appear as additional destination pills below Tel Aviv/Jerusalem
+2. When a saved location is selected, we calculate straight-line distance from each property to the saved location's coordinates
+3. We apply a rough drive-time estimate (using ~40 km/h average Israeli driving speed) to filter properties within the selected max commute time
+4. This filtering happens client-side since saved location coordinates don't map to the `cities` table columns
 
-## UI Design
+## UI Changes
 
-The filter appears as a new section in both desktop "More Filters" popover and mobile filter sheet, placed after "Listing Age":
+The destination section expands to show saved locations:
 
 ```text
-  Commute
-  -------
-  Destination:   [Tel Aviv]  [Jerusalem]
-  Max time:      [Any] [15] [30] [45] [60] min
+Commute
+-------
+Destination:
+  [Tel Aviv]  [Jerusalem]           <-- existing, unchanged
+  [Parents House]  [Office]         <-- new row, from saved locations
+Max time:  [Any] [15] [30] [45] [60] min
 ```
 
-- Pill-style buttons matching existing filter patterns (rounded-full, same sizing)
-- Selecting a destination + time activates the filter
-- "Any" clears the commute filter
-- When active, the filter button shows a badge count like other filters
+- Saved location pills use smaller text + an icon from the location's saved icon type (Home, Briefcase, Heart, etc.)
+- Only shown when user is logged in and has saved locations
+- If no saved locations exist, the section looks exactly as it does today
 
-## Files to Change
+## Technical Approach
 
-### 1. `src/types/database.ts` - PropertyFilters interface
-Add two new optional fields:
-- `commute_destination?: 'tel_aviv' | 'jerusalem'`
-- `max_commute_minutes?: number`
+### 1. `src/types/database.ts` - Expand commute_destination type
+Change `commute_destination` from `'tel_aviv' | 'jerusalem'` to `'tel_aviv' | 'jerusalem' | string` to support saved location IDs (prefixed with `saved:` e.g. `saved:abc123`).
 
-### 2. `src/hooks/useCommuteCities.ts` (new file)
-A small hook that:
-- Takes a destination and max minutes
-- Queries the `cities` table filtering by `commute_time_tel_aviv` or `commute_time_jerusalem`
-- Returns a list of qualifying city names
-- Cached via React Query (city data rarely changes)
+### 2. `src/hooks/useCommuteCities.ts` - Handle saved location destinations
+When `commute_destination` starts with `saved:`, skip the cities table query and return `null` -- the filtering will happen client-side instead.
 
-### 3. `src/hooks/useProperties.tsx` - useProperties and usePropertyCount
-Add commute filtering logic:
-- When `commute_destination` and `max_commute_minutes` are set, first fetch qualifying city names from the cities table
-- Then add `.in('city', qualifyingCities)` to the property query
-- This replaces any existing city filter when commute is active
+### 3. `src/hooks/usePaginatedProperties.tsx` - Client-side distance filtering for saved locations
+When commute destination is a saved location:
+- Skip the `.in('city', cityNames)` server filter
+- After fetching properties, filter client-side using Haversine distance formula
+- Convert max commute minutes to approximate km (using ~40 km/h average)
+- Filter properties whose straight-line distance is within that radius
 
-### 4. `src/components/filters/PropertyFilters.tsx` - Desktop filters
-Add a "Commute" section inside the "More Filters" popover:
-- Destination toggle (Tel Aviv / Jerusalem)
-- Time pills: Any, 15 min, 30 min, 45 min, 60 min
-- Include in `resetMoreFilters` clear logic
-- Include in active filter count
+### 4. `src/components/filters/PropertyFilters.tsx` - Desktop commute UI
+- Import `useSavedLocations` and `useAuth`
+- After the Tel Aviv/Jerusalem pills, render a second row of pills for each saved location
+- Use the location's icon (from `getLocationIcon`) before the label
+- Set `commute_destination` to `saved:${location.id}` when selected
 
-### 5. `src/components/filters/MobileFilterSheet.tsx` - Mobile filters
-Same commute section, placed after "Listing Age":
-- Destination toggle + time pills
-- Follows existing section styling with Car icon
+### 5. `src/components/filters/MobileFilterSheet.tsx` - Mobile commute UI
+Same changes as desktop: add saved location pills below the city destinations.
 
-### 6. `src/hooks/useMapFilters.ts` - URL persistence
-Add `commute_dest` and `max_commute` URL params so the commute filter persists in shared links.
+### 6. `src/hooks/useMapFilters.ts` - URL support
+The `commute_dest` URL param already supports arbitrary strings, so `saved:abc123` will persist in the URL without changes.
 
-### 7. `src/components/map-search/MobileMapFilterBar.tsx` - Active filter count
-Include commute filter in the `countActiveFilters` function.
+### 7. New utility: `src/lib/utils/haversine.ts`
+A small pure function for calculating distance between two lat/lng points, used for the client-side filtering.
 
-## Technical Notes
-
-- The cities table already has `commute_time_tel_aviv` (integer, minutes) and `commute_time_jerusalem` (integer, minutes) for 20+ cities
-- Jerusalem commute data is sparse (only ~6 cities have values) -- the UI will show available cities count when Jerusalem is selected so users know what to expect
-- No database migrations needed -- all data already exists
-- The commute filter works alongside other filters (price, rooms, etc.) but overrides the city filter when active (you're filtering by commute radius, not a single city)
-- Properties in cities without commute data are excluded when commute filter is active (conservative approach -- only show what we can verify)
-
+## Important Notes
+- Saved location commute filtering is approximate (straight-line distance with a speed multiplier), not exact driving directions. This is clearly a Phase 1 approach and can be upgraded to use a routing API later.
+- The existing Tel Aviv / Jerusalem city-level filtering remains unchanged and is more accurate since it uses pre-computed drive times.
+- Properties without lat/lng coordinates will be excluded when a saved location filter is active.
+- The saved location filter integrates with the drawn polygon filter -- both can be active simultaneously.
