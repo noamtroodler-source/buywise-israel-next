@@ -44,7 +44,18 @@ export function usePropertyCount(filters?: PropertyFilters) {
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
 
-      if (filters?.city) {
+      if (filters?.commute_destination && filters?.max_commute_minutes) {
+        // Commute filter: fetch qualifying cities first
+        const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
+        const { data: commuteCities } = await supabase
+          .from('cities')
+          .select('name')
+          .not(column, 'is', null)
+          .lte(column, filters.max_commute_minutes);
+        const cityNames = (commuteCities ?? []).map(c => c.name);
+        if (cityNames.length === 0) return 0;
+        query = query.in('city', cityNames);
+      } else if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
       if (filters?.neighborhood) {
@@ -153,7 +164,17 @@ export function useProperties(filters?: PropertyFilters) {
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
-      if (filters?.city) {
+      if (filters?.commute_destination && filters?.max_commute_minutes) {
+        const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
+        const { data: commuteCities } = await supabase
+          .from('cities')
+          .select('name')
+          .not(column, 'is', null)
+          .lte(column, filters.max_commute_minutes);
+        const cityNames = (commuteCities ?? []).map(c => c.name);
+        if (cityNames.length === 0) return [] as Property[];
+        query = query.in('city', cityNames);
+      } else if (filters?.city) {
         query = query.ilike('city', `%${filters.city}%`);
       }
       if (filters?.neighborhood) {

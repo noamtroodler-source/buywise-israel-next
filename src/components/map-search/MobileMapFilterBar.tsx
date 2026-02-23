@@ -32,6 +32,7 @@ function countActiveFilters(f: PropertyFilters): number {
   if (f.min_parking) n++;
   if (f.max_days_listed) n++;
   if (f.features?.length) n += f.features.length;
+  if (f.commute_destination && f.max_commute_minutes) n++;
   return n;
 }
 
