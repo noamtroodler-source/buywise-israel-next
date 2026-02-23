@@ -179,9 +179,6 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
           compsCount={verdictData.compsCount} 
         />
 
-        {/* AI Market Insight */}
-        <AIMarketInsight insight={insight} isLoading={insightLoading} />
-
         {/* Value Snapshot Cards (no header) */}
         <PropertyValueSnapshot
           price={property.price}
@@ -224,6 +221,9 @@ export function MarketIntelligence({ property, cityData }: MarketIntelligencePro
             />
           </>
         )}
+
+        {/* AI Market Insight — placed after evidence so it reads as a conclusion */}
+        <AIMarketInsight insight={insight} isLoading={insightLoading} />
 
         {/* Explore city link */}
         <div className="flex justify-center pt-1">
