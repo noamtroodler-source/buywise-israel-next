@@ -112,18 +112,8 @@ export default function Professionals() {
           </section>
         )}
 
-        {/* Disclaimer - inline subtle text */}
-        <div className="container py-8">
-          <div className="flex items-start justify-center gap-2 text-xs text-muted-foreground/70 max-w-2xl mx-auto px-4">
-            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <p>
-              Professionals are selected by BuyWise Israel based on their experience with international buyers. We may receive compensation from listed professionals. We cannot guarantee specific outcomes — the decision to engage is yours alone.
-            </p>
-          </div>
-        </div>
-
         {/* CTA */}
-        <section className="pb-16">
+        <section className="pb-6">
           <div className="container max-w-xl mx-auto">
             <SupportFooter
               message="Looking for a specific type of professional? [Contact us] and we'll help you find the right expert."
@@ -132,6 +122,16 @@ export default function Professionals() {
             />
           </div>
         </section>
+
+        {/* Disclaimer - inline subtle text */}
+        <div className="container pb-16 pt-4">
+          <div className="flex items-start justify-center gap-2 text-xs text-muted-foreground/70 max-w-2xl mx-auto px-4">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <p>
+              Professionals are selected by BuyWise Israel based on their experience with international buyers. We may receive compensation from listed professionals. We cannot guarantee specific outcomes — the decision to engage is yours alone.
+            </p>
+          </div>
+        </div>
       </div>
     </Layout>
   );
