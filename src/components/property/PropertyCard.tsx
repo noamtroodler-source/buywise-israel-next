@@ -1,6 +1,6 @@
 import { useState, memo, useMemo, useCallback, forwardRef } from 'react';
-import { Link } from 'react-router-dom';
-import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Bed, Bath, Maximize, MapPin, ChevronLeft, ChevronRight, Wallet, Sparkles, Clock, TrendingDown, TrendingUp, Flame, Zap, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Property } from '@/types/database';
@@ -13,6 +13,8 @@ import { ShareButton } from './ShareButton';
 
 import { MonthlyEstimate } from './AffordabilityBadge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { differenceInDays } from 'date-fns';
 import { useEventTracking } from '@/hooks/useEventTracking';
 import { useTouchSwipe } from '@/hooks/useTouchSwipe';
@@ -36,6 +38,7 @@ interface PropertyCardProps {
 const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardProps>(function PropertyCard({ property, className, showCompareButton = false, showShareButton = true, showMonthlyEstimate = false, hideStatusBadge = false, compact = false, maxBadges = 2, showCategoryBadge = false, hideFeaturedBadge = false, compareCategory, alwaysShowCompare = false }, ref) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(true);
   const [imageError, setImageError] = useState(false);
@@ -363,18 +366,44 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                 <p className="text-xs text-muted-foreground truncate">
                   {property.neighborhood ? `${property.neighborhood}, ` : ''}{property.city}
                 </p>
-                {/* Days on Market - More prominent for rentals and fresh listings */}
-                {daysLabel && (
-                  <div className={cn(
-                    "flex items-center gap-1 pt-1 text-xs",
-                   freshnessTier === 'hot' ? "text-semantic-teal font-medium" :
-                    freshnessTier === 'fresh' ? "text-semantic-teal font-medium" :
-                    "text-muted-foreground"
-                  )}>
-                    {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                    <span>{daysLabel}</span>
-                  </div>
-                )}
+                {/* Days on Market + Agency Logo row */}
+                <div className="flex items-center justify-between pt-1">
+                  {daysLabel && (
+                    <div className={cn(
+                      "flex items-center gap-1 text-xs",
+                     freshnessTier === 'hot' ? "text-semantic-teal font-medium" :
+                      freshnessTier === 'fresh' ? "text-semantic-teal font-medium" :
+                      "text-muted-foreground"
+                    )}>
+                      {freshnessTier === 'hot' ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      <span>{daysLabel}</span>
+                    </div>
+                  )}
+                  {property.agent?.agency?.logo_url && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="ml-auto flex-shrink-0"
+                          >
+                            <Avatar className="h-6 w-6 border border-border/50">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
               </div>
             </>
           ) : (
@@ -585,6 +614,31 @@ const PropertyCardComponent = memo(forwardRef<HTMLAnchorElement, PropertyCardPro
                       <Clock className="h-3.5 w-3.5" />
                       <span className="text-xs">{daysLabel}</span>
                     </div>
+                  )}
+                  {/* Agency Logo */}
+                  {property.agent?.agency?.logo_url && (
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (property.agent?.agency) {
+                                navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                              }
+                            }}
+                            className="ml-auto flex-shrink-0"
+                          >
+                            <Avatar className="h-6 w-6 border border-border/50">
+                              <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                              <AvatarFallback className="bg-muted"><Building2 className="h-3 w-3 text-muted-foreground" /></AvatarFallback>
+                            </Avatar>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </div>
               </CardContent>
