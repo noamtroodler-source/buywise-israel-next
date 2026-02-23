@@ -77,6 +77,8 @@ export function ProjectMobileFilterSheet({
     { value: 'ac', label: 'A/C' },
     { value: 'accessible', label: 'Accessible' },
     { value: 'sea_view', label: 'Sea View' },
+    { value: 'sukkah_balcony', label: 'Sukkah Balcony' },
+    { value: 'shabbat_elevator', label: 'Shabbos Elevator' },
   ];
 
   // Count active filters
