@@ -1,46 +1,71 @@
 
 
-# Add Agency Logo to Property Cards
+# Bidirectional Hover Sync: Scroll-Into-View
 
-## What Changes
+## Current State
 
-A small circular agency logo (24px) will appear in the bottom-right of the card info section, aligned with the property stats row. This applies to both the main `PropertyCard` (listings grid) and the `MapListCard` (map search sidebar).
+The hover state is already shared bidirectionally:
+- Card hover -> sets `hoveredPropertyId` -> marker gets `isHovered=true` (z-index boost + `marker-hovered` CSS class)
+- Marker hover -> sets `hoveredPropertyId` -> card gets `isHovered=true` (border highlight)
 
-## How It Works
+What's **missing**: when you hover a map marker, the corresponding list card should **scroll into view** automatically.
 
-The data is already available -- the properties query already joins `agent > agency(id, name, logo_url)`. No database changes needed.
+## Changes
 
-For each card, if `property.agent?.agency?.logo_url` exists, a small circular avatar is rendered at the end of the stats/features row. It links to the agency page via `/agencies/{slug}` (the slug is not in the join, but the agency name can serve as a tooltip). The logo uses the existing `Avatar` component for consistency.
+### 1. MapListPanel.tsx -- Add scroll-into-view on marker hover
+
+- Create a `Map<string, HTMLDivElement>` ref to store references to each card's DOM element
+- When `hoveredPropertyId` changes (from a marker hover), call `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` on the corresponding card element
+- Wrap each card in a div with a `ref` callback that registers it in the ref map
+
+### 2. MobileMapSheet.tsx -- Same scroll-into-view logic
+
+Apply the same pattern for the mobile bottom sheet list so marker hover scrolls the mobile card list too.
 
 ## Technical Details
 
-### File: `src/components/property/PropertyCard.tsx`
+### MapListPanel.tsx
 
-**Both compact and standard modes** -- add the agency logo to the bottom-right of the content section:
+Add a ref map and a scroll effect:
 
-- In the features row (`<div className="flex items-center gap-3 text-muted-foreground">`), add a `ml-auto` avatar at the end
-- Uses `Avatar` (h-6 w-6) with `AvatarImage` showing the agency `logo_url`
-- Falls back to a small building icon if no logo
-- Wrapped in a click handler that navigates to the agency page (stops event propagation so it doesn't trigger the property link)
-- Tooltip on hover showing agency name
+```tsx
+const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-Changes for **compact mode** (lines ~360-378): Add avatar after the location line, right-aligned in a flex row with the "Days on Market" label.
+useEffect(() => {
+  if (!hoveredPropertyId) return;
+  const el = cardRefs.current.get(hoveredPropertyId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}, [hoveredPropertyId]);
+```
 
-Changes for **standard mode** (lines ~567-589): Add avatar at the end of the features flex row using `ml-auto`.
+Wrap each card with a ref callback:
 
-### File: `src/components/map-search/MapListCard.tsx`
+```tsx
+<div
+  key={property.id}
+  ref={(el) => {
+    if (el) cardRefs.current.set(property.id, el);
+    else cardRefs.current.delete(property.id);
+  }}
+>
+  <MapListCard ... />
+</div>
+```
 
-Same pattern -- in the info section, add a small (h-5 w-5) avatar in the bottom-right corner of the card details, floated right on the type label row.
+Same pattern for `MapProjectCard` items using their `project-{id}` key.
 
-### File: `src/types/database.ts`
+### MobileMapSheet.tsx
 
-No changes needed -- `Property.agent?.agency` already typed with `logo_url`.
+Same `cardRefs` + `useEffect` scroll logic applied to the mobile list grid.
 
-### Summary
+## Summary
 
 | File | Change |
 |------|--------|
-| `src/components/property/PropertyCard.tsx` | Add agency logo avatar to features row (both modes) |
-| `src/components/map-search/MapListCard.tsx` | Add agency logo avatar to info section |
+| `src/components/map-search/MapListPanel.tsx` | Add card ref map + scroll-into-view effect |
+| `src/components/map-search/MobileMapSheet.tsx` | Same scroll-into-view for mobile |
 
-No new dependencies. No database changes.
+No new dependencies. No database changes. Desktop-only scroll is ~15 lines of code.
+
