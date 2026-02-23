@@ -460,27 +460,35 @@ export function ProjectMobileFilterSheet({
               </h3>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: undefined, label: 'Any' },
                   { value: 'planning', label: 'Planning' },
                   { value: 'pre_sale', label: 'Pre-Sale' },
                   { value: 'foundation', label: 'Foundation' },
                   { value: 'structure', label: 'Structure' },
                   { value: 'finishing', label: 'Finishing' },
                   { value: 'delivery', label: 'Delivery' },
-                ].map(option => (
-                  <button
-                    key={option.label}
-                    className={cn(
-                      "h-10 rounded-full text-sm font-medium transition-all",
-                      filters.construction_stage === option.value
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/80"
-                    )}
-                    onClick={() => updateFilter('construction_stage', option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                ].map(option => {
+                  const isSelected = filters.construction_stage?.includes(option.value);
+                  return (
+                    <button
+                      key={option.value}
+                      className={cn(
+                        "h-10 rounded-full text-sm font-medium transition-all",
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-muted/80"
+                      )}
+                      onClick={() => {
+                        const current = filters.construction_stage || [];
+                        const updated = isSelected
+                          ? current.filter(s => s !== option.value)
+                          : [...current, option.value];
+                        updateFilter('construction_stage', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </section>
 

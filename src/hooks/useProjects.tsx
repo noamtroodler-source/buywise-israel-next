@@ -55,8 +55,8 @@ export function useProjectCount(filters?: ProjectFiltersType) {
       if (filters?.amenities && filters.amenities.length > 0) {
         query = query.contains('amenities', filters.amenities);
       }
-      if (filters?.construction_stage) {
-        query = query.eq('status', filters.construction_stage as any);
+      if (filters?.construction_stage && filters.construction_stage.length > 0) {
+        query = query.in('status', filters.construction_stage as any);
       }
 
       const { count, error } = await query;
