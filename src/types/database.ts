@@ -177,7 +177,7 @@ export interface PropertyFilters {
   has_parking?: boolean;
   has_pool?: boolean;
   // Commute filter
-  commute_destination?: 'tel_aviv' | 'jerusalem';
+  commute_destination?: 'tel_aviv' | 'jerusalem' | string;
   max_commute_minutes?: number;
 }
 

@@ -6,6 +6,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PropertyFilters as PropertyFiltersType, PropertyType, SortOption } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { getLocationIcon } from '@/types/savedLocation';
 
 // Import the filter section components from PropertyFilters
 import { PriceRangeSlider } from '@/components/filters/PriceRangeSlider';
@@ -89,6 +91,7 @@ export function MobileFilterSheet({
   onSoldToggle,
 }: MobileFilterSheetProps) {
   const [citySearch, setCitySearch] = useState('');
+  const { data: savedLocations = [] } = useSavedLocations();
 
   const updateFilter = <K extends keyof PropertyFiltersType>(key: K, value: PropertyFiltersType[K]) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -442,6 +445,35 @@ export function MobileFilterSheet({
                     </button>
                   ))}
                 </div>
+                {savedLocations.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {savedLocations.map(loc => {
+                      const LocationIcon = getLocationIcon(loc.icon);
+                      const destValue = `saved:${loc.id}`;
+                      return (
+                        <button
+                          key={loc.id}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all",
+                            filters.commute_destination === destValue
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted hover:bg-muted/80"
+                          )}
+                          onClick={() => {
+                            if (filters.commute_destination === destValue) {
+                              onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                            } else {
+                              onFiltersChange({ ...filters, commute_destination: destValue, max_commute_minutes: filters.max_commute_minutes || 30 });
+                            }
+                          }}
+                        >
+                          <LocationIcon className="h-3.5 w-3.5" />
+                          {loc.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {filters.commute_destination && (
                   <>
                     <Label className="text-sm text-muted-foreground">Max drive time</Label>

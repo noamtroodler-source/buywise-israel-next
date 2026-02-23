@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
+import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
 
 /**
  * Helper: fetch featured property IDs from the featured_listings table.
@@ -44,7 +45,7 @@ export function usePropertyCount(filters?: PropertyFilters) {
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
 
-      if (filters?.commute_destination && filters?.max_commute_minutes) {
+      if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedLocationDest(filters.commute_destination)) {
         // Commute filter: fetch qualifying cities first
         const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
         const { data: commuteCities } = await supabase
@@ -164,7 +165,7 @@ export function useProperties(filters?: PropertyFilters) {
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
-      if (filters?.commute_destination && filters?.max_commute_minutes) {
+      if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedLocationDest(filters.commute_destination)) {
         const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
         const { data: commuteCities } = await supabase
           .from('cities')

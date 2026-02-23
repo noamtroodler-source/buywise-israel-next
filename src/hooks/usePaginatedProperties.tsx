@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Property, PropertyFilters } from '@/types/database';
+import { isSavedLocationDest, getSavedLocationId, filterByDistance } from '@/lib/utils/commuteFilter';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
 
 const DEFAULT_PAGE_SIZE = 24;
 
@@ -30,6 +32,13 @@ export function usePaginatedProperties(
   const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE;
   const [page, setPage] = useState(1);
   const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const { data: savedLocations = [] } = useSavedLocations();
+
+  // Resolve saved location coords for distance filtering
+  const isSavedDest = isSavedLocationDest(filters?.commute_destination);
+  const savedLocation = isSavedDest
+    ? savedLocations.find(l => l.id === getSavedLocationId(filters!.commute_destination!))
+    : null;
 
   // Reset when filters change
   const filterKey = JSON.stringify(filters);
@@ -43,8 +52,8 @@ export function usePaginatedProperties(
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
 
-      // Commute filter: resolve qualifying cities first
-      if (filters?.commute_destination && filters?.max_commute_minutes) {
+      // Commute filter: resolve qualifying cities first (only for preset destinations)
+      if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedDest) {
         const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
         const { data: cc } = await supabase.from('cities').select('name').not(column, 'is', null).lte(column, filters.max_commute_minutes);
         const cityNames = (cc ?? []).map(c => c.name);
@@ -87,8 +96,8 @@ export function usePaginatedProperties(
         .select(`*, agent:agents(*, agency:agencies(id, name, logo_url))`)
         .eq('is_published', true);
 
-      // Commute filter: resolve qualifying cities first
-      if (filters?.commute_destination && filters?.max_commute_minutes) {
+      // Commute filter: resolve qualifying cities first (only for preset destinations)
+      if (filters?.commute_destination && filters?.max_commute_minutes && !isSavedDest) {
         const column = filters.commute_destination === 'tel_aviv' ? 'commute_time_tel_aviv' : 'commute_time_jerusalem';
         const { data: cc } = await supabase.from('cities').select('name').not(column, 'is', null).lte(column, filters.max_commute_minutes);
         const cityNames = (cc ?? []).map(c => c.name);
@@ -135,9 +144,14 @@ export function usePaginatedProperties(
     ? (pageData ?? []) 
     : [...allProperties.slice(0, (page - 1) * pageSize), ...(pageData ?? [])];
   
-  const properties = page === 1 
+  let properties = page === 1 
     ? [...boostedProperties, ...organicProperties]
     : organicProperties;
+
+  // Client-side distance filtering for saved location commute destinations
+  if (isSavedDest && savedLocation && filters?.max_commute_minutes) {
+    properties = filterByDistance(properties, savedLocation, filters.max_commute_minutes);
+  }
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const hasNextPage = page < totalPages;
