@@ -20,6 +20,8 @@ import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { findNearestCity } from '@/lib/utils/findNearestCity';
 import { HoverOnlyTooltip } from '@/components/filters/HoverOnlyTooltip';
+import { useSavedLocations } from '@/hooks/useSavedLocations';
+import { getLocationIcon } from '@/types/savedLocation';
 interface PropertyFiltersProps {
   filters: PropertyFiltersType;
   onFiltersChange: (filters: PropertyFiltersType) => void;
@@ -124,6 +126,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [geoError, setGeoError] = useState<string | null>(null);
+  const { data: savedLocations = [] } = useSavedLocations();
   
   // Arming logic for hover-only tooltips: prevents tooltip from opening when popover appears under cursor
   const [tooltipsArmed, setTooltipsArmed] = useState(false);
@@ -970,6 +973,35 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
                     </button>
                   ))}
                 </div>
+                {savedLocations.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {savedLocations.map(loc => {
+                      const LocationIcon = getLocationIcon(loc.icon);
+                      const destValue = `saved:${loc.id}`;
+                      return (
+                        <button
+                          key={loc.id}
+                          className={cn(
+                            "flex items-center gap-1.5 h-9 px-3 rounded-full text-xs font-medium transition-all",
+                            filters.commute_destination === destValue
+                              ? "bg-primary text-primary-foreground"
+                              : "border border-border hover:bg-muted"
+                          )}
+                          onClick={() => {
+                            if (filters.commute_destination === destValue) {
+                              onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                            } else {
+                              onFiltersChange({ ...filters, commute_destination: destValue, max_commute_minutes: filters.max_commute_minutes || 30 });
+                            }
+                          }}
+                        >
+                          <LocationIcon className="h-3.5 w-3.5" />
+                          {loc.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {filters.commute_destination && (
                   <>
                     <Label className="text-sm text-muted-foreground">Max drive time</Label>

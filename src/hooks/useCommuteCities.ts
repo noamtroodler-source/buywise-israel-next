@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { isSavedLocationDest } from '@/lib/utils/commuteFilter';
 
 export type CommuteDestination = 'tel_aviv' | 'jerusalem';
 
@@ -10,7 +11,7 @@ export function useCommuteCities(
   return useQuery({
     queryKey: ['commute-cities', destination, maxMinutes],
     queryFn: async () => {
-      if (!destination || !maxMinutes) return null;
+      if (!destination || !maxMinutes || isSavedLocationDest(destination)) return null;
 
       const column =
         destination === 'tel_aviv'
