@@ -835,17 +835,20 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 <HardHat className="h-4 w-4" />
                 <h4 className="font-semibold">Construction Stage</h4>
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { value: undefined, label: 'Any' },
                   { value: 'planning', label: 'Planning' },
-                  { value: 'under_construction', label: 'Under Construction' },
-                  { value: 'completed', label: 'Delivered' },
+                  { value: 'pre_sale', label: 'Pre-Sale' },
+                  { value: 'foundation', label: 'Foundation' },
+                  { value: 'structure', label: 'Structure' },
+                  { value: 'finishing', label: 'Finishing' },
+                  { value: 'delivery', label: 'Delivery' },
                 ].map(option => (
                   <button
                     key={option.label}
                     className={cn(
-                      "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                      "h-10 rounded-full text-sm font-medium transition-all",
                       filters.construction_stage === option.value
                         ? "bg-primary text-primary-foreground"
                         : "border border-border hover:bg-muted"

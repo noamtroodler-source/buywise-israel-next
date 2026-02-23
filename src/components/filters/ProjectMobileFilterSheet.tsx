@@ -458,17 +458,20 @@ export function ProjectMobileFilterSheet({
                 <HardHat className="h-4 w-4 text-primary" />
                 Construction Stage
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { value: undefined, label: 'Any' },
                   { value: 'planning', label: 'Planning' },
-                  { value: 'under_construction', label: 'Under Construction' },
-                  { value: 'completed', label: 'Delivered' },
+                  { value: 'pre_sale', label: 'Pre-Sale' },
+                  { value: 'foundation', label: 'Foundation' },
+                  { value: 'structure', label: 'Structure' },
+                  { value: 'finishing', label: 'Finishing' },
+                  { value: 'delivery', label: 'Delivery' },
                 ].map(option => (
                   <button
                     key={option.label}
                     className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      "h-10 rounded-full text-sm font-medium transition-all",
                       filters.construction_stage === option.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted hover:bg-muted/80"
