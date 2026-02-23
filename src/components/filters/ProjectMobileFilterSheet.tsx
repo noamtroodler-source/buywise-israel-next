@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, Calendar, Briefcase, Loader2, Bath, Search, Layers, Sparkles, Car, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -66,6 +66,19 @@ export function ProjectMobileFilterSheet({
   const currentYear = new Date().getFullYear();
   const completionYears = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
+  const PROJECT_AMENITIES = [
+    { value: 'elevator', label: 'Elevator' },
+    { value: 'balcony', label: 'Balcony' },
+    { value: 'storage', label: 'Storage' },
+    { value: 'garden', label: 'Garden/Yard' },
+    { value: 'safe_room', label: 'Safe Room' },
+    { value: 'pool', label: 'Pool' },
+    { value: 'parking', label: 'Parking' },
+    { value: 'ac', label: 'A/C' },
+    { value: 'accessible', label: 'Accessible' },
+    { value: 'sea_view', label: 'Sea View' },
+  ];
+
   // Count active filters
   const activeFilterCount = [
     filters.city,
@@ -74,6 +87,9 @@ export function ProjectMobileFilterSheet({
     filters.min_rooms || filters.min_bathrooms,
     filters.completion_year_from || filters.completion_year_to,
     filters.developer_id,
+    filters.amenities && filters.amenities.length > 0,
+    filters.min_size || filters.max_size,
+    filters.min_parking,
   ].filter(Boolean).length;
 
   return (
@@ -342,6 +358,99 @@ export function ProjectMobileFilterSheet({
                 </div>
               </section>
             )}
+
+            {/* Size Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                Size (m²)
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Min</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={filters.min_size ?? ''}
+                    onChange={(e) => updateFilter('min_size', e.target.value ? Number(e.target.value) : undefined)}
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Max</label>
+                  <input
+                    type="number"
+                    placeholder="Any"
+                    value={filters.max_size ?? ''}
+                    onChange={(e) => updateFilter('max_size', e.target.value ? Number(e.target.value) : undefined)}
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Amenities Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Amenities
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {PROJECT_AMENITIES.map((amenity) => {
+                  const isSelected = filters.amenities?.includes(amenity.value);
+                  return (
+                    <button
+                      key={amenity.value}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left",
+                        isSelected
+                          ? "bg-primary/10 text-primary border border-primary/30"
+                          : "bg-muted/50 hover:bg-muted border border-transparent"
+                      )}
+                      onClick={() => {
+                        const current = filters.amenities || [];
+                        const updated = isSelected
+                          ? current.filter(a => a !== amenity.value)
+                          : [...current, amenity.value];
+                        updateFilter('amenities', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                        isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                      )}>
+                        {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                      </div>
+                      {amenity.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Parking Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Car className="h-4 w-4 text-primary" />
+                Parking Spots
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {[undefined, 1, 2].map(num => (
+                  <button
+                    key={num ?? 'any'}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                      filters.min_parking === num
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                    onClick={() => updateFilter('min_parking', num)}
+                  >
+                    {num === undefined ? 'Any' : `${num}+`}
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
         </ScrollArea>
 

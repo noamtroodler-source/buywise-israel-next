@@ -37,6 +37,9 @@ export function useProjectCount(filters?: ProjectFiltersType) {
       if (filters?.developer_id) {
         query = query.eq('developer_id', filters.developer_id);
       }
+      if (filters?.amenities && filters.amenities.length > 0) {
+        query = query.contains('amenities', filters.amenities);
+      }
 
       const { count, error } = await query;
       if (error) throw error;
