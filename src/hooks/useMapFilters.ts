@@ -25,6 +25,8 @@ export interface MapUrlFilters {
   lng: number | null;
   zoom: number | null;
   polygon: string | null;
+  commuteDest: string | null;
+  maxCommute: number | null;
 }
 
 function toNum(v: string | null): number | null {
@@ -63,6 +65,8 @@ export function useMapFilters() {
     lng: toNum(searchParams.get('lng')),
     zoom: toNum(searchParams.get('zoom')),
     polygon: searchParams.get('polygon'),
+    commuteDest: searchParams.get('commute_dest'),
+    maxCommute: toNum(searchParams.get('max_commute')),
   }), [searchParams]);
 
   const setFilter = useCallback(

@@ -220,6 +220,7 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
     if (filters.min_floor || filters.max_floor) count++;
     if (filters.available_now || filters.available_by) count++;
     if (filters.allows_pets?.length) count++;
+    if (filters.commute_destination && filters.max_commute_minutes) count++;
     return count;
   }, [filters]);
   
@@ -277,6 +278,9 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       available_now: undefined,
       available_by: undefined,
       allows_pets: undefined,
+      // Commute filter
+      commute_destination: undefined,
+      max_commute_minutes: undefined,
     });
   };
   
@@ -346,7 +350,8 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
       filters.max_days_listed ||
       filters.allows_pets?.length ||
       filters.available_by ||
-      filters.available_now
+      filters.available_now ||
+      (filters.commute_destination && filters.max_commute_minutes)
     );
   }, [filters]);
 
@@ -932,7 +937,75 @@ export function PropertyFilters({ filters, onFiltersChange, listingType, onCreat
               </div>
             </div>
 
-            {/* Size & Floor */}
+            {/* Commute Filter */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Car className="h-4 w-4" />
+                <h4 className="font-semibold">Commute</h4>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-sm text-muted-foreground">Destination</Label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'tel_aviv' as const, label: 'Tel Aviv' },
+                    { value: 'jerusalem' as const, label: 'Jerusalem' },
+                  ].map(dest => (
+                    <button
+                      key={dest.value}
+                      className={cn(
+                        "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                        filters.commute_destination === dest.value
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border hover:bg-muted"
+                      )}
+                      onClick={() => {
+                        if (filters.commute_destination === dest.value) {
+                          onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                        } else {
+                          onFiltersChange({ ...filters, commute_destination: dest.value, max_commute_minutes: filters.max_commute_minutes || 30 });
+                        }
+                      }}
+                    >
+                      {dest.label}
+                    </button>
+                  ))}
+                </div>
+                {filters.commute_destination && (
+                  <>
+                    <Label className="text-sm text-muted-foreground">Max drive time</Label>
+                    <div className="flex gap-2">
+                      {[
+                        { value: undefined, label: 'Any' },
+                        { value: 15, label: '15 min' },
+                        { value: 30, label: '30 min' },
+                        { value: 45, label: '45 min' },
+                        { value: 60, label: '60 min' },
+                      ].map(opt => (
+                        <button
+                          key={opt.label}
+                          className={cn(
+                            "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                            filters.max_commute_minutes === opt.value
+                              ? "bg-primary text-primary-foreground"
+                              : "border border-border hover:bg-muted"
+                          )}
+                          onClick={() => {
+                            if (opt.value === undefined) {
+                              onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                            } else {
+                              updateFilter('max_commute_minutes', opt.value);
+                            }
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-primary">
                 <Layers className="h-4 w-4" />

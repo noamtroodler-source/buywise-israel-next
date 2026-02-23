@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint } from 'lucide-react';
+import { MapPin, DollarSign, LayoutGrid, Building2, SlidersHorizontal, Filter, X, Loader2, Bath, Car, Layers, Clock, CalendarCheck, Cat, Dog, PawPrint, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -124,6 +124,7 @@ export function MobileFilterSheet({
     filters.min_size || filters.max_size,
     filters.min_parking,
     filters.max_days_listed,
+    filters.commute_destination && filters.max_commute_minutes,
   ].filter(Boolean).length;
 
   return (
@@ -405,6 +406,75 @@ export function MobileFilterSheet({
                     {option.label}
                   </button>
                 ))}
+              </div>
+            </section>
+
+            {/* Commute Section */}
+            <section className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Navigation className="h-4 w-4 text-primary" />
+                Commute
+              </h3>
+              <div className="space-y-3">
+                <Label className="text-sm text-muted-foreground">Destination</Label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'tel_aviv' as const, label: 'Tel Aviv' },
+                    { value: 'jerusalem' as const, label: 'Jerusalem' },
+                  ].map(dest => (
+                    <button
+                      key={dest.value}
+                      className={cn(
+                        "flex-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all",
+                        filters.commute_destination === dest.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted hover:bg-muted/80"
+                      )}
+                      onClick={() => {
+                        if (filters.commute_destination === dest.value) {
+                          onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                        } else {
+                          onFiltersChange({ ...filters, commute_destination: dest.value, max_commute_minutes: filters.max_commute_minutes || 30 });
+                        }
+                      }}
+                    >
+                      {dest.label}
+                    </button>
+                  ))}
+                </div>
+                {filters.commute_destination && (
+                  <>
+                    <Label className="text-sm text-muted-foreground">Max drive time</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: undefined, label: 'Any' },
+                        { value: 15, label: '15 min' },
+                        { value: 30, label: '30 min' },
+                        { value: 45, label: '45 min' },
+                        { value: 60, label: '60 min' },
+                      ].map(opt => (
+                        <button
+                          key={opt.label}
+                          className={cn(
+                            "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+                            filters.max_commute_minutes === opt.value
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted hover:bg-muted/80"
+                          )}
+                          onClick={() => {
+                            if (opt.value === undefined) {
+                              onFiltersChange({ ...filters, commute_destination: undefined, max_commute_minutes: undefined });
+                            } else {
+                              updateFilter('max_commute_minutes', opt.value);
+                            }
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             </section>
 

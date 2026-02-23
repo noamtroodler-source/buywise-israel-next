@@ -176,6 +176,9 @@ export interface PropertyFilters {
   has_storage?: boolean;
   has_parking?: boolean;
   has_pool?: boolean;
+  // Commute filter
+  commute_destination?: 'tel_aviv' | 'jerusalem';
+  max_commute_minutes?: number;
 }
 
 export interface SearchAlert {
