@@ -1,6 +1,6 @@
 import { memo, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Sparkles, Building2 } from 'lucide-react';
 import { Property } from '@/types/database';
 import { PropertyThumbnail } from '@/components/shared/PropertyThumbnail';
 import { FavoriteButton } from '@/components/property/FavoriteButton';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { useFormatPrice, useFormatArea } from '@/contexts/PreferencesContext';
 import { PROPERTY_TYPE_LABELS } from '@/lib/seo/constants';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 interface MapListCardProps {
   property: Property;
@@ -46,6 +48,7 @@ function getStatusBadge(property: Property) {
 export const MapListCard = memo(function MapListCard({ property, isHovered, onHover, onHoverEnd }: MapListCardProps) {
   const formatPrice = useFormatPrice();
   const formatArea = useFormatArea();
+  const navigate = useNavigate();
   const [imageIndex, setImageIndex] = useState(0);
   const [isCardHovered, setIsCardHovered] = useState(false);
 
@@ -165,7 +168,33 @@ export const MapListCard = memo(function MapListCard({ property, isHovered, onHo
 
         <p className="text-sm text-foreground truncate">{location}</p>
 
-        <p className="text-xs text-muted-foreground capitalize">{typeLabel}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground capitalize">{typeLabel}</p>
+          {property.agent?.agency?.logo_url && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (property.agent?.agency) {
+                        navigate(`/agencies/${property.agent.agency.name.toLowerCase().replace(/\s+/g, '-')}`);
+                      }
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    <Avatar className="h-5 w-5 border border-border/50">
+                      <AvatarImage src={property.agent.agency.logo_url} alt={property.agent.agency.name} />
+                      <AvatarFallback className="bg-muted"><Building2 className="h-2.5 w-2.5 text-muted-foreground" /></AvatarFallback>
+                    </Avatar>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">{property.agent.agency.name}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </div>
     </Link>
   );
