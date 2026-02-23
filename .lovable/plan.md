@@ -1,47 +1,75 @@
 
 
-# Add Swipe Support to Map Popup Image Carousels
+# Commute Time Filter (Phase 1)
 
-## Problem
-The map property popups (both Leaflet and Google Maps versions) only support arrow button navigation for images. On mobile, users expect to swipe through photos -- arrow buttons are too small and require precise tapping.
+## Overview
+Add a "Commute to" filter that lets users filter properties by max drive time to Tel Aviv or Jerusalem, using the commute data already stored in the `cities` table. Zero API cost, zero new dependencies.
 
-## Solution
-Wire the existing `useTouchSwipe` hook into both popup carousel containers. This gives horizontal swipe detection with vertical-scroll protection (already built into the hook).
+## How It Works
+1. User selects a destination (Tel Aviv or Jerusalem) and a max commute time (15/30/45/60 min)
+2. The app queries the `cities` table to find all cities within that commute time
+3. Properties are filtered client-side to only show listings in qualifying cities
+4. A commute badge appears on property cards showing the drive time
+
+## UI Design
+
+The filter appears as a new section in both desktop "More Filters" popover and mobile filter sheet, placed after "Listing Age":
+
+```text
+  Commute
+  -------
+  Destination:   [Tel Aviv]  [Jerusalem]
+  Max time:      [Any] [15] [30] [45] [60] min
+```
+
+- Pill-style buttons matching existing filter patterns (rounded-full, same sizing)
+- Selecting a destination + time activates the filter
+- "Any" clears the commute filter
+- When active, the filter button shows a badge count like other filters
 
 ## Files to Change
 
-### 1. `src/components/map-search/MapPropertyPopup.tsx`
-- Import `useTouchSwipe` from `@/hooks/useTouchSwipe`
-- Call the hook with `onSwipeLeft` -> `nextImage` (adapted for touch) and `onSwipeRight` -> `prevImage`
-- Spread the touch handlers (`onTouchStart`, `onTouchMove`, `onTouchEnd`) onto the image carousel container div (the `h-[140px]` div)
+### 1. `src/types/database.ts` - PropertyFilters interface
+Add two new optional fields:
+- `commute_destination?: 'tel_aviv' | 'jerusalem'`
+- `max_commute_minutes?: number`
 
-### 2. `src/components/map-search/MapPropertyOverlay.tsx`
-- Same pattern: import `useTouchSwipe`, call with prev/next callbacks, spread onto the image container div
+### 2. `src/hooks/useCommuteCities.ts` (new file)
+A small hook that:
+- Takes a destination and max minutes
+- Queries the `cities` table filtering by `commute_time_tel_aviv` or `commute_time_jerusalem`
+- Returns a list of qualifying city names
+- Cached via React Query (city data rarely changes)
 
-## Technical Detail
+### 3. `src/hooks/useProperties.tsx` - useProperties and usePropertyCount
+Add commute filtering logic:
+- When `commute_destination` and `max_commute_minutes` are set, first fetch qualifying city names from the cities table
+- Then add `.in('city', qualifyingCities)` to the property query
+- This replaces any existing city filter when commute is active
 
-The existing `prevImage`/`nextImage` callbacks use `React.MouseEvent` typing and call `e.preventDefault()`. For touch, we need simple no-arg wrappers:
+### 4. `src/components/filters/PropertyFilters.tsx` - Desktop filters
+Add a "Commute" section inside the "More Filters" popover:
+- Destination toggle (Tel Aviv / Jerusalem)
+- Time pills: Any, 15 min, 30 min, 45 min, 60 min
+- Include in `resetMoreFilters` clear logic
+- Include in active filter count
 
-```tsx
-const swipePrev = useCallback(() => {
-  goTo((indexRef.current - 1 + totalImages) % totalImages);
-}, [totalImages, goTo]);
+### 5. `src/components/filters/MobileFilterSheet.tsx` - Mobile filters
+Same commute section, placed after "Listing Age":
+- Destination toggle + time pills
+- Follows existing section styling with Car icon
 
-const swipeNext = useCallback(() => {
-  goTo((indexRef.current + 1) % totalImages);
-}, [totalImages, goTo]);
+### 6. `src/hooks/useMapFilters.ts` - URL persistence
+Add `commute_dest` and `max_commute` URL params so the commute filter persists in shared links.
 
-const touchHandlers = useTouchSwipe({
-  onSwipeLeft: swipeNext,
-  onSwipeRight: swipePrev,
-  threshold: 30,  // lower threshold for small popup area
-});
-```
+### 7. `src/components/map-search/MobileMapFilterBar.tsx` - Active filter count
+Include commute filter in the `countActiveFilters` function.
 
-Then on the carousel div:
-```tsx
-<div className="relative w-full h-[140px] ..." {...touchHandlers}>
-```
+## Technical Notes
 
-No new dependencies. ~10 lines per file.
+- The cities table already has `commute_time_tel_aviv` (integer, minutes) and `commute_time_jerusalem` (integer, minutes) for 20+ cities
+- Jerusalem commute data is sparse (only ~6 cities have values) -- the UI will show available cities count when Jerusalem is selected so users know what to expect
+- No database migrations needed -- all data already exists
+- The commute filter works alongside other filters (price, rooms, etc.) but overrides the city filter when active (you're filtering by commute radius, not a single city)
+- Properties in cities without commute data are excluded when commute filter is active (conservative approach -- only show what we can verify)
 
