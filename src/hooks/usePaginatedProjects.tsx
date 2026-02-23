@@ -45,10 +45,25 @@ export function usePaginatedProjects(
   const { data: totalCount = 0 } = useQuery({
     queryKey: ['projects', 'paginated-count', filters],
     queryFn: async () => {
+      // If property_types filter is active, first get matching project IDs
+      let propertyTypeProjectIds: string[] | null = null;
+      if (filters?.property_types && filters.property_types.length > 0) {
+        const { data: unitData } = await supabase
+          .from('project_units')
+          .select('project_id')
+          .in('unit_type', filters.property_types);
+        propertyTypeProjectIds = [...new Set((unitData || []).map(u => u.project_id))];
+        if (propertyTypeProjectIds.length === 0) return 0;
+      }
+
       let query = supabase
         .from('projects')
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
+
+      if (propertyTypeProjectIds) {
+        query = query.in('id', propertyTypeProjectIds);
+      }
 
       query = applyFilters(query, filters);
 
@@ -56,7 +71,7 @@ export function usePaginatedProjects(
       if (error) throw error;
       return count ?? 0;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - projects don't change frequently
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch boosted project IDs (page-1 only, cached 5 min)
@@ -70,12 +85,30 @@ export function usePaginatedProjects(
   const { data: pageData, isLoading, isFetching } = useQuery({
     queryKey: ['projects', 'paginated', filters, page, boostedIds],
     queryFn: async () => {
+      // If property_types filter is active, first get matching project IDs
+      let propertyTypeProjectIds: string[] | null = null;
+      if (filters?.property_types && filters.property_types.length > 0) {
+        const { data: unitData } = await supabase
+          .from('project_units')
+          .select('project_id')
+          .in('unit_type', filters.property_types);
+        propertyTypeProjectIds = [...new Set((unitData || []).map(u => u.project_id))];
+        if (propertyTypeProjectIds.length === 0) {
+          return []; // No projects match
+        }
+      }
+
       const offset = (page - 1) * pageSize;
 
       let query = supabase
         .from('projects')
         .select(`*, developer:developer_id (*)`)
         .eq('is_published', true);
+
+      // Apply property type filter
+      if (propertyTypeProjectIds) {
+        query = query.in('id', propertyTypeProjectIds);
+      }
 
       // On page 1, exclude boosted projects from organic results to avoid duplicates
       if (page === 1 && boostedIds.length > 0) {
@@ -179,6 +212,9 @@ function applyFilters(query: any, filters?: ProjectFiltersType) {
   }
   if (filters.amenities && filters.amenities.length > 0) {
     query = query.contains('amenities', filters.amenities);
+  }
+  if (filters.construction_stage) {
+    query = query.eq('status', filters.construction_stage as any);
   }
 
   return query;

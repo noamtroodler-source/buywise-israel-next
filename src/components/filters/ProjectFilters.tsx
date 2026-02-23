@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
- import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car } from 'lucide-react';
+ import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car, HardHat, Home } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,8 @@ export interface ProjectFiltersType {
   min_size?: number;
   max_size?: number;
   min_parking?: number;
+  construction_stage?: string;
+  property_types?: string[];
 }
 
 const PROJECT_AMENITIES = [
@@ -144,6 +146,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.amenities && filters.amenities.length > 0) count++;
     if (filters.min_size || filters.max_size) count++;
     if (filters.min_parking) count++;
+    if (filters.construction_stage) count++;
+    if (filters.property_types && filters.property_types.length > 0) count++;
     return count;
   }, [filters]);
 
@@ -183,7 +187,9 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       (filters.amenities && filters.amenities.length > 0) ||
       filters.min_size ||
       filters.max_size ||
-      filters.min_parking
+      filters.min_parking ||
+      filters.construction_stage ||
+      (filters.property_types && filters.property_types.length > 0)
     );
   }, [filters]);
 
@@ -193,6 +199,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.amenities && filters.amenities.length > 0) count++;
     if (filters.min_size || filters.max_size) count++;
     if (filters.min_parking) count++;
+    if (filters.construction_stage) count++;
+    if (filters.property_types && filters.property_types.length > 0) count++;
     return count;
   }, [filters]);
 
@@ -820,6 +828,79 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 ))}
               </div>
             </div>
+
+            {/* Construction Stage */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <HardHat className="h-4 w-4" />
+                <h4 className="font-semibold">Construction Stage</h4>
+              </div>
+              <div className="flex gap-2">
+                {[
+                  { value: undefined, label: 'Any' },
+                  { value: 'planning', label: 'Planning' },
+                  { value: 'under_construction', label: 'Under Construction' },
+                  { value: 'completed', label: 'Delivered' },
+                ].map(option => (
+                  <button
+                    key={option.label}
+                    className={cn(
+                      "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                      filters.construction_stage === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('construction_stage', option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Property Types */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Home className="h-4 w-4" />
+                <h4 className="font-semibold">Property Types</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: '3-Room Apartment', label: '3-Room Apt' },
+                  { value: '4-Room Apartment', label: '4-Room Apt' },
+                  { value: '5-Room Apartment', label: '5-Room Apt' },
+                  { value: 'Garden Apartment', label: 'Garden Apt' },
+                  { value: 'Penthouse', label: 'Penthouse' },
+                ].map((type) => {
+                  const isSelected = filters.property_types?.includes(type.value);
+                  return (
+                    <button
+                      key={type.value}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg hover:bg-muted transition-colors text-left"
+                      onClick={() => {
+                        const current = filters.property_types || [];
+                        const updated = isSelected
+                          ? current.filter(t => t !== type.value)
+                          : [...current, type.value];
+                        updateFilter('property_types', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary"
+                          : "border-primary/50"
+                      )}>
+                        {isSelected && (
+                          <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                        )}
+                      </div>
+                      <span>{type.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Fixed bottom action bar - matching resale */}
@@ -834,6 +915,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                   min_size: undefined,
                   max_size: undefined,
                   min_parking: undefined,
+                  construction_stage: undefined,
+                  property_types: undefined,
                 });
               }}
             >

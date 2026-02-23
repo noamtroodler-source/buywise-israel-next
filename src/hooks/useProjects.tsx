@@ -11,10 +11,25 @@ export function useProjectCount(filters?: ProjectFiltersType) {
   return useQuery({
     queryKey: ['projects', 'count', filters],
     queryFn: async () => {
+      // If property_types filter is active, first get matching project IDs
+      let propertyTypeProjectIds: string[] | null = null;
+      if (filters?.property_types && filters.property_types.length > 0) {
+        const { data: unitData } = await supabase
+          .from('project_units')
+          .select('project_id')
+          .in('unit_type', filters.property_types);
+        propertyTypeProjectIds = [...new Set((unitData || []).map(u => u.project_id))];
+        if (propertyTypeProjectIds.length === 0) return 0;
+      }
+
       let query = supabase
         .from('projects')
         .select('id', { count: 'exact', head: true })
         .eq('is_published', true);
+
+      if (propertyTypeProjectIds) {
+        query = query.in('id', propertyTypeProjectIds);
+      }
 
       if (filters?.city) {
         query = query.eq('city', filters.city);
@@ -40,12 +55,15 @@ export function useProjectCount(filters?: ProjectFiltersType) {
       if (filters?.amenities && filters.amenities.length > 0) {
         query = query.contains('amenities', filters.amenities);
       }
+      if (filters?.construction_stage) {
+        query = query.eq('status', filters.construction_stage as any);
+      }
 
       const { count, error } = await query;
       if (error) throw error;
       return count ?? 0;
     },
-    staleTime: 10000, // Cache for 10s to avoid excessive queries
+    staleTime: 10000,
   });
 }
 
