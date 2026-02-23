@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
  import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -694,15 +693,15 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       </Popover>
       )}
 
-      {/* Desktop: More Filters Button */}
+      {/* Desktop: More Filters Button - ghost styling matching resale */}
       {!isMobile && (
         <Button
-          variant="outline"
-          className={cn(filterButtonBase, moreFiltersCount > 0 && filterButtonActive)}
+          variant="ghost"
+          className="h-11 min-h-[44px] gap-2 px-3 font-medium hover:bg-muted/50 touch-manipulation"
           onClick={() => setMoreFiltersOpen(true)}
         >
           <SlidersHorizontal className="h-4 w-4" />
-          <span>{moreFiltersCount > 0 ? `More (${moreFiltersCount})` : 'More'}</span>
+          <span>More</span>
         </Button>
       )}
 
@@ -719,117 +718,115 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
         </Button>
       )}
 
-      {/* Desktop: More Filters Sheet */}
+      {/* Desktop: More Filters Sheet - matching resale/rental design */}
       <Sheet open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
-        <SheetContent side="right" className="sm:max-w-md p-0 flex flex-col">
-          <div className="sticky top-0 z-20 bg-background border-b border-border px-6 py-4">
-            <SheetHeader>
-              <SheetTitle className="text-lg font-semibold">More Filters</SheetTitle>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
+          <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4">
+            <SheetHeader className="text-left">
+              <SheetTitle className="text-xl">More Filters</SheetTitle>
             </SheetHeader>
           </div>
 
-          <ScrollArea className="flex-1 px-6 py-4">
-            <div className="space-y-8">
-              {/* Size Section */}
-              <section className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-primary" />
-                  Size (m²)
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Min</Label>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      value={filters.min_size ?? ''}
-                      onChange={(e) => updateFilter('min_size', e.target.value ? Number(e.target.value) : undefined)}
-                      className="rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Max</Label>
-                    <Input
-                      type="number"
-                      placeholder="Any"
-                      value={filters.max_size ?? ''}
-                      onChange={(e) => updateFilter('max_size', e.target.value ? Number(e.target.value) : undefined)}
-                      className="rounded-lg"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* Amenities Section */}
-              <section className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  Amenities
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {PROJECT_AMENITIES.map((amenity) => {
-                    const isSelected = filters.amenities?.includes(amenity.value);
-                    return (
-                      <button
-                        key={amenity.value}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left",
-                          isSelected
-                            ? "bg-primary/10 text-primary border border-primary/30"
-                            : "bg-muted/50 hover:bg-muted border border-transparent"
-                        )}
-                        onClick={() => {
-                          const current = filters.amenities || [];
-                          const updated = isSelected
-                            ? current.filter(a => a !== amenity.value)
-                            : [...current, amenity.value];
-                          updateFilter('amenities', updated.length > 0 ? updated : undefined);
-                        }}
-                      >
-                        <div className={cn(
-                          "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
-                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
-                        )}>
-                          {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
-                        </div>
-                        {amenity.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Parking Section */}
-              <section className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Car className="h-4 w-4 text-primary" />
-                  Parking Spots
-                </h3>
+          <div className="px-4 pb-32 space-y-6 py-2">
+            {/* Size Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Layers className="h-4 w-4" />
+                <h4 className="font-semibold">Size (m²)</h4>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Size (m²)</Label>
                 <div className="flex gap-2">
-                  {[undefined, 1, 2].map(num => (
-                    <button
-                      key={num ?? 'any'}
-                      className={cn(
-                        "flex-1 h-10 rounded-full text-sm font-medium transition-all",
-                        filters.min_parking === num
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border hover:bg-muted"
-                      )}
-                      onClick={() => updateFilter('min_parking', num)}
-                    >
-                      {num === undefined ? 'Any' : `${num}+`}
-                    </button>
-                  ))}
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.min_size ?? ''}
+                    onChange={(e) => updateFilter('min_size', e.target.value ? Number(e.target.value) : undefined)}
+                    className="rounded-lg"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.max_size ?? ''}
+                    onChange={(e) => updateFilter('max_size', e.target.value ? Number(e.target.value) : undefined)}
+                    className="rounded-lg"
+                  />
                 </div>
-              </section>
+              </div>
             </div>
-          </ScrollArea>
 
-          {/* Fixed Bottom Bar */}
-          <div className="border-t border-border p-4 flex gap-3 bg-background">
+            {/* Amenities */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Sparkles className="h-4 w-4" />
+                <h4 className="font-semibold">Amenities</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {PROJECT_AMENITIES.map((amenity) => {
+                  const isSelected = filters.amenities?.includes(amenity.value);
+                  return (
+                    <button
+                      key={amenity.value}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg hover:bg-muted transition-colors text-left"
+                      onClick={() => {
+                        const current = filters.amenities || [];
+                        const updated = isSelected
+                          ? current.filter(a => a !== amenity.value)
+                          : [...current, amenity.value];
+                        updateFilter('amenities', updated.length > 0 ? updated : undefined);
+                      }}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary"
+                          : "border-primary/50"
+                      )}>
+                        {isSelected && (
+                          <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                        )}
+                      </div>
+                      <span>{amenity.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Parking */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-primary">
+                <Car className="h-4 w-4" />
+                <h4 className="font-semibold">Parking</h4>
+              </div>
+              <div className="flex gap-2">
+                {[
+                  { value: undefined, label: 'Any' },
+                  { value: 1, label: '1+' },
+                  { value: 2, label: '2+' },
+                ].map(option => (
+                  <button
+                    key={option.label}
+                    className={cn(
+                      "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                      filters.min_parking === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "border border-border hover:bg-muted"
+                    )}
+                    onClick={() => updateFilter('min_parking', option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed bottom action bar - matching resale */}
+          <div className="fixed bottom-0 left-0 right-0 sm:left-auto sm:right-0 sm:w-full sm:max-w-md bg-background border-t border-border p-4 pb-safe flex gap-3 z-20">
             <Button
               variant="outline"
-              className="flex-1 rounded-xl h-12"
+              className="flex-1 rounded-full h-12"
               onClick={() => {
                 onFiltersChange({
                   ...filters,
@@ -840,14 +837,15 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
                 });
               }}
             >
+              <RotateCcw className="h-4 w-4 mr-2" />
               Reset
             </Button>
             <Button
-              className="flex-1 rounded-xl h-12"
+              className="flex-1 rounded-full h-12 bg-primary"
               onClick={() => setMoreFiltersOpen(false)}
             >
               {countLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
+              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply Filters'}
             </Button>
           </div>
         </SheetContent>
