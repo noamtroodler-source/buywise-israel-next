@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
- import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation } from 'lucide-react';
+ import { ChevronDown, ChevronUp, MapPin, DollarSign, Building2, Calendar, ArrowUpDown, Search, Check, ArrowRight, LayoutGrid, HelpCircle, Bell, Briefcase, Loader2, RotateCcw, SlidersHorizontal, Navigation, Layers, Sparkles, Car } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +30,24 @@ export interface ProjectFiltersType {
   min_bathrooms?: number;
   developer_id?: string;
   sort_by?: 'newest' | 'price_asc' | 'price_desc' | 'completion';
+  amenities?: string[];
+  min_size?: number;
+  max_size?: number;
+  min_parking?: number;
 }
+
+const PROJECT_AMENITIES = [
+  { value: 'elevator', label: 'Elevator' },
+  { value: 'balcony', label: 'Balcony' },
+  { value: 'storage', label: 'Storage' },
+  { value: 'garden', label: 'Garden/Yard' },
+  { value: 'safe_room', label: 'Safe Room' },
+  { value: 'pool', label: 'Pool' },
+  { value: 'parking', label: 'Parking' },
+  { value: 'ac', label: 'A/C' },
+  { value: 'accessible', label: 'Accessible' },
+  { value: 'sea_view', label: 'Sea View' },
+];
 
 interface ProjectFiltersProps {
   filters: ProjectFiltersType;
@@ -73,7 +92,8 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
   const [bedsAndBathsOpen, setBedsAndBathsOpen] = useState(false);
   const [developerOpen, setDeveloperOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [developerSearch, setDeveloperSearch] = useState('');
    const [geoError, setGeoError] = useState<string | null>(null);
@@ -122,6 +142,9 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
     if (filters.min_rooms || filters.min_bathrooms) count++;
     if (filters.completion_year_from || filters.completion_year_to) count++;
     if (filters.developer_id) count++;
+    if (filters.amenities && filters.amenities.length > 0) count++;
+    if (filters.min_size || filters.max_size) count++;
+    if (filters.min_parking) count++;
     return count;
   }, [filters]);
 
@@ -157,8 +180,21 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       filters.completion_year_to ||
       filters.min_rooms ||
       filters.min_bathrooms ||
-      filters.developer_id
+      filters.developer_id ||
+      (filters.amenities && filters.amenities.length > 0) ||
+      filters.min_size ||
+      filters.max_size ||
+      filters.min_parking
     );
+  }, [filters]);
+
+  // Count for "More Filters" badge
+  const moreFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.amenities && filters.amenities.length > 0) count++;
+    if (filters.min_size || filters.max_size) count++;
+    if (filters.min_parking) count++;
+    return count;
   }, [filters]);
 
   // Clear all filters except sort_by
@@ -658,6 +694,18 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
       </Popover>
       )}
 
+      {/* Desktop: More Filters Button */}
+      {!isMobile && (
+        <Button
+          variant="outline"
+          className={cn(filterButtonBase, moreFiltersCount > 0 && filterButtonActive)}
+          onClick={() => setMoreFiltersOpen(true)}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          <span>{moreFiltersCount > 0 ? `More (${moreFiltersCount})` : 'More'}</span>
+        </Button>
+      )}
+
       {/* Clear All Filters - Only shown when filters are active */}
       {hasActiveFilters && (
         <Button
@@ -670,6 +718,140 @@ export function ProjectFilters({ filters, onFiltersChange, onCreateAlert }: Proj
           <span>Clear</span>
         </Button>
       )}
+
+      {/* Desktop: More Filters Sheet */}
+      <Sheet open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
+        <SheetContent side="right" className="sm:max-w-md p-0 flex flex-col">
+          <div className="sticky top-0 z-20 bg-background border-b border-border px-6 py-4">
+            <SheetHeader>
+              <SheetTitle className="text-lg font-semibold">More Filters</SheetTitle>
+            </SheetHeader>
+          </div>
+
+          <ScrollArea className="flex-1 px-6 py-4">
+            <div className="space-y-8">
+              {/* Size Section */}
+              <section className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Size (m²)
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Min</Label>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={filters.min_size ?? ''}
+                      onChange={(e) => updateFilter('min_size', e.target.value ? Number(e.target.value) : undefined)}
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Max</Label>
+                    <Input
+                      type="number"
+                      placeholder="Any"
+                      value={filters.max_size ?? ''}
+                      onChange={(e) => updateFilter('max_size', e.target.value ? Number(e.target.value) : undefined)}
+                      className="rounded-lg"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* Amenities Section */}
+              <section className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Amenities
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROJECT_AMENITIES.map((amenity) => {
+                    const isSelected = filters.amenities?.includes(amenity.value);
+                    return (
+                      <button
+                        key={amenity.value}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left",
+                          isSelected
+                            ? "bg-primary/10 text-primary border border-primary/30"
+                            : "bg-muted/50 hover:bg-muted border border-transparent"
+                        )}
+                        onClick={() => {
+                          const current = filters.amenities || [];
+                          const updated = isSelected
+                            ? current.filter(a => a !== amenity.value)
+                            : [...current, amenity.value];
+                          updateFilter('amenities', updated.length > 0 ? updated : undefined);
+                        }}
+                      >
+                        <div className={cn(
+                          "w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0",
+                          isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                        )}>
+                          {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                        </div>
+                        {amenity.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Parking Section */}
+              <section className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Car className="h-4 w-4 text-primary" />
+                  Parking Spots
+                </h3>
+                <div className="flex gap-2">
+                  {[undefined, 1, 2].map(num => (
+                    <button
+                      key={num ?? 'any'}
+                      className={cn(
+                        "flex-1 h-10 rounded-full text-sm font-medium transition-all",
+                        filters.min_parking === num
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-border hover:bg-muted"
+                      )}
+                      onClick={() => updateFilter('min_parking', num)}
+                    >
+                      {num === undefined ? 'Any' : `${num}+`}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </ScrollArea>
+
+          {/* Fixed Bottom Bar */}
+          <div className="border-t border-border p-4 flex gap-3 bg-background">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl h-12"
+              onClick={() => {
+                onFiltersChange({
+                  ...filters,
+                  amenities: undefined,
+                  min_size: undefined,
+                  max_size: undefined,
+                  min_parking: undefined,
+                });
+              }}
+            >
+              Reset
+            </Button>
+            <Button
+              className="flex-1 rounded-xl h-12"
+              onClick={() => setMoreFiltersOpen(false)}
+            >
+              {countLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {previewCount !== undefined ? `Show ${previewCount} results` : 'Apply'}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Sort & Create Alert */}
       <div className="flex items-center gap-2 ml-auto">
