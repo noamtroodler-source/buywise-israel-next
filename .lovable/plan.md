@@ -1,46 +1,60 @@
 
-# Show Agency Logo Instead of Agent Avatar on Map Listing Popups
 
-## What Changes
+# Smart Popup Auto-Repositioning
 
-The small circular profile picture on the map listing popup (bottom-right of the image carousel) currently shows the agent's personal avatar. This will be changed to show the agency's logo instead, falling back to the agent's avatar if no agency logo exists.
+## Problem
+The overlay card always renders above the marker, centered horizontally. When a marker is near the top or edges of the map, the card gets clipped off-screen.
 
-## Technical Approach
+## Solution
+Add edge-detection logic that measures available space around the marker pixel position and flips the card's placement accordingly (above/below, left/right shift). The arrow tip also rotates to match.
 
-### 1. Extend the database query to include agency logo
+## How It Works
 
-The property queries currently use `agent:agents(*)` which fetches all agent fields but not the related agency data. This needs to change to a nested select that also grabs the agency's `logo_url`:
+1. **Measure available space** after computing the marker's pixel position against the map container dimensions
+2. **Decide vertical placement**: If there's not enough room above (card height + padding), flip to below the marker
+3. **Decide horizontal placement**: If the card would overflow left or right edges, shift it so it stays fully visible, and offset the arrow tip to still point at the marker
+4. **Rotate the arrow tip**: Point up when card is below, point down when card is above
 
-```
-agent:agents(*, agency:agencies(id, name, logo_url))
-```
+## Technical Details
 
-This change applies to:
-- `src/hooks/usePaginatedProperties.tsx` (used by the map search)
-- `src/hooks/useProperties.tsx` (used by listings pages, detail page, etc.)
+**File: `src/components/map-search/MapPropertyOverlay.tsx`**
 
-### 2. Update the Agent type
+Constants:
+- `CARD_WIDTH = 260`, `CARD_HEIGHT ~ 210` (image 140 + details ~60 + tip 10)
+- `EDGE_PADDING = 12` (minimum gap from map edge)
 
-Add an optional nested `agency` field to the `Agent` interface in `src/types/database.ts`:
+New state: replace fixed `style` with computed `placement` object containing `left`, `top`, `transform`, `arrowLeft`, and `arrowFlipped`.
 
-```ts
-export interface Agent {
-  // ... existing fields ...
-  agency_id: string | null;
-  agency?: { id: string; name: string; logo_url: string | null } | null;
+Logic (runs inside `computePos` or a derived effect):
+
+```text
+mapDiv = map.getDiv()
+containerW = mapDiv.offsetWidth
+containerH = mapDiv.offsetHeight
+
+// Vertical: default above, flip below if not enough room
+if (pos.y - CARD_HEIGHT - EDGE_PADDING < 0) {
+  // Place below marker
+  top = pos.y + TIP_HEIGHT
+  arrowFlipped = true  // arrow points up
+} else {
+  // Place above marker (current behavior)
+  top = pos.y - CARD_HEIGHT - TIP_HEIGHT
+  arrowFlipped = false // arrow points down
 }
+
+// Horizontal: default centered, clamp to edges
+idealLeft = pos.x - CARD_WIDTH / 2
+left = clamp(idealLeft, EDGE_PADDING, containerW - CARD_WIDTH - EDGE_PADDING)
+arrowLeft = pos.x - left  // arrow tip offset within card
 ```
 
-### 3. Update the overlay components to prefer agency logo
+The arrow `div` at the bottom (or top when flipped) uses `left: arrowLeft` instead of `justify-center`, and its rotation changes based on `arrowFlipped`.
 
-In `MapPropertyOverlay.tsx` and `MapPropertyPopup.tsx`, change the avatar source from `agent.avatar_url` to `agent.agency?.logo_url ?? agent.avatar_url`, so it shows the agency logo when available and falls back to the agent's own photo.
+Changes:
+- Remove the fixed `transform: translateY(calc(-100% - 10px))` 
+- Compute `top` and `left` directly as absolute pixel values
+- Move arrow from always-bottom to conditional top/bottom with dynamic horizontal offset
+- Card border radius stays the same since it's symmetric
 
-## Files Modified
-
-| File | Change |
-|------|--------|
-| `src/types/database.ts` | Add `agency_id` and optional `agency` nested type to `Agent` interface |
-| `src/hooks/usePaginatedProperties.tsx` | Change select from `agent:agents(*)` to `agent:agents(*, agency:agencies(id, name, logo_url))` |
-| `src/hooks/useProperties.tsx` | Same select change across all property queries |
-| `src/components/map-search/MapPropertyOverlay.tsx` | Use `agent.agency?.logo_url` as primary avatar source |
-| `src/components/map-search/MapPropertyPopup.tsx` | Same avatar source change |
+No new dependencies. No other files changed.
