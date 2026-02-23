@@ -124,9 +124,14 @@ export default function Professionals() {
               <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-primary/5 rounded-xl p-6 md:p-8 border border-primary/15">
                 <div className="flex items-start gap-3">
                   <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    BuyWise connects buyers with professionals many internationals have successfully worked with. Buyers should always evaluate which advisor is right for their personal situation.
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      BuyWise Israel provides this directory as an informational resource only. Inclusion does not constitute an endorsement, recommendation, or guarantee of any professional's qualifications, services, or results.
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      We do not verify credentials, monitor ongoing performance, or assume responsibility for any engagement between you and a listed professional. Always conduct your own due diligence and choose an advisor suited to your specific situation.
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>
