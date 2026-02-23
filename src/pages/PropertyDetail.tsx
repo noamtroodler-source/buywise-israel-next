@@ -24,6 +24,7 @@ import { PropertyNextSteps } from '@/components/property/PropertyNextSteps';
 import { SimilarProperties } from '@/components/property/SimilarProperties';
 // RecentNearbySales is now used inside MarketIntelligence
 import { SupportFooter } from '@/components/shared/SupportFooter';
+import { ListingDisclaimer } from '@/components/shared/ListingDisclaimer';
 import { ListingFeedback } from '@/components/listings/ListingFeedback';
 import { ReportListingButton } from '@/components/property/ReportListingButton';
 import { MobileSectionNav } from '@/components/property/MobileSectionNav';
@@ -352,6 +353,9 @@ export default function PropertyDetail() {
         <div id="section-similar">
           <SimilarProperties currentProperty={property} />
         </div>
+
+        {/* Disclaimer */}
+        <ListingDisclaimer variant="detail" className="py-6" />
       </div>
 
       {/* Mobile Contact Bar */}
