@@ -18,6 +18,7 @@ import {
   useDiscoverListings,
   useProcessBatch,
   useDeleteImportJob,
+  useRetryFailed,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ export default function AgencyImport() {
   const discoverMutation = useDiscoverListings();
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
+  const retryFailedMutation = useRetryFailed();
 
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -233,6 +235,27 @@ export default function AgencyImport() {
                         <>
                           <Download className="h-4 w-4 mr-2" />
                           {doneCount + failedCount === 0 ? 'Import First Batch' : 'Import Next Batch'} ({Math.min(pendingCount, 10)} listings)
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {failedCount > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => retryFailedMutation.mutate(currentJob!.id)}
+                      disabled={retryFailedMutation.isPending}
+                      className="rounded-xl"
+                    >
+                      {retryFailedMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Retry Failed ({failedCount})
                         </>
                       )}
                     </Button>

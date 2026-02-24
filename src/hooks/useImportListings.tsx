@@ -118,6 +118,29 @@ export function useProcessBatch() {
   });
 }
 
+export function useRetryFailed() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      const { data, error } = await supabase.functions.invoke('import-agency-listings', {
+        body: { action: 'retry_failed', job_id: jobId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { reset_count: number };
+    },
+    onSuccess: (data) => {
+      toast.success(`${data.reset_count} failed items reset — ready to retry`);
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Retry failed: ${err.message}`);
+    },
+  });
+}
+
 export function useDeleteImportJob() {
   const queryClient = useQueryClient();
 

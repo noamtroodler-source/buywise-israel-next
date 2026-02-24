@@ -678,6 +678,34 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
 // ─── MAIN ───────────────────────────────────────────────────────────────────
 
+// ─── RETRY FAILED ───────────────────────────────────────────────────────────
+
+async function handleRetryFailed(body: any) {
+  const { job_id } = body;
+  if (!job_id) throw new Error("job_id required");
+
+  const sb = supabaseAdmin();
+
+  // Reset all failed/skipped items back to pending
+  const { data: resetItems, error: resetErr } = await sb
+    .from("import_job_items")
+    .update({ status: "pending", error_message: null })
+    .eq("job_id", job_id)
+    .in("status", ["failed", "skipped"])
+    .select("id");
+
+  if (resetErr) throw new Error(`Failed to reset items: ${resetErr.message}`);
+
+  const resetCount = resetItems?.length || 0;
+
+  // Set job status back to ready so "Import Next Batch" appears
+  if (resetCount > 0) {
+    await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
+  }
+
+  return { reset_count: resetCount };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -692,6 +720,8 @@ Deno.serve(async (req) => {
       result = await handleDiscover(body);
     } else if (action === "process_batch") {
       result = await handleProcessBatch(body);
+    } else if (action === "retry_failed") {
+      result = await handleRetryFailed(body);
     } else {
       throw new Error(`Unknown action: ${action}`);
     }
