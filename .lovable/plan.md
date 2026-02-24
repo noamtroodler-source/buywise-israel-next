@@ -1,104 +1,114 @@
 
 
-## Data Validation Before Insert
+## Improved Deduplication Against Existing Listings
 
-### Problem
-The AI extraction can return incomplete or invalid data (e.g. price = 0, empty city, invalid property_type). Currently these get inserted with fallback defaults or cause database errors with cryptic messages. There's no clear per-item validation feedback.
+### Current State
+There is already duplicate detection at lines 716-735 for properties (address + city + price within 5%) and lines 578-592 for projects (name + city). However, the property check has gaps:
+
+1. **Requires price** -- if price changes between imports, duplicates slip through
+2. **Requires all 3 fields** -- if address or city is missing, no dedup check runs at all
+3. **No normalization** -- address strings like "Herzl 5" vs "herzl 5" only match via `ilike` (case-insensitive), but "5 Herzl St" vs "Herzl 5" would not match
+4. **No agent scoping** -- checks the entire properties table, not just the agency's listings
 
 ### Solution
-Add a `validatePropertyData` and `validateProjectData` function in the edge function that runs after AI extraction but before the database insert. Items that fail validation are marked as `failed` with a specific, human-readable error message listing exactly what's wrong (visible per-item in the existing UI).
+Replace the existing property duplicate detection with a two-tier approach:
+
+**Tier 1: Exact match (address + city)**
+- If a property exists with the same address and city (case-insensitive via `ilike`), it's a duplicate regardless of price
+- Scoped to the same agent (via `agent_id`) to avoid cross-agency false positives
+
+**Tier 2: Fuzzy match (city + bedrooms + size + similar price)**
+- If address is missing or empty, fall back to matching on city + bedrooms + size_sqm + price within 5%
+- This catches cases where the address wasn't extracted but it's clearly the same unit
+
+Both tiers mark the item as `skipped` with a clear message including the existing property ID for reference.
 
 ### Changes
 
 **File: `supabase/functions/import-agency-listings/index.ts`**
 
-Add two validation functions and integrate them into the processing flow:
+Replace the existing property duplicate detection block (lines 716-735) with improved logic:
 
-**1. `validatePropertyData(listing)` function**
-
-Checks the extracted property data and returns an array of validation error strings. If the array is empty, the data is valid.
-
-Validations:
-- `price` must be a positive number (> 0)
-- `city` must be a non-empty string
-- `property_type` must be one of the valid enum values (apartment, garden_apartment, penthouse, mini_penthouse, duplex, house, cottage, land, commercial) -- defaults gracefully if missing
-- `listing_status` must be `for_sale` or `for_rent`
-- `bedrooms` must be a non-negative integer (Math.floor applied)
-- `bathrooms` must be a non-negative integer
-- `size_sqm`, if present, must be a positive number
-- `floor`, if present, must be a reasonable integer (-2 to 200)
-- `year_built`, if present, must be between 1800 and current year + 5
-- `price` sanity: warn if price < 1000 (likely extraction error for ILS)
-
-**2. `validateProjectData(listing)` function**
-
-Checks project data:
-- `project_name` or `title` must be non-empty
-- `city` must be non-empty
-- `price_from`, if present, must be positive
-- `construction_status`, if present, must be a valid enum value
-
-**3. Integration into `handleProcessBatch`**
-
-For properties (after line ~614, before duplicate detection):
 ```text
-const errors = validatePropertyData(listing);
-if (errors.length > 0) {
+// ── Duplicate detection (two-tier) ──
+
+// Tier 1: Same address + city (strongest signal)
+if (listing.address && listing.city) {
+  const trimmedAddr = listing.address.trim();
+  if (trimmedAddr.length > 0) {
+    const { data: dupes } = await sb
+      .from("properties")
+      .select("id")
+      .eq("agent_id", agentId)
+      .ilike("address", trimmedAddr)
+      .ilike("city", listing.city.trim())
+      .limit(1);
+
+    if (dupes && dupes.length > 0) {
+      await sb.from("import_job_items").update({
+        status: "skipped",
+        error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
+      }).eq("id", item.id);
+      failed++;
+      continue;
+    }
+  }
+}
+
+// Tier 2: Fuzzy match when address is weak — city + rooms + size + ~price
+if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price) {
+  const priceLow = listing.price * 0.95;
+  const priceHigh = listing.price * 1.05;
+
+  const { data: fuzzyDupes } = await sb
+    .from("properties")
+    .select("id")
+    .eq("agent_id", agentId)
+    .ilike("city", listing.city.trim())
+    .eq("bedrooms", Math.floor(listing.bedrooms))
+    .eq("size_sqm", listing.size_sqm)
+    .gte("price", priceLow)
+    .lte("price", priceHigh)
+    .limit(1);
+
+  if (fuzzyDupes && fuzzyDupes.length > 0) {
+    await sb.from("import_job_items").update({
+      status: "skipped",
+      error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
+    }).eq("id", item.id);
+    failed++;
+    continue;
+  }
+}
+```
+
+**Also improve the project duplicate detection** (lines 578-592) to include the existing project ID in the skip message for easier debugging:
+
+```text
+if (dupeProjects && dupeProjects.length > 0) {
   await sb.from("import_job_items").update({
-    status: "failed",
-    error_message: `Validation failed: ${errors.join("; ")}`
+    status: "skipped",
+    error_message: `Duplicate: matches existing project ${dupeProjects[0].id} (same name + city)`
   }).eq("id", item.id);
   failed++;
   continue;
 }
 ```
 
-For projects (after line ~486, before duplicate detection):
-```text
-const errors = validateProjectData(listing);
-if (errors.length > 0) {
-  // same pattern
-}
-```
+### Key Design Decisions
 
-### What the user sees
+- **Agent-scoped**: Duplicates are checked within the same agent's listings only. Two different agents can legitimately list the same property (co-exclusives, etc.)
+- **Tier 1 doesn't need price**: If the same agent has a property at "Herzl 5, Tel Aviv", it's the same listing even if the price changed
+- **Tier 2 requires exact size_sqm match**: This is intentional -- size is a strong identifier for a specific unit, and unlike price it rarely changes between imports
+- **Existing property ID in message**: The skip message now includes the matching property ID so agents can easily verify it's truly a duplicate
 
-In the existing job items UI, failed items already show their `error_message`. After this change, validation failures will show messages like:
+### What the User Sees
 
-- "Validation failed: price must be greater than 0; city is required"
-- "Validation failed: invalid property type 'studio'"
-- "Validation failed: year_built 1750 is out of range"
+In the import job items UI, duplicates will show clear messages like:
+- "Duplicate: matches existing property abc-123 (same address + city)"
+- "Duplicate: matches existing property def-456 (same city, rooms, size, ~price)"
+- "Duplicate: matches existing project ghi-789 (same name + city)"
 
-These items can then be retried after the source data is fixed, using the existing "Retry Failed" button.
+### No UI Changes Needed
+The existing UI already displays `error_message` for skipped items. The improved messages will appear there automatically.
 
-### Technical Details
-
-```text
-Valid property_type values:
-  apartment, garden_apartment, penthouse, mini_penthouse,
-  duplex, house, cottage, land, commercial
-
-Valid listing_status values:
-  for_sale, for_rent
-
-Valid construction_status values:
-  planning, pre_sale, foundation, structure, finishing, delivery, completed
-
-Validation runs AFTER:
-  - sold/rented check (line ~332)
-  - AI extraction (line ~470)
-  - extracted_data is saved (line ~473)
-
-Validation runs BEFORE:
-  - duplicate detection
-  - image download
-  - geocoding
-  - database insert
-
-This ordering is intentional: we save the raw extracted_data first
-(so it can be inspected even if validation fails), but skip all the
-expensive operations (image downloads, geocoding) if the data is invalid.
-```
-
-### No UI changes needed
-The existing UI already displays `error_message` for failed/skipped items. The validation messages will appear there automatically with clear, actionable text.
