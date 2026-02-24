@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
   XCircle, AlertCircle, FileText, RefreshCw, Trash2,
-  Info,
+  Info, MinusCircle,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -140,13 +140,14 @@ export default function AgencyImport() {
   }
 
   const doneCount = jobItems.filter(i => i.status === 'done').length;
-  const failedCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status)).length;
-  const transientCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status) && i.error_type === 'transient').length;
-  const permanentCount = jobItems.filter(i => ['failed', 'skipped'].includes(i.status) && i.error_type === 'permanent').length;
+  const skippedCount = jobItems.filter(i => i.status === 'skipped').length;
+  const failedCount = jobItems.filter(i => i.status === 'failed').length;
+  const transientCount = jobItems.filter(i => i.status === 'failed' && i.error_type === 'transient').length;
+  const permanentCount = jobItems.filter(i => i.status === 'failed' && i.error_type === 'permanent').length;
   const pendingCount = jobItems.filter(i => i.status === 'pending').length;
   const processingCount = jobItems.filter(i => i.status === 'processing').length;
   const totalItems = jobItems.length;
-  const progressPercent = totalItems > 0 ? Math.round(((doneCount + failedCount) / totalItems) * 100) : 0;
+  const progressPercent = totalItems > 0 ? Math.round(((doneCount + skippedCount + failedCount) / totalItems) * 100) : 0;
 
   const isDiscovering = discoverMutation.isPending;
   const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
@@ -292,7 +293,7 @@ export default function AgencyImport() {
                         Importing listings…
                       </p>
                      <p className="text-xs text-muted-foreground">
-                        {doneCount} imported · {failedCount} skipped · {pendingCount} remaining
+                        {doneCount} imported · {skippedCount} skipped{failedCount > 0 ? ` · ${failedCount} failed` : ''} · {pendingCount} remaining
                       </p>
                       <ImportEta startTime={processingStartTime} processedSoFar={processedSoFar} remaining={pendingCount} />
                     </div>
@@ -310,7 +311,7 @@ export default function AgencyImport() {
                 {/* Progress bar */}
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span>{doneCount + failedCount} of {totalItems} processed</span>
+                    <span>{doneCount + skippedCount + failedCount} of {totalItems} processed</span>
                     <span>{progressPercent}%</span>
                   </div>
                   <Progress
@@ -321,9 +322,10 @@ export default function AgencyImport() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                   {[
                     { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600', active: false },
+                    { label: 'Skipped', value: skippedCount, icon: MinusCircle, color: 'text-muted-foreground', active: false },
                     { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500', active: false },
                     { label: 'Pending', value: pendingCount, icon: AlertCircle, color: 'text-yellow-600', active: false },
                     { label: 'Processing', value: processingCount, icon: RefreshCw, color: 'text-blue-500', active: processingCount > 0 },
@@ -427,7 +429,7 @@ export default function AgencyImport() {
                 {isCompleted && pendingCount === 0 && (
                   <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-sm">
                     <CheckCircle2 className="h-4 w-4 inline mr-2 text-green-600" />
-                    Import complete! {doneCount} listings imported as drafts.
+                    Import complete! {doneCount} listings imported, {skippedCount} skipped{failedCount > 0 ? `, ${failedCount} failed` : ''}.
                     Review and publish them from your Listings page.
                   </div>
                 )}
