@@ -1,57 +1,68 @@
 
-# Smart Retry Classification
 
-## Overview
-Currently, the "Retry Failed" button resets ALL failed and skipped items back to pending — even permanent failures like 404s, duplicate listings, "not a listing" pages, and project pages. This wastes Firecrawl credits and AI calls re-processing items that will always fail.
+# Incremental Re-Import
 
-The fix introduces error classification at every failure point, then uses that classification to only retry transient failures.
+## What It Does
+When an agency re-runs discovery on the same website URL, instead of blocking them ("A job for this URL already exists"), the system will:
+1. Re-scan the website for all URLs
+2. Compare against URLs already in ANY previous job for that agency + URL combo
+3. Only create new job items for URLs that haven't been seen before
+4. Skip all the filtering/classification/scraping for already-known URLs
 
-## How It Works
+This means agencies can periodically re-import to pick up new listings without re-processing their entire site.
 
-### 1. Add `error_type` column to `import_job_items`
-A new text column that tags each failure as one of:
-- **`transient`** — Timeouts, rate limits, network errors, scrape failures (5xx). Worth retrying.
-- **`permanent`** — 404s, paywalls, validation errors, duplicates, "not a listing", project pages, sold/rented. Will never succeed.
+## Current Behavior
+- **Backend**: If a non-failed job exists for the same `agency_id + website_url`, it returns `resumed: true` and does nothing new
+- **Frontend**: Client-side check also blocks submission if a matching URL job exists
 
-Default: `null` (for pending/done items).
+## Changes
 
-### 2. Tag every failure point in `processOneItem`
-Go through every `status: "failed"` or `status: "skipped"` update in the edge function and add the appropriate `error_type`:
+### 1. Backend: `handleDiscover` (edge function)
+Instead of blocking on duplicate jobs, the new flow:
+1. Run Firecrawl map as usual to get fresh URL list
+2. Query ALL `import_job_items` URLs from previous jobs for this `agency_id + website_url` (across all past jobs, not just the latest)
+3. Also check the `properties` table for `source_url` matches (catches listings imported from older deleted jobs)
+4. Filter out already-known URLs before AI classification
+5. If zero new URLs found, return early with a clear message: `{ new_urls: 0, total_discovered: X }`
+6. If new URLs exist, create a NEW job (not reuse the old one) with only the new items
 
-| Failure | Error Type |
-|---------|-----------|
-| URL duplicate, in-job duplicate, address/fuzzy duplicate | `permanent` |
-| Pre-check 404, redirect off-domain | `permanent` |
-| Pre-check network error, timeout | `transient` |
-| Scrape 404/410 | `permanent` |
-| Scrape other failures (5xx, network) | `transient` |
-| AI rate limit (429) | `transient` |
-| AI extraction failed (other status) | `transient` |
-| AI returned no data | `permanent` |
-| Not a listing / project page | `permanent` |
-| City not supported | `permanent` |
-| Sold/rented | `permanent` |
-| Validation errors | `permanent` |
-| Property insert failed | `transient` |
-| Content too short | `permanent` |
-| Catch-all exceptions | `transient` (default to retryable) |
+This approach is clean because:
+- Each job is a self-contained unit with its own progress tracking
+- Past job history is preserved
+- The "Past Imports" UI continues to work naturally
 
-### 3. Update `handleRetryFailed` to only reset transient errors
-Change the retry query filter from `in("status", ["failed", "skipped"])` to also require `eq("error_type", "transient")`.
+### 2. Frontend: Remove client-side duplicate block
+The `AgencyImport.tsx` currently short-circuits if it finds an existing job with the same URL (line 69-75). Remove this block so the request reaches the backend, which handles the incremental logic.
 
-### 4. Update the UI
-- The "Retry Failed" button label changes to "Retry (X)" showing only the transient failure count
-- Disable the button when there are zero transient failures
-- Show separate counts: "3 retryable, 12 permanent" so agencies understand what's happening
+Update the discovery success toast to show how many NEW URLs were found vs. how many were skipped as already imported.
 
-### 5. Update the hook
-Add `retry_failed` action response to include `transient_count` and `permanent_count` for better UI feedback.
+### 3. Frontend: UI feedback for incremental results
+When discovery returns with `new_urls: 0`, show a friendly message like "Your site is up to date - no new listings found." instead of creating an empty job.
+
+## Edge Cases Handled
+
+| Scenario | Behavior |
+|----------|----------|
+| No previous jobs for this URL | Normal full discovery (unchanged) |
+| Previous job exists, all URLs already known | Returns `{ new_urls: 0 }`, no new job created |
+| Previous job exists, some new URLs found | Creates new job with only new URLs |
+| Previous job was deleted but listings remain in `properties` | `source_url` check catches these too |
+| Agency re-imports after deleting all old jobs | Falls through to normal full discovery |
+| URL normalization differences | Uses existing `normalizeUrl()` for consistent matching |
 
 ## Technical Details
 
-**Database migration:** Add column `error_type text` to `import_job_items` (nullable, no constraint).
+**File: `supabase/functions/import-agency-listings/index.ts`**
+- Rewrite the duplicate-check block in `handleDiscover` (lines 600-623)
+- After Firecrawl map + filtering + AI classification, subtract known URLs
+- Add `source_url` lookup from `properties` table as secondary dedup
+- Return response with `new_urls` count and `skipped_existing` count
 
-**Files changed:**
-- `supabase/functions/import-agency-listings/index.ts` — Add `error_type` to every failure update call (~15 locations)
-- `src/hooks/useImportListings.tsx` — Update `useRetryFailed` response type
-- `src/pages/agency/AgencyImport.tsx` — Show smart retry counts, update button label
+**File: `src/pages/agency/AgencyImport.tsx`**
+- Remove client-side duplicate URL block (lines 68-75)
+- Update toast messages to reflect incremental results
+- Handle `new_urls: 0` response with an informational message instead of switching to a job
+
+**File: `src/hooks/useImportListings.tsx`**
+- Update `useDiscoverListings` return type to include `new_urls` and `skipped_existing`
+
