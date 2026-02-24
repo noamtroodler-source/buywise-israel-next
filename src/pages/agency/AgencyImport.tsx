@@ -322,12 +322,11 @@ export default function AgencyImport() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: 'Imported', value: doneCount, icon: CheckCircle2, color: 'text-green-600', active: false },
                     { label: 'Skipped', value: skippedCount, icon: MinusCircle, color: 'text-muted-foreground', active: false },
                     { label: 'Failed', value: failedCount, icon: XCircle, color: 'text-red-500', active: false },
-                    { label: 'Pending', value: pendingCount + processingCount, icon: AlertCircle, color: 'text-yellow-600', active: false },
                   ].map(stat => (
                     <div key={stat.label} className={cn(
                       "text-center p-3 rounded-xl bg-muted/30 transition-all",
