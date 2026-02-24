@@ -141,6 +141,211 @@ function getDomainFromUrl(url: string): string {
   }
 }
 
+// ─── INDEX PAGE SOLD-URL PRE-FILTER ─────────────────────────────────────────
+
+const INDEX_PAGE_PATTERNS = [
+  /\/(properties|listings|for-sale|for-rent|our-listings|all-listings|catalog|portfolio|real-estate|homes)/i,
+  /\/(נכסים|דירות|למכירה|להשכרה|נדלן|דירות-למכירה|דירות-להשכרה)/,
+  /\/(page|p)\/\d+/i, // pagination pages
+];
+
+const SOLD_BADGE_PATTERNS = [
+  // English
+  /\bsold\b/i,
+  /\brented\b/i,
+  /\bleased\b/i,
+  /\bunder\s+contract\b/i,
+  /\boff[\s-]?market\b/i,
+  /\bno\s+longer\s+available\b/i,
+  /\bsale\s+agreed\b/i,
+  /\blet\s+agreed\b/i,
+  /\bunavailable\b/i,
+  // Hebrew
+  /נמכר[הו]?/,
+  /הושכר[הו]?/,
+  /בהסכם/,
+  /לא\s*זמינ[הו]?/,
+  /לא\s*פנוי[הו]?/,
+];
+
+const SOLD_CSS_CLASS_PATTERN = /class\s*=\s*"[^"]*\b(sold|rented|unavailable|off-market|leased|inactive|expired)\b[^"]*"/gi;
+
+function identifyIndexPages(allUrls: string[], websiteUrl: string): string[] {
+  const candidates = new Set<string>();
+  
+  // Always include the homepage
+  try {
+    const homeUrl = new URL(websiteUrl);
+    homeUrl.pathname = "/";
+    homeUrl.search = "";
+    candidates.add(homeUrl.toString().replace(/\/$/, ""));
+  } catch { /* ignore */ }
+
+  for (const url of allUrls) {
+    try {
+      const parsed = new URL(url);
+      const path = decodeURIComponent(parsed.pathname);
+      for (const pattern of INDEX_PAGE_PATTERNS) {
+        if (pattern.test(path)) {
+          candidates.add(url);
+          break;
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Cap at 8 pages to limit Firecrawl credits
+  return Array.from(candidates).slice(0, 8);
+}
+
+function extractSoldUrlsFromHtml(html: string, pageUrl: string, knownUrls: Set<string>): Set<string> {
+  const soldUrls = new Set<string>();
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(pageUrl);
+  } catch {
+    return soldUrls;
+  }
+
+  // Strategy 1: Find <a> tags and check surrounding context for sold signals
+  const linkRegex = /<a\s[^>]*href\s*=\s*["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkRegex.exec(html)) !== null) {
+    const href = match[1];
+    const linkOuterStart = Math.max(0, match.index - 300);
+    const linkOuterEnd = Math.min(html.length, match.index + match[0].length + 300);
+    const surroundingContext = html.substring(linkOuterStart, linkOuterEnd);
+
+    // Check if surrounding context has sold/rented signals
+    let hasSoldSignal = false;
+
+    for (const pattern of SOLD_BADGE_PATTERNS) {
+      if (pattern.test(surroundingContext)) {
+        hasSoldSignal = true;
+        break;
+      }
+    }
+
+    if (!hasSoldSignal && SOLD_CSS_CLASS_PATTERN.test(surroundingContext)) {
+      hasSoldSignal = true;
+    }
+    // Reset lastIndex since we used the global flag
+    SOLD_CSS_CLASS_PATTERN.lastIndex = 0;
+
+    if (hasSoldSignal) {
+      // Normalize href to absolute URL
+      let absoluteUrl: string;
+      try {
+        absoluteUrl = new URL(href, baseUrl).toString();
+      } catch {
+        continue;
+      }
+      // Normalize and check if it's in our known URLs
+      const normalized = normalizeUrl(absoluteUrl);
+      if (knownUrls.has(normalized)) {
+        soldUrls.add(normalized);
+      }
+    }
+  }
+
+  // Strategy 2: Find elements with sold CSS classes and extract their child links
+  const soldContainerRegex = /<(?:div|article|li|section)\s[^>]*class\s*=\s*"[^"]*\b(sold|rented|unavailable|off-market|leased)\b[^"]*"[^>]*>([\s\S]*?)<\/(?:div|article|li|section)>/gi;
+  
+  while ((match = soldContainerRegex.exec(html)) !== null) {
+    const containerHtml = match[2];
+    const innerLinkRegex = /href\s*=\s*["']([^"'#]+)["']/gi;
+    let innerMatch: RegExpExecArray | null;
+    while ((innerMatch = innerLinkRegex.exec(containerHtml)) !== null) {
+      try {
+        const absoluteUrl = new URL(innerMatch[1], baseUrl).toString();
+        const normalized = normalizeUrl(absoluteUrl);
+        if (knownUrls.has(normalized)) {
+          soldUrls.add(normalized);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  return soldUrls;
+}
+
+async function findSoldUrlsFromIndexPages(
+  allUrls: string[],
+  websiteUrl: string,
+  firecrawlKey: string
+): Promise<Set<string>> {
+  const soldUrls = new Set<string>();
+
+  const indexPages = identifyIndexPages(allUrls, websiteUrl);
+  if (indexPages.length === 0) {
+    console.log("No index pages identified for sold-URL pre-filter");
+    return soldUrls;
+  }
+
+  console.log(`Index page pre-filter: scraping ${indexPages.length} pages: ${indexPages.join(", ")}`);
+
+  // Build a Set of normalized known URLs for fast lookup
+  const knownUrlSet = new Set(allUrls.map(u => normalizeUrl(u)));
+
+  // Scrape index pages in parallel (batches of 4 to avoid rate limits)
+  const batchSize = 4;
+  for (let i = 0; i < indexPages.length; i += batchSize) {
+    const batch = indexPages.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map(async (pageUrl) => {
+        try {
+          const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${firecrawlKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              url: pageUrl,
+              formats: ["html"],
+              onlyMainContent: false, // Need full page to see badges in grid
+              waitFor: 2000, // Wait for JS-rendered badges
+            }),
+          });
+
+          if (!res.ok) {
+            const errData = await res.text();
+            console.warn(`Index page scrape failed for ${pageUrl}: ${res.status} ${errData.substring(0, 200)}`);
+            return null;
+          }
+
+          const data = await res.json();
+          const html = data.data?.html || data.html || "";
+          if (!html || html.length < 100) {
+            console.warn(`Index page ${pageUrl}: empty HTML response`);
+            return null;
+          }
+
+          const found = extractSoldUrlsFromHtml(html, pageUrl, knownUrlSet);
+          if (found.size > 0) {
+            console.log(`Index page ${pageUrl}: found ${found.size} sold URLs`);
+          }
+          return found;
+        } catch (err) {
+          console.warn(`Index page scrape error for ${pageUrl}: ${err}`);
+          return null;
+        }
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled" && result.value) {
+        for (const url of result.value) {
+          soldUrls.add(url);
+        }
+      }
+    }
+  }
+
+  return soldUrls;
+}
+
 // ─── PRE-LLM SOLD/RENTED DETECTION ─────────────────────────────────────────
 
 function isSoldOrRentedPage(markdown: string): boolean {
@@ -349,9 +554,26 @@ async function handleDiscover(body: any) {
     }
   });
 
-  const filteredOut = rawUrls.length - allUrls.length;
-  if (filteredOut > 0) {
-    console.log(`Pre-filtered ${filteredOut} sold/rented URLs, ${allUrls.length} remaining`);
+  const urlFilteredOut = rawUrls.length - allUrls.length;
+  if (urlFilteredOut > 0) {
+    console.log(`URL keyword filter: removed ${urlFilteredOut} sold/rented URLs, ${allUrls.length} remaining`);
+  }
+
+  // Index page sold-URL pre-filter: scrape listing grid pages to find sold badges
+  let indexFilteredOut = 0;
+  try {
+    const soldUrlsFromIndex = await findSoldUrlsFromIndexPages(allUrls, normalizedUrl, FIRECRAWL_API_KEY);
+    if (soldUrlsFromIndex.size > 0) {
+      const beforeCount = allUrls.length;
+      const filteredUrls = allUrls.filter(url => !soldUrlsFromIndex.has(normalizeUrl(url)));
+      indexFilteredOut = beforeCount - filteredUrls.length;
+      // Replace allUrls contents
+      allUrls.length = 0;
+      allUrls.push(...filteredUrls);
+      console.log(`Index page filter: removed ${indexFilteredOut} sold/rented URLs, ${allUrls.length} remaining`);
+    }
+  } catch (err) {
+    console.warn(`Index page pre-filter failed (non-blocking): ${err}`);
   }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
