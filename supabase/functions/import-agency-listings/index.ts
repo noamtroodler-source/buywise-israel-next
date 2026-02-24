@@ -585,7 +585,10 @@ ${pageLinks.slice(0, 50).join("\n")}`;
             .limit(1);
 
           if (dupeProjects && dupeProjects.length > 0) {
-            await sb.from("import_job_items").update({ status: "skipped", error_message: "Duplicate project detected" }).eq("id", item.id);
+            await sb.from("import_job_items").update({
+              status: "skipped",
+              error_message: `Duplicate: matches existing project ${dupeProjects[0].id} (same name + city)`
+            }).eq("id", item.id);
             failed++;
             continue;
           }
@@ -713,22 +716,52 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
-      // Duplicate detection for properties
-      if (listing.address && listing.city && listing.price) {
+      // ── Duplicate detection (two-tier) ──
+
+      // Tier 1: Same address + city (strongest signal, agent-scoped)
+      if (listing.address && listing.city) {
+        const trimmedAddr = listing.address.trim();
+        if (trimmedAddr.length > 0) {
+          const { data: dupes } = await sb
+            .from("properties")
+            .select("id")
+            .eq("agent_id", agentId)
+            .ilike("address", trimmedAddr)
+            .ilike("city", listing.city.trim())
+            .limit(1);
+
+          if (dupes && dupes.length > 0) {
+            await sb.from("import_job_items").update({
+              status: "skipped",
+              error_message: `Duplicate: matches existing property ${dupes[0].id} (same address + city)`
+            }).eq("id", item.id);
+            failed++;
+            continue;
+          }
+        }
+      }
+
+      // Tier 2: Fuzzy match when address is weak — city + rooms + size + ~price
+      if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price) {
         const priceLow = listing.price * 0.95;
         const priceHigh = listing.price * 1.05;
 
-        const { data: dupes } = await sb
+        const { data: fuzzyDupes } = await sb
           .from("properties")
           .select("id")
-          .ilike("address", listing.address)
-          .ilike("city", listing.city)
+          .eq("agent_id", agentId)
+          .ilike("city", listing.city.trim())
+          .eq("bedrooms", Math.floor(listing.bedrooms))
+          .eq("size_sqm", listing.size_sqm)
           .gte("price", priceLow)
           .lte("price", priceHigh)
           .limit(1);
 
-        if (dupes && dupes.length > 0) {
-          await sb.from("import_job_items").update({ status: "skipped", error_message: "Duplicate listing detected" }).eq("id", item.id);
+        if (fuzzyDupes && fuzzyDupes.length > 0) {
+          await sb.from("import_job_items").update({
+            status: "skipped",
+            error_message: `Duplicate: matches existing property ${fuzzyDupes[0].id} (same city, rooms, size, ~price)`
+          }).eq("id", item.id);
           failed++;
           continue;
         }
