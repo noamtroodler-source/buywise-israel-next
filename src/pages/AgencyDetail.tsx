@@ -208,12 +208,7 @@ export default function AgencyDetail() {
                     </Button>
                   )}
                   {agency.phone && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      asChild
-                      style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
-                    >
+                    <Button variant="outline" size="sm" asChild>
                       <a href={`tel:${agency.phone}`}>
                         <Phone className="h-4 w-4 mr-2" />
                         Call
@@ -221,12 +216,7 @@ export default function AgencyDetail() {
                     </Button>
                   )}
                   {agency.email && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      asChild
-                      style={accentColor ? { borderColor: `${accentColor}40`, color: accentColor } : undefined}
-                    >
+                    <Button variant="outline" size="sm" asChild>
                       <a href={`mailto:${agency.email}`}>
                         <Mail className="h-4 w-4 mr-2" />
                         Email
