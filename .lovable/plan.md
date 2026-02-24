@@ -1,97 +1,104 @@
 
 
-## Pre-LLM Sold/Rented Filtering
+## Data Validation Before Insert
 
 ### Problem
-The current import pipeline relies solely on the AI model detecting sold/rented status via the `is_sold_or_rented` field. Hebrew terms like "נמכר" (sold), "הושכר" (rented), or English equivalents can be missed by the LLM, resulting in unavailable listings cluttering the dashboard.
+The AI extraction can return incomplete or invalid data (e.g. price = 0, empty city, invalid property_type). Currently these get inserted with fallback defaults or cause database errors with cryptic messages. There's no clear per-item validation feedback.
 
 ### Solution
-Add a deterministic keyword check on the scraped markdown **before** sending it to the AI for extraction. If the page content matches known sold/rented indicators, skip it immediately -- saving an AI call and preventing false positives.
+Add a `validatePropertyData` and `validateProjectData` function in the edge function that runs after AI extraction but before the database insert. Items that fail validation are marked as `failed` with a specific, human-readable error message listing exactly what's wrong (visible per-item in the existing UI).
 
 ### Changes
 
 **File: `supabase/functions/import-agency-listings/index.ts`**
 
-Add a helper function `isSoldOrRentedPage(markdown)` and call it in `handleProcessBatch` right after scraping succeeds (after the content-length check at line ~287, before the AI extraction prompt at line ~294).
+Add two validation functions and integrate them into the processing flow:
 
-**The helper function** scans the markdown for known patterns in Hebrew and English:
+**1. `validatePropertyData(listing)` function**
 
-Hebrew terms:
-- נמכר / נמכרה (sold, masculine/feminine)
-- הושכר / הושכרה (rented, masculine/feminine)
-- בהסכם (under contract)
-- לא זמין (not available)
-- אין בנמצא / לא פנוי (unavailable/not vacant)
+Checks the extracted property data and returns an array of validation error strings. If the array is empty, the data is valid.
 
-English terms:
-- sold, under contract, sale agreed
-- rented, leased, let agreed
-- off market, no longer available, under offer
+Validations:
+- `price` must be a positive number (> 0)
+- `city` must be a non-empty string
+- `property_type` must be one of the valid enum values (apartment, garden_apartment, penthouse, mini_penthouse, duplex, house, cottage, land, commercial) -- defaults gracefully if missing
+- `listing_status` must be `for_sale` or `for_rent`
+- `bedrooms` must be a non-negative integer (Math.floor applied)
+- `bathrooms` must be a non-negative integer
+- `size_sqm`, if present, must be a positive number
+- `floor`, if present, must be a reasonable integer (-2 to 200)
+- `year_built`, if present, must be between 1800 and current year + 5
+- `price` sanity: warn if price < 1000 (likely extraction error for ILS)
 
-The check uses case-insensitive regex matching and looks for these terms as whole words (not substrings of other words), to avoid false positives like "sold" appearing in "soldier".
+**2. `validateProjectData(listing)` function**
 
-**Logic flow:**
+Checks project data:
+- `project_name` or `title` must be non-empty
+- `city` must be non-empty
+- `price_from`, if present, must be positive
+- `construction_status`, if present, must be a valid enum value
+
+**3. Integration into `handleProcessBatch`**
+
+For properties (after line ~614, before duplicate detection):
 ```text
-1. Scrape page -> get markdown
-2. Check markdown length (existing, line ~287)
-3. NEW: Run isSoldOrRentedPage(markdown)
-   - If true -> mark item as "skipped" with message
-     "Pre-filter: listing appears sold/rented"
-   - If false -> continue to AI extraction (existing flow)
-4. AI extraction still has is_sold_or_rented as backup
-```
-
-This means there are now **two layers** of sold/rented detection:
-- Layer 1 (new): Fast keyword scan -- catches obvious cases, saves AI credits
-- Layer 2 (existing): AI extraction's `is_sold_or_rented` field -- catches nuanced cases the keywords miss
-
-### Technical Details
-
-The new function added near the top of the file:
-
-```text
-function isSoldOrRentedPage(markdown: string): boolean {
-  // Hebrew patterns
-  const hebrewPatterns = [
-    /נמכר[הו]?/,        // sold (masc/fem/plural)
-    /הושכר[הו]?/,       // rented (masc/fem/plural)
-    /בהסכם/,            // under contract
-    /לא\s*זמינ[הו]?/,   // not available
-    /לא\s*פנוי[הו]?/,   // not vacant
-    /אין\s*בנמצא/,       // unavailable
-  ];
-
-  // English patterns (word-boundary protected)
-  const englishPatterns = [
-    /\bsold\b/i,
-    /\brented\b/i,
-    /\bleased\b/i,
-    /\bunder\s+contract\b/i,
-    /\bunder\s+offer\b/i,
-    /\bsale\s+agreed\b/i,
-    /\blet\s+agreed\b/i,
-    /\boff\s*market\b/i,
-    /\bno\s+longer\s+available\b/i,
-    /\bunavailable\b/i,
-  ];
-
-  // Check first ~2000 chars (status badges are usually near the top)
-  const snippet = markdown.substring(0, 2000);
-
-  for (const p of hebrewPatterns) {
-    if (p.test(snippet)) return true;
-  }
-  for (const p of englishPatterns) {
-    if (p.test(snippet)) return true;
-  }
-  return false;
+const errors = validatePropertyData(listing);
+if (errors.length > 0) {
+  await sb.from("import_job_items").update({
+    status: "failed",
+    error_message: `Validation failed: ${errors.join("; ")}`
+  }).eq("id", item.id);
+  failed++;
+  continue;
 }
 ```
 
-Key design decisions:
-- Only scans the **first 2000 characters** of the markdown -- sold/rented badges are almost always in the page header/title area, and this avoids false positives from body text like "recently sold in this area"
-- Hebrew patterns don't use `\b` (word boundary doesn't work with Hebrew Unicode) -- instead relies on the specificity of the terms themselves
-- The existing AI `is_sold_or_rented` check (line 563) remains as a safety net for edge cases
+For projects (after line ~486, before duplicate detection):
+```text
+const errors = validateProjectData(listing);
+if (errors.length > 0) {
+  // same pattern
+}
+```
 
-### No UI Changes
-This is entirely a backend optimization. No frontend changes needed. Items filtered this way will show as "skipped" with a clear reason message in the existing UI.
+### What the user sees
+
+In the existing job items UI, failed items already show their `error_message`. After this change, validation failures will show messages like:
+
+- "Validation failed: price must be greater than 0; city is required"
+- "Validation failed: invalid property type 'studio'"
+- "Validation failed: year_built 1750 is out of range"
+
+These items can then be retried after the source data is fixed, using the existing "Retry Failed" button.
+
+### Technical Details
+
+```text
+Valid property_type values:
+  apartment, garden_apartment, penthouse, mini_penthouse,
+  duplex, house, cottage, land, commercial
+
+Valid listing_status values:
+  for_sale, for_rent
+
+Valid construction_status values:
+  planning, pre_sale, foundation, structure, finishing, delivery, completed
+
+Validation runs AFTER:
+  - sold/rented check (line ~332)
+  - AI extraction (line ~470)
+  - extracted_data is saved (line ~473)
+
+Validation runs BEFORE:
+  - duplicate detection
+  - image download
+  - geocoding
+  - database insert
+
+This ordering is intentional: we save the raw extracted_data first
+(so it can be inspected even if validation fails), but skip all the
+expensive operations (image downloads, geocoding) if the data is invalid.
+```
+
+### No UI changes needed
+The existing UI already displays `error_message` for failed/skipped items. The validation messages will appear there automatically with clear, actionable text.
