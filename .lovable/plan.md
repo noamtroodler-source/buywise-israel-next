@@ -1,122 +1,56 @@
 
+# Agencies Page Enhancement
 
-## Upgrade Professional Detail Pages: Differentiation, Social Proof, and Process Clarity
+## Overview
+Upgrade the Agencies listing page with search, filtering, real stats, and sorting -- all integrated into the existing clean card-based design.
 
-Three targeted improvements that transform generic directory listings into compelling, firm-specific profiles.
+## What Changes
 
----
+### 1. Enhanced Header with Agency Count
+The subtitle becomes dynamic: "Browse 15 verified real estate agencies in Israel" instead of static copy. Instant credibility signal.
 
-### 1. Replace Generic "Why This Firm" with Curated Selling Points
+### 2. Search + Filter Toolbar
+A single row below the header containing:
+- **Search input** (left) -- text field with a search icon, filters agencies by name as you type
+- **City filter pills** (center/below) -- horizontal scrollable row of pill buttons extracted from all `cities_covered` data across agencies. Clicking a city filters to agencies covering that city. An "All" pill is selected by default. On mobile, the pills scroll horizontally
+- **Sort dropdown** (right) -- small select with options: "A-Z", "Most Established", "Largest Team", "Most Listings"
 
-**Problem:** The current system auto-generates highlights from data fields (languages, city count, specializations). Every firm looks the same.
+This fits naturally between the header and the grid, consistent with how filter bars work on the property listing pages.
 
-**Solution:** Add a `key_differentiators` column -- a text array of 2-4 hand-written, firm-specific value propositions that you control.
+### 3. Real Stats on Agency Cards
+Replace the static "View team" / "Listings" labels in the card footer with **live counts**:
+- "8 Agents" (with Users icon)  
+- "24 Listings" (with Home icon)
 
-Examples:
-- "Handled 200+ Anglo purchases in Jerusalem"
-- "Only firm offering fixed-fee closings"
-- "Former Bank Leumi mortgage dept. manager"
+This requires updating the `useAgencies` hook to fetch agent and listing counts per agency. We'll do this with two additional queries (agent counts grouped by agency, listing counts grouped by agency) and merge the data client-side -- avoiding N+1 queries.
 
-**How it works:**
-- New DB column: `key_differentiators text[]` (nullable)
-- If `key_differentiators` has entries, display those instead of the auto-generated highlights
-- If empty, fall back to the current auto-generated logic (so nothing breaks for unfilled profiles)
-- Rename the section header from "Why this firm" to "What sets them apart"
-- Each differentiator displayed as a clean text bullet with a subtle accent-colored check icon
+### 4. Specialization Tags
+Your concern about them all looking the same is valid, but looking at the actual data, agencies DO differ meaningfully (e.g., "Anglo clients" vs "Investment properties" vs "Rentals"). These are high-signal for users who know what they need. We'll show them as small outline badges below the description, limited to 2-3 tags per card to keep it clean. They blend in rather than dominate.
 
-**Files changed:**
-- DB migration: add `key_differentiators` column
-- `useTrustedProfessionals.ts`: add field to interface
-- `ProfessionalHighlights.tsx`: prioritize curated differentiators over auto-generated ones
-
----
-
-### 2. Multiple Testimonials with Context
-
-**Problem:** Single testimonial slot with no context about who said it or what service they used.
-
-**Solution:** A new `professional_testimonials` table supporting multiple reviews per professional, each with buyer context.
-
-**Database design:**
-
-| Column | Type | Purpose |
-|--------|------|---------|
-| `id` | uuid (PK) | |
-| `professional_id` | uuid (FK) | Links to trusted_professionals |
-| `quote` | text | The testimonial text |
-| `author_name` | text | Attribution name |
-| `author_context` | text | e.g., "First-time buyer from New York" or "Investor, 3 properties" |
-| `service_used` | text | e.g., "Contract review", "Mortgage approval" |
-| `display_order` | integer | Sort order |
-
-- RLS: public read (matches parent table pattern)
-- Existing `testimonial_quote` / `testimonial_author` fields on the main table will be migrated into this new table (keeping backward compat until data is moved)
-- UI: Replace the single testimonial card with a new section showing up to 3 testimonials in a clean vertical stack, each with the quote, author name, their context badge, and service-used badge
-- If only 1 testimonial exists, it renders exactly like the current card (no visual regression)
-
-**Files changed:**
-- DB migration: create `professional_testimonials` table with RLS
-- New hook: `useProfessionalTestimonials.ts`
-- `ProfessionalTestimonialCard.tsx`: refactored to support multiple testimonials with context badges
+### 5. No-Results State
+When search/filter yields zero matches, show a friendly empty state with a "Clear filters" button.
 
 ---
 
-### 3. "What to Expect" Process Section
+## Technical Details
 
-**Problem:** International buyers don't know how Israeli professionals work -- consultation fees, engagement models, timelines, and response times are invisible.
+### Files Modified
 
-**Solution:** Add a `process_steps` JSONB column for structured engagement info, plus a `consultation_type` field for the quick headline.
+**`src/hooks/useAgency.tsx`**
+- Update `useAgencies()` to also return `agent_count` and `listing_count` per agency
+- Approach: After fetching agencies, run two grouped count queries (agents by agency_id, published properties by agent's agency_id) and merge results into the agency objects
+- Add `specializations` to the returned data (already in select `*`, just need to expose in the card)
 
-**Database columns:**
+**`src/pages/Agencies.tsx`**
+- Add state for `searchQuery`, `selectedCity`, and `sortBy`
+- Extract unique cities from all agencies' `cities_covered` arrays
+- Add filter/search toolbar UI between header and grid
+- Update `AgencyCard` interface to include `agent_count`, `listing_count`, `specializations`
+- Replace static footer labels with real counts
+- Add specialization badges (max 3, outline variant)
+- Add client-side filtering logic: name search (case-insensitive includes), city filter (agency.cities_covered includes selected city), and sort
+- Add filtered count in header ("Showing 5 of 15 agencies" when filtered)
+- Add empty state for no filter matches
 
-| Column | Type | Example |
-|--------|------|---------|
-| `consultation_type` | text | "Free initial consultation" or "Paid consultation (250 ILS)" |
-| `response_time` | text | "Within 24 hours" or "Same business day" |
-| `engagement_model` | text | "Fixed fee" or "Percentage-based" or "Hourly rate" |
-| `process_steps` | jsonb | Array of {step, description} objects |
-
-Example `process_steps` value:
-```text
-[
-  {"step": "Free intro call", "description": "30-min call to understand your needs"},
-  {"step": "Document review", "description": "We review the contract and flag issues"},
-  {"step": "Negotiation", "description": "We negotiate terms on your behalf"},
-  {"step": "Closing", "description": "Title registration and key handover"}
-]
-```
-
-**UI:** A new "How It Works" card placed between the About section and Testimonials on the detail page:
-- Top row: quick-glance badges for consultation type, response time, and engagement model (only shown when populated)
-- Below: numbered vertical step list (1, 2, 3, 4) with step title and description
-- Styled with the firm's accent color for step numbers
-- Only renders when at least one field is populated
-
-**Files changed:**
-- DB migration: add 4 columns to `trusted_professionals`
-- `useTrustedProfessionals.ts`: add fields to interface
-- New component: `ProfessionalProcessCard.tsx`
-- `ProfessionalDetail.tsx`: add the new card between About and Testimonials
-
----
-
-### Summary of Database Changes
-
-Single migration adding:
-- `trusted_professionals.key_differentiators` (text[])
-- `trusted_professionals.consultation_type` (text)
-- `trusted_professionals.response_time` (text)
-- `trusted_professionals.engagement_model` (text)
-- `trusted_professionals.process_steps` (jsonb)
-- New table `professional_testimonials` with public-read RLS
-
-### Section Order on Detail Page (after changes)
-
-1. Hero card (name, logo, category, social links, languages, cities)
-2. "What Sets Them Apart" (curated differentiators or auto-generated fallback)
-3. About (long_description)
-4. How It Works (process steps, consultation type, engagement model)
-5. Client Testimonials (multiple, with context)
-6. Specializations
-7. Trust disclaimer
-
+### No Database Changes Required
+All data already exists in the `agencies` and `agents` tables. We just need smarter queries and client-side filtering.
