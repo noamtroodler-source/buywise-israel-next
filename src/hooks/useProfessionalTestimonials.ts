@@ -22,7 +22,7 @@ export function useProfessionalTestimonials(professionalId: string | undefined) 
         .select('*')
         .eq('professional_id', professionalId)
         .order('display_order', { ascending: true })
-        .limit(3);
+        .limit(8);
       if (error) throw error;
       return (data || []) as unknown as ProfessionalTestimonial[];
     },
