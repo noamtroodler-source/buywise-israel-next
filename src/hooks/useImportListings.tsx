@@ -112,3 +112,32 @@ export function useProcessBatch() {
     },
   });
 }
+
+export function useDeleteImportJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (jobId: string) => {
+      // Delete items first (foreign key), then the job
+      const { error: itemsErr } = await supabase
+        .from('import_job_items')
+        .delete()
+        .eq('job_id', jobId);
+      if (itemsErr) throw itemsErr;
+
+      const { error: jobErr } = await supabase
+        .from('import_jobs')
+        .delete()
+        .eq('id', jobId);
+      if (jobErr) throw jobErr;
+    },
+    onSuccess: () => {
+      toast.success('Import job deleted');
+      queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+    },
+    onError: (err: Error) => {
+      toast.error(`Delete failed: ${err.message}`);
+    },
+  });
+}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Globe, Loader2, Download, CheckCircle2,
-  XCircle, AlertCircle, FileText, RefreshCw,
+  XCircle, AlertCircle, FileText, RefreshCw, Trash2,
 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import {
   useImportJobItems,
   useDiscoverListings,
   useProcessBatch,
+  useDeleteImportJob,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ export default function AgencyImport() {
   const { data: jobs = [], isLoading: jobsLoading } = useImportJobs(agency?.id);
   const discoverMutation = useDiscoverListings();
   const processBatchMutation = useProcessBatch();
+  const deleteJobMutation = useDeleteImportJob();
 
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -247,27 +249,47 @@ export default function AgencyImport() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {jobs.map(job => (
-                    <button
+                {jobs.map(job => (
+                    <div
                       key={job.id}
-                      onClick={() => setActiveJobId(job.id)}
                       className={cn(
-                        'w-full text-left p-3 rounded-xl border transition-colors',
-                        currentJob?.id === job.id
-                          ? 'border-primary/30 bg-primary/5'
-                          : 'border-border hover:bg-muted/30'
+                        'flex items-center gap-2',
                       )}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium truncate">{job.website_url}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {job.processed_count} imported · {new Date(job.created_at).toLocaleDateString()}
-                          </p>
+                      <button
+                        onClick={() => setActiveJobId(job.id)}
+                        className={cn(
+                          'flex-1 text-left p-3 rounded-xl border transition-colors',
+                          currentJob?.id === job.id
+                            ? 'border-primary/30 bg-primary/5'
+                            : 'border-border hover:bg-muted/30'
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium truncate">{job.website_url}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {job.processed_count} imported · {new Date(job.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{job.status}</Badge>
                         </div>
-                        <Badge variant="outline" className="text-xs">{job.status}</Badge>
-                      </div>
-                    </button>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-xl text-muted-foreground hover:text-destructive shrink-0"
+                        disabled={deleteJobMutation.isPending}
+                        onClick={() => {
+                          if (confirm('Delete this import job and all its items?')) {
+                            deleteJobMutation.mutate(job.id);
+                            if (activeJobId === job.id) setActiveJobId(null);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </CardContent>
