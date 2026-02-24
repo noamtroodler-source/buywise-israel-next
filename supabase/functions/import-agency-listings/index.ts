@@ -13,20 +13,146 @@ function supabaseAdmin() {
   );
 }
 
+// ─── SUPPORTED CITIES WHITELIST ─────────────────────────────────────────────
+
+const SUPPORTED_CITIES = [
+  "Ashdod", "Ashkelon", "Beer Sheva", "Beit Shemesh", "Caesarea",
+  "Efrat", "Eilat", "Givat Shmuel", "Gush Etzion", "Hadera",
+  "Haifa", "Herzliya", "Hod HaSharon", "Jerusalem", "Kfar Saba",
+  "Ma'ale Adumim", "Mevaseret Zion", "Modi'in", "Netanya",
+  "Pardes Hanna", "Petah Tikva", "Ra'anana", "Ramat Gan",
+  "Tel Aviv", "Zichron Yaakov",
+];
+
+// Common aliases/transliterations for supported cities
+const CITY_ALIASES: Record<string, string[]> = {
+  "Beer Sheva": ["beersheva", "beersheba", "beer sheba", "bersheva", "bersheba", "be'er sheva"],
+  "Beit Shemesh": ["beit shemesh", "bet shemesh", "beth shemesh", "beitschemesh"],
+  "Caesarea": ["kesaria", "cesaria", "qesaria", "kaisaria", "cesarea"],
+  "Givat Shmuel": ["givat shmuel", "givat shemuel"],
+  "Gush Etzion": ["gush etzion", "gush ezion"],
+  "Haifa": ["haipha", "hafia", "hefa", "heifa"],
+  "Herzliya": ["herzeliya", "herzelia", "herzlia", "hertzeliya"],
+  "Hod HaSharon": ["hod hasharon", "hod sharon"],
+  "Jerusalem": ["yerushalayim", "jeruslaem", "jerusalm"],
+  "Kfar Saba": ["kfar saba", "kfar sabba", "kfar sava"],
+  "Ma'ale Adumim": ["maale adumim", "maaleh adumim", "male adumim"],
+  "Mevaseret Zion": ["mevaseret zion", "mevasseret zion", "mevasseret"],
+  "Modi'in": ["modiin", "modin", "modein"],
+  "Netanya": ["natanya", "netaniya", "netanyah"],
+  "Pardes Hanna": ["pardes hanna", "pardes hana", "pardes hanna karkur"],
+  "Petah Tikva": ["petach tikva", "petah tikwa", "petachtikva"],
+  "Ra'anana": ["raanana", "ranana", "rannana"],
+  "Ramat Gan": ["ramat gan", "ramatgan"],
+  "Tel Aviv": ["telaviv", "tel aviv", "tlv", "tel avive"],
+  "Zichron Yaakov": ["zichron yaakov", "zichron yakov", "zichron jacob"],
+};
+
+// Domain keywords → city mapping for inferring city from URL
+const DOMAIN_CITY_HINTS: Record<string, string> = {
+  "jerusalem": "Jerusalem",
+  "telaviv": "Tel Aviv",
+  "tlv": "Tel Aviv",
+  "haifa": "Haifa",
+  "herzliya": "Herzliya",
+  "netanya": "Netanya",
+  "raanana": "Ra'anana",
+  "modiin": "Modi'in",
+  "beersheva": "Beer Sheva",
+  "ashdod": "Ashdod",
+  "ashkelon": "Ashkelon",
+  "eilat": "Eilat",
+  "kfarsaba": "Kfar Saba",
+  "hadera": "Hadera",
+  "caesarea": "Caesarea",
+  "efrat": "Efrat",
+  "beitshemesh": "Beit Shemesh",
+  "mevaseret": "Mevaseret Zion",
+  "petachtikva": "Petah Tikva",
+  "ramatgan": "Ramat Gan",
+  "hodsharon": "Hod HaSharon",
+  "hodhasharon": "Hod HaSharon",
+  "zichron": "Zichron Yaakov",
+  "pardeshanna": "Pardes Hanna",
+  "givatshmuel": "Givat Shmuel",
+  "maaleadumim": "Ma'ale Adumim",
+  "gushetzion": "Gush Etzion",
+};
+
+function normalizeCityStr(str: string): string {
+  return str.toLowerCase().replace(/['-]/g, "").replace(/\s+/g, "").trim();
+}
+
+/**
+ * Match a city name against the supported cities list.
+ * Returns canonical city name or null if not matched.
+ */
+function matchSupportedCity(city: string | undefined | null): string | null {
+  if (!city || typeof city !== "string" || city.trim() === "") return null;
+
+  const normalized = normalizeCityStr(city);
+
+  // 1. Direct match (normalized)
+  for (const supported of SUPPORTED_CITIES) {
+    if (normalizeCityStr(supported) === normalized) return supported;
+  }
+
+  // 2. Alias match
+  for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
+    for (const alias of aliases) {
+      if (normalizeCityStr(alias) === normalized) return canonical;
+    }
+  }
+
+  // 3. Substring / contains match (e.g. "Tel Aviv-Yafo" → "Tel Aviv")
+  for (const supported of SUPPORTED_CITIES) {
+    const normSupported = normalizeCityStr(supported);
+    if (normalized.includes(normSupported) || normSupported.includes(normalized)) {
+      return supported;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Try to infer a city from the URL domain name.
+ */
+function inferCityFromDomain(url: string): string | null {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase().replace(/\./g, "");
+    for (const [keyword, city] of Object.entries(DOMAIN_CITY_HINTS)) {
+      if (hostname.includes(keyword)) return city;
+    }
+  } catch {
+    // ignore invalid URLs
+  }
+  return null;
+}
+
+/**
+ * Extract domain name from URL for AI context.
+ */
+function getDomainFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+
 // ─── PRE-LLM SOLD/RENTED DETECTION ─────────────────────────────────────────
 
 function isSoldOrRentedPage(markdown: string): boolean {
-  // Hebrew patterns (no \b — word boundary doesn't work with Hebrew Unicode)
   const hebrewPatterns = [
-    /נמכר[הו]?/,        // sold (masc/fem/plural)
-    /הושכר[הו]?/,       // rented (masc/fem/plural)
-    /בהסכם/,            // under contract
-    /לא\s*זמינ[הו]?/,   // not available
-    /לא\s*פנוי[הו]?/,   // not vacant
-    /אין\s*בנמצא/,       // unavailable
+    /נמכר[הו]?/,
+    /הושכר[הו]?/,
+    /בהסכם/,
+    /לא\s*זמינ[הו]?/,
+    /לא\s*פנוי[הו]?/,
+    /אין\s*בנמצא/,
   ];
 
-  // English patterns (word-boundary protected to avoid "soldier" matching "sold")
   const englishPatterns = [
     /\bsold\b/i,
     /\brented\b/i,
@@ -40,7 +166,6 @@ function isSoldOrRentedPage(markdown: string): boolean {
     /\bunavailable\b/i,
   ];
 
-  // Only scan first 2000 chars — status badges are near the top
   const snippet = markdown.substring(0, 2000);
 
   for (const p of hebrewPatterns) {
@@ -67,16 +192,15 @@ function validatePropertyData(listing: Record<string, any>): string[] {
   const errors: string[] = [];
   const currentYear = new Date().getFullYear();
 
-  // Required fields
-  if (typeof listing.price !== "number" || listing.price <= 0) {
-    errors.push("price must be greater than 0");
-  } else if (listing.price < 1000) {
+  // Price validation — allow 0 (Price on Request) and null/undefined
+  if (listing.price != null && listing.price < 0) {
+    errors.push("price cannot be negative");
+  } else if (listing.price != null && listing.price > 0 && listing.price < 1000) {
     errors.push(`price ${listing.price} seems too low (likely extraction error)`);
   }
+  // price === 0 or null/undefined is allowed (Price on Request)
 
-  if (!listing.city || typeof listing.city !== "string" || listing.city.trim() === "") {
-    errors.push("city is required");
-  }
+  // City is no longer validated here — handled by city whitelist gate after extraction
 
   // Enum validation
   if (listing.property_type && !VALID_PROPERTY_TYPES.includes(listing.property_type)) {
@@ -115,12 +239,10 @@ function validateProjectData(listing: Record<string, any>): string[] {
     errors.push("project name is required");
   }
 
-  if (!listing.city || typeof listing.city !== "string" || listing.city.trim() === "") {
-    errors.push("city is required");
-  }
+  // City is no longer validated here — handled by city whitelist gate after extraction
 
-  if (listing.price_from != null && (typeof listing.price_from !== "number" || listing.price_from <= 0)) {
-    errors.push("price_from must be a positive number");
+  if (listing.price_from != null && (typeof listing.price_from !== "number" || listing.price_from < 0)) {
+    errors.push("price_from cannot be negative");
   }
 
   if (listing.construction_status && !VALID_CONSTRUCTION_STATUSES.includes(listing.construction_status)) {
@@ -138,7 +260,6 @@ function normalizeUrl(raw: string): string {
   try {
     const parsed = new URL(url);
     parsed.hostname = parsed.hostname.toLowerCase();
-    // Remove trailing slash from pathname
     if (parsed.pathname.endsWith("/") && parsed.pathname.length > 1) {
       parsed.pathname = parsed.pathname.slice(0, -1);
     }
@@ -155,7 +276,6 @@ async function handleDiscover(body: any) {
   const sb = supabaseAdmin();
   const normalizedUrl = normalizeUrl(website_url);
 
-  // Verify agency exists
   const { data: agency, error: agencyErr } = await sb
     .from("agencies")
     .select("id, admin_user_id")
@@ -163,7 +283,6 @@ async function handleDiscover(body: any) {
     .single();
   if (agencyErr || !agency) throw new Error("Agency not found");
 
-  // Check for existing job with same URL (duplicate prevention)
   const { data: existingJobs } = await sb
     .from("import_jobs")
     .select("id, status, total_urls")
@@ -175,7 +294,6 @@ async function handleDiscover(body: any) {
 
   if (existingJobs && existingJobs.length > 0) {
     const existing = existingJobs[0];
-    // Count pending items
     const { count } = await sb
       .from("import_job_items")
       .select("id", { count: "exact", head: true })
@@ -190,7 +308,6 @@ async function handleDiscover(body: any) {
     };
   }
 
-  // 1. Firecrawl MAP — discover all URLs
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
   if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
 
@@ -214,7 +331,6 @@ async function handleDiscover(body: any) {
 
   console.log(`Discovered ${allUrls.length} total URLs`);
 
-  // 2. AI filter — which are listing or project pages?
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -285,14 +401,12 @@ ${allUrls.join("\n")}`;
   }
 
   if (listingUrls.length === 0) {
-    // Fallback: if AI returned nothing, use all URLs (let process_batch handle non-listings)
     console.log("AI returned 0 listing URLs, using all discovered URLs as fallback");
-    listingUrls = allUrls.slice(0, 100); // Cap at 100
+    listingUrls = allUrls.slice(0, 100);
   }
 
   console.log(`AI identified ${listingUrls.length} listing URLs`);
 
-  // 3. Create import_job
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
     .insert({
@@ -306,7 +420,6 @@ ${allUrls.join("\n")}`;
     .single();
   if (jobErr) throw new Error(`Failed to create import job: ${jobErr.message}`);
 
-  // 4. Create import_job_items
   const items = listingUrls.map((url) => ({
     job_id: job.id,
     url,
@@ -329,7 +442,6 @@ async function handleProcessBatch(body: any) {
   const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY")!;
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
-  // Get job details
   const { data: job, error: jobErr } = await sb
     .from("import_jobs")
     .select("*, agencies!inner(id, admin_user_id)")
@@ -337,7 +449,6 @@ async function handleProcessBatch(body: any) {
     .single();
   if (jobErr || !job) throw new Error("Import job not found");
 
-  // Get next 10 pending items
   const { data: pendingItems, error: itemsErr } = await sb
     .from("import_job_items")
     .select("*")
@@ -348,15 +459,12 @@ async function handleProcessBatch(body: any) {
   if (itemsErr) throw new Error(`Failed to fetch pending items: ${itemsErr.message}`);
 
   if (!pendingItems || pendingItems.length === 0) {
-    // Mark job as completed
     await sb.from("import_jobs").update({ status: "completed" }).eq("id", job_id);
     return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
   }
 
-  // Update job status
   await sb.from("import_jobs").update({ status: "processing" }).eq("id", job_id);
 
-  // Get first agent for this agency (to assign listings)
   const { data: agents } = await sb
     .from("agents")
     .select("id")
@@ -369,7 +477,6 @@ async function handleProcessBatch(body: any) {
 
   for (const item of pendingItems) {
     try {
-      // Mark as processing
       await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
 
       // 1. Scrape the page
@@ -407,7 +514,7 @@ async function handleProcessBatch(body: any) {
         continue;
       }
 
-      // Pre-LLM sold/rented keyword check (Layer 1 — saves AI credits)
+      // Pre-LLM sold/rented keyword check
       if (isSoldOrRentedPage(markdown)) {
         console.log(`Pre-filter: sold/rented detected for ${item.url}`);
         await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented" }).eq("id", item.id);
@@ -415,8 +522,20 @@ async function handleProcessBatch(body: any) {
         continue;
       }
 
-      // 2. AI extraction — detect category (property vs project vs not_listing) and extract fields
+      // 2. AI extraction — with domain hint + supported cities context
+      const domain = getDomainFromUrl(item.url);
+
       const extractionPrompt = `You are extracting structured data from a scraped Israeli real estate page.
+
+IMPORTANT CONTEXT:
+- Website domain: ${domain}
+- Supported cities (return city as one of these EXACT names): ${SUPPORTED_CITIES.join(", ")}
+- If the city is not explicitly stated on the page, INFER it from:
+  1. The website domain name (e.g., "jerusalem-real-estate.co" → Jerusalem)
+  2. The URL path
+  3. Neighborhood context (e.g., Arnona, Baka, Talbieh → Jerusalem; Neve Tzedek → Tel Aviv)
+- If no price is listed (e.g., "Price on Request", "Call for price", "Contact us for pricing"), set price to 0.
+- Return city as one of the supported cities listed above.
 
 FIRST, determine the CATEGORY of this page:
 - "property": A single unit for sale or rent (resale, rental listing for one apartment/house)
@@ -437,7 +556,7 @@ FOR PROJECTS — extract these fields:
 - project_name: The name of the development/project
 - project_description: Description of the project
 - city, neighborhood, address: Location
-- price_from / price_to: Price range for units (numbers only)
+- price_from / price_to: Price range for units (numbers only, 0 if not listed)
 - currency: ILS/USD/EUR
 - total_units: Total number of units in the project
 - construction_status: One of planning, pre_sale, foundation, structure, finishing, delivery, completed
@@ -475,16 +594,15 @@ ${pageLinks.slice(0, 50).join("\n")}`;
                       enum: ["property", "project", "not_listing"],
                       description: "The category of the page: property (single unit listing), project (new development), or not_listing",
                     },
-                    // Property fields
                     title: { type: "string", description: "Listing title (for properties)" },
                     description: { type: "string", description: "Property description" },
-                    price: { type: "number", description: "Price as number (for properties)" },
+                    price: { type: "number", description: "Price as number (0 if Price on Request)" },
                     currency: { type: "string", enum: ["ILS", "USD", "EUR"], description: "Currency code" },
                     bedrooms: { type: "number", description: "Number of bedrooms (rooms - 1)" },
                     bathrooms: { type: "number", description: "Number of bathrooms" },
                     size_sqm: { type: "number", description: "Size in square meters" },
                     address: { type: "string", description: "Street address" },
-                    city: { type: "string", description: "City name in English" },
+                    city: { type: "string", description: "City name — must be one of the supported cities" },
                     neighborhood: { type: "string", description: "Neighborhood name" },
                     property_type: {
                       type: "string",
@@ -499,10 +617,9 @@ ${pageLinks.slice(0, 50).join("\n")}`;
                     year_built: { type: "number", description: "Year built" },
                     ac_type: { type: "string", enum: ["none", "split", "central", "mini_central"] },
                     is_sold_or_rented: { type: "boolean", description: "True if listing is sold/rented/under contract" },
-                    // Project fields
                     project_name: { type: "string", description: "Name of the project/development" },
                     project_description: { type: "string", description: "Description of the project" },
-                    price_from: { type: "number", description: "Lowest unit price in project" },
+                    price_from: { type: "number", description: "Lowest unit price in project (0 if not listed)" },
                     price_to: { type: "number", description: "Highest unit price in project" },
                     total_units: { type: "number", description: "Total number of units" },
                     construction_status: {
@@ -512,7 +629,6 @@ ${pageLinks.slice(0, 50).join("\n")}`;
                     },
                     completion_date: { type: "string", description: "Expected completion (YYYY-MM-DD)" },
                     amenities: { type: "array", items: { type: "string" }, description: "Project amenities" },
-                    // Shared
                     image_urls: { type: "array", items: { type: "string" }, description: "All image URLs found" },
                   },
                   required: ["listing_category"],
@@ -559,9 +675,30 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
+      // ── POST-EXTRACTION CITY INFERENCE ──
+      // If AI didn't extract a city, try to infer from domain
+      if (!listing.city || listing.city.trim() === "") {
+        const domainCity = inferCityFromDomain(item.url);
+        if (domainCity) {
+          console.log(`City inferred from domain for ${item.url}: ${domainCity}`);
+          listing.city = domainCity;
+        }
+      }
+
+      // ── CITY WHITELIST GATE ──
+      const matchedCity = matchSupportedCity(listing.city);
+      if (!matchedCity) {
+        await sb.from("import_job_items").update({
+          status: "skipped",
+          error_message: `City not supported: "${listing.city || '(none)'}". Only 25 featured cities are imported.`,
+        }).eq("id", item.id);
+        failed++;
+        continue;
+      }
+      listing.city = matchedCity; // Use canonical name
+
       // ── PROJECT PATH ──
       if (category === "project") {
-        // Validate project data before expensive operations
         const projectErrors = validateProjectData(listing);
         if (projectErrors.length > 0) {
           await sb.from("import_job_items").update({
@@ -573,9 +710,9 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         }
 
         const projectName = listing.project_name || listing.title || `Imported project from ${new URL(item.url).hostname}`;
-        const projectCity = listing.city || "";
+        const projectCity = listing.city;
 
-        // Duplicate detection for projects — by name + city
+        // Duplicate detection for projects
         if (projectName && projectCity) {
           const { data: dupeProjects } = await sb
             .from("projects")
@@ -594,7 +731,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
           }
         }
 
-        // Download & re-host images to project-images bucket
+        // Download & re-host images
         const imageUrls: string[] = [];
         const sourceImages = listing.image_urls || [];
         for (const imgUrl of sourceImages.slice(0, 15)) {
@@ -638,13 +775,11 @@ ${pageLinks.slice(0, 50).join("\n")}`;
           }
         }
 
-        // Generate slug
         const slug = projectName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-|-$/g, "") + "-" + crypto.randomUUID().substring(0, 6);
 
-        // Map construction_status to ProjectStatus
         const statusMap: Record<string, string> = {
           planning: "planning",
           pre_sale: "pre_sale",
@@ -696,7 +831,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
-      // ── PROPERTY PATH (existing logic) ──
+      // ── PROPERTY PATH ──
 
       // Sold or rented listing?
       if (listing.is_sold_or_rented) {
@@ -705,7 +840,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
-      // Validate property data before expensive operations
+      // Validate property data (relaxed price rules)
       const propertyErrors = validatePropertyData(listing);
       if (propertyErrors.length > 0) {
         await sb.from("import_job_items").update({
@@ -718,7 +853,7 @@ ${pageLinks.slice(0, 50).join("\n")}`;
 
       // ── Duplicate detection (two-tier) ──
 
-      // Tier 1: Same address + city (strongest signal, agent-scoped)
+      // Tier 1: Same address + city
       if (listing.address && listing.city) {
         const trimmedAddr = listing.address.trim();
         if (trimmedAddr.length > 0) {
@@ -741,8 +876,8 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         }
       }
 
-      // Tier 2: Fuzzy match when address is weak — city + rooms + size + ~price
-      if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price) {
+      // Tier 2: Fuzzy match — city + rooms + size + ~price (skip if price is 0 / Price on Request)
+      if (listing.city && listing.bedrooms != null && listing.size_sqm && listing.price && listing.price > 0) {
         const priceLow = listing.price * 0.95;
         const priceHigh = listing.price * 1.05;
 
@@ -826,10 +961,10 @@ ${pageLinks.slice(0, 50).join("\n")}`;
           description: listing.description || null,
           property_type: listing.property_type || "apartment",
           listing_status: listing.listing_status || "for_sale",
-          price: listing.price || 0,
+          price: listing.price || 0, // 0 = Price on Request
           currency: listing.currency || "ILS",
           address: listing.address || "",
-          city: listing.city || "",
+          city: listing.city, // Already canonical from whitelist gate
           neighborhood: listing.neighborhood || null,
           latitude,
           longitude,
@@ -860,7 +995,6 @@ ${pageLinks.slice(0, 50).join("\n")}`;
         continue;
       }
 
-      // Mark done
       await sb.from("import_job_items").update({ status: "done", property_id: property.id }).eq("id", item.id);
       succeeded++;
     } catch (err) {
@@ -899,8 +1033,6 @@ ${pageLinks.slice(0, 50).join("\n")}`;
   };
 }
 
-// ─── MAIN ───────────────────────────────────────────────────────────────────
-
 // ─── RETRY FAILED ───────────────────────────────────────────────────────────
 
 async function handleRetryFailed(body: any) {
@@ -909,7 +1041,6 @@ async function handleRetryFailed(body: any) {
 
   const sb = supabaseAdmin();
 
-  // Reset all failed/skipped items back to pending
   const { data: resetItems, error: resetErr } = await sb
     .from("import_job_items")
     .update({ status: "pending", error_message: null })
@@ -921,13 +1052,14 @@ async function handleRetryFailed(body: any) {
 
   const resetCount = resetItems?.length || 0;
 
-  // Set job status back to ready so "Import Next Batch" appears
   if (resetCount > 0) {
     await sb.from("import_jobs").update({ status: "ready" }).eq("id", job_id);
   }
 
   return { reset_count: resetCount };
 }
+
+// ─── MAIN ───────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
