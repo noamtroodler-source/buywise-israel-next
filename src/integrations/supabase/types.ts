@@ -2348,6 +2348,7 @@ export type Database = {
           extracted_data: Json | null
           id: string
           job_id: string
+          project_id: string | null
           property_id: string | null
           status: string
           url: string
@@ -2358,6 +2359,7 @@ export type Database = {
           extracted_data?: Json | null
           id?: string
           job_id: string
+          project_id?: string | null
           property_id?: string | null
           status?: string
           url: string
@@ -2368,6 +2370,7 @@ export type Database = {
           extracted_data?: Json | null
           id?: string
           job_id?: string
+          project_id?: string | null
           property_id?: string | null
           status?: string
           url?: string
@@ -2378,6 +2381,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_job_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
           {
@@ -3704,6 +3714,7 @@ export type Database = {
           floor_plans: string[] | null
           id: string
           images: string[] | null
+          import_source: string | null
           is_featured: boolean | null
           is_published: boolean | null
           last_renewed_at: string | null
@@ -3746,6 +3757,7 @@ export type Database = {
           floor_plans?: string[] | null
           id?: string
           images?: string[] | null
+          import_source?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
           last_renewed_at?: string | null
@@ -3788,6 +3800,7 @@ export type Database = {
           floor_plans?: string[] | null
           id?: string
           images?: string[] | null
+          import_source?: string | null
           is_featured?: boolean | null
           is_published?: boolean | null
           last_renewed_at?: string | null
