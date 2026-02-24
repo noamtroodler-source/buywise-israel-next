@@ -457,6 +457,136 @@ function validateProjectData(listing: Record<string, any>): string[] {
   return errors;
 }
 
+// ─── AI URL CLASSIFICATION (BATCHED) ────────────────────────────────────────
+
+async function classifyUrlChunk(
+  urls: string[],
+  lovableKey: string
+): Promise<string[]> {
+  try {
+    const filterPrompt = `You are analyzing URLs from a real estate agency website. 
+Given this list of URLs, identify which ones are individual property/listing detail pages OR project/development pages (not category pages, contact pages, about pages, blog posts, etc.).
+
+Look for URL patterns that suggest individual listings, such as:
+- URLs containing property IDs, slugs, or numeric identifiers
+- URLs with paths like /property/, /listing/, /נכס/, /דירה/, etc.
+- URLs that look like they point to a single property page
+
+Also look for project/development pages:
+- URLs with paths like /project/, /פרויקט/, /development/, /בנייה-חדשה/, /new-construction/
+- URLs that point to a new construction development page
+
+IMPORTANT: Only return URLs for ACTIVE, LIVE listings that are currently for sale or for rent. 
+Exclude any URLs that appear to be sold, rented, leased, archived, off-market, or completed listings.
+Look for signals like "sold", "rented", "נמכר", "הושכר", "under-contract", "past-sales", "archive" in the URL path or slug.
+
+Return ONLY the active listing and project URLs as a JSON array of strings. If unsure about a URL, exclude it.
+
+URLs to analyze:
+${urls.join("\n")}`;
+
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [{ role: "user", content: filterPrompt }],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_listing_urls",
+              description: "Return the filtered listing and project URLs",
+              parameters: {
+                type: "object",
+                properties: {
+                  listing_urls: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Array of URLs that are individual listing or project pages",
+                  },
+                },
+                required: ["listing_urls"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "return_listing_urls" } },
+      }),
+    });
+
+    if (!aiRes.ok) {
+      const errText = await aiRes.text();
+      console.warn(`AI chunk classification failed (${aiRes.status}): ${errText}`);
+      return [];
+    }
+
+    const aiData = await aiRes.json();
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      const parsed = JSON.parse(toolCall.function.arguments);
+      return parsed.listing_urls || [];
+    }
+    return [];
+  } catch (err) {
+    console.warn(`classifyUrlChunk failed (non-fatal): ${err}`);
+    return [];
+  }
+}
+
+async function classifyUrlsInBatches(
+  allUrls: string[],
+  lovableKey: string,
+  chunkSize = 80,
+  concurrency = 3
+): Promise<string[]> {
+  // Split into chunks
+  const chunks: string[][] = [];
+  for (let i = 0; i < allUrls.length; i += chunkSize) {
+    chunks.push(allUrls.slice(i, i + chunkSize));
+  }
+
+  console.log(`Classifying ${allUrls.length} URLs in ${chunks.length} chunk(s) (concurrency=${concurrency})`);
+
+  const allResults = new Set<string>();
+  let totalFailed = 0;
+
+  // Process chunks in parallel groups
+  for (let i = 0; i < chunks.length; i += concurrency) {
+    const group = chunks.slice(i, i + concurrency);
+    const results = await Promise.allSettled(
+      group.map(chunk => classifyUrlChunk(chunk, lovableKey))
+    );
+
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value.length > 0) {
+        for (const url of r.value) allResults.add(url);
+      } else if (r.status === "rejected") {
+        totalFailed++;
+        console.warn(`Chunk classification rejected: ${r.reason}`);
+      } else if (r.status === "fulfilled" && r.value.length === 0) {
+        // Could be a failure that returned [] or genuinely no listings in chunk
+        totalFailed++;
+      }
+    }
+  }
+
+  const listingUrls = Array.from(allResults);
+
+  // If ALL chunks failed, fall back to first 100 URLs
+  if (listingUrls.length === 0) {
+    console.log("All AI classification chunks returned 0 results, using fallback (first 100 URLs)");
+    return allUrls.slice(0, 100);
+  }
+
+  console.log(`Batch classification complete: ${listingUrls.length} unique listing URLs from ${chunks.length} chunks (${totalFailed} returned empty)`);
+  return listingUrls;
+}
+
 // ─── DISCOVER ───────────────────────────────────────────────────────────────
 
 function normalizeUrl(raw: string): string {
@@ -579,81 +709,7 @@ async function handleDiscover(body: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  const filterPrompt = `You are analyzing URLs from a real estate agency website. 
-Given this list of URLs, identify which ones are individual property/listing detail pages OR project/development pages (not category pages, contact pages, about pages, blog posts, etc.).
-
-Look for URL patterns that suggest individual listings, such as:
-- URLs containing property IDs, slugs, or numeric identifiers
-- URLs with paths like /property/, /listing/, /נכס/, /דירה/, etc.
-- URLs that look like they point to a single property page
-
-Also look for project/development pages:
-- URLs with paths like /project/, /פרויקט/, /development/, /בנייה-חדשה/, /new-construction/
-- URLs that point to a new construction development page
-
-IMPORTANT: Only return URLs for ACTIVE, LIVE listings that are currently for sale or for rent. 
-Exclude any URLs that appear to be sold, rented, leased, archived, off-market, or completed listings.
-Look for signals like "sold", "rented", "נמכר", "הושכר", "under-contract", "past-sales", "archive" in the URL path or slug.
-
-Return ONLY the active listing and project URLs as a JSON array of strings. If unsure about a URL, exclude it.
-
-URLs to analyze:
-${allUrls.join("\n")}`;
-
-  const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [{ role: "user", content: filterPrompt }],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "return_listing_urls",
-            description: "Return the filtered listing and project URLs",
-            parameters: {
-              type: "object",
-              properties: {
-                listing_urls: {
-                  type: "array",
-                  items: { type: "string" },
-                  description: "Array of URLs that are individual listing or project pages",
-                },
-              },
-              required: ["listing_urls"],
-              additionalProperties: false,
-            },
-          },
-        },
-      ],
-      tool_choice: { type: "function", function: { name: "return_listing_urls" } },
-    }),
-  });
-
-  if (!aiRes.ok) {
-    const errText = await aiRes.text();
-    console.error("AI filter error:", aiRes.status, errText);
-    throw new Error(`AI filtering failed (${aiRes.status})`);
-  }
-
-  const aiData = await aiRes.json();
-  let listingUrls: string[] = [];
-
-  const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-  if (toolCall?.function?.arguments) {
-    const parsed = JSON.parse(toolCall.function.arguments);
-    listingUrls = parsed.listing_urls || [];
-  }
-
-  if (listingUrls.length === 0) {
-    console.log("AI returned 0 listing URLs, using all discovered URLs as fallback");
-    listingUrls = allUrls.slice(0, 100);
-  }
-
+  const listingUrls = await classifyUrlsInBatches(allUrls, LOVABLE_API_KEY);
   console.log(`AI identified ${listingUrls.length} listing URLs`);
 
   const { data: job, error: jobErr } = await sb
