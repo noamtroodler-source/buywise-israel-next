@@ -1293,16 +1293,15 @@ async function handleProcessBatch(body: any) {
     .single();
   if (jobErr || !job) throw new Error("Import job not found");
 
-  const { data: pendingItems, error: itemsErr } = await sb
+  // Check if there's any pending work before setting up
+  const { data: initialCheck } = await sb
     .from("import_job_items")
-    .select("*")
+    .select("id")
     .eq("job_id", job_id)
     .eq("status", "pending")
-    .order("created_at", { ascending: true })
-    .limit(10);
-  if (itemsErr) throw new Error(`Failed to fetch pending items: ${itemsErr.message}`);
+    .limit(1);
 
-  if (!pendingItems || pendingItems.length === 0) {
+  if (!initialCheck || initialCheck.length === 0) {
     await sb.from("import_jobs").update({ status: "completed" }).eq("id", job_id);
     return { processed: 0, succeeded: 0, failed: 0, remaining: 0, status: "completed" };
   }
@@ -1316,40 +1315,78 @@ async function handleProcessBatch(body: any) {
     .limit(1);
   const agentId = agents?.[0]?.id || null;
 
-  let succeeded = 0;
-  let failed = 0;
-
   // Reset geocode rate limiter for this batch
   _lastGeoTime = 0;
   _geoQueue = Promise.resolve();
 
   const CONCURRENCY = 3;
+  const REFILL_SIZE = 6;
+  const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
-  for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
-    // Timeout safety: stop launching new chunks if we've used > 120s
-    if (Date.now() - batchStartTime > 120_000) {
-      console.log(`Timeout safety: ${Date.now() - batchStartTime}ms elapsed, stopping before chunk ${i}. Remaining items will be processed in next batch.`);
+  let totalProcessed = 0;
+  let totalSucceeded = 0;
+  let totalFailed = 0;
+  let refillCycle = 0;
+
+  while (true) {
+    // Time check before fetching more work
+    if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
+      console.log(`Time limit reached after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
       break;
     }
 
-    const chunk = pendingItems.slice(i, i + CONCURRENCY);
-    console.log(`Processing chunk ${Math.floor(i / CONCURRENCY) + 1}: ${chunk.length} items concurrently`);
+    // Fetch next batch of pending items
+    const { data: pendingItems, error: itemsErr } = await sb
+      .from("import_job_items")
+      .select("*")
+      .eq("job_id", job_id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true })
+      .limit(REFILL_SIZE);
 
-    const results = await Promise.allSettled(
-      chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id))
-    );
+    if (itemsErr) {
+      console.error(`Failed to fetch pending items on refill ${refillCycle}:`, itemsErr.message);
+      break;
+    }
 
-    for (const result of results) {
-      if (result.status === "fulfilled" && result.value.succeeded) {
-        succeeded++;
-      } else {
-        failed++;
+    if (!pendingItems || pendingItems.length === 0) {
+      console.log(`No more pending items after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
+      break;
+    }
+
+    refillCycle++;
+    console.log(`Refill cycle ${refillCycle}: fetched ${pendingItems.length} pending items`);
+
+    // Process in chunks of CONCURRENCY
+    for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
+      if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
+        console.log(`Time limit reached mid-refill at chunk ${i}, stopping`);
+        break;
+      }
+
+      const chunk = pendingItems.slice(i, i + CONCURRENCY);
+      console.log(`Refill ${refillCycle}, chunk ${Math.floor(i / CONCURRENCY) + 1}: ${chunk.length} items`);
+
+      const results = await Promise.allSettled(
+        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id))
+      );
+
+      for (const result of results) {
+        totalProcessed++;
+        if (result.status === "fulfilled" && result.value.succeeded) {
+          totalSucceeded++;
+        } else {
+          totalFailed++;
+        }
       }
     }
   }
 
-  // Update job counts
+  const elapsedSec = ((Date.now() - batchStartTime) / 1000).toFixed(1);
+  console.log(`Batch complete: ${totalProcessed} processed (${totalSucceeded} ok, ${totalFailed} failed) in ${elapsedSec}s across ${refillCycle} refills`);
+
+  // Update job counts from DB (source of truth)
   const { data: counts } = await sb
     .from("import_job_items")
     .select("status")
@@ -1367,9 +1404,9 @@ async function handleProcessBatch(body: any) {
     .eq("id", job_id);
 
   return {
-    processed: pendingItems.length,
-    succeeded,
-    failed,
+    processed: totalProcessed,
+    succeeded: totalSucceeded,
+    failed: totalFailed,
     remaining: remainingCount,
     status: newStatus,
   };
