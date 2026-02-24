@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { X, Loader2, GripVertical, Star, ImagePlus, AlertTriangle } from 'lucide-react';
+import { X, Loader2, GripVertical, Star, ImagePlus, AlertTriangle, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { toast as sonnerToast } from 'sonner';
 import {
   DndContext,
   closestCenter,
@@ -138,6 +139,7 @@ export function SortableImageUpload({
   minImages = 3,
 }: SortableImageUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [enhancingCount, setEnhancingCount] = useState(0);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -156,19 +158,43 @@ export function SortableImageUpload({
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `property-images/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('property-images')
-        .upload(filePath, file);
+    const { error: uploadError } = await supabase.storage
+      .from('property-images')
+      .upload(filePath, file);
 
-    if (uploadError) {
-      throw uploadError;
-    }
+    if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(filePath);
+    const { data } = supabase.storage
+      .from('property-images')
+      .getPublicUrl(filePath);
 
     return data.publicUrl;
+  }, []);
+
+  const enhanceUploadedImage = useCallback(async (publicUrl: string): Promise<string> => {
+    try {
+      const enhancePath = `property-images/enhanced-${crypto.randomUUID()}.png`;
+      const { data, error } = await supabase.functions.invoke('enhance-image', {
+        body: {
+          image_url: publicUrl,
+          bucket: 'property-images',
+          path: enhancePath,
+        },
+      });
+
+      if (error) {
+        console.error('Enhancement error:', error);
+        return publicUrl;
+      }
+
+      if (data?.success && data?.enhanced && data?.image_url) {
+        return data.image_url;
+      }
+      return publicUrl;
+    } catch (err) {
+      console.error('Enhancement failed:', err);
+      return publicUrl;
+    }
   }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +217,37 @@ export function SortableImageUpload({
     try {
       const uploadPromises = filesToUpload.map(uploadImage);
       const newUrls = await Promise.all(uploadPromises);
-      onImagesChange([...images, ...newUrls]);
+      const allImages = [...images, ...newUrls];
+      onImagesChange(allImages);
+      setUploading(false);
+
+      // Enhance images in background after upload completes
+      setEnhancingCount(newUrls.length);
+      sonnerToast.info(`Enhancing ${newUrls.length} image(s) with AI...`, { duration: 3000 });
+
+      const enhancedResults = await Promise.allSettled(
+        newUrls.map(url => enhanceUploadedImage(url))
+      );
+
+      const enhancedUrls = enhancedResults.map((r, i) =>
+        r.status === 'fulfilled' ? r.value : newUrls[i]
+      );
+
+      // Replace original URLs with enhanced ones
+      const updatedImages = allImages.map(url => {
+        const origIdx = newUrls.indexOf(url);
+        return origIdx >= 0 ? enhancedUrls[origIdx] : url;
+      });
+      onImagesChange(updatedImages);
+
+      const enhancedCount = enhancedResults.filter(
+        (r, i) => r.status === 'fulfilled' && r.value !== newUrls[i]
+      ).length;
+
+      if (enhancedCount > 0) {
+        sonnerToast.success(`${enhancedCount} image(s) enhanced with AI`);
+      }
+      setEnhancingCount(0);
     } catch (error) {
       console.error('Upload error:', error);
       toast({
@@ -201,6 +257,7 @@ export function SortableImageUpload({
       });
     } finally {
       setUploading(false);
+      setEnhancingCount(0);
       event.target.value = '';
     }
   };
@@ -278,6 +335,14 @@ export function SortableImageUpload({
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Enhancement indicator */}
+      {enhancingCount > 0 && (
+        <div className="flex items-center justify-center gap-2 text-sm text-primary">
+          <Sparkles className="h-4 w-4 animate-pulse" />
+          <span>Enhancing {enhancingCount} image(s) with AI...</span>
+        </div>
+      )}
 
       {/* Counter */}
       <p className="text-sm text-muted-foreground text-center">
