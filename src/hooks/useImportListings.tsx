@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -150,7 +151,6 @@ export function useDeleteImportJob() {
 
   return useMutation({
     mutationFn: async (jobId: string) => {
-      // Delete items first (foreign key), then the job
       const { error: itemsErr } = await supabase
         .from('import_job_items')
         .delete()
@@ -172,4 +172,55 @@ export function useDeleteImportJob() {
       toast.error(`Delete failed: ${err.message}`);
     },
   });
+}
+
+export function useProcessAll() {
+  const queryClient = useQueryClient();
+  const [isProcessingAll, setIsProcessingAll] = useState(false);
+  const stopRef = useRef(false);
+
+  const startProcessAll = async (jobId: string) => {
+    setIsProcessingAll(true);
+    stopRef.current = false;
+    let totalSucceeded = 0;
+    let totalFailed = 0;
+
+    try {
+      while (!stopRef.current) {
+        const { data, error } = await supabase.functions.invoke(
+          'import-agency-listings',
+          { body: { action: 'process_batch', job_id: jobId } }
+        );
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        totalSucceeded += data.succeeded;
+        totalFailed += data.failed;
+
+        queryClient.invalidateQueries({ queryKey: ['importJobs'] });
+        queryClient.invalidateQueries({ queryKey: ['importJobItems'] });
+
+        if (data.remaining === 0 || data.status === 'completed') break;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['agencyListingsManagement'] });
+
+      if (stopRef.current) {
+        toast.info(`Import paused. ${totalSucceeded} imported, ${totalFailed} skipped/failed so far.`);
+      } else {
+        toast.success(
+          `Import complete! ${totalSucceeded} listings imported, ${totalFailed} skipped/failed.`,
+          { duration: 10000 }
+        );
+      }
+    } catch (err: any) {
+      toast.error(`Import failed: ${err.message}`);
+    } finally {
+      setIsProcessingAll(false);
+    }
+  };
+
+  const stopProcessAll = () => { stopRef.current = true; };
+
+  return { startProcessAll, stopProcessAll, isProcessingAll };
 }

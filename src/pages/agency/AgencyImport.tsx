@@ -19,6 +19,7 @@ import {
   useProcessBatch,
   useDeleteImportJob,
   useRetryFailed,
+  useProcessAll,
 } from '@/hooks/useImportListings';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -45,7 +46,7 @@ export default function AgencyImport() {
   const processBatchMutation = useProcessBatch();
   const deleteJobMutation = useDeleteImportJob();
   const retryFailedMutation = useRetryFailed();
-
+  const { startProcessAll, stopProcessAll, isProcessingAll } = useProcessAll();
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
@@ -115,7 +116,7 @@ export default function AgencyImport() {
   const progressPercent = totalItems > 0 ? Math.round(((doneCount + failedCount) / totalItems) * 100) : 0;
 
   const isDiscovering = discoverMutation.isPending;
-  const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing';
+  const isProcessing = processBatchMutation.isPending || currentJob?.status === 'processing' || isProcessingAll;
   const isReady = currentJob?.status === 'ready' && pendingCount > 0;
   const isCompleted = currentJob?.status === 'completed';
 
@@ -245,25 +246,50 @@ export default function AgencyImport() {
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                   {(isReady || (isCompleted && pendingCount > 0)) && (
-                    <Button
-                      onClick={handleProcessBatch}
-                      disabled={isProcessing}
-                      className="rounded-xl"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Processing Batch...
-                        </>
+                    <>
+                      {/* Import All / Stop button */}
+                      {isProcessingAll ? (
+                        <Button
+                          onClick={stopProcessAll}
+                          variant="destructive"
+                          className="rounded-xl"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Stop Import
+                        </Button>
                       ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-2" />
-                          {doneCount + failedCount === 0 ? 'Import First Batch' : 'Import Next Batch'} ({Math.min(pendingCount, 10)} listings)
-                        </>
+                        <Button
+                          onClick={() => startProcessAll(currentJob!.id)}
+                          disabled={processBatchMutation.isPending}
+                          className="rounded-xl"
+                        >
+                          {processBatchMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4 mr-2" />
+                              Import All Remaining ({pendingCount})
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+
+                      {/* Single batch button */}
+                      <Button
+                        onClick={handleProcessBatch}
+                        disabled={isProcessing}
+                        variant="outline"
+                        className="rounded-xl"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Next Batch ({Math.min(pendingCount, 10)})
+                      </Button>
+                    </>
                   )}
 
                   {failedCount > 0 && (
