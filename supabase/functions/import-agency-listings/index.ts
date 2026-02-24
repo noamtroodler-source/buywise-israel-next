@@ -911,6 +911,7 @@ async function processOneItem(
   firecrawlKey: string,
   lovableKey: string,
   jobId: string,
+  domainCity: string | null = null,
 ): Promise<{ succeeded: boolean }> {
   try {
     await sb.from("import_job_items").update({ status: "processing" }).eq("id", item.id);
@@ -1105,11 +1106,9 @@ ${pageLinks.slice(0, 50).join("\n")}`;
       return { succeeded: false };
     }
 
-    // ── POST-EXTRACTION CITY INFERENCE ──
+    // ── POST-EXTRACTION CITY INFERENCE (cached at batch level) ──
     if (!listing.city || listing.city.trim() === "") {
-      const domainCity = inferCityFromDomain(item.url);
       if (domainCity) {
-        console.log(`City inferred from domain for ${item.url}: ${domainCity}`);
         listing.city = domainCity;
       }
     }
@@ -1368,6 +1367,12 @@ async function handleProcessBatch(body: any) {
     .single();
   if (jobErr || !job) throw new Error("Import job not found");
 
+  // Cache domain→city inference once for the entire batch
+  const cachedDomainCity = inferCityFromDomain(job.website_url);
+  if (cachedDomainCity) {
+    console.log(`Domain city cached for job: ${cachedDomainCity} (from ${job.website_url})`);
+  }
+
   // Check if there's any pending work before setting up
   const { data: initialCheck } = await sb
     .from("import_job_items")
@@ -1444,7 +1449,7 @@ async function handleProcessBatch(body: any) {
       console.log(`Refill ${refillCycle}, chunk ${Math.floor(i / CONCURRENCY) + 1}: ${chunk.length} items`);
 
       const results = await Promise.allSettled(
-        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id))
+        chunk.map(item => processOneItem(item, sb, job, agentId, FIRECRAWL_API_KEY, LOVABLE_API_KEY, job_id, cachedDomainCity))
       );
 
       for (const result of results) {
