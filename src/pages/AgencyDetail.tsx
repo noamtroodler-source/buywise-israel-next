@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Building2, Globe, Phone, Mail, Share2, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, FileText, Linkedin, Instagram, Facebook, Key } from 'lucide-react';
+import { Building2, Globe, Phone, Mail, MapPin, CheckCircle2, Users, Home, Clock, TrendingUp, FileText, Linkedin, Instagram, Facebook, Key } from 'lucide-react';
 import { useExtractedColor } from '@/hooks/useExtractedColor';
+import { ProfileShareMenu } from '@/components/shared/ProfileShareMenu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -61,17 +62,7 @@ export default function AgencyDetail() {
 
   const isOwner = agency && userAgent?.agency_id === agency.id;
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: agency?.name,
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard');
-    }
-  };
+  // handleShare removed — now using ProfileShareMenu component
 
   const formatPriceHook = useFormatPrice();
   const formatPrice = (price: number | null) => {
@@ -223,10 +214,11 @@ export default function AgencyDetail() {
                       </a>
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={handleShare}>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
+                  <ProfileShareMenu 
+                    name={agency.name} 
+                    profileType="agency" 
+                    size="sm"
+                  />
                   {(agency.social_links?.linkedin || agency.social_links?.instagram || agency.social_links?.facebook) && (
                     <>
                       <Separator orientation="vertical" className="h-6 mx-1" />

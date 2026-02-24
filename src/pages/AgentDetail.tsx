@@ -17,7 +17,6 @@ import { CategoryToggle } from '@/components/shared/CategoryToggle';
 import { 
   MessageCircle, 
   Mail, 
-  Share2, 
   Building2, 
   BadgeCheck,
   MapPin,
@@ -28,6 +27,7 @@ import {
   Facebook,
   ChevronRight
 } from 'lucide-react';
+import { ProfileShareMenu } from '@/components/shared/ProfileShareMenu';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { useFormatPrice } from '@/contexts/PreferencesContext';
@@ -97,17 +97,7 @@ export default function AgentDetail() {
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: agent?.name,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Profile link copied to clipboard');
-    }
-  };
+  // handleShare removed — now using ProfileShareMenu component
 
   if (agentLoading) {
     return (
@@ -260,10 +250,11 @@ export default function AgentDetail() {
                   <Mail className="h-4 w-4" />
                   Email
                 </Button>
-                <Button variant="ghost" className="gap-2" onClick={handleShare}>
-                  <Share2 className="h-4 w-4" />
-                  Share Profile
-                </Button>
+                <ProfileShareMenu 
+                  name={agent.name} 
+                  profileType="agent" 
+                  label="Share Profile"
+                />
                 {(agent.linkedin_url || agent.instagram_url || agent.facebook_url) && (
                   <>
                     <Separator orientation="vertical" className="h-8" />
