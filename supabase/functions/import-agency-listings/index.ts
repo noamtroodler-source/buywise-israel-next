@@ -13,6 +13,45 @@ function supabaseAdmin() {
   );
 }
 
+// ─── PRE-LLM SOLD/RENTED DETECTION ─────────────────────────────────────────
+
+function isSoldOrRentedPage(markdown: string): boolean {
+  // Hebrew patterns (no \b — word boundary doesn't work with Hebrew Unicode)
+  const hebrewPatterns = [
+    /נמכר[הו]?/,        // sold (masc/fem/plural)
+    /הושכר[הו]?/,       // rented (masc/fem/plural)
+    /בהסכם/,            // under contract
+    /לא\s*זמינ[הו]?/,   // not available
+    /לא\s*פנוי[הו]?/,   // not vacant
+    /אין\s*בנמצא/,       // unavailable
+  ];
+
+  // English patterns (word-boundary protected to avoid "soldier" matching "sold")
+  const englishPatterns = [
+    /\bsold\b/i,
+    /\brented\b/i,
+    /\bleased\b/i,
+    /\bunder\s+contract\b/i,
+    /\bunder\s+offer\b/i,
+    /\bsale\s+agreed\b/i,
+    /\blet\s+agreed\b/i,
+    /\boff\s*market\b/i,
+    /\bno\s+longer\s+available\b/i,
+    /\bunavailable\b/i,
+  ];
+
+  // Only scan first 2000 chars — status badges are near the top
+  const snippet = markdown.substring(0, 2000);
+
+  for (const p of hebrewPatterns) {
+    if (p.test(snippet)) return true;
+  }
+  for (const p of englishPatterns) {
+    if (p.test(snippet)) return true;
+  }
+  return false;
+}
+
 // ─── DISCOVER ───────────────────────────────────────────────────────────────
 
 function normalizeUrl(raw: string): string {
@@ -286,6 +325,14 @@ async function handleProcessBatch(body: any) {
 
       if (!markdown || markdown.length < 50) {
         await sb.from("import_job_items").update({ status: "skipped", error_message: "Page content too short — likely not a listing" }).eq("id", item.id);
+        failed++;
+        continue;
+      }
+
+      // Pre-LLM sold/rented keyword check (Layer 1 — saves AI credits)
+      if (isSoldOrRentedPage(markdown)) {
+        console.log(`Pre-filter: sold/rented detected for ${item.url}`);
+        await sb.from("import_job_items").update({ status: "skipped", error_message: "Pre-filter: listing appears sold/rented" }).eq("id", item.id);
         failed++;
         continue;
       }
