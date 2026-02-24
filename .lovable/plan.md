@@ -1,23 +1,36 @@
 
 
-# Tighten AI Image Enhancement Prompt
+# Cover-Photo-Only AI Enhancement
 
 ## Overview
-Update the image enhancement prompt in the edge function to strictly limit corrections to **technical photo quality only** — the digital equivalent of Lightroom Auto-Enhance. No content changes, no HDR look, no "AI feel."
+Limit AI image enhancement to **only the first (cover) photo** for each listing — both during manual uploads and bulk imports. This drops costs from ~$0.28/listing to ~$0.04/listing while keeping the highest-impact image looking sharp.
 
 ## Changes
 
-### File: `supabase/functions/enhance-image/index.ts`
+### 1. Manual Upload — `src/components/agent/SortableImageUpload.tsx`
 
-Replace the current open-ended prompt with a strict technical-correction-only prompt that:
+Currently, after uploading, ALL new images get enhanced in the background. Change this so only the **first image in the full list** (the cover photo) gets enhanced — and only if it's among the newly uploaded batch.
 
-- Limits to: white balance, exposure, sharpness, noise reduction, lens distortion
-- Explicitly forbids: adding/removing objects, changing colors of walls/surfaces, sky replacement, HDR effects, saturation boosting beyond natural levels
-- Anchors output with: "The result must be indistinguishable from a well-shot photo of the exact same scene"
-- Keeps the tone realistic and natural — as if a professional photographer took the same photo with better equipment and lighting
+- After upload, check if the cover photo (index 0 in `allImages`) is one of the newly uploaded URLs
+- If yes, enhance only that one image
+- Skip enhancement for all other images
+- Update the toast message to say "Enhancing cover photo..." instead of "Enhancing X images..."
 
-### New prompt (replacing the current one):
-> "Apply only technical photo corrections to this real estate image. Allowed adjustments: white balance correction, exposure/brightness normalization, sharpness enhancement, noise reduction, and minor lens distortion correction. Do NOT add, remove, or move any objects. Do NOT change wall colors, floor materials, or surface finishes. Do NOT replace or enhance the sky. Do NOT apply HDR effects or boost saturation beyond natural levels. Do NOT make rooms appear larger or alter geometry. The result must look like the same photo taken with a better camera and proper lighting — indistinguishable from reality."
+### 2. Bulk Import — `supabase/functions/import-agency-listings/index.ts`
 
-No other files need to change — the prompt is the only thing controlling the AI's behavior.
+Currently, every downloaded image gets passed through `enhanceImage()`. Change this so only the **first image** in the array gets enhanced.
+
+- In the image download loop, track the image index
+- Only call `enhanceImage()` for index 0 (the cover/first image)
+- All other images keep their original uploaded URL
+
+### 3. No changes needed to:
+- The `enhance-image` edge function itself (the prompt is already tightened)
+- The `ImageUpload.tsx` component (used elsewhere, will check if still relevant)
+- Database schema or storage
+
+## Cost Impact
+- Before: ~$0.28/listing (7 images x $0.039)
+- After: ~$0.04/listing (1 image x $0.039)
+- For 100 listings: ~$4 instead of ~$28
 
