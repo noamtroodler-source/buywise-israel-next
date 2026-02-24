@@ -1562,6 +1562,7 @@ async function handleProcessBatch(body: any) {
 
   const CONCURRENCY = 3;
   const REFILL_SIZE = 6;
+  const MAX_ITEMS = 10; // Hard cap per single batch call
   const TIME_LIMIT_MS = 120_000;
   const batchStartTime = Date.now();
 
@@ -1571,6 +1572,11 @@ async function handleProcessBatch(body: any) {
   let refillCycle = 0;
 
   while (true) {
+    // Check item cap
+    if (totalProcessed >= MAX_ITEMS) {
+      console.log(`Item cap (${MAX_ITEMS}) reached after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
+      break;
+    }
     // Time check before fetching more work
     if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
       console.log(`Time limit reached after ${refillCycle} refill cycles, ${totalProcessed} items processed`);
@@ -1584,7 +1590,7 @@ async function handleProcessBatch(body: any) {
       .eq("job_id", job_id)
       .eq("status", "pending")
       .order("created_at", { ascending: true })
-      .limit(REFILL_SIZE);
+      .limit(Math.min(REFILL_SIZE, MAX_ITEMS - totalProcessed));
 
     if (itemsErr) {
       console.error(`Failed to fetch pending items on refill ${refillCycle}:`, itemsErr.message);
@@ -1600,7 +1606,7 @@ async function handleProcessBatch(body: any) {
     console.log(`Refill cycle ${refillCycle}: fetched ${pendingItems.length} pending items`);
 
     // Process in chunks of CONCURRENCY
-    for (let i = 0; i < pendingItems.length; i += CONCURRENCY) {
+    for (let i = 0; i < pendingItems.length && totalProcessed < MAX_ITEMS; i += CONCURRENCY) {
       if (Date.now() - batchStartTime > TIME_LIMIT_MS) {
         console.log(`Time limit reached mid-refill at chunk ${i}, stopping`);
         break;
